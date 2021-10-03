@@ -1,0 +1,65 @@
+# First time? run `docker network create microservices`
+
+version: "3.8"
+services:
+    cloudumi_healthcheck:
+        build:
+            context: .
+            dockerfile: cloudumi_healthcheck/Dockerfile
+        image: cloudumi_healthcheck
+        networks:
+            - cloudumi
+        ports:
+            - 8090:8090
+        labels:
+            - traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
+            - traefik.http.services.home.loadbalancer.server.port=8090
+            - "traefik.enable=true"
+            - "traefik.port=80"
+    cloudumi_saml:
+        build:
+            context: .
+            dockerfile: cloudumi_healthcheck/Dockerfile
+        image: cloudumi_healthcheck
+        networks:
+            - cloudumi
+        ports:
+            - 8090:8090
+        labels:
+            - traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
+            - traefik.http.services.home.loadbalancer.server.port=8090
+            - "traefik.enable=true"
+            - "traefik.port=80"
+    cloudumi_router:
+        build:
+            context: .
+            dockerfile: cloudumi_router/Dockerfile
+        image: cloudumi_router
+        networks:
+            - cloudumi
+        ports:
+            - 8080:8080
+        labels:
+            - traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
+            - traefik.http.services.home.loadbalancer.server.port=8080
+            - "traefik.enable=true"
+            - "traefik.port=80"
+
+    cloudumi_frontend:
+        build:
+            context: .
+            dockerfile: cloudumi_frontend/Dockerfile
+        image: cloudumi_frontend
+        networks:
+            - cloudumi
+        ports:
+            - 8081:65000
+        labels:
+            - traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
+            - traefik.http.services.home.loadbalancer.server.port=8080
+            - "traefik.enable=true"
+            - "traefik.port=80"
+            - "traefik.frontend.priority=1" # lowest priority, the last thing to be matched
+
+networks:
+    cloudumi:

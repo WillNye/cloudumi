@@ -1,0 +1,55 @@
+# First time? run `docker network create microservices`
+
+version: "3.8"
+services:
+    cloudumi_healthcheck:
+        build:
+            context: .
+            dockerfile: cloudumi_healthcheck/Dockerfile
+        volumes:
+            - ./cloudumi_healthcheck/:/apps/cloudumi_healthcheck
+        command:
+          [
+              "sh",
+              "-c",
+              "pip install debugpy && python -m debugpy --wait-for-client --listen 0.0.0.0:9090 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8090",
+          ]
+        image: cloudumi_healthcheck
+        networks:
+            - cloudumi
+        ports:
+            - 8090:8090
+            - 9090:9090
+    cloudumi_router:
+        build:
+            context: .
+            dockerfile: cloudumi_router/Dockerfile
+        volumes:
+            - ./cloudumi_router/:/apps/cloudumi_router
+        command:
+          [
+                  "sh",
+                  "-c",
+                  "pip install debugpy && python -m debugpy --wait-for-client --listen 0.0.0.0:9080 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8080",
+          ]
+        image: cloudumi_router
+        networks:
+            - cloudumi
+        ports:
+            - 8080:8080
+            - 9080:9080
+
+    cloudumi_frontend:
+        build:
+            context: .
+            dockerfile: cloudumi_frontend/Dockerfile
+        volumes:
+            - ./cloudumi_frontend/:/apps/cloudumi_frontend
+        image: cloudumi_frontend
+        networks:
+            - cloudumi
+        ports:
+            - 8081:80
+
+networks:
+    cloudumi:

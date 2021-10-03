@@ -1,0 +1,35 @@
+# TODO: Check license on all of these
+
+aiozipkin
+asgiref # For Asyncio->Sync and Sync->Asyncio in threadpool
+bcrypt # Sign stuff in DynamoDB
+boto
+boto3
+cloudaux
+cryptography
+deepdiff # For getting deep in nested dictionary differences
+ed25519 # For.. more signing
+furl
+joblib  # For some parallelization
+jsonschema
+logmatic
+pandas # For data sciency stuff
+parliament # For telling us why our policies suck
+password_strength # For checking password strength
+policy_sentry # For telling us all the possible AWS actions and resources
+pydantic # For models
+pyjwt
+python3-saml
+pytz
+PyYAML
+redis
+redis-py-cluster
+redislite
+retrying
+ruamel.yaml
+sentry_sdk # Send errors and exceptions to Sentry
+setupmeta
+simplejson
+tenacity
+tornado
+ujson
