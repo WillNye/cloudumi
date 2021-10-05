@@ -1,8 +1,8 @@
 """Custom exceptions."""
 import tornado.web
 
-from consoleme.config import config
-from consoleme.lib.plugins import get_plugin_by_name
+from cloudumi_common.config import config
+from cloudumi_common.lib.plugins import get_plugin_by_name
 
 log = config.get_logger("consoleme")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()

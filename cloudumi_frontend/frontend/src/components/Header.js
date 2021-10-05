@@ -178,12 +178,12 @@ const ConsoleMeHeader = () => {
           }}
           href="/"
         >
-          {/* <Image
+          <Image
             size="mini"
             src="/images/logos/logo192.png"
             style={{ marginRight: "1.5em" }}
           />
-          ConsoleMe */}
+          ConsoleMe
         </Menu.Item>
         <Menu.Menu position="left">
           <Menu.Item active={false} exact as={NavLink} name="roles" to="/">

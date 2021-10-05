@@ -1,18 +1,24 @@
 # TODO: Check license on all of these
-
+# TODO: Install cmsaas_plugins or just get rid of the concept of plugins
 aiozipkin
 asgiref # For Asyncio->Sync and Sync->Asyncio in threadpool
+atlassian-python-api # Supports creating PRs in BitBucket
 bcrypt # Sign stuff in DynamoDB
+bleach # For sanitizing json data
 boto
 boto3
+celery
 cloudaux
 cryptography
 deepdiff # For getting deep in nested dictionary differences
 ed25519 # For.. more signing
 furl
+gitpython
 joblib  # For some parallelization
 jsonschema
-logmatic
+logmatic-python
+marshmallow
+okta_jwt # For parsing ALB Auth JWTs
 pandas # For data sciency stuff
 parliament # For telling us why our policies suck
 password_strength # For checking password strength
@@ -33,3 +39,4 @@ simplejson
 tenacity
 tornado
 ujson
+uvloop

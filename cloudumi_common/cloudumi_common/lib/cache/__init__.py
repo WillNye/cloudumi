@@ -111,6 +111,7 @@ async def store_json_results_in_redis_and_s3(
         ).encode()
         if s3_key.endswith(".gz"):
             data_for_s3 = gzip.compress(data_for_s3)
+
         put_object(
             Bucket=s3_bucket, Key=s3_key, Body=data_for_s3, host=host, **s3_extra_kwargs
         )

@@ -18,7 +18,7 @@ def get_plugin_by_name(plugin_name: str) -> Any:
     if global_plugins.get(plugin_name):
         return global_plugins[plugin_name]
     plugins = []
-    for ep in pkg_resources.iter_entry_points("consoleme.plugins"):
+    for ep in pkg_resources.iter_entry_points("cloudumi.plugins"):
         plugins.append(ep.name)
         if ep.name == plugin_name:
             global_plugins[ep.name] = ep.load()
@@ -43,8 +43,8 @@ def get_plugin_by_name(plugin_name: str) -> Any:
 def import_class_by_name(class_full_path: str):
     """
     Import a class by a dot-delimited class name.
-    i.e: import_class("consoleme_saas_plugins.plugins.metrics.default_metrics.DefaultMetric")
-        --> <class 'consoleme_saas_plugins.plugins.metrics.default_metrics.DefaultMetric'>
+    i.e: import_class("cloudumi_plugins.plugins.metrics.default_metrics.DefaultMetric")
+        --> <class 'cloudumi_plugins.plugins.metrics.default_metrics.DefaultMetric'>
     """
 
     d = class_full_path.rfind(".")

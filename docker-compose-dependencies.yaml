@@ -1,0 +1,161 @@
+version: "3"
+# TODO: Set up for production environment security
+# Scalable celery workers
+# Scylla DynamoDB backed by EBS
+# Redis backed by EBS?
+
+# Never use this in a production environment.
+services:
+  cloudumi-redis:
+    container_name: cloudumi-redis
+    ports:
+      - "6379:6379"
+    image: "redis:alpine"
+
+  cloudumi-dynamodb:
+    image: "cnadiminti/dynamodb-local"
+    container_name: cloudumi-dynamodb
+    entrypoint: java
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data -port 8005"
+    ports:
+      - "8005:8005"
+    restart: always
+    volumes:
+      - ./dynamodb-data:/data:delegated
+  cloudumi-dynamodb_admin:
+    container_name: cloudumi-dynamodb-admin
+    image: aaronshaf/dynamodb-admin:latest
+    environment:
+      - DYNAMO_ENDPOINT=http://cloudumi-dynamodb:8005
+    ports:
+      - "8001:8001"
+  localstack1:
+    image: localstack/localstack-full
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+      - "8082:8080"
+    volumes:
+      - "localstack-vol1:/tmp/localstack"
+    environment:
+      - TEST_AWS_ACCOUNT_ID=790766496544
+      - DATA_DIR=/tmp/localstack/data1
+  localstack2:
+    image: localstack/localstack-full
+    ports:
+      - "4567:4566"
+      - "4572:4571"
+      - "8083:8080"
+    volumes:
+      - "localstack-vol2:/tmp/localstack"
+    environment:
+      - TEST_AWS_ACCOUNT_ID=668381060369
+      - DATA_DIR=/tmp/localstack/data2
+  localstack3:
+    image: localstack/localstack-full
+    ports:
+      - "4568:4566"
+      - "4573:4571"
+      - "8084:8080"
+    volumes:
+      - "localstack-vol3:/tmp/localstack"
+    environment:
+      - TEST_AWS_ACCOUNT_ID=982482626085
+      - DATA_DIR=/tmp/localstack/data3
+  redis-cluster:
+    image: grokzen/redis-cluster
+    #    environment:
+    #      IP: ${REDIS_CLUSTER_IP}
+    #      SENTINEL: ${REDIS_USE_SENTINEL}
+    #      STANDALONE: ${REDIS_USE_STANDALONE}
+    hostname: server
+    ports:
+      - "7000-7050:7000-7050"
+      - "5000-5010:5000-5010"
+  # Portainer is only for dev
+  portainer:
+    image: portainer/portainer-ce:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+      - "9443:9443"
+# TODO: Figure out metrics and tracing
+#  prometheus:
+#    image: prom/prometheus
+#    volumes:
+#      - ./cloudumi_metrics/prometheus/:/etc/prometheus/
+#      - prometheus_data:/prometheus
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#      - '--storage.tsdb.path=/prometheus'
+#      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+#      - '--web.console.templates=/usr/share/prometheus/consoles'
+#    ports:
+#      - "9090:9090"
+#    deploy:
+#      labels:
+#        - "traefik.http.routers.prometheus.rule=Host(`prometheus.localhost`)"
+#        - "traefik.http.routers.prometheus.service=prometheus"
+#        - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+#      placement:
+#        constraints:
+#          - node.role==manager
+#      restart_policy:
+#        condition: on-failure
+#
+#  grafana:
+#    image: grafana/grafana
+#    depends_on:
+#      - prometheus
+#    volumes:
+#      - grafana_data:/var/lib/grafana
+#      - ./cloudumi_metrics/grafana/provisioning/:/etc/grafana/provisioning/
+#    env_file:
+#      - ./cloudumi_metrics/grafana/config.monitoring
+#    ports:
+#      - "9091:3000"
+#    user: "104"
+#    deploy:
+#      labels:
+#        - "traefik.http.routers.grafana.rule=Host(`grafana.localhost`)"
+#        - "traefik.http.routers.grafana.service=grafana"
+#        - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+#      placement:
+#        constraints:
+#          - node.role == manager
+#      restart_policy:
+#        condition: on-failure
+#
+#  jaeger:
+#    image: jaegertracing/all-in-one:latest
+#    ports:
+#      - "6831:6831/udp"
+#      - "16686:16686"
+
+volumes:
+  localstack-vol1:
+  localstack-vol2:
+  localstack-vol3:
+  prometheus_data: { }
+  grafana_data: { }
+  portainer_data:
+
+networks:
+  public:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.100.0/24
+  cloudumi-redis:
+    driver: bridge
+  cloudumi-dynamodb:
+    driver: bridge
+  cloudumi-redis-data:
+    driver: bridge
+  cloudumi-localstack:
+    driver: bridge
+

@@ -3,53 +3,162 @@
 version: "3.8"
 services:
     cloudumi_healthcheck:
+        volumes:
+            - ./cloudumi_healthcheck:/apps/cloudumi_healthcheck:cached
         build:
             context: .
             dockerfile: cloudumi_healthcheck/Dockerfile
-        volumes:
-            - ./cloudumi_healthcheck/:/apps/cloudumi_healthcheck
-        command:
-          [
-              "sh",
-              "-c",
-              "pip install debugpy && python -m debugpy --wait-for-client --listen 0.0.0.0:9090 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8090",
-          ]
+        environment:
+            - PYTHONUNBUFFERED=1
+            - PYTHONASYNCIODEBUG=1
         image: cloudumi_healthcheck
-        networks:
-            - cloudumi
+        depends_on:
+            - localstack1
+            - localstack2
+            - localstack3
+            - redis-cluster
+            - cloudumi-dynamodb
+        links:
+            - localstack1
+            - localstack2
+            - localstack3
+            - redis-cluster
+            - cloudumi-dynamodb
         ports:
             - 8090:8090
             - 9090:9090
-    cloudumi_router:
+
+        # Add --wait-for-client to debugpy call if you want to prevent the server from starting until you attach a debugger
+        command:
+            bash -c '
+            pip install debugpy && python -m debugpy --listen 0.0.0.0:9090 -m uvicorn main:app --reload --host 0.0.0.0 --port 8090'
+        labels:
+            - "traefik.enable=true"
+            - traefik.http.routers.cloudumi_healthcheck.rule=Path(`/healthcheck`)
+            - traefik.http.services.cloudumi_healthcheck.loadbalancer.server.port=8090
+    cloudumi_saml:
         build:
             context: .
-            dockerfile: cloudumi_router/Dockerfile
+            dockerfile: cloudumi_saml/Dockerfile
+        environment:
+            - PYTHONUNBUFFERED=1
+            - PYTHONASYNCIODEBUG=1
+        image: cloudumi_saml
         volumes:
-            - ./cloudumi_router/:/apps/cloudumi_router
-        command:
-          [
-                  "sh",
-                  "-c",
-                  "pip install debugpy && python -m debugpy --wait-for-client --listen 0.0.0.0:9080 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8080",
-          ]
-        image: cloudumi_router
-        networks:
-            - cloudumi
+            - ~/.aws:/root/.aws:cached
+            - ./cloudumi_saml:/apps/cloudumi_saml:cached
+            - ./cloudumi_config:/apps/cloudumi_config:cached
         ports:
-            - 8080:8080
-            - 9080:9080
-
+            - 8091:8091
+            - 9091:9091
+        labels:
+            - traefik.http.routers.cloudumi_saml.rule=PathPrefix(`/saml`)
+            - "traefik.http.routers.cloudumi_saml.entrypoints=websecure"
+            - "traefik.http.routers.cloudumi_saml.tls.certresolver=letsencrypt"
+            #- traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
+            - traefik.http.services.cloudumi_saml.loadbalancer.server.port=8091
+            - "traefik.enable=true"
+        depends_on:
+            - localstack1
+            - localstack2
+            - localstack3
+            - redis-cluster
+            - cloudumi-dynamodb
+        links:
+            - localstack1
+            - localstack2
+            - localstack3
+            - redis-cluster
+            - cloudumi-dynamodb
+        command:
+            bash -c '
+            pip install debugpy && python -m debugpy --listen 0.0.0.0:9091 /apps/cloudumi_saml/cloudumi_saml/__main__.py'
+    cloudumi_api:
+        volumes:
+            - ~/.aws:/root/.aws:cached
+            - ./cloudumi_api:/apps/cloudumi_api:cached
+            - ./cloudumi_config:/apps/cloudumi_config:cached
+        environment:
+            - PYTHONUNBUFFERED=1
+            - PYTHONASYNCIODEBUG=1
+        build:
+            context: .
+            dockerfile: ./cloudumi_api/Dockerfile
+        image: cloudumi_api
+        command:
+            bash -c '
+            pip install debugpy && python -m debugpy --listen 0.0.0.0:9092 /apps/cloudumi_api/cloudumi_api/__main__.py'
+        ports:
+            - 9092:9092
+            - 8092:8092
+        labels:
+            - "traefik.http.routers.cloudumi_api.rule=PathPrefix(`/api`) || PathPrefix(`/auth`)"
+            #- traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
+            - traefik.http.services.cloudumi_api.loadbalancer.server.port=8092
+            - "traefik.enable=true"
+        depends_on:
+            - localstack1
+            - localstack2
+            - localstack3
+            - redis-cluster
+            - cloudumi-dynamodb
+        links:
+            - localstack1
+            - localstack2
+            - localstack3
+            - redis-cluster
+            - cloudumi-dynamodb
     cloudumi_frontend:
+        volumes:
+            - ./cloudumi_frontend:/apps/cloudumi_frontend:delegated
+        environment:
+            - DANGEROUSLY_DISABLE_HOST_CHECK=true
+        command:
+            bash -c '
+            FORCE_COLOR=true yarn --cwd /apps/cloudumi_frontend/frontend run start'
         build:
             context: .
             dockerfile: cloudumi_frontend/Dockerfile
-        volumes:
-            - ./cloudumi_frontend/:/apps/cloudumi_frontend
         image: cloudumi_frontend
-        networks:
-            - cloudumi
         ports:
-            - 8081:80
+            - 8081:3000
+        labels:
+            - traefik.http.routers.cloudumi_frontend.rule=PathPrefix(`/`)
+            - "traefik.http.routers.cloudumi_frontend.entrypoints=websecure"
+            - "traefik.http.routers.cloudumi_frontend.tls.certresolver=letsencrypt"
+            - traefik.http.services.cloudumi_frontend.loadbalancer.server.port=3000
+            - "traefik.enable=true"
+            - "traefik.frontend.priority=1" # lowest priority, the last thing to be matched
 
-networks:
-    cloudumi:
+    cloudumi_celery:
+        volumes:
+            - ~/.aws:/root/.aws:cached
+            - ./cloudumi_api:/apps/cloudumi_api:cached
+            - ./cloudumi_config:/apps/cloudumi_config:cached
+            - ./cloudumi_common:/apps/cloudumi_common:cached
+        command:
+            bash -c '
+            celery -A cloudumi_common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8'
+        build:
+            context: .
+            dockerfile: cloudumi_api/Dockerfile
+        image: cloudumi_celery
+        environment:
+            - PYTHONUNBUFFERED=1
+            - PYTHONASYNCIODEBUG=1
+    cloudumi_flower:
+        volumes:
+            - ~/.aws:/root/.aws:cached
+            - ./cloudumi_api:/apps/cloudumi_api:cached
+            - ./cloudumi_config:/apps/cloudumi_config:cached
+            - ./cloudumi_common:/apps/cloudumi_common:cached
+        build:
+            context: .
+            dockerfile: cloudumi_api/Dockerfile
+        command: bash -c '
+            pip install flower;
+            celery -A cloudumi_common.celery_tasks.celery_tasks flower'
+        ports:
+            - 5555:5555
+volumes:
+    certs:

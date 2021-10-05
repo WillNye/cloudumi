@@ -56,7 +56,7 @@ const LoginForm = () => {
   };
 
   const signInWithSSO = async () => {
-    const resp = await fetch("/auth?use_sso=true&redirect_url=" + redirectUrl, {
+    const resp = await fetch("/api/v1/auth?use_sso=true&redirect_url=" + redirectUrl, {
       headers: {
         "X-Requested-With": "XMLHttpRequest",
         Accept: "application/json",

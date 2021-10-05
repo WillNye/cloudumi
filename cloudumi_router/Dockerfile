@@ -18,8 +18,8 @@ RUN apt-get install -y apache2 && apt-get clean
 
 COPY cloudumi_router/root/etc/apache2/ /etc/apache2/
 
-EXPOSE 80
-EXPOSE 443
+#EXPOSE 80
+#EXPOSE 443
 CMD ["apachectl", "-D", "FOREGROUND"]
 
 

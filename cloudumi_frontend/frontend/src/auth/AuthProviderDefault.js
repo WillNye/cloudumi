@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (history) => {
     try {
       // First check whether user is currently authenticated by using the backend auth endpoint.
-      const auth = await fetch("/auth?redirect_url=" + window.location.href, {
+      const auth = await fetch("/api/v1/auth?redirect_url=" + window.location.href, {
         headers: {
           "X-Requested-With": "XMLHttpRequest",
           Accept: "application/json",
@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }) => {
           response.type === "redirect" &&
           response.reason === "unauthenticated"
         ) {
-          fetch("/auth?redirect_url=" + window.location.href, {
+          fetch("/api/v1/auth?redirect_url=" + window.location.href, {
             headers: {
               "X-Requested-With": "XMLHttpRequest",
               Accept: "application/json",

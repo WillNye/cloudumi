@@ -22,15 +22,20 @@ if config.get("_global_.redis.use_redislite"):
     if not config.get("_global_.redis.redis_lite.db_path"):
         default_redislite_db_path = tempfile.NamedTemporaryFile().name
 
+region = config.region
+
 cluster_mode = False
 cluster_mode_nodes = []
 if config.get("_global_.redis.cluster_mode.enabled"):
     cluster_mode = True
-    cluster_mode_nodes = config.get("_global_.redis.cluster_mode.nodes")
+    cluster_mode_nodes = config.get(
+        f"_global_.redis.cluster_mode.nodes.{region}",
+                                        config.get(
+                                            "_global_.redis.cluster_mode.nodes.global", []),
+                                    )
     if not cluster_mode_nodes:
         raise Exception("Cluster mode enabled without specifying nodes")
 
-region = config.region
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 

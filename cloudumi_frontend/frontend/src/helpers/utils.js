@@ -55,7 +55,7 @@ async function sendRequestCommon(
       resJson.type === "redirect" &&
       resJson.reason === "unauthenticated"
     ) {
-      const auth = await fetch("/auth?redirect_url=" + window.location.href, {
+      const auth = await fetch("/api/v1/auth?redirect_url=" + window.location.href, {
         headers: {
           "X-Requested-With": "XMLHttpRequest",
           Accept: "application/json",

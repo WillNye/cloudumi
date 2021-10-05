@@ -915,7 +915,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         group: str = None,
         status: str = None,
         use_cache: bool = False,
-    ) -> Union[list[dict[str, Union[int, str]]], Any]:
+    ) -> Union[List[Dict[str, Union[int, str]]], Any]:
         """Get requests by user. Group and status can also be specified to filter results.
         :param user_email:
         :param group:

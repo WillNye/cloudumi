@@ -165,7 +165,7 @@ async def fetch_resource_details(
 async def fetch_managed_policy_details(
     account_id: str, resource_name: str, host, path: str = None
 ) -> Optional[Dict]:
-    from consoleme.lib.policies import get_aws_config_history_url_for_resource
+    from cloudumi_common.lib.policies import get_aws_config_history_url_for_resource
 
     if not host:
         raise Exception("host not configured")
@@ -223,7 +223,7 @@ async def fetch_assume_role_policy(role_arn: str, host: str) -> Optional[Dict]:
 async def fetch_sns_topic(
     account_id: str, region: str, resource_name: str, host: str
 ) -> dict:
-    from consoleme.lib.policies import get_aws_config_history_url_for_resource
+    from cloudumi_common.lib.policies import get_aws_config_history_url_for_resource
 
     regions = await get_enabled_regions_for_account(account_id, host)
     if region not in regions:
@@ -279,7 +279,7 @@ async def fetch_sns_topic(
 async def fetch_sqs_queue(
     account_id: str, region: str, resource_name: str, host: str
 ) -> dict:
-    from consoleme.lib.policies import get_aws_config_history_url_for_resource
+    from cloudumi_common.lib.policies import get_aws_config_history_url_for_resource
 
     regions = await get_enabled_regions_for_account(account_id, host)
     if region not in regions:
@@ -393,7 +393,7 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
     :return:
     """
 
-    from consoleme.lib.policies import get_aws_config_history_url_for_resource
+    from cloudumi_common.lib.policies import get_aws_config_history_url_for_resource
 
     log_data: Dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -2005,8 +2005,3 @@ async def get_resource_account(arn: str, host: str) -> str:
     return ""
 
 
-def split_s3_path(s3_path):
-    path_parts = s3_path.replace("s3://", "").split("/")
-    b = path_parts.pop(0)
-    k = "/".join(path_parts)
-    return b, k

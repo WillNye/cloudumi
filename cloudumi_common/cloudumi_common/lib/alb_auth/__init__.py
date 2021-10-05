@@ -15,8 +15,8 @@ from jwt.exceptions import (
 )
 from okta_jwt.utils import verify_exp, verify_iat
 
-from consoleme.config import config
-from consoleme.exceptions.exceptions import (
+from cloudumi_common.config import config
+from cloudumi_common.exceptions.exceptions import (
     MissingConfigurationValue,
     UnableToAuthenticate,
 )

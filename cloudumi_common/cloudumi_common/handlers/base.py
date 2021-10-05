@@ -520,7 +520,7 @@ class BaseHandler(TornadoRequestHandler):
                 await self.finish(log_data["message"])
                 raise
 
-        self.contractor = config.config_plugin().is_contractor(self.user)
+        self.contractor = False # TODO: Add functionality later for contractor detection via regex or something else
 
         if (
             config.get(f"site_configs.{host}.auth.cache_user_info_server_side", True)

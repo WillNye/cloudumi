@@ -21,7 +21,7 @@ from ruamel.yaml import YAML
 
 from cloudumi_common.lib.aws.aws_secret_manager import get_aws_secret
 
-from cloudumi_common.lib.aws.utils import split_s3_path
+from cloudumi_common.lib.aws.split_s3_path import split_s3_path
 
 main_exit_flag = threading.Event()
 
