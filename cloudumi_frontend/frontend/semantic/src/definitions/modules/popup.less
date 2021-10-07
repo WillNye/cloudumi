@@ -8,16 +8,14 @@
  *
  */
 
-
 /*******************************
             Theme
 *******************************/
 
-@type    : 'module';
-@element : 'popup';
+@type: "module";
+@element: "popup";
 
-@import (multiple) '../../theme.config';
-
+@import (multiple) "../../theme.config";
 
 /*******************************
             Popup
@@ -60,7 +58,7 @@
 
 .ui.popup:before {
   position: absolute;
-  content: '';
+  content: "";
   width: @arrowSize;
   height: @arrowSize;
 
@@ -89,7 +87,7 @@
   [data-tooltip]:before {
     pointer-events: none;
     position: absolute;
-    content: '';
+    content: "";
     font-size: @medium;
     width: @arrowSize;
     height: @arrowSize;
@@ -151,10 +149,8 @@
     pointer-events: none;
     visibility: hidden;
     opacity: 0;
-    transition:
-            transform @tooltipDuration @tooltipEasing,
-            opacity @tooltipDuration @tooltipEasing
-    ;
+    transition: transform @tooltipDuration @tooltipEasing,
+      opacity @tooltipDuration @tooltipEasing;
   }
   [data-tooltip]:before {
     transform: rotate(45deg) scale(0) !important;
@@ -690,7 +686,6 @@
   }
 }
 
-
 /*******************************
             Coupling
 *******************************/
@@ -721,7 +716,6 @@
   transform: translateZ(0);
   backface-visibility: hidden;
 }
-
 
 /*******************************
             Variations
@@ -766,7 +760,7 @@
     .ui[class*="very wide"].popup {
       max-width: @maxWidth;
       &.fixed when (@variationPopupFixed) {
-        width:@maxWidth;
+        width: @maxWidth;
       }
     }
   }
@@ -815,7 +809,6 @@
   }
 }
 
-
 /*--------------
      Sizes
 ---------------*/
@@ -835,8 +828,7 @@
         font-size: @s;
       }
     }
-  })
+  });
 }
-
 
 .loadUIOverrides();

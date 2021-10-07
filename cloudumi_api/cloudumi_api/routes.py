@@ -7,7 +7,6 @@ from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
-from cloudumi_common.config import config
 from cloudumi_api.handlers.auth import AuthHandler
 from cloudumi_api.handlers.v1.credentials import GetCredentialsHandler
 from cloudumi_api.handlers.v1.headers import ApiHeaderHandler, HeaderHandler
@@ -50,7 +49,10 @@ from cloudumi_api.handlers.v2.requests import (
     RequestsHandler,
     RequestsPageConfigHandler,
 )
-from cloudumi_api.handlers.v2.resources import GetResourceURLHandler, ResourceDetailHandler
+from cloudumi_api.handlers.v2.resources import (
+    GetResourceURLHandler,
+    ResourceDetailHandler,
+)
 from cloudumi_api.handlers.v2.roles import (
     AccountRolesHandler,
     GetRolesMTLSHandler,
@@ -77,6 +79,7 @@ from cloudumi_api.handlers.v2.user import (
     UserRegistrationHandler,
 )
 from cloudumi_api.handlers.v2.user_profile import UserProfileHandler
+from cloudumi_common.config import config
 
 log = config.get_logger()
 
@@ -85,7 +88,7 @@ def make_app(jwt_validator=None):
     """make_app."""
 
     routes = [
-        (r"/auth", AuthHandler), # /auth is still used by OIDC callback
+        (r"/auth", AuthHandler),  # /auth is still used by OIDC callback
         (r"/api/v1/auth", AuthHandler),
         (r"/api/v1/get_credentials", GetCredentialsHandler),
         (r"/api/v1/get_roles", GetRolesHandler),

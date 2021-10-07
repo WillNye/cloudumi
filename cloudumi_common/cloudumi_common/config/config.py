@@ -2,6 +2,7 @@
 import collections
 import datetime
 import logging
+import logging.handlers
 import os
 import socket
 import sys
@@ -20,7 +21,6 @@ from pytz import timezone
 from ruamel.yaml import YAML
 
 from cloudumi_common.lib.aws.aws_secret_manager import get_aws_secret
-
 from cloudumi_common.lib.aws.split_s3_path import split_s3_path
 
 main_exit_flag = threading.Event()
@@ -37,7 +37,11 @@ def validate_config(dct: Dict):
             raise Exception(
                 f"Configuration keys should not have dots in them. Invalid configuration key: {k}"
             )
-        if isinstance(dct[k], dict) and k not in ["logging_levels"] and k not in ["group_mapping"]:
+        if (
+            isinstance(dct[k], dict)
+            and k not in ["logging_levels"]
+            and k not in ["group_mapping"]
+        ):
             validate_config(dct[k])
 
 
@@ -250,6 +254,7 @@ class Configuration(object):
         if config_location:
             if config_location.startswith("s3://"):
                 import boto3
+
                 # TODO: Need host specific configuration?
                 client = boto3.client("s3")
                 bucket, key = split_s3_path(config_location)
@@ -341,6 +346,11 @@ class Configuration(object):
     ) -> Any:
         """Get value for configuration entry in dot notation."""
         value = self.config
+        # Only support keys that explicitly call out a host
+        if key not in ["extends", "site_configs"] and (
+            not key.startswith("site_configs.") and not key.startswith("_global_.")
+        ):
+            raise Exception(f"Configuration key is invalid: {key}")
         for k in key.split("."):
             try:
                 value = value[k]
@@ -396,7 +406,14 @@ class Configuration(object):
                 if "~" in logging_file:
                     logging_file = os.path.expanduser(logging_file)
                 os.makedirs(os.path.dirname(logging_file), exist_ok=True)
-                file_handler = logging.FileHandler(logging_file)
+                file_handler = logging.handlers.TimedRotatingFileHandler(
+                    logging_file,
+                    when="d",
+                    interval=1,
+                    backupCount=5,
+                    encoding=None,
+                    delay=False,
+                )
                 file_handler.setFormatter(
                     logmatic.JsonFormatter(
                         json_indent=self.get("_global_.logging.json_formatter.indent")
@@ -427,6 +444,10 @@ class Configuration(object):
             "rediscluster.connection": "WARNING",
             "rediscluster.client": "WARNING",
             "git.cmd": "WARNING",
+            "elasticapm.metrics": "WARNING",
+            "elasticapm.conf": "WARNING",
+            "elasticapm.transport": "WARNING",
+            "elasticapm.transport.http": "WARNING",
         }
         for logger, level in self.get(
             "_global_.logging_levels", default_logging_levels

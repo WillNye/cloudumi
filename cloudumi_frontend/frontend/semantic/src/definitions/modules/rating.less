@@ -8,15 +8,14 @@
  *
  */
 
-
 /*******************************
             Theme
 *******************************/
 
-@type    : 'module';
-@element : 'rating';
+@type: "module";
+@element: "rating";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
            Rating
@@ -47,11 +46,9 @@
   backface-visibility: hidden;
 }
 
-
 /*******************************
              Types
 *******************************/
-
 
 /*-------------------
       Standard
@@ -71,7 +68,11 @@
 
 /* Partially Active Icon */
 .ui.rating .icon.partial.active {
-  background: linear-gradient(to right, @activeColor 0% var(--full), @inactiveColor var(--full) 100%);
+  background: linear-gradient(
+    to right,
+    @activeColor 0% var(--full),
+    @inactiveColor var(--full) 100%
+  );
   background-clip: text;
   color: transparent;
 }
@@ -142,7 +143,6 @@ each(@colors, {
   }
 }
 
-
 /*-------------------
    User Interactive
 --------------------*/
@@ -155,8 +155,6 @@ each(@colors, {
 .ui.rating .icon.selected {
   opacity: @interactiveSelectedIconOpacity;
 }
-
-
 
 /*******************************
           Variations
@@ -171,8 +169,7 @@ each(@colors, {
     .ui.@{value}.rating  {
       font-size: @s;
     }
-  })
+  });
 }
-
 
 .loadUIOverrides();

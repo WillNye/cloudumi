@@ -11,9 +11,9 @@ import tornado.ioloop
 import uvloop
 from tornado.platform.asyncio import AsyncIOMainLoop
 
+from cloudumi_api.routes import make_app
 from cloudumi_common.config import config
 from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_api.routes import make_app
 
 logging.basicConfig(level=logging.DEBUG, format=config.get("_global_.logging.format"))
 logging.getLogger("_global_.urllib3.connectionpool").setLevel(logging.CRITICAL)
@@ -32,6 +32,15 @@ if config.get("_global_.tornado.uvloop", True):
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 AsyncIOMainLoop().install()
 app = main()
+if config.get("_global_.elastic_apn.enabled"):
+    from elasticapm.contrib.tornado import ElasticAPM
+
+    app.settings["ELASTIC_APM"] = {
+        "SERVICE_NAME": config.get("_global_.elastic_apn.service_name", "cloudumi"),
+        "SECRET_TOKEN": config.get("_global_.elastic_apn.secret_token"),
+        "SERVER_URL": config.get("_global_.elastic_apn.server_url"),
+    }
+    apm = ElasticAPM(app)
 
 
 def init():
@@ -56,7 +65,7 @@ def init():
                     for f in files
                     if not f.startswith(".")
                 ]
-        log.debug({"message": "Server started"})
+        log.debug({"message": "Server started", "port": port})
         asyncio.get_event_loop().run_forever()
 
 

@@ -46,6 +46,7 @@ celery==5.1.2
     # via -r requirements.in
 certifi==2021.5.30
     # via
+    #   elastic-apm
     #   requests
     #   sentry-sdk
 cffi==1.14.6
@@ -84,6 +85,8 @@ deprecated==1.2.13
 ecdsa==0.17.0
     # via python-jose
 ed25519==1.5
+    # via -r requirements.in
+elastic-apm==6.5.0
     # via -r requirements.in
 flagpole==1.1.1
     # via cloudaux
@@ -258,6 +261,7 @@ ujson==4.2.0
 urllib3==1.26.7
     # via
     #   botocore
+    #   elastic-apm
     #   requests
     #   sentry-sdk
 uvloop==0.16.0

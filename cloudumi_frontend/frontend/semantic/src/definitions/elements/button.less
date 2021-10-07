@@ -12,10 +12,10 @@
             Theme
 *******************************/
 
-@type    : 'element';
-@element : 'button';
+@type: "element";
+@element: "button";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
             Button
@@ -36,7 +36,8 @@
   font-family: @fontFamily;
 
   margin: 0 @horizontalMargin @verticalMargin 0;
-  padding: @verticalPadding @horizontalPadding (@verticalPadding + @shadowOffset);
+  padding: @verticalPadding @horizontalPadding
+    (@verticalPadding + @shadowOffset);
 
   text-transform: @textTransform;
   text-shadow: @textShadow;
@@ -55,7 +56,6 @@
 
   -webkit-tap-highlight-color: @tapColor;
 }
-
 
 /*******************************
             States
@@ -123,7 +123,6 @@
   background-image: @activeBackgroundImage;
 }
 
-
 /*--------------
     Loading
 ---------------*/
@@ -140,7 +139,7 @@
 }
 .ui.loading.button:before {
   position: absolute;
-  content: '';
+  content: "";
   top: 50%;
   left: 50%;
 
@@ -153,7 +152,7 @@
 }
 .ui.loading.button:after {
   position: absolute;
-  content: '';
+  content: "";
   top: 50%;
   left: 50%;
 
@@ -169,13 +168,13 @@
 
   box-shadow: 0 0 0 1px transparent;
 }
-& when (@variationButtonLabeledIcon){
+& when (@variationButtonLabeledIcon) {
   .ui.labeled.icon.loading.button .icon {
     background-color: transparent;
     box-shadow: none;
   }
 }
-& when (@variationButtonBasic){
+& when (@variationButtonBasic) {
   .ui.basic.loading.button:not(.inverted):before {
     border-color: @loaderFillColor;
   }
@@ -183,7 +182,7 @@
     border-color: @loaderLineColor;
   }
 }
-& when (@variationButtonDisabled){
+& when (@variationButtonDisabled) {
   /*-------------------
         Disabled
   --------------------*/
@@ -199,7 +198,7 @@
     box-shadow: none;
     pointer-events: none !important;
   }
-  & when (@variationButtonBasic){
+  & when (@variationButtonBasic) {
     /* Basic Group With Disabled */
     .ui.basic.buttons .ui.disabled.button {
       border-color: @disabledBorderColor;
@@ -210,7 +209,7 @@
 /*******************************
              Types
 *******************************/
-& when (@variationButtonAnimated){
+& when (@variationButtonAnimated) {
   /*-------------------
          Animated
   --------------------*/
@@ -264,7 +263,8 @@
   /* Vertical */
   .ui.vertical.animated.button .visible.content,
   .ui.vertical.animated.button .hidden.content {
-    transition: top @animationDuration @animationEasing, transform @animationDuration @animationEasing;
+    transition: top @animationDuration @animationEasing,
+      transform @animationDuration @animationEasing;
   }
   .ui.vertical.animated.button .visible.content {
     transform: translateY(0%);
@@ -289,7 +289,8 @@
   /* Fade */
   .ui.fade.animated.button .visible.content,
   .ui.fade.animated.button .hidden.content {
-    transition: opacity @animationDuration @animationEasing, transform @animationDuration @animationEasing;
+    transition: opacity @animationDuration @animationEasing,
+      transform @animationDuration @animationEasing;
   }
   .ui.fade.animated.button .visible.content {
     left: auto;
@@ -370,7 +371,7 @@
   }
 }
 
-& when (@variationButtonLabeled) or (@variationButtonLabeledIcon){
+& when (@variationButtonLabeled) or (@variationButtonLabeledIcon) {
   /*-------------------
       Labeled Button
   --------------------*/
@@ -642,7 +643,6 @@
 
   /* Tablet Or Below */
   @media only screen and (max-width: @largestMobileScreen) {
-
     .ui.stackable.buttons {
       flex-direction: column;
       width: 100%;
@@ -658,7 +658,6 @@
         border-radius: @borderRadius;
       }
     }
-
   }
 }
 
@@ -689,17 +688,21 @@
 
   .ui.compact.buttons .button,
   .ui.compact.button {
-    padding: @compactVerticalPadding @compactHorizontalPadding ( @compactVerticalPadding + @shadowOffset );
+    padding: @compactVerticalPadding @compactHorizontalPadding
+      (@compactVerticalPadding + @shadowOffset);
   }
 
   .ui.compact.icon.buttons .button,
   .ui.compact.icon.button {
-    padding: @compactVerticalPadding @compactVerticalPadding ( @compactVerticalPadding + @shadowOffset );
+    padding: @compactVerticalPadding @compactVerticalPadding
+      (@compactVerticalPadding + @shadowOffset);
   }
 
   .ui.compact.labeled.icon.buttons .button,
   .ui.compact.labeled.icon.button {
-    padding: @compactVerticalPadding (@compactHorizontalPadding + @labeledIconWidth) ( @compactVerticalPadding + @shadowOffset );
+    padding: @compactVerticalPadding
+      (@compactHorizontalPadding + @labeledIconWidth)
+      (@compactVerticalPadding + @shadowOffset);
   }
 
   .ui.compact.labeled.icon.buttons .button > .icon,
@@ -727,7 +730,7 @@
     .ui.ui.ui.ui.@{value}.button {
       font-size: @s;
     }
-  })
+  });
 }
 
 /*--------------
@@ -736,7 +739,7 @@
 
 .ui.icon.buttons .button,
 .ui.icon.button:not(.animated):not(.compact):not(.labeled) {
-  padding: @verticalPadding @verticalPadding ( @verticalPadding + @shadowOffset );
+  padding: @verticalPadding @verticalPadding (@verticalPadding + @shadowOffset);
 }
 .ui.animated.icon.button > .content > .icon,
 .ui.icon.buttons .button > .icon,
@@ -892,10 +895,12 @@
   .ui.tertiary.button {
     transition: color @defaultDuration @defaultEasing !important;
     border-radius: 0;
-    margin: (@verticalPadding  - @tertiaryLinePadding)
-      (@horizontalMargin)
-      (@verticalPadding + @shadowOffset + @verticalMargin - @tertiaryLinePadding)
-    0 !important;
+    margin: (@verticalPadding - @tertiaryLinePadding) (@horizontalMargin)
+      (
+        @verticalPadding + @shadowOffset + @verticalMargin -
+          @tertiaryLinePadding
+      )
+      0 !important;
     padding: @tertiaryLinePadding !important;
 
     & when (@tertiaryWithUnderline = true) {
@@ -906,7 +911,11 @@
       box-shadow: inset 0 @tertiaryLineHeight 0 @tertiaryLineColor;
     }
 
-    & when (@tertiaryWithUnderline = false) and (@tertiaryWithOverline = false){
+    &
+      when
+      (@tertiaryWithUnderline = false)
+      and
+      (@tertiaryWithOverline = false) {
       box-shadow: none;
     }
 
@@ -915,7 +924,6 @@
   }
 
   .ui.tertiary.button:hover {
-
     & when (@tertiaryHoverWithUnderline = true) {
       box-shadow: inset 0 -@tertiaryLineHeight 0 @tertiaryHoverLineColor;
     }
@@ -924,7 +932,11 @@
       box-shadow: inset 0 @tertiaryLineHeight 0 @tertiaryHoverLineColor;
     }
 
-    & when (@tertiaryHoverWithUnderline = false) and (@tertiaryHoverWithOverline = false) {
+    &
+      when
+      (@tertiaryHoverWithUnderline = false)
+      and
+      (@tertiaryHoverWithOverline = false) {
       box-shadow: none;
     }
 
@@ -941,7 +953,11 @@
       box-shadow: inset 0 @tertiaryLineHeight 0 @tertiaryFocusLineColor;
     }
 
-    & when (@tertiaryFocusWithUnderline = false) and (@tertiaryFocusWithOverline = false){
+    &
+      when
+      (@tertiaryFocusWithUnderline = false)
+      and
+      (@tertiaryFocusWithOverline = false) {
       box-shadow: none;
     }
 
@@ -960,7 +976,11 @@
       border-radius: 0 0 @borderRadius @borderRadius;
     }
 
-    & when (@tertiaryActiveWithUnderline = false) and (@tertiaryActiveWithOverline = false){
+    &
+      when
+      (@tertiaryActiveWithUnderline = false)
+      and
+      (@tertiaryActiveWithOverline = false) {
       box-shadow: none;
       border-radius: 0;
     }
@@ -1018,7 +1038,6 @@
     border-bottom-right-radius: inherit;
     box-shadow: @labeledIconRightShadow;
   }
-
 
   .ui.labeled.icon.buttons > .button > .icon:before,
   .ui.labeled.icon.button > .icon:before,
@@ -1148,14 +1167,12 @@
   .ui.fluid.buttons .or:after {
     display: none;
   }
-
 }
 
 & when (@variationButtonAttached) {
   /*-------------------
          Attached
   --------------------*/
-
 
   /* Singular */
   .ui.attached.button {
@@ -1345,7 +1362,7 @@
   }
 
   .ui.eight.buttons > .button {
-    width: 12.500%;
+    width: 12.5%;
   }
 
   .ui.nine.buttons {
@@ -1413,7 +1430,7 @@
   }
 
   .ui.eight.vertical.buttons > .button {
-    height: 12.500%;
+    height: 12.5%;
   }
 
   .ui.nine.vertical.buttons > .button {
@@ -1731,7 +1748,6 @@ each(@colors, {
 })
 
 .addConsequence(@consequence) {
-
   @_backgroundColor: "@{consequence}Color";
   @_backgroundColorHover: "@{consequence}ColorHover";
   @_backgroundColorFocus: "@{consequence}ColorFocus";
@@ -1808,7 +1824,8 @@ each(@colors, {
       box-shadow: 0 0 0 @basicColoredBorderSize @@_backgroundColorDown inset;
       color: @@_backgroundColorDown;
     }
-    .ui.buttons:not(.vertical) > .basic.@{consequence}.button:not(:first-child) {
+    .ui.buttons:not(.vertical)
+      > .basic.@{consequence}.button:not(:first-child) {
       margin-left: -@basicColoredBorderSize;
     }
   }

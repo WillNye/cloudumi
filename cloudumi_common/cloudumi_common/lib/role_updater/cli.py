@@ -9,7 +9,6 @@ from cloudumi_common.lib.role_updater.handler import log
 from cloudumi_common.lib.role_updater.handler import update_role as update_role_handler
 
 
-
 @click.group()
 def cli():
     log.debug("Running...")

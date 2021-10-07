@@ -24,7 +24,10 @@ from cloudumi_common.lib.aws.utils import (
 )
 from cloudumi_common.lib.generic import str2bool
 from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.v2.aws_principals import get_eligible_role_details, get_role_details
+from cloudumi_common.lib.v2.aws_principals import (
+    get_eligible_role_details,
+    get_role_details,
+)
 from cloudumi_common.models import (
     CloneRoleRequestModel,
     RoleCreationRequestModel,

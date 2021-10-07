@@ -11,15 +11,14 @@
             Theme
 *******************************/
 
-@type    : 'element';
-@element : 'loader';
+@type: "element";
+@element: "loader";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
             Loader
 *******************************/
-
 
 /* Standard Size */
 .ui.loader {
@@ -36,7 +35,7 @@
 /* Static Shape */
 .ui.loader:before {
   position: absolute;
-  content: '';
+  content: "";
   top: 0;
   left: 50%;
   width: 100%;
@@ -49,7 +48,7 @@
 /* Active Shape */
 .ui.loader:after {
   position: absolute;
-  content: '';
+  content: "";
   top: 0;
   left: 50%;
   width: 100%;
@@ -129,7 +128,6 @@
   }
 }
 
-
 /*******************************
             States
 *******************************/
@@ -152,7 +150,6 @@
 /*******************************
             Variations
 *******************************/
-
 
 /*-------------------
         Sizes
@@ -197,7 +194,7 @@
         padding-top: (@s + @textDistance);
       }
     }
-  })
+  });
 }
 
 /*-------------------
@@ -232,8 +229,7 @@ each(@colors, {
     color: @l;
   }
 })
-
-.ui.elastic.loader.loader:before,
+  .ui.elastic.loader.loader:before,
 .ui.elastic.loading.loading.loading:before,
 .ui.elastic.loading.loading.loading .input > i.icon:before,
 .ui.elastic.loading.loading.loading > i.icon:before,
@@ -286,12 +282,15 @@ each(@colors, {
 .ui.loading.loading.loading.loading.loading.loading .input > i.icon:after,
 .ui.loading.loading.loading.loading.loading.loading > i.icon:after,
 .ui.loader.loader.loader.loader.loader:after {
-  border-left-color:transparent;
-  border-right-color:transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
 }
 .ui.loading.loading.loading.loading.loading.loading.loading:not(.double):after,
-.ui.loading.loading.loading.loading.loading.loading.loading:not(.double) .input > i.icon:after,
-.ui.loading.loading.loading.loading.loading.loading.loading:not(.double) > i.icon:after,
+.ui.loading.loading.loading.loading.loading.loading.loading:not(.double)
+  .input
+  > i.icon:after,
+.ui.loading.loading.loading.loading.loading.loading.loading:not(.double)
+  > i.icon:after,
 .ui.loader.loader.loader.loader.loader.loader:not(.double):after {
   border-bottom-color: transparent;
 }
@@ -299,8 +298,8 @@ each(@colors, {
 .ui.loading.loading.loading.loading.loading.loading.segments:after,
 .ui.loading.loading.loading.loading.loading.loading.segment:after,
 .ui.loading.loading.loading.loading.loading.loading.form:after {
-  border-left-color:@loaderFillColor;
-  border-right-color:@loaderFillColor;
+  border-left-color: @loaderFillColor;
+  border-right-color: @loaderFillColor;
 }
 .ui.loading.loading.loading.loading.loading.loading.card:not(.double):after,
 .ui.loading.loading.loading.loading.loading.loading.segments:not(.double):after,
@@ -324,15 +323,16 @@ each(@colors, {
   .ui.elastic.loading.loading .input > i.icon:after,
   .ui.elastic.loading.loading > i.icon:after,
   .ui.elastic.loader.loader:after {
-    animation: loader 1s infinite cubic-bezier(.27, 1.05, .92, .61);
+    animation: loader 1s infinite cubic-bezier(0.27, 1.05, 0.92, 0.61);
     animation-delay: 0.3s;
   }
   .ui.elastic.loading.loading.loading:not(.form):not(.segment):not(.segments):not(.card):before,
   .ui.elastic.loading.loading.loading .input > i.icon:before,
   .ui.elastic.loading.loading.loading > i.icon:before,
   .ui.elastic.loader.loader:before {
-    animation: elastic-loader 1s infinite cubic-bezier(.27, 1.05, .92, .61);
-    -moz-animation: currentcolor-elastic-loader 1s infinite cubic-bezier(.27, 1.05, .92, .61);
+    animation: elastic-loader 1s infinite cubic-bezier(0.27, 1.05, 0.92, 0.61);
+    -moz-animation: currentcolor-elastic-loader 1s infinite
+      cubic-bezier(0.27, 1.05, 0.92, 0.61);
     border-right-color: transparent;
   }
   & when (@variationLoaderInline) {
@@ -359,7 +359,7 @@ each(@colors, {
     .ui.fast.elastic.loading.loading > i.icon:after,
     .ui.fast.elastic.loader.loader:after {
       animation-duration: 0.66s;
-      animation-delay: 0.20s;
+      animation-delay: 0.2s;
     }
     .ui.fast.elastic.loading.loading.loading:not(.form):not(.segment):not(.segments):not(.card):before,
     .ui.fast.elastic.loading.loading.loading .input > i.icon:before,
@@ -369,20 +369,24 @@ each(@colors, {
     }
   }
   @keyframes elastic-loader {
-    0%, 1% {
+    0%,
+    1% {
       border-left-color: transparent;
-      border-bottom-color: transparent
-    }
-    1.1%, 50% {
-      border-left-color: inherit;
-    }
-    10%, 35.1%{
       border-bottom-color: transparent;
     }
-    10.1%, 35%{
+    1.1%,
+    50% {
+      border-left-color: inherit;
+    }
+    10%,
+    35.1% {
+      border-bottom-color: transparent;
+    }
+    10.1%,
+    35% {
       border-bottom-color: inherit;
     }
-    50.1%{
+    50.1% {
       border-left-color: transparent;
     }
     100% {
@@ -393,20 +397,24 @@ each(@colors, {
   }
 
   @keyframes currentcolor-elastic-loader {
-    0%, 1% {
+    0%,
+    1% {
       border-left-color: transparent;
-      border-bottom-color: transparent
-    }
-    1.1%, 50% {
-      border-left-color: currentColor;
-    }
-    10%, 35.1%{
       border-bottom-color: transparent;
     }
-    10.1%, 35%{
+    1.1%,
+    50% {
+      border-left-color: currentColor;
+    }
+    10%,
+    35.1% {
+      border-bottom-color: transparent;
+    }
+    10.1%,
+    35% {
       border-bottom-color: currentColor;
     }
-    50.1%{
+    50.1% {
       border-left-color: transparent;
     }
     100% {

@@ -4,8 +4,12 @@ from cloudumi_common.config import config
 from cloudumi_common.lib.account_indexers.aws_organizations import (
     retrieve_accounts_from_aws_organizations,
 )
-from cloudumi_common.lib.account_indexers.current_account import retrieve_current_account
-from cloudumi_common.lib.account_indexers.local_config import retrieve_accounts_from_config
+from cloudumi_common.lib.account_indexers.current_account import (
+    retrieve_current_account,
+)
+from cloudumi_common.lib.account_indexers.local_config import (
+    retrieve_accounts_from_config,
+)
 from cloudumi_common.lib.account_indexers.swag import retrieve_accounts_from_swag
 from cloudumi_common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,

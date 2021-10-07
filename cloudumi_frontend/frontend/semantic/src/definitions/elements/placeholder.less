@@ -11,10 +11,10 @@
             Theme
 *******************************/
 
-@type    : 'element';
-@element : 'placeholder';
+@type: "element";
+@element: "placeholder";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*-------------------
       Content
@@ -31,12 +31,12 @@
   max-width: @placeholderMaxWidth;
 }
 
-@keyframes placeholderShimmer{
+@keyframes placeholderShimmer {
   0% {
-    background-position: -@placeholderLoadingGradientWidth 0
+    background-position: -@placeholderLoadingGradientWidth 0;
   }
   100% {
-    background-position: @placeholderLoadingGradientWidth 0
+    background-position: @placeholderLoadingGradientWidth 0;
   }
 }
 
@@ -52,7 +52,11 @@
 .ui.placeholder + .ui.placeholder + .ui.placeholder + .ui.placeholder {
   animation-delay: (@placeholderAnimationInterval * 3);
 }
-.ui.placeholder + .ui.placeholder + .ui.placeholder + .ui.placeholder + .ui.placeholder {
+.ui.placeholder
+  + .ui.placeholder
+  + .ui.placeholder
+  + .ui.placeholder
+  + .ui.placeholder {
   animation-delay: (@placeholderAnimationInterval * 4);
 }
 
@@ -65,7 +69,7 @@
 }
 
 .ui.placeholder.hidden {
-  display:none;
+  display: none;
 }
 
 & when (@variationPlaceholderImage) {
@@ -97,7 +101,7 @@
   .ui.placeholder .line:after {
     top: 100%;
     position: absolute;
-    content: '';
+    content: "";
     background-color: inherit;
   }
   .ui.placeholder .line:before {
@@ -172,7 +176,7 @@
     .ui.placeholder .image.header:after {
       display: block;
       height: @placeholderLineMargin;
-      content: '';
+      content: "";
       margin-left: @placeholderImageWidth;
     }
   }
@@ -188,7 +192,7 @@
 .ui.placeholder .paragraph:not(:first-child):before,
 .ui.placeholder .header:not(:first-child):before {
   height: @placeholderSpacing;
-  content: '';
+  content: "";
   display: block;
 }
 
@@ -209,7 +213,6 @@
 /*******************************
             Variations
 *******************************/
-
 
 /*-------------------
         Sizes

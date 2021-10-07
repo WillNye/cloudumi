@@ -172,9 +172,7 @@ for host in hosts:
                 f"Refusing to create resources for {host} because there's no custom boto3 endpoint URL"
             )
             continue
-        print(
-            f"Creating resources for: {host}."
-        )
+        print(f"Creating resources for: {host}.")
         print("Custom Boto3 client kwargs: " + json.dumps(boto_kwargs))
         print("Custom Session kwargs: " + json.dumps(session_kwargs))
         sts = session.client(
@@ -213,8 +211,12 @@ for host in hosts:
             "Statement": [
                 {
                     "Effect": "Allow",
-                    "Principal": {"AWS": ["arn:aws:iam::259868150464:role/ConsoleMeCentralRole",
-                                          f"arn:aws:iam::{account_id}:role/ConsoleMe1"]},
+                    "Principal": {
+                        "AWS": [
+                            "arn:aws:iam::259868150464:role/ConsoleMeCentralRole",
+                            f"arn:aws:iam::{account_id}:role/ConsoleMe1",
+                        ]
+                    },
                     "Action": "sts:AssumeRole",
                 }
             ],

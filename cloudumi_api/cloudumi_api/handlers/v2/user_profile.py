@@ -24,7 +24,7 @@ class UserProfileHandler(BaseAPIV1Handler):
         :return:
         """
         host = self.ctx.host
-        is_contractor = False # TODO: Support other option
+        is_contractor = False  # TODO: Support other option
         site_config = {
             "consoleme_logo": await get_random_security_logo(host),
             "google_analytics": {
@@ -70,8 +70,8 @@ class UserProfileHandler(BaseAPIV1Handler):
                 f"site_configs.{host}.auth.set_auth_cookie", False
             ),
             "is_contractor": is_contractor,
-            "employee_photo_url": "", # TODO: Support custom employee URL
-            "employee_info_url": "", # TODO: Support custom employee info url
+            "employee_photo_url": "",  # TODO: Support custom employee URL
+            "employee_info_url": "",  # TODO: Support custom employee info url
             "authorization": {
                 "can_edit_policies": can_admin_policies(self.user, self.groups, host),
                 "can_create_roles": can_create_roles(self.user, self.groups, host),

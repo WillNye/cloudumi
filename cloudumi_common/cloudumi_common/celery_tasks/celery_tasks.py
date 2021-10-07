@@ -74,7 +74,9 @@ from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler, UserDynamoHandler
 from cloudumi_common.lib.event_bridge.access_denies import (
     detect_cloudtrail_denies_and_update_cache,
 )
-from cloudumi_common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
+from cloudumi_common.lib.event_bridge.role_updates import (
+    detect_role_changes_and_update_cache,
+)
 from cloudumi_common.lib.generic import un_wrap_json_and_dump_values
 from cloudumi_common.lib.git import store_iam_resources_in_git
 from cloudumi_common.lib.plugins import get_plugin_by_name
@@ -1000,7 +1002,7 @@ def cache_iam_resources_for_account(account_id: str, host=None) -> Dict[str, Any
                 f"site_configs.{host}.cache_iam_resources_for_account.s3.bucket"
             ),
             s3_key=config.get(
-                f"{host}_cache_iam_resources_for_account.s3.file",
+                f"site_configs.{host}.cache_iam_resources_for_account.s3.file",
                 "get_account_authorization_details/get_account_authorization_details_{account_id}_v1.json.gz",
             ).format(account_id=account_id),
             host=host,
@@ -1025,10 +1027,10 @@ def cache_iam_resources_for_account(account_id: str, host=None) -> Dict[str, Any
             async_to_sync(store_json_results_in_redis_and_s3)(
                 iam_roles,
                 s3_bucket=config.get(
-                    f"{host}_cache_iam_resources_for_account.iam_roles.s3.bucket"
+                    f"site_configs.{host}.cache_iam_resources_for_account.iam_roles.s3.bucket"
                 ),
                 s3_key=config.get(
-                    f"{host}_cache_iam_resources_for_account.iam_roles.s3.file",
+                    f"site_configs.{host}.cache_iam_resources_for_account.iam_roles.s3.file",
                     "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
                 ).format(resource_type="iam_roles", account_id=account_id),
                 host=host,
@@ -1039,10 +1041,10 @@ def cache_iam_resources_for_account(account_id: str, host=None) -> Dict[str, Any
             async_to_sync(store_json_results_in_redis_and_s3)(
                 iam_users,
                 s3_bucket=config.get(
-                    f"{host}_cache_iam_resources_for_account.iam_users.s3.bucket"
+                    f"site_configs.{host}.cache_iam_resources_for_account.iam_users.s3.bucket"
                 ),
                 s3_key=config.get(
-                    f"{host}_cache_iam_resources_for_account.iam_users.s3.file",
+                    f"site_configs.{host}.cache_iam_resources_for_account.iam_users.s3.file",
                     "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
                 ).format(resource_type="iam_users", account_id=account_id),
                 host=host,
@@ -1053,10 +1055,10 @@ def cache_iam_resources_for_account(account_id: str, host=None) -> Dict[str, Any
             async_to_sync(store_json_results_in_redis_and_s3)(
                 iam_groups,
                 s3_bucket=config.get(
-                    f"{host}_cache_iam_resources_for_account.iam_groups.s3.bucket"
+                    f"site_configs.{host}.cache_iam_resources_for_account.iam_groups.s3.bucket"
                 ),
                 s3_key=config.get(
-                    f"{host}_cache_iam_resources_for_account.iam_groups.s3.file",
+                    f"site_configs.{host}.cache_iam_resources_for_account.iam_groups.s3.file",
                     "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
                 ).format(resource_type="iam_groups", account_id=account_id),
                 host=host,
@@ -1067,10 +1069,10 @@ def cache_iam_resources_for_account(account_id: str, host=None) -> Dict[str, Any
             async_to_sync(store_json_results_in_redis_and_s3)(
                 iam_policies,
                 s3_bucket=config.get(
-                    f"{host}_cache_iam_resources_for_account.iam_policies.s3.bucket"
+                    f"site_configs.{host}.cache_iam_resources_for_account.iam_policies.s3.bucket"
                 ),
                 s3_key=config.get(
-                    f"{host}_cache_iam_resources_for_account.iam_policies.s3.file",
+                    f"site_configs.{host}.cache_iam_resources_for_account.iam_policies.s3.file",
                     "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
                 ).format(resource_type="iam_policies", account_id=account_id),
                 host=host,

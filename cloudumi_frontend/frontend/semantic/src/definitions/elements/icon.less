@@ -8,23 +8,21 @@
  *
  */
 
-
 /*******************************
             Theme
 *******************************/
 
-@type    : 'element';
-@element : 'icon';
+@type: "element";
+@element: "icon";
 
-@import (multiple) '../../theme.config';
-
+@import (multiple) "../../theme.config";
 
 /*******************************
              Icon
 *******************************/
 
 @font-face {
-  font-family: 'Icons';
+  font-family: "Icons";
   src: @fallbackSRC;
   src: @src;
   font-style: normal;
@@ -43,7 +41,7 @@ i.icon {
   width: @width;
   height: @height;
 
-  font-family: 'Icons';
+  font-family: "Icons";
   font-style: normal;
   font-weight: @normal;
   text-decoration: inherit;
@@ -72,7 +70,8 @@ i.icon:before {
     height: 1em;
     line-height: 1;
   }
-  i.loading.icon, i.loading.icons {
+  i.loading.icon,
+  i.loading.icons {
     animation: loader @loadingDuration linear infinite;
   }
 }
@@ -81,14 +80,18 @@ i.icon:before {
              States
 *******************************/
 
-i.icon:hover, i.icons:hover,
-i.icon:active, i.icons:active,
-i.emphasized.icon:not(.disabled), i.emphasized.icons:not(.disabled) {
+i.icon:hover,
+i.icons:hover,
+i.icon:active,
+i.icons:active,
+i.emphasized.icon:not(.disabled),
+i.emphasized.icons:not(.disabled) {
   opacity: 1;
 }
 
 & when (@variationIconDisabled) {
-  i.disabled.icon, i.disabled.icons {
+  i.disabled.icon,
+  i.disabled.icons {
     opacity: @disabledOpacity;
     cursor: default;
     pointer-events: none;
@@ -115,12 +118,14 @@ i.emphasized.icon:not(.disabled), i.emphasized.icons:not(.disabled) {
            Link
   --------------------*/
 
-  i.link.icon:not(.disabled), i.link.icons:not(.disabled) {
+  i.link.icon:not(.disabled),
+  i.link.icons:not(.disabled) {
     cursor: pointer;
     opacity: @linkOpacity;
     transition: opacity @defaultDuration @defaultEasing;
   }
-  i.link.icon:hover, i.link.icons:hover {
+  i.link.icon:hover,
+  i.link.icons:hover {
     opacity: 1;
   }
 }
@@ -139,7 +144,7 @@ i.emphasized.icon:not(.disabled), i.emphasized.icons:not(.disabled) {
 
     width: @circularSize !important;
     height: @circularSize !important;
-    &.colored when (@variationIconColored){
+    &.colored when (@variationIconColored) {
       box-shadow: @coloredBoxShadow;
     }
   }
@@ -253,22 +258,28 @@ i.emphasized.icon:not(.disabled), i.emphasized.icons:not(.disabled) {
       transform: translateX(-50%) translateY(-50%) scale(-1, 1) rotate(90deg);
     }
     .icons i.left.rotated.flipped.icon:not(.corner):not(:first-child),
-    .icons i.counterclockwise.rotated.flipped.icon:not(.corner):not(:first-child) {
+    .icons
+      i.counterclockwise.rotated.flipped.icon:not(.corner):not(:first-child) {
       transform: translateX(-50%) translateY(-50%) scale(-1, 1) rotate(-90deg);
     }
     .icons i.halfway.rotated.flipped.icon:not(.corner):not(:first-child) {
       transform: translateX(-50%) translateY(-50%) scale(-1, 1) rotate(180deg);
     }
     .icons i.rotated.vertically.flipped.icon:not(.corner):not(:first-child),
-    .icons i.right.rotated.vertically.flipped.icon:not(.corner):not(:first-child),
-    .icons i.clockwise.rotated.vertically.flipped.icon:not(.corner):not(:first-child) {
+    .icons
+      i.right.rotated.vertically.flipped.icon:not(.corner):not(:first-child),
+    .icons
+      i.clockwise.rotated.vertically.flipped.icon:not(.corner):not(:first-child) {
       transform: translateX(-50%) translateY(-50%) scale(1, -1) rotate(90deg);
     }
-    .icons i.left.rotated.vertically.flipped.icon:not(.corner):not(:first-child),
-    .icons i.counterclockwise.rotated.vertically.flipped.icon:not(.corner):not(:first-child) {
+    .icons
+      i.left.rotated.vertically.flipped.icon:not(.corner):not(:first-child),
+    .icons
+      i.counterclockwise.rotated.vertically.flipped.icon:not(.corner):not(:first-child) {
       transform: translateX(-50%) translateY(-50%) scale(1, -1) rotate(-90deg);
     }
-    .icons i.halfway.rotated.vertically.flipped.icon:not(.corner):not(:first-child) {
+    .icons
+      i.halfway.rotated.vertically.flipped.icon:not(.corner):not(:first-child) {
       transform: translateX(-50%) translateY(-50%) scale(1, -1) rotate(180deg);
     }
   }
@@ -287,7 +298,7 @@ i.emphasized.icon:not(.disabled), i.emphasized.icons:not(.disabled) {
     height: @borderedSize;
     padding: @borderedVerticalPadding @borderedHorizontalPadding !important;
     box-shadow: @borderedShadow;
-    &.colored when (@variationIconColored){
+    &.colored when (@variationIconColored) {
       box-shadow: @coloredBoxShadow;
     }
   }
@@ -363,7 +374,7 @@ i.icons {
       font-size: @s;
       vertical-align: middle;
     }
-  })
+  });
 }
 
 & when (@variationIconGroups) or (@variationIconCorner) {
@@ -393,7 +404,8 @@ i.icons {
     height: auto;
     vertical-align: top;
   }
-  i.icons:not(.bordered):not(.circular) .icon:first-child:not(.rotated):not(.flipped) {
+  i.icons:not(.bordered):not(.circular)
+    .icon:first-child:not(.rotated):not(.flipped) {
     transform: none;
   }
 
@@ -442,8 +454,11 @@ i.icons {
   }
 }
 
-& when ((@variationIconGroups) or (@variationIconCorner))
-   and ((@variationIconBordered) or (@variationIconCircular)) {
+&
+  when
+  ((@variationIconGroups) or (@variationIconCorner))
+  and
+  ((@variationIconBordered) or (@variationIconCircular)) {
   /*************************************************
      Bordered/circular with corner or group icons
   *************************************************/
@@ -453,7 +468,7 @@ i.icons {
     height: @borderedSize;
     box-shadow: @borderedShadow;
     vertical-align: middle;
-    &.colored when (@variationIconColored){
+    &.colored when (@variationIconColored) {
       box-shadow: @coloredBoxShadow;
     }
   }

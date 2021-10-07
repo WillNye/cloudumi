@@ -12,10 +12,10 @@
             Theme
 *******************************/
 
-@type    : 'module';
-@element : 'calendar';
+@type: "module";
+@element: "calendar";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
             Popup
@@ -158,15 +158,28 @@
     box-shadow: @rangeInvertedBoxShadow;
   }
 
-  .ui.inverted.calendar:not(.disabled) .calendar:focus .ui.table.inverted tbody tr td.focus,
-  .ui.inverted.calendar:not(.disabled) .calendar.active .ui.table.inverted tbody tr td.focus {
+  .ui.inverted.calendar:not(.disabled)
+    .calendar:focus
+    .ui.table.inverted
+    tbody
+    tr
+    td.focus,
+  .ui.inverted.calendar:not(.disabled)
+    .calendar.active
+    .ui.table.inverted
+    tbody
+    tr
+    td.focus {
     box-shadow: @focusInvertedBoxShadow;
   }
   .ui.inverted.calendar .ui.inverted.table tr .disabled {
     color: @invertedDisabledTextColor;
   }
 
-  .ui.inverted.calendar .ui.inverted.table tr .adjacent:not(.disabled):not(.active) {
+  .ui.inverted.calendar
+    .ui.inverted.table
+    tr
+    .adjacent:not(.disabled):not(.active) {
     color: @adjacentInvertedTextColor;
     background: @adjacentInvertedBackground;
   }
@@ -190,6 +203,5 @@
     pointer-events: none;
   }
 }
-
 
 .loadUIOverrides();

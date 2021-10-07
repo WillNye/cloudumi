@@ -1,5 +1,9 @@
 site_configs:
   localhost:
+    identity_providers:
+      - type: okta
+        url: https://dev-876967.okta.com/
+        api_key: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
     consoleme_s3_bucket: consolemecache
     jwt_secret: local_secret_insecure
     policies:
@@ -29,7 +33,7 @@ site_configs:
       internal_policies: cmsaas_policies
     extends:
       - example_config_header_auth.yaml
-    url: http://localhost:8081
+    url: http://localhost
     application_admin: ccastrapel@gmail.com
     environment: dev
     development: true

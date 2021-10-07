@@ -79,7 +79,9 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
                 )
                 all_resource_arns = all_resources.keys()
                 if all_resources:
-                    await sync_to_async(red.hmset)(resource_redis_cache_key, all_resources)
+                    await sync_to_async(red.hmset)(
+                        resource_redis_cache_key, all_resources
+                    )
             except DataNotRetrievable:
                 sentry_sdk.capture_exception()
                 all_resource_arns = []

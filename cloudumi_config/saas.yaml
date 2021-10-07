@@ -1,4 +1,6 @@
-# TODO: Either only support specific Redis Regions or use Redis Global
+# When running this locally, ensure your /etc/hosts file has the following configuration:
+# 127.0.0.1 localhost redis-cluster cloudumi-dynamodb cloudumi-redis localstack1 localstack2 localstack3
+# TODO: Extends must NOT modify _global_. It must ONLY exist in the site_config specific namespace
 extends:
   - saas_localhost.yaml
   - saas_oidc_cloudumi_com.yaml
@@ -7,6 +9,12 @@ extends:
   - saas_aws_sso_cloudumi_com.yaml
   - saas_cognito_cloudumi_com.yaml
 _global_:
+  elastic_apn:
+    enabled: true
+    service_name: cloudumi
+    server_url: http://apmserver:8200
+  logging:
+    file: /logs/cloudumi/cloudumi_tornado.log
   sentry:
     dsn: http://c431e275be51424e98734f222cca6c47@sentry.cloudumi.com:9000/1
   boto3:

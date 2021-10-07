@@ -12,7 +12,7 @@ from cloudumi_common.lib.cloud_credential_authorization_mapping.models import (
 
 
 class RoleTagAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
-    """ Generates an authorization mapping of groups -> roles based on IAM role tags."""
+    """Generates an authorization mapping of groups -> roles based on IAM role tags."""
 
     async def generate_credential_authorization_mapping(
         self,

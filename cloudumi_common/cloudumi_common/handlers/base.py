@@ -64,7 +64,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         self.write(
             {
                 "type": "redirect",
-                "redirect_url": "https://cloudumi.com", # TODO: Make this URL configurable?
+                "redirect_url": "https://cloudumi.com",  # TODO: Make this URL configurable?
                 "reason": "unauthenticated",
                 "message": "Invalid host specified",
             }
@@ -338,7 +338,7 @@ class BaseHandler(TornadoRequestHandler):
          allow authenticating users by a combination of user/password and SSO. In this case, we need to tell
         Returns: boolean
         """
-        if not config.get(f"{host}.auth.get_user_by_password", False):
+        if not config.get(f"site_configs.{host}.auth.get_user_by_password", False):
             return True
 
         # force_use_sso indicates the user's intent to authenticate via SSO
@@ -359,6 +359,8 @@ class BaseHandler(TornadoRequestHandler):
         self, user: str = None, console_only: bool = True, refresh_cache: bool = False
     ) -> None:
         """Perform high level authorization flow."""
+        # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
+        # TODO: Return Authentication prompt regardless of subdomain
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
@@ -404,9 +406,7 @@ class BaseHandler(TornadoRequestHandler):
         log.debug(log_data)
 
         # Check to see if user has a valid auth cookie
-        auth_cookie = self.get_cookie(
-            "consoleme_auth"
-        )
+        auth_cookie = self.get_cookie("consoleme_auth")
 
         # Validate auth cookie and use it to retrieve group information
         if auth_cookie:
@@ -520,7 +520,7 @@ class BaseHandler(TornadoRequestHandler):
                 await self.finish(log_data["message"])
                 raise
 
-        self.contractor = False # TODO: Add functionality later for contractor detection via regex or something else
+        self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
         if (
             config.get(f"site_configs.{host}.auth.cache_user_info_server_side", True)
@@ -558,8 +558,9 @@ class BaseHandler(TornadoRequestHandler):
 
         # Set Per-User Role Name (This logic is not used in OSS deployment)
         if (
-            config.get(f"{host}.user_roles.opt_in_group")
-            and config.get(f"{host}.user_roles.opt_in_group") in self.groups
+            config.get(f"site_configs.{host}.user_roles.opt_in_group")
+            and config.get(f"site_configs.{host}.user_roles.opt_in_group")
+            in self.groups
         ):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)

@@ -1,28 +1,31 @@
 from datetime import datetime
-import ujson as json
 
+import ujson as json
 from asgiref.sync import async_to_sync
 
 from cloudumi_common.config import config
-from cloudumi_common.lib.cache import store_json_results_in_redis_and_s3, retrieve_json_data_from_redis_or_s3
+from cloudumi_common.lib.cache import (
+    retrieve_json_data_from_redis_or_s3,
+    store_json_results_in_redis_and_s3,
+)
 from cloudumi_common.lib.redis import RedisHandler
 
 # TODO: Get other resource types here
+
 
 def cache_aws_resource_details(items, host):
     """
     Store all resource ARNs in Redis/S3. Items must have a TTL entry Used by typeahead endpoint.
     """
     redis_key = config.get(
-            f"site_configs.{host}.store_all_aws_resource_details.redis_key", f"{host}_ALL_AWS_RESOURCE_ARNS"
-        )
-    s3_bucket = config.get(
-        f"site_configs.{host}.all_aws_resource_details.s3.bucket"
+        f"site_configs.{host}.store_all_aws_resource_details.redis_key",
+        f"{host}_ALL_AWS_RESOURCE_ARNS",
     )
+    s3_bucket = config.get(f"site_configs.{host}.all_aws_resource_details.s3.bucket")
     s3_key = config.get(
         f"site_configs.{host}.all_aws_resource_details.s3.file",
         "all_aws_resource_details/all_aws_resource_details_v1.json.gz",
-        )
+    )
 
     red = RedisHandler().redis_sync(host)
 
@@ -32,7 +35,7 @@ def cache_aws_resource_details(items, host):
         s3_bucket=s3_bucket,
         s3_key=s3_key,
         host=host,
-        default={}
+        default={},
     )
     items.update(existing_items)
     to_delete = []
@@ -64,11 +67,10 @@ def cache_aws_resource_details(items, host):
 
 async def get_all_resource_arns(host):
     redis_key = config.get(
-        f"site_configs.{host}.store_all_aws_resource_details.redis_key", f"{host}_ALL_AWS_RESOURCE_ARNS"
+        f"site_configs.{host}.store_all_aws_resource_details.redis_key",
+        f"{host}_ALL_AWS_RESOURCE_ARNS",
     )
-    s3_bucket = config.get(
-        f"site_configs.{host}.all_aws_resource_details.s3.bucket"
-    )
+    s3_bucket = config.get(f"site_configs.{host}.all_aws_resource_details.s3.bucket")
     s3_key = config.get(
         f"site_configs.{host}.all_aws_resource_details.s3.file",
         "all_aws_resource_details/all_aws_resource_details_v1.json.gz",
@@ -80,6 +82,6 @@ async def get_all_resource_arns(host):
         s3_bucket=s3_bucket,
         s3_key=s3_key,
         host=host,
-        default={}
+        default={},
     )
     return items.keys()

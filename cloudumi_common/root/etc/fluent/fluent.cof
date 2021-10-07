@@ -1,0 +1,21 @@
+<source>
+  @type tail
+  path /logs/consoleme/consoleme_tornado.log
+  pos_file /var/log/td-agent/consoleme_tornado.log.pos
+  format json
+  tag consoleme.tornado
+  time_key timestamp
+  time_format %Y-%m-%dT%H:%M:%SZ%z
+</source>
+
+<match consoleme.tornado>
+  @type aws-elasticsearch-service
+  type_name "consoleme"
+  logstash_format true
+  flush_interval 1s
+
+  <endpoint>
+    url ${elasticsearch_url}
+    region ${elasticsearch_region}
+  </endpoint>
+</match>

@@ -28,6 +28,7 @@ class Config:
         if config_location:
             if config_location.startswith("s3://"):
                 import boto3
+
                 # TODO: Need host specific configuration?
                 client = boto3.client("s3")
                 bucket, key = split_s3_path(config_location)

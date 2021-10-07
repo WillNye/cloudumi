@@ -37,14 +37,23 @@ from cloudumi_common.lib.aws.s3 import (
 from cloudumi_common.lib.aws.sanitize import sanitize_session_name
 from cloudumi_common.lib.aws.session import get_session_for_tenant
 from cloudumi_common.lib.aws.sns import get_topic_attributes
-from cloudumi_common.lib.aws.sqs import get_queue_attributes, get_queue_url, list_queue_tags
+from cloudumi_common.lib.aws.sqs import (
+    get_queue_attributes,
+    get_queue_url,
+    list_queue_tags,
+)
 from cloudumi_common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
 from cloudumi_common.lib.generic import sort_dict
 from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
+from cloudumi_common.lib.redis import (
+    RedisHandler,
+    redis_hget,
+    redis_hgetex,
+    redis_hsetex,
+)
 from cloudumi_common.models import (
     CloneRoleRequestModel,
     RoleCreationRequestModel,
@@ -713,10 +722,10 @@ async def fetch_iam_user_details(account_id, iam_user_name, host):
         service_type="resource",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get(f"{host}.policies.role_name"),
+        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
         session_name=sanitize_session_name("fetch_iam_user_details"),
         retry_max_attempts=2,
-        client_kwargs=config.get(f"{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
     )
     try:
         iam_user = await sync_to_async(iam_resource.User)(iam_user_name)
@@ -1221,7 +1230,7 @@ def get_resource_from_arn(arn):
 
 
 def get_service_from_arn(arn):
-    """Given an ARN string, return the service """
+    """Given an ARN string, return the service"""
     result = parse_arn(arn)
     return result["service"]
 
@@ -2003,5 +2012,3 @@ async def get_resource_account(arn: str, host: str) -> str:
             if search_bucket_name in buckets_j:
                 return bucket_account_id
     return ""
-
-

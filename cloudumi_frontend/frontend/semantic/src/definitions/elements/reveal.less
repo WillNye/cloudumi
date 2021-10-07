@@ -12,16 +12,16 @@
             Theme
 *******************************/
 
-@type    : 'element';
-@element : 'reveal';
+@type: "element";
+@element: "reveal";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
             Reveal
 *******************************/
 
-.ui.reveal  {
+.ui.reveal {
   display: inherit;
   position: relative !important;
   font-size: 0;
@@ -44,7 +44,6 @@
 .ui.reveal:hover .visible.content {
   z-index: @activeZIndex !important;
 }
-
 
 /*******************************
               Types
@@ -189,7 +188,6 @@
   }
 }
 
-
 & when (@variationRevealRotate) {
   /*--------------
        Rotate
@@ -240,7 +238,6 @@
   }
 }
 
-
 /*******************************
            Coupling
 *******************************/
@@ -269,7 +266,6 @@
   transition-delay: 0s !important;
 }
 
-
 /*--------------
      Sizing
 ---------------*/
@@ -283,7 +279,7 @@
     .ui.@{value}.reveal > .content {
       font-size: @s;
     }
-  })
+  });
 }
 
 .loadUIOverrides();

@@ -30,7 +30,13 @@ class GroupMapping:
         pass
 
     async def get_eligible_roles(
-        self, username: str, groups: list, user_role: str, host: str, console_only: bool, **kwargs
+        self,
+        username: str,
+        groups: list,
+        user_role: str,
+        host: str,
+        console_only: bool,
+        **kwargs,
     ) -> list:
         """Get eligible roles for user."""
         roles: list = []

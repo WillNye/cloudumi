@@ -56,12 +56,15 @@ const LoginForm = () => {
   };
 
   const signInWithSSO = async () => {
-    const resp = await fetch("/api/v1/auth?use_sso=true&redirect_url=" + redirectUrl, {
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        Accept: "application/json",
-      },
-    });
+    const resp = await fetch(
+      "/api/v1/auth?use_sso=true&redirect_url=" + redirectUrl,
+      {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          Accept: "application/json",
+        },
+      }
+    );
     const respJson = await resp.json();
     if (respJson.type === "redirect") {
       window.location.href = respJson.redirect_url;

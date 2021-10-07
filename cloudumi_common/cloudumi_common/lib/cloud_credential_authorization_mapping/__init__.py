@@ -76,7 +76,7 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
                     json_encoder=pydantic_encoder,
                     max_age=max_age,
                     host=host,
-                    default={}
+                    default={},
                 )
                 self.authorization_mapping[host]["last_update"] = int(time.time())
             except Exception as e:

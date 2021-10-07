@@ -151,13 +151,22 @@ class Auth:
         return user
 
     async def get_groups(
-        self, user: str, request_object, headers=None, get_header_groups=False, only_direct=True
+        self,
+        user: str,
+        request_object,
+        headers=None,
+        get_header_groups=False,
+        only_direct=True,
     ):
         """Get the user's groups."""
         host = request_object.get_host_name()
-        groups_to_add_for_all_users = config.get(f"site_configs.{host}.auth.groups_to_add_for_all_users", [])
+        groups_to_add_for_all_users = config.get(
+            f"site_configs.{host}.auth.groups_to_add_for_all_users", []
+        )
         groups = []
-        if get_header_groups or config.get(f"site_configs.{host}.auth.get_groups_by_header"):
+        if get_header_groups or config.get(
+            f"site_configs.{host}.auth.get_groups_by_header"
+        ):
             header_groups = await self.get_groups_by_header(headers, request_object)
             if header_groups:
                 groups.extend(header_groups)
@@ -194,7 +203,9 @@ class Auth:
             log.debug(log_data, exc_info=True)
             return groups
 
-        groups_header_name = config.get(f"site_configs.{host}.auth.groups_header_name", None)
+        groups_header_name = config.get(
+            f"site_configs.{host}.auth.groups_header_name", None
+        )
         if not groups_header_name:
             log_data = {
                 "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -226,7 +237,9 @@ class Auth:
     async def validate_certificate(self, request_object):
         headers = request_object.request.headers
         host = request_object.get_host_name()
-        cli_auth_required_headers = config.get(f"site_configs.{host}.cli_auth.required_headers")
+        cli_auth_required_headers = config.get(
+            f"site_configs.{host}.cli_auth.required_headers"
+        )
         if not cli_auth_required_headers:
             raise MissingConfigurationValue(
                 "You must specified the header key and expected value in order to validate a certificate for mutual "
@@ -253,7 +266,9 @@ class Auth:
         return False
 
     async def validate_and_return_api_caller(self, headers: dict, host: str):
-        cli_auth_required_headers = config.get(f"site_configs.{host}.cli_auth.required_headers")
+        cli_auth_required_headers = config.get(
+            f"site_configs.{host}.cli_auth.required_headers"
+        )
         if not cli_auth_required_headers:
             raise MissingConfigurationValue(
                 "You must specified the header key and expected value in order to validate a certificate for mutual "
@@ -267,7 +282,9 @@ class Auth:
                     )
         cert = await self.extract_user_from_certificate(headers)
         user = cert.get("name")
-        if not user or user not in config.get(f"site_configs.{host}.api_auth.valid_entities", []):
+        if not user or user not in config.get(
+            f"site_configs.{host}.api_auth.valid_entities", []
+        ):
             raise Exception("Not authorized to call this API with that certificate.")
         return user
 

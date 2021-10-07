@@ -8,15 +8,14 @@
  *
  */
 
-
 /*******************************
             Theme
 *******************************/
 
-@type    : 'module';
-@element : 'nag';
+@type: "module";
+@element: "nag";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
              Nag
@@ -58,7 +57,6 @@ a.ui.nag {
   color: @titleColor;
 }
 
-
 .ui.nag > .close.icon {
   cursor: pointer;
   opacity: @closeOpacity;
@@ -92,7 +90,6 @@ a.ui.nag {
   opacity: @closeHoverOpacity;
 }
 
-
 /*******************************
            Variations
 *******************************/
@@ -109,7 +106,7 @@ a.ui.nag {
 }
 
 & when(@variationNagFixed) {
-/*--------------
+  /*--------------
      Fixed
 ---------------*/
   .ui.fixed.nags,
@@ -118,7 +115,7 @@ a.ui.nag {
   }
 }
 & when(@variationNagBottom) {
-/*--------------
+  /*--------------
      Bottom
 ---------------*/
   .ui.bottom.nags,
@@ -130,7 +127,7 @@ a.ui.nag {
 }
 
 & when(@variationNagInverted) {
-/*--------------
+  /*--------------
      Inverted
 ---------------*/
 
@@ -150,7 +147,7 @@ a.ui.nag {
 }
 
 & when not (@variationNagSizes = false) {
-/*-------------------
+  /*-------------------
         Sizes
 --------------------*/
   each(@variationNagSizes, {
@@ -163,7 +160,7 @@ a.ui.nag {
         line-height: 1;
       }
     }
-  })
+  });
 }
 
 /*--------------
@@ -191,9 +188,10 @@ each(@colors, {
     }
   }
 })
-
-& when (@variationNagGroups) {
-/*******************************
+  &
+  when
+  (@variationNagGroups) {
+  /*******************************
            Groups
 *******************************/
   .ui.nags {

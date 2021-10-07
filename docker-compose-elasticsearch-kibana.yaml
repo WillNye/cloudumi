@@ -1,0 +1,50 @@
+# Stolen from https://quoeamaster.medium.com/deploying-elasticsearch-and-kibana-with-docker-86a4ac78d851
+version: "3.8"
+services:
+  elasticsearch1:
+    image: elasticsearch:7.14.1
+    container_name: elasticsearch1
+    environment:
+      - node.name=elasticsearch1
+      - cluster.name=es-cluster-1
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data01:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+
+  kibana1:
+    image: kibana:7.14.1
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch1:9200
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch1
+  apmserver:
+    image: docker.elastic.co/apm/apm-server:7.14.2
+    #    volumes:
+    #      - apn-data01:/usr/share/apm-server/apm-server.yml:ro
+    ports:
+      - 8200:8200
+    command: >
+      apm-server -e
+        -E apm-server.rum.enabled=true
+        -E setup.kibana.host=kibana1:5601
+        -E setup.template.settings.index.number_of_replicas=0
+        -E apm-server.kibana.enabled=true
+        -E apm-server.kibana.host=kibana1:5601
+        -E output.elasticsearch.hosts=["elasticsearch1:9200"]
+    depends_on:
+      - elasticsearch1
+      - kibana1
+
+volumes:
+  es-data01:
+    driver: local
+    #external: true

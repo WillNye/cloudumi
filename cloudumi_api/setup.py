@@ -1,7 +1,7 @@
-from setuptools import setup
 import pip
 from pip._internal.network.session import PipSession
 from pip._internal.req import parse_requirements
+from setuptools import setup
 
 requirements = parse_requirements("requirements.txt", session=PipSession())
 test_requirements = parse_requirements("requirements-test.txt", session=PipSession())

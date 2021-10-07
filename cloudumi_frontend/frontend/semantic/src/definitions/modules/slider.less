@@ -1,11 +1,11 @@
- /*******************************
+/*******************************
              Theme
  *******************************/
 
-@type    : 'module';
-@element : 'slider';
+@type: "module";
+@element: "slider";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 .ui.slider:not(.vertical):not(.checkbox) {
   width: 100%;
@@ -78,7 +78,6 @@
 .ui.slider:not(.disabled):focus .inner .thumb {
   background: @thumbHoverBackground;
 }
-
 
 /*******************************
             States
@@ -207,7 +206,7 @@
   }
   & when (@variationSliderTicked) {
     .ui.labeled.ticked.slider > .labels .label:after {
-      content: ' ';
+      content: " ";
       height: @labelHeight;
       width: @labelWidth;
       background: @labelColor;
@@ -269,10 +268,10 @@
   transition: @hoverOpacityTransition;
 }
 
-.ui.hover.slider:not(.disabled):hover .inner .thumb, .ui.hover.slider:not(.disabled):focus .inner .thumb {
+.ui.hover.slider:not(.disabled):hover .inner .thumb,
+.ui.hover.slider:not(.disabled):focus .inner .thumb {
   opacity: @hoverVarHoverOpacity;
 }
-
 
 & when (@variationSliderInverted) {
   /*--------------
@@ -341,7 +340,8 @@ each(@colors, {
   .ui.slider.basic .inner .thumb {
     background-color: @trackFillColor;
   }
-  .ui.slider.basic .inner .thumb:hover, .ui.slider.basic:focus .inner .thumb {
+  .ui.slider.basic .inner .thumb:hover,
+  .ui.slider.basic:focus .inner .thumb {
     background-color: @trackFillColorFocus;
   }
 
@@ -354,19 +354,19 @@ each(@colors, {
     .ui.inverted.slider.basic .inner .thumb {
       background-color: @invertedTrackFillColor;
     }
-    .ui.inverted.slider.basic .inner .thumb:hover, .ui.inverted.slider.basic:focus .inner .thumb {
+    .ui.inverted.slider.basic .inner .thumb:hover,
+    .ui.inverted.slider.basic:focus .inner .thumb {
       background-color: @invertedTrackFillColorFocus;
     }
   }
 }
-
 
 /*--------------
      Sizing
 ---------------*/
 
 & when not (@variationSliderSizes = false) {
-   each(@variationSliderSizes, {
+  each(@variationSliderSizes, {
      @h: @{value}Height;
      @th: @{value}TrackHeight;
      @tp: @{value}TrackPositionTop;
@@ -412,8 +412,7 @@ each(@colors, {
          }
        }
      }
-   })
+   });
 }
-
 
 .loadUIOverrides();

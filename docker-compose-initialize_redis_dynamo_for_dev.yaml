@@ -1,23 +1,23 @@
 version: "3.8"
 services:
   cloudumi_initialize_redis_dynamo_for_dev:
-      volumes:
-          - ~/.aws:/root/.aws:cached
-          - ./cloudumi_api:/apps/cloudumi_api:cached
-          - ./cloudumi_config:/apps/cloudumi_config:cached
-          - ./cloudumi_common:/apps/cloudumi_common:cached
-      command:
-          # TODO: Figure out why this isn't already installed in other container
-          bash -c '
-          pip install debugpy bleach;
-          python -m debugpy --listen 0.0.0.0:9099 /apps/cloudumi_common/cloudumi_common/scripts/initialize_dynamodb_oss.py;
-          python -m debugpy --listen 0.0.0.0:9099 /apps/cloudumi_common/cloudumi_common/scripts/initialize_redis_oss.py'
-      build:
-          context: .
-          dockerfile: cloudumi_api/Dockerfile
-      environment:
-          - PYTHONUNBUFFERED=1
-          - PYTHONASYNCIODEBUG=1
-          - AWS_PROFILE=personal
-      ports:
-          - 9099:9099
+    volumes:
+      - ~/.aws:/root/.aws:cached
+      - ./cloudumi_api:/apps/cloudumi_api:cached
+      - ./cloudumi_config:/apps/cloudumi_config:cached
+      - ./cloudumi_common:/apps/cloudumi_common:cached
+    command:
+      # TODO: Figure out why this isn't already installed in other container
+      bash -c '
+      pip install debugpy bleach;
+      python -m debugpy --listen 0.0.0.0:9099 /apps/cloudumi_common/cloudumi_common/scripts/initialize_dynamodb_oss.py;
+      python -m debugpy --listen 0.0.0.0:9099 /apps/cloudumi_common/cloudumi_common/scripts/initialize_redis_oss.py'
+    build:
+      context: .
+      dockerfile: cloudumi_api/Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONASYNCIODEBUG=1
+      - AWS_PROFILE=personal
+    ports:
+      - 9099:9099

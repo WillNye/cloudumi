@@ -20,11 +20,11 @@ region = config.region
 app = Celery(
     "tasks",
     broker=config.get(
-        f"celery.broker.{config.region}",
+        f"_global_.celery.broker.{config.region}",
         config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/1"),
     ),
     backend=config.get(
-        f"celery.backend.{config.region}",
+        f"_global_.celery.backend.{config.region}",
         config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/2"),
     ),
 )
@@ -35,7 +35,9 @@ if config.get(f"_global_.redis.use_redislite"):
     import redislite
 
     redislite_db_path = os.path.join(
-        config.get(f"_global_.redis.redislite.db_path", tempfile.NamedTemporaryFile().name)
+        config.get(
+            f"_global_.redis.redislite.db_path", tempfile.NamedTemporaryFile().name
+        )
     )
     redislite_client = redislite.Redis(redislite_db_path)
     redislite_socket_path = f"redis+socket://{redislite_client.socket_file}"
@@ -46,10 +48,14 @@ if config.get(f"_global_.redis.use_redislite"):
     )
 
 app.conf.result_expires = config.get(f"_global_.celery.result_expires", 60)
-app.conf.worker_prefetch_multiplier = config.get(f"_global_.celery.worker_prefetch_multiplier", 4)
+app.conf.worker_prefetch_multiplier = config.get(
+    f"_global_.celery.worker_prefetch_multiplier", 4
+)
 app.conf.task_acks_late = config.get(f"_global_.celery.task_acks_late", True)
 
-if config.get(f"_global_.celery.purge") and not config.get(f"_global_.redis.use_redislite"):
+if config.get(f"_global_.celery.purge") and not config.get(
+    f"_global_.redis.use_redislite"
+):
     # Useful to clear celery queue in development
     with Timeout(seconds=5, error_message="Timeout: Are you sure Redis is running?"):
         app.control.purge()
@@ -68,7 +74,10 @@ def cache_application_information(host):
 
     red = RedisHandler().redis_sync(host)
     red.set(
-        config.get(f"site_configs.{host}.celery.apps_to_roles.redis_key", f"{host}_APPS_TO_ROLES"),
+        config.get(
+            f"site_configs.{host}.celery.apps_to_roles.redis_key",
+            f"{host}_APPS_TO_ROLES",
+        ),
         json.dumps(apps_to_roles, cls=SetEncoder),
     )
 

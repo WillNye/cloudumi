@@ -1,13 +1,13 @@
 {
-  "name"        : "fomantic/ui",
-  "description" : "Fomantic empowers designers and developers by creating a shared vocabulary for UI.",
-  "homepage"    : "https://fomantic-ui.com",
+  "name": "fomantic/ui",
+  "description": "Fomantic empowers designers and developers by creating a shared vocabulary for UI.",
+  "homepage": "https://fomantic-ui.com",
   "authors": [
     {
-      "name" : "Jack Lukic",
+      "name": "Jack Lukic",
       "email": "jacklukic@gmail.com",
-      "homepage"  : "http://www.jacklukic.com",
-      "role" : "Creator"
+      "homepage": "http://www.jacklukic.com",
+      "role": "Creator"
     }
   ],
   "keywords": [
@@ -18,5 +18,5 @@
     "css",
     "framework"
   ],
-  "license" : "MIT"
+  "license": "MIT"
 }

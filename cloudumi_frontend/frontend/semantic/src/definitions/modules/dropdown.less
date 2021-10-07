@@ -8,15 +8,14 @@
  *
  */
 
-
 /*******************************
             Theme
 *******************************/
 
-@type    : 'module';
-@element : 'dropdown';
+@type: "module";
+@element: "dropdown";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
             Dropdown
@@ -70,7 +69,6 @@
   white-space: nowrap;
 }
 
-
 /*--------------
   Hidden Input
 ---------------*/
@@ -99,7 +97,6 @@
 .ui.dropdown .menu > .item .dropdown.icon + .text {
   margin-right: @itemDropdownIconDistance;
 }
-
 
 /*--------------
       Text
@@ -166,7 +163,6 @@
 .ui.dropdown .menu .item > img.floated {
   margin-top: @itemLineHeightOffset;
 }
-
 
 /*--------------
   Menu Divider
@@ -281,7 +277,7 @@
 .ui.dropdown .menu > .item > .label,
 .ui.dropdown .menu > .item > .flag,
 .ui.dropdown .menu > .item > .image,
-.ui.dropdown .menu > .item > img  {
+.ui.dropdown .menu > .item > img {
   margin-top: @itemLineHeightOffset;
 }
 
@@ -296,7 +292,7 @@
 .ui.dropdown .menu > .item > .label,
 .ui.dropdown .menu > .item > .flag,
 .ui.dropdown .menu > .item > .image,
-.ui.dropdown .menu > .item > img  {
+.ui.dropdown .menu > .item > img {
   margin-left: 0;
   float: @itemElementFloat;
   margin-right: @itemElementDistance;
@@ -318,11 +314,9 @@
   max-height: @menuImageMaxHeight;
 }
 
-
 /*******************************
             Coupling
 *******************************/
-
 
 /*--------------
       Menu
@@ -371,8 +365,6 @@
     min-width: 100%;
   }
 }
-
-
 
 /*******************************
               Types
@@ -434,7 +426,7 @@ select.ui.dropdown {
   & when (@variationDropdownCompact) {
     /* Compact */
     .ui.compact.selection.dropdown {
-      min-width:  0;
+      min-width: 0;
     }
   }
 
@@ -468,7 +460,7 @@ select.ui.dropdown {
     padding: @selectionMessagePadding;
   }
 
-  @media only screen and (max-width : @largestMobileScreen) {
+  @media only screen and (max-width: @largestMobileScreen) {
     & when (@variationDropdownShort) {
       .ui.selection.dropdown.short .menu {
         max-height: @selectionMobileMaxMenuHeight * 0.75;
@@ -632,11 +624,13 @@ select.ui.dropdown {
   }
   & when (@variationDropdownScrollhint) {
     /* CSS specific to iOS devices or firefox mobile only  */
-    @supports (-webkit-touch-callout: none) or (-webkit-overflow-scrolling: touch) or (-moz-appearance:none) {
+    @supports (-webkit-touch-callout: none) or
+      (-webkit-overflow-scrolling: touch) or (-moz-appearance: none) {
       @media (-moz-touch-enabled), (pointer: coarse) {
         .ui.dropdown .scrollhint.menu:not(.hidden):before {
-          animation: scrollhint @scrollhintDuration @scrollhintEasing @scrollhintIteration;
-          content: '';
+          animation: scrollhint @scrollhintDuration @scrollhintEasing
+            @scrollhintIteration;
+          content: "";
           z-index: @scrollhintZIndex;
           display: block;
           position: absolute;
@@ -646,11 +640,21 @@ select.ui.dropdown {
           height: 100%;
           border-right: @scrollhintRightBorder;
           border-left: @scrollhintLeftBorder;
-          border-image: linear-gradient(to bottom, @scrollhintStartColor, @scrollhintEndColor) 1 100%;
+          border-image: linear-gradient(
+              to bottom,
+              @scrollhintStartColor,
+              @scrollhintEndColor
+            )
+            1 100%;
         }
 
         .ui.inverted.dropdown .scrollhint.menu:not(.hidden):before {
-          border-image: linear-gradient(to bottom, @invertedScrollhintStartColor, @invertedScrollhintEndColor) 1 100%;
+          border-image: linear-gradient(
+              to bottom,
+              @invertedScrollhintStartColor,
+              @invertedScrollhintEndColor
+            )
+            1 100%;
         }
 
         @keyframes scrollhint {
@@ -750,7 +754,7 @@ select.ui.dropdown {
     backface-visibility: hidden;
     -webkit-overflow-scrolling: touch;
   }
-  @media only screen and (max-width : @largestMobileScreen) {
+  @media only screen and (max-width: @largestMobileScreen) {
     .ui.search.dropdown .menu {
       max-height: @searchMobileMaxMenuHeight;
     }
@@ -798,7 +802,7 @@ select.ui.dropdown {
   }
 
   .ui.dropdown select.noselection ~ .remove.icon,
-  .ui.dropdown input[value=''] ~ .remove.icon,
+  .ui.dropdown input[value=""] ~ .remove.icon,
   .ui.dropdown input:not([value]) ~ .remove.icon,
   .ui.dropdown.loading > .remove.icon {
     display: none;
@@ -937,11 +941,9 @@ select.ui.dropdown {
   }
 }
 
-
 /*******************************
             States
 *******************************/
-
 
 /*--------------------
         Active
@@ -955,7 +957,6 @@ select.ui.dropdown {
   box-shadow: @activeItemBoxShadow;
   z-index: @activeItemZIndex;
 }
-
 
 /*--------------------
         Hover
@@ -982,7 +983,6 @@ select.ui.dropdown {
 }
 
 & when (@variationDropdownLoading) {
-
   /*--------------------
          Loading
   ---------------------*/
@@ -995,7 +995,7 @@ select.ui.dropdown {
   }
   .ui.loading.dropdown > i.icon:before {
     position: absolute;
-    content: '';
+    content: "";
     top: 50%;
     left: 50%;
 
@@ -1008,7 +1008,7 @@ select.ui.dropdown {
   }
   .ui.loading.dropdown > i.icon:after {
     position: absolute;
-    content: '';
+    content: "";
     top: 50%;
     left: 50%;
     box-shadow: 0 0 0 1px transparent;
@@ -1020,7 +1020,6 @@ select.ui.dropdown {
     animation: loader @loaderSpeed infinite linear;
     border: @loaderLineWidth solid @loaderLineColor;
     border-radius: @circularRadius;
-
   }
 
   /* Coupling */
@@ -1059,7 +1058,6 @@ select.ui.dropdown {
   background: @selectedBackground;
   color: @selectedColor;
 }
-
 
 /*--------------------
     Search Filtered
@@ -1120,11 +1118,11 @@ select.ui.dropdown {
     .ui.dropdown.@{state} > .menu .active.item {
       background-color: @formStates[@@state][dropdownActiveBackground];
     }
-  })
+  });
 }
 
 & when (@variationDropdownClear) {
-/*--------------------
+  /*--------------------
         Clear
 ----------------------*/
   .ui.dropdown > .remove.icon,
@@ -1175,7 +1173,6 @@ select.ui.dropdown {
 .ui.dropdown .menu {
   left: 0;
 }
-
 
 /* Default Side (Right) */
 .ui.dropdown .right.menu > .menu,
@@ -1322,13 +1319,13 @@ select.ui.dropdown {
   }
 
   /* Scrollbar in IE */
-  @media all and (-ms-high-contrast:none) {
+  @media all and (-ms-high-contrast: none) {
     .ui.scrolling.dropdown .menu,
     .ui.dropdown .scrolling.menu {
       min-width: e(%("calc(100%% - %d)", @scrollbarWidth));
     }
   }
-  @media only screen and (max-width : @largestMobileScreen) {
+  @media only screen and (max-width: @largestMobileScreen) {
     .ui.scrolling.dropdown .menu,
     .ui.dropdown .scrolling.menu {
       max-height: @scrollingMobileMaxMenuHeight;
@@ -1360,7 +1357,9 @@ select.ui.dropdown {
   ---------------------*/
 
   /* Regular Label on Left */
-  .ui.labeled.input:not([class*="corner labeled"]) .label:first-child + .dropdown {
+  .ui.labeled.input:not([class*="corner labeled"])
+    .label:first-child
+    + .dropdown {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     border-left-color: transparent;
@@ -1382,7 +1381,7 @@ select.ui.dropdown {
      Columnar
 ---------------*/
 .ui.column.dropdown > .menu {
-  flex-wrap:wrap;
+  flex-wrap: wrap;
 }
 .ui.dropdown[class*="two column"] > .menu > .item {
   width: 50%;
@@ -1446,8 +1445,8 @@ select.ui.dropdown {
     opacity: 1;
   }
   .ui.simple.dropdown > .menu > .item:active > .left.menu,
-  .ui.simple.dropdown .menu .item:hover > .left.menu, 
-  .right.menu .ui.simple.dropdown > .menu > .item:active > .menu:not(.right), 
+  .ui.simple.dropdown .menu .item:hover > .left.menu,
+  .right.menu .ui.simple.dropdown > .menu > .item:active > .menu:not(.right),
   .right.menu .ui.simple.dropdown > .menu .item:hover > .menu:not(.right) {
     left: auto;
     right: 100%;
@@ -1527,7 +1526,7 @@ select.ui.dropdown {
     display: block;
     position: absolute;
     pointer-events: none;
-    content: '';
+    content: "";
     visibility: visible;
     transform: rotate(45deg);
 
@@ -1609,7 +1608,6 @@ select.ui.dropdown {
     transform: rotate(135deg);
   }
 
-
   /* Right Pointing */
   .ui.right.pointing.dropdown > .menu {
     top: 0;
@@ -1631,7 +1629,7 @@ select.ui.dropdown {
     bottom: 100%;
     left: 0;
     right: auto;
-    margin: 0 0 @pointingArrowDistanceFromEdge ;
+    margin: 0 0 @pointingArrowDistanceFromEdge;
   }
   .ui.bottom.pointing.dropdown > .menu:after {
     top: auto;
@@ -1695,7 +1693,6 @@ select.ui.dropdown {
     box-shadow: @pointingArrowBoxShadow;
   }
 
-
   /* Left Pointing Upward */
   .ui.left.pointing.upward.dropdown:not(.top):not(.bottom) .menu {
     top: auto !important;
@@ -1725,7 +1722,7 @@ select.ui.dropdown {
     .ui.@{value}.dropdown .menu > .item {
       font-size: @s;
     }
-  })
+  });
 }
 
 & when (@variationDropdownInverted) {

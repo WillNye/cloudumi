@@ -12,10 +12,10 @@
             Theme
 *******************************/
 
-@type    : 'collection';
-@element : 'form';
+@type: "collection";
+@element: "form";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
             Elements
@@ -58,7 +58,6 @@
   margin: 0;
 }
 
-
 /*--------------------
         Labels
 ---------------------*/
@@ -75,7 +74,6 @@
 /*--------------------
     Standard Inputs
 ---------------------*/
-
 
 .ui.form textarea,
 .ui.form input:not([type]),
@@ -116,7 +114,7 @@
   margin: 0;
   outline: none;
   -webkit-appearance: none;
-  -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
 
   line-height: @inputLineHeight;
   padding: @inputPadding;
@@ -135,7 +133,7 @@
 .ui.form textarea {
   margin: 0;
   -webkit-appearance: none;
-  -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
 
   padding: @textAreaPadding;
   background: @textAreaBackground;
@@ -165,16 +163,29 @@
     Checkbox margin
 ---------------------*/
 
-.ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) label + .ui.ui.checkbox {
+.ui.form
+  .fields:not(.grouped):not(.inline)
+  .field:not(:only-child)
+  label
+  + .ui.ui.checkbox {
   margin-top: @checkboxLabelFieldTopMargin;
 }
-.ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.checkbox {
+.ui.form
+  .fields:not(.grouped):not(.inline)
+  .field:not(:only-child)
+  .ui.checkbox {
   margin-top: @inputLineHeight + @checkboxFieldTopMargin;
 }
-.ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.toggle.checkbox {
+.ui.form
+  .fields:not(.grouped):not(.inline)
+  .field:not(:only-child)
+  .ui.toggle.checkbox {
   margin-top: @inputLineHeight + @checkboxToggleFieldTopMargin;
 }
-.ui.form .fields:not(.grouped):not(.inline) .field:not(:only-child) .ui.slider.checkbox {
+.ui.form
+  .fields:not(.grouped):not(.inline)
+  .field:not(:only-child)
+  .ui.slider.checkbox {
   margin-top: @inputLineHeight + @checkboxSliderFieldTopMargin;
 }
 .ui.ui.form .field .fields .field:not(:only-child) .ui.checkbox {
@@ -212,7 +223,6 @@
 .ui.form input.attached {
   width: auto;
 }
-
 
 /*--------------------
      Basic Select
@@ -297,7 +307,6 @@
   width: 0;
 }
 
-
 /*--------------------
    Types of Messages
 ---------------------*/
@@ -308,7 +317,7 @@
     .ui.form .@{state}.message:empty {
       display: none;
     }
-  })
+  });
 }
 
 /* Assumptions */
@@ -342,7 +351,6 @@
   }
 }
 
-
 /*******************************
             States
 *******************************/
@@ -361,8 +369,6 @@
   box-shadow: 0 0 0 100px @inputAutoFillFocusBackground inset !important;
   border-color: @inputAutoFillFocusBorder !important;
 }
-
-
 
 /*--------------------
       Placeholder
@@ -390,8 +396,6 @@
   color: @inputPlaceholderFocusColor;
 }
 
-
-
 /*--------------------
         Focus
 ---------------------*/
@@ -417,17 +421,17 @@
 & when (@variationInputAction) {
   .ui.form .ui.action.input:not([class*="left action"]) {
     & input:not([type]):focus,
-      input[type="date"]:focus,
-      input[type="datetime-local"]:focus,
-      input[type="email"]:focus,
-      input[type="number"]:focus,
-      input[type="password"]:focus,
-      input[type="search"]:focus,
-      input[type="tel"]:focus,
-      input[type="time"]:focus,
-      input[type="text"]:focus,
-      input[type="file"]:focus,
-      input[type="url"]:focus {
+    input[type="date"]:focus,
+    input[type="datetime-local"]:focus,
+    input[type="email"]:focus,
+    input[type="number"]:focus,
+    input[type="password"]:focus,
+    input[type="search"]:focus,
+    input[type="tel"]:focus,
+    input[type="time"]:focus,
+    input[type="text"]:focus,
+    input[type="file"]:focus,
+    input[type="url"]:focus {
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
     }
@@ -435,17 +439,17 @@
 
   .ui.form .ui[class*="left action"].input {
     & input:not([type]),
-      input[type="date"],
-      input[type="datetime-local"],
-      input[type="email"],
-      input[type="number"],
-      input[type="password"],
-      input[type="search"],
-      input[type="tel"],
-      input[type="time"],
-      input[type="text"],
-      input[type="file"],
-      input[type="url"] {
+    input[type="date"],
+    input[type="datetime-local"],
+    input[type="email"],
+    input[type="number"],
+    input[type="password"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="time"],
+    input[type="text"],
+    input[type="file"],
+    input[type="url"] {
       border-bottom-left-radius: 0;
       border-top-left-radius: 0;
     }
@@ -505,7 +509,7 @@
       color: @c;
     }
 
-    .ui.form .fields.@{state} .field .ui.label, 
+    .ui.form .fields.@{state} .field .ui.label,
     .ui.form .field.@{state} .ui.label {
       background-color: @lbg;
     }
@@ -693,7 +697,7 @@
         color: @lbg;
       }
     }
-  })
+  });
 }
 
 & when (@variationFormDisabled) {
@@ -728,7 +732,7 @@
   }
   .ui.loading.form:before {
     position: absolute;
-    content: '';
+    content: "";
     top: 0;
     left: 0;
     background: @loaderDimmerColor;
@@ -743,7 +747,7 @@
 
   .ui.loading.form:after {
     position: absolute;
-    content: '';
+    content: "";
     top: 50%;
     left: 50%;
 
@@ -796,7 +800,6 @@
     left: 100%;
   }
 }
-
 
 /*******************************
            Variations
@@ -940,7 +943,7 @@
 }
 
 /* Swap to full width on mobile */
-@media only screen and (max-width : @largestMobileScreen) {
+@media only screen and (max-width: @largestMobileScreen) {
   .ui.form .fields {
     flex-wrap: wrap;
     margin-bottom: 0;
@@ -952,7 +955,6 @@
     margin: 0 0 @rowDistance;
   }
 }
-
 
 /* Sizing Combinations */
 .ui.form .fields .wide.field {
@@ -1009,7 +1011,6 @@
 .ui.form .sixteen.wide.field {
   width: @sixteenWide;
 }
-
 
 /*--------------------
      Equal Width
@@ -1074,7 +1075,7 @@
 
   .ui.form .inline.fields .field .calendar:not(.popup),
   .ui.form .inline.field .calendar:not(.popup) {
-    display:inline-block;
+    display: inline-block;
   }
 
   .ui.form .inline.fields .field .calendar:not(.popup) > .input > input,
@@ -1103,7 +1104,6 @@
   }
 }
 
-
 /*--------------------
         Sizes
 ---------------------*/
@@ -1121,8 +1121,7 @@
     .ui.@{value}.form .field .dropdown .menu > .item {
       font-size: @s;
     }
-  })
+  });
 }
-
 
 .loadUIOverrides();

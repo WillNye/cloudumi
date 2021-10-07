@@ -45,12 +45,15 @@ export const AuthProvider = ({ children }) => {
   const login = async (history) => {
     try {
       // First check whether user is currently authenticated by using the backend auth endpoint.
-      const auth = await fetch("/api/v1/auth?redirect_url=" + window.location.href, {
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-          Accept: "application/json",
-        },
-      }).then((res) => res.json());
+      const auth = await fetch(
+        "/api/v1/auth?redirect_url=" + window.location.href,
+        {
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            Accept: "application/json",
+          },
+        }
+      ).then((res) => res.json());
 
       // ConsoleMe backend returns a response containing a redirection to IDP for authentication.
       if (auth.type === "redirect" && auth.reason === "unauthenticated") {

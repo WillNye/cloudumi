@@ -144,12 +144,15 @@ try:
         AttributeDefinitions=[
             {"AttributeName": "host", "AttributeType": "S"},
             {"AttributeName": "request_id", "AttributeType": "S"},
-            {"AttributeName": "arn", "AttributeType": "S"}
+            {"AttributeName": "arn", "AttributeType": "S"},
         ],
         GlobalSecondaryIndexes=[
             {
                 "IndexName": "arn-host-index",
-                "KeySchema": [{"AttributeName": "host", "KeyType": "HASH"}, {"AttributeName": "arn", "KeyType": "RANGE"}],
+                "KeySchema": [
+                    {"AttributeName": "host", "KeyType": "HASH"},
+                    {"AttributeName": "arn", "KeyType": "RANGE"},
+                ],
                 "Projection": {"ProjectionType": "ALL"},
                 "ProvisionedThroughput": {
                     "ReadCapacityUnits": 100,
@@ -181,12 +184,15 @@ try:
         AttributeDefinitions=[
             {"AttributeName": "host", "AttributeType": "S"},
             {"AttributeName": "entity_id", "AttributeType": "S"},
-            {"AttributeName": "arn", "AttributeType": "S"}
+            {"AttributeName": "arn", "AttributeType": "S"},
         ],
         GlobalSecondaryIndexes=[
             {
                 "IndexName": "host-arn-index",
-                "KeySchema": [{"AttributeName": "host", "KeyType": "HASH"}, {"AttributeName": "arn", "KeyType": "RANGE"}],
+                "KeySchema": [
+                    {"AttributeName": "host", "KeyType": "HASH"},
+                    {"AttributeName": "arn", "KeyType": "RANGE"},
+                ],
                 "Projection": {"ProjectionType": "ALL"},
                 "ProvisionedThroughput": {
                     "ReadCapacityUnits": 100,
@@ -226,7 +232,7 @@ try:
         ],
         AttributeDefinitions=[
             {"AttributeName": "host", "AttributeType": "S"},
-            {"AttributeName": "arn", "AttributeType": "S"}
+            {"AttributeName": "arn", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
         StreamSpecification={

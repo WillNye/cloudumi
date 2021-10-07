@@ -18,11 +18,18 @@ from tornado.httputil import url_concat
 from cloudumi_common.config import config
 from cloudumi_common.exceptions.exceptions import UserRoleNotAssumableYet
 from cloudumi_common.lib.assume_role import boto3_cached_conn
-from cloudumi_common.lib.aws.iam import get_role_managed_policies, get_role_inline_policies, list_role_tags, \
-    get_user_managed_policies, get_user_inline_policies
-from cloudumi_common.lib.aws.session import get_session_for_tenant
-from cloudumi_common.lib.aws.utils import raise_if_background_check_required_and_no_background_check
+from cloudumi_common.lib.aws.iam import (
+    get_role_inline_policies,
+    get_role_managed_policies,
+    get_user_inline_policies,
+    get_user_managed_policies,
+    list_role_tags,
+)
 from cloudumi_common.lib.aws.sanitize import sanitize_session_name
+from cloudumi_common.lib.aws.session import get_session_for_tenant
+from cloudumi_common.lib.aws.utils import (
+    raise_if_background_check_required_and_no_background_check,
+)
 from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
 from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.policies import send_communications_policy_change_request_v2
@@ -47,7 +54,9 @@ class Aws:
         :param role_entry:
         :return:
         """
-        redis_key = config.get(f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_ROLE_CACHE")
+        redis_key = config.get(
+            f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_ROLE_CACHE"
+        )
         red = RedisHandler().redis_sync(host)
         red.hset(redis_key, role_entry["arn"], json.dumps(role_entry))
 
@@ -62,7 +71,9 @@ class Aws:
         :param role_arn:
         :return:
         """
-        redis_key = config.get(f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_ROLE_CACHE")
+        redis_key = config.get(
+            f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_ROLE_CACHE"
+        )
         red = RedisHandler().redis_sync(host)
         return red.hget(redis_key, role_arn)
 
@@ -117,7 +128,9 @@ class Aws:
         return principal
 
     @staticmethod
-    def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, Any]]:
+    def _get_iam_user_sync(
+        account_id, user_name, conn, host
+    ) -> Optional[Dict[str, Any]]:
         client = boto3_cached_conn(
             "iam",
             host,
@@ -126,7 +139,7 @@ class Aws:
             read_only=True,
             retry_max_attempts=2,
             client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
-            session_name = sanitize_session_name("consoleme_get_iam_user"),
+            session_name=sanitize_session_name("consoleme_get_iam_user"),
         )
         user = client.get_user(UserName=user_name)["User"]
         user["ManagedPolicies"] = get_user_managed_policies(
@@ -165,7 +178,9 @@ class Aws:
 
         for t in all_tasks:
             tasks.append(
-                asyncio.ensure_future(sync_to_async(t)({"UserName": user_name},host=host,  **conn))
+                asyncio.ensure_future(
+                    sync_to_async(t)({"UserName": user_name}, host=host, **conn)
+                )
             )
 
         user_tag_details = asyncio.ensure_future(
@@ -191,7 +206,9 @@ class Aws:
         return user
 
     @staticmethod
-    def _get_iam_role_sync(account_id, role_name, conn, host: str) -> Optional[Dict[str, Any]]:
+    def _get_iam_role_sync(
+        account_id, role_name, conn, host: str
+    ) -> Optional[Dict[str, Any]]:
         client = boto3_cached_conn(
             "iam",
             host,
@@ -200,7 +217,7 @@ class Aws:
             read_only=True,
             retry_max_attempts=2,
             client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
-            session_name = sanitize_session_name("consoleme_get_iam_role"),
+            session_name=sanitize_session_name("consoleme_get_iam_role"),
         )
         role = client.get_role(RoleName=role_name)["Role"]
         role["ManagedPolicies"] = get_role_managed_policies(
@@ -239,7 +256,9 @@ class Aws:
 
         for t in all_tasks:
             tasks.append(
-                asyncio.ensure_future(sync_to_async(t)({"RoleName": role_name}, host=host, **conn))
+                asyncio.ensure_future(
+                    sync_to_async(t)({"RoleName": role_name}, host=host, **conn)
+                )
             )
 
         responses = asyncio.gather(*tasks)
@@ -254,7 +273,7 @@ class Aws:
         self,
         account_id: str,
         user_arn: str,
-            host: str,
+        host: str,
         run_sync=False,
     ) -> Optional[Dict[str, Any]]:
         """Fetch the IAM User from AWS in threadpool if run_sync=False, otherwise synchronously.
@@ -276,7 +295,9 @@ class Aws:
                 "account_number": account_id,
                 "assume_role": config.get(f"site_configs.{host}.policies.role_name"),
                 "region": config.region,
-                "client_kwargs": config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+                "client_kwargs": config.get(
+                    f"site_configs.{host}.boto3.client_kwargs", {}
+                ),
             }
             if run_sync:
                 user = self._get_iam_user_sync(account_id, user_name, conn, host)
@@ -309,7 +330,7 @@ class Aws:
         self,
         account_id: str,
         role_arn: str,
-            host: str,
+        host: str,
         force_refresh: bool = False,
         run_sync=False,
     ) -> Optional[Dict[str, Any]]:
@@ -334,7 +355,9 @@ class Aws:
 
         if not force_refresh:
             # First check redis:
-            result: str = await sync_to_async(self._fetch_role_from_redis)(role_arn, host)
+            result: str = await sync_to_async(self._fetch_role_from_redis)(
+                role_arn, host
+            )
 
             if result:
                 result: dict = json.loads(result)
@@ -353,9 +376,7 @@ class Aws:
                     return result
 
             # If not in Redis or it's older than an hour, proceed to DynamoDB:
-            result = await sync_to_async(dynamo.fetch_iam_role)(
-                role_arn, host
-            )
+            result = await sync_to_async(dynamo.fetch_iam_role)(role_arn, host)
 
         # If it's NOT in dynamo, or if we're forcing a refresh, we need to reach out to AWS and fetch:
         if force_refresh or not result.get("Item"):
@@ -376,14 +397,20 @@ class Aws:
                 role_name = role_arn.split("/")[-1]
                 conn = {
                     "account_number": account_id,
-                    "assume_role": config.get(f"site_configs.{host}.policies.role_name"),
+                    "assume_role": config.get(
+                        f"site_configs.{host}.policies.role_name"
+                    ),
                     "region": config.region,
-                    "client_kwargs": config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+                    "client_kwargs": config.get(
+                        f"site_configs.{host}.boto3.client_kwargs", {}
+                    ),
                 }
                 if run_sync:
                     role = self._get_iam_role_sync(account_id, role_name, conn, host)
                 else:
-                    role = await self._get_iam_role_async(account_id, role_name, conn, host)
+                    role = await self._get_iam_role_async(
+                        account_id, role_name, conn, host
+                    )
 
             except ClientError as ce:
                 if ce.response["Error"]["Code"] == "NoSuchEntity":
@@ -417,7 +444,10 @@ class Aws:
                 "policy": dynamo.convert_iam_resource_to_json(role),
                 "permissions_boundary": role.get("PermissionsBoundary", {}),
                 "templated": red.hget(
-                    config.get(f"site_configs.{host}.templated_roles.redis_key", f"{host}_TEMPLATED_ROLES_v2"),
+                    config.get(
+                        f"site_configs.{host}.templated_roles.redis_key",
+                        f"{host}_TEMPLATED_ROLES_v2",
+                    ),
                     role.get("Arn").lower(),
                 ),
             }
@@ -469,7 +499,7 @@ class Aws:
         self,
         user: str,
         role: str,
-            host: str,
+        host: str,
         enforce_ip_restrictions: bool = True,
         user_role: bool = False,
         account_id: str = None,
@@ -493,9 +523,7 @@ class Aws:
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get(
-                f"site_configs.{host}.boto3.client_kwargs", {}
-            ),
+            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
             session_name=sanitize_session_name("consoleme_get_credentials"),
         )
 
@@ -511,7 +539,9 @@ class Aws:
             except Exception as e:
                 raise e
 
-        await raise_if_background_check_required_and_no_background_check(role, user, host)
+        await raise_if_background_check_required_and_no_background_check(
+            role, user, host
+        )
 
         try:
             if enforce_ip_restrictions and ip_restrictions:
@@ -545,7 +575,9 @@ class Aws:
                     RoleArn=role,
                     RoleSessionName=user.lower(),
                     Policy=policy,
-                    DurationSeconds=config.get(f"site_configs.{host}.aws.session_duration", 3600),
+                    DurationSeconds=config.get(
+                        f"site_configs.{host}.aws.session_duration", 3600
+                    ),
                 )
                 credentials["Credentials"]["Expiration"] = int(
                     credentials["Credentials"]["Expiration"].timestamp()
@@ -590,7 +622,9 @@ class Aws:
                     RoleArn=role,
                     RoleSessionName=user.lower(),
                     Policy=policy,
-                    DurationSeconds=config.get(f"site_configs.{host}.aws.session_duration", 3600),
+                    DurationSeconds=config.get(
+                        f"site_configs.{host}.aws.session_duration", 3600
+                    ),
                 )
                 credentials["Credentials"]["Expiration"] = int(
                     credentials["Credentials"]["Expiration"].timestamp()
@@ -606,7 +640,9 @@ class Aws:
             credentials = await sync_to_async(client.assume_role)(
                 RoleArn=role,
                 RoleSessionName=user.lower(),
-                DurationSeconds=config.get(f"site_configs.{host}.aws.session_duration", 3600),
+                DurationSeconds=config.get(
+                    f"site_configs.{host}.aws.session_duration", 3600
+                ),
             )
             credentials["Credentials"]["Expiration"] = int(
                 credentials["Credentials"]["Expiration"].timestamp()
@@ -625,7 +661,7 @@ class Aws:
         self,
         user: str,
         role: str,
-            host: str,
+        host: str,
         region: str = "us-east-1",
         user_role: bool = False,
         account_id: str = None,
@@ -659,14 +695,17 @@ class Aws:
         req_params = {
             "Action": "getSigninToken",
             "Session": bleach.clean(json.dumps(credentials_d)),
-            "DurationSeconds": config.get(f"site_configs.{host}.aws.session_duration", 3600),
+            "DurationSeconds": config.get(
+                f"site_configs.{host}.aws.session_duration", 3600
+            ),
         }
 
         http_client = AsyncHTTPClient(force_instance=True)
 
         url_with_params: str = url_concat(
             config.get(
-                f"site_configs.{host}.aws.federation_url", "https://signin.aws.amazon.com/federation"
+                f"site_configs.{host}.aws.federation_url",
+                "https://signin.aws.amazon.com/federation",
             ),
             req_params,
         )
@@ -679,18 +718,22 @@ class Aws:
             "Destination": (
                 "{}".format(
                     config.get(
-                        f"site_configs.{host}.aws.console_url", "https://{}.console.aws.amazon.com"
+                        f"site_configs.{host}.aws.console_url",
+                        "https://{}.console.aws.amazon.com",
                     ).format(region)
                 )
             ),
             "SigninToken": bleach.clean(token.get("SigninToken")),
-            "SessionDuration": config.get(f"site_configs.{host}.aws.session_duration", 3600),
+            "SessionDuration": config.get(
+                f"site_configs.{host}.aws.session_duration", 3600
+            ),
         }
 
         r2 = requests_sync.Request(
             "GET",
             config.get(
-                f"site_configs.{host}.aws.federation_url", "https://signin.aws.amazon.com/federation"
+                f"site_configs.{host}.aws.federation_url",
+                "https://signin.aws.amazon.com/federation",
             ),
             params=login_req_params,
         )
@@ -738,7 +781,9 @@ class Aws:
     def handle_detected_role(role):
         pass
 
-    async def should_auto_approve_policy_v2(self, extended_request, user, user_groups, host):
+    async def should_auto_approve_policy_v2(
+        self, extended_request, user, user_groups, host
+    ):
         return {"approved": False}
 
 

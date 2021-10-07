@@ -1,5 +1,6 @@
-import sentry_sdk
 from typing import List
+
+import sentry_sdk
 
 from cloudumi_common.config import config
 from cloudumi_common.lib.dynamo import UserDynamoHandler
@@ -10,6 +11,7 @@ class Policies:
     """
     Policies internal plugin
     """
+
     async def get_errors_by_role(self, arn, host, n=5):
         dynamo = UserDynamoHandler(host=host)
         try:
@@ -18,7 +20,11 @@ class Policies:
             sentry_sdk.capture_exception()
             return {}
 
-    async def get_applications_associated_with_role(self, arn: str, host: str,) -> AppDetailsArray:
+    async def get_applications_associated_with_role(
+        self,
+        arn: str,
+        host: str,
+    ) -> AppDetailsArray:
         """
         This function returns applications associated with a role from configuration. You may want to override this
         function to pull this information from an authoratative source.
@@ -43,7 +49,7 @@ class Policies:
         return AppDetailsArray(app_details=apps_formatted)
 
     async def get_roles_associated_with_app(
-            self, app_name: str
+        self, app_name: str
     ) -> List[AwsPrincipalModel]:
         """
         This function returns roles associated with an app from configuration. You may want to override this

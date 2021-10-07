@@ -19,13 +19,12 @@
 @import (optional) "@{themesFolder}/@{site}/globals/site.variables";
 
 /* Component's site.variables */
-& when not (@theme = 'default') {
+& when not (@theme = "default") {
   @import (optional) "@{themesFolder}/@{theme}/globals/site.variables";
 }
 
 /* Site theme site.variables */
 @import (optional) "@{siteFolder}/globals/site.variables";
-
 
 /*-------------------
  Component Variables
@@ -40,7 +39,6 @@
 /* Site Theme */
 @import (optional) "@{siteFolder}/@{type}s/@{element}.variables";
 
-
 /*-------------------------
     Central Color Map
 -------------------------*/
@@ -51,7 +49,6 @@
 /* Site Theme */
 @import (optional) "@{themesFolder}/@{site}/globals/colors.less";
 
-
 /*******************************
              Mix-ins
 *******************************/
@@ -61,7 +58,8 @@
 -------------------*/
 
 .loadFonts() when (@importGoogleFonts) {
-  @import (css) url('@{googleProtocol}fonts.googleapis.com/css2?family=@{googleFontRequest}');
+  @import (css)
+    url("@{googleProtocol}fonts.googleapis.com/css2?family=@{googleFontRequest}");
 }
 
 /*------------------
@@ -69,7 +67,7 @@
 -------------------*/
 
 .loadUIOverrides() {
-  & when not (@theme = 'default') {
+  & when not (@theme = "default") {
     @import (optional) "@{themesFolder}/default/@{type}s/@{element}.overrides";
   }
   @import (optional) "@{themesFolder}/@{theme}/@{type}s/@{element}.overrides";

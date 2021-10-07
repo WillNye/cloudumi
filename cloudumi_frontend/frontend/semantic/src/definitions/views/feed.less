@@ -12,10 +12,10 @@
             Theme
 *******************************/
 
-@type    : 'view';
-@element : 'feed';
+@type: "view";
+@element: "feed";
 
-@import (multiple) '../../theme.config';
+@import (multiple) "../../theme.config";
 
 /*******************************
          Activity Feed
@@ -30,7 +30,6 @@
 .ui.feed:last-child {
   margin-bottom: 0;
 }
-
 
 /*******************************
             Content
@@ -258,8 +257,6 @@
   color: @metadataActionHoverColor;
 }
 
-
-
 /*******************************
             Variations
 *******************************/
@@ -273,7 +270,7 @@
     .ui.@{value}.feed  {
       font-size: @s;
     }
-  })
+  });
 }
 
 & when (@variationFeedInverted) {
@@ -299,6 +296,5 @@
     color: @invertedSelectedTextColor;
   }
 }
-
 
 .loadUIOverrides();

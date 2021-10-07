@@ -30,9 +30,8 @@ if config.get("_global_.redis.cluster_mode.enabled"):
     cluster_mode = True
     cluster_mode_nodes = config.get(
         f"_global_.redis.cluster_mode.nodes.{region}",
-                                        config.get(
-                                            "_global_.redis.cluster_mode.nodes.global", []),
-                                    )
+        config.get("_global_.redis.cluster_mode.nodes.global", []),
+    )
     if not cluster_mode_nodes:
         raise Exception("Cluster mode enabled without specifying nodes")
 

@@ -4,18 +4,17 @@
 # Sends async request to other container
 # TODO: Dev mode only:
 import ptvsd
-ptvsd.enable_attach(address=('0.0.0.0', 5678), redirect_output=True)
+
+ptvsd.enable_attach(address=("0.0.0.0", 5678), redirect_output=True)
 
 
-import uvicorn
 import httpx
-from fastapi import FastAPI, Response, Request
+import uvicorn
+from fastapi import FastAPI, Request, Response
 
 app = FastAPI()
 
-path_mapping = {
-    "healthcheck": "http://cloudumi_healthcheck:8090/healthcheck"
-}
+path_mapping = {"healthcheck": "http://cloudumi_healthcheck:8090/healthcheck"}
 
 frontend = "http://cloudumi_frontend/"
 
@@ -57,6 +56,8 @@ async def wildcard_put(path: str, request: Request, response: Response):
     response.body = proxy.content
     response.status_code = proxy.status_code
     return response
+
+
 #
 # @app.get("/healthcheck")
 # async def healthcheck_get(response: Response):

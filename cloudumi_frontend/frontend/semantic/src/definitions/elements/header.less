@@ -8,16 +8,14 @@
  *
  */
 
-
 /*******************************
             Theme
 *******************************/
 
-@type    : 'element';
-@element : 'header';
+@type: "element";
+@element: "header";
 
-@import (multiple) '../../theme.config';
-
+@import (multiple) "../../theme.config";
 
 /*******************************
             Header
@@ -120,7 +118,6 @@
   vertical-align: @contentIconAlignment;
 }
 
-
 /*--------------
  Loose Coupling
 ---------------*/
@@ -136,12 +133,9 @@
   margin-top: @nextParagraphDistance;
 }
 
-
-
 /*******************************
             Types
 *******************************/
-
 
 /*--------------
      Page
@@ -158,7 +152,7 @@
         font-size: @@sf;
       }
     }
-  })
+  });
 }
 
 /*--------------
@@ -184,7 +178,7 @@
         font-size: @@shf;
       }
     }
-  })
+  });
 }
 
 & when (@variationHeaderSub) {
@@ -213,7 +207,7 @@
     margin: @iconHeaderTopMargin 0 @iconHeaderBottomMargin;
   }
   .ui.icon.header:after {
-    content: '';
+    content: "";
     display: block;
     height: 0;
     clear: both;
@@ -270,7 +264,6 @@
   }
 }
 
-
 /*******************************
            Variations
 *******************************/
@@ -301,7 +294,6 @@
     }
   }
 }
-
 
 /*-------------------
        Colors
@@ -337,8 +329,9 @@ each(@colors, {
     }
   }
 })
-
-& when (@variationHeaderAligned) {
+  &
+  when
+  (@variationHeaderAligned) {
   /*-------------------
          Aligned
   --------------------*/
@@ -361,7 +354,7 @@ each(@colors, {
   }
   .ui.justified.header:after {
     display: inline-block;
-    content: '';
+    content: "";
     width: 100%;
   }
 }
@@ -437,7 +430,7 @@ each(@colors, {
       .ui.@{value}.block.header {
         font-size: @@s;
       }
-    })
+    });
   }
 }
 
@@ -477,7 +470,7 @@ each(@colors, {
       .ui.@{value}.attached.header {
         font-size: @@s;
       }
-    })
+    });
   }
 }
 
