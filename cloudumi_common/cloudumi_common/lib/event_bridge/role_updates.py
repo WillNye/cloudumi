@@ -22,8 +22,9 @@ def detect_role_changes_and_update_cache(celery_app, host):
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "host": host,
     }
-    queue_arn = config.get(
+    queue_arn = config.get_host_specific_key(
         f"site_configs.{host}.event_bridge.detect_role_changes_and_update_cache.queue_arn",
+        host,
         "",
     ).format(region=config.region)
 
@@ -36,8 +37,9 @@ def detect_role_changes_and_update_cache(celery_app, host):
     queue_account_number = queue_arn.split(":")[4]
     queue_region = queue_arn.split(":")[3]
     # Optionally assume a role before receiving messages from the queue
-    queue_assume_role = config.get(
-        f"site_configs.{host}.event_bridge.detect_role_changes_and_update_cache.assume_role"
+    queue_assume_role = config.get_host_specific_key(
+        f"site_configs.{host}.event_bridge.detect_role_changes_and_update_cache.assume_role",
+        host,
     )
 
     sqs_client = boto3_cached_conn(
@@ -48,7 +50,9 @@ def detect_role_changes_and_update_cache(celery_app, host):
         retry_max_attempts=2,
         account_number=queue_account_number,
         assume_role=queue_assume_role,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
         session_name=sanitize_session_name("consoleme_sqs_role_updates"),
     )
 

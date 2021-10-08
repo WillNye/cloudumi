@@ -27,20 +27,22 @@ async def get_custom_page_header(
             message: Read this!
         ```
     """
-    if config.get(f"site_configs.{host}.example_config.is_example_config", False):
+    if config.get_host_specific_key(
+        f"site_configs.{host}.example_config.is_example_config", host, False
+    ):
         return {
-            "custom_header_message_title": config.get(
-                f"site_configs.{host}.example_config.title"
+            "custom_header_message_title": config.get_host_specific_key(
+                f"site_configs.{host}.example_config.title", host
             ),
-            "custom_header_message_text": config.get(
-                f"site_configs.{host}.example_config.text"
+            "custom_header_message_text": config.get_host_specific_key(
+                f"site_configs.{host}.example_config.text", host
             ),
-            "custom_header_message_route": config.get(
-                f"site_configs.{host}.example_config.routes"
+            "custom_header_message_route": config.get_host_specific_key(
+                f"site_configs.{host}.example_config.routes", host
             ),
         }
-    custom_headers_for_group_members = config.get(
-        f"site_configs.{host}.dynamic_config.custom_headers_for_group_members", []
+    custom_headers_for_group_members = config.get_host_specific_key(
+        f"site_configs.{host}.dynamic_config.custom_headers_for_group_members", host, []
     )
     for custom_header in custom_headers_for_group_members:
         for header_group in custom_header.get("users_or_groups", []):
@@ -51,13 +53,13 @@ async def get_custom_page_header(
                     "custom_header_message_route": custom_header.get("route", ".*"),
                 }
     return {
-        "custom_header_message_title": config.get(
-            f"site_configs.{host}.headers.custom_header_message.title", ""
+        "custom_header_message_title": config.get_host_specific_key(
+            f"site_configs.{host}.headers.custom_header_message.title", host, ""
         ),
-        "custom_header_message_text": config.get(
-            f"site_configs.{host}.headers.custom_header_message.text", ""
+        "custom_header_message_text": config.get_host_specific_key(
+            f"site_configs.{host}.headers.custom_header_message.text", host, ""
         ),
-        "custom_header_message_route": config.get(
-            f"site_configs.{host}.headers.custom_header_message.route", ".*"
+        "custom_header_message_route": config.get_host_specific_key(
+            f"site_configs.{host}.headers.custom_header_message.route", host, ".*"
         ),
     }

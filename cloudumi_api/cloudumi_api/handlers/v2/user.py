@@ -41,7 +41,9 @@ class UserRegistrationHandler(TornadoRequestHandler):
 
         generic_error_message: str = "User registration failed"
         # Fail if getting users by password is not enabled
-        if not config.get(f"site_configs.{host}.auth.get_user_by_password"):
+        if not config.get_host_specific_key(
+            f"site_configs.{host}.auth.get_user_by_password", host
+        ):
             errors = [
                 "Expected configuration `auth.get_user_by_password`, but it is not enabled."
             ]
@@ -50,7 +52,9 @@ class UserRegistrationHandler(TornadoRequestHandler):
             )
             return
         # Fail if user registration not allowed
-        if not config.get(f"site_configs.{host}.auth.allow_user_registration"):
+        if not config.get_host_specific_key(
+            f"site_configs.{host}.auth.allow_user_registration", host
+        ):
             errors = [
                 "Expected configuration `auth.allow_user_registration`, but it is not enabled."
             ]
@@ -122,24 +126,28 @@ class LoginConfigurationHandler(TornadoRequestHandler):
     def get(self):
         host = self.get_host_name()
         default_configuration = {
-            "enabled": config.get(f"site_configs.{host}.auth.get_user_by_password"),
-            "page_title": config.get(
+            "enabled": config.get_host_specific_key(
+                f"site_configs.{host}.auth.get_user_by_password", host
+            ),
+            "page_title": config.get_host_specific_key(
                 f"site_configs.{host}.LoginConfigurationHandler.page_title",
+                host,
                 "Welcome to ConsoleMe - Please Sign-In",
             ),
-            "allow_password_login": config.get(
-                f"site_configs.{host}.auth.get_user_by_password", True
+            "allow_password_login": config.get_host_specific_key(
+                f"site_configs.{host}.auth.get_user_by_password", host, True
             ),
             "allow_sso_login": config.get(
                 "LoginConfigurationHandler.allow_sso_login", True
             ),
-            "allow_sign_up": config.get(
-                f"site_configs.{host}.auth.allow_user_registration", False
+            "allow_sign_up": config.get_host_specific_key(
+                f"site_configs.{host}.auth.allow_user_registration", host, False
             ),
             "custom_message": "",
         }
-        login_configuration = config.get(
+        login_configuration = config.get_host_specific_key(
             f"site_configs.{host}.LoginConfigurationHandler.login_configuration",
+            host,
             default_configuration,
         )
         self.write(login_configuration)
@@ -165,7 +173,9 @@ class LoginHandler(TornadoRequestHandler):
             "host": host,
         }
         generic_error_message = "Authentication failed"
-        if not config.get(f"site_configs.{host}.auth.get_user_by_password"):
+        if not config.get_host_specific_key(
+            f"site_configs.{host}.auth.get_user_by_password", host
+        ):
             errors = [
                 "Expected configuration `auth.get_user_by_password`, but it is not enabled."
             ]
@@ -174,7 +184,9 @@ class LoginHandler(TornadoRequestHandler):
             )
             return
         # Auth cookie must be set to use password authentication.
-        if not config.get(f"site_configs.{host}.auth.set_auth_cookie"):
+        if not config.get_host_specific_key(
+            f"site_configs.{host}.auth.set_auth_cookie", host
+        ):
             errors = [
                 "Expected configuration `auth.set_auth_cookie`, but it is not enabled."
             ]
@@ -204,7 +216,9 @@ class LoginHandler(TornadoRequestHandler):
             return
         # Make and set jwt for user
         expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-            minutes=config.get(f"site_configs.{host}.jwt.expiration_minutes", 60)
+            minutes=config.get_host_specific_key(
+                f"site_configs.{host}.jwt.expiration_minutes", host, 60
+            )
         )
         encoded_cookie = await generate_jwt_token(
             authenticated_response.username,
@@ -216,12 +230,20 @@ class LoginHandler(TornadoRequestHandler):
             "consoleme_auth",
             encoded_cookie,
             expires=expiration,
-            secure=config.get(
+            secure=config.get_host_specific_key(
                 f"site_configs.{host}.auth.cookie.secure",
-                True if "https://" in config.get(f"site_configs.{host}.url") else False,
+                host,
+                True
+                if "https://"
+                in config.get_host_specific_key(f"site_configs.{host}.url", host)
+                else False,
             ),
-            httponly=config.get(f"site_configs.{host}.auth.cookie.httponly", True),
-            samesite=config.get(f"site_configs.{host}.auth.cookie.samesite", True),
+            httponly=config.get_host_specific_key(
+                f"site_configs.{host}.auth.cookie.httponly", host, True
+            ),
+            samesite=config.get_host_specific_key(
+                f"site_configs.{host}.auth.cookie.samesite", host, True
+            ),
         )
         res = WebResponse(
             status="redirect",

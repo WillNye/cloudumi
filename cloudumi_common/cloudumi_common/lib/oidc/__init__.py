@@ -24,8 +24,8 @@ log = config.get_logger()
 
 async def populate_oidc_config(host):
     http_client = tornado.httpclient.AsyncHTTPClient()
-    metadata_url = config.get(
-        f"site_configs.{host}.get_user_by_oidc_settings.metadata_url"
+    metadata_url = config.get_host_specific_key(
+        f"site_configs.{host}.get_user_by_oidc_settings.metadata_url", host
     )
 
     if metadata_url:
@@ -39,13 +39,16 @@ async def populate_oidc_config(host):
         )
         oidc_config = json.loads(res.body)
     else:
-        authorization_endpoint = config.get(
-            f"site_configs.{host}.get_user_by_oidc_settings.authorization_endpoint"
+        authorization_endpoint = config.get_host_specific_key(
+            f"site_configs.{host}.get_user_by_oidc_settings.authorization_endpoint",
+            host,
         )
-        token_endpoint = config.get(
-            f"site_configs.{host}.get_user_by_oidc_settings.token_endpoint"
+        token_endpoint = config.get_host_specific_key(
+            f"site_configs.{host}.get_user_by_oidc_settings.token_endpoint", host
         )
-        jwks_uri = config.get(f"site_configs.{host}.get_user_by_oidc_settings.jwks_uri")
+        jwks_uri = config.get_host_specific_key(
+            f"site_configs.{host}.get_user_by_oidc_settings.jwks_uri", host
+        )
         if not (authorization_endpoint or token_endpoint or jwks_uri):
             raise MissingConfigurationValue("Missing OIDC Configuration.")
         oidc_config = {
@@ -53,8 +56,12 @@ async def populate_oidc_config(host):
             "token_endpoint": token_endpoint,
             "jwks_uri": jwks_uri,
         }
-    client_id = config.get(f"site_configs.{host}.oidc_secrets.client_id")
-    client_secret = config.get(f"site_configs.{host}.oidc_secrets.secret")
+    client_id = config.get_host_specific_key(
+        f"site_configs.{host}.oidc_secrets.client_id", host
+    )
+    client_secret = config.get_host_specific_key(
+        f"site_configs.{host}.oidc_secrets.secret", host
+    )
     if not (client_id or client_secret):
         raise MissingConfigurationValue("Missing OIDC Secrets")
     oidc_config["client_id"] = client_id
@@ -62,7 +69,9 @@ async def populate_oidc_config(host):
     oidc_config["jwt_keys"] = {}
     jwks_uris = [oidc_config["jwks_uri"]]
     jwks_uris.extend(
-        config.get(f"site_configs.{host}.get_user_by_oidc_settings.extra_jwks_uri", [])
+        config.get_host_specific_key(
+            f"site_configs.{host}.get_user_by_oidc_settings.extra_jwks_uri", host, []
+        )
     )
     for jwks_uri in jwks_uris:
         # Fetch jwks_uri for jwt validation
@@ -100,7 +109,7 @@ async def authenticate_user_by_oidc(request):
     log_data = {"function": function}
     code = request.get_argument("code", None)
     protocol = request.request.protocol
-    if "https://" in config.get(f"site_configs.{host}.url"):
+    if "https://" in config.get_host_specific_key(f"site_configs.{host}.url", host):
         # If we're behind a load balancer that terminates tls for us, request.request.protocol will be "http://" and our
         # oidc redirect will be invalid
         protocol = "https"
@@ -116,8 +125,8 @@ async def authenticate_user_by_oidc(request):
     if after_redirect_uri and isinstance(after_redirect_uri, bytes):
         after_redirect_uri = after_redirect_uri.decode("utf-8")
     if not after_redirect_uri:
-        after_redirect_uri = config.get(
-            f"site_configs.{host}.url", f"{protocol}://{full_host}/"
+        after_redirect_uri = config.get_host_specific_key(
+            f"site_configs.{host}.url", host, f"{protocol}://{full_host}/"
         )
 
     if not code:
@@ -129,7 +138,9 @@ async def authenticate_user_by_oidc(request):
 
     if not code:
         args = {"response_type": "code"}
-        client_scope = config.get(f"site_configs.{host}.oidc_secrets.client_scope")
+        client_scope = config.get_host_specific_key(
+            f"site_configs.{host}.oidc_secrets.client_scope", host
+        )
         if request.request.uri is not None:
             args["redirect_uri"] = oidc_redirect_uri
         args["client_id"] = oidc_config["client_id"]
@@ -159,8 +170,9 @@ async def authenticate_user_by_oidc(request):
     try:
         # exchange the authorization code with the access token
         http_client = tornado.httpclient.AsyncHTTPClient()
-        grant_type = config.get(
+        grant_type = config.get_host_specific_key(
             f"site_configs.{host}.get_user_by_oidc_settings.grant_type",
+            host,
             "authorization_code",
         )
         authorization_header = (
@@ -170,7 +182,9 @@ async def authenticate_user_by_oidc(request):
             authorization_header.encode("UTF-8")
         ).decode("UTF-8")
         url = f"{oidc_config['token_endpoint']}"
-        client_scope = config.get(f"site_configs.{host}.oidc_secrets.client_scope")
+        client_scope = config.get_host_specific_key(
+            f"site_configs.{host}.oidc_secrets.client_scope", host
+        )
         if client_scope:
             client_scope = " ".join(client_scope)
         token_exchange_response = await http_client.fetch(
@@ -187,20 +201,22 @@ async def authenticate_user_by_oidc(request):
         token_exchange_response_body_dict = json.loads(token_exchange_response.body)
 
         id_token = token_exchange_response_body_dict.get(
-            config.get(
+            config.get_host_specific_key(
                 f"site_configs.{host}.get_user_by_oidc_settings.id_token_response_key",
+                host,
                 "id_token",
             )
         )
         access_token = token_exchange_response_body_dict.get(
-            config.get(
+            config.get_host_specific_key(
                 f"site_configs.{host}.get_user_by_oidc_settings.access_token_response_key",
+                host,
                 "access_token",
             )
         )
 
-        jwt_verify = config.get(
-            f"site_configs.{host}.get_user_by_oidc_settings.jwt_verify", True
+        jwt_verify = config.get_host_specific_key(
+            f"site_configs.{host}.get_user_by_oidc_settings.jwt_verify", host, True
         )
         if jwt_verify:
             header = jwt.get_unverified_header(id_token)
@@ -220,15 +236,17 @@ async def authenticate_user_by_oidc(request):
             )
 
             email = decoded_id_token.get(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.get_user_by_oidc_settings.jwt_email_key",
+                    host,
                     "email",
                 )
             )
 
             # For google auth, the access_token does not contain JWT-parsable claims.
-            if config.get(
+            if config.get_host_specific_key(
                 f"site_configs.{host}.get_user_by_oidc_settings.get_groups_from_access_token",
+                host,
                 True,
             ):
                 try:
@@ -245,8 +263,9 @@ async def authenticate_user_by_oidc(request):
                     decoded_access_token = jwt.decode(
                         access_token,
                         pub_key,
-                        audience=config.get(
-                            f"site_configs.{host}.get_user_by_oidc_settings.access_token_audience"
+                        audience=config.get_host_specific_key(
+                            f"site_configs.{host}.get_user_by_oidc_settings.access_token_audience",
+                            host,
                         ),
                         algorithms=algorithm,
                     )
@@ -271,8 +290,10 @@ async def authenticate_user_by_oidc(request):
             decoded_access_token = jwt.decode(access_token, verify=jwt_verify)
 
         email = email or decoded_id_token.get(
-            config.get(
-                f"site_configs.{host}.get_user_by_oidc_settings.jwt_email_key", "email"
+            config.get_host_specific_key(
+                f"site_configs.{host}.get_user_by_oidc_settings.jwt_email_key",
+                host,
+                "email",
             )
         )
 
@@ -282,14 +303,16 @@ async def authenticate_user_by_oidc(request):
         groups = (
             groups
             or decoded_access_token.get(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.get_user_by_oidc_settings.jwt_groups_key",
+                    host,
                     "groups",
                 ),
             )
             or decoded_id_token.get(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.get_user_by_oidc_settings.jwt_groups_key",
+                    host,
                     "groups",
                 ),
                 [],
@@ -298,9 +321,12 @@ async def authenticate_user_by_oidc(request):
 
         if (
             not groups
-            and oidc_config.get(f"site_configs.{host}.userinfo_endpoint")
-            and config.get(
+            and oidc_config.get_host_specific_key(
+                f"site_configs.{host}.userinfo_endpoint", host
+            )
+            and config.get_host_specific_key(
                 f"site_configs.{host}.get_user_by_oidc_settings.get_groups_from_userinfo_endpoint",
+                host,
                 True,
             )
         ):
@@ -314,16 +340,21 @@ async def authenticate_user_by_oidc(request):
                 },
             )
             groups = json.loads(user_info.body).get(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.get_user_by_oidc_settings.user_info_groups_key",
+                    host,
                     "groups",
                 ),
                 [],
             )
 
-        if config.get(f"site_configs.{host}.auth.set_auth_cookie"):
+        if config.get_host_specific_key(
+            f"site_configs.{host}.auth.set_auth_cookie", host
+        ):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                minutes=config.get(f"site_configs.{host}.jwt.expiration_minutes", 60)
+                minutes=config.get_host_specific_key(
+                    f"site_configs.{host}.jwt.expiration_minutes", host, 60
+                )
             )
             encoded_cookie = await generate_jwt_token(
                 email, groups, host, exp=expiration
@@ -332,12 +363,18 @@ async def authenticate_user_by_oidc(request):
                 "consoleme_auth",
                 encoded_cookie,
                 expires=expiration,
-                secure=config.get(
+                secure=config.get_host_specific_key(
                     f"site_configs.{host}.auth.cookie.secure",
-                    "https://" in config.get(f"site_configs.{host}.url"),
+                    host,
+                    "https://"
+                    in config.get_host_specific_key(f"site_configs.{host}.url", host),
                 ),
-                httponly=config.get(f"site_configs.{host}.auth.cookie.httponly", True),
-                samesite=config.get(f"site_configs.{host}.auth.cookie.samesite", True),
+                httponly=config.get_host_specific_key(
+                    f"site_configs.{host}.auth.cookie.httponly", host, True
+                ),
+                samesite=config.get_host_specific_key(
+                    f"site_configs.{host}.auth.cookie.samesite", host, True
+                ),
             )
 
         if force_redirect:

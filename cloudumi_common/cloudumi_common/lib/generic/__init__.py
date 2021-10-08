@@ -171,10 +171,14 @@ def is_in_time_range(t, time_range):
 
 
 async def get_random_security_logo(host):
-    if not config.get(f"site_configs.{host}.consoleme_logo.enabled"):
+    if not config.get_host_specific_key(
+        f"site_configs.{host}.consoleme_logo.enabled", host
+    ):
         return None
-    if config.get(f"site_configs.{host}.consoleme_logo.image"):
-        return config.get(f"site_configs.{host}.consoleme_logo.image")
+    if config.get_host_specific_key(f"site_configs.{host}.consoleme_logo.image", host):
+        return config.get_host_specific_key(
+            f"site_configs.{host}.consoleme_logo.image", host
+        )
     month = datetime.now().month
     summer = month in [6, 7, 8]
 

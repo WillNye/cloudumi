@@ -33,8 +33,9 @@ class NotificationsHandler(BaseAPIV2Handler):
         host = self.ctx.host
         try:
             max_notifications = (
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.get_notifications_for_user.max_notifications",
+                    host,
                     5,
                 ),
             )
@@ -136,8 +137,9 @@ class NotificationsHandler(BaseAPIV2Handler):
         try:
             # Retrieve and return updated notifications for user
             max_notifications = (
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.get_notifications_for_user.max_notifications",
+                    host,
                     5,
                 ),
             )

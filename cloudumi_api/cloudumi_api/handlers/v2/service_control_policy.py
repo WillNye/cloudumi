@@ -21,11 +21,15 @@ class ServiceControlPolicyHandler(BaseAPIV2Handler):
     async def get(self, identifier):
         host = self.ctx.host
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
-            if self.user not in config.get(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions", []
+            if self.user not in config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                host,
+                [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
 

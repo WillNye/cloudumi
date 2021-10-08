@@ -23,7 +23,9 @@ async def send_slack_notification_new_request(
     """
     Sends a notification using specified webhook URL about a new request created
     """
-    if not config.get(f"site_configs.{host}.slack.notifications_enabled", False):
+    if not config.get_host_specific_key(
+        f"site_configs.{host}.slack.notifications_enabled", host, False
+    ):
         return
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -41,7 +43,9 @@ async def send_slack_notification_new_request(
         "approval_probe_approved": approval_probe_approved,
     }
     log.debug(log_data)
-    slack_webhook_url = config.get(f"site_configs.{host}.slack.webhook_url")
+    slack_webhook_url = config.get_host_specific_key(
+        f"site_configs.{host}.slack.webhook_url", host
+    )
     if not slack_webhook_url:
         log_data["message"] = "Missing webhook URL for slack notification"
         log.error(log_data)

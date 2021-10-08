@@ -60,8 +60,9 @@ async def store_json_results_in_redis_and_s3(
         config.get("_global_.plugins.metrics", "cmsaas_metrics")
     )()
 
-    last_updated_redis_key = config.get(
+    last_updated_redis_key = config.get_host_specific_key(
         f"site_configs.{host}.store_json_results_in_redis_and_s3.last_updated_redis_key",
+        host,
         f"{host}_STORE_JSON_RESULTS_IN_REDIS_AND_S3_LAST_UPDATED",
     )
 
@@ -79,8 +80,9 @@ async def store_json_results_in_redis_and_s3(
 
     # If we've defined an S3 key, but not a bucket, let's use the default bucket if it's defined in configuration.
     if s3_key and not s3_bucket:
-        s3_bucket = config.get(
+        s3_bucket = config.get_host_specific_key(
             f"site_configs.{host}.consoleme_s3_bucket",
+            host,
             config.get("_global_.consoleme_s3_bucket"),
         )
 
@@ -141,8 +143,9 @@ async def retrieve_json_data_from_redis_or_s3(
     :return:
     """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    last_updated_redis_key = config.get(
+    last_updated_redis_key = config.get_host_specific_key(
         f"site_configs.{host}.store_json_results_in_redis_and_s3.last_updated_redis_key",
+        host,
         f"{host}_STORE_JSON_RESULTS_IN_REDIS_AND_S3_LAST_UPDATED",
     )
 
@@ -163,8 +166,9 @@ async def retrieve_json_data_from_redis_or_s3(
 
     # If we've defined an S3 key, but not a bucket, let's use the default bucket if it's defined in configuration.
     if s3_key and not s3_bucket:
-        s3_bucket = config.get(
+        s3_bucket = config.get_host_specific_key(
             f"site_configs.{host}.consoleme_s3_bucket",
+            host,
             config.get("_global_.consoleme_s3_bucket"),
         )
 

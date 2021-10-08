@@ -53,13 +53,18 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         role = role.lower()
         group_mapping = get_plugin_by_name(
-            config.get(
-                f"site_configs.{host}.plugins.group_mapping", "cmsaas_group_mapping"
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.group_mapping",
+                host,
+                "cmsaas_group_mapping",
             )
         )()
         selected_roles = await group_mapping.filter_eligible_roles(role, self)
         region = arguments.get(
-            "r", config.get(f"site_configs.{host}.aws.region", config.region)
+            "r",
+            config.get_host_specific_key(
+                f"site_configs.{host}.aws.region", host, config.region
+            ),
         )
         redirect = arguments.get("redirect")
         log_data = {
@@ -161,7 +166,9 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 user_role = True
                 account_id = selected_role.split("arn:aws:iam::")[1].split(":role")[0]
             aws = get_plugin_by_name(
-                config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+                config.get_host_specific_key(
+                    f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+                )
             )()
             url = await aws.generate_url(
                 self.user,
@@ -453,7 +460,9 @@ class RoleDetailHandler(BaseAPIV2Handler):
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
         aws = get_plugin_by_name(
-            config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+            )
         )()
         await aws.fetch_iam_role(account_id, arn, host, force_refresh=True)
         response_json = {
@@ -539,7 +548,9 @@ class RoleDetailAppHandler(BaseMtlsHandler):
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
         aws = get_plugin_by_name(
-            config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+            )
         )()
         await aws.fetch_iam_role(account_id, arn, host, force_refresh=True)
         response_json = {

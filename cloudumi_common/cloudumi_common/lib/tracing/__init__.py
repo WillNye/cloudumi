@@ -94,11 +94,13 @@ class ConsoleMeTracer:
     async def configure_tracing(
         self, span_name, host, span_kind=SERVER, tags=None, annotations=None
     ) -> Optional[ConsoleMeTracerObject]:
-        if not config.get(f"site_configs.{host}.tracing.enabled", False):
+        if not config.get_host_specific_key(
+            f"site_configs.{host}.tracing.enabled", host, False
+        ):
             return
 
-        if not random() * 100 <= config.get(
-            f"site_configs.{host}.tracing.sample_rate", 0.1
+        if not random() * 100 <= config.get_host_specific_key(
+            f"site_configs.{host}.tracing.sample_rate", host, 0.1
         ):  # nosec
             return
 
@@ -106,15 +108,20 @@ class ConsoleMeTracer:
             tags = []
         if not annotations:
             annotations = []
-        zipkin_address = config.get(
+        zipkin_address = config.get_host_specific_key(
             f"site_configs.{host}.tracing.zipkin_address",
+            host,
             "http://127.0.0.1:9411/api/v2/spans",
         ).format(
             region=config.region,
-            environment=config.get(f"site_configs.{host}.environment"),
+            environment=config.get_host_specific_key(
+                f"site_configs.{host}.environment", host
+            ),
         )
         endpoint = az.create_endpoint(
-            config.get(f"site_configs.{host}.tracing.application_name", "consoleme")
+            config.get_host_specific_key(
+                f"site_configs.{host}.tracing.application_name", host, "consoleme"
+            )
         )
         # The tracer's sample rate is 100% because we are pre-sampling our requests
         self.tracer = await az.create(zipkin_address, endpoint, sample_rate=1.0)

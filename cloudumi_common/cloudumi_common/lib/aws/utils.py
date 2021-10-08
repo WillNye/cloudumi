@@ -185,19 +185,27 @@ async def fetch_managed_policy_details(
     result["Policy"] = await sync_to_async(get_managed_policy_document)(
         policy_arn=policy_arn,
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         region=config.region,
         retry_max_attempts=2,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
         host=host,
     )
     policy_details = await sync_to_async(get_policy)(
         policy_arn=policy_arn,
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         region=config.region,
         retry_max_attempts=2,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
         host=host,
     )
 
@@ -245,26 +253,34 @@ async def fetch_sns_topic(
         "sns",
         host,
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         region=region,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
         retry_max_attempts=2,
     )
 
     result: Dict = await sync_to_async(get_topic_attributes)(
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         TopicArn=arn,
         region=region,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
         retry_max_attempts=2,
         host=host,
     )
@@ -298,21 +314,27 @@ async def fetch_sqs_queue(
 
     queue_url: str = await sync_to_async(get_queue_url)(
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         region=region,
         QueueName=resource_name,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
         retry_max_attempts=2,
         host=host,
     )
 
     result: Dict = await sync_to_async(get_queue_attributes)(
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         region=region,
         QueueUrl=queue_url,
         AttributeNames=["All"],
@@ -320,21 +342,27 @@ async def fetch_sqs_queue(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
         retry_max_attempts=2,
         host=host,
     )
 
     tags: Dict = await sync_to_async(list_queue_tags)(
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         region=region,
         QueueUrl=queue_url,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
         retry_max_attempts=2,
         host=host,
     )
@@ -373,13 +401,17 @@ async def get_bucket_location_with_fallback(
         bucket_location_res = await sync_to_async(get_bucket_location)(
             Bucket=bucket_name,
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
             retry_max_attempts=2,
             host=host,
         )
@@ -417,13 +449,17 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
         bucket_resource = await sync_to_async(get_bucket_resource)(
             bucket_name,
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
             retry_max_attempts=2,
             host=host,
         )
@@ -438,14 +474,18 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
         )
         policy: Dict = await sync_to_async(get_bucket_policy)(
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             region=bucket_location,
             Bucket=bucket_name,
             sts_client_kwargs=dict(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
             retry_max_attempts=2,
             host=host,
         )
@@ -457,14 +497,18 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
     try:
         tags: Dict = await sync_to_async(get_bucket_tagging)(
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             region=bucket_location,
             Bucket=bucket_name,
             sts_client_kwargs=dict(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
             retry_max_attempts=2,
             host=host,
         )
@@ -490,10 +534,12 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
 
 async def raise_if_background_check_required_and_no_background_check(role, user, host):
     auth = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.auth", "cmsaas_auth")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
+        )
     )()
-    for compliance_account_id in config.get(
-        f"site_configs.{host}.aws.compliance_account_ids", []
+    for compliance_account_id in config.get_host_specific_key(
+        f"site_configs.{host}.aws.compliance_account_ids", host, []
     ):
         if compliance_account_id == role.split(":")[4]:
             user_info = await auth.get_user_info(user, object=True)
@@ -511,8 +557,9 @@ async def raise_if_background_check_required_and_no_background_check(role, user,
                     tags={"function": function, "user": user, "role": role},
                 )
                 raise BackgroundCheckNotPassedException(
-                    config.get(
+                    config.get_host_specific_key(
                         f"site_configs.{host}.aws.background_check_not_passed",
+                        host,
                         "You must have passed a background check to access role "
                         "{role}.",
                     ).format(role=role)
@@ -542,10 +589,14 @@ def apply_managed_policy_to_role(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         session_name=sanitize_session_name(session_name),
         retry_max_attempts=2,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     )
 
     client.attach_role_policy(RoleName=role.get("RoleName"), PolicyArn=policy_arn)
@@ -682,10 +733,14 @@ async def fetch_role_details(account_id, role_name, host):
         service_type="resource",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         session_name=sanitize_session_name("fetch_role_details"),
         retry_max_attempts=2,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     )
     try:
         iam_role = await sync_to_async(iam_resource.Role)(role_name)
@@ -722,10 +777,14 @@ async def fetch_iam_user_details(account_id, iam_user_name, host):
         service_type="resource",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         session_name=sanitize_session_name("fetch_iam_user_details"),
         retry_max_attempts=2,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     )
     try:
         iam_user = await sync_to_async(iam_resource.User)(iam_user_name)
@@ -761,8 +820,9 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
     }
     log.info(log_data)
 
-    default_trust_policy = config.get(
+    default_trust_policy = config.get_host_specific_key(
         f"site_configs.{host}.user_role_creator.default_trust_policy",
+        host,
         {
             "Version": "2012-10-17",
             "Statement": [
@@ -789,10 +849,14 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
         service_type="client",
         account_number=create_model.account_id,
         region=config.region,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         session_name=sanitize_session_name("create_role_" + username),
         retry_max_attempts=2,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     )
     results = {"errors": 0, "role_created": "false", "action_results": []}
     try:
@@ -881,7 +945,9 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
     # Force caching of role
     try:
         aws = get_plugin_by_name(
-            config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+            )
         )()
         role_arn = (
             f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
@@ -935,8 +1001,8 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     log.info(log_data)
     role = await fetch_role_details(clone_model.account_id, clone_model.role_name, host)
 
-    default_trust_policy = config.get(
-        f"site_configs.{host}.user_role_creator.default_trust_policy"
+    default_trust_policy = config.get_host_specific_key(
+        f"site_configs.{host}.user_role_creator.default_trust_policy", host
     )
     trust_policy = (
         role.assume_role_policy_document
@@ -970,10 +1036,14 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         service_type="client",
         account_number=clone_model.dest_account_id,
         region=config.region,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         session_name=sanitize_session_name("clone_role_" + username),
         retry_max_attempts=2,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     )
     results = {"errors": 0, "role_created": "false", "action_results": []}
     try:
@@ -1247,7 +1317,9 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
     if enabled_regions_for_account:
         return enabled_regions_for_account
 
-    celery_sync_regions = config.get(f"site_configs.{host}.celery.sync_regions", [])
+    celery_sync_regions = config.get_host_specific_key(
+        f"site_configs.{host}.celery.sync_regions", host, []
+    )
     if celery_sync_regions:
         return celery_sync_regions
 
@@ -1255,10 +1327,14 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
         "ec2",
         host,
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         read_only=True,
         retry_max_attempts=2,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     )
 
     regions = await sync_to_async(client.describe_regions)()
@@ -1274,7 +1350,9 @@ async def access_analyzer_validate_policy(
         client = await sync_to_async(session.client)(
             "accessanalyzer",
             region_name=config.region,
-            **config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
         access_analyzer_response = await sync_to_async(client.validate_policy)(
             policyDocument=policy,
@@ -1352,17 +1430,19 @@ async def get_all_scps(
     Args:
         force_sync: force a cache update
     """
-    redis_key = config.get(
+    redis_key = config.get_host_specific_key(
         f"site_configs.{host}.cache_scps_across_organizations.redis.key.all_scps_key",
+        host,
         f"{host}_ALL_AWS_SCPS",
     )
     scps = await retrieve_json_data_from_redis_or_s3(
         redis_key,
-        s3_bucket=config.get(
-            f"site_configs.{host}.cache_scps_across_organizations.s3.bucket"
+        s3_bucket=config.get_host_specific_key(
+            f"site_configs.{host}.cache_scps_across_organizations.s3.bucket", host
         ),
-        s3_key=config.get(
+        s3_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_scps_across_organizations.s3.file",
+            host,
             "scps/cache_scps_v1.json.gz",
         ),
         default={},
@@ -1380,15 +1460,17 @@ async def get_all_scps(
 async def cache_all_scps(host) -> Dict[str, Any]:
     """Store a dictionary of all Service Control Policies across organizations in the cache"""
     all_scps = {}
-    for organization in config.get(
-        f"site_configs.{host}.cache_accounts_from_aws_organizations", []
+    for organization in config.get_host_specific_key(
+        f"site_configs.{host}.cache_accounts_from_aws_organizations", host, []
     ):
         org_account_id = organization.get(
             f"site_configs.{host}.organizations_master_account_id"
         )
         role_to_assume = organization.get(
             f"site_configs.{host}.organizations_master_role_to_assume",
-            config.get(f"site_configs.{host}.policies.role_name"),
+            config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
         )
         if not org_account_id:
             raise MissingConfigurationValue(
@@ -1406,20 +1488,25 @@ async def cache_all_scps(host) -> Dict[str, Any]:
             org_account_id, host, role_to_assume=role_to_assume, region=config.region
         )
         all_scps[org_account_id] = org_scps
-    redis_key = config.get(
+    redis_key = config.get_host_specific_key(
         f"site_configs.{host}.cache_scps_across_organizations.redis.key.all_scps_key",
+        host,
         f"{host}_ALL_AWS_SCPS",
     )
     s3_bucket = None
     s3_key = None
-    if config.region == config.get(
-        f"site_configs.{host}.celery.active_region", config.region
-    ) or config.get(f"site_configs.{host}.environment") in ["dev", "test"]:
-        s3_bucket = config.get(
-            f"site_configs.{host}.cache_scps_across_organizations.s3.bucket"
+    if config.region == config.get_host_specific_key(
+        f"site_configs.{host}.celery.active_region", host, config.region
+    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "dev",
+        "test",
+    ]:
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.cache_scps_across_organizations.s3.bucket", host
         )
-        s3_key = config.get(
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.cache_scps_across_organizations.s3.file",
+            host,
             "scps/cache_scps_v1.json.gz",
         )
     await store_json_results_in_redis_and_s3(
@@ -1434,17 +1521,19 @@ async def get_org_structure(host, force_sync=False) -> Dict[str, Any]:
     Args:
         force_sync: force a cache update
     """
-    redis_key = config.get(
+    redis_key = config.get_host_specific_key(
         f"site_configs.{host}.cache_organization_structure.redis.key.org_structure_key",
+        host,
         f"{host}_AWS_ORG_STRUCTURE",
     )
     org_structure = await retrieve_json_data_from_redis_or_s3(
         redis_key,
-        s3_bucket=config.get(
-            f"site_configs.{host}.cache_organization_structure.s3.bucket"
+        s3_bucket=config.get_host_specific_key(
+            f"site_configs.{host}.cache_organization_structure.s3.bucket", host
         ),
-        s3_key=config.get(
+        s3_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_organization_structure.s3.file",
+            host,
             "scps/cache_org_structure_v1.json.gz",
         ),
         default={},
@@ -1458,15 +1547,17 @@ async def get_org_structure(host, force_sync=False) -> Dict[str, Any]:
 async def cache_org_structure(host: str) -> Dict[str, Any]:
     """Store a dictionary of the organization structure in the cache"""
     all_org_structure = {}
-    for organization in config.get(
-        f"site_configs.{host}.cache_accounts_from_aws_organizations", []
+    for organization in config.get_host_specific_key(
+        f"site_configs.{host}.cache_accounts_from_aws_organizations", host, []
     ):
         org_account_id = organization.get(
             f"site_configs.{host}.organizations_master_account_id"
         )
         role_to_assume = organization.get(
             f"site_configs.{host}.organizations_master_role_to_assume",
-            config.get(f"site_configs.{host}.policies.role_name"),
+            config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
         )
         if not org_account_id:
             raise MissingConfigurationValue(
@@ -1484,20 +1575,25 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
             org_account_id, host, region=config.region
         )
         all_org_structure.update(org_structure)
-    redis_key = config.get(
+    redis_key = config.get_host_specific_key(
         f"site_configs.{host}.cache_organization_structure.redis.key.org_structure_key",
+        host,
         f"{host}_AWS_ORG_STRUCTURE",
     )
     s3_bucket = None
     s3_key = None
-    if config.region == config.get(
-        f"site_configs.{host}.celery.active_region", config.region
-    ) or config.get(f"site_configs.{host}.environment") in ["dev", "test"]:
-        s3_bucket = config.get(
-            f"site_configs.{host}.cache_organization_structure.s3.bucket"
+    if config.region == config.get_host_specific_key(
+        f"site_configs.{host}.celery.active_region", host, config.region
+    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "dev",
+        "test",
+    ]:
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.cache_organization_structure.s3.bucket", host
         )
-        s3_key = config.get(
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.cache_organization_structure.s3.file",
+            host,
             "scps/cache_org_structure_v1.json.gz",
         )
     await store_json_results_in_redis_and_s3(
@@ -1742,8 +1838,12 @@ def allowed_to_sync_role(
 
     :return: boolean specifying whether ConsoleMe is allowed to sync / access the role
     """
-    allowed_tags = config.get(f"site_configs.{host}.roles.allowed_tags", {})
-    allowed_arns = config.get(f"site_configs.{host}.roles.allowed_arns", [])
+    allowed_tags = config.get_host_specific_key(
+        f"site_configs.{host}.roles.allowed_tags", host, {}
+    )
+    allowed_arns = config.get_host_specific_key(
+        f"site_configs.{host}.roles.allowed_arns", host, []
+    )
     if not allowed_tags and not allowed_arns:
         return True
 
@@ -1774,7 +1874,9 @@ def get_aws_principal_owner(role_details: Dict[str, Any], host: str) -> Optional
     :return: owner: str
     """
     owner = None
-    owner_tag_names = config.get(f"site_configs.{host}.aws.tags.owner", [])
+    owner_tag_names = config.get_host_specific_key(
+        f"site_configs.{host}.aws.tags.owner", host, []
+    )
     if not owner_tag_names:
         return owner
     if isinstance(owner_tag_names, str):
@@ -1809,16 +1911,18 @@ async def resource_arn_known_in_aws_config(
     :return:
     """
     red = RedisHandler().redis_sync(host)
-    expiration_seconds: int = config.get(
+    expiration_seconds: int = config.get_host_specific_key(
         f"site_configs.{host}.aws.resource_arn_known_in_aws_config.expiration_seconds",
+        host,
         3600,
     )
     known_arn = False
     if not resource_arn.startswith("arn:aws:"):
         return known_arn
 
-    resources_from_aws_config_redis_key: str = config.get(
+    resources_from_aws_config_redis_key: str = config.get_host_specific_key(
         f"site_configs.{host}.aws_config_cache.redis_key",
+        host,
         f"{host}_AWSCONFIG_RESOURCE_CACHE",
     )
 
@@ -1827,8 +1931,9 @@ async def resource_arn_known_in_aws_config(
     ):
         return True
 
-    resource_arn_exists_temp_matches_redis_key: str = config.get(
+    resource_arn_exists_temp_matches_redis_key: str = config.get_host_specific_key(
         f"site_configs.{host}.resource_arn_known_in_aws_config.redis.temp_matches_key",
+        host,
         f"{host}_TEMP_QUERIED_RESOURCE_ARN_CACHE",
     )
 
@@ -1876,16 +1981,18 @@ async def simulate_iam_principal_action(
     """
     if not expiration_seconds:
         expiration_seconds = (
-            config.get(
+            config.get_host_specific_key(
                 f"site_configs.{host}.aws.simulate_iam_principal_action.expiration_seconds",
+                host,
                 3600,
             ),
         )
     # simulating IAM principal policies is expensive.
     # Temporarily cache and return results by principal_arn, action, and resource_arn. We don't consider source_ip
     # when caching because it could vary greatly for application roles running on multiple instances/containers.
-    resource_arn_exists_temp_matches_redis_key: str = config.get(
+    resource_arn_exists_temp_matches_redis_key: str = config.get_host_specific_key(
         f"site_configs.{host}.resource_arn_known_in_aws_config.redis.temp_matches_key",
+        host,
         f"{host}_TEMP_POLICY_SIMULATION_CACHE",
     )
 
@@ -1911,7 +2018,9 @@ async def simulate_iam_principal_action(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+        assume_role=config.get_host_specific_key(
+            f"site_configs.{host}.policies.role_name", host
+        ),
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
@@ -1971,8 +2080,9 @@ async def get_resource_account(arn: str, host: str) -> str:
     if resource_account:
         return resource_account
 
-    resources_from_aws_config_redis_key: str = config.get(
+    resources_from_aws_config_redis_key: str = config.get_host_specific_key(
         f"site_configs.{host}.aws_config_cache.redis_key",
+        host,
         f"{host}_AWSCONFIG_RESOURCE_CACHE",
     )
 
@@ -1980,11 +2090,12 @@ async def get_resource_account(arn: str, host: str) -> str:
         # This will force a refresh of our redis cache if the data exists in S3
         await retrieve_json_data_from_redis_or_s3(
             redis_key=resources_from_aws_config_redis_key,
-            s3_bucket=config.get(
-                f"site_configs.{host}.aws_config_cache_combined.s3.bucket"
+            s3_bucket=config.get_host_specific_key(
+                f"site_configs.{host}.aws_config_cache_combined.s3.bucket", host
             ),
-            s3_key=config.get(
+            s3_key=config.get_host_specific_key(
                 f"site_configs.{host}.aws_config_cache_combined.s3.file",
+                host,
                 "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
             ),
             redis_data_type="hash",
@@ -2000,8 +2111,8 @@ async def get_resource_account(arn: str, host: str) -> str:
         # retrieved this info from our AWS Config cache, but we've encountered problems with AWS Config historically
         # that have necessitated this code.
         s3_cache = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get(
-                f"site_configs.{host}.redis.s3_buckets_key", f"{host}_S3_BUCKETS"
+            redis_key=config.get_host_specific_key(
+                f"site_configs.{host}.redis.s3_buckets_key", host, f"{host}_S3_BUCKETS"
             ),
             redis_data_type="hash",
             host=host,

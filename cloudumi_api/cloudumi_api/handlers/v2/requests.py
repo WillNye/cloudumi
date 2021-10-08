@@ -236,11 +236,15 @@ class RequestHandler(BaseAPIV2Handler):
         """
         host = self.ctx.host
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
-            if self.user not in config.get(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions", []
+            if self.user not in config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                host,
+                [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
 
@@ -258,7 +262,9 @@ class RequestHandler(BaseAPIV2Handler):
             "host": host,
         }
         aws = get_plugin_by_name(
-            config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+            )
         )()
         log.debug(log_data)
         try:
@@ -381,7 +387,7 @@ class RequestHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception", tags={"user": self.user}
             )
             self.write_error(400, message="Error validating input: " + str(e))
-            if config.get(f"site_configs.{host}.development"):
+            if config.get_host_specific_key(f"site_configs.{host}.development", host):
                 raise
             return
         except Exception as e:
@@ -390,7 +396,7 @@ class RequestHandler(BaseAPIV2Handler):
             stats.count(f"{log_data['function']}.exception", tags={"user": self.user})
             sentry_sdk.capture_exception(tags={"user": self.user})
             self.write_error(500, message="Error parsing request: " + str(e))
-            if config.get(f"site_configs.{host}.development"):
+            if config.get_host_specific_key(f"site_configs.{host}.development", host):
                 raise
             return
 
@@ -481,13 +487,17 @@ class RequestsHandler(BaseAPIV2Handler):
         host = self.ctx.host
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         markdown = arguments.get("markdown")
-        cache_key = config.get(
+        cache_key = config.get_host_specific_key(
             f"site_configs.{host}.cache_all_policy_requests.redis_key",
+            host,
             f"{host}_ALL_POLICY_REQUESTS",
         )
-        s3_bucket = config.get(f"site_configs.{host}.cache_policy_requests.s3.bucket")
-        s3_key = config.get(
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.cache_policy_requests.s3.bucket", host
+        )
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.cache_policy_requests.s3.file",
+            host,
             "policy_requests/all_policy_requests_v1.json.gz",
         )
         arguments = json.loads(self.request.body)
@@ -638,14 +648,20 @@ class RequestDetailHandler(BaseAPIV2Handler):
         }
         log.debug(log_data)
         aws = get_plugin_by_name(
-            config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+            )
         )()
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
-            if self.user not in config.get(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions", []
+            if self.user not in config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                host,
+                [],
             ):
                 self.write_error(
                     403, message="Only FTEs are authorized to view this page."
@@ -747,11 +763,15 @@ class RequestDetailHandler(BaseAPIV2Handler):
         log.debug(log_data)
 
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
-            if self.user not in config.get(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions", []
+            if self.user not in config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                host,
+                [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
 
@@ -784,7 +804,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception", tags={"user": self.user}
             )
             self.write_error(400, message="Error validating input: " + str(e))
-            if config.get(f"site_configs.{host}.development"):
+            if config.get_host_specific_key(f"site_configs.{host}.development", host):
                 raise
             return
         except Unauthorized as e:
@@ -795,7 +815,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.unauthorized", tags={"user": self.user}
             )
             self.write_error(403, message=str(e))
-            if config.get(f"site_configs.{host}.development"):
+            if config.get_host_specific_key(f"site_configs.{host}.development", host):
                 raise
             return
         self.write(response.json())
@@ -863,8 +883,9 @@ class RequestsPageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get(
+        table_configuration = config.get_host_specific_key(
             f"site_configs.{host}.RequestsTableConfigHandler.configuration",
+            host,
             default_configuration,
         )
 

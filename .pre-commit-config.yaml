@@ -8,12 +8,13 @@ repos:
       - id: check-case-conflict
       - id: debug-statements
       - id: check-yaml
-        exclude: "^docs/gitbook/|^helm/consoleme|cdk/resources/create_config_lambda/config.yaml"
+        args: [--allow-multiple-documents]
+        exclude: "^docs/gitbook/|^helm/cloudumi|cdk/resources/create_config_lambda/config.yaml"
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:
       - id: flake8
-        args: ["--exclude", "consoleme/models.py"]
+        args: ["--exclude", "cloudumi/models.py"]
 
   - repo: https://github.com/asottile/seed-isort-config
     rev: v2.2.0
@@ -56,9 +57,11 @@ repos:
             "--max-warnings",
             "0",
             "--resolve-plugins-relative-to",
-            "./ui",
+            "./cloudumi_frontend/frontend",
             "-c",
-            "./ui/.eslintrc",
+            "./cloudumi_frontend/frontend/.eslintrc",
+            "--ignore-path",
+            "./cloudumi_frontend/frontend/.eslintignore",
           ]
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.12
@@ -79,12 +82,6 @@ repos:
       - id: python-bandit-vulnerability-check
         name: bandit
         entry: bandit
-        args: ["--ini", "tox.ini", "-r", "consoleme"]
-        language: system
-        pass_filenames: false
-
-      - id: helm-lint
-        name: helm-lint
-        entry: helm lint helm/consoleme
+        args: ["--ini", "tox.ini", "-r", "cloudumi"]
         language: system
         pass_filenames: false

@@ -91,7 +91,7 @@ services:
       - 9092:9092
       - 8092:8092
     labels:
-      - "traefik.http.routers.cloudumi_api.rule=PathPrefix(`/api`) || PathPrefix(`/auth`) || PathPrefix(`/noauth`)"
+      - "traefik.http.routers.cloudumi_api.rule=PathPrefix(`/api`) || PathPrefix(`/auth`) || PathPrefix(`/noauth`) || PathPrefix(`/policies`)"
       #- traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
       - traefik.http.services.cloudumi_api.loadbalancer.server.port=8092
       - "traefik.enable=true"

@@ -33,8 +33,10 @@ class CloudTrail:
         :param notification_ttl_seconds:
         :return:
         """
-        notification_ttl_seconds = config.get(
-            f"site_configs.{host}.process_cloudtrail_errors.notification_ttl", 86400
+        notification_ttl_seconds = config.get_host_specific_key(
+            f"site_configs.{host}.process_cloudtrail_errors.notification_ttl",
+            host,
+            86400,
         )
         notification_type = "cloudtrail_generated_policy"
         expiration = int(time.time() + notification_ttl_seconds)
@@ -113,8 +115,9 @@ class CloudTrail:
                 json.dumps(generated_request).encode()
             ).decode("utf-8")
             encoded_request_url = f"/selfservice?encoded_request={encoded_request}"
-            notification_message = config.get(
+            notification_message = config.get_host_specific_key(
                 f"site_configs.{host}.process_cloudtrail_errors.generate_notifications.message",
+                host,
                 """We've generated a policy suggestion for a recent permissions error with **[{arn}]({url_role_path})**.
 Please click the button below to review it.
 
@@ -170,8 +173,9 @@ was detected. This notification will disappear when a similar error has not occu
                 # Maybe Add IAM policy simulation result to the CloudTrail event, and in turn, the notification details
                 # We don't want to simulate events for every single update of a notification, just one time for
                 # Initial creation
-                if config.get(
-                    f"site_configs.{host}.process_cloudtrail_errors.simulate_iam_principal_action"
+                if config.get_host_specific_key(
+                    f"site_configs.{host}.process_cloudtrail_errors.simulate_iam_principal_action",
+                    host,
                 ):
                     generated_notification.details[
                         "iam_policy_simulation"
@@ -205,8 +209,9 @@ was detected. This notification will disappear when a similar error has not occu
             # Optionally add development users to the notification
             new_or_changed_notifications[predictable_id].users_or_groups.update(
                 set(
-                    config.get(
+                    config.get_host_specific_key(
                         f"site_configs.{host}.process_cloudtrail_errors.additional_notify_users",
+                        host,
                         [],
                     )
                 )
@@ -226,13 +231,18 @@ was detected. This notification will disappear when a similar error has not occu
                 notifications_by_user_group[k] = original_json.dumps(v, cls=SetEncoder)
             await store_json_results_in_redis_and_s3(
                 notifications_by_user_group,
-                redis_key=config.get(
-                    f"site_configs.{host}.notifications.redis_key", "ALL_NOTIFICATIONS"
+                redis_key=config.get_host_specific_key(
+                    f"site_configs.{host}.notifications.redis_key",
+                    host,
+                    "ALL_NOTIFICATIONS",
                 ),
                 redis_data_type="hash",
-                s3_bucket=config.get(f"site_configs.{host}.notifications.s3.bucket"),
-                s3_key=config.get(
+                s3_bucket=config.get_host_specific_key(
+                    f"site_configs.{host}.notifications.s3.bucket", host
+                ),
+                s3_key=config.get_host_specific_key(
                     f"site_configs.{host}.notifications.s3.key",
+                    host,
                     "notifications/all_notifications_v1.json.gz",
                 ),
                 host=host,

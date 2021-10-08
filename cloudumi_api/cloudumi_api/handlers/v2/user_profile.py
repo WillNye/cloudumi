@@ -28,33 +28,44 @@ class UserProfileHandler(BaseAPIV1Handler):
         site_config = {
             "consoleme_logo": await get_random_security_logo(host),
             "google_analytics": {
-                "tracking_id": config.get(
-                    f"site_configs.{host}.google_analytics.tracking_id"
+                "tracking_id": config.get_host_specific_key(
+                    f"site_configs.{host}.google_analytics.tracking_id", host
                 ),
-                "options": config.get(
-                    f"site_configs.{host}.google_analytics.options", {}
+                "options": config.get_host_specific_key(
+                    f"site_configs.{host}.google_analytics.options", host, {}
                 ),
             },
-            "documentation_url": config.get(
+            "documentation_url": config.get_host_specific_key(
                 f"site_configs.{host}.documentation_page",
+                host,
                 "https://hawkins.gitbook.io/consoleme/",
             ),
-            "support_contact": config.get(f"site_configs.{host}.support_contact"),
-            "support_chat_url": config.get(
+            "support_contact": config.get_host_specific_key(
+                f"site_configs.{host}.support_contact", host
+            ),
+            "support_chat_url": config.get_host_specific_key(
                 f"site_configs.{host}.support_chat_url",
+                host,
                 "https://discord.com/invite/nQVpNGGkYu",
             ),
-            "security_logo": config.get(f"site_configs.{host}.security_logo.image"),
-            "security_url": config.get(f"site_configs.{host}.security_logo.url"),
+            "security_logo": config.get_host_specific_key(
+                f"site_configs.{host}.security_logo.image", host
+            ),
+            "security_url": config.get_host_specific_key(
+                f"site_configs.{host}.security_logo.url", host
+            ),
             # If site_config.landing_url is set, users will be redirected to the landing URL after authenticating
             # on the frontend.
-            "landing_url": config.get(f"site_configs.{host}.site_config.landing_url"),
+            "landing_url": config.get_host_specific_key(
+                f"site_configs.{host}.site_config.landing_url", host
+            ),
             "notifications": {
-                "enabled": config.get(
-                    f"site_configs.{host}.site_config.notifications.enabled"
+                "enabled": config.get_host_specific_key(
+                    f"site_configs.{host}.site_config.notifications.enabled", host
                 ),
-                "request_interval": config.get(
+                "request_interval": config.get_host_specific_key(
                     f"site_configs.{host}.site_config.notifications.request_interval",
+                    host,
                     60,
                 ),
             },
@@ -66,8 +77,8 @@ class UserProfileHandler(BaseAPIV1Handler):
         user_profile = {
             "site_config": site_config,
             "user": self.user,
-            "can_logout": config.get(
-                f"site_configs.{host}.auth.set_auth_cookie", False
+            "can_logout": config.get_host_specific_key(
+                f"site_configs.{host}.auth.set_auth_cookie", host, False
             ),
             "is_contractor": is_contractor,
             "employee_photo_url": "",  # TODO: Support custom employee URL
@@ -92,24 +103,24 @@ class UserProfileHandler(BaseAPIV1Handler):
                     ),
                 },
                 "groups": {
-                    "enabled": config.get(
-                        f"site_configs.{host}.headers.group_access.enabled", False
+                    "enabled": config.get_host_specific_key(
+                        f"site_configs.{host}.headers.group_access.enabled", host, False
                     )
                 },
                 "users": {
-                    "enabled": config.get(
-                        f"site_configs.{host}.headers.group_access.enabled", False
+                    "enabled": config.get_host_specific_key(
+                        f"site_configs.{host}.headers.group_access.enabled", host, False
                     )
                 },
                 "policies": {
-                    "enabled": config.get(
-                        f"site_configs.{host}.headers.policies.enabled", True
+                    "enabled": config.get_host_specific_key(
+                        f"site_configs.{host}.headers.policies.enabled", host, True
                     )
                     and not is_contractor
                 },
                 "self_service": {
-                    "enabled": config.get(
-                        f"site_configs.{host}.enable_self_service", True
+                    "enabled": config.get_host_specific_key(
+                        f"site_configs.{host}.enable_self_service", host, True
                     )
                     and not is_contractor
                 },
@@ -117,8 +128,10 @@ class UserProfileHandler(BaseAPIV1Handler):
                     "enabled": is_in_group(
                         self.user,
                         self.groups,
-                        config.get(
-                            f"site_configs.{host}.groups.can_edit_health_alert", []
+                        config.get_host_specific_key(
+                            f"site_configs.{host}.groups.can_edit_health_alert",
+                            host,
+                            [],
                         ),
                     )
                 },
@@ -126,7 +139,9 @@ class UserProfileHandler(BaseAPIV1Handler):
                     "enabled": is_in_group(
                         self.user,
                         self.groups,
-                        config.get(f"site_configs.{host}.groups.can_audit", []),
+                        config.get_host_specific_key(
+                            f"site_configs.{host}.groups.can_audit", host, []
+                        ),
                     )
                 },
                 "config": {

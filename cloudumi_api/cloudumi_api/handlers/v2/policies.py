@@ -72,8 +72,9 @@ class PoliciesPageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get(
+        table_configuration = config.get_host_specific_key(
             f"site_configs.{host}.PoliciesTableConfigHandler.configuration",
+            host,
             default_configuration,
         )
 
@@ -112,15 +113,17 @@ class PoliciesHandler(BaseAPIV2Handler):
         }
         log.debug(log_data)
         policies = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get(
+            redis_key=config.get_host_specific_key(
                 f"site_configs.{host}.policies.redis_policies_key",
+                host,
                 f"{host}_ALL_POLICIES",
             ),
-            s3_bucket=config.get(
-                f"site_configs.{host}.cache_policies_table_details.s3.bucket"
+            s3_bucket=config.get_host_specific_key(
+                f"site_configs.{host}.cache_policies_table_details.s3.bucket", host
             ),
-            s3_key=config.get(
+            s3_key=config.get_host_specific_key(
                 f"site_configs.{host}.cache_policies_table_details.s3.file",
+                host,
                 "policies_table/cache_policies_table_details_v1.json.gz",
             ),
             default=[],

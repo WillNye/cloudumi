@@ -25,6 +25,7 @@ class ConsoleMeCloudAux:
             })
         """
         self.conn_details = {"session_name": "cloudaux", "region": "us-east-1"}
+        # Let caller override session name and region
         self.conn_details.update(kwargs)
 
     def call(self, function_expr, **kwargs):
@@ -62,13 +63,13 @@ class ConsoleMeCloudAux:
 # client = boto3_cached_conn(
 #             "iam",
 #             account_number=account_id,
-#             assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+#             assume_role=config.get_host_specific_key(f"site_configs.{host}.policies.role_name", host),
 #             region=config.region,
 #             sts_client_kwargs=dict(
 #                 region_name=config.region,
 #                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
 #             ),
-#             client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+#             client_kwargs=config.get_host_specific_key(f"site_configs.{host}.boto3.client_kwargs", host, {}),
 #         )
 
 
@@ -191,8 +192,8 @@ def boto3_cached_conn(
     :return: boto3 client or resource connection
     """
     if host:
-        pre_assume_roles = consoleme_config.get(
-            f"site_configs.{host}.policies.pre_role_arns_to_assume", []
+        pre_assume_roles = consoleme_config.get_host_specific_key(
+            f"site_configs.{host}.policies.pre_role_arns_to_assume", host, []
         )
     else:
         pre_assume_roles = []

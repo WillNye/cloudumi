@@ -112,8 +112,8 @@ class Configuration(object):
             red = RedisHandler().redis_sync(host)
 
         dynamic_config = refresh_dynamic_config(host, ddb)
-        if dynamic_config and dynamic_config != self.config.get(
-            f"site_configs.{host}.dynamic_config"
+        if dynamic_config and dynamic_config != self.config.get_host_specific_key(
+            f"site_configs.{host}.dynamic_config", host
         ):
             red.set(
                 f"{host}_DYNAMIC_CONFIG_CACHE",
@@ -148,7 +148,9 @@ class Configuration(object):
             return
         dynamic_config_j = json.loads(dynamic_config)
         if (
-            self.config.get(f"site_configs.{host}.dynamic_config", {})
+            self.config.get_host_specific_key(
+                f"site_configs.{host}.dynamic_config", host, {}
+            )
             != dynamic_config_j
         ):
             self.get_logger("config").debug(
@@ -329,11 +331,11 @@ class Configuration(object):
             t = Timer(2, self.load_config_from_dynamo_bg_thread, ())
             t.start()
 
-        if allow_start_background_threads and self.get(
-            "_global_.config.run_recurring_internal_tasks"
-        ):
-            t = Timer(3, config_plugin.internal_functions, kwargs={"cfg": self.config})
-            t.start()
+        # if allow_start_background_threads and self.get(
+        #     "_global_.config.run_recurring_internal_tasks"
+        # ):
+        #     t = Timer(3, config_plugin.internal_functions, kwargs={"cfg": self.config})
+        #     t.start()
 
         if allow_automatically_reload_configuration and self.get(
             "_global_.config.automatically_reload_configuration"
@@ -357,6 +359,18 @@ class Configuration(object):
             except KeyError:
                 return default
         return value
+
+    def get_host_specific_key(self, key: str, host: str, default: Any = None) -> Any:
+        """
+        Get a host/"tenant" specific value for configuration entry in dot notation.
+        """
+        # TODO: Load config from S3 or DDB and cache for 60s
+        # TODO: Verify signing key upon loading
+        # TODO: Verify model
+        # REF: Regex search: c|onfig.get\(f\"site_configs.\{host\}.([\.a-zA-Z0-9\_\-]+)"
+        if not key.startswith(f"site_configs.{host}"):
+            raise Exception(f"Configuration key is invalid: {key}")
+        return self.get(key, default=default)
 
     def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
         """Get logger."""
@@ -488,6 +502,7 @@ async_to_sync(CONFIG.load_config)()
 
 get = CONFIG.get
 get_logger = CONFIG.get_logger
+get_host_specific_key = CONFIG.get_host_specific_key
 
 # Set logging levels
 CONFIG.set_logging_levels()

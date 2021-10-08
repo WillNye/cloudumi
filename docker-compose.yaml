@@ -81,7 +81,7 @@ services:
     ports:
       - 8092:8092
     labels:
-      - "traefik.http.routers.cloudumi_api.rule=PathPrefix(`/api`) || PathPrefix(`/auth`)"
+      - "traefik.http.routers.cloudumi_api.rule=PathPrefix(`/api`) || PathPrefix(`/auth`) || PathPrefix(`/noauth`) || PathPrefix(`/policies`)"
       - "traefik.http.routers.cloudumi_api.entrypoints=websecure"
       - "traefik.http.routers.cloudumi_api.tls.certresolver=letsencrypt"
       #- traefik.http.routers.home.rule=Host(`cloudumi.localhost`)

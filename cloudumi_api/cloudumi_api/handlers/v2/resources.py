@@ -29,7 +29,9 @@ class ResourceDetailHandler(BaseAPIV2Handler):
         host = self.ctx.host
         red = await RedisHandler().redis(host)
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
             if self.user not in config.get(
@@ -96,14 +98,16 @@ class ResourceDetailHandler(BaseAPIV2Handler):
         yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
         s3_query_url = None
         if resource_type == "s3":
-            s3_query_url = config.get(f"site_configs.{host}.s3.bucket_query_url")
+            s3_query_url = config.get_host_specific_key(
+                f"site_configs.{host}.s3.bucket_query_url", host
+            )
         all_s3_errors = None
         if s3_query_url:
             s3_query_url = s3_query_url.format(
                 yesterday=yesterday, bucket_name=f"'{resource_name}'"
             )
-            s3_error_topic = config.get(
-                f"site_configs.{host}.redis.s3_errors", f"{host}_S3_ERRORS"
+            s3_error_topic = config.get_host_specific_key(
+                f"site_configs.{host}.redis.s3_errors", host, f"{host}_S3_ERRORS"
             )
             all_s3_errors = red.get(s3_error_topic)
 
@@ -176,19 +180,21 @@ class GetResourceURLHandler(BaseMtlsHandler):
             # parse_arn will raise an exception on invalid arns
             parse_arn(arn)
 
-            resources_from_aws_config_redis_key = config.get(
+            resources_from_aws_config_redis_key = config.get_host_specific_key(
                 f"site_configs.{host}.aws_config_cache.redis_key",
+                host,
                 f"{host}_AWSCONFIG_RESOURCE_CACHE",
             )
             if not red.exists(resources_from_aws_config_redis_key):
                 # This will force a refresh of our redis cache if the data exists in S3
                 await retrieve_json_data_from_redis_or_s3(
                     redis_key=resources_from_aws_config_redis_key,
-                    s3_bucket=config.get(
-                        f"site_configs.{host}.aws_config_cache_combined.s3.bucket"
+                    s3_bucket=config.get_host_specific_key(
+                        f"site_configs.{host}.aws_config_cache_combined.s3.bucket", host
                     ),
-                    s3_key=config.get(
+                    s3_key=config.get_host_specific_key(
                         f"site_configs.{host}.aws_config_cache_combined.s3.file",
+                        host,
                         "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
                     ),
                     redis_data_type="hash",

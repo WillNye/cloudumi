@@ -27,7 +27,9 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
     async def get(self, arn):
         host = self.ctx.host
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
             if self.user not in config.get(
@@ -87,11 +89,13 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
             )(
                 {"RoleName": principal_name},
                 account_number=account_id,
-                assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+                assume_role=config.get_host_specific_key(
+                    f"site_configs.{host}.policies.role_name", host
+                ),
                 region=config.region,
                 retry_max_attempts=2,
-                client_kwargs=config.get(
-                    f"site_configs.{host}.boto3.client_kwargs", {}
+                client_kwargs=config.get_host_specific_key(
+                    f"site_configs.{host}.boto3.client_kwargs", host, {}
                 ),
                 host=host,
             )
@@ -101,11 +105,13 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
             )(
                 {"UserName": principal_name},
                 account_number=account_id,
-                assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+                assume_role=config.get_host_specific_key(
+                    f"site_configs.{host}.policies.role_name", host
+                ),
                 region=config.region,
                 retry_max_attempts=2,
-                client_kwargs=config.get(
-                    f"site_configs.{host}.boto3.client_kwargs", {}
+                client_kwargs=config.get_host_specific_key(
+                    f"site_configs.{host}.boto3.client_kwargs", host, {}
                 ),
                 host=host,
             )
@@ -129,11 +135,15 @@ class ManagedPoliciesHandler(BaseAPIV2Handler):
     async def get(self, policy_arn: str):
         host = self.ctx.host
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
-            if self.user not in config.get(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions", []
+            if self.user not in config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                host,
+                [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
 
@@ -156,10 +166,14 @@ class ManagedPoliciesHandler(BaseAPIV2Handler):
         managed_policy_details = await sync_to_async(get_managed_policy_document)(
             policy_arn=policy_arn,
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             region=config.region,
             retry_max_attempts=2,
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
             host=host,
         )
         res = WebResponse(
@@ -177,11 +191,15 @@ class ManagedPoliciesForAccountHandler(BaseAPIV2Handler):
         """
         host = self.ctx.host
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
-            if self.user not in config.get(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions", []
+            if self.user not in config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                host,
+                [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
         try:

@@ -40,7 +40,9 @@ async def generate_honeybee_request_from_change_model_array(
     repo_config = None
 
     auth = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.auth", "cmsaas_auth")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
+        )
     )()
     # Checkout Git Repo and generate a branch name for the user's change
     for change in request_creation.changes.changes:
@@ -51,8 +53,8 @@ async def generate_honeybee_request_from_change_model_array(
         if repositories_for_request.get(change.principal.repository_name):
             continue
         # Find repo
-        for r in config.get(
-            f"site_configs.{host}.cache_resource_templates.repositories", []
+        for r in config.get_host_specific_key(
+            f"site_configs.{host}.cache_resource_templates.repositories", host, []
         ):
             if r["name"] == change.principal.repository_name:
                 repo_config = r

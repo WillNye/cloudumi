@@ -30,8 +30,9 @@ async def is_object_older_than_seconds(
     exist, this function will return True.
     """
     if not bucket:
-        bucket = config.get(
+        bucket = config.get_host_specific_key(
             f"site_configs.{host}.consoleme_s3_bucket",
+            host,
             config.get("_global_.consoleme_s3_bucket"),
         )
     if not bucket:
@@ -43,7 +44,10 @@ async def is_object_older_than_seconds(
     if not s3_client:
         session = get_session_for_tenant(host)
         s3_client = session.client(
-            "s3", **config.get(f"site_configs.{host}.boto3.client_kwargs", {})
+            "s3",
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
     try:
         res = await sync_to_async(s3_client.head_object)(Bucket=bucket, Key=key)
@@ -65,7 +69,10 @@ async def does_object_exist(bucket: str, key: str, host: str, s3_client=None) ->
     if not s3_client:
         session = get_session_for_tenant(host)
         s3_client = session.client(
-            "s3", **config.get(f"site_configs.{host}.boto3.client_kwargs", {})
+            "s3",
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
     try:
         await sync_to_async(s3_client.head_object)(Bucket=bucket, Key=key)
@@ -105,14 +112,17 @@ def put_object(**kwargs):
                 session_name=sanitize_session_name("consoleme_s3_put_object"),
                 region=kwargs.get("region", config.region),
                 retry_max_attempts=2,
-                client_kwargs=config.get(
-                    f"site_configs.{host}.boto3.client_kwargs", {}
+                client_kwargs=config.get_host_specific_key(
+                    f"site_configs.{host}.boto3.client_kwargs", host, {}
                 ),
             )
         else:
             session = get_session_for_tenant(host)
             client = session.client(
-                "s3", **config.get(f"site_configs.{host}.boto3.client_kwargs", {})
+                "s3",
+                **config.get_host_specific_key(
+                    f"site_configs.{host}.boto3.client_kwargs", host, {}
+                ),
             )
     return client.put_object(Bucket=kwargs.get("Bucket"), Key=kwargs.get("Key"))
 
@@ -131,14 +141,17 @@ def get_object(**kwargs):
                 session_name=sanitize_session_name("consoleme_s3_get_object"),
                 region=kwargs.get("region", config.region),
                 retry_max_attempts=2,
-                client_kwargs=config.get(
-                    f"site_configs.{host}.boto3.client_kwargs", {}
+                client_kwargs=config.get_host_specific_key(
+                    f"site_configs.{host}.boto3.client_kwargs", host, {}
                 ),
             )
         else:
             session = get_session_for_tenant(host)
             client = session.client(
-                "s3", **config.get(f"site_configs.{host}.boto3.client_kwargs", {})
+                "s3",
+                **config.get_host_specific_key(
+                    f"site_configs.{host}.boto3.client_kwargs", host, {}
+                ),
             )
     return client.get_object(Bucket=kwargs.get("Bucket"), Key=kwargs.get("Key"))
 

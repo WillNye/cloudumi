@@ -15,8 +15,10 @@ class InternalPluginAuthorizationMappingGenerator(CredentialAuthzMappingGenerato
     ) -> Dict[user_or_group, RoleAuthorizations]:
         """This will list accounts that meet the account attribute search criteria."""
         group_mapping = get_plugin_by_name(
-            config.get(
-                f"site_configs.{host}.plugins.group_mapping", "cmsaas_group_mapping"
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.group_mapping",
+                host,
+                "cmsaas_group_mapping",
             )
         )()
 

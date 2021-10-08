@@ -23,10 +23,12 @@ def query(
         config_client = session.client(
             "config",
             region_name=config.region,
-            **config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
-        configuration_aggregator_name: str = config.get(
-            f"site_configs.{host}.aws_config.configuration_aggregator.name"
+        configuration_aggregator_name: str = config.get_host_specific_key(
+            f"site_configs.{host}.aws_config.configuration_aggregator.name", host
         ).format(region=config.region)
         if not configuration_aggregator_name:
             raise MissingConfigurationValue("Invalid configuration for aws_config")
@@ -59,14 +61,16 @@ def query(
                 "config",
                 host,
                 account_number=account_id,
-                assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+                assume_role=config.get_host_specific_key(
+                    f"site_configs.{host}.policies.role_name", host
+                ),
                 region=region,
                 sts_client_kwargs=dict(
                     region_name=config.region,
                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",
                 ),
-                client_kwargs=config.get(
-                    f"site_configs.{host}.boto3.client_kwargs", {}
+                client_kwargs=config.get_host_specific_key(
+                    f"site_configs.{host}.boto3.client_kwargs", host, {}
                 ),
                 session_name=sanitize_session_name("consoleme_aws_config_query"),
             )

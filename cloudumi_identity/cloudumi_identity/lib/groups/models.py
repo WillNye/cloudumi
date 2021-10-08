@@ -1,8 +1,14 @@
-from typing import Dict, Set
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
 # Reference: https://www.guidodiepen.nl/2019/02/implementing-a-simple-plugin-framework-in-python/
+
+
+class UserStatus(Enum):
+    active = "active"
+    inactive = "inactive"
 
 
 class Group(BaseModel):
@@ -20,6 +26,7 @@ class Group(BaseModel):
 
 class User(BaseModel):
     username: str
+    user_id: str
     domain: str
     fullname: str
     status: str

@@ -22,11 +22,9 @@ class CleanAllCommand(distutils.cmd.Command):
 
     def initialize_options(self):
         """Docstring for public method."""
-        pass
 
     def finalize_options(self):
         """Docstring for public method."""
-        pass
 
     def run(self):
         """Docstring for public method."""

@@ -23,7 +23,9 @@ async def duo_mfa_user(username, host, message="ConsoleMe Authorization Request"
     # Generate the payload for the event passed to the lambda function
     payload = {"username": username, "message_type": message}
 
-    lambda_arn = config.get(f"site_configs.{host}.duo.lambda_arn", None)
+    lambda_arn = config.get_host_specific_key(
+        f"site_configs.{host}.duo.lambda_arn", host, None
+    )
 
     log_data = {"function": f"{__name__}.{sys._getframe().f_code.co_name}"}
 

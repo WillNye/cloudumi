@@ -54,8 +54,10 @@ class Aws:
         :param role_entry:
         :return:
         """
-        redis_key = config.get(
-            f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_ROLE_CACHE"
+        redis_key = config.get_host_specific_key(
+            f"site_configs.{host}.aws.iamroles_redis_key",
+            host,
+            f"{host}_IAM_ROLE_CACHE",
         )
         red = RedisHandler().redis_sync(host)
         red.hset(redis_key, role_entry["arn"], json.dumps(role_entry))
@@ -71,8 +73,10 @@ class Aws:
         :param role_arn:
         :return:
         """
-        redis_key = config.get(
-            f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_ROLE_CACHE"
+        redis_key = config.get_host_specific_key(
+            f"site_configs.{host}.aws.iamroles_redis_key",
+            host,
+            f"{host}_IAM_ROLE_CACHE",
         )
         red = RedisHandler().redis_sync(host)
         return red.hget(redis_key, role_arn)
@@ -135,10 +139,14 @@ class Aws:
             "iam",
             host,
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             read_only=True,
             retry_max_attempts=2,
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
             session_name=sanitize_session_name("consoleme_get_iam_user"),
         )
         user = client.get_user(UserName=user_name)["User"]
@@ -161,10 +169,14 @@ class Aws:
             "iam",
             host,
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             read_only=True,
             retry_max_attempts=2,
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
         user_details = asyncio.ensure_future(
             sync_to_async(client.get_user)(UserName=user_name)
@@ -213,10 +225,14 @@ class Aws:
             "iam",
             host,
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             read_only=True,
             retry_max_attempts=2,
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
             session_name=sanitize_session_name("consoleme_get_iam_role"),
         )
         role = client.get_role(RoleName=role_name)["Role"]
@@ -238,10 +254,14 @@ class Aws:
             "iam",
             host,
             account_number=account_id,
-            assume_role=config.get(f"site_configs.{host}.policies.role_name"),
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
             read_only=True,
             retry_max_attempts=2,
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
         role_details = asyncio.ensure_future(
             sync_to_async(client.get_role)(RoleName=role_name)
@@ -293,10 +313,12 @@ class Aws:
             user_name = user_arn.split("/")[-1]
             conn = {
                 "account_number": account_id,
-                "assume_role": config.get(f"site_configs.{host}.policies.role_name"),
+                "assume_role": config.get_host_specific_key(
+                    f"site_configs.{host}.policies.role_name", host
+                ),
                 "region": config.region,
-                "client_kwargs": config.get(
-                    f"site_configs.{host}.boto3.client_kwargs", {}
+                "client_kwargs": config.get_host_specific_key(
+                    f"site_configs.{host}.boto3.client_kwargs", host, {}
                 ),
             }
             if run_sync:
@@ -397,12 +419,12 @@ class Aws:
                 role_name = role_arn.split("/")[-1]
                 conn = {
                     "account_number": account_id,
-                    "assume_role": config.get(
-                        f"site_configs.{host}.policies.role_name"
+                    "assume_role": config.get_host_specific_key(
+                        f"site_configs.{host}.policies.role_name", host
                     ),
                     "region": config.region,
-                    "client_kwargs": config.get(
-                        f"site_configs.{host}.boto3.client_kwargs", {}
+                    "client_kwargs": config.get_host_specific_key(
+                        f"site_configs.{host}.boto3.client_kwargs", host, {}
                     ),
                 }
                 if run_sync:
@@ -444,8 +466,9 @@ class Aws:
                 "policy": dynamo.convert_iam_resource_to_json(role),
                 "permissions_boundary": role.get("PermissionsBoundary", {}),
                 "templated": red.hget(
-                    config.get(
+                    config.get_host_specific_key(
                         f"site_configs.{host}.templated_roles.redis_key",
+                        host,
                         f"{host}_TEMPLATED_ROLES_v2",
                     ),
                     role.get("Arn").lower(),
@@ -523,11 +546,15 @@ class Aws:
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
             session_name=sanitize_session_name("consoleme_get_credentials"),
         )
 
-        ip_restrictions = config.get(f"site_configs.{host}.aws.ip_restrictions")
+        ip_restrictions = config.get_host_specific_key(
+            f"site_configs.{host}.aws.ip_restrictions", host
+        )
         stats.count("aws.get_credentials", tags={"role": role, "user": user})
 
         # If this is a dynamic request, then we need to fetch the role details, call out to the lambda
@@ -575,8 +602,8 @@ class Aws:
                     RoleArn=role,
                     RoleSessionName=user.lower(),
                     Policy=policy,
-                    DurationSeconds=config.get(
-                        f"site_configs.{host}.aws.session_duration", 3600
+                    DurationSeconds=config.get_host_specific_key(
+                        f"site_configs.{host}.aws.session_duration", host, 3600
                     ),
                 )
                 credentials["Credentials"]["Expiration"] = int(
@@ -622,8 +649,8 @@ class Aws:
                     RoleArn=role,
                     RoleSessionName=user.lower(),
                     Policy=policy,
-                    DurationSeconds=config.get(
-                        f"site_configs.{host}.aws.session_duration", 3600
+                    DurationSeconds=config.get_host_specific_key(
+                        f"site_configs.{host}.aws.session_duration", host, 3600
                     ),
                 )
                 credentials["Credentials"]["Expiration"] = int(
@@ -640,8 +667,8 @@ class Aws:
             credentials = await sync_to_async(client.assume_role)(
                 RoleArn=role,
                 RoleSessionName=user.lower(),
-                DurationSeconds=config.get(
-                    f"site_configs.{host}.aws.session_duration", 3600
+                DurationSeconds=config.get_host_specific_key(
+                    f"site_configs.{host}.aws.session_duration", host, 3600
                 ),
             )
             credentials["Credentials"]["Expiration"] = int(
@@ -695,16 +722,17 @@ class Aws:
         req_params = {
             "Action": "getSigninToken",
             "Session": bleach.clean(json.dumps(credentials_d)),
-            "DurationSeconds": config.get(
-                f"site_configs.{host}.aws.session_duration", 3600
+            "DurationSeconds": config.get_host_specific_key(
+                f"site_configs.{host}.aws.session_duration", host, 3600
             ),
         }
 
         http_client = AsyncHTTPClient(force_instance=True)
 
         url_with_params: str = url_concat(
-            config.get(
+            config.get_host_specific_key(
                 f"site_configs.{host}.aws.federation_url",
+                host,
                 "https://signin.aws.amazon.com/federation",
             ),
             req_params,
@@ -714,25 +742,29 @@ class Aws:
 
         login_req_params = {
             "Action": "login",
-            "Issuer": config.get(f"site_configs.{host}.aws.issuer"),
+            "Issuer": config.get_host_specific_key(
+                f"site_configs.{host}.aws.issuer", host
+            ),
             "Destination": (
                 "{}".format(
-                    config.get(
+                    config.get_host_specific_key(
                         f"site_configs.{host}.aws.console_url",
+                        host,
                         "https://{}.console.aws.amazon.com",
                     ).format(region)
                 )
             ),
             "SigninToken": bleach.clean(token.get("SigninToken")),
-            "SessionDuration": config.get(
-                f"site_configs.{host}.aws.session_duration", 3600
+            "SessionDuration": config.get_host_specific_key(
+                f"site_configs.{host}.aws.session_duration", host, 3600
             ),
         }
 
         r2 = requests_sync.Request(
             "GET",
-            config.get(
+            config.get_host_specific_key(
                 f"site_configs.{host}.aws.federation_url",
+                host,
                 "https://signin.aws.amazon.com/federation",
             ),
             params=login_req_params,

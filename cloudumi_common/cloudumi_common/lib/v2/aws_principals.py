@@ -43,17 +43,19 @@ async def get_cloudtrail_details_for_role(arn: str, host: str):
     :return:
     """
     internal_policies = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.internal_policies", "default_policies")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.internal_policies", host, "cmsaas_policies"
+        )
     )()
-    error_url = config.get(
-        f"site_configs.{host}.cloudtrail_errors.error_messages_by_role_uri", ""
+    error_url = config.get_host_specific_key(
+        f"site_configs.{host}.cloudtrail_errors.error_messages_by_role_uri", host, ""
     ).format(arn=arn)
 
     errors_unformatted = await internal_policies.get_errors_by_role(
         arn,
         host,
-        config.get(
-            f"site_configs.{host}.policies.number_cloudtrail_errors_to_display", 5
+        config.get_host_specific_key(
+            f"site_configs.{host}.policies.number_cloudtrail_errors_to_display", host, 5
         ),
     )
 
@@ -84,15 +86,19 @@ async def get_s3_details_for_role(
     """
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
     yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
-    error_url = config.get(f"site_configs.{host}.s3.query_url", "").format(
+    error_url = config.get_host_specific_key(
+        f"site_configs.{host}.s3.query_url", host, ""
+    ).format(
         yesterday=yesterday, role_name=f"'{role_name}'", account_id=f"'{account_id}'"
     )
-    query_url = config.get(f"site_configs.{host}.s3.non_error_query_url", "").format(
+    query_url = config.get_host_specific_key(
+        f"site_configs.{host}.s3.non_error_query_url", host, ""
+    ).format(
         yesterday=yesterday, role_name=f"'{role_name}'", account_id=f"'{account_id}'"
     )
 
-    s3_error_topic = config.get(
-        f"site_configs.{host}.redis.s3_errors", f"{host}_S3_ERRORS"
+    s3_error_topic = config.get_host_specific_key(
+        f"site_configs.{host}.redis.s3_errors", host, f"{host}_S3_ERRORS"
     )
     all_s3_errors = await redis_get(s3_error_topic, host)
     s3_errors_unformatted = []
@@ -126,7 +132,9 @@ async def get_app_details_for_role(arn: str, host: str):
     :return:
     """
     internal_policies = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.internal_policies", "default_policies")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.internal_policies", host, "cmsaas_policies"
+        )
     )()
     return await internal_policies.get_applications_associated_with_role(arn, host)
 
@@ -134,8 +142,9 @@ async def get_app_details_for_role(arn: str, host: str):
 async def get_role_template(arn: str, host: str):
     red = RedisHandler().redis_sync(host)
     return await sync_to_async(red.hget)(
-        config.get(
+        config.get_host_specific_key(
             f"site_configs.{host}.templated_roles.redis_key",
+            host,
             f"{host}_TEMPLATED_ROLES_v2",
         ),
         arn.lower(),
@@ -152,7 +161,9 @@ async def get_user_details(
     account_ids_to_name = await get_account_id_to_name_mapping(host)
     arn = f"arn:aws:iam::{account_id}:user/{user_name}"
     aws = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+        )
     )()
     user = await aws.fetch_iam_user(account_id, arn, host)
     # requested user doesn't exist
@@ -205,7 +216,9 @@ async def get_role_details(
     account_ids_to_name = await get_account_id_to_name_mapping(host)
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
     aws = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+        )
     )()
     role = await aws.fetch_iam_role(account_id, arn, host, force_refresh=force_refresh)
     # requested role doesn't exist

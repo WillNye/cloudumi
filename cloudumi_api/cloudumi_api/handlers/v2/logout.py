@@ -18,7 +18,9 @@ class LogOutHandler(BaseHandler):
             "ip": self.ip,
             "host": host,
         }
-        if not config.get(f"site_configs.{host}.auth.set_auth_cookie"):
+        if not config.get_host_specific_key(
+            f"site_configs.{host}.auth.set_auth_cookie", host
+        ):
             await handle_generic_error_response(
                 self,
                 "Unable to log out",
@@ -53,14 +55,14 @@ class LogOutHandler(BaseHandler):
             return
         self.clear_cookie(cookie_name)
 
-        extra_auth_cookies: list = config.get(
-            f"site_configs.{host}.auth.extra_auth_cookies", []
+        extra_auth_cookies: list = config.get_host_specific_key(
+            f"site_configs.{host}.auth.extra_auth_cookies", host, []
         )
         for cookie in extra_auth_cookies:
             self.clear_cookie(cookie)
 
-        redirect_url: str = config.get(
-            f"site_configs.{host}.auth.logout_redirect_url", "/"
+        redirect_url: str = config.get_host_specific_key(
+            f"site_configs.{host}.auth.logout_redirect_url", host, "/"
         )
         res = WebResponse(
             status="redirect",

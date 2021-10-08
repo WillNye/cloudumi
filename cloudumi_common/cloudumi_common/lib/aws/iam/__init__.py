@@ -274,9 +274,9 @@ async def create_or_update_managed_policy(
     policy_arn,
     description,
     host,
+    conn_details,
     policy_path="/",
     existing_policy=None,
-    **conn_details,
 ):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -309,8 +309,9 @@ async def create_or_update_managed_policy(
 async def get_all_iam_managed_policies_for_account(account_id, host):
     global ALL_IAM_MANAGED_POLICIES
     # TODO: Use redis clusters for this type of thing and not a global var
-    policy_key: str = config.get(
+    policy_key: str = config.get_host_specific_key(
         f"site_configs.{host}.redis.iam_managed_policies_key",
+        host,
         f"{host}_IAM_MANAGED_POLICIES",
     )
     current_time = time.time()
@@ -326,9 +327,12 @@ async def get_all_iam_managed_policies_for_account(account_id, host):
             ALL_IAM_MANAGED_POLICIES[host]["managed_policies"].get(account_id, "[]")
         )
     else:
-        s3_bucket = config.get(f"site_configs.{host}.account_resource_cache.s3.bucket")
-        s3_key = config.get(
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.account_resource_cache.s3.bucket", host
+        )
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.account_resource_cache.s3.file",
+            host,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="managed_policies", account_id=account_id)
         return await retrieve_json_data_from_redis_or_s3(

@@ -102,8 +102,8 @@ class BaseDynamoHandler:
                     "dynamodb",
                     host,
                     service_type="resource",
-                    account_number=config.get(
-                        f"site_configs.{host}.aws.account_number"
+                    account_number=config.get_host_specific_key(
+                        f"site_configs.{host}.aws.account_number", host
                     ),
                     session_name=sanitize_session_name("consoleme_dynamodb"),
                     region=config.region,
@@ -271,58 +271,66 @@ class UserDynamoHandler(BaseDynamoHandler):
         self.host = host
         try:
             self.requests_table = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.requests_dynamo_table",
+                    host,
                     "consoleme_requests_global",
                 ),
                 host,
             )
             self.users_table = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.users_dynamo_table",
+                    host,
                     "consoleme_users_multitenant",
                 ),
                 host,
             )
             self.group_log = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.group_log_dynamo_table",
+                    host,
                     "consoleme_audit_global",
                 ),
                 host,
             )
             self.dynamic_config = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.group_log_dynamo_table",
+                    host,
                     "consoleme_config_multitenant",
                 ),
                 host,
             )
             self.policy_requests_table = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.policy_requests_dynamo_table",
+                    host,
                     "consoleme_policy_requests_multitenant",
                 ),
                 host,
             )
             self.resource_cache_table = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.resource_cache_dynamo_table",
+                    host,
                     "consoleme_resource_cache_multitenant",
                 ),
                 host,
             )
             self.cloudtrail_table = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.cloudtrail_table",
+                    host,
                     "consoleme_cloudtrail_multitenant",
                 ),
                 host,
             )
 
             self.notifications_table = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.notifications_table",
+                    host,
                     "consoleme_notifications_multitenant",
                 ),
                 host,
@@ -1137,8 +1145,9 @@ class IAMRoleDynamoHandler(BaseDynamoHandler):
     def __init__(self, host) -> None:
         try:
             self.role_table = self._get_dynamo_table(
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.iamroles_dynamo_table",
+                    host,
                     "consoleme_iamroles_multitenant",
                 ),
                 host,

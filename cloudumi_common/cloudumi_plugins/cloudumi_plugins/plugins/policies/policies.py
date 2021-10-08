@@ -35,7 +35,9 @@ class Policies:
 
         apps_formatted = []
 
-        application_details = config.get(f"site_configs.{host}.application_details", {})
+        application_details = config.get_host_specific_key(
+            f"site_configs.{host}.application_details", host, {}
+        )
 
         for app, details in application_details.items():
             apps_formatted.append(

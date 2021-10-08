@@ -29,21 +29,25 @@ yaml.width = 4096
 
 async def cache_resource_templates(host) -> TemplatedFileModelArray:
     templated_file_array = TemplatedFileModelArray(templated_resources=[])
-    for repository in config.get(
-        f"site_configs.{host}.cache_resource_templates.repositories", []
+    for repository in config.get_host_specific_key(
+        f"site_configs.{host}.cache_resource_templates.repositories", host, []
     ):
         if repository.get("type") == "git":
             result = await cache_resource_templates_for_repository(repository, host)
             templated_file_array.templated_resources.extend(result.templated_resources)
     await store_json_results_in_redis_and_s3(
         templated_file_array.dict(),
-        redis_key=config.get(
+        redis_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_resource_templates.redis.key",
+            host,
             f"{host}_cache_templated_resources_v1",
         ),
-        s3_bucket=config.get(f"site_configs.{host}.cache_resource_templates.s3.bucket"),
-        s3_key=config.get(
+        s3_bucket=config.get_host_specific_key(
+            f"site_configs.{host}.cache_resource_templates.s3.bucket", host
+        ),
+        s3_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_resource_templates.s3.file",
+            host,
             "cache_templated_resources/cache_templated_resources_v1.json.gz",
         ),
         host=host,
@@ -61,13 +65,17 @@ async def retrieve_cached_resource_templates(
 ) -> Optional[Union[TemplatedFileModelArray, TemplateFile]]:
     matching_templates = []
     templated_resource_data_d = await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get(
+        redis_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_resource_templates.redis.key",
+            host,
             f"{host}_cache_templated_resources_v1",
         ),
-        s3_bucket=config.get(f"site_configs.{host}.cache_resource_templates.s3.bucket"),
-        s3_key=config.get(
+        s3_bucket=config.get_host_specific_key(
+            f"site_configs.{host}.cache_resource_templates.s3.bucket", host
+        ),
+        s3_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_resource_templates.s3.file",
+            host,
             "cache_templated_resources/cache_templated_resources_v1.json.gz",
         ),
         host=host,

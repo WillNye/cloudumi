@@ -21,25 +21,30 @@ class RoleTagAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
     ) -> Dict[user_or_group, RoleAuthorizations]:
         """This will list accounts that meet the account attribute search criteria."""
         # Retrieve roles
-        cache_key = config.get(
-            f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_ROLE_CACHE"
+        cache_key = config.get_host_specific_key(
+            f"site_configs.{host}.aws.iamroles_redis_key",
+            host,
+            f"{host}_IAM_ROLE_CACHE",
         )
         all_roles = await retrieve_json_data_from_redis_or_s3(
             redis_key=cache_key,
             redis_data_type="hash",
-            s3_bucket=config.get(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket"
+            s3_bucket=config.get_host_specific_key(
+                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+                host,
             ),
-            s3_key=config.get(
+            s3_key=config.get_host_specific_key(
                 f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+                host,
                 "account_resource_cache/cache_all_roles_v1.json.gz",
             ),
             host=host,
             default={},
         )
 
-        required_trust_policy_entity = config.get(
-            f"site_configs.{host}.cloud_credential_authorization_mapping.role_tags.required_trust_policy_entity"
+        required_trust_policy_entity = config.get_host_specific_key(
+            f"site_configs.{host}.cloud_credential_authorization_mapping.role_tags.required_trust_policy_entity",
+            host,
         )
 
         for arn, role_entry_j in all_roles.items():
@@ -57,14 +62,17 @@ class RoleTagAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
                 continue
 
             for tag in tags:
-                if tag["Key"] in config.get(
+                if tag["Key"] in config.get_host_specific_key(
                     f"site_configs.{host}.cloud_credential_authorization_mapping.role_tags.authorized_groups_tags",
+                    host,
                     [],
                 ):
                     splitted_groups = tag["Value"].split(":")
                     for group in splitted_groups:
-                        if config.get(
-                            f"site_configs.{host}.auth.force_groups_lowercase", False
+                        if config.get_host_specific_key(
+                            f"site_configs.{host}.auth.force_groups_lowercase",
+                            host,
+                            False,
                         ):
                             group = group.lower()
                         if not authorization_mapping.get(group):
@@ -75,14 +83,17 @@ class RoleTagAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
                                 }
                             )
                         authorization_mapping[group].authorized_roles.add(arn)
-                if tag["Key"] in config.get(
+                if tag["Key"] in config.get_host_specific_key(
                     f"site_configs.{host}.cloud_credential_authorization_mapping.role_tags.authorized_groups_cli_only_tags",
+                    host,
                     [],
                 ):
                     splitted_groups = tag["Value"].split(":")
                     for group in splitted_groups:
-                        if config.get(
-                            f"site_configs.{host}.auth.force_groups_lowercase", False
+                        if config.get_host_specific_key(
+                            f"site_configs.{host}.auth.force_groups_lowercase",
+                            host,
+                            False,
                         ):
                             group = group.lower()
                         if not authorization_mapping.get(group):

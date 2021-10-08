@@ -390,7 +390,9 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
 
 async def get_formatted_policy_changes(account_id, arn, request, host):
     aws = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+        )
     )()
     existing_role: dict = await aws.fetch_iam_role(
         account_id, arn, host, force_refresh=True
@@ -505,7 +507,9 @@ async def should_auto_approve_policy_v2(
     set included in ConsoleMe OSS will return False.
     """
     aws = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+        )
     )()
     return await aws.should_auto_approve_policy_v2(
         extended_request, user, user_groups, host
@@ -540,8 +544,8 @@ async def send_communications_new_comment(
     :return:
     """
     if not to_addresses:
-        to_addresses = config.get(
-            f"site_configs.{host}.groups.fallback_policy_request_reviewers", []
+        to_addresses = config.get_host_specific_key(
+            f"site_configs.{host}.groups.fallback_policy_request_reviewers", host, []
         )
 
     request_uri = await get_policy_request_uri_v2(extended_request, host)
@@ -882,9 +886,14 @@ async def get_aws_config_history_url_for_resource(
     region: Optional[str] = None,
 ):
     if not region:
-        region = (config.get(f"site_configs.{host}.aws.region", config.region),)
-    if config.get(
-        f"site_configs.{host}.get_aws_config_history_url_for_resource.generate_conglomo_url"
+        region = (
+            config.get_host_specific_key(
+                f"site_configs.{host}.aws.region", host, config.region
+            ),
+        )
+    if config.get_host_specific_key(
+        f"site_configs.{host}.get_aws_config_history_url_for_resource.generate_conglomo_url",
+        host,
     ):
         return await get_conglomo_url_for_resource(
             account_id, resource_id, technology, host, region
@@ -902,8 +911,9 @@ async def get_aws_config_history_url_for_resource(
 async def get_conglomo_url_for_resource(
     account_id, resource_id, technology, host, region="global"
 ):
-    conglomo_url = config.get(
-        f"site_configs.{host}.get_aws_config_history_url_for_resource.conglomo_url"
+    conglomo_url = config.get_host_specific_key(
+        f"site_configs.{host}.get_aws_config_history_url_for_resource.conglomo_url",
+        host,
     )
     if not conglomo_url:
         raise MissingConfigurationValue(

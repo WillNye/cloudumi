@@ -65,7 +65,6 @@ class Config:
     @staticmethod
     def internal_functions(cfg=None):
         cfg = cfg or {}
-        pass
 
     @staticmethod
     def is_contractor(user):
@@ -77,8 +76,8 @@ class Config:
 
         # Try to get a custom employee photo url by formatting a string provided through configuration
 
-        custom_employee_photo_url = config.get(
-            f"site_configs.{host}.get_employee_photo_url.custom_employee_url", ""
+        custom_employee_photo_url = config.get_host_specific_key(
+            f"site_configs.{host}.get_employee_photo_url.custom_employee_url", host, ""
         ).format(user=user)
         if custom_employee_photo_url:
             return custom_employee_photo_url

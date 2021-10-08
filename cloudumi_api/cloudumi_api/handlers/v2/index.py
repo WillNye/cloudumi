@@ -71,8 +71,9 @@ class EligibleRoleHandler(BaseHandler):
             role_name = arn.split("/")[-1]
             account_id = arn.split(":")[4]
             account_name = self.eligible_accounts.get(account_id, "")
-            formatted_account_name = config.get(
+            formatted_account_name = config.get_host_specific_key(
                 f"site_configs.{host}.role_select_page.formatted_account_name",
+                host,
                 "{account_name}",
             ).format(account_name=account_name, account_id=account_id)
             roles.append(
@@ -111,8 +112,9 @@ class EligibleRolePageConfigHandler(BaseHandler):
         host = self.ctx.host
         page_configuration = {
             "pageName": "Select a Role",
-            "pageDescription": config.get(
+            "pageDescription": config.get_host_specific_key(
                 f"site_configs.{host}.role_select_page.table_description",
+                host,
                 "Select a role to login to the AWS console.",
             ),
             "tableConfig": {
@@ -145,8 +147,9 @@ class EligibleRolePageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get(
+        table_configuration = config.get_host_specific_key(
             f"site_configs.{host}.role_table_config.table_configuration_override",
+            host,
             page_configuration,
         )
 

@@ -15,12 +15,12 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 
 async def retrieve_accounts_from_swag(host) -> CloudAccountModelArray:
     function: str = f"{sys._getframe().f_code.co_name}"
-    expected_owners: List = config.get(
-        f"site_configs.{host}.retrieve_accounts_from_swag.expected_owners", []
+    expected_owners: List = config.get_host_specific_key(
+        f"site_configs.{host}.retrieve_accounts_from_swag.expected_owners", host, []
     )
 
-    swag_base_url = config.get(
-        f"site_configs.{host}.retrieve_accounts_from_swag.base_url"
+    swag_base_url = config.get_host_specific_key(
+        f"site_configs.{host}.retrieve_accounts_from_swag.base_url", host
     )
     if not swag_base_url:
         raise MissingConfigurationValue("Unable to find Swag URL in configuration")

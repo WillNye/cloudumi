@@ -30,11 +30,17 @@ async def cache_cloud_accounts(host) -> CloudAccountModelArray:
     """
     account_mapping = None
     # Get the accounts
-    if config.get(f"site_configs.{host}.cache_cloud_accounts.from_aws_organizations"):
+    if config.get_host_specific_key(
+        f"site_configs.{host}.cache_cloud_accounts.from_aws_organizations", host
+    ):
         account_mapping = await retrieve_accounts_from_aws_organizations(host)
-    elif config.get(f"site_configs.{host}.cache_cloud_accounts.from_swag"):
+    elif config.get_host_specific_key(
+        f"site_configs.{host}.cache_cloud_accounts.from_swag", host
+    ):
         account_mapping = await retrieve_accounts_from_swag(host)
-    elif config.get(f"site_configs.{host}.cache_cloud_accounts.from_config", True):
+    elif config.get_host_specific_key(
+        f"site_configs.{host}.cache_cloud_accounts.from_config", host, True
+    ):
         account_mapping = await retrieve_accounts_from_config(host)
 
     if not account_mapping or not account_mapping.accounts:
@@ -45,19 +51,26 @@ async def cache_cloud_accounts(host) -> CloudAccountModelArray:
     for account in account_mapping.accounts:
         account_id_to_name[account.id] = account.name
 
-    redis_key = config.get(
+    redis_key = config.get_host_specific_key(
         f"site_configs.{host}.cache_cloud_accounts.redis.key.all_accounts_key",
+        host,
         f"{host}_ALL_AWS_ACCOUNTS",
     )
 
     s3_bucket = None
     s3_key = None
-    if config.region == config.get(
-        f"site_configs.{host}.celery.active_region", config.region
-    ) or config.get(f"site_configs.{host}.environment") in ["dev", "test"]:
-        s3_bucket = config.get(f"site_configs.{host}.cache_cloud_accounts.s3.bucket")
-        s3_key = config.get(
+    if config.region == config.get_host_specific_key(
+        f"site_configs.{host}.celery.active_region", host, config.region
+    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "dev",
+        "test",
+    ]:
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.cache_cloud_accounts.s3.bucket", host
+        )
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.cache_cloud_accounts.s3.file",
+            host,
             "cache_cloud_accounts/accounts_v1.json.gz",
         )
     # Store full mapping of the model
@@ -78,8 +91,9 @@ async def cache_cloud_accounts(host) -> CloudAccountModelArray:
 async def get_cloud_account_model_array(
     host, status="active", environment=None, force_sync=False
 ):
-    redis_key = config.get(
+    redis_key = config.get_host_specific_key(
         f"site_configs.{host}.cache_cloud_accounts.redis.key.all_accounts_key",
+        host,
         f"{host}_ALL_AWS_ACCOUNTS",
     )
     accounts = await retrieve_json_data_from_redis_or_s3(
@@ -112,8 +126,9 @@ async def get_cloud_account_model_array(
 async def get_account_id_to_name_mapping(
     host, status="active", environment=None, force_sync=False
 ):
-    redis_key = config.get(
+    redis_key = config.get_host_specific_key(
         f"site_configs.{host}.cache_cloud_accounts.redis.key.all_accounts_key",
+        host,
         f"{host}_ALL_AWS_ACCOUNTS",
     )
     accounts = await retrieve_json_data_from_redis_or_s3(
@@ -124,9 +139,12 @@ async def get_account_id_to_name_mapping(
         await cache_cloud_accounts(host)
         accounts = await retrieve_json_data_from_redis_or_s3(
             redis_key,
-            s3_bucket=config.get(f"site_configs.{host}.cache_cloud_accounts.s3.bucket"),
-            s3_key=config.get(
+            s3_bucket=config.get_host_specific_key(
+                f"site_configs.{host}.cache_cloud_accounts.s3.bucket", host
+            ),
+            s3_key=config.get_host_specific_key(
                 f"site_configs.{host}.cache_cloud_accounts.s3.file",
+                host,
                 "cache_cloud_accounts/accounts_v1.json.gz",
             ),
             default={},

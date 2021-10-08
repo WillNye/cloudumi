@@ -87,18 +87,21 @@ async def detect_cloudtrail_denies_and_update_cache(
         "host": host,
     }
     if not event_ttl:
-        event_ttl = config.get(
+        event_ttl = config.get_host_specific_key(
             f"site_configs.{host}.event_bridge.detect_cloudtrail_denies_and_update_cache.event_ttl",
+            host,
             86400,
         )
     if not max_num_messages_to_process:
-        max_num_messages_to_process = config.get(
+        max_num_messages_to_process = config.get_host_specific_key(
             f"site_configs.{host}.event_bridge.detect_cloudtrail_denies_and_update_cache.max_num_messages_to_process",
+            host,
             100,
         )
     dynamo = UserDynamoHandler(host=host)
-    queue_arn = config.get(
+    queue_arn = config.get_host_specific_key(
         f"site_configs.{host}.event_bridge.detect_cloudtrail_denies_and_update_cache.queue_arn",
+        host,
         "",
     ).format(region=config.region)
     if not queue_arn:
@@ -110,8 +113,9 @@ async def detect_cloudtrail_denies_and_update_cache(
     queue_account_number = queue_arn.split(":")[4]
     queue_region = queue_arn.split(":")[3]
     # Optionally assume a role before receiving messages from the queue
-    queue_assume_role = config.get(
-        f"site_configs.{host}.event_bridge.detect_cloudtrail_denies_and_update_cache.assume_role"
+    queue_assume_role = config.get_host_specific_key(
+        f"site_configs.{host}.event_bridge.detect_cloudtrail_denies_and_update_cache.assume_role",
+        host,
     )
 
     # Modify existing cloudtrail deny samples
@@ -130,7 +134,9 @@ async def detect_cloudtrail_denies_and_update_cache(
         retry_max_attempts=2,
         account_number=queue_account_number,
         assume_role=queue_assume_role,
-        client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        client_kwargs=config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     )
 
     queue_url_res = await sync_to_async(sqs_client.get_queue_url)(QueueName=queue_name)
@@ -171,8 +177,9 @@ async def detect_cloudtrail_denies_and_update_cache(
                     continue
                 event_name = decoded_message.get("eventName")
                 event_source = decoded_message.get("eventSource")
-                for event_source_substitution in config.get(
+                for event_source_substitution in config.get_host_specific_key(
                     f"site_configs.{host}.event_bridge.detect_cloudtrail_denies_and_update_cache.event_bridge_substitutions",
+                    host,
                     [".amazonaws.com"],
                 ):
                     event_source = event_source.replace(event_source_substitution, "")

@@ -165,8 +165,12 @@ for host in hosts:
                 "Value": "ccastrapel@gmail.com:bayareasec@gmail.com",
             },
         ]
-        boto_kwargs = config.get(f"site_configs.{host}.boto3.client_kwargs", {})
-        session_kwargs = config.get(f"site_configs.{host}.boto3.session_kwargs", {})
+        boto_kwargs = config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        )
+        session_kwargs = config.get_host_specific_key(
+            f"site_configs.{host}.boto3.session_kwargs", host, {}
+        )
         if disable_creation_for_real_aws and not boto_kwargs.get("endpoint_url"):
             print(
                 f"Refusing to create resources for {host} because there's no custom boto3 endpoint URL"
@@ -178,32 +182,42 @@ for host in hosts:
         sts = session.client(
             "sts",
             region_name="us-east-1",
-            **config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
         current_role = sts.get_caller_identity()
         account_id = current_role["Account"]
         sqs = session.client(
             "sqs",
             region_name="us-east-1",
-            **config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
 
         sns = session.client(
             "sns",
             region_name="us-east-1",
-            **config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
 
         s3 = session.client(
             "s3",
             region_name="us-east-1",
-            **config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
 
         iam = session.client(
             "iam",
             region_name="us-east-1",
-            **config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            **config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
 
         assume_role_1 = {

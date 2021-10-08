@@ -21,20 +21,24 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
         retrieve_cached_resource_templates,
     )
 
-    app_name_tag = config.get(
-        f"site_configs.{host}.cache_self_service_typeahead.app_name_tag"
+    app_name_tag = config.get_host_specific_key(
+        f"site_configs.{host}.cache_self_service_typeahead.app_name_tag", host
     )
     # Cache role and app information
     role_data = await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get(
-            f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_ROLE_CACHE"
+        redis_key=config.get_host_specific_key(
+            f"site_configs.{host}.aws.iamroles_redis_key",
+            host,
+            f"{host}_IAM_ROLE_CACHE",
         ),
         redis_data_type="hash",
-        s3_bucket=config.get(
-            f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket"
+        s3_bucket=config.get_host_specific_key(
+            f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+            host,
         ),
-        s3_key=config.get(
+        s3_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+            host,
             "account_resource_cache/cache_all_roles_v1.json.gz",
         ),
         host=host,
@@ -47,8 +51,9 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
 
     # We want templates to appear in Self-Service ahead of IAM roles, so we will cache them in that order.
 
-    if config.get(
-        f"site_configs.{host}.cache_self_service_typeahead.cache_resource_templates"
+    if config.get_host_specific_key(
+        f"site_configs.{host}.cache_self_service_typeahead.cache_resource_templates",
+        host,
     ):
         resource_templates = await retrieve_cached_resource_templates(
             host, resource_type="iam_role", template_language="honeybee"
@@ -85,8 +90,10 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                 if tag["Key"] != app_name_tag:
                     continue
                 app_name = tag["Value"]
-                app_url = config.get(
-                    f"site_configs.{host}.cache_self_service_typeahead.app_url", ""
+                app_url = config.get_host_specific_key(
+                    f"site_configs.{host}.cache_self_service_typeahead.app_url",
+                    host,
+                    "",
                 ).format(app_name=app_name)
         typeahead_entries.append(
             SelfServiceTypeaheadModel(
@@ -104,15 +111,19 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
         )
 
     user_data = await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get(
-            f"site_configs.{host}.aws.iamroles_redis_key", f"{host}_IAM_USER_CACHE"
+        redis_key=config.get_host_specific_key(
+            f"site_configs.{host}.aws.iamroles_redis_key",
+            host,
+            f"{host}_IAM_USER_CACHE",
         ),
         redis_data_type="hash",
-        s3_bucket=config.get(
-            f"site_configs.{host}.cache_iam_resources_across_accounts.all_users_combined.s3.bucket"
+        s3_bucket=config.get_host_specific_key(
+            f"site_configs.{host}.cache_iam_resources_across_accounts.all_users_combined.s3.bucket",
+            host,
         ),
-        s3_key=config.get(
+        s3_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_iam_resources_across_accounts.all_users_combined.s3.file",
+            host,
             "account_resource_cache/cache_all_users_v1.json.gz",
         ),
         default={},
@@ -132,8 +143,10 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                 if tag["Key"] != app_name_tag:
                     continue
                 app_name = tag["Value"]
-                app_url = config.get(
-                    f"site_configs.{host}.cache_self_service_typeahead.app_url", ""
+                app_url = config.get_host_specific_key(
+                    f"site_configs.{host}.cache_self_service_typeahead.app_url",
+                    host,
+                    "",
                 ).format(app_name=app_name)
         typeahead_entries.append(
             SelfServiceTypeaheadModel(
@@ -153,15 +166,17 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
     typeahead_data = SelfServiceTypeaheadModelArray(typeahead_entries=typeahead_entries)
     await store_json_results_in_redis_and_s3(
         json.loads(typeahead_data.json()),
-        redis_key=config.get(
+        redis_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_self_service_typeahead.redis.key",
+            host,
             f"{host}_cache_self_service_typeahead_v1",
         ),
-        s3_bucket=config.get(
-            f"site_configs.{host}.cache_self_service_typeahead.s3.bucket"
+        s3_bucket=config.get_host_specific_key(
+            f"site_configs.{host}.cache_self_service_typeahead.s3.bucket", host
         ),
-        s3_key=config.get(
+        s3_key=config.get_host_specific_key(
             f"site_configs.{host}.cache_self_service_typeahead.s3.file",
+            host,
             "cache_self_service_typeahead/cache_self_service_typeahead_v1.json.gz",
         ),
         host=host,

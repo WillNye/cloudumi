@@ -8,15 +8,12 @@ test_requirements = parse_requirements("requirements-test.txt", session=PipSessi
 
 if tuple(map(int, pip.__version__.split("."))) >= (20, 1):
     reqs = [str(ir.requirement) for ir in requirements]
-    test_reqs = [str(ir.requirement) for ir in test_requirements]
 else:
     reqs = [str(ir.req) for ir in requirements]
-    test_reqs = [str(ir.req) for ir in test_requirements]
 
 setup(
     name="cloudumi_identity",
     versioning="distance",
     setup_requires="setupmeta",
     install_requires=reqs,
-    tests_require=test_reqs,
 )

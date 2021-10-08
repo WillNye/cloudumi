@@ -10,6 +10,7 @@ from sentry_sdk.integrations.tornado import TornadoIntegration
 from cloudumi_api.handlers.auth import AuthHandler
 from cloudumi_api.handlers.v1.credentials import GetCredentialsHandler
 from cloudumi_api.handlers.v1.headers import ApiHeaderHandler, HeaderHandler
+from cloudumi_api.handlers.v1.health import HealthHandler
 from cloudumi_api.handlers.v1.policies import (
     ApiResourceTypeAheadHandler,
     AutocompleteHandler,
@@ -89,6 +90,7 @@ def make_app(jwt_validator=None):
 
     routes = [
         (r"/auth", AuthHandler),  # /auth is still used by OIDC callback
+        (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
         (r"/api/v1/get_credentials", GetCredentialsHandler),
         (r"/api/v1/get_roles", GetRolesHandler),

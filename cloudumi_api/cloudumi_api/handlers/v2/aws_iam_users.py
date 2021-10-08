@@ -134,7 +134,9 @@ class UserDetailHandler(BaseAPIV2Handler):
 
         # if here, user has been successfully deleted
         aws = get_plugin_by_name(
-            config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+            )
         )()
         arn = f"arn:aws:iam::{account_id}:user/{iam_user_name}"
         await aws.fetch_iam_user(account_id, arn, host)

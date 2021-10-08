@@ -17,16 +17,16 @@ class SelfServiceConfigHandler(BaseAPIV2Handler):
         admin_bypass_approval_enabled: bool = can_admin_policies(
             self.user, self.groups, host
         )
-        export_to_terraform_enabled: bool = config.get(
-            f"site_configs.{host}.export_to_terraform_enabled", False
+        export_to_terraform_enabled: bool = config.get_host_specific_key(
+            f"site_configs.{host}.export_to_terraform_enabled", host, False
         )
-        self_service_iam_config: dict = config.get(
-            f"site_configs.{host}.self_service_iam", SELF_SERVICE_IAM_DEFAULTS
+        self_service_iam_config: dict = config.get_host_specific_key(
+            f"site_configs.{host}.self_service_iam", host, SELF_SERVICE_IAM_DEFAULTS
         )
 
         # Help message can be configured with Markdown for link handling
-        help_message: str = config.get(
-            f"site_configs.{host}.self_service_iam_help_message"
+        help_message: str = config.get_host_specific_key(
+            f"site_configs.{host}.self_service_iam_help_message", host
         )
 
         self.write(
@@ -53,12 +53,18 @@ class PermissionTemplatesHandler(BaseAPIV2Handler):
         configuration templates with PERMISSION_TEMPLATE_DEFAULTS.
         """
         host = self.ctx.host
-        permission_templates_dynamic_config: List[Dict[str, Any]] = config.get(
-            f"site_configs.{host}.dynamic_config.permission_templates", []
+        permission_templates_dynamic_config: List[
+            Dict[str, Any]
+        ] = config.get_host_specific_key(
+            f"site_configs.{host}.dynamic_config.permission_templates", host, []
         )
 
-        permission_templates_config: List[Dict[str, Any]] = config.get(
-            f"site_configs.{host}.permission_templates", PERMISSION_TEMPLATE_DEFAULTS
+        permission_templates_config: List[
+            Dict[str, Any]
+        ] = config.get_host_specific_key(
+            f"site_configs.{host}.permission_templates",
+            host,
+            PERMISSION_TEMPLATE_DEFAULTS,
         )
 
         seen = set()

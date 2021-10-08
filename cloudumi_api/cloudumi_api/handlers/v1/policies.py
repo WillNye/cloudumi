@@ -27,11 +27,15 @@ class AutocompleteHandler(BaseAPIV1Handler):
         """
         host = self.get_host_name()
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
-            if self.user not in config.get(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions", []
+            if self.user not in config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                host,
+                [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
 
@@ -108,58 +112,66 @@ async def handle_resource_type_ahead_request(cls):
 
     role_name = False
     if resource_type == "s3":
-        topic = config.get(
-            f"site_configs.{host}.redis.s3_bucket_key", f"{host}_S3_BUCKETS"
+        topic = config.get_host_specific_key(
+            f"site_configs.{host}.redis.s3_bucket_key", host, f"{host}_S3_BUCKETS"
         )
-        s3_bucket = config.get(
-            f"site_configs.{host}.account_resource_cache.s3_combined.bucket"
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.account_resource_cache.s3_combined.bucket", host
         )
-        s3_key = config.get(
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.account_resource_cache.s3_combined.file",
+            host,
             "account_resource_cache/cache_s3_combined_v1.json.gz",
         )
     elif resource_type == "sqs":
-        topic = config.get(
-            f"site_configs.{host}.redis.sqs_queues_key", f"{host}_SQS_QUEUES"
+        topic = config.get_host_specific_key(
+            f"site_configs.{host}.redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
         )
-        s3_bucket = config.get(
-            f"site_configs.{host}.account_resource_cache.sqs_combined.bucket"
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.account_resource_cache.sqs_combined.bucket", host
         )
-        s3_key = config.get(
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.account_resource_cache.sqs_combined.file",
+            host,
             "account_resource_cache/cache_sqs_queues_combined_v1.json.gz",
         )
     elif resource_type == "sns":
-        topic = config.get(
-            f"site_configs.{host}.redis.sns_topics_key", f"{host}_SNS_TOPICS"
+        topic = config.get_host_specific_key(
+            f"site_configs.{host}.redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
         )
-        s3_bucket = config.get(
-            f"site_configs.{host}.account_resource_cache.sns_topics_combined.bucket"
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.account_resource_cache.sns_topics_combined.bucket",
+            host,
         )
-        s3_key = config.get(
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.account_resource_cache.sns_topics_topics_combined.file",
+            host,
             "account_resource_cache/cache_sns_topics_combined_v1.json.gz",
         )
     elif resource_type == "iam_arn":
         topic = config.get(
             f"site_configs.{host}.aws.iamroles_redis_key ", f"{host}_IAM_ROLE_CACHE"
         )
-        s3_bucket = config.get(
-            f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket"
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+            host,
         )
-        s3_key = config.get(
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+            host,
             "account_resource_cache/cache_all_roles_v1.json.gz",
         )
     elif resource_type == "iam_role":
         topic = config.get(
             f"site_configs.{host}.aws.iamroles_redis_key ", f"{host}_IAM_ROLE_CACHE"
         )
-        s3_bucket = config.get(
-            f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket"
+        s3_bucket = config.get_host_specific_key(
+            f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+            host,
         )
-        s3_key = config.get(
+        s3_key = config.get_host_specific_key(
             f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+            host,
             "account_resource_cache/cache_all_roles_v1.json.gz",
         )
         role_name = True
@@ -169,8 +181,9 @@ async def handle_resource_type_ahead_request(cls):
         s3_key = None
         topic_is_hash = False
     elif resource_type == "app":
-        topic = config.get(
+        topic = config.get_host_specific_key(
             f"site_configs.{host}.celery.apps_to_roles.redis_key",
+            host,
             f"{host}_APPS_TO_ROLES",
         )
         s3_bucket = None
@@ -211,8 +224,9 @@ async def handle_resource_type_ahead_request(cls):
         all_role_arns = []
         all_role_arns_j = await redis_hgetall(
             (
-                config.get(
+                config.get_host_specific_key(
                     f"site_configs.{host}.aws.iamroles_redis_key",
+                    host,
                     f"{host}_IAM_ROLE_CACHE",
                 )
             ),
@@ -301,8 +315,8 @@ async def handle_resource_type_ahead_request(cls):
 class ApiResourceTypeAheadHandler(BaseMtlsHandler):
     async def get(self):
         host = self.get_host_name()
-        if self.requester["name"] not in config.get(
-            f"site_configs.{host}.api_auth.valid_entities", []
+        if self.requester["name"] not in config.get_host_specific_key(
+            f"site_configs.{host}.api_auth.valid_entities", host, []
         ):
             raise Exception("Call does not originate from a valid API caller")
         results = await handle_resource_type_ahead_request(self)
@@ -313,11 +327,15 @@ class ResourceTypeAheadHandler(BaseHandler):
     async def get(self):
         host = self.ctx.host
         if (
-            config.get(f"site_configs.{host}.policy_editor.disallow_contractors", True)
+            config.get_host_specific_key(
+                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+            )
             and self.contractor
         ):
-            if self.user not in config.get(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions", []
+            if self.user not in config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                host,
+                [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
         results = await handle_resource_type_ahead_request(self)

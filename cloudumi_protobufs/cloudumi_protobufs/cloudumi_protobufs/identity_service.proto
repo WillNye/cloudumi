@@ -1,0 +1,83 @@
+syntax = "proto3";
+// put your protobuf files in a separate Git repo from the microservice code
+// python -m grpc_tools.protoc -I ../cloudumi_protobufs --python_out=./cloudumi_common/lib/grpc/clients/ \
+//         --grpc_python_out=./cloudumi_common/lib/grpc/services/ ../cloudumi_protobufs/identity_service.proto
+// python -m grpc_tools.protoc -I . --python_out=./generated/ \
+//         --grpc_python_out=./generated/ ./identity_service.proto
+// TODO: copy and autogenerate these files in cloudumi_common docker container
+// python3 -m grpc_tools.protoc -I cloudumi_protobufs --python_out=. --grpc_python_out=. *.proto
+// python3 -m grpc_tools.protoc -I cloudumi_protobufs --python_out=. --grpc_python_out=. cloudumi_protobufs/cloudumi_protobufs/*.proto
+
+message Provider {
+  string provider_name = 1;
+  enum provider_type {
+    GOOGLE = 0;
+    OKTA = 1;
+  }
+  string host = 2;
+}
+
+message Group {
+  string name = 1;
+  string group_id = 2;
+  string friendly_name = 3;
+  string domain = 4;
+  string description = 5;
+  string settings = 6;
+  string aliases = 7;
+  repeated User members = 8;
+  string attributes = 9;
+  bool automated_group = 10;
+  Provider provider = 11;
+}
+
+
+
+message User {
+  string username = 1;
+  string user_id = 2;
+  string email = 3;
+  string domain = 4;
+  string first_name = 5;
+  string last_name = 6;
+  string status = 7;
+  string created = 8;
+  string updated = 9;
+  repeated Group groups = 10;
+  string host = 11;
+}
+
+message UpdateEntry {
+  User user = 1;
+  int32 time = 2;
+  string comment = 3;
+}
+
+message GroupRequest {
+  string request_id = 1;
+  repeated User users = 2;
+  repeated Group groups = 3;
+  User requester = 4;
+  map<string, string> justification = 5;
+  int32 expires = 6;
+  enum status {
+    PENDING = 0;
+    APPROVED = 1;
+    CANCELLED = 2;
+    REJECTED = 3;
+  }
+  repeated UpdateEntry UpdateHistory = 7;
+  int32 last_update_time = 8;
+  User last_updated_by = 9;
+  bool admin_self_approve = 10;
+}
+
+message GroupResponse {
+  bool created = 1;
+  GroupRequest request = 2;
+}
+
+
+service GroupManagementService {
+    rpc GroupManagement (GroupRequest) returns (GroupResponse);
+}

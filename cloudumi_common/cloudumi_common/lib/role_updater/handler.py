@@ -69,12 +69,14 @@ async def update_role(event, host):
             "iam",
             host,
             account_number=account_number,
-            assume_role=config.get(
-                f"site_configs.{host}.policies.role_name", "ConsoleMe"
+            assume_role=config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host, "ConsoleMe"
             ),
             session_name=sanitize_session_name(aws_session_name),
             retry_max_attempts=2,
-            client_kwargs=config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+            client_kwargs=config.get_host_specific_key(
+                f"site_configs.{host}.boto3.client_kwargs", host, {}
+            ),
         )
         inline_policies = d.get("inline_policies", [])
         managed_policies = d.get("managed_policies", [])

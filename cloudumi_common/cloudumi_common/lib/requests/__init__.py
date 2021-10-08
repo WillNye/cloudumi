@@ -34,7 +34,9 @@ async def can_cancel_request(current_user, requesting_user, groups, host):
         return True
 
     # Allow restricted admins to cancel requests
-    for g in config.get(f"site_configs.{host}.groups.can_admin_restricted"):
+    for g in config.get_host_specific_key(
+        f"site_configs.{host}.groups.can_admin_restricted", host
+    ):
         if g in groups:
             return True
 
@@ -61,7 +63,9 @@ async def get_request_by_id(user, request_id, host):
         for req in requests:
             group = req.get("group")
             auth = get_plugin_by_name(
-                config.get(f"site_configs.{host}.plugins.auth", "cmsaas_auth")
+                config.get_host_specific_key(
+                    f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
+                )
             )()
             secondary_approvers = await auth.get_secondary_approvers(group, host)
             req["secondary_approvers"] = ",".join(secondary_approvers)
@@ -75,7 +79,9 @@ async def get_all_pending_requests_api(user, host):
     dynamo_handler = UserDynamoHandler(user=user, host=host)
     all_requests = await dynamo_handler.get_all_requests(host)
     auth = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.auth", "cmsaas_auth")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
+        )
     )()
     pending_requests = []
 
@@ -132,19 +138,24 @@ async def cache_all_policy_requests(
     if not host:
         raise Exception("Unknown host")
     if not redis_key:
-        redis_key = config.get(
+        redis_key = config.get_host_specific_key(
             f"site_configs.{host}.cache_policy_requests.redis_key",
+            host,
             f"{host}_ALL_POLICY_REQUESTS",
         )
     if not s3_bucket and not s3_key:
-        if config.region == config.get(
-            f"site_configs.{host}.celery.active_region", config.region
-        ) or config.get(f"site_configs.{host}.environment") in ["dev", "test"]:
-            s3_bucket = config.get(
-                f"site_configs.{host}.cache_policy_requests.s3.bucket"
+        if config.region == config.get_host_specific_key(
+            f"site_configs.{host}.celery.active_region", host, config.region
+        ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+            "dev",
+            "test",
+        ]:
+            s3_bucket = config.get_host_specific_key(
+                f"site_configs.{host}.cache_policy_requests.s3.bucket", host
             )
-            s3_key = config.get(
+            s3_key = config.get_host_specific_key(
                 f"site_configs.{host}.cache_policy_requests.s3.file",
+                host,
                 "policy_requests/all_policy_requests_v1.json.gz",
             )
     requests = await get_all_policy_requests(user, host)
@@ -194,8 +205,8 @@ async def get_all_pending_requests(user, groups, host):
     pending_requests["all_pending_requests"].extend(all_policy_requests)
 
     for req in all_policy_requests:
-        req["secondary_approvers"] = config.get(
-            f"site_configs.{host}.groups.can_admin_policies"
+        req["secondary_approvers"] = config.get_host_specific_key(
+            f"site_configs.{host}.groups.can_admin_policies", host
         )
 
         for sa in req["secondary_approvers"]:
@@ -211,14 +222,14 @@ async def get_all_pending_requests(user, groups, host):
 async def get_user_requests(user, groups, host):
     """Get requests relevant to a user.
 
-    A user sees requests they have made as well as requests where they are a
+    A user sees group requests they have made as well as requests where they are a
     secondary approver
     """
     dynamo_handler = UserDynamoHandler(user=user, host=host)
     all_requests = await dynamo_handler.get_all_requests(host)
     query = {
-        "domains": config.get(
-            f"site_configs.{host}.dynamo.get_user_requests.domains", []
+        "domains": config.get_host_specific_key(
+            f"site_configs.{host}.dynamo.get_user_requests.domains", host, []
         ),
         "filters": [
             {
@@ -235,7 +246,9 @@ async def get_user_requests(user, groups, host):
         "size": 500,
     }
     auth = get_plugin_by_name(
-        config.get(f"site_configs.{host}.plugins.auth", "cmsaas_auth")
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
+        )
     )()
     approver_groups = await auth.query_cached_groups(query=query)
     approver_groups = [g["name"] for g in approver_groups]

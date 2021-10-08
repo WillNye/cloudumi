@@ -24,15 +24,17 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
     """
 
     cloud_accounts = []
-    for organization in config.get(
-        f"site_configs.{host}.cache_accounts_from_aws_organizations", []
+    for organization in config.get_host_specific_key(
+        f"site_configs.{host}.cache_accounts_from_aws_organizations", host, []
     ):
         organizations_master_account_id = organization.get(
             "organizations_master_account_id"
         )
         role_to_assume = organization.get(
             "organizations_master_role_to_assume",
-            config.get(f"site_configs.{host}.policies.role_name"),
+            config.get_host_specific_key(
+                f"site_configs.{host}.policies.role_name", host
+            ),
         )
         if not organizations_master_account_id:
             raise MissingConfigurationValue(
@@ -260,7 +262,9 @@ async def retrieve_org_structure(
         "session_name": "ConsoleMeSCPSync",
         "region": region,
         "host": host,
-        "client_kwargs": config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        "client_kwargs": config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     }
     ca = ConsoleMeCloudAux(**conn_details)
     roots = _list_org_roots(ca)
@@ -290,7 +294,9 @@ async def retrieve_scps_for_organization(
         "account_number": org_account_id,
         "session_name": "ConsoleMeSCPSync",
         "region": region,
-        "client_kwargs": config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        "client_kwargs": config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     }
     ca = ConsoleMeCloudAux(**conn_details)
     all_scp_metadata = await sync_to_async(_list_service_control_policies)(ca)

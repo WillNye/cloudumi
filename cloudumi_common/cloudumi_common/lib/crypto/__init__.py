@@ -14,7 +14,9 @@ class Crypto:
         self.load_secrets(host)
 
     def load_secrets(self, host) -> None:
-        if not config.get(f"site_configs.{host}.ed25519.signing_key"):
+        if not config.get_host_specific_key(
+            f"site_configs.{host}.ed25519.signing_key", host
+        ):
             # Generating keys on demand. This is useful for unit tests
             self.signing_key, self.verifying_key = ed25519.create_keypair(
                 entropy=os.urandom
@@ -22,7 +24,9 @@ class Crypto:
             return
 
         signing_key_file = os.path.expanduser(
-            config.get(f"site_configs.{host}.ed25519.signing_key")
+            config.get_host_specific_key(
+                f"site_configs.{host}.ed25519.signing_key", host
+            )
         )
         try:
             with open(signing_key_file, "rb") as signing_file:
@@ -32,7 +36,9 @@ class Crypto:
             log.error(msg, exc_info=True)
             raise Exception(msg)
         self.signing_key = ed25519.SigningKey(signing_key_str)
-        verifying_key_file = config.get(f"site_configs.{host}.ed25519.verifying_key")
+        verifying_key_file = config.get_host_specific_key(
+            f"site_configs.{host}.ed25519.verifying_key", host
+        )
         try:
             verifying_key_str = open(verifying_key_file, "rb").read()
         except FileNotFoundError:

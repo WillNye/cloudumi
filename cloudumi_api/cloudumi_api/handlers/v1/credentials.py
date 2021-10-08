@@ -80,13 +80,16 @@ class GetCredentialsHandler(BaseMtlsHandler):
     async def raise_if_certificate_too_old(self, role, stats, log_data=None):
         host = self.ctx.host
         group_mapping = get_plugin_by_name(
-            config.get(
-                f"site_configs.{host}.plugins.group_mapping", "cmsaas_group_mapping"
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.group_mapping",
+                host,
+                "cmsaas_group_mapping",
             )
         )()
         log_data = {} if not log_data else log_data
-        max_cert_age_message = config.get(
+        max_cert_age_message = config.get_host_specific_key(
             f"site_configs.{host}.errors.custom_max_cert_age_message",
+            host,
             "Please refresh your certificate.",
         )
         try:
@@ -135,16 +138,20 @@ class GetCredentialsHandler(BaseMtlsHandler):
         """Get the requested role to complete the credentials fetching."""
         host = web_request.host_name
         group_mapping = get_plugin_by_name(
-            config.get(
-                f"site_configs.{host}.plugins.group_mapping", "cmsaas_group_mapping"
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.group_mapping",
+                host,
+                "cmsaas_group_mapping",
             )
         )()
         if request.get("requested_role"):
             return request["requested_role"]
         elif request.get("app_name"):
             internal_policies = get_plugin_by_name(
-                config.get(
-                    f"site_configs.{host}.plugins.internal_policies", "cmsaas_policies"
+                config.get_host_specific_key(
+                    f"site_configs.{host}.plugins.internal_policies",
+                    host,
+                    "cmsaas_policies",
                 )
             )()
             role_models = await internal_policies.get_roles_associated_with_app(
@@ -350,7 +357,9 @@ class GetCredentialsHandler(BaseMtlsHandler):
     async def get_credentials_app_flow(self, app_name, app, request, stats, log_data):
         host = self.ctx.host
         aws = get_plugin_by_name(
-            config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+            )
         )()
         requested_role = request["requested_role"]
         log_data["requested_role"] = requested_role
@@ -429,12 +438,16 @@ class GetCredentialsHandler(BaseMtlsHandler):
     async def get_credentials_user_flow(self, user_email, request, stats, log_data):
         host = self.ctx.host
         group_mapping = get_plugin_by_name(
-            config.get(
-                f"site_configs.{host}.plugins.group_mapping", "cmsaas_group_mapping"
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.group_mapping",
+                host,
+                "cmsaas_group_mapping",
             )
         )()
         aws = get_plugin_by_name(
-            config.get(f"site_configs.{host}.plugins.aws", "cmsaas_aws")
+            config.get_host_specific_key(
+                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+            )
         )()
         log_data["user"] = user_email
 

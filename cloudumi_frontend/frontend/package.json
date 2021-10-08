@@ -30,13 +30,10 @@
     "yaml": "^1.10.2"
   },
   "scripts": {
-    "start": "cp -a public/ ../consoleme/templates; craco start",
+    "start": "craco start",
     "build": "craco build",
     "test": "craco test --env=jsdom",
     "eject": "craco eject",
-    "copy:prod": "cp -a build/ ../consoleme/templates",
-    "clean:prod": "rm -rf build && rm -rf ../consoleme/templates",
-    "build:prod": "yarn run clean:prod && yarn build",
     "lint": "prettier --check './src/**/*.{jsx,js}'",
     "lint:fix": "prettier --write './src/**/*.{jsx,js}'"
   },

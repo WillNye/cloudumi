@@ -22,12 +22,16 @@ async def send_email(
     sending_app: str = "consoleme",
     charset: str = "UTF-8",
 ) -> None:
-    region: str = config.get(f"site_configs.{host}.ses.region", config.region)
+    region: str = config.get_host_specific_key(
+        f"site_configs.{host}.ses.region", host, config.region
+    )
     session = get_session_for_tenant(host)
     client = session.client(
         "ses",
         region_name=region,
-        **config.get(f"site_configs.{host}.boto3.client_kwargs", {}),
+        **config.get_host_specific_key(
+            f"site_configs.{host}.boto3.client_kwargs", host, {}
+        ),
     )
     sender = config.get(f"_global_.ses.{sending_app}.sender")
     log_data = {
@@ -39,7 +43,7 @@ async def send_email(
         "host": host,
     }
 
-    if not config.get(f"site_configs.{host}.ses.arn"):
+    if not config.get_host_specific_key(f"site_configs.{host}.ses.arn", host):
         log.error(
             {
                 **log_data,
@@ -81,7 +85,9 @@ async def send_email(
                 "Subject": {"Charset": charset, "Data": subject},
             },
             Source=sender,
-            SourceArn=config.get(f"site_configs.{host}.ses.arn"),
+            SourceArn=config.get_host_specific_key(
+                f"site_configs.{host}.ses.arn", host
+            ),
         )
     # Display an error if something goes wrong.
     except Exception:
@@ -326,7 +332,9 @@ async def send_policy_request_status_update_v2(
         subject = f"{app_name}: Policy change request for {principal} has been created"
         message = f"A policy change request for {principal} has been created."
         # This is a new request, also send email to application admins
-        to_addresses.append(config.get(f"site_configs.{host}.application_admin"))
+        to_addresses.append(
+            config.get_host_specific_key(f"site_configs.{host}.application_admin", host)
+        )
     else:
         subject = (
             f"{app_name}: Policy change request for {principal} has been "
