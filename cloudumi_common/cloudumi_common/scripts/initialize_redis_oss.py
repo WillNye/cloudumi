@@ -7,7 +7,6 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from asgiref.sync import async_to_sync
 
 from cloudumi_common.celery_tasks import celery_tasks as celery
-from cloudumi_common.config import config
 from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
 from cloudumi_common.lib.tenants import get_all_hosts
 

@@ -14,7 +14,6 @@ from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
 from cloudumi_common.lib.aws.utils import minimize_iam_policy_statements
 from cloudumi_common.lib.defaults import SELF_SERVICE_IAM_DEFAULTS
 from cloudumi_common.lib.generic import generate_random_string, iterate_and_format_dict
-from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.models import (
     ChangeGeneratorModel,
     ChangeGeneratorModelArray,
