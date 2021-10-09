@@ -17,10 +17,8 @@ BASE_DIR = config.get(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 )
 DEV_STATS = config.get("_global_.webpack.loader.dev_stats", "webpack-stats.dev.json")
-PROD_STATS = config.get(
-    f"_global_.webpack.loader.prod_stats", "webpack-stats.prod.json"
-)
-BUNDLE_DIR_NAME = config.get(f"_global_.webpack.loader.bundle_dir", "bundles/")
+PROD_STATS = config.get("_global_.webpack.loader.prod_stats", "webpack-stats.prod.json")
+BUNDLE_DIR_NAME = config.get("_global_.webpack.loader.bundle_dir", "bundles/")
 
 
 class WebpackLoader(object):

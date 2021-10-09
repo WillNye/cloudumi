@@ -32,7 +32,7 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
         response = self.fetch("/api/v2/user_profile", headers=headers)
         self.assertEqual(response.code, 200)
         response_j = json.loads(response.body)
-        consoleme_logo = response_j["site_config"].pop("consoleme_logo")
+        response_j["site_config"].pop("consoleme_logo")
         # self.assertIn("/images/logos/", consoleme_logo)
         self.assertEqual(
             response_j,

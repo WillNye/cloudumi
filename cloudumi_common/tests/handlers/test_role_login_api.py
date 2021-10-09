@@ -3,7 +3,6 @@ import os
 import sys
 
 import ujson as json
-from tests.globals import host
 from tests.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -17,7 +16,7 @@ class TestRoleLoginApi(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def test_role_api_fail(self):
-        from cloudumi_common.config import config
+        pass
 
         response = self.fetch(
             "/api/v2/role_login/role123",
@@ -34,7 +33,7 @@ class TestRoleLoginApi(ConsoleMeAsyncHTTPTestCase):
         )
 
     def test_role_api_fail_multiple_matching_roles(self):
-        from cloudumi_common.config import config
+        pass
 
         response = self.fetch(
             "/api/v2/role_login/role",
@@ -52,7 +51,7 @@ class TestRoleLoginApi(ConsoleMeAsyncHTTPTestCase):
         self.assertIn("/?arn=role&warningMessage=", response_j["redirect_url"])
 
     def test_role_api_success(self):
-        from cloudumi_common.config import config
+        pass
 
         response = self.fetch(
             "/api/v2/role_login/roleA",

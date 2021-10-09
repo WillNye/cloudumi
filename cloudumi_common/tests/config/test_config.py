@@ -4,7 +4,6 @@ from unittest import TestCase
 
 import yaml
 from asgiref.sync import async_to_sync
-from tests.globals import host
 
 
 class TestConfig(TestCase):

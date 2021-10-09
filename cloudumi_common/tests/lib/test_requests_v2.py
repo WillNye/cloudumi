@@ -2402,7 +2402,6 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 f"site_configs.{host}.boto3.client_kwargs", host, {}
             ),
         )
-        role_name = "test"
 
         # Trying to apply while not being authorized
         with pytest.raises(Unauthorized) as e:
@@ -2451,7 +2450,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
         # Make sure this change got applied
         inline_policy = client.get_role_policy(
-            RoleName=role_name,
+            RoleName=test_role_name,
             PolicyName=extended_request.changes.changes[0].policy_name,
         )
         self.assertEqual(
@@ -2654,9 +2653,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     @patch(
         "cloudumi_common.lib.v2.requests.send_communications_policy_change_request_v2"
     )
-    @patch.object(
-        "cloudumi_common.lib.v2.requests.parse_and_apply_policy_request_modification",
-        "aws.fetch_iam_role",
+    @patch(
+        "cloudumi_plugins.plugins.aws.aws.Aws.fetch_iam_role",
     )
     @patch("cloudumi_common.lib.v2.requests.populate_old_policies")
     @patch("cloudumi_common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
@@ -2773,7 +2771,6 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 f"site_configs.{host}.boto3.client_kwargs", host, {}
             ),
         )
-        role_name = "test"
 
         # Trying to approve while not being authorized
         with pytest.raises(Unauthorized) as e:
@@ -2832,7 +2829,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
         # Make sure this change got applied
         inline_policy = client.get_role_policy(
-            RoleName=role_name,
+            RoleName=test_role_name,
             PolicyName=extended_request.changes.changes[0].policy_name,
         )
         self.assertEqual(

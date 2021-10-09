@@ -1,7 +1,7 @@
 import ujson as json
 from asgiref.sync import async_to_sync
 from mock import Mock, patch
-from tests.conftest import MockBaseHandler, create_future
+from tests.conftest import create_future
 from tests.globals import host
 from tests.util import ConsoleMeAsyncHTTPTestCase
 

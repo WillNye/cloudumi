@@ -69,7 +69,7 @@ def refresh_dynamic_config(host, ddb=None):
         from cloudumi_common.lib.dynamo import UserDynamoHandler
 
         # TODO: Figure out host
-        ddb = UserDynamoHandler()
+        ddb = UserDynamoHandler(host)
     return ddb.get_dynamic_config_dict(host)
 
 
@@ -241,6 +241,32 @@ class Configuration(object):
                 timeout=self.get("_global_.reload_static_config_interval", 60)
             ):
                 break
+
+    def get_employee_photo_url(self, user, host):
+        import hashlib
+        import urllib.parse
+
+        # Try to get a custom employee photo url by formatting a string provided through configuration
+
+        custom_employee_photo_url = self.get_host_specific_key(
+            f"site_configs.{host}.get_employee_photo_url.custom_employee_url", host, ""
+        ).format(user=user)
+        if custom_employee_photo_url:
+            return custom_employee_photo_url
+
+        # Fall back to Gravatar
+        gravatar_url = (
+            "https://www.gravatar.com/avatar/"
+            + hashlib.md5(user.lower().encode("utf-8")).hexdigest()
+            + "?"
+        )
+
+        gravatar_url += urllib.parse.urlencode({"d": "mp"})
+        return gravatar_url
+
+    @staticmethod
+    def get_employee_info_url(user, host):
+        return None
 
     @staticmethod
     def get_config_location():
@@ -503,6 +529,8 @@ async_to_sync(CONFIG.load_config)()
 get = CONFIG.get
 get_logger = CONFIG.get_logger
 get_host_specific_key = CONFIG.get_host_specific_key
+get_employee_photo_url = CONFIG.get_employee_photo_url
+get_employee_info_url = CONFIG.get_employee_info_url
 
 # Set logging levels
 CONFIG.set_logging_levels()

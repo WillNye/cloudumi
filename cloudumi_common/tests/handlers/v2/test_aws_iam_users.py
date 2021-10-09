@@ -1,7 +1,5 @@
 import json
-from unittest.mock import patch
 
-from tests.conftest import MockBaseHandler
 from tests.globals import host
 from tests.util import ConsoleMeAsyncHTTPTestCase
 
@@ -133,7 +131,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
         response = self.fetch(
             f"/api/v2/users/123456789012/{user_name}",
             method="DELETE",
-            user="test_delete_user_allowed",
+            user=user_name,
         )
         self.assertEqual(response.code, 200)
         body = json.loads(response.body)

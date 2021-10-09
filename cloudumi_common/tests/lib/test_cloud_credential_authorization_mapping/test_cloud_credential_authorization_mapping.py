@@ -29,7 +29,9 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
             },
         }
         cache_iam_resources_for_account("123456789012", host=host)
-        cache_iam_resources_across_accounts(host=host)
+        cache_iam_resources_across_accounts(
+            host=host, run_subtasks=False, wait_for_subtask_completion=False
+        )
         CONFIG.config = old_config
 
     def setUp(self):
@@ -47,7 +49,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
             generate_and_store_credential_authorization_mapping,
         )
 
-        mapping = await generate_and_store_credential_authorization_mapping()
+        mapping = await generate_and_store_credential_authorization_mapping(host)
 
         expected = {
             "group8": RoleAuthorizations(
@@ -492,7 +494,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         }
 
         reverse_mapping = await generate_and_store_reverse_authorization_mapping(
-            authorization_mapping
+            authorization_mapping, host
         )
 
         expected = {
@@ -572,7 +574,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         )
 
         authorization_mapping = await RoleTagAuthorizationMappingGenerator().generate_credential_authorization_mapping(
-            {}
+            {}, host
         )
 
         expected = {
@@ -787,7 +789,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         )
 
         authorization_mapping = await DynamicConfigAuthorizationMappingGenerator().generate_credential_authorization_mapping(
-            {}
+            {}, host
         )
 
         expected = {

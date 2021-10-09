@@ -289,8 +289,12 @@ class TestAwsLib(TestCase):
         # Allow - allowed_tags exists in role
         CONFIG.config = {
             **CONFIG.config,
-            "roles": {
-                "allowed_tags": {"testtag": "testtagv"},
+            "site_configs": {
+                host: {
+                    "roles": {
+                        "allowed_tags": {"testtag": "testtagv"},
+                    },
+                }
             },
         }
 
@@ -301,8 +305,15 @@ class TestAwsLib(TestCase):
         # Reject, one of the tags doesn't exist on role
         CONFIG.config = {
             **CONFIG.config,
-            "roles": {
-                "allowed_tags": {"testtag": "testtagv", "testtagNOTEXIST": "testv"},
+            "site_configs": {
+                host: {
+                    "roles": {
+                        "allowed_tags": {
+                            "testtag": "testtagv",
+                            "testtagNOTEXIST": "testv",
+                        },
+                    },
+                }
             },
         }
 
@@ -313,9 +324,15 @@ class TestAwsLib(TestCase):
         # Allow - Role has all allowed_tags, doesn't matter that allowed_arns doesn't have our role ARN
         CONFIG.config = {
             **CONFIG.config,
-            "roles": {
-                "allowed_tags": {"testtag": "testtagv"},
-                "allowed_arns": ["arn:aws:iam::111111111111:role/some-other-role"],
+            "site_configs": {
+                host: {
+                    "roles": {
+                        "allowed_tags": {"testtag": "testtagv"},
+                        "allowed_arns": [
+                            "arn:aws:iam::111111111111:role/some-other-role"
+                        ],
+                    },
+                }
             },
         }
 
@@ -326,9 +343,13 @@ class TestAwsLib(TestCase):
         # Allow - Role has all allowed_tags
         CONFIG.config = {
             **CONFIG.config,
-            "roles": {
-                "allowed_tags": {"testtag": "testtagv"},
-                "allowed_arns": ["arn:aws:iam::111111111111:role/BADROLENAME"],
+            "site_configs": {
+                host: {
+                    "roles": {
+                        "allowed_tags": {"testtag": "testtagv"},
+                        "allowed_arns": ["arn:aws:iam::111111111111:role/BADROLENAME"],
+                    },
+                }
             },
         }
 
@@ -339,8 +360,12 @@ class TestAwsLib(TestCase):
         # Reject - No tag
         CONFIG.config = {
             **CONFIG.config,
-            "roles": {
-                "allowed_tags": {"a": "b"},
+            "site_configs": {
+                host: {
+                    "roles": {
+                        "allowed_tags": {"a": "b"},
+                    },
+                }
             },
         }
 
@@ -351,8 +376,14 @@ class TestAwsLib(TestCase):
         # Allow by ARN
         CONFIG.config = {
             **CONFIG.config,
-            "roles": {
-                "allowed_arns": ["arn:aws:iam::111111111111:role/role-name-here-1"]
+            "site_configs": {
+                host: {
+                    "roles": {
+                        "allowed_arns": [
+                            "arn:aws:iam::111111111111:role/role-name-here-1"
+                        ]
+                    },
+                }
             },
         }
 

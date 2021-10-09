@@ -1,6 +1,6 @@
 import asyncio
 import sys
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from okta.client import Client as OktaClient
 
@@ -49,7 +49,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
             return [], str(err)
         users_to_return = []
         for user in users:
-            users.append(User())
+            users_to_return.append(User())
 
     async def list_all_groups(self):
         groups, resp, err = await self.okta_client.list_groups()

@@ -26,7 +26,6 @@ from cloudumi_common.lib.aws.iam import (
     list_role_tags,
 )
 from cloudumi_common.lib.aws.sanitize import sanitize_session_name
-from cloudumi_common.lib.aws.session import get_session_for_tenant
 from cloudumi_common.lib.aws.utils import (
     raise_if_background_check_required_and_no_background_check,
 )

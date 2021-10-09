@@ -110,7 +110,7 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
     def test_login_post_invalid_password(self):
         from cloudumi_common.lib.dynamo import UserDynamoHandler
 
-        ddb = UserDynamoHandler()
+        ddb = UserDynamoHandler(host=host)
         ddb.create_user(
             "testuser", host, "correctpassword", ["group1", "group2@example.com"]
         )
@@ -135,7 +135,7 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
     def test_login_post_success(self):
         from cloudumi_common.lib.dynamo import UserDynamoHandler
 
-        ddb = UserDynamoHandler()
+        ddb = UserDynamoHandler(host=host)
         ddb.create_user(
             "testuser2", host, "correctpassword", ["group1", "group2@example.com"]
         )
@@ -167,17 +167,6 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def test_create_user(self):
-        from cloudumi_common.config import config
-
-        # headers = {
-        #     config.get(
-        #         f"site_configs.{host}.auth.user_header_name"
-        #     ): "consoleme_admins@example.com",
-        #     config.get(
-        #         f"site_configs.{host}.auth.groups_header_name"
-        #     ): "groupa,groupb,groupc",
-        # }
-
         body = json.dumps(
             {
                 "user_management_action": "create",
@@ -186,7 +175,9 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
                 "groups": ["group1", "group2", "group3"],
             }
         )
-        response = self.fetch("/api/v2/user", method="POST", body=body)
+
+        admin_user = "consoleme_admins@example.com"
+        response = self.fetch("/api/v2/user", method="POST", body=body, user=admin_user)
         self.assertEqual(response.code, 200)
         self.assertEqual(
             json.loads(response.body),
@@ -201,12 +192,12 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
         from cloudumi_common.lib.dynamo import UserDynamoHandler
         from cloudumi_common.models import LoginAttemptModel
 
-        ddb = UserDynamoHandler()
+        ddb = UserDynamoHandler(host=host)
         login_attempt_success = LoginAttemptModel(
             username="testuser3", password="testuser3password"
         )
 
-        should_pass = async_to_sync(ddb.authenticate_user)(login_attempt_success)
+        should_pass = async_to_sync(ddb.authenticate_user)(login_attempt_success, host)
         self.assertEqual(
             should_pass.dict(),
             {
@@ -220,7 +211,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
             username="testuser3", password="wrongpassword"
         )
 
-        should_fail = async_to_sync(ddb.authenticate_user)(login_attempt_fail)
+        should_fail = async_to_sync(ddb.authenticate_user)(login_attempt_fail, host)
 
         self.assertEqual(
             should_fail.dict(),
@@ -244,7 +235,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
                 "password": "testuser3newpassword",
             }
         )
-        response = self.fetch("/api/v2/user", method="POST", body=body)
+        response = self.fetch("/api/v2/user", method="POST", body=body, user=admin_user)
         self.assertEqual(response.code, 200)
         self.assertEqual(
             json.loads(response.body),
@@ -263,7 +254,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
                 "groups": ["group1", "group2", "group3", "newgroup"],
             }
         )
-        response = self.fetch("/api/v2/user", method="POST", body=body)
+        response = self.fetch("/api/v2/user", method="POST", body=body, user=admin_user)
         self.assertEqual(response.code, 200)
         self.assertEqual(
             json.loads(response.body),
@@ -282,7 +273,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
                 "groups": ["group1", "group2", "group3", "newgroup", "newgroup2"],
             }
         )
-        response = self.fetch("/api/v2/user", method="POST", body=body)
+        response = self.fetch("/api/v2/user", method="POST", body=body, user=admin_user)
         self.assertEqual(response.code, 200)
         self.assertEqual(
             json.loads(response.body),
@@ -302,7 +293,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
             }
         )
 
-        response = self.fetch("/api/v2/user", method="POST", body=body)
+        response = self.fetch("/api/v2/user", method="POST", body=body, user=admin_user)
         self.assertEqual(response.code, 200)
         self.assertEqual(
             json.loads(response.body),

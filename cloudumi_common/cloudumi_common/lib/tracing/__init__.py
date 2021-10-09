@@ -50,7 +50,7 @@ class ConsoleMeTracer:
 
         # Skip tracing functions outside of core ConsoleMe by default
         in_scope_function_calls = config.get(
-            f"_global_.tracing.in_scope_function_calls", ["/consoleme/"]
+            "_global_.tracing.in_scope_function_calls", ["/consoleme/"]
         )
         if not (
             any(x in frame.f_code.co_filename for x in in_scope_function_calls)
@@ -156,7 +156,7 @@ class ConsoleMeTracer:
         )
 
     async def disable_tracing(self):
-        if not config.get(f"_global_.tracing.enabled", False):
+        if not config.get("_global_.tracing.enabled", False):
             return
         self.log_data["message"] = "disabling tracing"
         log.debug(self.log_data)
@@ -178,7 +178,7 @@ class ConsoleMeTracer:
         # We iterate through the dictionary of spans in a safe manner
         # to avoid a "Dictionary changed size during iteration" error as other asynchronous
         # callers modify self.spans
-        if not config.get(f"_global_.tracing.enabled", False):
+        if not config.get("_global_.tracing.enabled", False):
             return
         self.log_data["message"] = "finishing spans"
         log.debug(self.log_data)

@@ -7,7 +7,6 @@ import json
 import os
 from datetime import timedelta
 
-from asgiref.sync import async_to_sync
 from celery import Celery
 
 from cloudumi_common.config import config
@@ -29,14 +28,14 @@ app = Celery(
     ),
 )
 
-if config.get(f"_global_.redis.use_redislite"):
+if config.get("_global_.redis.use_redislite"):
     import tempfile
 
     import redislite
 
     redislite_db_path = os.path.join(
         config.get(
-            f"_global_.redis.redislite.db_path", tempfile.NamedTemporaryFile().name
+            "_global_.redis.redislite.db_path", tempfile.NamedTemporaryFile().name
         )
     )
     redislite_client = redislite.Redis(redislite_db_path)
@@ -47,14 +46,14 @@ if config.get(f"_global_.redis.use_redislite"):
         backend=f"{redislite_socket_path}?virtual_host=2",
     )
 
-app.conf.result_expires = config.get(f"_global_.celery.result_expires", 60)
+app.conf.result_expires = config.get("_global_.celery.result_expires", 60)
 app.conf.worker_prefetch_multiplier = config.get(
-    f"_global_.celery.worker_prefetch_multiplier", 4
+    "_global_.celery.worker_prefetch_multiplier", 4
 )
-app.conf.task_acks_late = config.get(f"_global_.celery.task_acks_late", True)
+app.conf.task_acks_late = config.get("_global_.celery.task_acks_late", True)
 
-if config.get(f"_global_.celery.purge") and not config.get(
-    f"_global_.redis.use_redislite"
+if config.get("_global_.celery.purge") and not config.get(
+    "_global_.redis.use_redislite"
 ):
     # Useful to clear celery queue in development
     with Timeout(seconds=5, error_message="Timeout: Are you sure Redis is running?"):

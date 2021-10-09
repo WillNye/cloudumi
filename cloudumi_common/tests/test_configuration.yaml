@@ -4,7 +4,7 @@ _global_:
   development: true
   environment: test
   tornado:
-    debug: true
+    debug: false
     port: 8081
     xsrf: false
   config:
@@ -12,6 +12,10 @@ _global_:
 
 site_configs:
   example_com:
+    groups:
+      can_delete_iam_principals:
+        - test_delete_user_allowed
+    application_admin: consoleme_admins@example.com
     jwt_secret: T3sts3cr3t
     consoleme_s3_bucket: fakebucket
     celery:

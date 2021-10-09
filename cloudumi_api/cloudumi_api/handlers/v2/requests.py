@@ -374,7 +374,7 @@ class RequestHandler(BaseAPIV2Handler):
                             log_data["request"] = extended_request.dict()
                             log.debug(log_data)
 
-            dynamo = UserDynamoHandler(user=self.user, host=host)
+            dynamo = UserDynamoHandler(host=host, user=self.user)
             request = await dynamo.write_policy_request_v2(extended_request, host)
             log_data["message"] = "New request created in Dynamo"
             log_data["request"] = extended_request.dict()
@@ -604,7 +604,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
         )
 
     async def _get_extended_request(self, request_id, log_data, host):
-        dynamo = UserDynamoHandler(user=self.user, host=host)
+        dynamo = UserDynamoHandler(host=host, user=self.user)
         requests = await dynamo.get_policy_requests(host, request_id=request_id)
         if len(requests) == 0:
             log_data["message"] = "Request with that ID not found"
@@ -695,7 +695,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 "extended_request"
             ]
             # Update in dynamo with the latest resource policy changes
-            dynamo = UserDynamoHandler(user=self.user, host=host)
+            dynamo = UserDynamoHandler(host=host, user=self.user)
             updated_request = await dynamo.write_policy_request_v2(
                 extended_request, host
             )
@@ -706,7 +706,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
         if populate_old_managed_policies_result["changed"]:
             extended_request = populate_old_managed_policies_result["extended_request"]
             # Update in dynamo with the latest resource policy changes
-            dynamo = UserDynamoHandler(user=self.user, host=host)
+            dynamo = UserDynamoHandler(host=host, user=self.user)
             updated_request = await dynamo.write_policy_request_v2(
                 extended_request, host
             )

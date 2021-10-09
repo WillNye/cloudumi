@@ -1,13 +1,3 @@
-# Receives requests into CloudUmi
-# Determines host
-# Authenticates client according to host settings
-# Sends async request to other container
-# TODO: Dev mode only:
-import ptvsd
-
-ptvsd.enable_attach(address=("0.0.0.0", 5678), redirect_output=True)
-
-
 import httpx
 import uvicorn
 from fastapi import FastAPI, Request, Response

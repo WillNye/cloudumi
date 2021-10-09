@@ -4,8 +4,7 @@ import sys
 
 import ujson as json
 from mock import MagicMock, patch
-from tests.conftest import MockBaseHandler, MockRedisHandler, create_future
-from tests.globals import host
+from tests.conftest import MockRedisHandler, create_future
 from tests.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -41,7 +40,7 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
         self,
         mock_retrieve_json_data_from_redis_or_s3,  # mock_auth
     ):
-        from cloudumi_common.config import config
+        pass
 
         # mock_auth.return_value.validate_certificate.return_value = create_future(True)
         # mock_auth.return_value.extract_user_from_certificate.return_value = create_future(

@@ -1,6 +1,4 @@
-import hashlib
 import os
-import urllib.parse
 from typing import List
 
 from cloudumi_common.lib.aws.aws_secret_manager import get_aws_secret
@@ -69,31 +67,6 @@ class Config:
     @staticmethod
     def is_contractor(user):
         return False
-
-    @staticmethod
-    def get_employee_photo_url(user, host):
-        from cloudumi_common.config import config
-
-        # Try to get a custom employee photo url by formatting a string provided through configuration
-
-        custom_employee_photo_url = config.get_host_specific_key(
-            f"site_configs.{host}.get_employee_photo_url.custom_employee_url", host, ""
-        ).format(user=user)
-        if custom_employee_photo_url:
-            return custom_employee_photo_url
-
-        # Fall back to Gravatar
-        gravatar_url = (
-            "https://www.gravatar.com/avatar/"
-            + hashlib.md5(user.lower().encode("utf-8")).hexdigest()
-            + "?"
-        )
-        gravatar_url += urllib.parse.urlencode({"d": "mp"})
-        return gravatar_url
-
-    @staticmethod
-    def get_employee_info_url(user, host):
-        return None
 
 
 def init():

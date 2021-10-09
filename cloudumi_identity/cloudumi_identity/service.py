@@ -1,11 +1,8 @@
 import asyncio
-import os
-from concurrent import futures
 from signal import SIGTERM, signal
 
 import grpc
 
-from cloudumi_common.config import config
 from cloudumi_protobufs import identity_service_pb2_grpc
 
 

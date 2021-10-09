@@ -36,10 +36,10 @@ def log_metric_error(future):
 class CloudWatchMetric(Metric):
     def __init__(self):
         self.namespace = config.get(
-            f"_global_.metrics.cloudwatch.namespace", "ConsoleMe"
+            "_global_.metrics.cloudwatch.namespace", "ConsoleMe"
         )
         self.executor = concurrent.futures.ThreadPoolExecutor(
-            config.get(f"_global_.metrics.cloudwatch.max_threads", 10)
+            config.get("_global_.metrics.cloudwatch.max_threads", 10)
         )
 
     def send_cloudwatch_metric(self, metric_name, dimensions, unit, value):

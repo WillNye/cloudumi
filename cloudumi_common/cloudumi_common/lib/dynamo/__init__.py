@@ -267,7 +267,7 @@ class BaseDynamoHandler:
 
 
 class UserDynamoHandler(BaseDynamoHandler):
-    def __init__(self, user: Optional[str] = None, host: Optional[str] = None) -> None:
+    def __init__(self, host, user: Optional[str] = None) -> None:
         self.host = host
         try:
             self.requests_table = self._get_dynamo_table(
@@ -570,8 +570,8 @@ class UserDynamoHandler(BaseDynamoHandler):
             "after_redirect_uri": login_attempt.after_redirect_uri,
         }
         user_entry = await sync_to_async(self.users_table.query)(
-            KeyConditionExpression="username = :un",
-            ExpressionAttributeValues={":un": login_attempt.username},
+            KeyConditionExpression="username = :un AND host = :h",
+            ExpressionAttributeValues={":un": login_attempt.username, ":h": host},
         )
         user = None
 

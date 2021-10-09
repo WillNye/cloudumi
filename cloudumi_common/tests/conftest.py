@@ -464,12 +464,12 @@ def iamrole_table(dynamodb):
     dynamodb.create_table(
         TableName="consoleme_iamroles_multitenant",
         AttributeDefinitions=[
-            {"AttributeName": "arn", "AttributeType": "S"},
-            {"AttributeName": "accountId", "AttributeType": "S"},
+            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "entity_id", "AttributeType": "S"},
         ],
         KeySchema=[
-            {"AttributeName": "arn", "KeyType": "HASH"},
-            {"AttributeName": "accountId", "KeyType": "RANGE"},
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "entity_id", "KeyType": "RANGE"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
     )
@@ -489,12 +489,12 @@ def cloudtrail_table(dynamodb):
     dynamodb.create_table(
         TableName="consoleme_cloudtrail_multitenant",
         AttributeDefinitions=[
+            {"AttributeName": "host", "AttributeType": "S"},
             {"AttributeName": "arn", "AttributeType": "S"},
-            {"AttributeName": "request_id", "AttributeType": "S"},
         ],
         KeySchema=[
-            {"AttributeName": "arn", "KeyType": "HASH"},
-            {"AttributeName": "request_id", "KeyType": "RANGE"},
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "arn", "KeyType": "RANGE"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
         StreamSpecification={
@@ -714,8 +714,12 @@ def policy_requests_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
         TableName="consoleme_policy_requests_multitenant",
-        KeySchema=[{"AttributeName": "request_id", "KeyType": "HASH"}],  # Partition key
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "request_id", "KeyType": "RANGE"},
+        ],  # Partition key
         AttributeDefinitions=[
+            {"AttributeName": "host", "AttributeType": "S"},
             {"AttributeName": "request_id", "AttributeType": "S"},
             {"AttributeName": "arn", "AttributeType": "S"},
         ],
@@ -741,8 +745,14 @@ def requests_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
         TableName="consoleme_requests_global",
-        AttributeDefinitions=[{"AttributeName": "request_id", "AttributeType": "S"}],
-        KeySchema=[{"AttributeName": "request_id", "KeyType": "HASH"}],
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "request_id", "KeyType": "RANGE"},
+        ],  # Partition key
+        AttributeDefinitions=[
+            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "request_id", "AttributeType": "S"},
+        ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
     )
 
@@ -754,8 +764,14 @@ def users_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
         TableName="consoleme_users_multitenant",
-        AttributeDefinitions=[{"AttributeName": "username", "AttributeType": "S"}],
-        KeySchema=[{"AttributeName": "username", "KeyType": "HASH"}],
+        AttributeDefinitions=[
+            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "username", "AttributeType": "S"},
+        ],
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "username", "KeyType": "RANGE"},
+        ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
     )
 
@@ -765,6 +781,7 @@ def users_table(dynamodb):
 @pytest.fixture(autouse=True, scope="session")
 def dummy_requests_data(requests_table):
     user = {
+        "host": {"S": host},
         "request_id": {"S": "abc-def-ghi"},
         "aws:rep:deleting": {"BOOL": False},
         "aws:rep:updateregion": {"S": "us-west-2"},
@@ -791,6 +808,7 @@ def dummy_requests_data(requests_table):
 @pytest.fixture(autouse=True, scope="session")
 def dummy_users_data(users_table):
     user = {
+        "host": {"S": host},
         "username": {"S": "test@user.xyz"},
         "aws:rep:deleting": {"BOOL": False},
         "aws:rep:updateregion": {"S": "us-west-2"},

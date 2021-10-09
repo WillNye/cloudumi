@@ -271,7 +271,7 @@ class UserManagementHandler(BaseAPIV2Handler):
             "ip": self.ip,
             "host": host,
         }
-        ddb = UserDynamoHandler(host=host)
+
         generic_error_message = "Unable to create/update user"
         log.debug(log_data)
         # Checks authz levels of current user
@@ -281,6 +281,7 @@ class UserManagementHandler(BaseAPIV2Handler):
                 self, generic_error_message, errors, 403, "unauthorized", log_data
             )
             return
+        ddb = UserDynamoHandler(host=host)
         request = UserManagementModel.parse_raw(self.request.body)
         log_data["requested_user"] = request.username
         if request.user_management_action.value == "create":

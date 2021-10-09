@@ -33,8 +33,9 @@ async def generate_honeybee_request_from_change_model_array(
     primary_principal = None
     t = int(time.time())
     generated_branch_name = f"{user}-{t}"
-    policy_name = config.get(
-        "generate_honeybee_request_from_change_model_array.policy_name",
+    policy_name = config.get_host_specific_key(
+        f"site_configs.{host}.generate_honeybee_request_from_change_model_array.policy_name",
+        host,
         "self_service_generated",
     )
     repo_config = None
@@ -180,21 +181,23 @@ async def generate_honeybee_request_from_change_model_array(
         if repo_config["code_repository_provider"] == "bitbucket":
             bitbucket = BitBucket(
                 repo_config["code_repository_config"]["url"],
-                config.get(
+                config.get_host_specific_key(
                     "site_configs.{host}.{key}".format(
                         host=host,
                         key=repo_config["code_repository_config"][
                             "username_config_key"
                         ],
-                    )
+                    ),
+                    host,
                 ),
-                config.get(
+                config.get_host_specific_key(
                     "site_configs.{host}.{key}".format(
                         host=host,
                         key=repo_config["code_repository_config"][
                             "password_config_key"
                         ],
-                    )
+                    ),
+                    host,
                 ),
             )
             pull_request_url = await bitbucket.create_pull_request(
@@ -230,8 +233,8 @@ async def generate_honeybee_request_from_change_model_array(
         requester_info=UserModel(
             email=user,
             extended_info=await auth.get_user_info(user, host),
-            details_url=config.config_plugin().get_employee_info_url(user, host),
-            photo_url=config.config_plugin().get_employee_photo_url(user, host),
+            details_url=config.get_employee_info_url(user, host),
+            photo_url=config.get_employee_photo_url(user, host),
         ),
         comments=[],
         cross_account=False,

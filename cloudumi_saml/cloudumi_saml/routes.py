@@ -1,6 +1,4 @@
 """Web routes."""
-import os
-
 import sentry_sdk
 import tornado.autoreload
 import tornado.web

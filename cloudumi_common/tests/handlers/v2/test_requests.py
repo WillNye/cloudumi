@@ -57,7 +57,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             self.config.get_host_specific_key(
                 f"site_configs.{host}.cache_policy_requests.redis_key",
                 host,
-                "ALL_POLICY_REQUESTS",
+                f"{host}_ALL_POLICY_REQUESTS",
             ),
             json.dumps(mock_request_data),
         )
@@ -117,7 +117,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             self.config.get_host_specific_key(
                 f"site_configs.{host}.cache_policy_requests.redis_key",
                 host,
-                "ALL_POLICY_REQUESTS",
+                f"site_configs.{host}.ALL_POLICY_REQUESTS",
             ),
             json.dumps(mock_request_data),
         )
@@ -182,24 +182,16 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             self.config.get_host_specific_key(
                 f"site_configs.{host}.cache_policy_requests.redis_key",
                 host,
-                "ALL_POLICY_REQUESTS",
+                f"{host}_ALL_POLICY_REQUESTS",
             ),
             json.dumps(mock_request_data),
         )
 
-        headers = {
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
-            ): "consoleme_admins@example.com",
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
-            ): "groupa,groupb,groupc",
-        }
         response = self.fetch(
             "/api/v2/request",
             method="POST",
-            headers=headers,
             body=json.dumps(mock_request_data),
+            user="consoleme_admins@example.com",
         )
         self.assertEqual(response.code, 200)
         response_d = json.loads(response.body)
@@ -229,23 +221,14 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             self.config.get_host_specific_key(
                 f"site_configs.{host}.cache_policy_requests.redis_key",
                 host,
-                "ALL_POLICY_REQUESTS",
+                f"{host}_ALL_POLICY_REQUESTS",
             ),
             json.dumps(mock_request_data),
         )
 
-        headers = {
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
-            ): "user@github.com",
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
-            ): "groupa,groupb,groupc",
-        }
         response = self.fetch(
             "/api/v2/requests",
             method="POST",
-            headers=headers,
             body=json.dumps({"limit": 1}),
         )
         self.assertEqual(response.code, 200)
@@ -266,23 +249,14 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             self.config.get_host_specific_key(
                 f"site_configs.{host}.cache_policy_requests.redis_key",
                 host,
-                "ALL_POLICY_REQUESTS",
+                f"{host}_ALL_POLICY_REQUESTS",
             ),
             json.dumps(mock_request_data),
         )
 
-        headers = {
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
-            ): "user@github.com",
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
-            ): "groupa,groupb,groupc",
-        }
         response = self.fetch(
             "/api/v2/requests",
             method="POST",
-            headers=headers,
             body=json.dumps({"filters": {"request_id": "12346"}}),
         )
         self.assertEqual(response.code, 200)
@@ -366,11 +340,11 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                         "principal_arn": "arn:aws:iam::123456789012:policy/testpolicy",
                     },
                     "justification": None,
-                    "requester_email": "user@github.com",
+                    "requester_email": "testuser@example.com",
                     "approvers": [],
                     "request_status": "pending",
                     "cross_account": False,
-                    "arn_url": "/policies/edit/123456789012/managed_policy/testpolicy",
+                    "arn_url": "/role/123456789012?redirect=https://console.aws.amazon.com/iam/home?%23/policies/arn:aws:iam::123456789012:policy/testpolicy$serviceLevelSummary",
                     "admin_auto_approve": False,
                     "changes": {
                         "changes": [
@@ -417,15 +391,15 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                         ]
                     },
                     "requester_info": {
-                        "email": "user@github.com",
+                        "email": "testuser@example.com",
                         "extended_info": {
                             "domain": "",
-                            "userName": "user@github.com",
+                            "userName": "testuser@example.com",
                             "name": {"givenName": "", "familyName": "", "fullName": ""},
-                            "primaryEmail": "user@github.com",
+                            "primaryEmail": "testuser@example.com",
                         },
                         "details_url": None,
-                        "photo_url": "https://www.gravatar.com/avatar/1496f7f4fd086e2d0a0460220331e9ec?d=mp",
+                        "photo_url": "https://www.gravatar.com/avatar/7ec7606c46a14a7ef514d1f1f9038823?d=mp",
                     },
                     "reviewer": None,
                     "comments": [],
@@ -434,14 +408,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     def test_post_new_managed_policy_resource_request_autoapprove(self):
-        headers = {
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
-            ): "consoleme_admins@example.com",
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
-            ): "groupa,groupb,groupc",
-        }
+        user = "consoleme_admins@example.com"
 
         input_body = {
             "admin_auto_approve": True,
@@ -486,8 +453,8 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         response = self.fetch(
             "/api/v2/request",
             method="POST",
-            headers=headers,
             body=json.dumps(input_body),
+            user=user,
         )
         result = json.loads(response.body)
         result.pop("request_id")
@@ -526,7 +493,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                     "approvers": [],
                     "request_status": "approved",
                     "cross_account": False,
-                    "arn_url": "/policies/edit/123456789012/managed_policy/randompath/extra/testpolicy",
+                    "arn_url": "/role/123456789012?redirect=https://console.aws.amazon.com/iam/home?%23/policies/arn:aws:iam::123456789012:policy/randompath/extra/testpolicy$serviceLevelSummary",
                     "admin_auto_approve": True,
                     "changes": {
                         "changes": [
@@ -589,15 +556,6 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     def test_post_iam_role_request_dry_run(self):
-        headers = {
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
-            ): "user@github.com",
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
-            ): "groupa,groupb,groupc",
-        }
-
         input_body = {
             "dry_run": True,
             "changes": {
@@ -628,7 +586,6 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         response = self.fetch(
             "/api/v2/request",
             method="POST",
-            headers=headers,
             body=json.dumps(input_body),
         )
         result = json.loads(response.body)
@@ -652,11 +609,11 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                         "principal_arn": "arn:aws:iam::123456789012:role/RoleNumber1",
                     },
                     "justification": None,
-                    "requester_email": "user@github.com",
+                    "requester_email": "testuser@example.com",
                     "approvers": [],
                     "request_status": "pending",
                     "cross_account": False,
-                    "arn_url": "/policies/edit/123456789012/iamrole/RoleNumber1",
+                    "arn_url": "",
                     "admin_auto_approve": False,
                     "changes": {
                         "changes": [
@@ -692,15 +649,15 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                         ]
                     },
                     "requester_info": {
-                        "email": "user@github.com",
+                        "email": "testuser@example.com",
                         "extended_info": {
                             "domain": "",
-                            "userName": "user@github.com",
+                            "userName": "testuser@example.com",
                             "name": {"givenName": "", "familyName": "", "fullName": ""},
-                            "primaryEmail": "user@github.com",
+                            "primaryEmail": "testuser@example.com",
                         },
                         "details_url": None,
-                        "photo_url": "https://www.gravatar.com/avatar/1496f7f4fd086e2d0a0460220331e9ec?d=mp",
+                        "photo_url": "https://www.gravatar.com/avatar/7ec7606c46a14a7ef514d1f1f9038823?d=mp",
                     },
                     "reviewer": None,
                     "comments": [],
@@ -711,14 +668,6 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
     @patch("git.Repo")
     @patch("git.Git")
     def test_post_honeybee_request_dry_run(self, mock_git, mock_repo):
-        headers = {
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
-            ): "user@github.com",
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
-            ): "groupa,groupb,groupc",
-        }
         input_body = {
             "dry_run": True,
             "changes": {
@@ -779,7 +728,6 @@ Policies:
             response = self.fetch(
                 "/api/v2/request",
                 method="POST",
-                headers=headers,
                 body=json.dumps(input_body),
             )
             result = json.loads(response.body)
@@ -851,7 +799,7 @@ Policies:
                             "resource_url": "http://example.com/fake_repo/path/to/file.yaml",
                         },
                         "justification": None,
-                        "requester_email": "user@github.com",
+                        "requester_email": "testuser@example.com",
                         "approvers": [],
                         "request_status": "pending",
                         "cross_account": False,
@@ -880,19 +828,19 @@ Policies:
                             ]
                         },
                         "requester_info": {
-                            "email": "user@github.com",
+                            "email": "testuser@example.com",
                             "extended_info": {
                                 "domain": "",
-                                "userName": "user@github.com",
+                                "userName": "testuser@example.com",
                                 "name": {
                                     "givenName": "",
                                     "familyName": "",
                                     "fullName": "",
                                 },
-                                "primaryEmail": "user@github.com",
+                                "primaryEmail": "testuser@example.com",
                             },
                             "details_url": None,
-                            "photo_url": "https://www.gravatar.com/avatar/1496f7f4fd086e2d0a0460220331e9ec?d=mp",
+                            "photo_url": "https://www.gravatar.com/avatar/7ec7606c46a14a7ef514d1f1f9038823?d=mp",
                         },
                         "reviewer": None,
                         "comments": [],

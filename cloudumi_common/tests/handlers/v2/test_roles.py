@@ -1,6 +1,6 @@
 import ujson as json
 from mock import patch
-from tests.conftest import MockBaseHandler, MockBaseMtlsHandler, create_future
+from tests.conftest import create_future
 from tests.globals import host
 from tests.util import ConsoleMeAsyncHTTPTestCase
 
@@ -218,24 +218,8 @@ class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
 
         return make_app(jwt_validator=lambda x: {})
 
-    def test_delete_role_by_user(self):
-        expected = {
-            "status": 406,
-            "title": "Not Acceptable",
-            "message": "Endpoint not supported for non-applications",
-        }
-        response = self.fetch(
-            "/api/v2/mtls/roles/012345678901/fake_account_admin", method="DELETE"
-        )
-        self.assertEqual(response.code, 406)
-        self.assertDictEqual(json.loads(response.body), expected)
-
     @patch("cloudumi_api.handlers.v2.roles.can_delete_iam_principals_app")
     def test_delete_role_by_app_denied(self, mock_can_delete_roles):
-        import boto3
-
-        from cloudumi_common.config import config
-
         expected = {"code": "403", "message": "Invalid Certificate"}
         mock_can_delete_roles.return_value = False
         response = self.fetch(

@@ -55,7 +55,7 @@ async def can_move_back_to_pending(current_user, request, groups, host):
 
 async def get_request_by_id(user, request_id, host):
     """Get request matching id and add the group's secondary approvers"""
-    dynamo_handler = UserDynamoHandler(user=user, host=host)
+    dynamo_handler = UserDynamoHandler(host=host, user=user)
     try:
         requests = await sync_to_async(dynamo_handler.resolve_request_ids)(
             [request_id], host
@@ -76,7 +76,7 @@ async def get_request_by_id(user, request_id, host):
 
 async def get_all_pending_requests_api(user, host):
     """Get all pending requests and add the group's secondary approvers"""
-    dynamo_handler = UserDynamoHandler(user=user, host=host)
+    dynamo_handler = UserDynamoHandler(host=host, user=user)
     all_requests = await dynamo_handler.get_all_requests(host)
     auth = get_plugin_by_name(
         config.get_host_specific_key(
@@ -109,7 +109,7 @@ async def get_all_pending_requests_api(user, host):
 
 
 async def get_app_pending_requests_policies(user, host):
-    dynamo_handler = UserDynamoHandler(user=user, host=host)
+    dynamo_handler = UserDynamoHandler(host=host, user=user)
     all_policy_requests = await dynamo_handler.get_all_policy_requests(
         host, status="pending"
     )
@@ -119,7 +119,7 @@ async def get_app_pending_requests_policies(user, host):
 
 
 async def get_all_policy_requests(user, host, status=None):
-    dynamo_handler = UserDynamoHandler(user=user, host=host)
+    dynamo_handler = UserDynamoHandler(host=host, user=user)
     all_policy_requests = await dynamo_handler.get_all_policy_requests(
         host, status=status
     )
@@ -225,7 +225,7 @@ async def get_user_requests(user, groups, host):
     A user sees group requests they have made as well as requests where they are a
     secondary approver
     """
-    dynamo_handler = UserDynamoHandler(user=user, host=host)
+    dynamo_handler = UserDynamoHandler(host=host, user=user)
     all_requests = await dynamo_handler.get_all_requests(host)
     query = {
         "domains": config.get_host_specific_key(
@@ -272,7 +272,7 @@ async def get_user_requests(user, groups, host):
 async def get_existing_pending_approved_request(
     user: str, group_info: Any, host: str
 ) -> None:
-    dynamo_handler = UserDynamoHandler(user=user, host=host)
+    dynamo_handler = UserDynamoHandler(host=host, user=user)
     existing_requests = await sync_to_async(dynamo_handler.get_requests_by_user)(
         user, host
     )
@@ -286,7 +286,7 @@ async def get_existing_pending_approved_request(
 
 
 async def get_existing_pending_request(user: str, group_info: Any, host: str) -> None:
-    dynamo_handler = UserDynamoHandler(user=user, host=host)
+    dynamo_handler = UserDynamoHandler(host=host, user=user)
     existing_requests = await sync_to_async(dynamo_handler.get_requests_by_user)(
         user, host
     )

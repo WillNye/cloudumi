@@ -1,6 +1,5 @@
 import ujson as json
 from mock import patch
-from tests.conftest import MockBaseHandler
 from tests.util import ConsoleMeAsyncHTTPTestCase
 
 

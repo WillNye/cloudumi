@@ -390,8 +390,8 @@ async def generate_request_from_change_model_array(
             requester_info=UserModel(
                 email=user,
                 extended_info=await auth.get_user_info(user, host),
-                details_url=config.config_plugin().get_employee_info_url(user, host),
-                photo_url=config.config_plugin().get_employee_photo_url(user, host),
+                details_url=config.get_employee_info_url(user, host),
+                photo_url=config.get_employee_photo_url(user, host),
             ),
             comments=[],
             cross_account=False,
@@ -2412,7 +2412,7 @@ async def _update_dynamo_with_change(
     error_message: str,
     visible: bool = True,
 ):
-    dynamo = UserDynamoHandler(user=user, host=host)
+    dynamo = UserDynamoHandler(host=host, user=user)
     try:
         await dynamo.write_policy_request_v2(extended_request, host)
         response.action_results.append(
