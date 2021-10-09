@@ -28,7 +28,8 @@ from tornado.concurrent import Future
 os.environ["AWS_REGION"] = "us-east-1"
 
 # This must be set before loading ConsoleMe's configuration
-os.environ["CONFIG_LOCATION"] = "tests/test_configuration.yaml"
+if not os.environ.get("CONFIG_LOCATION"):
+    os.environ["CONFIG_LOCATION"] = "tests/test_configuration.yaml"
 
 MOCK_ROLE = {
     "arn": "arn:aws:iam::123456789012:role/FakeRole",

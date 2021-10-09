@@ -4,7 +4,7 @@ project := cloudumi_common
 flake8 := flake8
 pytest := PYTHONDONTWRITEBYTECODE=1 py.test --tb short \
 	--cov-config .coveragerc --cov $(project) \
-	--async-test-timeout=1 --timeout=30 tests
+	--async-test-timeout=60 --timeout=30 tests
 
 html_report := --cov-report html
 test_args := --cov-report term-missing
@@ -108,12 +108,10 @@ up-reqs: clean
 	pip install --upgrade setuptools
 	pip-compile --output-file requirements.txt requirements.in -U --no-emit-index-url
 	pip-compile --output-file requirements-test.txt requirements-test.in requirements.txt -U --no-emit-index-url
-	pip-compile --output-file requirements-docs.txt requirements-docs.in -U --no-emit-index-url
 	@echo "--> Done updating Python requirements"
 	@echo "--> Installing new dependencies"
 	pip install -e .
 	pip install -r requirements-test.txt
-	pip install -r requirements-docs.txt
 	@echo "--> Done installing new dependencies"
 
 consoleme.tar.gz: clean

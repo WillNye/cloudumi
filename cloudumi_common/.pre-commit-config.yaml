@@ -13,7 +13,7 @@ repos:
     rev: 3.8.4
     hooks:
       - id: flake8
-        args: ["--exclude", "consoleme/models.py"]
+        args: ["--exclude", "cloudumi_common/models.py"]
 
   - repo: https://github.com/asottile/seed-isort-config
     rev: v2.2.0
