@@ -119,7 +119,7 @@ services:
       dockerfile: cloudumi_frontend/Dockerfile
     image: cloudumi_frontend
     ports:
-      - 8081:3000
+      - 3000:3000
     labels:
       - traefik.http.routers.cloudumi_frontend.rule=PathPrefix(`/`)
       - "traefik.http.routers.cloudumi_frontend.entrypoints=websecure"

@@ -1,0 +1,79 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome",
+      "request": "launch",
+      "type": "pwa-chrome",
+      "url": "http://localhost",
+      "webRoot": "${workspaceFolder}/cloudumi_frontend/frontend/"
+    },
+    {
+      "name": "Remote: cloudumi-healthcheck",
+      "type": "python",
+      "request": "attach",
+      "host": "localhost",
+      "port": 9090,
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/cloudumi_healthcheck",
+          "remoteRoot": "/apps/cloudumi_healthcheck"
+        }
+      ]
+    },
+    {
+      "name": "Remote: cloudumi-saml",
+      "type": "python",
+      "request": "attach",
+      "host": "localhost",
+      "port": 9091,
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/cloudumi_saml",
+          "remoteRoot": "/apps/cloudumi_saml"
+        },
+        {
+          "localRoot": "${workspaceFolder}/cloudumi_common",
+          "remoteRoot": "/apps/cloudumi_common"
+        }
+      ]
+    },
+    {
+      "name": "Remote: cloudumi-api",
+      "type": "python",
+      "request": "attach",
+      "host": "localhost",
+      "port": 9092,
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/cloudumi_api",
+          "remoteRoot": "/apps/cloudumi_api"
+        },
+        {
+          "localRoot": "${workspaceFolder}/cloudumi_common",
+          "remoteRoot": "/apps/cloudumi_common"
+        }
+      ]
+    },
+    {
+      "name": "Remote: cloudumi_initialize_redis_dynamo_for_dev",
+      "type": "python",
+      "request": "attach",
+      "host": "localhost",
+      "port": 9099,
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/cloudumi_api",
+          "remoteRoot": "/apps/cloudumi_api"
+        },
+        {
+          "localRoot": "${workspaceFolder}/cloudumi_common",
+          "remoteRoot": "/apps/cloudumi_common"
+        }
+      ]
+    }
+  ]
+}

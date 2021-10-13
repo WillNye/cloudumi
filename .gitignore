@@ -118,7 +118,6 @@ venv.bak/
 
 # Dev environment stuff:
 .DS_Store
-.vscode/
 .idea/
 dynamodb-data/
 redis-data/
