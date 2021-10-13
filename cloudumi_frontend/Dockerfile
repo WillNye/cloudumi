@@ -32,7 +32,7 @@ WORKDIR /apps/cloudumi_frontend/frontend
 RUN yarn
 
 # Build static frontend
-RUN yarn build:prod
+RUN yarn build
 
 
 EXPOSE 8081

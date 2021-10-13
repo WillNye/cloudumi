@@ -1,5 +1,6 @@
 site_configs:
   localhost:
+    # Customer controlled
     identity:
       cache_groups:
         enabled: true
@@ -10,6 +11,7 @@ site_configs:
           org_url: https://dev-876967.okta.com/
           # TODO: No secrets should be in plaintext configuration
           api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
+    # Customer controlled (Need to instruct them to give us write access
     consoleme_s3_bucket: consolemecache
     jwt_secret: local_secret_insecure
     policies:

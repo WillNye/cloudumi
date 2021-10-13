@@ -1,7 +1,7 @@
 # Build from the directory above this with:
 # docker build . -f cloudumi_base_docker/Dockerfile -t cloudumi_base_docker
 
-FROM python
+FROM python:3.9.7
 RUN mkdir -p /apps
 RUN apt-get update
 RUN apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y

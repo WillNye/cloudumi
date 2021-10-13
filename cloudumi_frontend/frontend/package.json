@@ -8,8 +8,6 @@
     "@testing-library/react": "^12.0.0",
     "@testing-library/user-event": "^13.2.1",
     "axios": "^0.21.4",
-    "fomantic-ui": "^2.8.8",
-    "fomantic-ui-css": "^2.8.8",
     "js-cookie": "^3.0.1",
     "js-yaml": "^4.1.0",
     "json-2-csv": "^3.14.4",
