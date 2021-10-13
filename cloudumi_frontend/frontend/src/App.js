@@ -5,6 +5,8 @@ import { NotificationProvider } from "./components/hooks/notifications";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import ConsoleMeSelectRoles from "./components/roles/SelectRoles";
 import ConsoleMePolicyTable from "./components/policy/PolicyTable";
+import ConsoleMeIdentityGroupsTable from "./components/identity/IdentityGroupsTable";
+import IdentityGroupEdit from "./components/identity/Group";
 import ConsoleMeRequestTable from "./components/request/RequestTable";
 import ConsoleMeSelfService from "./components/selfservice/SelfService";
 import ConsoleMeDynamicConfig from "./components/DynamicConfig";
@@ -40,6 +42,17 @@ function App() {
           exact
           path="/policies"
           component={ConsoleMePolicyTable}
+        />
+        <ProtectedRoute
+          key="groups"
+          exact
+          path="/groups"
+          component={ConsoleMeIdentityGroupsTable}
+        />
+        <ProtectedRoute
+          key="group"
+          path="/group/:idpName/:groupName"
+          component={IdentityGroupEdit}
         />
         <ProtectedRoute
           key="review"

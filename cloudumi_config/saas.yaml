@@ -10,7 +10,7 @@ extends:
   - saas_cognito_cloudumi_com.yaml
 _global_:
   elastic_apn:
-    enabled: true
+    enabled: false # TODO: Maybe change me
     service_name: cloudumi
     server_url: http://apmserver:8200
   logging:

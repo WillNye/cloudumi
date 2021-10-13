@@ -331,7 +331,93 @@ except ClientError as e:
 table_name = "consoleme_site_config_multitenant"
 try:
     ddb.create_table(
-        TableName="consoleme_config_multitenant",
+        TableName="consoleme_site_config_multitenant",
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "id", "KeyType": "RANGE"},
+        ],  # Partition key
+        AttributeDefinitions=[
+            {"AttributeName": "id", "AttributeType": "S"},
+            {"AttributeName": "host", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
+        StreamSpecification={
+            "StreamEnabled": streams_enabled,
+            "StreamViewType": "NEW_AND_OLD_IMAGES",
+        },
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "host_index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "host",
+                        "KeyType": "HASH",
+                    },
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL",
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 100,
+                    "WriteCapacityUnits": 100,
+                },
+            }
+        ],
+    )
+except ClientError as e:
+    if str(e) != (
+        "An error occurred (ResourceInUseException) when calling the CreateTable operation: "
+        "Cannot create preexisting table"
+    ):
+        print(f"Unable to create table {table_name}. Error: {e}.")
+
+table_name = "consoleme_identity_groups_multitenant"
+try:
+    ddb.create_table(
+        TableName=table_name,
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "group_id", "KeyType": "RANGE"},
+        ],  # Partition key
+        AttributeDefinitions=[
+            {"AttributeName": "group_id", "AttributeType": "S"},
+            {"AttributeName": "host", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
+        StreamSpecification={
+            "StreamEnabled": streams_enabled,
+            "StreamViewType": "NEW_AND_OLD_IMAGES",
+        },
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "host_index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "host",
+                        "KeyType": "HASH",
+                    },
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL",
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 100,
+                    "WriteCapacityUnits": 100,
+                },
+            }
+        ],
+    )
+except ClientError as e:
+    if str(e) != (
+        "An error occurred (ResourceInUseException) when calling the CreateTable operation: "
+        "Cannot create preexisting table"
+    ):
+        print(f"Unable to create table {table_name}. Error: {e}.")
+
+table_name = "consoleme_identity_users_multitenant"
+try:
+    ddb.create_table(
+        TableName=table_name,
         KeySchema=[
             {"AttributeName": "host", "KeyType": "HASH"},
             {"AttributeName": "id", "KeyType": "RANGE"},

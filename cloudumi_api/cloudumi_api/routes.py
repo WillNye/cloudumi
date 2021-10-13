@@ -80,6 +80,11 @@ from cloudumi_api.handlers.v2.user import (
     UserRegistrationHandler,
 )
 from cloudumi_api.handlers.v2.user_profile import UserProfileHandler
+from cloudumi_api.handlers.v3.identity.group import IdentityGroupHandler
+from cloudumi_api.handlers.v3.identity.groups import (
+    IdentityGroupPageConfigHandler,
+    IdentityGroupsTableHandler,
+)
 from cloudumi_common.config import config
 
 log = config.get_logger()
@@ -158,6 +163,9 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
+        (r"/api/v3/identity_groups_page_config", IdentityGroupPageConfigHandler),
+        (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
+        (r"/api/v3/identities/group/(.*?)/(.*)", IdentityGroupHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
     ]
 

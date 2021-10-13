@@ -189,6 +189,13 @@ class BaseDynamoHandler:
                     with attempt:
                         batch.put_item(Item=self._data_to_dynamo_replace(item))
 
+    def parallel_delete_table_entries(self, table, keys):
+        with table.batch_writer() as batch:
+            for key in keys:
+                for attempt in Retrying(stop=stop_after_attempt(3), wait=wait_fixed(2)):
+                    with attempt:
+                        batch.delete_item(Key=self._data_to_dynamo_replace(key))
+
     def parallel_scan_table(
         self,
         table,
@@ -332,6 +339,24 @@ class UserDynamoHandler(BaseDynamoHandler):
                     f"site_configs.{host}.aws.notifications_table",
                     host,
                     "consoleme_notifications_multitenant",
+                ),
+                host,
+            )
+
+            self.identity_groups_table = self._get_dynamo_table(
+                config.get_host_specific_key(
+                    f"site_configs.{host}.aws.identity_groups_table",
+                    host,
+                    "consoleme_identity_groups_multitenant",
+                ),
+                host,
+            )
+
+            self.identity_users_table = self._get_dynamo_table(
+                config.get_host_specific_key(
+                    f"site_configs.{host}.aws.identity_users_table",
+                    host,
+                    "consoleme_identity_users_multitenant",
                 ),
                 host,
             )
@@ -1139,6 +1164,40 @@ class UserDynamoHandler(BaseDynamoHandler):
                 error_count[arn] = 0
             error_count[arn] += item.get("count", 1)
         return error_count
+
+    def fetch_groups_for_host(self, host):
+        # TODO: Support filtering?
+        function: str = (
+            f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
+        )
+        log_data = {
+            "function": function,
+            "host": host,
+        }
+
+        log.debug(log_data)
+        groups = self.identity_groups_table.query(
+            KeyConditionExpression="host = :h",
+            ExpressionAttributeValues={":h": host},
+        )
+        return groups
+
+    def fetch_users_for_host(self, host):
+        # TODO: Support filtering?
+        function: str = (
+            f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
+        )
+        log_data = {
+            "function": function,
+            "host": host,
+        }
+
+        log.debug(log_data)
+        users = self.identity_users_table.query(
+            KeyConditionExpression="host = :h",
+            ExpressionAttributeValues={":h": host},
+        )
+        return users
 
 
 class IAMRoleDynamoHandler(BaseDynamoHandler):

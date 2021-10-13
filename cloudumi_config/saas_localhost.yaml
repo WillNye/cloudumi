@@ -1,10 +1,15 @@
 site_configs:
   localhost:
-    identity_providers:
-      okta_test:
-        type: okta
-        org_url: https://dev-876967.okta.com/
-        api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
+    identity:
+      cache_groups:
+        enabled: true
+      identity_providers:
+        okta_test:
+          name: okta_test
+          idp_type: okta
+          org_url: https://dev-876967.okta.com/
+          # TODO: No secrets should be in plaintext configuration
+          api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
     consoleme_s3_bucket: consolemecache
     jwt_secret: local_secret_insecure
     policies:

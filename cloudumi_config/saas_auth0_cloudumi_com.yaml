@@ -16,6 +16,7 @@ site_configs:
       internal_routes: cmsaas_internal_routes
       internal_policies: cmsaas_policies
     url: https://auth0.cloudumi.com/
+    # Customer controlled
     application_admin: consoleme_admins@example.com
     environment: dev
     development: true
@@ -26,12 +27,15 @@ site_configs:
       xsrf_cookie_kwargs:
         samesite: strict
     dynamodb_server: http://localhost:8005 # Not allowed in non localhost configuration
+    # Customer controlled
     challenge_url:
       request_ip_must_match_challenge_creation_ip: true
+    # Customer controlled
     auth:
       get_user_by_saml: true
       set_auth_cookie: true
       force_redirect_to_identity_provider: false
+    # Customer controlled
     get_user_by_saml_settings:
       # parameter organization is required for this client
       # On the provider, set ACS url to https://your_consoleme_url/saml/acs and saml audience to "https://your_consoleme_url/"
@@ -91,6 +95,7 @@ site_configs:
           wantMessagesSigned: true
           wantNameId: true
           wantNameIdEncrypted: false
+    # Customer controlled
     cloud_credential_authorization_mapping:
       role_tags:
         enabled: true

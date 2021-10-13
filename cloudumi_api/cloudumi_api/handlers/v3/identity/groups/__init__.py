@@ -1,0 +1,149 @@
+import ujson as json
+
+from cloudumi_common.config import config
+from cloudumi_common.handlers.base import BaseHandler
+from cloudumi_common.lib.cache import retrieve_json_data_from_redis_or_s3
+from cloudumi_common.lib.generic import filter_table
+from cloudumi_common.lib.plugins import get_plugin_by_name
+from cloudumi_common.lib.timeout import Timeout
+from cloudumi_common.models import DataTableResponse
+from cloudumi_identity.lib.groups import get_identity_group_storage_keys
+
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+log = config.get_logger()
+
+
+class IdentityGroupPageConfigHandler(BaseHandler):
+    async def get(self):
+        """
+        /api/v3/identity_groups_page_config
+        ---
+        get:
+            description: Retrieve Policies Page Configuration
+            responses:
+                200:
+                    description: Returns Policies Page Configuration
+        """
+        host = self.ctx.host
+        default_configuration = {
+            "pageName": "Group Identity Manager",
+            "pageDescription": "",
+            "tableConfig": {
+                "expandableRows": True,
+                "dataEndpoint": "/api/v3/identities/groups?markdown=true",
+                "sortable": False,
+                "totalRows": 1000,
+                "rowsPerPage": 50,
+                "serverSideFiltering": True,
+                "allowCsvExport": True,
+                "allowJsonExport": True,
+                "columns": [
+                    {
+                        "placeholder": "Group Name",
+                        "key": "name",
+                        "type": "input",
+                        "style": {"width": "110px"},
+                    },
+                    {
+                        "placeholder": "IDP Name",
+                        "key": "idp_name",
+                        "type": "input",
+                        "style": {"width": "90px"},
+                    },
+                    {
+                        "placeholder": "Description",
+                        "key": "description",
+                        "type": "link",
+                        "width": 6,
+                        "style": {"whiteSpace": "normal", "wordBreak": "break-all"},
+                    },
+                ],
+            },
+        }
+
+        table_configuration = config.get_host_specific_key(
+            f"site_configs.{host}.IdentityGroupTableConfigHandler.configuration",
+            host,
+            default_configuration,
+        )
+
+        self.write(table_configuration)
+
+
+class IdentityGroupsTableHandler(BaseHandler):
+    """
+    /api/v3/identities/groups?markdown=true
+    Provides table contents for the identity groups table.
+    1. Cache groups to DynamoDB/S3/Redis via Celery
+        (Give user a Force Resync button?)
+    2. Display in Groups table with advanced filtering
+    3.
+    """
+
+    async def post(self):
+        """
+        POST /api/v2/identity/groups
+        """
+        host = self.ctx.host
+        arguments = {k: self.get_argument(k) for k in self.request.arguments}
+        config_keys = get_identity_group_storage_keys(host)
+        arguments = json.loads(self.request.body)
+        filters = arguments.get("filters")
+        # TODO: Add server-side sorting
+        # sort = arguments.get("sort")
+        limit = arguments.get("limit", 1000)
+        tags = {"user": self.user}
+        stats.count("IdentityGroupsTableHandler.post", tags=tags)
+        log_data = {
+            "function": "IdentityGroupsTableHandler.post",
+            "user": self.user,
+            "message": "Writing items",
+            "limit": limit,
+            "filters": filters,
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "host": host,
+        }
+        log.debug(log_data)
+        items_d = await retrieve_json_data_from_redis_or_s3(
+            config_keys["redis_key"],
+            s3_bucket=config_keys["s3_bucket"],
+            s3_key=config_keys["s3_key"],
+            host=host,
+            default={},
+        )
+        items = list(items_d.values())
+
+        total_count = len(items)
+
+        if filters:
+            try:
+                with Timeout(seconds=5):
+                    for filter_key, filter_value in filters.items():
+                        items = await filter_table(filter_key, filter_value, items)
+            except TimeoutError:
+                self.write("Query took too long to run. Check your filter.")
+                await self.finish()
+                raise
+
+        items_to_write = []
+        for item in items[0:limit]:
+            idp_name = item["idp_name"]
+            group_name = item["name"]
+            group_url = f"/group/{idp_name}/{group_name}"
+            # Convert request_id and role ARN to link
+            item["name"] = f"[{group_name}]({group_url})"
+            items_to_write.append(item)
+        filtered_count = len(items_to_write)
+        res = DataTableResponse(
+            totalCount=total_count, filteredCount=filtered_count, data=items_to_write
+        )
+        self.write(res.json())
+
+
+class IdentityGroupsHandler(BaseHandler):
+    """
+    Shows all groups associated with a given host
+    """
+
+    pass

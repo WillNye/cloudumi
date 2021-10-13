@@ -1,27 +1,24 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, constr
 
 # Reference: https://www.guidodiepen.nl/2019/02/implementing-a-simple-plugin-framework-in-python/
+
+
+class IdentityProvider(BaseModel):
+    name: str
+
+
+class OktaIdentityProvider(IdentityProvider):
+    idp_type: constr(regex=r"okta")
+    org_url: str
+    api_token: str
 
 
 class UserStatus(Enum):
     active = "active"
     inactive = "inactive"
-
-
-class Group(BaseModel):
-    name: str
-    domain: str
-    group_id: str
-    friendly_name: str
-    description: str
-    settings: str
-    aliases: str
-    members: str
-    attributes: str
-    automated_group: str
 
 
 class User(BaseModel):
@@ -34,6 +31,63 @@ class User(BaseModel):
     updated: str
     groups: List[str]
     background_check_status: str
+
+
+class Group(BaseModel):
+    host: str = Field(..., description="Host/Tenant associated with the group")
+    name: str = Field(..., description="Name of the group")
+    idp_name: str = Field(
+        ...,
+        description="Name of the host's identity provider that's associated with the group",
+    )
+    group_id: str = Field(
+        ..., description="Unique Group ID for the group. Usually it's {idp-name}-{name}"
+    )
+    description: Optional[str] = Field(None, description="Description of the group")
+    requestable: Optional[bool] = Field(
+        None, description="Whether end-users can request access to group"
+    )
+    manager_approval_required: Optional[bool] = Field(
+        None, description="Whether a manager needs to approve access to the group"
+    )
+    approval_chain: Optional[List[Union[User, str]]] = Field(
+        [],
+        description="A list of users or groups that need to approve access to the group",
+    )
+    self_approval_groups: Optional[List[str]] = Field(
+        [],
+        description=(
+            "If the user is a member of a self-approval group, their request to the group "
+            "will be automatically approved"
+        ),
+    )
+    allow_bulk_add_and_remove: Optional[bool] = Field(
+        True,
+        description=(
+            "Controls whether administrators can automatically approve access to the group"
+        ),
+    )
+    background_check_required: Optional[bool] = Field(
+        False,
+        description=("Whether a background check is required to be added to the group"),
+    )
+    allow_contractors: Optional[bool] = Field(
+        False,
+        description=("Whether contractors are allowed to be members of the group"),
+    )
+    allow_third_party: Optional[bool] = Field(
+        False,
+        description=(
+            "Whether third-party users are allowed to be a member of the group"
+        ),
+    )
+    emails_to_notify_on_new_members: Optional[List[str]] = Field(
+        [],
+        description=(
+            "A list of e-mail addresses to notify when new users are added to the group."
+        ),
+    )
+    extra: Any = Field(None, description=("Extra attributes to store"))
 
 
 class ActionStatus(Enum):
@@ -101,6 +155,9 @@ class GroupManagementPlugin:
     ) -> ActionResponse:
         raise NotImplementedError
 
+    async def get_group(self, group_name: str):
+        raise NotImplementedError
+
     async def add_user_to_groups(
         self, user: User, groups: List[Group], requester: User
     ) -> ActionResponse:
@@ -128,4 +185,65 @@ class GroupManagementPlugin:
         raise NotImplementedError
 
     async def get_users_group_memberships(self, user: List[User]) -> ActionResponse:
+        raise NotImplementedError
+
+    async def list_group_users(self, group: Group):
+        raise NotImplementedError
+
+    async def create_group(self, group: Group):
+        raise NotImplementedError
+
+    async def add_group_target_to_role(
+        self, user_id: str, user_role_id: str, group_id: str
+    ):
+        raise NotImplementedError
+
+    async def create_user(self, user: User):
+        raise NotImplementedError
+
+    async def activate_user(self, user_id: str):
+        raise NotImplementedError
+
+    async def suspend_user(self, user_id: str):
+        raise NotImplementedError
+
+    async def unsuspend_user(self, user_id: str):
+        raise NotImplementedError
+
+    async def assign_role_to_user(self, user_id: str, req):
+        raise NotImplementedError
+
+    async def get_user(self, user_id: str):
+        raise NotImplementedError
+
+    async def deactivate_or_delete_user(self, user_id: str):
+        raise NotImplementedError
+
+    async def assign_role_to_group(self, group: Group, req):
+        raise NotImplementedError
+
+    async def list_group_assigned_roles(self, group: Group):
+        raise NotImplementedError
+
+    async def remove_role_from_group(self, group: Group):
+        raise NotImplementedError
+
+    async def create_application(self, req):
+        raise NotImplementedError
+
+    async def create_application_group_assignment(
+        self, app, group: Group, app_group_assignment
+    ):
+        raise NotImplementedError
+
+    async def list_assigned_applications_for_group(self, group: Group):
+        raise NotImplementedError
+
+    async def deactivate_application(self, app):
+        raise NotImplementedError
+
+    async def delete_application(self, app):
+        raise NotImplementedError
+
+    async def delete_group(self, group: Group):
         raise NotImplementedError

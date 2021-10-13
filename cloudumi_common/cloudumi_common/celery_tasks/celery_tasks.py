@@ -2803,6 +2803,34 @@ def cache_notifications(host=None) -> Dict[str, Any]:
     return log_data
 
 
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def cache_identity_groups_for_host_t(host: str) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Caching Identity Groups for Host",
+        "host": host,
+    }
+    log.debug(log_data)
+    res = async_to_sync(cache_identity_groups_for_host)(host)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def cache_identity_groups_for_all_hosts() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    hosts = get_all_hosts()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "nun_hosts": len(hosts),
+    }
+    log.debug(log_data)
+    for host in hosts:
+        cache_identity_groups_for_host_t.apply_async((host,))
+    return log_data
+
+
 schedule_30_minute = timedelta(seconds=1800)
 schedule_45_minute = timedelta(seconds=2700)
 schedule_6_hours = timedelta(hours=6)

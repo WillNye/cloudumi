@@ -138,8 +138,8 @@ export const AuthProvider = ({ children }) => {
       .then((response) => {
         if (
           response.status === 403 &&
-          response.type === "redirect" &&
-          response.reason === "unauthenticated"
+          response?.type === "redirect" &&
+          response?.reason === "unauthenticated"
         ) {
           fetch("/api/v1/auth?redirect_url=" + window.location.href, {
             headers: {
@@ -147,11 +147,11 @@ export const AuthProvider = ({ children }) => {
               Accept: "application/json",
             },
           }).then((resp) => {
-            if (resp.type === "redirect") {
+            if (resp?.type === "redirect") {
               window.location.href = resp.redirect_url;
             }
           });
-        } else if (response.status === 401) {
+        } else if (response?.status === 401) {
           setIsSessionExpired(true);
         }
 
