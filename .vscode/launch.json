@@ -9,7 +9,16 @@
       "request": "launch",
       "type": "pwa-chrome",
       "url": "http://localhost",
-      "webRoot": "${workspaceFolder}/cloudumi_frontend/frontend/"
+      "webRoot": "${workspaceFolder}/cloudumi_frontend/frontend/",
+      "env": {
+        "INTERPRETER_OPTIONS": "",
+        "PARENT_ENVS": true,
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONASYNCIODEBUG": "1",
+        "CONSOLEME_CONFIG_ENTRYPOINT": "cmsaas_config",
+        "CONFIG_LOCATION": "PROJECT_DIR$/cloudumi_config/configs/localhost/saas_development.yaml",
+        "AWS_PROFILE": "localstack"
+      }
     },
     {
       "name": "Remote: cloudumi-healthcheck",
