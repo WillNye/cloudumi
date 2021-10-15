@@ -17,8 +17,6 @@ services:
       #      - "--tracing.jaeger.samplingServerURL=http://tracing:5778/sampling"
       - "--accesslog.filepath=/var/log/traefik/access.log"
       - "--accesslog.bufferingsize=100"
-    env_file:
-      - .env
     ports:
       - "80:80"
       - "9999:8080"
