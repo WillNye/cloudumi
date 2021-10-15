@@ -1,0 +1,47 @@
+# Use this traefik configuration when you want to run services in a container, and have traefik use TLS for all traffic
+
+version: "3.8"
+
+services:
+  reverse-proxy:
+    image: traefik
+    #    command:
+    #      - "--api.insecure=true"
+    #      - "--providers.docker"
+    #      # Set up LetsEncrypt
+    #      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+    #      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+    #      - --certificatesresolvers.letsencrypt.acme.email=ccastrapel@gmail.com
+    #      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    #      # Set up an insecure listener that redirects all traffic to TLS
+    #      - --entrypoints.web.address=:80
+    #      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+    #      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+    #      - --entrypoints.websecure.address=:443
+    #      # Set up the TLS configuration for our websecure listener
+    #      - --entrypoints.websecure.http.tls=true
+    #      - --entrypoints.websecure.http.tls.certResolver=letsencrypt
+    #      - --entrypoints.websecure.http.tls.domains[0].main=cloudumi.com
+    #      - --entrypoints.websecure.http.tls.domains[0].sans=*.cloudumi.com
+    #      # TODO: Figure out metrics and tracing
+    #      #      - "--metrics=true"
+    #      #      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
+    #      #      - "--tracing.jaeger.samplingServerURL=http://tracing:5778/sampling"
+    #      - "--accesslog.filepath=/var/log/traefik/access.log"
+    #      - "--accesslog.bufferingsize=100"
+    #      - "--entrypoints.websecure.address=:443"
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+      - "443:443"
+      - "9999:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - certs:/letsencrypt
+      - ./cloudumi_traefik/config_tls:/etc/traefik/
+    labels:
+      - traefik.enable=false
+
+volumes:
+  certs:
