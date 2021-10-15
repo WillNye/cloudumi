@@ -14,7 +14,11 @@ repos:
     rev: 3.8.4
     hooks:
       - id: flake8
-        args: ["--exclude", "cloudumi_common/cloudumi_common/models.py"]
+        args:
+          [
+            "--exclude",
+            "cloudumi_common/cloudumi_common/models.py,cloudumi_identity/cloudumi_identity/lib/groups/models.py",
+          ]
 
   - repo: https://github.com/asottile/seed-isort-config
     rev: v2.2.0

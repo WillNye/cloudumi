@@ -183,7 +183,7 @@ class IdentityGroupHandler(BaseHandler):
         res = WebResponse(
             status="success",
             status_code=200,
-            message=f"Successfully updated group.",
+            message="Successfully updated group.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

@@ -530,7 +530,7 @@ def cache_cloudtrail_errors_by_arn_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -583,7 +583,7 @@ def cache_policies_table_details_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -1230,7 +1230,7 @@ def cache_iam_resources_across_accounts_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -1539,7 +1539,7 @@ def cache_managed_policies_across_accounts_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -1578,7 +1578,7 @@ def cache_s3_buckets_across_accounts_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -1675,7 +1675,7 @@ def cache_sqs_queues_across_accounts_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -1767,7 +1767,7 @@ def cache_sns_topics_across_accounts_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2122,7 +2122,7 @@ def clear_old_redis_iam_cache_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2295,7 +2295,7 @@ def cache_resources_from_aws_config_across_accounts_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2338,7 +2338,7 @@ def cache_resources_from_aws_config_across_accounts(
     tasks = []
     # First, get list of accounts
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
-    # Second, call tasks to enumerate all the roles across all accounts
+    # Second, call tasks to enumerate all the roles across all tenant accounts
     for account_id in accounts_d.keys():
         if config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
             "prod",
@@ -2347,13 +2347,19 @@ def cache_resources_from_aws_config_across_accounts(
             tasks.append(
                 cache_resources_from_aws_config_for_account.s(account_id, host)
             )
+        elif account_id in config.get_host_specific_key(
+            f"site_configs.{host}.celery.test_account_ids", host, []
+        ):
+            tasks.append(
+                cache_resources_from_aws_config_for_account.s(account_id, host)
+            )
         else:
-            if account_id in config.get_host_specific_key(
-                f"site_configs.{host}.celery.test_account_ids", host, []
-            ):
-                tasks.append(
-                    cache_resources_from_aws_config_for_account.s(account_id, host)
-                )
+            log.debug(
+                {
+                    **log_data,
+                    "message": "Not running task because we're not in prod|dev, and we don't have any test account IDs",
+                }
+            )
     if tasks:
         if run_subtasks:
             results = group(*tasks).apply_async()
@@ -2411,7 +2417,7 @@ def cache_policy_requests_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2443,7 +2449,7 @@ def cache_cloud_account_mapping_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2477,7 +2483,7 @@ def cache_credential_authorization_mapping_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2525,7 +2531,7 @@ def cache_scps_across_organizations_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2556,7 +2562,7 @@ def cache_organization_structure_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2587,7 +2593,7 @@ def cache_resource_templates_task_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2618,7 +2624,7 @@ def cache_self_service_typeahead_task_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2649,7 +2655,7 @@ def trigger_credential_mapping_refresh_from_role_changes_for_all_hosts() -> Dict
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2705,7 +2711,7 @@ def cache_cloudtrail_denies_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2780,7 +2786,7 @@ def cache_notifications_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:
@@ -2812,7 +2818,8 @@ def cache_identity_groups_for_host_t(host: str) -> Dict:
         "host": host,
     }
     log.debug(log_data)
-    res = async_to_sync(cache_identity_groups_for_host)(host)
+    # TODO: Finish this
+    # res = async_to_sync(cache_identity_groups_for_host)(host)
     return log_data
 
 
@@ -2823,7 +2830,7 @@ def cache_identity_groups_for_all_hosts() -> Dict:
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "nun_hosts": len(hosts),
+        "num_hosts": len(hosts),
     }
     log.debug(log_data)
     for host in hosts:

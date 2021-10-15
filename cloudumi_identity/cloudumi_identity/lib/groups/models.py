@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field, constr
+from pydantic import Field, constr
+
+from cloudumi_common.lib.pydantic import BaseModel
 
 # Reference: https://www.guidodiepen.nl/2019/02/implementing-a-simple-plugin-framework-in-python/
 

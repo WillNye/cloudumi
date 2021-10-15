@@ -1,3 +1,6 @@
+# Use this traefik configuration when you want to run services on your localhost, and have traefik route to them without
+# TLS
+
 version: "3.8"
 
 services:
@@ -6,8 +9,7 @@ services:
     network_mode: "host"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - certs:/letsencrypt
-      - ./cloudumi_traefik/config_localhost:/etc/traefik/
+      - ./cloudumi_traefik/config_localhost_insecure:/etc/traefik/
     labels:
       - traefik.enable=false
 volumes:

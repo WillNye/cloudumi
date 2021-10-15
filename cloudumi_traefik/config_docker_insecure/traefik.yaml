@@ -1,0 +1,14 @@
+api:
+  insecure: true
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic_conf.yaml
+
+accesslog:
+  filepath: /var/log/traefik/access.log
+  bufferingsize: 100
+
+entryPoints:
+  web:
+    address: ":80"
