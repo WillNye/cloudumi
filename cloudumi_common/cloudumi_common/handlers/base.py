@@ -426,7 +426,9 @@ class BaseHandler(TornadoRequestHandler):
         log.debug(log_data)
 
         # Check to see if user has a valid auth cookie
-        auth_cookie = self.get_cookie("consoleme_auth")
+        auth_cookie = self.get_cookie(
+            config.get("_global_.auth.cookie.name", "consoleme_auth")
+        )
 
         # Validate auth cookie and use it to retrieve group information
         if auth_cookie:
@@ -657,7 +659,9 @@ class BaseHandler(TornadoRequestHandler):
                 )
             except redis.exceptions.ConnectionError:
                 pass
-        if not self.get_cookie("consoleme_auth"):
+        if not self.get_cookie(
+            config.get("_global_.auth.cookie.name", "consoleme_auth")
+        ):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                 minutes=config.get_host_specific_key(
                     f"site_configs.{host}.jwt.expiration_minutes", host, 60
@@ -668,7 +672,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.user, self.groups, host, exp=expiration
             )
             self.set_cookie(
-                "consoleme_auth",
+                config.get("_global_.auth.cookie.name", "consoleme_auth"),
                 encoded_cookie,
                 expires=expiration,
                 secure=config.get_host_specific_key(
@@ -806,7 +810,9 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         elif config.get_host_specific_key(
             f"site_configs.{host}.auth.require_jwt", host, True
         ):
-            auth_cookie = self.get_cookie("consoleme_auth")
+            auth_cookie = self.get_cookie(
+                config.get("_global_.auth.cookie.name", "consoleme_auth")
+            )
 
             if auth_cookie:
                 res = await validate_and_return_jwt_token(auth_cookie, host)

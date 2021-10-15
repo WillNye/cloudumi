@@ -348,9 +348,7 @@ async def authenticate_user_by_oidc(request):
                 [],
             )
 
-        if config.get_host_specific_key(
-            f"site_configs.{host}.auth.set_auth_cookie", host
-        ):
+        if config.get("_global_.auth.set_auth_cookie", True):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                 minutes=config.get_host_specific_key(
                     f"site_configs.{host}.jwt.expiration_minutes", host, 60
@@ -360,7 +358,7 @@ async def authenticate_user_by_oidc(request):
                 email, groups, host, exp=expiration
             )
             request.set_cookie(
-                "consoleme_auth",
+                config.get("_global_.auth.cookie.name", "consoleme_auth"),
                 encoded_cookie,
                 expires=expiration,
                 secure=config.get_host_specific_key(

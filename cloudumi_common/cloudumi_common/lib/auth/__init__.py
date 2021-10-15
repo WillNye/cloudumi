@@ -9,7 +9,7 @@ import ujson as json
 from cryptography.hazmat.backends.openssl.rsa import _RSAPublicKey
 
 from cloudumi_common.config import config
-from cloudumi_common.lib.crypto import Crypto
+from cloudumi_common.lib.crypto import CryptoSign
 from cloudumi_common.lib.generic import is_in_group
 from cloudumi_common.lib.plugins import get_plugin_by_name
 
@@ -75,7 +75,7 @@ async def generate_auth_token(
         "{{'user': '{0}', 'ip': '{1}', 'challenge_uuid'': '{2}', "
         "'valid_before'': '{3}', 'valid_after'': '{4}', 'host'': '{5}'}}"
     ).format(user, ip, challenge_uuid, valid_before, valid_after, host)
-    crypto = Crypto(host)
+    crypto = CryptoSign(host)
     sig = crypto.sign(to_sign)
 
     auth_token["sig"] = sig
@@ -146,7 +146,7 @@ async def validate_auth_token(user, ip, token, request_object):
         auth_token.get("valid_after"),
         auth_token.get("host"),
     )
-    crypto = Crypto(host)
+    crypto = CryptoSign(host)
     token_details = {
         "valid": crypto.verify(to_verify, auth_token.get("sig")),
         "user": auth_token.get("user"),

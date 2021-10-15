@@ -101,6 +101,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
                 name=group.profile.name,
                 description=group.profile.description,
                 group_id=group_id,
+                attributes=dict(),
                 extra=dict(
                     okta_group_id=group.id,
                     created=group.created,
@@ -135,6 +136,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
             name=matching_group.profile.name,
             description=matching_group.profile.description,
             group_id=group_id,
+            attributes={},
             extra=dict(
                 okta_group_id=matching_group.id,
                 created=matching_group.created,

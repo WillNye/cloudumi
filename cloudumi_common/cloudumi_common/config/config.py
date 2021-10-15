@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 import botocore.exceptions
 import logmatic
+import sentry_sdk
 import ujson as json
 from asgiref.sync import async_to_sync
 from pytz import timezone
@@ -106,13 +107,16 @@ class Configuration(object):
             from cloudumi_common.lib.dynamo import UserDynamoHandler
 
             ddb = UserDynamoHandler(host=host)
+
+        dynamic_config = refresh_dynamic_config(host, ddb)
+        self.set_config_for_host(host, dynamic_config)
+
+    def set_config_for_host(self, host, dynamic_config, red=None):
         if not red:
             from cloudumi_common.lib.redis import RedisHandler
 
             red = RedisHandler().redis_sync(host)
-
-        dynamic_config = refresh_dynamic_config(host, ddb)
-        if dynamic_config and dynamic_config != self.config.get_host_specific_key(
+        if dynamic_config and dynamic_config != self.get_host_specific_key(
             f"site_configs.{host}.dynamic_config", host
         ):
             red.set(
@@ -125,6 +129,10 @@ class Configuration(object):
                     "message": "Dynamic configuration changes detected and loaded",
                 }
             )
+            if not self.get("site_configs"):
+                self.config["site_configs"] = {}
+            if not self.get(f"site_configs.{host}"):
+                self.config["site_configs"][host] = {}
             self.config["site_configs"][host]["dynamic_config"] = dynamic_config
 
     def load_dynamic_config_from_redis(
@@ -148,9 +156,7 @@ class Configuration(object):
             return
         dynamic_config_j = json.loads(dynamic_config)
         if (
-            self.config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config", host, {}
-            )
+            self.get_host_specific_key(f"site_configs.{host}.dynamic_config", host, {})
             != dynamic_config_j
         ):
             self.get_logger("config").debug(
@@ -177,6 +183,62 @@ class Configuration(object):
                 timeout=self.get("_global_.dynamic_config.dynamo_load_interval", 60)
             ):
                 break
+
+    def load_tenant_configurations_from_redis_or_s3(self):
+        """
+        Initially, we're going to work with tenants on their SaaS tenant configuration. In the future, they will have
+        a web interface for configuration. We want to support secure S3 storage and retrieval of tenant configuration.
+
+        The SaaS compute that responds to tenant web requests does not need to be aware of tenant configuration until
+        a web request to a tenant is received.
+
+        The SaaS Celery compute (Caches tenant resources) does not receive tenant web requests, and it DOES need to be
+        aware of tenant configuration.
+
+        This means we can:
+
+         1) Create a Celery task that caches tenant configuration from S3 to a Redis hash every minute or so,
+        or caches specific tenant configuration on-demand. We need to take care to delete Redis hash keys for tenants
+        that are no longer valid
+
+         2) Celery workers that need all tenant configuration will pull it all in to their configuration
+
+         3) Web hosts will pull configuration from Redis, and fall back to "s3 -> cache to redis" on demand
+        :return:
+        """
+        # TODO: Validate layout of each Tenant configuration. It should not be able to override any other tenant config
+        # or _global_ config
+        # TODO: Predictable tenant configuration location and name. If web host pulls config, it should use assumerole
+        # tag to restrict access to specific configuration item
+        pass
+
+    def load_tenant_configuration_from_redis_or_s3(self, host):
+        """
+        Loads a single tenant static configuration from S3. TODO: Support S3 access points and custom assume role
+        policies to prevent one tenant from pulling another tenant's configuration
+
+        :param host: host, aka tenant, ID
+        :return:
+        """
+        pass
+
+    def load_tenant_configurations_from_dynamo(self):
+        """
+        Loads tenant static configurations from DynamoDB and sets them in our giant configuration dictionary
+        :return:
+        """
+        from cloudumi_common.lib.dynamo import RestrictedDynamoHandler
+
+        ddb = RestrictedDynamoHandler()
+        try:
+            tenant_configs = ddb.get_static_config_yaml_for_all_hosts_sync()
+            if not self.config.get("site_configs"):
+                self.config["site_configs"] = {}
+            for host, static_config in tenant_configs.items():
+                self.config["site_configs"][host] = static_config
+        except Exception:
+            # No tenant configurations loaded.
+            sentry_sdk.capture_exception()
 
     def __set_flag_on_main_exit(self):
         # while main thread is active, do nothing
@@ -214,6 +276,17 @@ class Configuration(object):
                         secret_name, os.environ.get("EC2_REGION", "us-east-1")
                     )
                 )
+
+            elif s.startswith("AWS_S3:s3://"):
+                # TODO: Support restricting what keys are allowed to exist in this configuration. For tenant configs,
+                # we need to prevent the config from overriding our other keys
+                extended_config_path = s.split("AWS_S3:")[1]
+                import boto3
+
+                client = boto3.client("s3")
+                bucket, key = split_s3_path(extended_config_path)
+                obj = client.get_object(Bucket=bucket, Key=key)
+                extend_config = yaml.load(obj["Body"].read().decode())
             else:
                 try:
                     extend_path = os.path.join(dir_path, s)
@@ -233,6 +306,7 @@ class Configuration(object):
             async_to_sync(self.load_config)(
                 allow_automatically_reload_configuration=False,
                 allow_start_background_threads=False,
+                load_tenant_configurations_from_dynamo=False,
             )
             if not self.get("_global_.config.automatically_reload_configuration"):
                 break
@@ -270,13 +344,6 @@ class Configuration(object):
 
     @staticmethod
     def get_config_location():
-        # TODO: This is only called once, so I need to pull a massive configuration for all customers after
-        # verifying validity
-
-        # And have to re-pull it every once in a while
-        # Customers should NOT be allowed to mess up the configuration
-        # Dynamic configuration for customer turns into advanced configuration  for them
-
         config_location = os.environ.get("CONFIG_LOCATION")
         default_save_location = f"{os.curdir}/cloudumi.yaml"
         if config_location:
@@ -286,7 +353,7 @@ class Configuration(object):
                 # TODO: Need host specific configuration?
                 client = boto3.client("s3")
                 bucket, key = split_s3_path(config_location)
-                obj = client.get_object(Bucket=bucket, Key=key, host="_global_")
+                obj = client.get_object(Bucket=bucket, Key=key)
                 s3_object_content = obj["Body"].read()
                 with open(default_save_location, "w") as f:
                     f.write(s3_object_content.decode())
@@ -320,6 +387,7 @@ class Configuration(object):
         self,
         allow_automatically_reload_configuration=True,
         allow_start_background_threads=True,
+        load_tenant_configurations_from_dynamo=False,
     ):
         """Load configuration"""
         path = self.get_config_location()
@@ -367,6 +435,12 @@ class Configuration(object):
             "_global_.config.automatically_reload_configuration"
         ):
             t = Timer(4, self.reload_config, ())
+            t.start()
+
+        if load_tenant_configurations_from_dynamo and self.get(
+            "_global_.config.load_tenant_configurations_from_dynamo"
+        ):
+            t = Timer(5, self.load_tenant_configurations_from_dynamo, ())
             t.start()
 
     def get(

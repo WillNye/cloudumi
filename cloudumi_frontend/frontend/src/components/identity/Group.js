@@ -119,7 +119,11 @@ const IdentityGroupEdit = () => {
                   {/* Get them to the point where they can play around. Keep Step 3 manual. It will be*/}
                   {/* Automated in the future but just not now */}
                   {/* Experience to devs is the most important */}
-                  <input type="checkbox" {...register(attribute.name)} />
+                  <input
+                    type="checkbox"
+                    defaultChecked={attribute.value}
+                    {...register(attribute.name)}
+                  />
                 </Form.Field>
               );
             } else if (attribute.type === "array") {
@@ -133,7 +137,7 @@ const IdentityGroupEdit = () => {
                   />
 
                   <input
-                    // defaultValue={defaultValues.email}
+                    defaultValue={attribute.value}
                     {...register(attribute.name)}
                   />
                 </p>

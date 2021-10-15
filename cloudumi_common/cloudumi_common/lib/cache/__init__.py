@@ -20,6 +20,11 @@ from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.redis import RedisHandler
 from cloudumi_common.lib.s3_helpers import get_object, put_object
 
+# TODO: Assume role to S3 based on host Prefix
+# We need to optionally perform nested assume-role calls. On the last assume-role call, we need to pass in a session
+# policy that restricts S3 access to the host's prefix
+# Ex: https://awsfeed.com/whats-new/security/implement-tenant-isolation-for-amazon-s3-and-aurora-postgresql-by-using-abac
+
 
 async def store_json_results_in_redis_and_s3(
     data: Union[

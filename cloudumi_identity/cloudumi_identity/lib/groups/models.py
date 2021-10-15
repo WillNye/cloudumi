@@ -33,6 +33,52 @@ class User(BaseModel):
     background_check_status: str
 
 
+class GroupAttributes(BaseModel):
+    requestable: bool = Field(
+        False, description="Whether end-users can request access to group"
+    )
+    manager_approval_required: bool = Field(
+        False, description="Whether a manager needs to approve access to the group"
+    )
+    approval_chain: List[Union[User, str]] = Field(
+        [],
+        description="A list of users or groups that need to approve access to the group",
+    )
+    self_approval_groups: List[str] = Field(
+        [],
+        description=(
+            "If the user is a member of a self-approval group, their request to the group "
+            "will be automatically approved"
+        ),
+    )
+    allow_bulk_add_and_remove: bool = Field(
+        True,
+        description=(
+            "Controls whether administrators can automatically approve access to the group"
+        ),
+    )
+    background_check_required: bool = Field(
+        False,
+        description=("Whether a background check is required to be added to the group"),
+    )
+    allow_contractors: bool = Field(
+        False,
+        description=("Whether contractors are allowed to be members of the group"),
+    )
+    allow_third_party: bool = Field(
+        False,
+        description=(
+            "Whether third-party users are allowed to be a member of the group"
+        ),
+    )
+    emails_to_notify_on_new_members: List[str] = Field(
+        [],
+        description=(
+            "A list of e-mail addresses to notify when new users are added to the group."
+        ),
+    )
+
+
 class Group(BaseModel):
     host: str = Field(..., description="Host/Tenant associated with the group")
     name: str = Field(..., description="Name of the group")
@@ -44,47 +90,10 @@ class Group(BaseModel):
         ..., description="Unique Group ID for the group. Usually it's {idp-name}-{name}"
     )
     description: Optional[str] = Field(None, description="Description of the group")
-    requestable: Optional[bool] = Field(
-        None, description="Whether end-users can request access to group"
-    )
-    manager_approval_required: Optional[bool] = Field(
-        None, description="Whether a manager needs to approve access to the group"
-    )
-    approval_chain: Optional[List[Union[User, str]]] = Field(
-        [],
-        description="A list of users or groups that need to approve access to the group",
-    )
-    self_approval_groups: Optional[List[str]] = Field(
-        [],
+    attributes: GroupAttributes = Field(
+        ...,
         description=(
-            "If the user is a member of a self-approval group, their request to the group "
-            "will be automatically approved"
-        ),
-    )
-    allow_bulk_add_and_remove: Optional[bool] = Field(
-        True,
-        description=(
-            "Controls whether administrators can automatically approve access to the group"
-        ),
-    )
-    background_check_required: Optional[bool] = Field(
-        False,
-        description=("Whether a background check is required to be added to the group"),
-    )
-    allow_contractors: Optional[bool] = Field(
-        False,
-        description=("Whether contractors are allowed to be members of the group"),
-    )
-    allow_third_party: Optional[bool] = Field(
-        False,
-        description=(
-            "Whether third-party users are allowed to be a member of the group"
-        ),
-    )
-    emails_to_notify_on_new_members: Optional[List[str]] = Field(
-        [],
-        description=(
-            "A list of e-mail addresses to notify when new users are added to the group."
+            "Protected attributes that tell us whether the group is requester, where approvals should be routed, etc."
         ),
     )
     extra: Any = Field(None, description=("Extra attributes to store"))

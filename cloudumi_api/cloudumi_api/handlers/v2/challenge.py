@@ -376,7 +376,9 @@ class ChallengePollerHandler(TornadoRequestHandler):
             self.write(
                 {
                     "status": challenge["status"],
-                    "cookie_name": "consoleme_auth",
+                    "cookie_name": config.get(
+                        "_global_.auth.cookie.name", "consoleme_auth"
+                    ),
                     "expiration": int(jwt_expiration.timestamp()),
                     "encoded_jwt": encoded_jwt,
                     "user": challenge["user"],

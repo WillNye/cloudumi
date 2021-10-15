@@ -77,9 +77,7 @@ class UserProfileHandler(BaseAPIV1Handler):
         user_profile = {
             "site_config": site_config,
             "user": self.user,
-            "can_logout": config.get_host_specific_key(
-                f"site_configs.{host}.auth.set_auth_cookie", host, False
-            ),
+            "can_logout": config.get("_global_.auth.set_auth_cookie", True),
             "is_contractor": is_contractor,
             "employee_photo_url": "",  # TODO: Support custom employee URL
             "employee_info_url": "",  # TODO: Support custom employee info url

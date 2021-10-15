@@ -85,6 +85,7 @@ from cloudumi_api.handlers.v3.identity.groups import (
     IdentityGroupPageConfigHandler,
     IdentityGroupsTableHandler,
 )
+from cloudumi_api.handlers.v3.identity.requests.group import IdentityRequestGroupHandler
 from cloudumi_common.config import config
 
 log = config.get_logger()
@@ -166,6 +167,7 @@ def make_app(jwt_validator=None):
         (r"/api/v3/identity_groups_page_config", IdentityGroupPageConfigHandler),
         (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
         (r"/api/v3/identities/group/(.*?)/(.*)", IdentityGroupHandler),
+        (r"/api/v3/identities/requests/group/(.*?)/(.*)", IdentityRequestGroupHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
     ]
 

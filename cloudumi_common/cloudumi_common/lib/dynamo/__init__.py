@@ -32,8 +32,11 @@ from cloudumi_common.exceptions.exceptions import (
 )
 from cloudumi_common.lib.assume_role import boto3_cached_conn
 from cloudumi_common.lib.aws.sanitize import sanitize_session_name
-from cloudumi_common.lib.aws.session import get_session_for_tenant
-from cloudumi_common.lib.crypto import Crypto
+from cloudumi_common.lib.aws.session import (
+    get_session_for_tenant,
+    restricted_get_session_for_saas,
+)
+from cloudumi_common.lib.crypto import CryptoSign
 from cloudumi_common.lib.password import wait_after_authentication_failure
 from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.redis import RedisHandler
@@ -69,21 +72,23 @@ class BaseDynamoHandler:
         )
 
         # TODO: Support getting DynamoDB table in customer accounts through nested assume role calls
-        restrictive_session_policy = {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": ["dynamodb:*"],
-                    "Resource": ["*"],
-                    "Condition": {
-                        "ForAllValues:StringEquals": {
-                            "dynamodb:LeadingKeys": [f"{host}"]
-                        }
-                    },
-                }
-            ],
-        }
+        restrictive_session_policy = json.dumps(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": ["dynamodb:*"],
+                        "Resource": ["*"],
+                        "Condition": {
+                            "ForAllValues:StringEquals": {
+                                "dynamodb:LeadingKeys": [f"{host}"]
+                            }
+                        },
+                    }
+                ],
+            }
+        )
 
         try:
             # call sts_conn with my client and pass in forced_client
@@ -303,7 +308,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             )
             self.dynamic_config = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.group_log_dynamo_table",
+                    f"site_configs.{host}.aws.dynamic_config_dynamo_table",
                     host,
                     "consoleme_config_multitenant",
                 ),
@@ -529,13 +534,13 @@ class UserDynamoHandler(BaseDynamoHandler):
 
     async def update_dynamic_config(
         self,
-        config: str,
+        new_config: str,
         updated_by: str,
         host: str,
     ) -> None:
         """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
         # Validate that config loads as yaml, raises exception if not
-        yaml.safe_load(config)
+        yaml.safe_load(new_config)
         stats.count("update_dynamic_config", tags={"updated_by": updated_by})
         current_config_entry = self.dynamic_config.get_item(
             Key={"host": host, "id": "master"}
@@ -551,14 +556,16 @@ class UserDynamoHandler(BaseDynamoHandler):
 
             self.dynamic_config.put_item(Item=self._data_to_dynamo_replace(old_config))
 
-        new_config = {
+        new_config_writable = {
             "host": host,
             "id": "master",
-            "config": zlib.compress(config.encode()),
+            "config": zlib.compress(new_config.encode()),
             "updated_by": updated_by,
             "updated_at": str(int(time.time())),
         }
-        self.dynamic_config.put_item(Item=self._data_to_dynamo_replace(new_config))
+        self.dynamic_config.put_item(
+            Item=self._data_to_dynamo_replace(new_config_writable)
+        )
 
     # def validate_signature(self, items):
     #     signature = items.pop("signature")
@@ -576,7 +583,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         :param user_entry:
         :return:
         """
-        crypto = Crypto(host)
+        crypto = CryptoSign(host)
         # Remove old signature if it exists
         user_entry.pop("signature", None)
         user_entry = self._data_from_dynamo_replace(user_entry)
@@ -1198,6 +1205,158 @@ class UserDynamoHandler(BaseDynamoHandler):
             ExpressionAttributeValues={":h": host},
         )
         return users
+
+
+class RestrictedDynamoHandler(BaseDynamoHandler):
+    def __init__(self) -> None:
+        self.tenant_static_configs = self._get_dynamo_table_restricted(
+            config.get(
+                f"_global_.aws.tenant_static_config_dynamo_table",
+                "consoleme_tenant_static_configs",
+            ),
+        )
+
+    def _get_dynamo_table_restricted(self, table_name):
+        function: str = (
+            f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
+        )
+        session = restricted_get_session_for_saas()
+        try:
+            # call sts_conn with my client and pass in forced_client
+            if config.get("_global_.dynamodb_server"):
+
+                resource = session.resource(
+                    "dynamodb",
+                    region_name=config.region,
+                    endpoint_url=config.get(
+                        "_global_.dynamodb_server",
+                        config.get("_global_.boto3.client_kwargs.endpoint_url"),
+                    ),
+                )
+            else:
+                resource = session.resource(
+                    "dynamodb",
+                    region_name=config.region,
+                )
+            table = resource.Table(table_name)
+        except Exception as e:
+            log.error({"function": function, "error": e}, exc_info=True)
+            stats.count(f"{function}.exception")
+            return None
+        else:
+            return table
+
+    async def get_static_config_yaml_for_all_hosts(self) -> Dict[str, str]:
+        """Retrieve static configuration yaml."""
+        tenant_configs_l = await self.parallel_scan_table_async(
+            self.tenant_static_configs,
+            dynamodb_kwargs={"FilterExpression": Key("id").eq("master")},
+        )
+        return self.validate_and_return_tenant_configurations(tenant_configs_l)
+
+    def validate_and_return_tenant_configurations(
+        self, tenant_configs_l: List[Dict[str, Union[str, bytes]]]
+    ):
+        log_data = {
+            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+            "message": "Validating tenant configurations",
+        }
+        tenant_configs = {}
+        for c in tenant_configs_l:
+            if not c["id"] == "master":
+                # This should never  be the case, but as a safety check, let's ensure we're only loading the "master"
+                # (ie latest) version of a tenant's configuration
+                continue
+            try:
+                config_uncompressed = zlib.decompress(c["config"].value)
+                config_d = yaml.safe_load(config_uncompressed)
+                # TODO: Validate Pydantic Model of tenant configuration here
+            except Exception as e:
+                log.error(
+                    {
+                        **log_data,
+                        "message": "Unable to parse configuration for tenant",
+                        "host": c["host"],
+                        "error": str(e),
+                    }
+                )
+                sentry_sdk.capture_exception()
+                continue
+            tenant_configs[c["host"]] = config_d
+        # TODO: Merge dynamic configuration for tenant into this model
+        return tenant_configs
+
+    def get_static_config_yaml_for_all_hosts_sync(self) -> Dict[str, str]:
+        """Retrieve static configuration yaml."""
+        tenant_configs_l = self.parallel_scan_table(
+            self.tenant_static_configs,
+            dynamodb_kwargs={"FilterExpression": Key("id").eq("master")},
+        )
+        return self.validate_and_return_tenant_configurations(tenant_configs_l)
+
+    def get_static_config_for_host_sync(self, host) -> bytes:
+        """Retrieve dynamic configuration yaml synchronously"""
+        c = b""
+        try:
+            current_config = self.tenant_static_configs.get_item(
+                Key={"host": host, "id": "master"}
+            )
+            if not current_config:
+                return c
+            compressed_config = current_config.get("Item", {}).get("config", "")
+            if not compressed_config:
+                return c
+            c = zlib.decompress(compressed_config.value)
+        except Exception as e:  # noqa
+            log.error(
+                {
+                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+                    "message": "Error retrieving dynamic configuration",
+                    "error": str(e),
+                }
+            )
+            sentry_sdk.capture_exception()
+        return c
+
+    async def update_static_config_for_host(
+        self,
+        new_config: str,
+        updated_by: str,
+        host: str,
+    ) -> None:
+
+        # TODO: We could support encrypting/decrypting static configuration automatically based on a configuration
+        # passed in from AWS Secrets Manager or something else
+        """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
+        # Validate that config loads as yaml, raises exception if not
+        yaml.safe_load(new_config)
+        stats.count("update_dynamic_config", tags={"updated_by": updated_by})
+        current_config_entry = self.tenant_static_configs.get_item(
+            Key={"host": host, "id": "master"}
+        )
+        if current_config_entry.get("Item"):
+            old_config = {
+                "host": host,
+                "id": current_config_entry["Item"]["updated_at"],
+                "updated_by": current_config_entry["Item"]["updated_by"],
+                "config": current_config_entry["Item"]["config"],
+                "updated_at": str(int(time.time())),
+            }
+
+            self.tenant_static_configs.put_item(
+                Item=self._data_to_dynamo_replace(old_config)
+            )
+
+        new_config_writable = {
+            "host": host,
+            "id": "master",
+            "config": zlib.compress(new_config.encode()),
+            "updated_by": updated_by,
+            "updated_at": str(int(time.time())),
+        }
+        self.tenant_static_configs.put_item(
+            Item=self._data_to_dynamo_replace(new_config_writable)
+        )
 
 
 class IAMRoleDynamoHandler(BaseDynamoHandler):

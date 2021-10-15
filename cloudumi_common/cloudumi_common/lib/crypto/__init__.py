@@ -1,6 +1,7 @@
 import os
 
 import ed25519
+from cryptography.fernet import Fernet
 
 from cloudumi_common.config import config
 from cloudumi_common.lib.plugins import get_plugin_by_name
@@ -9,7 +10,7 @@ log = config.get_logger("consoleme")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
-class Crypto:
+class CryptoSign:
     def __init__(self, host) -> None:
         self.load_secrets(host)
 
@@ -60,3 +61,15 @@ class Crypto:
             stats.count("verify.bad_sig")
             log.error("Bad signature", exc_info=True)
             return False
+
+
+class CryptoEncrypt:
+    def __init__(self):
+        key = os.environ["NOQ_TENANT_CONFIG_ENCRYPTION_KEY"]
+        self.cipher_suite = Fernet(key)
+
+    def encrypt(self, b: bytes):
+        return self.cipher_suite.encrypt(b)
+
+    def decrypt(self, c: bytes):
+        return self.cipher_suite.decrypt(c)

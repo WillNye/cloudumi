@@ -89,23 +89,24 @@ async def cache_identity_groups_for_host(host):
             existing_group_d = existing_groups.get(group_id, {})
             if existing_group_d:
                 existing_group = Group.parse_obj(existing_group_d)
-                group.requestable = existing_group.requestable
-                group.manager_approval_required = (
-                    existing_group.manager_approval_required
-                )
-                group.approval_chain = existing_group.approval_chain
-                group.self_approval_groups = existing_group.self_approval_groups
-                group.allow_bulk_add_and_remove = (
-                    existing_group.allow_bulk_add_and_remove
-                )
-                group.background_check_required = (
-                    existing_group.background_check_required
-                )
-                group.allow_contractors = existing_group.allow_contractors
-                group.allow_third_party = existing_group.allow_third_party
-                group.emails_to_notify_on_new_members = (
-                    existing_group.emails_to_notify_on_new_members
-                )
+                group.attributes = existing_group.attributes
+                # group.requestable = existing_group.attributes.requestable
+                # group.manager_approval_required = (
+                #     existing_group.attributes.manager_approval_required
+                # )
+                # group.approval_chain = existing_group.attributes.approval_chain
+                # group.self_approval_groups = existing_group.attributes.self_approval_groups
+                # group.allow_bulk_add_and_remove = (
+                #     existing_group.attributes.allow_bulk_add_and_remove
+                # )
+                # group.background_check_required = (
+                #     existing_group.attributes.background_check_required
+                # )
+                # group.allow_contractors = existing_group.attributes.allow_contractors
+                # group.allow_third_party = existing_group.attributes.allow_third_party
+                # group.emails_to_notify_on_new_members = (
+                #     existing_group.attributes.emails_to_notify_on_new_members
+                # )
             groups_to_update[group_id] = group.dict()
         all_groups.update(groups_to_update)
         log.debug({**log_data, "message": "Successfully pulled groups from IDP"})
@@ -143,6 +144,7 @@ async def cache_identity_groups_for_host(host):
         )
 
 
-import asyncio
-
-asyncio.run(cache_identity_groups_for_host("localhost"))
+# Testing
+# import asyncio
+#
+# asyncio.run(cache_identity_groups_for_host("localhost"))

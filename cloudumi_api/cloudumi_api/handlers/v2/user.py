@@ -184,11 +184,9 @@ class LoginHandler(TornadoRequestHandler):
             )
             return
         # Auth cookie must be set to use password authentication.
-        if not config.get_host_specific_key(
-            f"site_configs.{host}.auth.set_auth_cookie", host
-        ):
+        if not config.get("_global_.auth.set_auth_cookie", True):
             errors = [
-                "Expected configuration `auth.set_auth_cookie`, but it is not enabled."
+                "Expected configuration `_global_.auth.set_auth_cookie`, but it is not enabled."
             ]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "not_configured", log_data
@@ -227,7 +225,7 @@ class LoginHandler(TornadoRequestHandler):
             exp=expiration,
         )
         self.set_cookie(
-            "consoleme_auth",
+            config.get("_global_.auth.cookie.name", "consoleme_auth"),
             encoded_cookie,
             expires=expiration,
             secure=config.get_host_specific_key(

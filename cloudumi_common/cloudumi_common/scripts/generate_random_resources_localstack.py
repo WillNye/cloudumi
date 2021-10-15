@@ -15,6 +15,9 @@ from cloudumi_common.lib.tenants import get_all_hosts
 # TODO: Generate fake cloudtrail messages for SQS
 from cloudumi_common.lib.timeout import Timeout
 
+disable_creation_for_real_aws = True
+hosts = get_all_hosts()
+
 SAMPLE = Counter(
     {
         "e": 1202,
@@ -151,9 +154,6 @@ def randomword():
         i += 1
     return "".join(segments)
 
-
-disable_creation_for_real_aws = True
-hosts = get_all_hosts()
 
 for host in hosts:
     with Timeout(seconds=20):
