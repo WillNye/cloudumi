@@ -59,6 +59,17 @@
       ]
     },
     {
+      "name": "Local: cloudumi-api",
+      "type": "python",
+      "request": "attach",
+      "host": "localhost",
+      "port": 9092,
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "localstack"
+      }
+    },
+    {
       "name": "Remote: cloudumi_initialize_redis_dynamo_for_dev",
       "type": "python",
       "request": "attach",

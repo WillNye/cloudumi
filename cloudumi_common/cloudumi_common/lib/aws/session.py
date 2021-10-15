@@ -19,7 +19,7 @@ def restricted_get_session_for_saas(region_name=config.region):
     """
     Allows specifying a session with custom kwargs for the SaaS
     """
-    session_kwargs = config.get(f"_global_.boto3.session_kwargs", {})
+    session_kwargs = config.get("_global_.boto3.session_kwargs", {})
     session_kwargs["region_name"] = region_name
     session = boto3.Session(**session_kwargs)
     return session

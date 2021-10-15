@@ -12,6 +12,6 @@ RUN pip install /apps/cloudumi_common/
 RUN pip install /apps/cloudumi_common/cloudumi_plugins
 RUN python -m pip install -r requirements.txt
 RUN python -m pip install -e .
-ENV CONFIG_LOCATION=/apps/cloudumi_config/saas.yaml
+ENV CONFIG_LOCATION=/apps/cloudumi_config/configs/localhost/saas_development.yaml
 # TODO: figure out how to securely get AWS credentials readable by non-root user so we can have everything run as appuser
 #USER appuser

@@ -1,4 +1,3 @@
-import asyncio
 import sys
 from typing import Dict, List, Optional, Tuple
 
@@ -53,7 +52,6 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
             "identity_provider_name": self.identity_provider_name,
         }
         users, resp, err = await self.okta_client.list_users()
-        has_next = True
         while resp.has_next():
             next_users, resp, err = await self.okta_client.list_users()
             if err:

@@ -21,11 +21,11 @@ services:
       - cloudumi-dynamodb
     ports:
       - 8090:8090
-    labels:
-      - "traefik.enable=true"
-      - traefik.http.routers.cloudumi_healthcheck.rule=Path(`/healthcheck`)
-      - traefik.http.services.cloudumi_healthcheck.loadbalancer.server.port=8090
-      - "traefik.port=80"
+  #    labels:
+  #      - "traefik.enable=true"
+  #      - traefik.http.routers.cloudumi_healthcheck.rule=Path(`/healthcheck`)
+  #      - traefik.http.services.cloudumi_healthcheck.loadbalancer.server.port=8090
+  #      - "traefik.port=80"
   cloudumi_saml:
     build:
       context: .
@@ -35,14 +35,14 @@ services:
       - ~/.aws:/root/.aws:cached
     ports:
       - 8091:8091
-    labels:
-      - traefik.http.routers.cloudumi_saml.rule=PathPrefix(`/saml`)
-      - "traefik.http.routers.cloudumi_saml.entrypoints=websecure"
-      - "traefik.http.routers.cloudumi_saml.tls.certresolver=letsencrypt"
-      #- traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
-      - traefik.http.services.cloudumi_saml.loadbalancer.server.port=8091
-      - "traefik.enable=true"
-      - "traefik.port=80"
+    #    labels:
+    #      - traefik.http.routers.cloudumi_saml.rule=PathPrefix(`/saml`)
+    #      - "traefik.http.routers.cloudumi_saml.entrypoints=websecure"
+    #      - "traefik.http.routers.cloudumi_saml.tls.certresolver=letsencrypt"
+    #      #- traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
+    #      - traefik.http.services.cloudumi_saml.loadbalancer.server.port=8091
+    #      - "traefik.enable=true"
+    #      - "traefik.port=80"
     depends_on:
       - localstack1
       - localstack2
@@ -80,14 +80,14 @@ services:
     #              mode: 0440
     ports:
       - 8092:8092
-    labels:
-      - "traefik.http.routers.cloudumi_api.rule=PathPrefix(`/api`) || PathPrefix(`/auth`) || PathPrefix(`/noauth`) || PathPrefix(`/policies`)"
-      - "traefik.http.routers.cloudumi_api.entrypoints=websecure"
-      - "traefik.http.routers.cloudumi_api.tls.certresolver=letsencrypt"
-      #- traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
-      - traefik.http.services.cloudumi_api.loadbalancer.server.port=8092
-      - "traefik.enable=true"
-      - "traefik.port=80"
+    #    labels:
+    #      - "traefik.http.routers.cloudumi_api.rule=PathPrefix(`/api`) || PathPrefix(`/auth`) || PathPrefix(`/noauth`) || PathPrefix(`/policies`)"
+    #      - "traefik.http.routers.cloudumi_api.entrypoints=websecure"
+    #      - "traefik.http.routers.cloudumi_api.tls.certresolver=letsencrypt"
+    #      #- traefik.http.routers.home.rule=Host(`cloudumi.localhost`)
+    #      - traefik.http.services.cloudumi_api.loadbalancer.server.port=8092
+    #      - "traefik.enable=true"
+    #      - "traefik.port=80"
     depends_on:
       - localstack1
       - localstack2
@@ -126,14 +126,14 @@ services:
     image: cloudumi_frontend
     ports:
       - 8081:8081
-    labels:
-      - traefik.http.routers.cloudumi_frontend.rule=PathPrefix(`/`)
-      - "traefik.http.routers.cloudumi_frontend.entrypoints=websecure"
-      - "traefik.http.routers.cloudumi_frontend.tls.certresolver=letsencrypt"
-      - traefik.http.services.cloudumi_frontend.loadbalancer.server.port=8081
-      - "traefik.enable=true"
-      - "traefik.port=80"
-      - "traefik.frontend.priority=1" # lowest priority, the last thing to be matched
+#    labels:
+#      - traefik.http.routers.cloudumi_frontend.rule=PathPrefix(`/`)
+#      - "traefik.http.routers.cloudumi_frontend.entrypoints=websecure"
+#      - "traefik.http.routers.cloudumi_frontend.tls.certresolver=letsencrypt"
+#      - traefik.http.services.cloudumi_frontend.loadbalancer.server.port=8081
+#      - "traefik.enable=true"
+#      - "traefik.port=80"
+#      - "traefik.frontend.priority=1" # lowest priority, the last thing to be matched
 
 volumes:
   certs:
