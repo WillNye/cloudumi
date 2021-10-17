@@ -73,7 +73,7 @@ pip_parse(
 )
 
 # Load the starlark macro which will define your dependencies.
-load("@nexus_python_ext//:requirements.bzl", "install_deps")
+load("@cloudumi_python_ext//:requirements.bzl", "install_deps")
 # Call it to define repos for your requirements.
 install_deps()
 

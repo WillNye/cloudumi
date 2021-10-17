@@ -15,7 +15,7 @@ ed25519 # For.. more signing
 elastic-apm # For Elastic Application Performance Monitoring
 furl
 gitpython
-grpcio
+grpcio==1.41.0
 grpcio-tools
 joblib  # For some parallelization
 jsonschema

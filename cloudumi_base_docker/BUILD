@@ -1,10 +1,38 @@
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
-#load("@io_bazel_rules_docker//container:container.bzl", "container_layer")
+load("@io_bazel_rules_docker//container:container.bzl", "container_layer")
 #load("@nexus_python_ext//:requirements.bzl", "requirement")
 #load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
+filegroup(
+    name = "etc",
+    srcs = [
+        "etc",
+    ],
+)
+
+filegroup(
+    name = "home",
+    srcs = [
+        "home",
+    ],
+)
+
+container_layer(
+    name = "etc_layer",
+    srcs = [
+        ":etc",
+    ],
+)
+
+container_layer(
+    name = "home_layer",
+    srcs = [
+        ":home",
+    ]
+)
+
 container_run_and_commit(
-    name = "cloudumi_base_docker",
+    name = "cloudumi_base_docker_raw",
     commands = [
         "mkdir -p /apps",
         "apt-get update -y",
@@ -35,11 +63,13 @@ container_run_and_commit(
     visibility = ["//visibility:public"],
 )
 
-container_run_and_commit(
-    name = "cloudumi_common_docker",
-    commands = [
-        "apt-get update",
-        "apt-get install build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev nodejs -y",
-        ""
-    ]
+container_image(
+    name = "cloudumi_base_docker",
+    base = ":cloudumi_base_docker_raw",
+    layers = [
+        ":etc_layer",
+        ":home_layer",
+    ],
+    data_path = "/",
 )
+
