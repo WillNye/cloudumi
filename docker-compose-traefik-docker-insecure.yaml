@@ -6,17 +6,17 @@ version: "3.8"
 services:
   reverse-proxy:
     image: traefik
-    command:
-      - "--api.insecure=true"
-      #      - "--providers.docker"
-      # Set up an insecure listener
-      - --entrypoints.web.address=:80
-      # TODO: Figure out metrics and tracing
-      #      - "--metrics=true"
-      #      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
-      #      - "--tracing.jaeger.samplingServerURL=http://tracing:5778/sampling"
-      - "--accesslog.filepath=/var/log/traefik/access.log"
-      - "--accesslog.bufferingsize=100"
+    #    command:
+    #      - "--api.insecure=true"
+    #      - "--providers.docker"
+    # Set up an insecure listener
+    #      - --entrypoints.web.address=:80
+    # TODO: Figure out metrics and tracing
+    #      - "--metrics=true"
+    #      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
+    #      - "--tracing.jaeger.samplingServerURL=http://tracing:5778/sampling"
+    #      - "--accesslog.filepath=/var/log/traefik/access.log"
+    #      - "--accesslog.bufferingsize=100"
     ports:
       - "80:80"
       - "9999:8080"

@@ -556,7 +556,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
         return log_data
     ct = CloudTrail()
     process_cloudtrail_errors_res: Dict = async_to_sync(ct.process_cloudtrail_errors)(
-        aws
+        aws, host
     )
     cloudtrail_errors = process_cloudtrail_errors_res["error_count_by_role"]
     red.setex(
@@ -569,7 +569,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
         json.dumps(cloudtrail_errors),
     )
     if process_cloudtrail_errors_res["num_new_or_changed_notifications"] > 0:
-        cache_notifications.delay()
+        cache_notifications.apply_async((host,))
     log_data["number_of_roles_with_errors"]: len(cloudtrail_errors.keys())
     log_data["number_errors"]: sum(cloudtrail_errors.values())
     log.debug(log_data)
@@ -1813,12 +1813,12 @@ def cache_sns_topics_across_accounts(
             if config.get_host_specific_key(
                 f"site_configs.{host}.environment", host
             ) in ["prod", "dev"]:
-                tasks.append(cache_sns_topics_for_account.s(account_id))
+                tasks.append(cache_sns_topics_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
                     f"site_configs.{host}.celery.test_account_ids", host, []
                 ):
-                    tasks.append(cache_sns_topics_for_account.s(account_id))
+                    tasks.append(cache_sns_topics_for_account.s(account_id, host))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
