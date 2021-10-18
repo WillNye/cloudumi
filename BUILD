@@ -9,9 +9,9 @@ container_run_and_commit(
         "mkdir -p /apps",
         "apt-get update -y",
         "apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y",
-        "bash -c 'wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -'",
-        "bash -c 'echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list'",
-        "bash -c 'sudo apt-get update && sudo apt-get install logstash'",
+        "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
+        "echo 'deb https://artifacts.elastic.co/packages/7.x/apt stable main' | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list",
+        "sudo apt-get update && sudo apt-get install logstash",
         "systemctl enable logstash",
         "systemctl start logstash",
 
@@ -26,20 +26,12 @@ container_run_and_commit(
         "chown -R appuser /home/appuser",
     ],
     # Example of using select
-    image = select({
-        "//:amd64": "@python_3.9.7_container//image",
-        "//:arm64": "@python_3.9.7_container//image",
-        "//:aarch64": "@python_3.9.7_container//image",
-        "//conditions:default": "@python_3.9.7_container//image",
-    }),
+    # image = select({
+    #     "//:amd64": "@python_3.9.7_container//image",
+    #     "//:arm64": "@python_3.9.7_container//image",
+    #     "//:aarch64": "@python_3.9.7_container//image",
+    #     "//conditions:default": "@python_3.9.7_container//image",
+    # }),
+    image = "@python_3.9.7_container//image",
     visibility = ["//visibility:public"],
-)
-
-container_run_and_commit(
-    name = "cloudumi_common_docker",
-    commands = [
-        "apt-get update",
-        "apt-get install build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev nodejs -y",
-        ""
-    ]
 )

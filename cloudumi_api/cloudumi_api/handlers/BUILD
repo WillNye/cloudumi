@@ -12,20 +12,23 @@ filegroup(
         ":src",
         "//cloudumi_api/cloudumi_api/handlers/v1:src",
     ],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "v2",
     srcs = [
         ":src",
-        "//cloudumi_api/cloudumi_api/handlers/v2/src",
-    ]
+        "//cloudumi_api/cloudumi_api/handlers/v2:src",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "v3",
     srcs = [
         ":src",
-        "//cloudumi_api/cloudumi_api/handlers/v3/src",
-    ]
+        "//cloudumi_api/cloudumi_api/handlers/v3:src",
+    ],
+    visibility = ["//visibility:public"],
 )

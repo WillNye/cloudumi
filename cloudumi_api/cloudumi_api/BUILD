@@ -2,7 +2,7 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_python//python:packaging.bzl", "py_wheel")
 load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image")
-load("@nexus_python_ext//:requirements.bzl", "requirement")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 filegroup(
     name = "src",
@@ -54,10 +54,27 @@ py_library(
 )
 
 py_binary(
-    name = "bin.v1",
+    name = "bin.v2",
     srcs_version = "PY3",
     srcs = [
-        ":v1",
+        ":v2",
+    ],
+    main = "__main__.py",
+    data = [
+    ],
+    deps = [
+        requirement("email_validator"),
+        requirement("uvloop"),
+        requirement("marshmallow"),
+        requirement("policyuniverse"),
+    ],
+)
+
+py_binary(
+    name = "bin.v3",
+    srcs_version = "PY3",
+    srcs = [
+        ":v3",
     ],
     main = "__main__.py",
     data = [

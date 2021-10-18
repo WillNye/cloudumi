@@ -141,3 +141,6 @@ consoleme.tar.gz
 # Config
 consoleme.yaml
 cdk/config.yaml
+
+# Bazel
+bazel-*

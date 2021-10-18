@@ -1,33 +1,35 @@
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
-load("@io_bazel_rules_docker//container:container.bzl", "container_layer")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer")
 #load("@nexus_python_ext//:requirements.bzl", "requirement")
 #load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 filegroup(
-    name = "etc",
+    name = "etc_files",
     srcs = [
-        "etc",
+        "root/etc",
     ],
 )
 
 filegroup(
-    name = "home",
+    name = "home_files",
     srcs = [
-        "home",
+        "root/home",
     ],
 )
 
 container_layer(
     name = "etc_layer",
-    srcs = [
-        ":etc",
+    directory = "/",
+    files = [
+        ":etc_files",
     ],
 )
 
 container_layer(
     name = "home_layer",
-    srcs = [
-        ":home",
+    directory = "/",
+    files = [
+        ":home_files",
     ]
 )
 
@@ -37,9 +39,9 @@ container_run_and_commit(
         "mkdir -p /apps",
         "apt-get update -y",
         "apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y",
-        "bash -c 'wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -'",
-        "bash -c 'echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list'",
-        "bash -c 'sudo apt-get update && sudo apt-get install logstash'",
+        "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
+        "echo 'deb https://artifacts.elastic.co/packages/7.x/apt stable main' | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list",
+        "sudo apt-get update && sudo apt-get install logstash",
         "systemctl enable logstash",
         "systemctl start logstash",
 
@@ -54,12 +56,13 @@ container_run_and_commit(
         "chown -R appuser /home/appuser",
     ],
     # Example of using select
-    image = select({
-        "//:amd64": "@python_3.9.7_container//image",
-        "//:arm64": "@python_3.9.7_container//image",
-        "//:aarch64": "@python_3.9.7_container//image",
-        "//conditions:default": "@python_3.9.7_container//image",
-    }),
+    # image = select({
+    #     "//:amd64": "@python_3.9.7_container//image",
+    #     "//:arm64": "@python_3.9.7_container//image",
+    #     "//:aarch64": "@python_3.9.7_container//image",
+    #     "//conditions:default": "@python_3.9.7_container//image",
+    # }),
+    image = "@python_3.9.7_container//image",
     visibility = ["//visibility:public"],
 )
 
@@ -71,5 +74,6 @@ container_image(
         ":home_layer",
     ],
     data_path = "/",
+    visibility = ["//visibility:public"],
 )
 
