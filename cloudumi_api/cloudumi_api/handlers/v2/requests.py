@@ -66,16 +66,18 @@ class RequestHandler(BaseAPIV2Handler):
     def on_finish(self) -> None:
         if self.request.method != "POST":
             return
-
+        host = self.ctx.host
         try:
             with Timeout(
                 seconds=5, error_message="Timeout: Are you sure Celery is running?"
             ):
                 celery_app.send_task(
-                    "consoleme.celery_tasks.celery_tasks.cache_policy_requests"
+                    "cloudumi_common.celery_tasks.celery_tasks.cache_policy_requests",
+                    kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "consoleme.celery_tasks.celery_tasks.cache_credential_authorization_mapping"
+                    "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+                    kwargs={"host": host},
                 )
         except TimeoutError:
             sentry_sdk.capture_exception()
@@ -595,12 +597,15 @@ class RequestDetailHandler(BaseAPIV2Handler):
     def on_finish(self) -> None:
         if self.request.method != "PUT":
             return
+        host = self.ctx.host
         # TODO: Only cache policy requests / Credential AuthZ for host
         celery_app.send_task(
-            "consoleme.celery_tasks.celery_tasks.cache_policy_requests"
+            "cloudumi_common.celery_tasks.celery_tasks.cache_policy_requests",
+            kwargs={"host": host},
         )
         celery_app.send_task(
-            "consoleme.celery_tasks.celery_tasks.cache_credential_authorization_mapping"
+            "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            kwargs={"host": host},
         )
 
     async def _get_extended_request(self, request_id, log_data, host):

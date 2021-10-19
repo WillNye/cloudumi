@@ -94,7 +94,10 @@ class CreateCloneFeature extends Component {
       const re = new RegExp(_.escapeRegExp(value), "i");
 
       const TYPEAHEAD_API =
-        "/policies/typeahead?resource=" + searchType + "&search=" + value;
+        "/api/v2/policies/typeahead?resource=" +
+        searchType +
+        "&search=" +
+        value;
 
       this.props
         .sendRequestCommon(null, TYPEAHEAD_API, "get")

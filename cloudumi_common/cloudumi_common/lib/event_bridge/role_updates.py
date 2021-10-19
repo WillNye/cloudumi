@@ -94,7 +94,7 @@ def detect_role_changes_and_update_cache(celery_app, host):
 
                 if role_arn not in roles_to_update:
                     celery_app.send_task(
-                        "consoleme.celery_tasks.celery_tasks.refresh_iam_role",
+                        "cloudumi_common.celery_tasks.celery_tasks.refresh_iam_role",
                         args=[role_arn, host],
                     )
                 roles_to_update.add(role_arn)

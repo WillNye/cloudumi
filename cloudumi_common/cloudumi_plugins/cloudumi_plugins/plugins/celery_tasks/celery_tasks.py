@@ -94,6 +94,7 @@ def generate_consoleme_saas_configuration():
     :return:
     """
     # TODO
+    pass
 
 
 schedule = timedelta(seconds=1800)

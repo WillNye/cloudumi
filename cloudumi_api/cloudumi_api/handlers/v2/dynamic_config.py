@@ -26,10 +26,11 @@ class DynamicConfigApiHandler(BaseHandler):
         # TODO: Trigger this to run cross-region
         # TODO: Delete server-side user-role cache intelligently so users get immediate access
         celery_app.send_task(
-            "consoleme.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
             countdown=config.get_host_specific_key(
                 f"site_configs.{host}.dynamic_config.dynamo_load_interval", host
             ),
+            kwargs={"host": host},
         )
 
     async def get(self) -> None:

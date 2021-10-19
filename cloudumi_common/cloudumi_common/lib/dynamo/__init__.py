@@ -114,10 +114,20 @@ class BaseDynamoHandler:
                     region=config.region,
                     client_kwargs=config.get("_global_.boto3.client_kwargs", {}),
                     session_policy=restrictive_session_policy,
+                    # TODO: This implies only hosting data in SaaS and not customer env. We will need to change this
+                    # to support data plane in customer env
+                    pre_assume_roles=[],
                 )
             table = resource.Table(table_name)
         except Exception as e:
-            log.error({"function": function, "error": e}, exc_info=True)
+            log.error(
+                {
+                    "function": function,
+                    "error": e,
+                    "host": host,
+                },
+                exc_info=True,
+            )
             stats.count(f"{function}.exception")
             return None
         else:
@@ -372,7 +382,10 @@ class UserDynamoHandler(BaseDynamoHandler):
         except Exception:
             if config.get("_global_.development"):
                 log.error(
-                    "Unable to connect to Dynamo. Trying to set user via development configuration",
+                    {
+                        "message": "Unable to connect to Dynamo. Trying to set user via development configuration",
+                        "host": host,
+                    },
                     exc_info=True,
                 )
                 self.user = self.sign_request(
@@ -386,7 +399,13 @@ class UserDynamoHandler(BaseDynamoHandler):
                 )
                 self.affected_user = self.user
             else:
-                log.error("Unable to get Dynamo table.", exc_info=True)
+                log.error(
+                    {
+                        "message": "Unable to get Dynamo table.",
+                        "host": host,
+                    },
+                    exc_info=True,
+                )
                 raise
 
     def write_resource_cache_data(self, data):
@@ -416,6 +435,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 {
                     "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
                     "message": "Error retrieving dynamic configuration",
+                    "host": host,
                     "error": str(e),
                 }
             )
@@ -469,6 +489,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "message": "Writing policy request v2 to Dynamo",
             "request": new_request,
+            "host": host,
         }
         log.debug(log_data)
 
@@ -600,6 +621,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             "function": function,
             "user_email": login_attempt.username,
             "after_redirect_uri": login_attempt.after_redirect_uri,
+            "host": host,
         }
         user_entry = await sync_to_async(self.users_table.query)(
             KeyConditionExpression="username = :un AND host = :h",

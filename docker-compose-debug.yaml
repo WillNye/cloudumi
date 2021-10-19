@@ -10,20 +10,19 @@ services:
     build:
       context: .
       dockerfile: cloudumi_healthcheck/Dockerfile
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONASYNCIODEBUG=1
+    env_file:
+      - ".env_debug_containers"
     image: cloudumi_healthcheck
     depends_on:
-      - localstack1
-      - localstack2
-      - localstack3
+      #      - localstack1
+      #      - localstack2
+      #      - localstack3
       - redis-cluster
       - cloudumi-dynamodb
     links:
-      - localstack1
-      - localstack2
-      - localstack3
+      #      - localstack1
+      #      - localstack2
+      #      - localstack3
       - redis-cluster
       - cloudumi-dynamodb
     ports:
@@ -41,14 +40,15 @@ services:
     build:
       context: .
       dockerfile: cloudumi_saml/Dockerfile
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONASYNCIODEBUG=1
+    env_file:
+      - ".env_debug_containers"
     image: cloudumi_saml
     volumes:
       - ~/.aws:/root/.aws:cached
+      - ./cloudumi_api:/apps/cloudumi_api:cached
       - ./cloudumi_saml:/apps/cloudumi_saml:cached
       - ./cloudumi_config:/apps/cloudumi_config:cached
+      - ./cloudumi_common:/apps/cloudumi_common:cached
     ports:
       - 8091:8091
       - 9091:9091
@@ -60,15 +60,15 @@ services:
     #      - traefik.http.services.cloudumi_saml.loadbalancer.server.port=8091
     #      - "traefik.enable=true"
     depends_on:
-      - localstack1
-      - localstack2
-      - localstack3
+      #      - localstack1
+      #      - localstack2
+      #      - localstack3
       - redis-cluster
       - cloudumi-dynamodb
     links:
-      - localstack1
-      - localstack2
-      - localstack3
+      #      - localstack1
+      #      - localstack2
+      #      - localstack3
       - redis-cluster
       - cloudumi-dynamodb
     command: bash -c '
@@ -78,9 +78,9 @@ services:
       - ~/.aws:/root/.aws:cached
       - ./cloudumi_api:/apps/cloudumi_api:cached
       - ./cloudumi_config:/apps/cloudumi_config:cached
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONASYNCIODEBUG=1
+      - ./cloudumi_common:/apps/cloudumi_common:cached
+    env_file:
+      - ".env_debug_containers"
     build:
       context: .
       dockerfile: ./cloudumi_api/Dockerfile
@@ -89,6 +89,7 @@ services:
       metricbeat setup -e;
       systemctl start metricbeat;
       pip install debugpy && python -m debugpy --listen 0.0.0.0:9092 /apps/cloudumi_api/cloudumi_api/__main__.py'
+    # python /apps/cloudumi_api/cloudumi_api/__main__.py;'
     ports:
       - 9092:9092
       - 8092:8092
@@ -98,15 +99,15 @@ services:
     #      - traefik.http.services.cloudumi_api.loadbalancer.server.port=8092
     #      - "traefik.enable=true"
     depends_on:
-      - localstack1
-      - localstack2
-      - localstack3
+      #      - localstack1
+      #      - localstack2
+      #      - localstack3
       - redis-cluster
       - cloudumi-dynamodb
     links:
-      - localstack1
-      - localstack2
-      - localstack3
+      #      - localstack1
+      #      - localstack2
+      #      - localstack3
       - redis-cluster
       - cloudumi-dynamodb
   cloudumi_frontend:
@@ -114,6 +115,8 @@ services:
       - ./cloudumi_frontend:/apps/cloudumi_frontend:delegated
     environment:
       - DANGEROUSLY_DISABLE_HOST_CHECK=true
+    env_file:
+      - ".env_debug_containers"
     command: bash -c '
       FORCE_COLOR=true yarn --cwd /apps/cloudumi_frontend/frontend run start &
       nginx -g "daemon off;"
@@ -140,27 +143,27 @@ services:
       - ./cloudumi_config:/apps/cloudumi_config:cached
       - ./cloudumi_common:/apps/cloudumi_common:cached
     command: bash -c '
+      python /apps/cloudumi_common/cloudumi_common/scripts/generate_random_resources_localstack.py;
       python /apps/cloudumi_common/cloudumi_common/scripts/initialize_redis.py;
-      celery -A cloudumi_common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8
+      celery -A cloudumi_common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=16
       '
     build:
       context: .
       dockerfile: cloudumi_api/Dockerfile
     image: cloudumi_api
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONASYNCIODEBUG=1
+    env_file:
+      - ".env_debug_containers"
     depends_on:
-      - localstack1
-      - localstack2
-      - localstack3
+      #      - localstack1
+      #      - localstack2
+      #      - localstack3
       - redis-cluster
       - cloudumi-redis
       - cloudumi-dynamodb
     links:
-      - localstack1
-      - localstack2
-      - localstack3
+      #      - localstack1
+      #      - localstack2
+      #      - localstack3
       - redis-cluster
       - cloudumi-redis
       - cloudumi-dynamodb
@@ -170,6 +173,8 @@ services:
       - ./cloudumi_api:/apps/cloudumi_api:cached
       - ./cloudumi_config:/apps/cloudumi_config:cached
       - ./cloudumi_common:/apps/cloudumi_common:cached
+    env_file:
+      - ".env_debug_containers"
     build:
       context: .
       dockerfile: cloudumi_api/Dockerfile

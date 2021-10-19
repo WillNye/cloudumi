@@ -1,9 +1,5 @@
 version: "3"
 # TODO: Set up for production environment security
-# Scalable celery workers
-# Scylla DynamoDB backed by EBS
-# Redis backed by EBS?
-
 # Never use this in a production environment.
 services:
   cloudumi-redis:
@@ -29,39 +25,6 @@ services:
       - DYNAMO_ENDPOINT=http://cloudumi-dynamodb:8005
     ports:
       - "8001:8001"
-  localstack1:
-    image: localstack/localstack-full
-    ports:
-      - "4566:4566"
-      - "4571:4571"
-      - "8082:8080"
-    volumes:
-      - "localstack-vol1:/tmp/localstack"
-    environment:
-      - TEST_AWS_ACCOUNT_ID=790766496544
-      - DATA_DIR=/tmp/localstack/data1
-  localstack2:
-    image: localstack/localstack-full
-    ports:
-      - "4567:4566"
-      - "4572:4571"
-      - "8083:8080"
-    volumes:
-      - "localstack-vol2:/tmp/localstack"
-    environment:
-      - TEST_AWS_ACCOUNT_ID=668381060369
-      - DATA_DIR=/tmp/localstack/data2
-  localstack3:
-    image: localstack/localstack-full
-    ports:
-      - "4568:4566"
-      - "4573:4571"
-      - "8084:8080"
-    volumes:
-      - "localstack-vol3:/tmp/localstack"
-    environment:
-      - TEST_AWS_ACCOUNT_ID=982482626085
-      - DATA_DIR=/tmp/localstack/data3
   redis-cluster:
     image: grokzen/redis-cluster
     #    environment:
@@ -73,15 +36,15 @@ services:
       - "7000-7050:7000-7050"
       - "5000-5010:5000-5010"
   # Portainer is only for dev
-  portainer:
-    image: portainer/portainer-ce:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-    ports:
-      - "9000:9000"
-      - "8000:8000"
-      - "9443:9443"
+#  portainer:
+#    image: portainer/portainer-ce:latest
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - portainer_data:/data
+#    ports:
+#      - "9000:9000"
+#      - "8000:8000"
+#      - "9443:9443"
 # TODO: Figure out metrics and tracing
 #  prometheus:
 #    image: prom/prometheus
@@ -134,14 +97,14 @@ services:
 #    ports:
 #      - "6831:6831/udp"
 #      - "16686:16686"
-
-volumes:
-  localstack-vol1:
-  localstack-vol2:
-  localstack-vol3:
-  prometheus_data: {}
-  grafana_data: {}
-  portainer_data:
+#
+#volumes:
+#  localstack-vol1:
+#  localstack-vol2:
+#  localstack-vol3:
+#  prometheus_data: {}
+#  grafana_data: {}
+#  portainer_data:
 
 networks:
   public:

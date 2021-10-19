@@ -64,7 +64,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         self.write(
             {
                 "type": "redirect",
-                "redirect_url": "https://cloudumi.com",  # TODO: Make this URL configurable?
+                "redirect_url": "https://noq.dev",  # TODO: Make this URL configurable?
                 "reason": "unauthenticated",
                 "message": "Invalid host specified",
             }
@@ -132,7 +132,7 @@ class BaseJSONHandler(TornadoRequestHandler):
             self.write(
                 {
                     "type": "redirect",
-                    "redirect_url": "https://cloudumi.com",
+                    "redirect_url": "https://noq.dev",
                     "reason": "unauthenticated",
                     "message": "Invalid host specified",
                 }
@@ -243,7 +243,7 @@ class BaseHandler(TornadoRequestHandler):
             self.write(
                 {
                     "type": "redirect",
-                    "redirect_url": "https://cloudumi.com",
+                    "redirect_url": "https://noq.dev",
                     "reason": "unauthenticated",
                     "message": "Invalid host specified",
                 }
@@ -759,7 +759,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
             self.write(
                 {
                     "type": "redirect",
-                    "redirect_url": "https://cloudumi.com",
+                    "redirect_url": "https://noq.dev",
                     "reason": "unauthenticated",
                     "message": "Invalid host specified",
                 }

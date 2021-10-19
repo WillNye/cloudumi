@@ -155,6 +155,7 @@ def boto3_cached_conn(
     sts_client_kwargs=None,
     client_kwargs=None,
     session_policy=None,
+    pre_assume_roles=None,
 ):
     """
     Used to obtain a boto3 client or resource connection.
@@ -191,11 +192,11 @@ def boto3_cached_conn(
     :param sts_client_kwargs: Optional arguments to pass during STS client creation
     :return: boto3 client or resource connection
     """
-    if host:
+    if host and pre_assume_roles is None:
         pre_assume_roles = consoleme_config.get_host_specific_key(
             f"site_configs.{host}.policies.pre_role_arns_to_assume", host, []
         )
-    else:
+    elif pre_assume_roles is None:
         pre_assume_roles = []
     key = (
         host,

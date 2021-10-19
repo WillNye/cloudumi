@@ -143,17 +143,6 @@ class Configuration(object):
 
             red = RedisHandler().redis_sync(host)
         dynamic_config = red.get(f"{host}_DYNAMIC_CONFIG_CACHE")
-        if not dynamic_config:
-            self.get_logger("config").warning(
-                {
-                    **log_data,
-                    "error": (
-                        "Unable to retrieve Dynamic Config from Redis. "
-                        "This can be safely ignored if your dynamic config is empty."
-                    ),
-                }
-            )
-            return
         dynamic_config_j = json.loads(dynamic_config)
         if (
             self.get_host_specific_key(f"site_configs.{host}.dynamic_config", host, {})
@@ -301,6 +290,9 @@ class Configuration(object):
         validate_config(self.config)
 
     def reload_config(self):
+        from cloudumi_common.lib.dynamo import UserDynamoHandler
+        from cloudumi_common.lib.redis import RedisHandler
+
         # We don't want to start additional background threads when we're reloading static configuration.
         while threading.main_thread().is_alive():
             async_to_sync(self.load_config)(
@@ -308,6 +300,11 @@ class Configuration(object):
                 allow_start_background_threads=False,
                 load_tenant_configurations_from_dynamo=False,
             )
+            # Reload dynamic configuration
+            for host, _ in self.get("site_configs", {}).items():
+                ddb = UserDynamoHandler(host=host)
+                red = RedisHandler().redis_sync(host)
+                self.load_config_from_dynamo(host, ddb=ddb, red=red)
             if not self.get("_global_.config.automatically_reload_configuration"):
                 break
             # Wait till main exit flag is set OR a fixed timeout

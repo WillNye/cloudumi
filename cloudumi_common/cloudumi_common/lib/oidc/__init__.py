@@ -321,9 +321,7 @@ async def authenticate_user_by_oidc(request):
 
         if (
             not groups
-            and oidc_config.get_host_specific_key(
-                f"site_configs.{host}.userinfo_endpoint", host
-            )
+            and oidc_config.get("userinfo_endpoint")
             and config.get_host_specific_key(
                 f"site_configs.{host}.get_user_by_oidc_settings.get_groups_from_userinfo_endpoint",
                 host,

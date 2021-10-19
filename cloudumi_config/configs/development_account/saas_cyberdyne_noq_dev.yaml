@@ -1,0 +1,112 @@
+site_configs:
+  cyberdyne_noq_dev:
+    account_ids_to_name:
+      "972417093400": skynet_prod
+      "694815895589": skynet_test
+    policies:
+      # the roles that SaaS consoleMe should assume to get to the central role in a client's account
+      pre_role_arns_to_assume:
+        - arn:aws:iam::259868150464:role/NoqClusterRole1
+        - arn:aws:iam::972417093400:role/ConsoleMeCentralRole
+      role_name: ConsoleMeSpokeRole
+    security_logo:
+      image: /images/logos/cyberdyne.png
+    url: https://cyberdyne.noq.dev/
+    # Customer controlled
+    application_admin: ccastrapel@gmail.com
+    environment: dev
+    development: true
+    # Customer controlled
+    challenge_url:
+      request_ip_must_match_challenge_creation_ip: true
+    # Customer controlled
+    auth:
+      get_user_by_saml: true
+      set_auth_cookie: true
+      force_redirect_to_identity_provider: false
+    # Customer controlled
+    get_user_by_saml_settings:
+      # parameter organization is required for this client
+      # On the provider, set ACS url to https://your_consoleme_url/saml/acs and saml audience to "https://your_consoleme_url/"
+      idp_metadata_url: "https://dev-o6hu-9yg.us.auth0.com/samlp/metadata/qOQcmWU2t3thJ1umrGpGHBRnkhq48FOa"
+      saml_path: /apps/cloudumi_config/configs/development_account/tenant_configurations/ssas_auth0_noq_dev
+      attributes:
+        user: user
+        groups: groups
+        email: email
+      # Optional: Add these additional parameters to the SAML request. IE: Auth0 Organizations
+      additional_saml_request_parameters:
+        organization: org_ef2QUk0IG8ZijrXI
+      saml_settings:
+        debug: true
+        # IDP settings are not necessary if you provided the get_user_by_saml_settings.idp_metadata_url configuration setting
+        # They are provided here as an example
+        #    idp:
+        #      entityId: https://portal.sso.us-east-1.amazonaws.com/saml/assertion/CUSTOMENDPOINT
+        #      singleLogoutService:
+        #        binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
+        #        url: https://portal.sso.us-east-1.amazonaws.com/saml/logout/CUSTOMENDPOINT
+        #      singleSignOnService:
+        #        binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
+        #        url: https://portal.sso.us-east-1.amazonaws.com/saml/assertion/CUSTOMENDPOINT
+        #      x509cert: MIIDAz.....
+        sp:
+          NameIDFormat: urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
+          assertionConsumerService:
+            binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST
+            url: https://cyberdyne.noq.dev/saml/acs
+          entityId: https://cyberdyne.noq.dev/
+          singleLogoutService:
+            binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
+            url: https://cyberdyne.noq.dev/saml/sls
+        strict: false
+        support:
+          emailAddress: support@example.com
+          givenName: support_name
+          technical:
+            emailAddress: technical@example.com
+            givenName: technical_name
+        organization:
+          en-US:
+            displayname: ConsoleMe
+            name: ConsoleMe
+            url: https://cyberdyne.noq.dev/
+        security:
+          authnRequestsSigned: true
+          digestAlgorithm: http://www.w3.org/2000/09/xmldsig#sha1
+          logoutRequestSigned: true
+          logoutResponseSigned: true
+          nameIdEncrypted: false
+          signMetadata: true
+          signatureAlgorithm: http://www.w3.org/2000/09/xmldsig#rsa-sha1
+          wantAssertionsEncrypted: true
+          wantAssertionsSigned: true
+          wantMessagesSigned: true
+          wantNameId: true
+          wantNameIdEncrypted: false
+    # Customer controlled
+    cloud_credential_authorization_mapping:
+      role_tags:
+        enabled: false
+        authorized_groups_tags:
+          - consoleme-authorized
+        authorized_groups_cli_only_tags:
+          - consoleme-owner-dl
+          - consoleme-authorized-cli-only
+    aws:
+      issuer: YourCompany
+      region: "us-east-1"
+    celery:
+      cache_resources_from_aws_config_across_accounts:
+        enabled: false
+    groups:
+      can_edit_config:
+        - ccastrapel@gmail.com
+      can_admin_policies:
+        - ccastrapel@gmail.com
+    jwt:
+      email_key: email
+    jwt_secret: uT213123p4`sSf-6E8\RAA
+    support_contact: consoleme-support@example.com
+    support_chat_url: https://www.example.com/slack/channel
+    documentation_page: https://github.com/Netflix/consoleme/
