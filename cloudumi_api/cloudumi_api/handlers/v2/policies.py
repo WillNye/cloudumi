@@ -31,8 +31,8 @@ class PoliciesPageConfigHandler(BaseHandler):
         """
         host = self.ctx.host
         default_configuration = {
-            "pageName": "Policies",
-            "pageDescription": "View all of the AWS Resources we know about.",
+            "pageName": "All Resources",
+            "pageDescription": "View all of the resources we know about.",
             "tableConfig": {
                 "expandableRows": True,
                 "dataEndpoint": "/api/v2/policies?markdown=true",

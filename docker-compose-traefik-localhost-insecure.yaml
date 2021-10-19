@@ -4,7 +4,7 @@
 version: "3.8"
 
 services:
-  reverse-proxy:
+  cloudumi_traefik:
     image: traefik
     network_mode: "host"
     volumes:

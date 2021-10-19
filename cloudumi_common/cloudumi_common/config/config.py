@@ -143,6 +143,8 @@ class Configuration(object):
 
             red = RedisHandler().redis_sync(host)
         dynamic_config = red.get(f"{host}_DYNAMIC_CONFIG_CACHE")
+        if not dynamic_config:
+            return
         dynamic_config_j = json.loads(dynamic_config)
         if (
             self.get_host_specific_key(f"site_configs.{host}.dynamic_config", host, {})

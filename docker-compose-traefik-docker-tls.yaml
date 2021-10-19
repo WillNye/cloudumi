@@ -3,7 +3,7 @@
 version: "3.8"
 
 services:
-  reverse-proxy:
+  cloudumi_traefik:
     image: traefik
     env_file:
       - .env
