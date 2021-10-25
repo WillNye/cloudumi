@@ -37,4 +37,4 @@ COPY cloudumi_base_docker/root/ /
 RUN addgroup --gid 1111 appgroup
 RUN adduser -uid 1111 --gid 1111 --disabled-password --no-create-home --gecos "" appuser && chown -R appuser /apps
 RUN mkdir -p /home/appuser/.aws/
-RUN chown -R appuser /home/appuser
+RUN chown -R appuser /home/appuse"r

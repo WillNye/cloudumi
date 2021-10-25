@@ -1,4 +1,4 @@
--e ../cloudumi_common
+#-e ../cloudumi_common
 fastapi
 uvicorn
 python3-saml
