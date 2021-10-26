@@ -1,6 +1,6 @@
 # Use this traefik configuration when you want to run services in a container, and have traefik use TLS for all traffic
 
-version: "3.8"
+version: "3"
 
 services:
   cloudumi_traefik:

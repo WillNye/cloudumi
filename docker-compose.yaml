@@ -1,6 +1,6 @@
 # First time? run `docker network create microservices`
 
-version: "3.8"
+version: "3"
 services:
   cloudumi_healthcheck:
     build:

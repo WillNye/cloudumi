@@ -2,7 +2,7 @@
 # Run with: docker-compose -f docker-compose-traefik-docker-insecure.yaml -f docker-compose-dependencies.yaml -f docker-compose-debug.yaml build
 # docker-compose -f docker-compose-traefik-docker-insecure.yaml -f docker-compose-dependencies.yaml -f docker-compose-debug.yaml  up -d --force-recreate
 
-version: "3.8"
+version: "3"
 services:
   cloudumi_healthcheck:
     volumes:

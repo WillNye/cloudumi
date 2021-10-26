@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3"
 services:
   cloudumi_initialize_redis_dynamo_for_dev:
     volumes:
