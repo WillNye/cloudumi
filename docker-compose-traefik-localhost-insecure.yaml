@@ -1,10 +1,10 @@
 # Use this traefik configuration when you want to run services on your localhost, and have traefik route to them without
 # TLS
 
-version: "3.8"
+version: "3"
 
 services:
-  reverse-proxy:
+  cloudumi_traefik:
     image: traefik
     network_mode: "host"
     volumes:

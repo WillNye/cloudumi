@@ -1,5 +1,5 @@
 # Stolen from https://quoeamaster.medium.com/deploying-elasticsearch-and-kibana-with-docker-86a4ac78d851
-version: "3.8"
+version: "3"
 services:
   elasticsearch1:
     image: elasticsearch:7.14.1

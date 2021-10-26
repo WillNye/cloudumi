@@ -1,6 +1,7 @@
 api:
   insecure: true
-
+log:
+  level: DEBUG
 providers:
   file:
     filename: /etc/traefik/dynamic_conf.yaml
@@ -22,13 +23,14 @@ entryPoints:
     address: ":80"
   #    http:
   #      domains:
-  #        - main: cloudumi.com
-  #          sans: "*.cloudumi.com"
+  #        - main: noq.dev
+  #          sans: "*.noq.dev"
   websecure:
     address: ":443"
     http:
       tls:
         certResolver: letsencrypt
-#      domains:
-#        - main: cloudumi.com
-#          sans: "*.cloudumi.com"
+        domains:
+          - main: noq.dev
+            sans:
+              - "*.noq.dev"

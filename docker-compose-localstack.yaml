@@ -1,0 +1,36 @@
+version: "3"
+# Never use this in a production environment.
+services:
+  localstack1:
+    image: localstack/localstack-full
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+      - "8082:8080"
+    volumes:
+      - "localstack-vol1:/tmp/localstack"
+    environment:
+      - TEST_AWS_ACCOUNT_ID=790766496544
+      - DATA_DIR=/tmp/localstack/data1
+  localstack2:
+    image: localstack/localstack-full
+    ports:
+      - "4567:4566"
+      - "4572:4571"
+      - "8083:8080"
+    volumes:
+      - "localstack-vol2:/tmp/localstack"
+    environment:
+      - TEST_AWS_ACCOUNT_ID=668381060369
+      - DATA_DIR=/tmp/localstack/data2
+  localstack3:
+    image: localstack/localstack-full
+    ports:
+      - "4568:4566"
+      - "4573:4571"
+      - "8084:8080"
+    volumes:
+      - "localstack-vol3:/tmp/localstack"
+    environment:
+      - TEST_AWS_ACCOUNT_ID=982482626085
+      - DATA_DIR=/tmp/localstack/data3

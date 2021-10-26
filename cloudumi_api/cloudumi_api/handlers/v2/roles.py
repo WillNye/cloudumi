@@ -221,13 +221,16 @@ class RolesHandler(BaseAPIV2Handler):
     def on_finish(self) -> None:
         if self.request.method != "POST":
             return
+        host = self.ctx.host
         # Force refresh of crednetial authorization mapping after the dynamic config sync period to ensure all workers
         # have the updated configuration
         celery_app.send_task(
-            "consoleme.celery_tasks.celery_tasks.cache_policies_table_details",
+            "cloudumi_common.celery_tasks.celery_tasks.cache_policies_table_details",
+            kwargs={"host": host},
         )
         celery_app.send_task(
-            "consoleme.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            kwargs={"host": host},
         )
 
     async def get(self):

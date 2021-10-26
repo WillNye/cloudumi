@@ -307,7 +307,7 @@ def report_successful_task(**kwargs):
     tags = get_celery_request_tags(**kwargs)
     # TODO: Host?
     red = RedisHandler().redis_sync("_global_")
-    red.set(f"{tags['task_name']}.last_success", int(time.time()))
+    red.set(f"_global_.{tags['task_name']}.last_success", int(time.time()))
     tags.pop("error", None)
     tags.pop("task_id", None)
     stats.timer("celery.successful_task", tags=tags)
@@ -556,7 +556,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
         return log_data
     ct = CloudTrail()
     process_cloudtrail_errors_res: Dict = async_to_sync(ct.process_cloudtrail_errors)(
-        aws
+        aws, host
     )
     cloudtrail_errors = process_cloudtrail_errors_res["error_count_by_role"]
     red.setex(
@@ -569,7 +569,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
         json.dumps(cloudtrail_errors),
     )
     if process_cloudtrail_errors_res["num_new_or_changed_notifications"] > 0:
-        cache_notifications.delay()
+        cache_notifications.apply_async((host,))
     log_data["number_of_roles_with_errors"]: len(cloudtrail_errors.keys())
     log_data["number_errors"]: sum(cloudtrail_errors.values())
     log.debug(log_data)
@@ -1234,7 +1234,10 @@ def cache_iam_resources_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_iam_resources_across_accounts.apply_async((host,))
+        # TODO: Figure out why wait_for_subtask_completion=True is failing here
+        cache_iam_resources_across_accounts.delay(
+            host, wait_for_subtask_completion=False
+        )
     return log_data
 
 
@@ -1297,7 +1300,7 @@ def cache_iam_resources_across_accounts(
         },
     }
 
-    log_data = {"function": function, "cache_keys": cache_keys}
+    log_data = {"function": function}
     if is_task_already_running(function, []):
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
@@ -1543,7 +1546,7 @@ def cache_managed_policies_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_managed_policies_across_accounts.apply_async((host,))
+        cache_managed_policies_across_accounts(host)
     return log_data
 
 
@@ -1582,7 +1585,7 @@ def cache_s3_buckets_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_s3_buckets_across_accounts.apply_async((host,))
+        cache_s3_buckets_across_accounts.delay(host, wait_for_subtask_completion=False)
     return log_data
 
 
@@ -1624,12 +1627,12 @@ def cache_s3_buckets_across_accounts(
             if config.get_host_specific_key(
                 f"site_configs.{host}.environment", host
             ) in ["prod", "dev"]:
-                tasks.append(cache_s3_buckets_for_account.s(account_id))
+                tasks.append(cache_s3_buckets_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
                     f"site_configs.{host}.celery.test_account_ids", host, []
                 ):
-                    tasks.append(cache_s3_buckets_for_account.s(account_id))
+                    tasks.append(cache_s3_buckets_for_account.s(account_id, host))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1679,7 +1682,7 @@ def cache_sqs_queues_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_sqs_queues_across_accounts.apply_async((host,))
+        cache_sqs_queues_across_accounts.delay(host, wait_for_subtask_completion=False)
     return log_data
 
 
@@ -1771,7 +1774,7 @@ def cache_sns_topics_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_sns_topics_across_accounts.apply_async((host,))
+        cache_sns_topics_across_accounts.delay(host, wait_for_subtask_completion=False)
     return log_data
 
 
@@ -1813,12 +1816,12 @@ def cache_sns_topics_across_accounts(
             if config.get_host_specific_key(
                 f"site_configs.{host}.environment", host
             ) in ["prod", "dev"]:
-                tasks.append(cache_sns_topics_for_account.s(account_id))
+                tasks.append(cache_sns_topics_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
                     f"site_configs.{host}.celery.test_account_ids", host, []
                 ):
-                    tasks.append(cache_sns_topics_for_account.s(account_id))
+                    tasks.append(cache_sns_topics_for_account.s(account_id, host))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -2299,7 +2302,9 @@ def cache_resources_from_aws_config_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_resources_from_aws_config_across_accounts.apply_async((host,))
+        cache_resources_from_aws_config_across_accounts.delay(
+            host, wait_for_subtask_completion=False
+        )
     return log_data
 
 
@@ -2859,7 +2864,7 @@ if config.get("_global_.development", False):
 schedule = {
     "cache_iam_resources_across_accounts_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "clear_old_redis_iam_cache_for_all_hosts": {
@@ -2869,87 +2874,89 @@ schedule = {
     },
     "cache_policies_table_details_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
-    "report_celery_last_success_metrics": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.report_celery_last_success_metrics",
-        "options": {"expires": 60},
-        "schedule": schedule_minute,
-    },
+    # TODO: Get this task for a similar task working so we can alert on failing tasks or tasks that do not run as
+    #  planned
+    # "report_celery_last_success_metrics": {
+    #     "task": "cloudumi_common.celery_tasks.celery_tasks.report_celery_last_success_metrics",
+    #     "options": {"expires": 60},
+    #     "schedule": schedule_minute,
+    # },
     "cache_managed_policies_across_accounts_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_managed_policies_across_accounts_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_s3_buckets_across_accounts_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_s3_buckets_across_accounts_for_all_hosts",
-        "options": {"expires": 300},
+        "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_sqs_queues_across_accounts_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_sqs_queues_across_accounts_for_all_hosts",
-        "options": {"expires": 300},
+        "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_sns_topics_across_accounts_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_sns_topics_across_accounts_for_all_hosts",
-        "options": {"expires": 300},
+        "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_cloudtrail_errors_by_arn_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloudtrail_errors_by_arn_for_all_hosts",
-        "options": {"expires": 300},
+        "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_resources_from_aws_config_across_accounts_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_hosts",
-        "options": {"expires": 300},
+        "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_policy_requests_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_policy_requests_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_5_minutes,
     },
     "cache_cloud_account_mapping_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_credential_authorization_mapping_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_5_minutes,
     },
     "cache_scps_across_organizations_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_scps_across_organizations_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_organization_structure_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_organization_structure_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_resource_templates_task_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_resource_templates_task_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     "cache_self_service_typeahead_task_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_self_service_typeahead_task_for_all_hosts",
-        "options": {"expires": 1000},
+        "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     "trigger_credential_mapping_refresh_from_role_changes_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_hosts",
-        "options": {"expires": 300},
+        "options": {"expires": 180},
         "schedule": schedule_minute,
     },
     "cache_cloudtrail_denies_for_all_hosts": {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_hosts",
-        "options": {"expires": 300},
+        "options": {"expires": 180},
         "schedule": schedule_minute,
     },
 }

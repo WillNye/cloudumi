@@ -263,7 +263,8 @@ async def detect_cloudtrail_denies_and_update_cache(
     if reached_limit_on_num_messages_to_process:
         # We hit our limit. Let's spawn another task immediately to process remaining messages
         celery_app.send_task(
-            "consoleme.celery_tasks.celery_tasks.cache_cloudtrail_denies", args=(host,)
+            "cloudumi_common.celery_tasks.celery_tasks.cache_cloudtrail_denies",
+            args=(host,),
         )
     log_data["message"] = "Successfully cached Cloudtrail Access Denies"
     log_data["num_events"] = num_events

@@ -64,6 +64,10 @@
         {
           "localRoot": "${workspaceFolder}/cloudumi_common",
           "remoteRoot": "/apps/cloudumi_common"
+        },
+        {
+          "localRoot": "${workspaceFolder}/cloudumi_saml",
+          "remoteRoot": "/apps/cloudumi_saml"
         }
       ]
     },

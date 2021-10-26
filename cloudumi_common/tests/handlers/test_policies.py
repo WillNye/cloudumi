@@ -58,7 +58,7 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
         # Invalid resource, no search string
         resource = "fake"
         response = self.fetch(
-            f"/policies/typeahead?resource={resource}",
+            f"/api/v2/policies/typeahead?resource={resource}",
             # headers=headers,
             method="GET",
         )
@@ -67,7 +67,7 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
         # Valid resource, no search string
         resource = "s3"
         response = self.fetch(
-            f"/policies/typeahead?resource={resource}",
+            f"/api/v2/policies/typeahead?resource={resource}",
             # headers=headers,
             method="GET",
         )
@@ -78,7 +78,7 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
         resource = "s3"
         search = "a"
         response = self.fetch(
-            f"/policies/typeahead?resource={resource}&search={search}&account_id={account_id}",
+            f"/api/v2/policies/typeahead?resource={resource}&search={search}&account_id={account_id}",
             # headers=headers,
             method="GET",
         )

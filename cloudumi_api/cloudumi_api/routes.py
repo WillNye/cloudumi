@@ -155,7 +155,7 @@ def make_app(jwt_validator=None):
         (r"/api/v2/typeahead/resources", ResourceTypeAheadHandlerV2),
         (r"/api/v2/role_login/(.*)", RoleConsoleLoginHandler),
         (r"/myheaders/?", HeaderHandler),
-        (r"/policies/typeahead/?", ResourceTypeAheadHandler),
+        (r"/api/v2/policies/typeahead/?", ResourceTypeAheadHandler),
         (
             r"/api/v2/challenge_validator/([a-zA-Z0-9_-]+)",
             ChallengeValidatorHandler,

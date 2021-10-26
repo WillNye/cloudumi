@@ -94,21 +94,22 @@ def generate_consoleme_saas_configuration():
     :return:
     """
     # TODO
+    pass
 
 
 schedule = timedelta(seconds=1800)
 
 internal_schedule = {
-    "generate_consoleme_saas_configuration": {
-        "task": "cloudumi_plugins.plugins.celery_tasks.generate_consoleme_saas_configuration",
-        "options": {"expires": 4000},
-        "schedule": schedule,
-    },
-    "cache_application_information": {
-        "task": "cloudumi_plugins.plugins.celery_tasks.celery_tasks.cache_application_information",
-        "options": {"expires": 4000},
-        "schedule": schedule,
-    },
+    # "generate_consoleme_saas_configuration": {
+    #     "task": "cloudumi_plugins.plugins.celery_tasks.generate_consoleme_saas_configuration",
+    #     "options": {"expires": 4000},
+    #     "schedule": schedule,
+    # },
+    # "cache_application_information": {
+    #     "task": "cloudumi_plugins.plugins.celery_tasks.celery_tasks.cache_application_information",
+    #     "options": {"expires": 4000},
+    #     "schedule": schedule,
+    # },
 }
 
 

@@ -14,7 +14,7 @@ permissions_map:
         type: typeahead_input
         text: Bucket Name
         required: true
-        typeahead_endpoint: /policies/typeahead?resource=s3&show_full_arn_for_s3_buckets=true&search={query}
+        typeahead_endpoint: /api/v2/policies/typeahead?resource=s3&show_full_arn_for_s3_buckets=true&search={query}
       - name: bucket_prefix
         type: text_input
         text: Prefix (Folder under S3 that you need access to).
@@ -58,7 +58,7 @@ permissions_map:
         type: typeahead_input
         text: Queue ARN
         required: true
-        typeahead_endpoint: /policies/typeahead?resource=sqs&search={query}
+        typeahead_endpoint: /api/v2/policies//typeahead?resource=sqs&search={query}
     action_map:
       - name: send_messages
         text: Send Message (Queue Producer)
@@ -89,7 +89,7 @@ permissions_map:
         type: typeahead_input
         text: Topic ARN
         required: true
-        typeahead_endpoint: /policies/typeahead?resource=sns&search={query}
+        typeahead_endpoint: /api/v2/policies/typeahead?resource=sns&search={query}
     action_map:
       - name: get_topic_attributes
         text: Get Topic Attributes
@@ -173,7 +173,7 @@ permissions_map:
         type: typeahead_input
         text: Role ARN that you wish to assume
         required: true
-        typeahead_endpoint: /policies/typeahead?resource=iam_arn&search={query}
+        typeahead_endpoint: /api/v2/policies/typeahead?resource=iam_arn&search={query}
     action_map:
       - name: assume_role
         text: Assume Role
