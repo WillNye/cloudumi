@@ -34,3 +34,8 @@ services:
     environment:
       - TEST_AWS_ACCOUNT_ID=982482626085
       - DATA_DIR=/tmp/localstack/data3
+
+volumes:
+  localstack-vol1:
+  localstack-vol2:
+  localstack-vol3:
