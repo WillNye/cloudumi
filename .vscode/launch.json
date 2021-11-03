@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Celery",
+      "name": "Local: CloudUmi Celery",
       "args": [
         "-A",
         "cloudumi_common.celery_tasks.celery_tasks",
@@ -22,30 +22,33 @@
       "console": "integratedTerminal",
       "module": "celery",
       "env": {
-        "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "personal"
+        // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev"
       }
     },
     {
-      "name": "Python: CloudUmi API",
+      "name": "Local: CloudUmi API",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/cloudumi_api/cloudumi_api/__main__.py",
       "console": "integratedTerminal",
       "env": {
-        "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "personal"
+        // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev"
       }
     },
     {
-      "name": "Python: Initialize Dynamo Tables",
+      "name": "Local: Initialize Dynamo Tables",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/cloudumi_common/cloudumi_common/scripts/initialize_dynamodb.py",
       "console": "integratedTerminal",
       "env": {
-        "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "personal"
+        // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev"
       }
     },
     {
@@ -58,10 +61,7 @@
         "INTERPRETER_OPTIONS": "",
         "PARENT_ENVS": true,
         "PYTHONUNBUFFERED": "1",
-        "PYTHONASYNCIODEBUG": "1",
-        "CONSOLEME_CONFIG_ENTRYPOINT": "cmsaas_config",
-        "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/localhost/saas_development.yaml",
-        "AWS_PROFILE": "localstack"
+        "PYTHONASYNCIODEBUG": "1"
       }
     },
     {
@@ -122,8 +122,9 @@
       "host": "localhost",
       "port": 9092,
       "env": {
-        "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "personal"
+        //"CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev"
       }
     },
     {
