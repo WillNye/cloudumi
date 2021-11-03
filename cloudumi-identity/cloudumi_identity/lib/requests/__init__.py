@@ -1,0 +1,127 @@
+import datetime
+import time
+import uuid
+
+from cloudumi_identity.lib.groups.groups import get_group_by_name
+from cloudumi_identity.lib.groups.models import (
+    Group,
+    GroupRequest,
+    GroupRequestStatus,
+    LastUpdated,
+    User,
+)
+
+from cloudumi_common.lib.dynamo import UserDynamoHandler
+
+
+async def get_request_by_id(host, request_id):
+    """
+    Get a request by ID.
+    """
+    ddb = UserDynamoHandler(host)
+    request_j = await ddb.get_identity_group_request_by_id(host, request_id)
+    request = GroupRequest.parse_obj(request_j)
+    return request
+
+
+async def request_access_to_group(
+    host, user, user_groups, idp_name, group_name, justification, group_expiration
+):
+    """
+    Request access to a group.
+    """
+
+    # TODO: Support multiple users being added to multiple groups
+
+    errors = []
+
+    if group_name in user_groups:
+        raise Exception("User is already in group")
+
+    # Get the group
+    group = await get_group_by_name(host, idp_name, group_name)
+    if not group:
+        raise Exception("Group not found")
+
+    if not group.attributes.requestable:
+        raise Exception("Group is not requestable")
+
+    ddb = UserDynamoHandler(host)
+
+    # TODO: Check for existing pending requests
+    pending_requests = await ddb.get_pending_identity_group_requests(
+        host, user=user, group=group, status="pending"
+    )
+    if pending_requests:
+        raise Exception("User already has a pending request for this group")
+
+    user_obj = User(
+        username=user,
+        host=host,
+        groups=user_groups,
+        background_check_status=False,
+    )
+    # Create the request
+    request_uuid = str(uuid.uuid4())
+    request_status = GroupRequestStatus("pending")
+    current_time = int(time.time())
+    request_last_updated = LastUpdated(
+        user=user_obj, time=current_time, comment="Request Created"
+    )
+
+    # TODO: Get user from a function, similar to how we get groups
+
+    # TODO: Check for correct domain
+
+    # TODO: Check background check requirement
+
+    # TODO: Check restricted status on group
+
+    # Approve if no secondary approver
+
+    if (
+        not group.attributes.manager_approval_required
+        and not group.attributes.approval_chain
+    ):
+        request_status = GroupRequestStatus("approved")
+        request_last_updated.comment = "Request Self-Approved - No Approval Chain"
+
+    # Approve if user in self-approval groups
+    if group.attributes.self_approval_groups:
+        for user_group in user_groups:
+            if user_group in group.attributes.self_approval_groups:
+                request_status = GroupRequestStatus("approved")
+                request_last_updated.comment = (
+                    "Request Self-Approved - User in Self Approval Group"
+                )
+                break
+
+    users = [user_obj]
+    groups = [group]
+    request = GroupRequest(
+        request_id=request_uuid,
+        host=host,
+        users=users,
+        groups=groups,
+        requester=user_obj,
+        justification=justification,
+        # TODO: expires=expires,
+        status=request_status,
+        last_updated=[request_last_updated],
+        last_updated_time=current_time,
+        last_updated_by=user_obj,
+        request_url=f"/group_request/{request_uuid}",
+    )
+
+    # Create request in DynamoDB
+    ddb = UserDynamoHandler(host, user=user)
+    await ddb.create_identity_group_request(host, user, request)
+
+    # TODO: Notify approvers via Slack/Email
+    # https://github.com/Netflix/consoleme/commit/8b1f020253dc4f90ef2b336a8b75032eab66f241
+
+    # TODO: If status approved, call function to add user to group and notify user
+
+    # TODO: Tell user request was successful and provide context
+
+    return request

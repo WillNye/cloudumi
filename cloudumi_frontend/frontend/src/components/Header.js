@@ -51,6 +51,24 @@ const ConsoleMeHeader = () => {
     return null;
   };
 
+  const generateIdentityDropDown = () => {
+    if (user?.pages?.identity?.enabled === true) {
+      return (
+        <Dropdown text="Identity" pointing className="link item">
+          <Dropdown.Menu>
+            <Dropdown.Item as={NavLink} to="/users">
+              All Users
+            </Dropdown.Item>
+            <Dropdown.Item as={NavLink} to="/groups">
+              All Groups
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      );
+    }
+    return null;
+  };
+
   const generateAdvancedDropDown = () => {
     if (user?.pages?.config?.enabled === true) {
       return (
@@ -190,6 +208,7 @@ const ConsoleMeHeader = () => {
             Access
           </Menu.Item>
           {generatePoliciesDropDown()}
+          {generateIdentityDropDown()}
           {generateAdvancedDropDown()}
         </Menu.Menu>
         <Menu.Menu position="right">

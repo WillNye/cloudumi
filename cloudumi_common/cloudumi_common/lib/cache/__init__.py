@@ -46,6 +46,7 @@ async def store_json_results_in_redis_and_s3(
     json_encoder=None,
     s3_expires: int = None,
     host: str = None,
+    redis_field: str = None,
 ):
     """
     Stores data in Redis and S3, depending on configuration
@@ -101,12 +102,20 @@ async def store_json_results_in_redis_and_s3(
                 )
         elif redis_data_type == "hash":
             if data:
-                red.hmset(redis_key, data)
+                if redis_field:
+                    if isinstance(data, dict) or isinstance(data, list):
+                        data_str = json.dumps(data)
+                    else:
+                        data_str = data
+                    red.hset(redis_key, redis_field, data_str)
+                else:
+                    red.hmset(redis_key, data)
         else:
             raise UnsupportedRedisDataType("Unsupported redis_data_type passed")
         red.hset(last_updated_redis_key, redis_key, last_updated)
 
-    if s3_bucket and s3_key:
+    # TODO: If Redis field is defined, we should pull data from S3, update data, then store in S3.
+    if s3_bucket and s3_key and not redis_field:
         s3_extra_kwargs = {}
         if isinstance(s3_expires, int):
             s3_extra_kwargs["Expires"] = datetime.utcfromtimestamp(s3_expires)
@@ -131,10 +140,11 @@ async def retrieve_json_data_from_redis_or_s3(
     s3_key: str = None,
     cache_to_redis_if_data_in_s3: bool = True,
     max_age: Optional[int] = None,
-    default: Optional = None,
-    json_object_hook: Optional = None,
-    json_encoder: Optional = None,
-    host=None,
+    default: Optional[Any] = None,
+    json_object_hook: Optional[Any] = None,
+    json_encoder: Optional[Any] = None,
+    host: str = None,
+    redis_field: str = None,  # Optional field for Redis hash
 ):
     """
     Retrieve data from Redis as a priority. If data is unavailable in Redis, fall back to S3 and attempt to store
@@ -184,7 +194,10 @@ async def retrieve_json_data_from_redis_or_s3(
             if data_s:
                 data = json.loads(data_s, object_hook=json_object_hook)
         elif redis_data_type == "hash":
-            data = red.hgetall(redis_key)
+            if redis_field:
+                data = red.hget(redis_key, redis_field)
+            else:
+                data = red.hgetall(redis_key)
         else:
             raise UnsupportedRedisDataType("Unsupported redis_data_type passed")
         if data and max_age:
@@ -228,6 +241,7 @@ async def retrieve_json_data_from_redis_or_s3(
                 redis_data_type=redis_data_type,
                 json_encoder=json_encoder,
                 host=host,
+                redis_field=redis_field,
             )
 
     if data is not None:
@@ -241,8 +255,8 @@ async def retrieve_json_data_from_s3_bulk(
     s3_bucket: str = None,
     s3_keys: Optional[List[str]] = None,
     max_age: Optional[int] = None,
-    json_object_hook: Optional = None,
-    json_encoder: Optional = None,
+    json_object_hook: Optional[Any] = None,
+    json_encoder: Optional[Any] = None,
     host: str = None,
 ):
     """

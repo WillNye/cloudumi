@@ -20,6 +20,8 @@ import Logout from "./components/Logout";
 import NoMatch from "./components/NoMatch";
 import AuthenticateModal from "./components/AuthenticateModal";
 import GenerateConfig from "./components/generate_config/GenerateConfig";
+import { IdentityGroupRequest } from "./components/identity/GroupRequest";
+import { IdentityGroupRequestReview } from "./components/identity/GroupRequestReview";
 
 function App() {
   return (
@@ -53,6 +55,23 @@ function App() {
           key="group"
           path="/group/:idpName/:groupName"
           component={IdentityGroupEdit}
+        />
+        <ProtectedRoute
+          key="group_request"
+          path="/group_request/:idpName/:groupName"
+          component={IdentityGroupRequest}
+        />
+        <ProtectedRoute
+          key="group_request_review"
+          exact
+          path="/group_request/:requestId"
+          component={IdentityGroupRequestReview}
+        />
+        <ProtectedRoute
+          key="group_requests"
+          exact
+          path="/group_requests"
+          // component={ConsoleMeRequestTable}
         />
         <ProtectedRoute
           key="review"

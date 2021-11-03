@@ -105,6 +105,11 @@ class UserProfileHandler(BaseAPIV1Handler):
                         f"site_configs.{host}.headers.group_access.enabled", host, False
                     )
                 },
+                "identity": {
+                    "enabled": config.get_host_specific_key(
+                        f"site_configs.{host}.headers.identity.enabled", host, False
+                    )
+                },
                 "users": {
                     "enabled": config.get_host_specific_key(
                         f"site_configs.{host}.headers.group_access.enabled", host, False

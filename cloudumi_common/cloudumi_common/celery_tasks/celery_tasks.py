@@ -36,6 +36,10 @@ from celery.signals import (
     task_success,
     task_unknown,
 )
+from cloudumi_identity.lib.groups.groups import (
+    cache_identity_groups_for_host,
+    cache_identity_groups_requests_for_host,
+)
 from retrying import retry
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
@@ -70,7 +74,6 @@ from cloudumi_common.lib.cloud_credential_authorization_mapping import (
     generate_and_store_credential_authorization_mapping,
     generate_and_store_reverse_authorization_mapping,
 )
-from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler, UserDynamoHandler
 from cloudumi_common.lib.event_bridge.access_denies import (
     detect_cloudtrail_denies_and_update_cache,
 )
@@ -936,6 +939,8 @@ def cache_policies_table_details(host=None) -> bool:
 def cache_iam_resources_for_account(account_id: str, host=None) -> Dict[str, Any]:
     if not host:
         raise Exception("`host` must be passed to this task.")
+    from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
+
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     aws = get_plugin_by_name(
         config.get_host_specific_key(
@@ -1247,6 +1252,8 @@ def cache_iam_resources_across_accounts(
 ) -> Dict:
     if not host:
         raise Exception("`host` must be passed to this task.")
+    from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
+
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(host)
     cache_keys = {
@@ -2197,6 +2204,8 @@ def clear_old_redis_iam_cache(host=None) -> bool:
 
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
 def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
+    from cloudumi_common.lib.dynamo import UserDynamoHandler
+
     if not host:
         raise Exception("`host` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -2824,12 +2833,12 @@ def cache_identity_groups_for_host_t(host: str) -> Dict:
     }
     log.debug(log_data)
     # TODO: Finish this
-    # res = async_to_sync(cache_identity_groups_for_host)(host)
+    res = async_to_sync(cache_identity_groups_for_host)(host)
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_groups_for_all_hosts() -> Dict:
+def cache_identities_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
     log_data = {
@@ -2840,6 +2849,36 @@ def cache_identity_groups_for_all_hosts() -> Dict:
     log.debug(log_data)
     for host in hosts:
         cache_identity_groups_for_host_t.apply_async((host,))
+        # TODO: Cache identity users for all hosts
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def cache_identity_group_requests_for_host_t(host: str) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Caching Identity Group Requests for Host",
+        "host": host,
+    }
+    log.debug(log_data)
+    # Fetch from Dynamo. Write to Redis and S3
+    res = async_to_sync(cache_identity_groups_requests_for_host)(host)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def cache_identity_group_requests_for_all_hosts() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    hosts = get_all_hosts()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_hosts": len(hosts),
+    }
+    log.debug(log_data)
+    for host in hosts:
+        cache_identity_group_requests_for_host_t.apply_async((host,))
     return log_data
 
 
@@ -2959,7 +2998,18 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
+    "cache_identities_for_all_hosts": {
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
+        "options": {"expires": 180},
+        "schedule": schedule_30_minute,
+    },
+    "cache_identity_group_requests_for_all_hosts": {
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_hosts",
+        "options": {"expires": 180},
+        "schedule": schedule_30_minute,
+    },
 }
+
 
 if internal_celery_tasks and isinstance(internal_celery_tasks, dict):
     schedule = {**schedule, **internal_celery_tasks}
@@ -2969,3 +3019,6 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
+
+cache_identity_groups_for_host_t("localhost")
+cache_identity_group_requests_for_all_hosts.delay()

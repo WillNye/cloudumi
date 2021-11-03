@@ -1,17 +1,21 @@
 import sys
 
+from cloudumi_identity.lib.groups.models import Group, OktaIdentityProvider
+from cloudumi_identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
+
 from cloudumi_common.config import config
 from cloudumi_common.lib.cache import store_json_results_in_redis_and_s3
 from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_identity.lib.groups.models import Group, OktaIdentityProvider
-from cloudumi_identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
+from cloudumi_common.lib.s3_helpers import get_s3_bucket_for_host
 
 log = config.get_logger()
 
 
 def get_identity_group_storage_keys(host):
     s3_bucket = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_groups.bucket", host
+        f"site_configs.{host}.identity.cache_groups.bucket",
+        host,
+        config.get("_global_.consoleme_s3_bucket"),
     )
     redis_key: str = config.get_host_specific_key(
         f"site_configs.{host}.identity.cache_groups.redis_key",
@@ -28,6 +32,32 @@ def get_identity_group_storage_keys(host):
         "redis_key": redis_key,
         "s3_key": s3_key,
     }
+
+
+async def cache_identity_groups_requests_for_host(host):
+    """
+    Cache all group requests for host
+    """
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "host": host,
+    }
+    # Get group requests from Dynamo
+    ddb = UserDynamoHandler(host)
+    group_requests = await ddb.get_all_identity_group_requests(host)
+    group_requests_by_id = {}
+    for req in group_requests:
+        group_requests_by_id[req["request_id"]] = req
+    log_data["len_group_requests"] = len(group_requests)
+    #  Store in Redis/S3
+    red_key = f"{host}_GROUP_IDENTITY_REQUESTS"
+    await store_json_results_in_redis_and_s3(
+        group_requests_by_id,
+        redis_key=red_key,
+        s3_bucket=await get_s3_bucket_for_host(host),
+        host=host,
+    )
+    log.debug({**log_data, "message": "Cached group requests"})
 
 
 async def cache_identity_groups_for_host(host):
@@ -144,7 +174,30 @@ async def cache_identity_groups_for_host(host):
         )
 
 
-# Testing
-# import asyncio
-#
-# asyncio.run(cache_identity_groups_for_host("localhost"))
+async def get_group_by_name(host, idp, group_name):
+    """
+    Gets a group from the cache.
+
+    :param host:
+    :param group_id:
+    :return:
+    """
+    group_id = f"{idp}-{group_name}"
+    ddb = UserDynamoHandler(host)
+    matching_group = ddb.identity_groups_table.get_item(
+        Key={"host": host, "group_id": group_id}
+    )
+    if matching_group.get("Item"):
+        return Group.parse_obj(ddb._data_from_dynamo_replace(matching_group["Item"]))
+    else:
+        idp_d = config.get_host_specific_key(
+            f"site_configs.{host}.identity.identity_providers", host, default={}
+        ).get(idp)
+        if not idp_d:
+            raise Exception("Invalid IDP specified")
+        if idp_d["idp_type"] == "okta":
+            idp = OktaIdentityProvider.parse_obj(idp_d)
+            idp_plugin = OktaGroupManagementPlugin(host, idp)
+        else:
+            raise Exception("IDP type is not supported.")
+        return await idp_plugin.get_group(group_name)

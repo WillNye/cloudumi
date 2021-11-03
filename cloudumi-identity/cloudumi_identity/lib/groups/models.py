@@ -27,14 +27,15 @@ class UserStatus(Enum):
 
 class User(BaseModel):
     username: str
-    user_id: str
-    domain: str
-    fullname: str
-    status: str
-    created: str
-    updated: str
+    host: str
+    user_id: Optional[str]
+    domain: Optional[str]
+    fullname: Optional[str]
+    status: Optional[str]
+    created: Optional[str]
+    updated: Optional[str]
     groups: List[str]
-    background_check_status: str
+    background_check_status: bool
 
 
 class GroupAttributes(BaseModel):
@@ -129,15 +130,31 @@ class LastUpdated(BaseModel):
 
 class GroupRequest(BaseModel):
     request_id: str
+    request_url: str
+    host: str
     users: List[User]
     groups: List[Group]
     requester: User
-    justification: Dict[str, str]
+    justification: str
     expires: Optional[int] = None
     status: GroupRequestStatus
     last_updated: List[LastUpdated]
     last_updated_time: int
     last_updated_by: User
+
+
+class GroupRequests(BaseModel):
+    requests: List[GroupRequest]
+
+
+class GroupRequestsTable(BaseModel):
+    User: str
+    Group: str
+    Requester: str
+    Justification: str
+    Expires: Optional[str]
+    Status: str
+    Last_Updated: str
 
 
 # TODO: Justification might be multiple fields. Should be a struct. Should allow RegEx validation

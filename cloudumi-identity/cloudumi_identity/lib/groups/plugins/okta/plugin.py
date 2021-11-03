@@ -1,10 +1,6 @@
 import sys
 from typing import Dict, List, Optional, Tuple
 
-from okta.client import Client as OktaClient
-
-from cloudumi_common.config import config
-from cloudumi_common.lib.dynamo import UserDynamoHandler
 from cloudumi_identity.lib.groups.models import (
     ActionResponse,
     Group,
@@ -12,6 +8,10 @@ from cloudumi_identity.lib.groups.models import (
     OktaIdentityProvider,
     User,
 )
+from okta.client import Client as OktaClient
+
+from cloudumi_common.config import config
+from cloudumi_common.lib.dynamo import UserDynamoHandler
 
 log = config.get_logger()
 

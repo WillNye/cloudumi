@@ -1,5 +1,13 @@
 import tornado.escape
+from cloudumi_identity.lib.groups.groups import get_group_by_name
+from cloudumi_identity.lib.groups.models import (
+    Group,
+    GroupAttributes,
+    OktaIdentityProvider,
+)
+from cloudumi_identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 
+from cloudumi_common.celery_tasks.celery_tasks import app as celery_app
 from cloudumi_common.config import config
 from cloudumi_common.handlers.base import BaseHandler
 from cloudumi_common.lib.auth import can_admin_all
@@ -7,12 +15,6 @@ from cloudumi_common.lib.dynamo import UserDynamoHandler
 from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.web import handle_generic_error_response
 from cloudumi_common.models import WebResponse
-from cloudumi_identity.lib.groups import (
-    Group,
-    OktaGroupManagementPlugin,
-    OktaIdentityProvider,
-)
-from cloudumi_identity.lib.groups.models import GroupAttributes
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -35,27 +37,9 @@ class IdentityGroupHandler(BaseHandler):
         }
         log.debug(log_data)
         # TODO: Authz check? this is a read only endpoint but some companies might not want all employees seeing groups
-        group_id = f"{_idp}-{_group_name}"
-        ddb = UserDynamoHandler(host)
-        matching_group = ddb.identity_groups_table.get_item(
-            Key={"host": host, "group_id": group_id}
-        )
-        if matching_group.get("Item"):
-            group = Group.parse_obj(
-                ddb._data_from_dynamo_replace(matching_group["Item"])
-            )
-        else:
-            idp_d = config.get_host_specific_key(
-                f"site_configs.{host}.identity.identity_providers", host, default={}
-            ).get(_idp)
-            if not idp_d:
-                raise Exception("Invalid IDP specified")
-            if idp_d["idp_type"] == "okta":
-                idp = OktaIdentityProvider.parse_obj(idp_d)
-                idp_plugin = OktaGroupManagementPlugin(host, idp)
-            else:
-                raise Exception("IDP type is not supported.")
-            group = await idp_plugin.get_group(_group_name)
+        group = await get_group_by_name(host, _idp, _group_name)
+        if not group:
+            raise Exception("Group not found")
         headers = [
             {"key": "Identity Provider Name", "value": group.idp_name},
             {
@@ -186,4 +170,8 @@ class IdentityGroupHandler(BaseHandler):
             message="Successfully updated group.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
+        celery_app.send_task(
+            "cloudumi_common.celery_tasks.celery_tasks.cache_identity_groups_for_host_t",
+            kwargs={"host": host},
+        )
         return

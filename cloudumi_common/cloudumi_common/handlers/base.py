@@ -13,6 +13,7 @@ import tornado.httpclient
 import tornado.httputil
 import tornado.web
 import ujson as json
+from rediscluster.exceptions import ClusterDownError
 from tornado import httputil
 
 from cloudumi_common.config import config
@@ -567,7 +568,7 @@ class BaseHandler(TornadoRequestHandler):
             try:
                 red = await RedisHandler().redis(host)
                 cache_r = red.get(f"{host}_USER-{self.user}-CONSOLE-{console_only}")
-            except redis.exceptions.ConnectionError:
+            except (redis.exceptions.ConnectionError, ClusterDownError):
                 cache_r = None
             if cache_r:
                 log_data["message"] = "Loading from cache"
@@ -657,7 +658,7 @@ class BaseHandler(TornadoRequestHandler):
                         }
                     ),
                 )
-            except redis.exceptions.ConnectionError:
+            except (redis.exceptions.ConnectionError, ClusterDownError):
                 pass
         if not self.get_cookie(
             config.get("_global_.auth.cookie.name", "consoleme_auth")

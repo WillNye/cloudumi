@@ -127,6 +127,7 @@ class Configuration(object):
                 {
                     "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
                     "message": "Dynamic configuration changes detected and loaded",
+                    "host": host,
                 }
             )
             if not self.get("site_configs"):

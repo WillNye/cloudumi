@@ -18,6 +18,14 @@ log = config.get_logger("consoleme")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
+async def get_s3_bucket_for_host(host):
+    return config.get_host_specific_key(
+        f"site_configs.{host}.consoleme_s3_bucket",
+        host,
+        config.get("_global_.consoleme_s3_bucket"),
+    )
+
+
 async def is_object_older_than_seconds(
     key: str,
     older_than_seconds: int,
@@ -30,11 +38,7 @@ async def is_object_older_than_seconds(
     exist, this function will return True.
     """
     if not bucket:
-        bucket = config.get_host_specific_key(
-            f"site_configs.{host}.consoleme_s3_bucket",
-            host,
-            config.get("_global_.consoleme_s3_bucket"),
-        )
+        bucket = await get_s3_bucket_for_host(host)
     if not bucket:
         raise MissingConfigurationValue(
             "`bucket` not defined, and we can't find the default bucket in "

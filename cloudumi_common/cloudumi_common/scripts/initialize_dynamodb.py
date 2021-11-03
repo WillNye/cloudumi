@@ -459,3 +459,46 @@ except ClientError as e:
         "Cannot create preexisting table"
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
+
+table_name = "consoleme_identity_requests_multitenant"
+try:
+    ddb.create_table(
+        TableName=table_name,
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "request_id", "KeyType": "RANGE"},
+        ],  # Partition key
+        AttributeDefinitions=[
+            {"AttributeName": "request_id", "AttributeType": "S"},
+            {"AttributeName": "host", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
+        StreamSpecification={
+            "StreamEnabled": streams_enabled,
+            "StreamViewType": "NEW_AND_OLD_IMAGES",
+        },
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "host_index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "host",
+                        "KeyType": "HASH",
+                    },
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL",
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1,
+                    "WriteCapacityUnits": 1,
+                },
+            }
+        ],
+    )
+except ClientError as e:
+    if str(e) != (
+        "An error occurred (ResourceInUseException) when calling the CreateTable operation: "
+        "Cannot create preexisting table"
+    ):
+        print(f"Unable to create table {table_name}. Error: {e}.")
