@@ -7,25 +7,25 @@ import {
   Header,
   Popup,
   Input,
-  Table,
   Icon,
+  Table,
   Form,
   Ref,
   TextArea,
 } from "semantic-ui-react";
+import SemanticDatepicker from "react-semantic-ui-datepickers";
 import { useAuth } from "../../auth/AuthProviderDefault";
 import { useForm, Controller } from "react-hook-form";
-import SemanticDatepicker from "react-semantic-ui-datepickers";
 import { DateTime } from "luxon";
 
-const IdentityGroupEdit = () => {
+const IdentityUserEdit = () => {
   const auth = useAuth();
   const { sendRequestCommon } = auth;
-  const { idpName, groupName } = useParams();
+  const { idpName, userName } = useParams();
 
   const [header, setHeader] = useState(null);
   const [attributes, setAttributes] = useState(null);
-  const [groupDetails, setGroupDetails] = useState(null);
+  const [userDetails, setuserDetails] = useState(null);
   const [groupExpiration, setGroupExpiration] = useState(null);
   const [justification, setJustification] = useState(null);
   const {
@@ -37,7 +37,7 @@ const IdentityGroupEdit = () => {
   const onSubmit = async (data) => {
     const resJson = await sendRequestCommon(
       data,
-      "/api/v3/identities/group/" + idpName + "/" + groupName
+      "/api/v3/identities/user/" + idpName + "/" + userName
     );
     // TODO: Post data and render response message/error in a generic way
     console.log(data);
@@ -48,13 +48,13 @@ const IdentityGroupEdit = () => {
     async function fetchDetails() {
       const resJson = await sendRequestCommon(
         null,
-        "/api/v3/identities/group/" + idpName + "/" + groupName,
+        "/api/v3/identities/user/" + idpName + "/" + userName,
         "get"
       );
       if (!resJson) {
         return;
       }
-      setGroupDetails(resJson);
+      setuserDetails(resJson);
 
       // Set headers
       if (resJson?.headers) {
@@ -78,34 +78,22 @@ const IdentityGroupEdit = () => {
             if (attribute.type === "bool") {
               return (
                 <Form.Field>
-                  <div style={{ display: "block", width: "50px;" }}>
-                    <input
-                      type="checkbox"
-                      style={{ display: "inline" }}
-                      defaultChecked={attribute.value}
-                      {...register(attribute.name)}
-                    />
-                    {"    "}
-                    <Popup
-                      trigger={
-                        <label style={{ display: "inline" }}>
-                          {attribute.friendly_name}
-                        </label>
-                      }
-                      content={attribute.description}
-                      position="right center"
-                      size="mini"
-                    />
-                    {/* <div className={"ui fitted toggle checkbox"}> */}
-                    {/* <Input toggle type="checkbox" {...register(attribute.name)} /> */}
-                    {/* <Controller
+                  <Popup
+                    trigger={<label>{attribute.friendly_name}</label>}
+                    content={attribute.description}
+                    position="right center"
+                    size="mini"
+                  />
+                  {/* <div className={"ui fitted toggle checkbox"}> */}
+                  {/* <Input toggle type="checkbox" {...register(attribute.name)} /> */}
+                  {/* <Controller
                 name={attribute.name}
                 control={control}
                 render={({ field }) => <Checkbox toggle {...field} />}
               /> */}
 
-                    {/* <Checkbox toggle {...register(attribute.name)} /> */}
-                    {/* <Controller
+                  {/* <Checkbox toggle {...register(attribute.name)} /> */}
+                  {/* <Controller
                 name={attribute.name}
                 control={control}
                 error={!!errors.checkBox}
@@ -132,12 +120,16 @@ const IdentityGroupEdit = () => {
                   />
                   </Ref>
                 )} */}
-                    {/* render={({ field }) => <Form.Checkbox toggle {...field} />} */}
-                    {/* /> */}
-                    {/* Get them to the point where they can play around. Keep Step 3 manual. It will be*/}
-                    {/* Automated in the future but just not now */}
-                    {/* Experience to devs is the most important */}
-                  </div>
+                  {/* render={({ field }) => <Form.Checkbox toggle {...field} />} */}
+                  {/* /> */}
+                  {/* Get them to the point where they can play around. Keep Step 3 manual. It will be*/}
+                  {/* Automated in the future but just not now */}
+                  {/* Experience to devs is the most important */}
+                  <input
+                    type="checkbox"
+                    defaultChecked={attribute.value}
+                    {...register(attribute.name)}
+                  />
                 </Form.Field>
               );
             } else if (attribute.type === "array") {
@@ -167,29 +159,21 @@ const IdentityGroupEdit = () => {
   }, [sendRequestCommon]);
 
   useEffect(() => {
-    console.log(groupDetails);
-  }, [groupDetails]);
+    console.log(userDetails);
+  }, [userDetails]);
 
   return (
     <>
-      <Header as="h3">Group Details</Header>
+      <Header as="h3">User Details</Header>
       <Table celled striped definition>
         {header}
       </Table>
-      <Header as="h3">Group Attributes</Header>
 
-      <Form onSubmit={handleSubmit(onSubmit)}>
-        {attributes}
-        <Button primary ype="submit">
-          Save
-        </Button>
-      </Form>
-      <br />
-      <Header as="h3">Add Users to Group</Header>
+      <Header as="h3">Add Group Memberships</Header>
       {/* Bulk Add / Bulk Remove groups */}
       {/* TODO: Implement multi-select table  to allow deleting multiple groups at once */}
       <Form>
-        <TextArea placeholder="Comma or Newline-Separated List of Users" />
+        <TextArea placeholder="Comma or Newline-Separated List of Groups" />
         <br />
         <br />
         <Form.Field>
@@ -226,18 +210,18 @@ const IdentityGroupEdit = () => {
           />
         </Form.Field>
         {/* TODO: Does bulk request need to be a feature? <Button
-          content={"Submit for Review"}
-          // onClick={handleRequestGroups}
-          // style={{
-          //   width: "50%",
-          //   display: "inline-block",
-          //   textAlign: "center",
-          // }}
-          positive
-        // attached="right"
-        /> */}
+            content={"Submit for Review"}
+            // onClick={handleRequestGroups}
+            // style={{
+            //   width: "50%",
+            //   display: "inline-block",
+            //   textAlign: "center",
+            // }}
+            positive
+            // attached="right"
+          /> */}
         <Button
-          content={"Add Users"}
+          content={"Add Groups"}
           // onClick={handleAdminAddGroups}
           // style={{
           //   width: "50%",
@@ -248,20 +232,19 @@ const IdentityGroupEdit = () => {
           // floated={"right"}
           color={"green"}
         />
-        <br />
-        <Header as="h3">Members</Header>
       </Form>
+      <Header as="h3">Group Memberships</Header>
       <Table celled striped>
         <Table.Header>
           <Table.Row>
-            <Table.HeaderCell>Username</Table.HeaderCell>
-            <Table.HeaderCell>Remove</Table.HeaderCell>
+            <Table.HeaderCell>Group Name</Table.HeaderCell>
+            <Table.HeaderCell>Action</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {groupDetails?.group?.members?.map((member) => (
+          {userDetails?.user?.groups?.map((group) => (
             <Table.Row>
-              <Table.Cell>{member.username}</Table.Cell>
+              <Table.Cell>{group}</Table.Cell>
               <Table.Cell>
                 <Button negative icon labelPosition="right">
                   Request Removal
@@ -276,9 +259,8 @@ const IdentityGroupEdit = () => {
           ))}
         </Table.Body>
       </Table>
-      <Header as="h3">Requests</Header>
     </>
   );
 };
 
-export default IdentityGroupEdit;
+export default IdentityUserEdit;

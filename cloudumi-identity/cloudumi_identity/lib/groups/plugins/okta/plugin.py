@@ -45,7 +45,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
         # Should return a request object
         raise NotImplementedError
 
-    async def list_all_users(self) -> Tuple[List[User], str]:
+    async def list_all_users(self) -> List[User]:
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "host": self.host,
@@ -62,12 +62,24 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
                         "error": str(err),
                     }
                 )
-                return [], str(err)
+                return []
             users.append(next_users)
 
         users_to_return = []
         for user in users:
-            users_to_return.append(User())
+            users_to_return.append(
+                User(
+                    idp_name=self.identity_provider_name,
+                    host=self.host,
+                    username=user.profile.login,
+                    status=user.status.value.lower(),
+                    user_id=f"{self.identity_provider_name}-{user.profile.login}",
+                    extra=dict(
+                        okta_user_id=user.id,
+                        created=user.created,
+                    ),
+                )
+            )
         return users_to_return
 
     async def list_all_groups(self):
@@ -107,6 +119,47 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
             )
         return groups_to_return
 
+    async def get_user(self, user_name: str):
+        user, resp, err = await self.okta_client.get_user(user_name)
+
+        user_obj = User(
+            idp_name=self.identity_provider_name,
+            host=self.host,
+            username=user.profile.login,
+            status=user.status.value.lower(),
+            user_id=f"{self.identity_provider_name}-{user.profile.login}",
+            extra=dict(
+                okta_user_id=user.id,
+                created=user.created,
+            ),
+        )
+        user_obj.groups = await self.get_user_group_memberships(user_obj)
+        # TODO: Re-cache user to DDB
+        return user_obj
+
+    async def get_user_group_memberships(self, user: User) -> List[str]:
+        log_data = {
+            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+            "host": self.host,
+            "identity_provider_name": self.identity_provider_name,
+            "username": user.username,
+        }
+
+        user_groups, resp, err = await self.okta_client.list_user_groups(user.username)
+        while resp.has_next():
+            next_user_groups, err = await resp.next()
+            if err:
+                log.error(
+                    {
+                        **log_data,
+                        "message": "Error encountered when getting user group memberships",
+                        "error": str(err),
+                    }
+                )
+                return user_groups
+            user_groups.append(next_user_groups)
+        return [group.profile.name for group in user_groups]
+
     async def get_group(self, group_name):
         groups, resp, err = await self.okta_client.list_groups(
             query_params={"q": group_name}
@@ -127,8 +180,8 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
         self.ddb.identity_groups_table.get_item(
             Key={"host": self.host, "group_id": group_id}
         )
-        # TODO: Save new group if it doesn't already exist?
-        return Group(
+
+        group = Group(
             idp_name=self.identity_provider_name,
             host=self.host,
             name=matching_group.profile.name,
@@ -140,6 +193,11 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
                 created=matching_group.created,
             ),
         )
+
+        group.members = await self.list_group_users(group)
+
+        # TODO: Save new group if it doesn't already exist?
+        return group
         # group = await self.okta_client.get_group(matching_group.id)
         # print(group)
         # group = await self.okta_client.get_group(group.extra["okta_group_id"])
@@ -170,14 +228,51 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
     ) -> ActionResponse:
         raise NotImplementedError
 
-    async def get_user_group_memberships(self, user: User) -> ActionResponse:
-        raise NotImplementedError
-
     async def get_users_group_memberships(self, user: List[User]) -> ActionResponse:
         raise NotImplementedError
 
     async def list_group_users(self, group: Group):
-        raise NotImplementedError
+        log_data = {
+            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+            "host": self.host,
+            "identity_provider_name": self.identity_provider_name,
+            "group_id": group.group_id,
+        }
+        users, resp, err = await self.okta_client.list_group_users(
+            group.extra["okta_group_id"]
+        )
+        while resp.has_next():
+            next_users, resp, err = await self.okta_client.list_group_users(
+                group.extra["okta_group_id"]
+            )
+            if err:
+                log.error(
+                    {
+                        **log_data,
+                        "message": "Error encountered when listing users in group",
+                        "error": str(err),
+                    }
+                )
+                return [], str(err)
+            users.append(next_users)
+        users_to_return = []
+        for user in users:
+            users_to_return.append(
+                User(
+                    idp_name=self.identity_provider_name,
+                    host=self.host,
+                    username=user.profile.login,
+                    status=user.status.value.lower(),
+                    user_id=f"{self.identity_provider_name}-{user.profile.login}",
+                    attributes={},
+                    extra=dict(
+                        okta_user_id=user.id,
+                        created=user.created,
+                    ),
+                )
+            )
+            print(user)
+        return users_to_return
 
     async def create_group(self, group: Group):
         raise NotImplementedError
@@ -200,9 +295,6 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
         raise NotImplementedError
 
     async def assign_role_to_user(self, user_id: str, req):
-        raise NotImplementedError
-
-    async def get_user(self, user_id: str):
         raise NotImplementedError
 
     async def deactivate_or_delete_user(self, user_id: str):

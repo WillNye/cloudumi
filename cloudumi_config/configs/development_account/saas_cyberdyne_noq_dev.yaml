@@ -11,7 +11,7 @@ site_configs:
       role_name: ConsoleMeSpokeRole
     security_logo:
       image: /images/logos/cyberdyne.png
-    url: https://cyberdyne.noq.dev/
+    url: https://cyberdyne.localhost
     # Customer controlled
     application_admin: ccastrapel@gmail.com
     environment: dev

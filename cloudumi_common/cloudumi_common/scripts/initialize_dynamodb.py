@@ -230,11 +230,11 @@ try:
         TableName=table_name,
         KeySchema=[
             {"AttributeName": "host", "KeyType": "HASH"},
-            {"AttributeName": "arn", "KeyType": "RANGE"},
+            {"AttributeName": "request_id", "KeyType": "RANGE"},
         ],
         AttributeDefinitions=[
             {"AttributeName": "host", "AttributeType": "S"},
-            {"AttributeName": "arn", "AttributeType": "S"},
+            {"AttributeName": "request_id", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
         StreamSpecification={
@@ -423,11 +423,11 @@ try:
         TableName=table_name,
         KeySchema=[
             {"AttributeName": "host", "KeyType": "HASH"},
-            {"AttributeName": "id", "KeyType": "RANGE"},
+            {"AttributeName": "user_id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
-            {"AttributeName": "id", "AttributeType": "S"},
             {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "user_id", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
         StreamSpecification={

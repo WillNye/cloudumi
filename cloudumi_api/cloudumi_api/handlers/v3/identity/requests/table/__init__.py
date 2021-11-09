@@ -1,8 +1,13 @@
+import tornado.escape
 import ujson as json
 from cloudumi_identity.lib.groups.groups import (
-    cache_identity_groups_for_host,
+    cache_identity_requests_for_host,
+    get_group_by_name,
     get_identity_group_storage_keys,
+    get_identity_request_storage_keys,
 )
+from cloudumi_identity.lib.groups.models import GroupRequestsTable
+from cloudumi_identity.lib.requests import get_request_by_id, request_access_to_group
 
 from cloudumi_common.config import config
 from cloudumi_common.handlers.base import BaseHandler
@@ -10,30 +15,30 @@ from cloudumi_common.lib.cache import retrieve_json_data_from_redis_or_s3
 from cloudumi_common.lib.generic import filter_table
 from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.timeout import Timeout
-from cloudumi_common.models import DataTableResponse
+from cloudumi_common.models import DataTableResponse, Status2, WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
 
 
-class IdentityGroupPageConfigHandler(BaseHandler):
+class IdentityRequestsPageConfigHandler(BaseHandler):
     async def get(self):
         """
-        /api/v3/identity_groups_page_config
+        /api/v3/identity_requests_page_config
         ---
         get:
-            description: Retrieve Policies Page Configuration
+            description: Retrieve Identity Requests Page Configuration
             responses:
                 200:
-                    description: Returns Policies Page Configuration
+                    description: Returns Identity Requests Page Configuration
         """
         host = self.ctx.host
         default_configuration = {
-            "pageName": "Group Manager",
+            "pageName": "Group Requests",
             "pageDescription": "",
             "tableConfig": {
                 "expandableRows": True,
-                "dataEndpoint": "/api/v3/identities/groups?markdown=true",
+                "dataEndpoint": "/api/v3/identities/requests?markdown=true",
                 "sortable": False,
                 "totalRows": 1000,
                 "rowsPerPage": 50,
@@ -42,42 +47,41 @@ class IdentityGroupPageConfigHandler(BaseHandler):
                 "allowJsonExport": True,
                 "columns": [
                     {
-                        "placeholder": "Request Access",
-                        "key": "request_remove_link",
+                        "placeholder": "Request",
+                        "key": "request",
                         "type": "input",
                         "style": {"width": "150px"},
                     },
                     {
-                        "placeholder": "Group Name",
-                        "key": "name",
+                        "placeholder": "Request Time",
+                        "key": "created_time",
+                        "type": "daterange",
+                        "style": {"width": "150px"},
+                    },
+                    {
+                        "placeholder": "User",
+                        "key": "user_field",
+                        "type": "input",
+                        "style": {"width": "150px"},
+                    },
+                    {
+                        "placeholder": "Group",
+                        "key": "group_field",
                         "type": "input",
                         "style": {"width": "110px"},
                     },
-                    # {
-                    #     "placeholder": "Members",
-                    #     "key": "num_members",
-                    #     "type": "input",
-                    #     "style": {"width": "110px"},
-                    # },
                     {
-                        "placeholder": "IDP Name",
-                        "key": "idp_name",
+                        "placeholder": "Status",
+                        "key": "status",
                         "type": "input",
                         "style": {"width": "90px"},
-                    },
-                    {
-                        "placeholder": "Description",
-                        "key": "description",
-                        "type": "link",
-                        "width": 6,
-                        "style": {"whiteSpace": "normal", "wordBreak": "break-all"},
                     },
                 ],
             },
         }
 
         table_configuration = config.get_host_specific_key(
-            f"site_configs.{host}.IdentityGroupTableConfigHandler.configuration",
+            f"site_configs.{host}.IdentityRequestsPageConfigHandler.configuration",
             host,
             default_configuration,
         )
@@ -85,32 +89,32 @@ class IdentityGroupPageConfigHandler(BaseHandler):
         self.write(table_configuration)
 
 
-class IdentityGroupsTableHandler(BaseHandler):
+class IdentityRequestsTableHandler(BaseHandler):
     """
-    /api/v3/identities/groups?markdown=true
-    Provides table contents for the identity groups table.
-    1. Cache groups to DynamoDB/S3/Redis via Celery
+    /api/v3/identities/requests?markdown=true
+    Provides table contents for the identity requests table.
+    1. Cache requests to DynamoDB/S3/Redis via Celery
         (Give user a Force Resync button?)
-    2. Display in Groups table with advanced filtering
+    2. Display in Requests table with advanced filtering
     3.
     """
 
     async def post(self):
         """
-        POST /api/v2/identity/groups
+        POST /api/v2/identity/requests
         """
         host = self.ctx.host
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
-        config_keys = get_identity_group_storage_keys(host)
+        config_keys = get_identity_request_storage_keys(host)
         arguments = json.loads(self.request.body)
         filters = arguments.get("filters")
         # TODO: Add server-side sorting
         # sort = arguments.get("sort")
         limit = arguments.get("limit", 1000)
         tags = {"user": self.user}
-        stats.count("IdentityGroupsTableHandler.post", tags=tags)
+        stats.count("IdentityRequestsTableHandler.post", tags=tags)
         log_data = {
-            "function": "IdentityGroupsTableHandler.post",
+            "function": "IdentityRequestsTableHandler.post",
             "user": self.user,
             "message": "Writing items",
             "limit": limit,
@@ -121,7 +125,7 @@ class IdentityGroupsTableHandler(BaseHandler):
         }
         log.debug(log_data)
         # TODO: Cache if out-of-date, otherwise return cached data
-        await cache_identity_groups_for_host(host)
+        await cache_identity_requests_for_host(host)
         items_d = await retrieve_json_data_from_redis_or_s3(
             config_keys["redis_key"],
             s3_bucket=config_keys["s3_bucket"],
@@ -145,31 +149,22 @@ class IdentityGroupsTableHandler(BaseHandler):
 
         items_to_write = []
         for item in items[0:limit]:
-            idp_name = item["idp_name"]
-            group_name = item["name"]
-            group_url = f"/group/{idp_name}/{group_name}"
-            group_request_url = f"/group_request/{idp_name}/{group_name}"
-            group_remove_url = f"/group_remove/{idp_name}/{group_name}"
-            if item["attributes"]["requestable"]:
-                item["request_remove_link"] = f"[Request Access]({group_request_url})"
-            else:
-                item["request_remove_link"] = "Not Requestable"
-            if group_name in self.groups:
-                item["request_remove_link"] = f"[Remove My Access]({group_remove_url})"
-
-            # Convert request_id and role ARN to link
-            item["name"] = f"[{group_name}]({group_url})"
+            item["request"] = f"[View Request](/group_request/{item['request_id']})"
+            item["user_field"] = ", ".join(
+                [
+                    f"[{u['username']}](/user/TODO_idp_name/{u['username']})"
+                    for u in item["users"]
+                ]
+            )
+            item["group_field"] = ", ".join(
+                [
+                    f"[{g['name']}](/user/TODO_idp_name/{g['name']})"
+                    for g in item["groups"]
+                ]
+            )
             items_to_write.append(item)
         filtered_count = len(items_to_write)
         res = DataTableResponse(
             totalCount=total_count, filteredCount=filtered_count, data=items_to_write
         )
         self.write(res.json())
-
-
-class IdentityGroupsHandler(BaseHandler):
-    """
-    Shows all groups associated with a given host
-    """
-
-    pass

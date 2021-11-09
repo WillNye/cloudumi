@@ -1,4 +1,5 @@
 import tornado.escape
+import ujson as json
 from cloudumi_identity.lib.groups.groups import get_group_by_name
 from cloudumi_identity.lib.groups.models import (
     Group,
@@ -108,7 +109,7 @@ class IdentityGroupHandler(BaseHandler):
         self.write(
             {
                 "headers": headers,
-                "group": group.dict(),
+                "group": json.loads(group.json()),
                 "attributes": attributes,
             }
         )

@@ -1225,10 +1225,10 @@ class UserDynamoHandler(BaseDynamoHandler):
 
     def batch_write_cloudtrail_events(self, items, host: str):
         with self.cloudtrail_table.batch_writer(
-            overwrite_by_pkeys=["arn", "request_id"]
+            overwrite_by_pkeys=["host", "request_id"]
         ) as batch:
             for item in items:
-                batch.put_item(Item=self._data_to_dynamo_replace(item))
+                r = batch.put_item(Item=self._data_to_dynamo_replace(item))
         return True
 
     async def get_top_cloudtrail_errors_by_arn(self, arn, host, n=5):

@@ -4,7 +4,7 @@ import ConsoleMeDataTable from "../blocks/datatable/DataTableComponent";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "../../auth/AuthProviderDefault";
 
-const IdentityGroupsTable = () => {
+const IdentityRequestsTable = () => {
   const auth = useAuth();
   const { sendRequestCommon } = auth;
   const [pageConfig, setPageConfig] = useState(null);
@@ -13,7 +13,7 @@ const IdentityGroupsTable = () => {
     (async () => {
       const data = await sendRequestCommon(
         null,
-        "/api/v3/identities/groups_page_config",
+        "/api/v3/identities/requests_page_config",
         "get"
       );
       if (!data) {
@@ -46,4 +46,4 @@ const IdentityGroupsTable = () => {
   );
 };
 
-export default IdentityGroupsTable;
+export default IdentityRequestsTable;

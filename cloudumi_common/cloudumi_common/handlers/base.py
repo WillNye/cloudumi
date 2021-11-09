@@ -76,7 +76,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         if config.get("_global_.development"):
             x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
             if x_forwarded_host:
-                return x_forwarded_host
+                return x_forwarded_host.split(":")[0]
 
         return self.request.host
 
@@ -255,6 +255,7 @@ class BaseHandler(TornadoRequestHandler):
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
         self.tracer = None
+
         await self.configure_tracing()
 
         if config.get_host_specific_key(

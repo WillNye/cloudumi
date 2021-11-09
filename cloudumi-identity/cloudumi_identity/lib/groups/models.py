@@ -22,20 +22,23 @@ class OktaIdentityProvider(IdentityProvider):
 
 class UserStatus(Enum):
     active = "active"
-    inactive = "inactive"
+    provisioned = "provisioned"
+    deprovisioned = "deprovisioned"
 
 
 class User(BaseModel):
+    idp_name: str
     username: str
     host: str
-    user_id: Optional[str]
+    user_id: str
     domain: Optional[str]
     fullname: Optional[str]
-    status: Optional[str]
+    status: Optional[UserStatus]
     created: Optional[str]
     updated: Optional[str]
-    groups: List[str]
-    background_check_status: bool
+    groups: Optional[List[str]]
+    background_check_status: Optional[bool]
+    extra: Any = Field(None, description=("Extra attributes to store"))
 
 
 class GroupAttributes(BaseModel):
@@ -87,6 +90,7 @@ class GroupAttributes(BaseModel):
 class Group(BaseModel):
     host: str = Field(..., description="Host/Tenant associated with the group")
     name: str = Field(..., description="Name of the group")
+    owner: Optional[str] = Field(None, description="Owner of the group")
     idp_name: str = Field(
         ...,
         description="Name of the host's identity provider that's associated with the group",
@@ -102,6 +106,7 @@ class Group(BaseModel):
         ),
     )
     extra: Any = Field(None, description=("Extra attributes to store"))
+    members: Optional[List[User]] = Field(None, description="Users in the group")
 
 
 class ActionStatus(Enum):
@@ -138,6 +143,7 @@ class GroupRequest(BaseModel):
     justification: str
     expires: Optional[int] = None
     status: GroupRequestStatus
+    created_time: int
     last_updated: List[LastUpdated]
     last_updated_time: int
     last_updated_by: User

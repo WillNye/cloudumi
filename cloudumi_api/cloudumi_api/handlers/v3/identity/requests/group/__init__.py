@@ -6,6 +6,7 @@ from cloudumi_identity.lib.requests import get_request_by_id, request_access_to_
 
 from cloudumi_common.config import config
 from cloudumi_common.handlers.base import BaseHandler
+from cloudumi_common.lib.auth import can_admin_identity
 from cloudumi_common.models import Status2, WebResponse
 
 log = config.get_logger()
@@ -61,6 +62,36 @@ class IdentityGroupRequestReviewHandler(BaseHandler):
         res = WebResponse(status=Status2.success, data=data)
         self.write(json.loads(res.json()))
 
+    async def post(self, request_id):
+        host = self.ctx.host
+        log_data = {
+            "function": "IdentityGroupHandler.get",
+            "user": self.user,
+            "message": "Retrieving group request information",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "identity_request_id": request_id,
+            "host": host,
+        }
+        # Get request from DynamoDB
+        request = await get_request_by_id(host, request_id)
+        if not request:
+            log.error(log_data)
+            res = WebResponse(status=Status2.error, message="No request found.")
+            self.set_status(400)
+            self.write(json.loads(res.json()))
+            return
+        # Is user authorized to make changes to this request?
+        if not can_admin_identity(self.user, self.groups, host):
+            log.error(log_data)
+            res = WebResponse(status=Status2.error, message="Not authorized.")
+            self.set_status(401)
+            self.write(json.loads(res.json()))
+            return
+
+        # TODO: Handle approval and rejection of request
+        # TODO: Handle adding to group with expiration if provided
+
 
 class IdentityRequestGroupHandler(BaseHandler):
     async def get(self, _idp, _group_name):
@@ -81,7 +112,7 @@ class IdentityRequestGroupHandler(BaseHandler):
         }
         log.debug(log_data)
 
-    async def post(self, _idp, _group_name):
+    async def post(self, _idp, _group_names):
         """
         Request access to a group
         :return:
@@ -94,13 +125,14 @@ class IdentityRequestGroupHandler(BaseHandler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "idp": _idp,
-            "group_name": _group_name,
+            "group_name": _group_names,
             "host": host,
         }
 
         data = tornado.escape.json_decode(self.request.body)
         justification = data["justification"]
         group_expiration = data["groupExpiration"]
+        user = data.get("user") or self.user
 
         if not justification:
             log.error(log_data)
@@ -111,10 +143,10 @@ class IdentityRequestGroupHandler(BaseHandler):
 
         request = await request_access_to_group(
             host,
-            self.user,
+            user,
             self.groups,
             _idp,
-            _group_name,
+            _group_names,
             justification,
             group_expiration,
         )

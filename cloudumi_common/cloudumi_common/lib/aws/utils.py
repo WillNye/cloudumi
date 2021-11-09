@@ -2066,9 +2066,9 @@ async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str
     account_id = arn.split(":")[4]
     # trying to find principal for subsequent queries
     if principal_type == "role":
-        principal_details = await aws().fetch_iam_role(account_id, arn, host)
+        principal_details = await aws.fetch_iam_role(account_id, arn, host)
     elif principal_type == "user":
-        principal_details = await aws().fetch_iam_user(account_id, arn, host)
+        principal_details = await aws.fetch_iam_user(account_id, arn, host)
     return principal_details.get("owner")
 
 

@@ -178,6 +178,27 @@ def can_admin_all(user: str, user_groups: List[str], host: str):
     return False
 
 
+def can_admin_identity(user: str, user_groups: List[str], host: str):
+    if can_admin_all(user, user_groups, host):
+        return True
+    if is_in_group(
+        user,
+        user_groups,
+        [
+            *config.get_host_specific_key(
+                f"site_configs.{host}.groups.can_admin_identity", host, []
+            ),
+            *config.get_host_specific_key(
+                f"site_configs.{host}.dynamic_config.groups.can_admin_identity",
+                host,
+                [],
+            ),
+        ],
+    ):
+        return True
+    return False
+
+
 def can_create_roles(user: str, user_groups: List[str], host: str) -> bool:
     if can_admin_all(user, user_groups, host):
         return True

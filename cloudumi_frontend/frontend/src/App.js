@@ -22,6 +22,9 @@ import AuthenticateModal from "./components/AuthenticateModal";
 import GenerateConfig from "./components/generate_config/GenerateConfig";
 import { IdentityGroupRequest } from "./components/identity/GroupRequest";
 import { IdentityGroupRequestReview } from "./components/identity/GroupRequestReview";
+import IdentityRequestsTable from "./components/identity/IdentityRequestsTable";
+import IdentityUsersTable from "./components/identity/IdentityUsersTable";
+import IdentityUserEdit from "./components/identity/User";
 
 function App() {
   return (
@@ -52,9 +55,20 @@ function App() {
           component={ConsoleMeIdentityGroupsTable}
         />
         <ProtectedRoute
+          key="users"
+          exact
+          path="/users"
+          component={IdentityUsersTable}
+        />
+        <ProtectedRoute
           key="group"
           path="/group/:idpName/:groupName"
           component={IdentityGroupEdit}
+        />
+        <ProtectedRoute
+          key="user"
+          path="/user/:idpName/:userName"
+          component={IdentityUserEdit}
         />
         <ProtectedRoute
           key="group_request"
@@ -70,8 +84,8 @@ function App() {
         <ProtectedRoute
           key="group_requests"
           exact
-          path="/group_requests"
-          // component={ConsoleMeRequestTable}
+          path="/requests"
+          component={IdentityRequestsTable}
         />
         <ProtectedRoute
           key="review"

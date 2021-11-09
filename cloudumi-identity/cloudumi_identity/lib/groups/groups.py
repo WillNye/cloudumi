@@ -11,6 +11,29 @@ from cloudumi_common.lib.s3_helpers import get_s3_bucket_for_host
 log = config.get_logger()
 
 
+def get_identity_request_storage_keys(host):
+    s3_bucket = config.get_host_specific_key(
+        f"site_configs.{host}.identity.cache_requests.bucket",
+        host,
+        config.get("_global_.consoleme_s3_bucket"),
+    )
+    redis_key: str = config.get_host_specific_key(
+        f"site_configs.{host}.identity.cache_requests.redis_key",
+        host,
+        default=f"{host}_IDENTITY_REQUESTS",
+    )
+    s3_key = config.get_host_specific_key(
+        f"site_configs.{host}.identity.cache_requests.key",
+        host,
+        default="identity/requests/identity_requests_cache_v1.json.gz",
+    )
+    return {
+        "s3_bucket": s3_bucket,
+        "redis_key": redis_key,
+        "s3_key": s3_key,
+    }
+
+
 def get_identity_group_storage_keys(host):
     s3_bucket = config.get_host_specific_key(
         f"site_configs.{host}.identity.cache_groups.bucket",
@@ -34,7 +57,7 @@ def get_identity_group_storage_keys(host):
     }
 
 
-async def cache_identity_groups_requests_for_host(host):
+async def cache_identity_requests_for_host(host):
     """
     Cache all group requests for host
     """
@@ -50,14 +73,14 @@ async def cache_identity_groups_requests_for_host(host):
         group_requests_by_id[req["request_id"]] = req
     log_data["len_group_requests"] = len(group_requests)
     #  Store in Redis/S3
-    red_key = f"{host}_GROUP_IDENTITY_REQUESTS"
+    red_key = f"{host}_IDENTITY_REQUESTS"
     await store_json_results_in_redis_and_s3(
         group_requests_by_id,
         redis_key=red_key,
         s3_bucket=await get_s3_bucket_for_host(host),
         host=host,
     )
-    log.debug({**log_data, "message": "Cached group requests"})
+    log.debug({**log_data, "message": "Cached identity requests"})
 
 
 async def cache_identity_groups_for_host(host):
@@ -184,10 +207,14 @@ async def get_group_by_name(host, idp, group_name):
     """
     group_id = f"{idp}-{group_name}"
     ddb = UserDynamoHandler(host)
-    matching_group = ddb.identity_groups_table.get_item(
+
+    matching_group = None
+    matching_group_item = ddb.identity_groups_table.get_item(
         Key={"host": host, "group_id": group_id}
     )
-    if matching_group.get("Item"):
+    if matching_group_item.get("Item"):
+        matching_group = Group.parse_obj(matching_group_item["Item"])
+    if False:  # TODO: Remove
         return Group.parse_obj(ddb._data_from_dynamo_replace(matching_group["Item"]))
     else:
         idp_d = config.get_host_specific_key(
@@ -200,4 +227,7 @@ async def get_group_by_name(host, idp, group_name):
             idp_plugin = OktaGroupManagementPlugin(host, idp)
         else:
             raise Exception("IDP type is not supported.")
-        return await idp_plugin.get_group(group_name)
+        group = await idp_plugin.get_group(group_name)
+        if matching_group:
+            group.attributes = matching_group.attributes
+        return matching_group

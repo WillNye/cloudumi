@@ -1,10 +1,8 @@
-import datetime
 import time
 import uuid
 
 from cloudumi_identity.lib.groups.groups import get_group_by_name
 from cloudumi_identity.lib.groups.models import (
-    Group,
     GroupRequest,
     GroupRequestStatus,
     LastUpdated,
@@ -12,6 +10,7 @@ from cloudumi_identity.lib.groups.models import (
 )
 
 from cloudumi_common.lib.dynamo import UserDynamoHandler
+from cloudumi_common.lib.slack import send_slack_notification_new_group_request
 
 
 async def get_request_by_id(host, request_id):
@@ -34,7 +33,7 @@ async def request_access_to_group(
     # TODO: Support multiple users being added to multiple groups
 
     errors = []
-
+    user_id = f"{idp_name}-{user}"
     if group_name in user_groups:
         raise Exception("User is already in group")
 
@@ -56,6 +55,8 @@ async def request_access_to_group(
         raise Exception("User already has a pending request for this group")
 
     user_obj = User(
+        idp_name=idp_name,
+        user_id=user_id,
         username=user,
         host=host,
         groups=user_groups,
@@ -107,6 +108,7 @@ async def request_access_to_group(
         justification=justification,
         # TODO: expires=expires,
         status=request_status,
+        created_time=current_time,
         last_updated=[request_last_updated],
         last_updated_time=current_time,
         last_updated_by=user_obj,
@@ -116,12 +118,13 @@ async def request_access_to_group(
     # Create request in DynamoDB
     ddb = UserDynamoHandler(host, user=user)
     await ddb.create_identity_group_request(host, user, request)
+    # await send_slack_notification_new_group_request(host, request)
 
     # TODO: Notify approvers via Slack/Email
     # https://github.com/Netflix/consoleme/commit/8b1f020253dc4f90ef2b336a8b75032eab66f241
 
     # TODO: If status approved, call function to add user to group and notify user
-
+    # TODO: Trigger notification in ConsoleMe
     # TODO: Tell user request was successful and provide context
 
     return request

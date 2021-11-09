@@ -57,10 +57,10 @@ async def populate_oidc_config(host):
             "jwks_uri": jwks_uri,
         }
     client_id = config.get_host_specific_key(
-        f"site_configs.{host}.oidc_secrets.client_id", host
+        f"site_configs.{host}.secrets.auth.oidc.client_id", host
     )
     client_secret = config.get_host_specific_key(
-        f"site_configs.{host}.oidc_secrets.secret", host
+        f"site_configs.{host}.secrets.auth.oidc.client_secret", host
     )
     if not (client_id or client_secret):
         raise MissingConfigurationValue("Missing OIDC Secrets")
@@ -99,7 +99,9 @@ async def populate_oidc_config(host):
 
 
 async def authenticate_user_by_oidc(request):
-    full_host = request.get_host()
+    full_host = request.request.headers.get("X-Forwarded-Host")
+    if not full_host:
+        full_host = request.get_host()
     host = request.get_host_name()
     email = None
     groups = []
@@ -139,7 +141,7 @@ async def authenticate_user_by_oidc(request):
     if not code:
         args = {"response_type": "code"}
         client_scope = config.get_host_specific_key(
-            f"site_configs.{host}.oidc_secrets.client_scope", host
+            f"site_configs.{host}.get_user_by_oidc_settings.client_scopes", host
         )
         if request.request.uri is not None:
             args["redirect_uri"] = oidc_redirect_uri
@@ -183,7 +185,7 @@ async def authenticate_user_by_oidc(request):
         ).decode("UTF-8")
         url = f"{oidc_config['token_endpoint']}"
         client_scope = config.get_host_specific_key(
-            f"site_configs.{host}.oidc_secrets.client_scope", host
+            f"site_configs.{host}.get_user_by_oidc_settings.client_scopes", host
         )
         if client_scope:
             client_scope = " ".join(client_scope)

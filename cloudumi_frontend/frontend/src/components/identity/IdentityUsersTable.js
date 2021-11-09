@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Header } from "semantic-ui-react";
+import { Button, Header } from "semantic-ui-react";
 import ConsoleMeDataTable from "../blocks/datatable/DataTableComponent";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "../../auth/AuthProviderDefault";
 
-const IdentityGroupsTable = () => {
+const IdentityUsersTable = () => {
   const auth = useAuth();
   const { sendRequestCommon } = auth;
   const [pageConfig, setPageConfig] = useState(null);
@@ -13,7 +13,7 @@ const IdentityGroupsTable = () => {
     (async () => {
       const data = await sendRequestCommon(
         null,
-        "/api/v3/identities/groups_page_config",
+        "/api/v3/identities/users_page_config",
         "get"
       );
       if (!data) {
@@ -41,9 +41,12 @@ const IdentityGroupsTable = () => {
           />
         </Header.Subheader>
       </Header>
+      <Button basic color="blue">
+        Add User
+      </Button>
       <ConsoleMeDataTable config={tableConfig} {...auth} />
     </>
   );
 };
 
-export default IdentityGroupsTable;
+export default IdentityUsersTable;

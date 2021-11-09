@@ -145,7 +145,7 @@ async def get_notifications_for_user(
 async def fetch_notification(notification_id: str, host: str):
     ddb = UserDynamoHandler(host=host)
     notification = await sync_to_async(ddb.notifications_table.get_item)(
-        Key={"predictable_id": notification_id}
+        Key={"host": host, "predictable_id": notification_id}
     )
     if notification.get("Item"):
         return ConsoleMeUserNotification.parse_obj(notification["Item"])
