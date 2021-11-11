@@ -502,10 +502,10 @@ async def generate_resource_policies(
         f"site_configs.{host}.policies.supported_trust_policy_permissions",
         host,
         [
-            "sts:AssumeRole",
-            "sts:TagSession",
-            "sts:AssumeRoleWithSAML",
-            "sts:AssumeRoleWithWebIdentity",
+            "sts:assumerole",
+            "sts:tagsession",
+            "sts:assumerolewithsaml",
+            "sts:assumerolewithwebidentity",
         ],
     )
 
@@ -580,7 +580,10 @@ async def generate_resource_policies(
                                     else [statement_actions]
                                 )
                                 for action in statement_actions:
-                                    if action in supported_trust_policy_permissions:
+                                    if (
+                                        action.lower()
+                                        in supported_trust_policy_permissions
+                                    ):
                                         # Cross account sts policy
                                         auto_generated_resource_policy_changes.append(
                                             ResourcePolicyChangeModel(
@@ -1502,10 +1505,10 @@ async def populate_cross_account_resource_policy_for_change(
         f"site_configs.{host}.policies.supported_trust_policy_permissions",
         host,
         [
-            "sts:AssumeRole",
-            "sts:TagSession",
-            "sts:AssumeRoleWithSAML",
-            "sts:AssumeRoleWithWebIdentity",
+            "sts:assumerole",
+            "sts:tagsession",
+            "sts:assumerolewithsaml",
+            "sts:assumerolewithwebidentity",
         ],
     )
     all_accounts = await get_account_id_to_name_mapping(host, status=None)
@@ -1622,7 +1625,10 @@ async def populate_cross_account_resource_policy_for_change(
                             ):
                                 if change.change_type == "sts_resource_policy":
                                     # only supported actions allowed for sts resource policy
-                                    if action in supported_trust_policy_permissions:
+                                    if (
+                                        action.lower()
+                                        in supported_trust_policy_permissions
+                                    ):
                                         actions.append(action)
                                 else:
                                     actions.append(action)
@@ -3020,7 +3026,7 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
         else:
             if (
                 get_service_from_action(action) == resource_service
-                or action.lower() == "sts:assumerole"
+                or action.lower() in ["sts:assumerole", "sts:tagsession"]
                 and resource_service == "iam"
             ):
                 if action not in results:

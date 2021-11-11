@@ -240,7 +240,7 @@ async def get_payload_for_group_request(
 
 
 async def get_payload_for_policy_notification(
-    role_arn, event_call, resource, error_call, request_url
+    message, session_name, arn, event_call, resource, source_ip, request_url
 ):
 
     payload = {
@@ -249,12 +249,16 @@ async def get_payload_for_policy_notification(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "We generated a policy to resolve a recent permission error. ",
+                    "text": message,
                 },
             },
             {
                 "type": "section",
-                "text": {"type": "mrkdwn", "text": f"*Role* \n {role_arn}"},
+                "text": {"type": "mrkdwn", "text": f"*Session Name* \n {session_name}"},
+            },
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": f"*ARN* \n {arn}"},
             },
             {
                 "type": "section",
@@ -266,7 +270,7 @@ async def get_payload_for_policy_notification(
             },
             {
                 "type": "section",
-                "text": {"type": "mrkdwn", "text": f"*Error* \n {error_call}"},
+                "text": {"type": "mrkdwn", "text": f"*Source IP* \n {source_ip}"},
             },
             {
                 "type": "actions",
@@ -278,7 +282,7 @@ async def get_payload_for_policy_notification(
                             "text": "Request Permission",
                             "emoji": True,
                         },
-                        "value": "click_me_123",
+                        "value": "request_url",
                         "url": f"{request_url}",
                     }
                 ],
@@ -288,7 +292,9 @@ async def get_payload_for_policy_notification(
     return payload
 
 
-async def send_slack_notification_new_notification(host, notification):
+async def send_slack_notification_new_notification(
+    host, arn, event_call, resource, source_ip, session_name, encoded_request_url
+):
     """
     Sends a notification using specified webhook URL about a new identity request
     """
@@ -298,18 +304,15 @@ async def send_slack_notification_new_notification(host, notification):
         return
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    requester = request.requester.username
-    requested_users = ", ".join(user.username for user in request.users)
-    requested_groups = ", ".join(group.name for group in request.groups)
 
     log_data: dict = {
         "function": function,
-        "requester": requester,
-        "requested_users": requested_users,
-        "requested_groups": requested_groups,
         "host": host,
-        "message": "Incoming request for slack notification",
-        "request": json.loads(request.json()),
+        "arn": arn,
+        "event_call": event_call,
+        "resource": resource,
+        "source_ip": source_ip,
+        "session_name": session_name,
     }
     log.debug(log_data)
     slack_webhook_url = config.get_host_specific_key(
@@ -319,8 +322,13 @@ async def send_slack_notification_new_notification(host, notification):
         log_data["message"] = "Missing webhook URL for slack notification"
         log.error(log_data)
         return
-    payload = await get_payload_for_group_request(
-        request, requester, requested_users, requested_groups, host
+    message = "We've generated a policy to resolve a detected permissions error"
+    request_url = (
+        config.get_host_specific_key(f"site_configs.{host}.url", host)
+        + encoded_request_url
+    )
+    payload = await get_payload_for_policy_notification(
+        message, session_name, arn, event_call, resource, source_ip, request_url
     )
     http_headers = HTTPHeaders({"Content-Type": "application/json"})
     http_req = HTTPRequest(

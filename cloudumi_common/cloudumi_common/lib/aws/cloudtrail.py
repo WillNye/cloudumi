@@ -188,6 +188,15 @@ was detected. This notification will disappear when a similar error has not occu
                         cloudtrail_error.get("source_ip"),
                         host,
                     )
+                await send_slack_notification_new_notification(
+                    host,
+                    arn,
+                    event_call,
+                    resource,
+                    cloudtrail_error.get("source_ip"),
+                    session_name,
+                    encoded_request_url,
+                )
             if principal_owner and not all_notifications.get(predictable_id):
                 generated_notification.users_or_groups.add(principal_owner)
                 new_or_changed_notifications[predictable_id] = generated_notification
@@ -222,7 +231,6 @@ was detected. This notification will disappear when a similar error has not occu
         notifications_by_user_group = defaultdict(list)
         for notification in new_or_changed_notifications.values():
             new_or_changed_notifications_l.append(notification.dict())
-            await send_slack_notification_new_notification(host, notification)
             for user_or_group in notification.users_or_groups:
                 notifications_by_user_group[user_or_group].append(notification.dict())
         if new_or_changed_notifications_l:

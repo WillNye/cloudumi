@@ -44,7 +44,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         unprotected_routes = ["/healthcheck"]
         host = self.get_host_name()
         # Ensure request is for a valid host / tenant
-        if config.get(f"site_configs.{host}"):
+        if config.get_host_specific_key(f"site_configs.{host}", host):
             return
 
         # Ignore unprotected routes, like /healthcheck
@@ -120,7 +120,7 @@ class BaseJSONHandler(TornadoRequestHandler):
 
     async def prepare(self):
         host = self.get_host_name()
-        if not config.get(f"site_configs.{host}"):
+        if not config.get_host_specific_key(f"site_configs.{host}", host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -231,7 +231,7 @@ class BaseHandler(TornadoRequestHandler):
 
     async def prepare(self) -> None:
         host = self.get_host_name()
-        if not config.get(f"site_configs.{host}"):
+        if not config.get_host_specific_key(f"site_configs.{host}", host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -276,13 +276,13 @@ class BaseHandler(TornadoRequestHandler):
         return await self.authorization_flow()
 
     def write(self, chunk: Union[str, bytes, dict]) -> None:
-        host = self.get_host_name()
-        if config.get_host_specific_key(
-            f"site_configs.{host}._security_risk_full_debugging.enabled", host
-        ):
-            if not hasattr(self, "responses"):
-                self.responses = []
-            self.responses.append(chunk)
+        # host = self.get_host_name()
+        # if config.get_host_specific_key(
+        #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
+        # ):
+        #     if not hasattr(self, "responses"):
+        #         self.responses = []
+        #     self.responses.append(chunk)
         super(BaseHandler, self).write(chunk)
 
     async def configure_tracing(self):
@@ -314,32 +314,32 @@ class BaseHandler(TornadoRequestHandler):
             asyncio.ensure_future(self.tracer.finish_spans())
             asyncio.ensure_future(self.tracer.disable_tracing())
 
-        if config.get_host_specific_key(
-            f"site_configs.{host}._security_risk_full_debugging.enabled", host
-        ):
-            responses = None
-            if hasattr(self, "responses"):
-                responses = self.responses
-            request_details = {
-                "path": self.request.path,
-                "method": self.request.method,
-                "body": self.request.body,
-                "arguments": self.request.arguments,
-                "body_arguments": self.request.body_arguments,
-                "headers": dict(self.request.headers.items()),
-                "query": self.request.query,
-                "query_arguments": self.request.query_arguments,
-                "uri": self.request.uri,
-                "cookies": dict(self.request.cookies.items()),
-                "response": responses,
-            }
-            with open(
-                config.get_host_specific_key(
-                    f"site_configs.{host}._security_risk_full_debugging.file", host
-                ),
-                "a+",
-            ) as f:
-                f.write(json.dumps(request_details, reject_bytes=False))
+        # if config.get_host_specific_key(
+        #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
+        # ):
+        #     responses = None
+        #     if hasattr(self, "responses"):
+        #         responses = self.responses
+        #     request_details = {
+        #         "path": self.request.path,
+        #         "method": self.request.method,
+        #         "body": self.request.body,
+        #         "arguments": self.request.arguments,
+        #         "body_arguments": self.request.body_arguments,
+        #         "headers": dict(self.request.headers.items()),
+        #         "query": self.request.query,
+        #         "query_arguments": self.request.query_arguments,
+        #         "uri": self.request.uri,
+        #         "cookies": dict(self.request.cookies.items()),
+        #         "response": responses,
+        #     }
+        #     with open(
+        #         config.get_host_specific_key(
+        #             f"site_configs.{host}._security_risk_full_debugging.file", host
+        #         ),
+        #         "a+",
+        #     ) as f:
+        #         f.write(json.dumps(request_details, reject_bytes=False))
         super(BaseHandler, self).on_finish()
 
     async def attempt_sso_authn(self, host) -> bool:
@@ -748,7 +748,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
         host = self.get_host_name()
-        if not config.get(f"site_configs.{host}"):
+        if not config.get_host_specific_key(f"site_configs.{host}", host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -851,38 +851,38 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         await self.configure_tracing()
 
     def write(self, chunk: Union[str, bytes, dict]) -> None:
-        host = self.get_host_name()
-        if config.get_host_specific_key(
-            f"site_configs.{host}._security_risk_full_debugging.enabled", host
-        ):
-            self.responses.append(chunk)
+        # host = self.get_host_name()
+        # if config.get_host_specific_key(
+        #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
+        # ):
+        #     self.responses.append(chunk)
         super(BaseMtlsHandler, self).write(chunk)
 
     def on_finish(self) -> None:
         host = self.get_host_name()
-        if config.get_host_specific_key(
-            f"site_configs.{host}._security_risk_full_debugging.enabled", host
-        ):
-            request_details = {
-                "path": self.request.path,
-                "method": self.request.method,
-                "body": self.request.body,
-                "arguments": self.request.arguments,
-                "body_arguments": self.request.body_arguments,
-                "headers": dict(self.request.headers.items()),
-                "query": self.request.query,
-                "query_arguments": self.request.query_arguments,
-                "uri": self.request.uri,
-                "cookies": dict(self.request.cookies.items()),
-                "response": self.responses,
-            }
-            with open(
-                config.get_host_specific_key(
-                    f"site_configs.{host}._security_risk_full_debugging.file", host
-                ),
-                "a+",
-            ) as f:
-                f.write(json.dumps(request_details, reject_bytes=False))
+        # if config.get_host_specific_key(
+        #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
+        # ):
+        #     request_details = {
+        #         "path": self.request.path,
+        #         "method": self.request.method,
+        #         "body": self.request.body,
+        #         "arguments": self.request.arguments,
+        #         "body_arguments": self.request.body_arguments,
+        #         "headers": dict(self.request.headers.items()),
+        #         "query": self.request.query,
+        #         "query_arguments": self.request.query_arguments,
+        #         "uri": self.request.uri,
+        #         "cookies": dict(self.request.cookies.items()),
+        #         "response": self.responses,
+        #     }
+        #     with open(
+        #         config.get_host_specific_key(
+        #             f"site_configs.{host}._security_risk_full_debugging.file", host
+        #         ),
+        #         "a+",
+        #     ) as f:
+        #         f.write(json.dumps(request_details, reject_bytes=False))
         super(BaseMtlsHandler, self).on_finish()
 
 

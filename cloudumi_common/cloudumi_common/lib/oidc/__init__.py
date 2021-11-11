@@ -189,16 +189,20 @@ async def authenticate_user_by_oidc(request):
         )
         if client_scope:
             client_scope = " ".join(client_scope)
-        token_exchange_response = await http_client.fetch(
-            url,
-            method="POST",
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": "Basic %s" % authorization_header_encoded,
-                "Accept": "application/json",
-            },
-            body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
-        )
+        try:
+            token_exchange_response = await http_client.fetch(
+                url,
+                method="POST",
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": "Basic %s" % authorization_header_encoded,
+                    "Accept": "application/json",
+                },
+                body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
+            )
+        except tornado.httpclient.HTTPError as e:
+            print(e)
+            raise
 
         token_exchange_response_body_dict = json.loads(token_exchange_response.body)
 

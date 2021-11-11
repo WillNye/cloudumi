@@ -8,6 +8,7 @@ import socket
 import sys
 import threading
 import time
+import zlib
 from logging import LoggerAdapter, LogRecord
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
@@ -82,6 +83,7 @@ class Configuration(object):
         """Initialize empty configuration."""
         self.config = {}
         self.log = None
+        self.tenant_configs = collections.defaultdict(dict)
 
     def raise_if_invalid_aws_credentials(self):
         try:
@@ -418,12 +420,12 @@ class Configuration(object):
         if allow_start_background_threads and self.get("_global_.redis.use_redislite"):
             t = Timer(1, self.purge_redislite_cache, ())
             t.start()
-
-        if allow_start_background_threads and self.get(
-            "_global_.config.load_from_dynamo", True
-        ):
-            t = Timer(2, self.load_config_from_dynamo_bg_thread, ())
-            t.start()
+        #
+        # if allow_start_background_threads and self.get(
+        #     "_global_.config.load_from_dynamo", True
+        # ):
+        #     t = Timer(2, self.load_config_from_dynamo_bg_thread, ())
+        #     t.start()
 
         # if allow_start_background_threads and self.get(
         #     "_global_.config.run_recurring_internal_tasks"
@@ -431,17 +433,17 @@ class Configuration(object):
         #     t = Timer(3, config_plugin.internal_functions, kwargs={"cfg": self.config})
         #     t.start()
 
-        if allow_automatically_reload_configuration and self.get(
-            "_global_.config.automatically_reload_configuration"
-        ):
-            t = Timer(4, self.reload_config, ())
-            t.start()
-
-        if load_tenant_configurations_from_dynamo and self.get(
-            "_global_.config.load_tenant_configurations_from_dynamo"
-        ):
-            t = Timer(5, self.load_tenant_configurations_from_dynamo, ())
-            t.start()
+        # if allow_automatically_reload_configuration and self.get(
+        #     "_global_.config.automatically_reload_configuration"
+        # ):
+        #     t = Timer(4, self.reload_config, ())
+        #     t.start()
+        #
+        # if load_tenant_configurations_from_dynamo and self.get(
+        #     "_global_.config.load_tenant_configurations_from_dynamo"
+        # ):
+        #     t = Timer(5, self.load_tenant_configurations_from_dynamo, ())
+        #     t.start()
 
     def get(
         self, key: str, default: Optional[Union[List[str], int, bool, str, Dict]] = None
@@ -460,17 +462,52 @@ class Configuration(object):
                 return default
         return value
 
+    def get_tenant_static_config_from_dynamo(self, host):
+        dynamodb = boto3.resource(
+            "dynamodb",
+            endpoint_url=self.get(
+                "_global_.dynamodb_server",
+                self.get("_global_.boto3.client_kwargs.endpoint_url"),
+            ),
+        )
+        config_table = dynamodb.Table("consoleme_tenant_static_configs")
+        current_config = config_table.get_item(Key={"host": host, "id": "master"})
+        c = {}
+
+        compressed_config = current_config.get("Item", {}).get("config", "")
+        if not compressed_config:
+            return c
+        try:
+            c = zlib.decompress(compressed_config.value)
+        except Exception as e:  # noqa
+            sentry_sdk.capture_exception()
+        return yaml.load(c)
+
     def get_host_specific_key(self, key: str, host: str, default: Any = None) -> Any:
         """
         Get a host/"tenant" specific value for configuration entry in dot notation.
         """
-        # TODO: Load config from S3 or DDB and cache for 60s
-        # TODO: Verify signing key upon loading
-        # TODO: Verify model
         # REF: Regex search: c|onfig.get\(f\"site_configs.\{host\}.([\.a-zA-Z0-9\_\-]+)"
         if not key.startswith(f"site_configs.{host}"):
             raise Exception(f"Configuration key is invalid: {key}")
-        return self.get(key, default=default)
+        current_time = int(time.time())
+        last_updated = self.tenant_configs[host].get("last_updated", 0)
+        if current_time - last_updated > 60:
+
+            config_item = self.get_tenant_static_config_from_dynamo(host)
+            if config_item:
+                self.tenant_configs[host]["config"] = config_item
+                self.tenant_configs[host]["last_updated"] = current_time
+            else:
+                # Temporary fallback to extends configuration
+                return self.get(key, default=default)
+        value = self.tenant_configs[host]["config"]
+        for k in key.split("."):
+            try:
+                value = value[k]
+            except KeyError:
+                return default
+        return value
 
     def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
         """Get logger."""
@@ -605,6 +642,7 @@ get_logger = CONFIG.get_logger
 get_host_specific_key = CONFIG.get_host_specific_key
 get_employee_photo_url = CONFIG.get_employee_photo_url
 get_employee_info_url = CONFIG.get_employee_info_url
+get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dynamo
 
 # Set logging levels
 CONFIG.set_logging_levels()

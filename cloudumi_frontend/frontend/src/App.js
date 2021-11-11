@@ -25,6 +25,7 @@ import { IdentityGroupRequestReview } from "./components/identity/GroupRequestRe
 import IdentityRequestsTable from "./components/identity/IdentityRequestsTable";
 import IdentityUsersTable from "./components/identity/IdentityUsersTable";
 import IdentityUserEdit from "./components/identity/User";
+import { Settings } from "./components/settings/Settings";
 
 function App() {
   return (
@@ -138,6 +139,12 @@ function App() {
           exact
           path="/create_role"
           component={CreateCloneFeature}
+        />
+        <ProtectedRoute
+          key="settings"
+          exact
+          path="/settings"
+          component={Settings}
         />
         <ProtectedRoute key="logout" exact path="/logout" component={Logout} />
         <Route key="login" exact path="/login" component={Login} />

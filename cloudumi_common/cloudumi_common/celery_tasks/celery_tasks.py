@@ -3041,3 +3041,7 @@ if "celery" in sys.argv[0]:
         cache_cloudtrail_denies(host="cyberdyne_localhost")
         cache_cloudtrail_errors_by_arn(host="cyberdyne_localhost")
         cache_notifications(host="cyberdyne_localhost")
+
+# cache_identity_groups_for_host_t("cyberdyne_localhost")
+# cache_identity_users_for_host_t("cyberdyne_localhost")
+# cache_identity_requests_for_host_t("cyberdyne_localhost")

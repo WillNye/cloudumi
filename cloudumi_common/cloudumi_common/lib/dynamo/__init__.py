@@ -42,6 +42,9 @@ from cloudumi_common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from cloudumi_common.lib.crypto import CryptoSign
+from cloudumi_common.lib.dynamo.host_restrict_session_policy import (
+    get_session_policy_for_host,
+)
 from cloudumi_common.lib.password import wait_after_authentication_failure
 from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.redis import RedisHandler
@@ -78,23 +81,7 @@ class BaseDynamoHandler:
         )
 
         # TODO: Support getting DynamoDB table in customer accounts through nested assume role calls
-        restrictive_session_policy = json.dumps(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": ["dynamodb:*"],
-                        "Resource": ["*"],
-                        "Condition": {
-                            "ForAllValues:StringEquals": {
-                                "dynamodb:LeadingKeys": [f"{host}"]
-                            }
-                        },
-                    }
-                ],
-            }
-        )
+        restrictive_session_policy = get_session_policy_for_host(host)
 
         try:
             # call sts_conn with my client and pass in forced_client
@@ -293,6 +280,40 @@ class BaseDynamoHandler:
             items.extend(result)
         return items
 
+    def truncateTable(self, table, host):
+        """
+        Truncate a dynamo table - For development
+        """
+        # get the table keys
+        tableKeyNames = [key.get("AttributeName") for key in table.key_schema]
+
+        # Only retrieve the keys for each item in the table (minimize data transfer)
+        projectionExpression = ", ".join("#" + key for key in tableKeyNames)
+        expressionAttrNames = {"#" + key: key for key in tableKeyNames}
+        filterExpression = Key("host").eq(host)
+
+        counter = 0
+        page = table.scan(
+            ProjectionExpression=projectionExpression,
+            ExpressionAttributeNames=expressionAttrNames,
+            FilterExpression=filterExpression,
+        )
+        with table.batch_writer() as batch:
+            while page["Count"] > 0:
+                counter += page["Count"]
+                # Delete items in batches
+                for itemKeys in page["Items"]:
+                    batch.delete_item(Key=itemKeys)
+                # Fetch the next page
+                if "LastEvaluatedKey" in page:
+                    page = table.scan(
+                        ProjectionExpression=projectionExpression,
+                        ExpressionAttributeNames=expressionAttrNames,
+                        ExclusiveStartKey=page["LastEvaluatedKey"],
+                    )
+                else:
+                    break
+
 
 class UserDynamoHandler(BaseDynamoHandler):
     def __init__(self, host, user: Optional[str] = None) -> None:
@@ -382,6 +403,15 @@ class UserDynamoHandler(BaseDynamoHandler):
                 host,
             )
 
+            self.tenant_static_configs = self._get_dynamo_table(
+                config.get_host_specific_key(
+                    f"site_configs.{host}.aws.tenant_static_config_table",
+                    host,
+                    "consoleme_tenant_static_configs",
+                ),
+                host,
+            )
+
             if user and host:
                 self.user = self.get_or_create_user(user, host)
                 self.affected_user = self.user
@@ -413,6 +443,30 @@ class UserDynamoHandler(BaseDynamoHandler):
                     exc_info=True,
                 )
                 raise
+
+    async def get_static_config_for_host(self, host) -> bytes:
+        """Retrieve dynamic configuration yaml asynchronously"""
+        c = b""
+        try:
+            current_config = await sync_to_async(self.tenant_static_configs.get_item)(
+                Key={"host": host, "id": "master"}
+            )
+            if not current_config:
+                return c
+            compressed_config = current_config.get("Item", {}).get("config", "")
+            if not compressed_config:
+                return c
+            c = zlib.decompress(compressed_config.value)
+        except Exception as e:  # noqa
+            log.error(
+                {
+                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+                    "message": "Error retrieving static configuration",
+                    "error": str(e),
+                }
+            )
+            sentry_sdk.capture_exception()
+        return c
 
     def write_resource_cache_data(self, data):
         self.parallel_write_table(
@@ -1416,7 +1470,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
                 }
             )
             sentry_sdk.capture_exception()
-        return c
+        return yaml.safe_load(c)
 
     async def update_static_config_for_host(
         self,

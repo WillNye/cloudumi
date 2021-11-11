@@ -6,6 +6,7 @@ import tornado.web
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
+from tornado.routing import HostMatches, Rule, RuleRouter
 
 from cloudumi_api.handlers.auth import AuthHandler
 from cloudumi_api.handlers.v1.credentials import GetCredentialsHandler
@@ -97,6 +98,9 @@ from cloudumi_api.handlers.v3.identity.users import (
     IdentityUserHandler,
     IdentityUsersPageConfigHandler,
     IdentityUsersTableHandler,
+)
+from cloudumi_api.handlers.v3.tenant_registration.tenant_registration import (
+    TenantRegistrationHandler,
 )
 from cloudumi_common.config import config
 from cloudumi_saml.handlers.v1.saml import SamlHandler
@@ -192,12 +196,26 @@ def make_app(jwt_validator=None):
         (r"/api/v2/.*", V2NotFoundHandler),
     ]
 
+    router = RuleRouter(routes)
+    # for domain in config.get("_global_.landing_page_domains", []):
+    #     router.rules.append(
+    #         Rule(
+    #             HostMatches(domain),
+    #             RuleRouter(
+    #                 [
+    #                     (r"/api/v3/tenant_registration", TenantRegistrationHandler)
+    #                         ]
+    #                        )
+    #         )
+    #     )
+
     app = tornado.web.Application(
-        routes,
+        router.rules,
         debug=config.get("_global_.tornado.debug", False),
         xsrf_cookies=config.get("_global_.tornado.xsrf", True),
         xsrf_cookie_kwargs=config.get("_global_.tornado.xsrf_cookie_kwargs", {}),
     )
+
     sentry_dsn = config.get("_global_.sentry.dsn")
 
     if sentry_dsn:
