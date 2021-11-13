@@ -1,0 +1,75 @@
+Resources:
+  CloudUmiTaskRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      RoleName: !Join
+          - '-'
+          - - 'cloudumi-spoke-role'
+            - !Select
+              - 0
+              - !Split
+                - '-'
+                - !Select
+                  - 2
+                  - !Split
+                    - '/'
+                    - !Ref "AWS::StackId"
+      Policies:
+        -
+          PolicyName: !Join
+          - '-'
+          - - 'cloudumi-spoke-acct-policy-ecs'
+            - !Select
+              - 0
+              - !Split
+                - '-'
+                - !Select
+                  - 2
+                  - !Split
+                    - '/'
+                    - !Ref "AWS::StackId"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "autoscaling:Describe*"
+                  - "cloudwatch:Get*"
+                  - "cloudwatch:List*"
+                  - "config:BatchGet*"
+                  - "config:List*"
+                  - "config:Select*"
+                  - "ec2:describeregions"
+                  - "ec2:DescribeSubnets"
+                  - "ec2:describevpcendpoints"
+                  - "ec2:DescribeVpcs"
+                  - "iam:*"
+                  - "s3:GetBucketPolicy"
+                  - "s3:GetBucketTagging"
+                  - "s3:ListAllMyBuckets"
+                  - "s3:ListBucket"
+                  - "s3:PutBucketPolicy"
+                  - "s3:PutBucketTagging"
+                  - "sns:GetTopicAttributes"
+                  - "sns:ListTagsForResource"
+                  - "sns:ListTopics"
+                  - "sns:SetTopicAttributes"
+                  - "sns:TagResource"
+                  - "sns:UnTagResource"
+                  - "sqs:GetQueueAttributes"
+                  - "sqs:GetQueueUrl"
+                  - "sqs:ListQueues"
+                  - "sqs:ListQueueTags"
+                  - "sqs:SetQueueAttributes"
+                  - "sqs:TagQueue"
+                  - "sqs:UntagQueue"
+                Resource: "*"
