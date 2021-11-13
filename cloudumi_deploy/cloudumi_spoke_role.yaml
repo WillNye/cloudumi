@@ -73,3 +73,14 @@ Resources:
                   - "sqs:TagQueue"
                   - "sqs:UntagQueue"
                 Resource: "*"
+  CloudUmiSnsCustomResource:
+    Type: 'Custom::CloudUmiSnsCustomResource'
+    Properties:
+      Type: AWS_CT_CFG
+      ServiceToken: arn:aws:sns:us-east-1:259868150464:noq_registration
+      IntegrationName: !Ref 'AWS::StackName'
+      ExternalId: !Ref ExternalID
+      ActionType: "AWSSpokeRegistration"
+      Account: cloudumi
+      TemplateVersion: 1.5
+      AWSAccountId: !Ref 'AWS::AccountId'
