@@ -118,8 +118,13 @@ Resources:
       Type: AWS_CT_CFG
       ServiceToken: arn:aws:sns:us-east-1:259868150464:noq_registration
       IntegrationName: !Ref 'AWS::StackName'
-      ExternalId: !Ref ExternalID
+      ExternalId: !Ref ExternalIDParameter
       ActionType: "AWSCentralRegistration"
       Account: cloudumi
       TemplateVersion: 1.5
       AWSAccountId: !Ref 'AWS::AccountId'
+Parameters:
+  ExternalIDParameter:
+    Type: String
+    Default: __not_set__
+    Description: Enter an external id associated with your account (contact NOQ for assistance if not automatically populated)
