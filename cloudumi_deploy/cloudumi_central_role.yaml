@@ -114,8 +114,8 @@ Resources:
                 Resource: "*"
   CloudUmiSnsCustomResource:
     Type: 'Custom::CloudUmiSnsCustomResource'
+    DeletionPolicy: Retain
     Properties:
-      Type: AWS_CT_CFG
       ServiceToken: arn:aws:sns:us-east-1:259868150464:noq_registration
       IntegrationName: !Ref 'AWS::StackName'
       ExternalId: !Ref ExternalIDParameter
@@ -125,6 +125,15 @@ Resources:
       AWSAccountId: !Ref 'AWS::AccountId'
 Parameters:
   ExternalIDParameter:
+    Description: >-
+      The cross-account access role created by the stack will use this value for
+      its ExternalID. Do not change this value!
     Type: String
-    Default: __not_set__
-    Description: Enter an external id associated with your account (contact NOQ for assistance if not automatically populated)
+    MinLength: '2'
+    MaxLength: '1224'
+    AllowedPattern: '[\w+=,.@:\/-]*'
+    ConstraintDescription: 'Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]*'
+Outputs:
+  ExternalID:
+    Description: ExternalID to share with NOQ on Cloudumi credential deployments
+    Value: !Ref ExternalIDParameter
