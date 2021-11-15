@@ -1,6 +1,8 @@
 import sys
+from typing import List
 
-from cloudumi_identity.lib.groups.models import Group, OktaIdentityProvider
+import sentry_sdk
+from cloudumi_identity.lib.groups.models import Group, OktaIdentityProvider, User
 from cloudumi_identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 
 from cloudumi_common.config import config
@@ -9,6 +11,63 @@ from cloudumi_common.lib.dynamo import UserDynamoHandler
 from cloudumi_common.lib.s3_helpers import get_s3_bucket_for_host
 
 log = config.get_logger()
+
+
+async def get_identity_provider_plugin(host: str, idp_name: str):
+    idp_d = config.get_host_specific_key(
+        f"site_configs.{host}.identity.identity_providers", host, default={}
+    ).get(idp_name)
+    if not idp_d:
+        raise Exception("Invalid IDP specified")
+    if idp_d["idp_type"] == "okta":
+        idp = OktaIdentityProvider.parse_obj(idp_d)
+        return OktaGroupManagementPlugin(host, idp)
+    raise Exception("Invalid IDP name specified")
+
+
+async def add_users_to_groups(host, users: List[User], groups: List[Group], actor: str):
+    """
+    Add users to groups. all users and groups must be from the same IdP
+    """
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "host": host,
+        "actor": actor,
+        "users": [user.username for user in users],
+        "groups": [group.name for group in groups],
+    }
+    log.debug(log_data)
+    errors = []
+    for user in users:
+        for group in groups:
+            if user.idp_name != group.idp_name:
+                raise Exception("User and group must be from the same IDP")
+            try:
+                await add_user_to_group(host, user, group, actor)
+            except Exception as e:
+                errors.append(
+                    f"{user.username} could not be added to {group.name}: {e}"
+                )
+                sentry_sdk.capture_exception()
+    return errors
+
+
+async def add_user_to_group(host, user: User, group: Group, actor: str):
+    """
+    Add user to group
+    """
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "host": host,
+        "user": user.username,
+        "actor": actor,
+        "group": group.name,
+    }
+    log.debug(log_data)
+    if user.idp_name != group.idp_name:
+        raise Exception("User and group must be from the same IDP")
+    idp_plugin = await get_identity_provider_plugin(host, group.idp_name)
+    return await idp_plugin.add_user_to_group(user, group, actor)
 
 
 def get_identity_request_storage_keys(host):
@@ -217,16 +276,7 @@ async def get_group_by_name(host, idp, group_name):
     if False:  # TODO: Remove
         return Group.parse_obj(ddb._data_from_dynamo_replace(matching_group["Item"]))
     else:
-        idp_d = config.get_host_specific_key(
-            f"site_configs.{host}.identity.identity_providers", host, default={}
-        ).get(idp)
-        if not idp_d:
-            raise Exception("Invalid IDP specified")
-        if idp_d["idp_type"] == "okta":
-            idp = OktaIdentityProvider.parse_obj(idp_d)
-            idp_plugin = OktaGroupManagementPlugin(host, idp)
-        else:
-            raise Exception("IDP type is not supported.")
+        idp_plugin = await get_identity_provider_plugin(host, idp)
         group = await idp_plugin.get_group(group_name)
         if matching_group:
             group.attributes = matching_group.attributes

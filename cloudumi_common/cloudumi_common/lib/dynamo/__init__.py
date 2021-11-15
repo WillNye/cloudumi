@@ -62,7 +62,6 @@ DYNAMODB_EMPTY_DECIMAL = Decimal(0)
 POSSIBLE_STATUSES = [
     "pending",
     "approved",
-    "rejected",
     "cancelled",
     "expired",
     "removed",
@@ -70,6 +69,23 @@ POSSIBLE_STATUSES = [
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger("consoleme")
+
+
+async def hash_api_key(api_key, user, host) -> str:
+    """
+    Hashes an API key.
+    """
+    import base64
+    import hashlib
+    import hmac
+
+    return base64.b64encode(
+        hmac.new(
+            api_key.encode("utf-8"),
+            f"{user}:{host}".encode("utf-8"),
+            hashlib.sha256,
+        ).digest()
+    ).decode("utf-8")
 
 
 class BaseDynamoHandler:
@@ -112,6 +128,7 @@ class BaseDynamoHandler:
                     pre_assume_roles=[],
                 )
             table = resource.Table(table_name)
+            return table
         except Exception as e:
             log.error(
                 {
@@ -412,6 +429,15 @@ class UserDynamoHandler(BaseDynamoHandler):
                 host,
             )
 
+            self.noq_api_keys = self._get_dynamo_table(
+                config.get_host_specific_key(
+                    f"site_configs.{host}.aws.noq_api_keys_table",
+                    host,
+                    "noq_api_keys",
+                ),
+                host,
+            )
+
             if user and host:
                 self.user = self.get_or_create_user(user, host)
                 self.affected_user = self.user
@@ -443,6 +469,86 @@ class UserDynamoHandler(BaseDynamoHandler):
                     exc_info=True,
                 )
                 raise
+
+    async def create_api_key(self, user, host, ttl=None) -> str:
+        """
+        Creates a new API key for the user.
+
+        :param user: The user to create an API key for.
+        :param host: The host to create the API key for.
+        :param ttl: The TTL for the API key.
+        :return: The API key.
+        """
+
+        async def generate_api_key() -> str:
+            """
+            Generates an API key.
+            """
+            import secrets
+
+            return secrets.token_hex(32)
+
+        # Create a new API key
+        api_key = await generate_api_key()
+        hashed_api_key = await hash_api_key(api_key, user, host)
+
+        # Store hashed API Key in Dynamo
+        await sync_to_async(self.noq_api_keys.put_item)(
+            Item={
+                "host": host,
+                "user": user,
+                "api_key": hashed_api_key,
+                "id": str(uuid.uuid4()),
+                "ttl": ttl,
+            }
+        )
+
+        return api_key
+
+    async def verify_api_key(self, api_key, user, host) -> bool:
+        """
+        Verifies an API key.
+
+        :param api_key: The API key to verify.
+        :param user: The user to verify the API key for.
+        :param host: The host to verify the API key for.
+        :return: True if the API key is valid, False otherwise.
+        """
+        hashed_api_key = await hash_api_key(api_key, user, host)
+        # Get the hashed API key
+        hashed_api_entry = await sync_to_async(self.noq_api_keys.get_item)(
+            Key={"host": host, "api_key": hashed_api_key}
+        )
+
+        # Verify the API key
+        if hashed_api_entry.get("Item"):
+            if not hashed_api_entry["Item"]["user"] == user:
+                return False
+            return user
+        return False
+
+    async def delete_api_key(self, host, user, api_key=None, api_key_id=None):
+        """
+        Delete API Key from Dynamo
+        """
+        if api_key:
+            hashed_api_key = await hash_api_key(api_key, user, host)
+            await self.noq_api_keys.delete_item(
+                Key={"host": host, "api_key": hashed_api_key}
+            )
+            return True
+        elif api_key_id:
+            res = await sync_to_async(self.cloudtrail_table.query)(
+                IndexName="host_id_index",
+                KeyConditionExpression="id = :id AND host = :h",
+                ExpressionAttributeValues={":id": api_key_id, ":h": host},
+            )
+            items = res.get("Items", [])
+            for item in items:
+                await self.noq_api_keys.delete_item(
+                    Key={"host": host, "api_key": item["api_key"]}
+                )
+                return True
 
     async def get_static_config_for_host(self, host) -> bytes:
         """Retrieve dynamic configuration yaml asynchronously"""
@@ -1207,13 +1313,14 @@ class UserDynamoHandler(BaseDynamoHandler):
 
         return modified_request
 
-    def change_request_status_by_id(
+    async def change_request_status_by_id(
         self,
+        host: str,
         request_id: str,
         new_status: str,
-        host: str,
         updated_by: Optional[str] = None,
         reviewer_comments: Optional[str] = None,
+        expiration: Optional[int] = None,
     ) -> Dict[str, Union[int, str]]:
         """
         Change request status by ID
@@ -1238,8 +1345,9 @@ class UserDynamoHandler(BaseDynamoHandler):
         for request in requests:
             request["status"] = new_status
             request["updated_by"] = updated_by
-            request["last_updated"] = int(time.time())
+            request["last_updated_time"] = int(time.time())
             request["reviewer_comments"] = reviewer_comments
+            request["expiration"] = expiration
             request["host"] = host
             modified_request = request
             try:
@@ -1287,6 +1395,7 @@ class UserDynamoHandler(BaseDynamoHandler):
 
     async def get_top_cloudtrail_errors_by_arn(self, arn, host, n=5):
         response: dict = await sync_to_async(self.cloudtrail_table.query)(
+            IndexName="host-arn-index",
             KeyConditionExpression="arn = :arn AND host = :h",
             ExpressionAttributeValues={":arn": arn, ":h": host},
         )
@@ -1602,3 +1711,9 @@ class IAMRoleDynamoHandler(BaseDynamoHandler):
         #     )
         #     items.extend(self._data_from_dynamo_replace(response["Items"]))
         # return items
+
+
+# from asgiref.sync import async_to_sync
+# ddb = UserDynamoHandler("cyberdyne_noq_dev", user="ccastrapel@gmail.com")
+# api_key = async_to_sync(ddb.create_api_key)("ccastrapel@gmail.com", "cyberdyne_noq_dev")
+# print(api_key)

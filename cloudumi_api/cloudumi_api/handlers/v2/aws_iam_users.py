@@ -7,6 +7,7 @@ import tornado.escape
 from cloudumi_common.config import config
 from cloudumi_common.handlers.base import BaseAPIV2Handler
 from cloudumi_common.lib.auth import can_delete_iam_principals
+from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_user
 from cloudumi_common.lib.aws.utils import delete_iam_user
 from cloudumi_common.lib.generic import str2bool
 from cloudumi_common.lib.plugins import get_plugin_by_name
@@ -139,7 +140,7 @@ class UserDetailHandler(BaseAPIV2Handler):
             )
         )()
         arn = f"arn:aws:iam::{account_id}:user/{iam_user_name}"
-        await aws.fetch_iam_user(account_id, arn, host)
+        await fetch_iam_user(account_id, arn, host)
         response_json = {
             "status": "success",
             "message": "Successfully deleted AWS IAM user from account",

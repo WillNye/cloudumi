@@ -389,12 +389,9 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
 
 
 async def get_formatted_policy_changes(account_id, arn, request, host):
-    aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
-    )()
-    existing_role: dict = await aws.fetch_iam_role(
+    from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role
+
+    existing_role: dict = await fetch_iam_role(
         account_id, arn, host, force_refresh=True
     )
     policy_changes: list = json.loads(request.get("policy_changes"))

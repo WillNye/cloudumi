@@ -24,6 +24,7 @@ from cloudumi_common.exceptions.exceptions import (
 from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
 from cloudumi_common.lib.assume_role import boto3_cached_conn
 from cloudumi_common.lib.auth import can_admin_policies
+from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role
 from cloudumi_common.lib.aws.iam import (
     create_or_update_managed_policy,
     get_managed_policy_document,
@@ -2356,9 +2357,7 @@ async def apply_resource_policy_change(
                 ),
             )
             # force refresh the role for which we just changed the assume role policy doc
-            await aws.fetch_iam_role(
-                resource_account, change.arn, host, force_refresh=True
-            )
+            await fetch_iam_role(resource_account, change.arn, host, force_refresh=True)
         response.action_results.append(
             ActionResult(
                 status="success",
@@ -2501,7 +2500,7 @@ async def maybe_approve_reject_request(
             extended_request.principal.principal_arn, host
         )
         if extended_request.principal.principal_arn.startswith("aws:aws:iam::"):
-            await aws.fetch_iam_role(
+            await fetch_iam_role(
                 account_id,
                 extended_request.principal.principal_arn,
                 host,
@@ -2750,7 +2749,7 @@ async def parse_and_apply_policy_request_modification(
                     extended_request.principal.principal_arn,
                     host,
                 )
-                await aws.fetch_iam_role(
+                await fetch_iam_role(
                     account_id,
                     extended_request.principal.principal_arn,
                     host,
@@ -2926,7 +2925,7 @@ async def parse_and_apply_policy_request_modification(
         account_id = await get_resource_account(
             extended_request.principal.principal_arn, host
         )
-        await aws.fetch_iam_role(
+        await fetch_iam_role(
             account_id,
             extended_request.principal.principal_arn,
             host,

@@ -19,6 +19,7 @@ from cloudumi_common.exceptions.exceptions import (
 )
 from cloudumi_common.handlers.base import BaseAPIV2Handler, BaseHandler
 from cloudumi_common.lib.auth import can_admin_policies
+from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role
 from cloudumi_common.lib.aws.utils import get_resource_account
 from cloudumi_common.lib.cache import retrieve_json_data_from_redis_or_s3
 from cloudumi_common.lib.dynamo import UserDynamoHandler
@@ -452,7 +453,7 @@ class RequestHandler(BaseAPIV2Handler):
             # Force a refresh of the role in Redis/DDB
             arn_parsed = parse_arn(extended_request.principal.principal_arn)
             if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
-                await aws.fetch_iam_role(
+                await fetch_iam_role(
                     account_id,
                     extended_request.principal.principal_arn,
                     host,
@@ -736,7 +737,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
         # Force a refresh of the role in Redis/DDB
         arn_parsed = parse_arn(extended_request.principal.principal_arn)
         if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
-            iam_role = await aws.fetch_iam_role(
+            iam_role = await fetch_iam_role(
                 arn_parsed["account"], extended_request.principal.principal_arn, host
             )
             template = iam_role.get("templated")

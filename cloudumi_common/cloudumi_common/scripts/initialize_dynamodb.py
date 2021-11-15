@@ -1,3 +1,8 @@
+# TODO: Dynamo tables should be created via IaC
+# TODO: Production should also implement AutoScaling.
+# Here is a potential guide:
+# https://cols-knil.medium.com/autoscaling-in-dynamodb-with-boto3-bf5bbeb99b10
+
 from botocore.exceptions import ClientError
 from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait_fixed
 
@@ -235,12 +240,27 @@ try:
         AttributeDefinitions=[
             {"AttributeName": "host", "AttributeType": "S"},
             {"AttributeName": "request_id", "AttributeType": "S"},
+            {"AttributeName": "arn", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
         StreamSpecification={
             "StreamEnabled": streams_enabled,
             "StreamViewType": "NEW_AND_OLD_IMAGES",
         },
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "host-arn-index",
+                "KeySchema": [
+                    {"AttributeName": "host", "KeyType": "HASH"},
+                    {"AttributeName": "arn", "KeyType": "RANGE"},
+                ],
+                "Projection": {"ProjectionType": "ALL"},
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1,
+                    "WriteCapacityUnits": 1,
+                },
+            },
+        ],
     )
     if ttl_enabled:
         try:
@@ -502,3 +522,97 @@ except ClientError as e:
         "Cannot create preexisting table"
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
+
+table_name = "noq_api_keys"
+try:
+    ddb.create_table(
+        TableName=table_name,
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "api_key", "KeyType": "RANGE"},
+        ],  # Partition key
+        AttributeDefinitions=[
+            {"AttributeName": "api_key", "AttributeType": "S"},
+            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "id", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
+        StreamSpecification={
+            "StreamEnabled": streams_enabled,
+            "StreamViewType": "NEW_AND_OLD_IMAGES",
+        },
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "host_index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "host",
+                        "KeyType": "HASH",
+                    },
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL",
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1,
+                    "WriteCapacityUnits": 1,
+                },
+            },
+            {
+                "IndexName": "host_id_index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "host",
+                        "KeyType": "HASH",
+                    },
+                    {
+                        "AttributeName": "id",
+                        "KeyType": "RANGE",
+                    },
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL",
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1,
+                    "WriteCapacityUnits": 1,
+                },
+            },
+        ],
+    )
+except ClientError as e:
+    if str(e) != (
+        "An error occurred (ResourceInUseException) when calling the CreateTable operation: "
+        "Cannot create preexisting table"
+    ):
+        print(f"Unable to create table {table_name}. Error: {e}.")
+
+    if ttl_enabled:
+        try:
+            for attempt in Retrying(
+                stop=stop_after_attempt(3),
+                wait=wait_fixed(3),
+                retry=retry_if_exception_type(
+                    (
+                        ddb.exceptions.ResourceNotFoundException,
+                        ddb.exceptions.ResourceInUseException,
+                        ClientError,
+                    )
+                ),
+            ):
+                with attempt:
+                    ddb.update_time_to_live(
+                        TableName=table_name,
+                        TimeToLiveSpecification={
+                            "Enabled": True,
+                            "AttributeName": "ttl",
+                        },
+                    )
+        except ClientError as e:
+            if str(e) != (
+                "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
+                "TimeToLive is already enabled"
+            ):
+                print(
+                    f"Unable to update TTL attribute on table {table_name}. Error: {e}."
+                )

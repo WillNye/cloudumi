@@ -162,7 +162,7 @@ class IdentityGroupHandler(BaseHandler):
 
         ddb = UserDynamoHandler(host)
         ddb.identity_groups_table.put_item(
-            Item=ddb._data_to_dynamo_replace(group.dict())
+            Item=ddb._data_to_dynamo_replace(json.loads(group.json()))
         )
 
         res = WebResponse(

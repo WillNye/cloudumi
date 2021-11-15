@@ -5,6 +5,7 @@ import asyncio
 import logging
 import os
 
+import newrelic.agent
 import tornado.autoreload
 import tornado.httpserver
 import tornado.ioloop
@@ -15,6 +16,7 @@ from cloudumi_api.routes import make_app
 from cloudumi_common.config import config
 from cloudumi_common.lib.plugins import get_plugin_by_name
 
+newrelic.agent.initialize()
 logging.basicConfig(level=logging.DEBUG, format=config.get("_global_.logging.format"))
 logging.getLogger("_global_.urllib3.connectionpool").setLevel(logging.CRITICAL)
 log = config.get_logger()

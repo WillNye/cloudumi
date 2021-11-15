@@ -202,8 +202,15 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
         # print(group)
         # group = await self.okta_client.get_group(group.extra["okta_group_id"])
 
-    async def add_user_to_group(self, user, group):
-        _, err = await self.okta_client.add_user_to_group(group.id, user.id)
+    async def add_user_to_group(self, user: User, group: Group, actor: str):
+        try:
+            user.extra["okta_user_id"]
+        except (KeyError, TypeError):
+            user = await self.get_user(user.username)
+        res, err = await self.okta_client.add_user_to_group(
+            group.extra["okta_group_id"], user.extra["okta_user_id"]
+        )
+        return res
 
     async def add_user_to_groups(
         self, user: User, groups: List[Group], requester: User

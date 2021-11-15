@@ -28,6 +28,7 @@ from cloudumi_common.exceptions.exceptions import (
 )
 from cloudumi_common.lib.alb_auth import authenticate_user_by_alb_auth
 from cloudumi_common.lib.auth import AuthenticationError
+from cloudumi_common.lib.dynamo import UserDynamoHandler
 from cloudumi_common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
 from cloudumi_common.lib.oidc import authenticate_user_by_oidc
 from cloudumi_common.lib.plugins import get_plugin_by_name
@@ -458,6 +459,21 @@ class BaseHandler(TornadoRequestHandler):
             self.groups = config.get_host_specific_key(
                 f"site_configs.{host}._development_groups_override", host
             )
+
+        if not self.user:
+            # Authenticate user by API Key
+            if config.get_host_specific_key(
+                f"site_configs.{host}.auth.get_user_by_api_key", host, False
+            ):
+                api_key = self.request.headers.get("X-API-Key")
+                api_user = self.request.headers.get("X-API-User")
+                if bool(api_key) != bool(api_user):
+                    raise Exception(
+                        "X-API-Key and X-API-User must be both present or both absent"
+                    )
+                if api_key and api_user:
+                    ddb = UserDynamoHandler(host)
+                    self.user = await ddb.verify_api_key(api_key, api_user, host)
 
         if not self.user:
             # SAML flow. If user has a JWT signed by ConsoleMe, and SAML is enabled in configuration, user will go

@@ -39,7 +39,7 @@ export const IdentityGroupRequestReview = (props) => {
         "/api/v3/identities/group_requests/" + requestId
       );
       console.log(resJson);
-      if (resJson.status !== "success") {
+      if (resJson?.status !== "success") {
         setErrorMessage(JSON.stringify(resJson));
       } else {
         setStatusMessage(
@@ -133,7 +133,7 @@ export const IdentityGroupRequestReview = (props) => {
         <Button
           primary
           onClick={(evt) => {
-            handleSubmit(evt, "approve");
+            handleSubmit(evt, "approved");
           }}
         >
           Approve
@@ -141,7 +141,7 @@ export const IdentityGroupRequestReview = (props) => {
         <Button
           negative
           onClick={(evt) => {
-            handleSubmit(evt, "cancel");
+            handleSubmit(evt, "cancelled");
           }}
         >
           Cancel

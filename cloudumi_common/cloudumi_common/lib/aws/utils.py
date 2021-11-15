@@ -1,3 +1,4 @@
+import asyncio
 import fnmatch
 import json
 import re
@@ -27,7 +28,14 @@ from cloudumi_common.lib.account_indexers.aws_organizations import (
 )
 from cloudumi_common.lib.assume_role import boto3_cached_conn
 from cloudumi_common.lib.aws.aws_config import query
-from cloudumi_common.lib.aws.iam import get_managed_policy_document, get_policy
+from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
+from cloudumi_common.lib.aws.iam import (
+    get_managed_policy_document,
+    get_policy,
+    get_role_inline_policies,
+    get_role_managed_policies,
+    list_role_tags,
+)
 from cloudumi_common.lib.aws.s3 import (
     get_bucket_location,
     get_bucket_policy,
@@ -955,7 +963,7 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
         role_arn = (
             f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
         )
-        await aws.fetch_iam_role(
+        await fetch_iam_role(
             create_model.account_id, role_arn, host, force_refresh=True
         )
     except Exception as e:
@@ -2066,9 +2074,9 @@ async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str
     account_id = arn.split(":")[4]
     # trying to find principal for subsequent queries
     if principal_type == "role":
-        principal_details = await aws.fetch_iam_role(account_id, arn, host)
+        principal_details = await fetch_iam_role(account_id, arn, host)
     elif principal_type == "user":
-        principal_details = await aws.fetch_iam_user(account_id, arn, host)
+        principal_details = await fetch_iam_user(account_id, arn, host)
     return principal_details.get("owner")
 
 

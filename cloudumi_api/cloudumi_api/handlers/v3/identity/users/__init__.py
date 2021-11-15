@@ -12,7 +12,7 @@ from cloudumi_identity.lib.users.users import (
 from cloudumi_common.celery_tasks.celery_tasks import app as celery_app
 from cloudumi_common.config import config
 from cloudumi_common.handlers.base import BaseHandler
-from cloudumi_common.lib.auth import can_admin_all
+from cloudumi_common.lib.auth import can_admin_all, can_admin_identity
 from cloudumi_common.lib.cache import retrieve_json_data_from_redis_or_s3
 from cloudumi_common.lib.dynamo import UserDynamoHandler
 from cloudumi_common.lib.generic import filter_table
@@ -178,6 +178,7 @@ class IdentityUserHandler(BaseHandler):
             {
                 "headers": headers,
                 "user": json.loads(user.json()),
+                "can_admin_groups": can_admin_identity(self.user, self.groups, host),
             }
         )
 

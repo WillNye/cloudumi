@@ -24,6 +24,7 @@ from ruamel.yaml import YAML
 
 from cloudumi_common.lib.aws.aws_secret_manager import get_aws_secret
 from cloudumi_common.lib.aws.split_s3_path import split_s3_path
+from cloudumi_common.lib.singleton import Singleton
 
 main_exit_flag = threading.Event()
 
@@ -75,7 +76,7 @@ def refresh_dynamic_config(host, ddb=None):
     return ddb.get_dynamic_config_dict(host)
 
 
-class Configuration(object):
+class Configuration(metaclass=Singleton):
     """Load YAML configuration files. YAML files can be extended to extend each other, to include common configuration
     values."""
 
@@ -487,20 +488,44 @@ class Configuration(object):
         """
         Get a host/"tenant" specific value for configuration entry in dot notation.
         """
-        # REF: Regex search: c|onfig.get\(f\"site_configs.\{host\}.([\.a-zA-Z0-9\_\-]+)"
-        if not key.startswith(f"site_configs.{host}"):
+        # Only support keys that explicitly call out a host
+        host_config_base_key = f"site_configs.{host}"
+        if not key.startswith(host_config_base_key):
             raise Exception(f"Configuration key is invalid: {key}")
+        else:
+            # If we've defined a static config yaml file for the host, that takes precedence over
+            # anything in Dynamo, even if the static config doesn't actually have the config
+            # key the user is querying.
+            if self.get(host_config_base_key):
+                return self.get(key, default=default)
+        # Otherwise, we need to get the config from local variable,
+        # fall back to Redis cache, and lastly fall back to Dynamo
         current_time = int(time.time())
         last_updated = self.tenant_configs[host].get("last_updated", 0)
         if current_time - last_updated > 60:
+            from cloudumi_common.lib.redis import RedisHandler
 
+            red = RedisHandler().redis_sync(host)
+            tenant_config = json.loads(red.get(f"{host}_STATIC_CONFIGURATION") or "{}")
+            last_updated = tenant_config.get("last_updated", 0)
+            # If Redis config cahce for host is newer than 60 seconds, update in-memory variables
+            if current_time - last_updated < 60:
+                self.tenant_configs[host]["config"] = tenant_config["config"]
+                self.tenant_configs[host]["last_updated"] = last_updated
+        # If local variables and Redis config cache for the host are still older than 60 seconds,
+        # pull from Dynamo, update local cache, redis cache, and in-memory variables
+        if current_time - last_updated > 60:
             config_item = self.get_tenant_static_config_from_dynamo(host)
             if config_item:
+                from cloudumi_common.lib.redis import RedisHandler
+
+                red = RedisHandler().redis_sync(host)
                 self.tenant_configs[host]["config"] = config_item
                 self.tenant_configs[host]["last_updated"] = current_time
-            else:
-                # Temporary fallback to extends configuration
-                return self.get(key, default=default)
+                red.set(
+                    f"{host}_STATIC_CONFIGURATION",
+                    json.dumps(self.tenant_configs[host]),
+                )
         value = self.tenant_configs[host]["config"]
         for k in key.split("."):
             try:

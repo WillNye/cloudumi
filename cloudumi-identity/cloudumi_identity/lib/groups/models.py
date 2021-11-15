@@ -30,7 +30,7 @@ class User(BaseModel):
     idp_name: str
     username: str
     host: str
-    user_id: str
+    user_id: Optional[str]
     domain: Optional[str]
     fullname: Optional[str]
     status: Optional[UserStatus]
@@ -95,7 +95,7 @@ class Group(BaseModel):
         ...,
         description="Name of the host's identity provider that's associated with the group",
     )
-    group_id: str = Field(
+    group_id: Optional[str] = Field(
         ..., description="Unique Group ID for the group. Usually it's {idp-name}-{name}"
     )
     description: Optional[str] = Field(None, description="Description of the group")
@@ -147,6 +147,7 @@ class GroupRequest(BaseModel):
     last_updated: List[LastUpdated]
     last_updated_time: int
     last_updated_by: User
+    reviewer_comments: Optional[str]
 
 
 class GroupRequests(BaseModel):
@@ -187,7 +188,7 @@ class GroupManagementPlugin:
         raise NotImplementedError
 
     async def add_user_to_group(
-        self, user: User, group: Group, requester: User
+        self, user: User, group: Group, requester: str
     ) -> ActionResponse:
         raise NotImplementedError
 

@@ -55,6 +55,7 @@ from cloudumi_common.lib.account_indexers import (
 from cloudumi_common.lib.assume_role import boto3_cached_conn
 from cloudumi_common.lib.aws import aws_config
 from cloudumi_common.lib.aws.cloudtrail import CloudTrail
+from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role
 from cloudumi_common.lib.aws.iam import get_all_managed_policies
 from cloudumi_common.lib.aws.s3 import list_buckets
 from cloudumi_common.lib.aws.sanitize import sanitize_session_name
@@ -2789,7 +2790,7 @@ def refresh_iam_role(role_arn, host=None):
         )
     )()
     account_id = role_arn.split(":")[4]
-    async_to_sync(aws().fetch_iam_role)(
+    async_to_sync(fetch_iam_role)(
         account_id, role_arn, host, force_refresh=True, run_sync=True
     )
 
@@ -3037,11 +3038,10 @@ app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
 
 if "celery" in sys.argv[0]:
+    cache_identity_groups_for_host_t("cyberdyne_noq_dev")
+    cache_identity_users_for_host_t("cyberdyne_noq_dev")
+    cache_identity_requests_for_host_t("cyberdyne_noq_dev")
     while True:
-        cache_cloudtrail_denies(host="cyberdyne_localhost")
-        cache_cloudtrail_errors_by_arn(host="cyberdyne_localhost")
-        cache_notifications(host="cyberdyne_localhost")
-
-# cache_identity_groups_for_host_t("cyberdyne_localhost")
-# cache_identity_users_for_host_t("cyberdyne_localhost")
-# cache_identity_requests_for_host_t("cyberdyne_localhost")
+        cache_cloudtrail_denies(host="cyberdyne_noq_dev")
+        cache_cloudtrail_errors_by_arn(host="cyberdyne_noq_dev")
+        cache_notifications(host="cyberdyne_noq_dev")

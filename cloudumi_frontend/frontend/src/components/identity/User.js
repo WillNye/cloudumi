@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   Button,
@@ -6,6 +6,7 @@ import {
   Divider,
   Header,
   Popup,
+  Message,
   Input,
   Icon,
   Table,
@@ -17,6 +18,7 @@ import SemanticDatepicker from "react-semantic-ui-datepickers";
 import { useAuth } from "../../auth/AuthProviderDefault";
 import { useForm, Controller } from "react-hook-form";
 import { DateTime } from "luxon";
+import ReactMarkdown from "react-markdown";
 
 const IdentityUserEdit = () => {
   const auth = useAuth();
@@ -28,6 +30,10 @@ const IdentityUserEdit = () => {
   const [userDetails, setuserDetails] = useState(null);
   const [groupExpiration, setGroupExpiration] = useState(null);
   const [justification, setJustification] = useState(null);
+  const [bulkGroupEditField, setBulkGroupEditField] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [statusMessage, setStatusMessage] = useState(null);
+
   const {
     control,
     register,
@@ -43,6 +49,38 @@ const IdentityUserEdit = () => {
     console.log(data);
     //console.log(resJson)
   };
+
+  const handleAddGroups = useCallback(
+    async (evt, action) => {
+      const data = {
+        user: userName,
+        justification: justification,
+        groupExpiration: groupExpiration,
+        bulkGroupEditField: bulkGroupEditField,
+        idpName: idpName,
+      };
+
+      const resJson = await sendRequestCommon(
+        data,
+        "/api/v3/identities/requests/groups"
+      );
+      console.log(resJson);
+      if (resJson.status !== "success") {
+        setErrorMessage(JSON.stringify(resJson));
+      } else {
+        setStatusMessage(
+          <ReactMarkdown linkTarget="_blank" children={resJson.message} />
+        );
+      }
+    },
+    [
+      justification,
+      groupExpiration,
+      bulkGroupEditField,
+      idpName,
+      sendRequestCommon,
+    ]
+  );
 
   useEffect(() => {
     async function fetchDetails() {
@@ -172,8 +210,23 @@ const IdentityUserEdit = () => {
       <Header as="h3">Add Group Memberships</Header>
       {/* Bulk Add / Bulk Remove groups */}
       {/* TODO: Implement multi-select table  to allow deleting multiple groups at once */}
+      {errorMessage ? (
+        <Message negative>
+          <p>{errorMessage}</p>
+        </Message>
+      ) : null}
+      {statusMessage ? (
+        <Message positive>
+          <p>{statusMessage}</p>
+        </Message>
+      ) : null}
       <Form>
-        <TextArea placeholder="Comma or Newline-Separated List of Groups" />
+        <TextArea
+          placeholder="Comma or Newline-Separated List of Groups"
+          onChange={(e) => {
+            setBulkGroupEditField(e.target.value);
+          }}
+        />
         <br />
         <br />
         <Form.Field>
@@ -222,14 +275,14 @@ const IdentityUserEdit = () => {
           /> */}
         <Button
           content={"Add Groups"}
-          // onClick={handleAdminAddGroups}
-          // style={{
-          //   width: "50%",
-          //   display: "inline-block",
-          //   textAlign: "center",
-          //   maxWidth: "20em",
-          // }}
-          // floated={"right"}
+          onClick={handleAddGroups}
+          style={{
+            width: "50%",
+            display: "inline-block",
+            textAlign: "center",
+            maxWidth: "20em",
+          }}
+          floated={"right"}
           color={"green"}
         />
       </Form>
@@ -246,10 +299,6 @@ const IdentityUserEdit = () => {
             <Table.Row>
               <Table.Cell>{group}</Table.Cell>
               <Table.Cell>
-                <Button negative icon labelPosition="right">
-                  Request Removal
-                  <Icon name="delete" />
-                </Button>
                 <Button color={"orange"} icon labelPosition="right">
                   Remove
                   <Icon name="delete" />

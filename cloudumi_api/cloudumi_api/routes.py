@@ -89,6 +89,7 @@ from cloudumi_api.handlers.v3.identity.groups import (
 from cloudumi_api.handlers.v3.identity.requests.group import (
     IdentityGroupRequestReviewHandler,
     IdentityRequestGroupHandler,
+    IdentityRequestGroupsHandler,
 )
 from cloudumi_api.handlers.v3.identity.requests.table import (
     IdentityRequestsPageConfigHandler,
@@ -191,23 +192,23 @@ def make_app(jwt_validator=None):
         (r"/api/v3/identities/user/(.*?)/(.*)", IdentityUserHandler),
         (r"/api/v3/identities/group_requests/(.*)", IdentityGroupRequestReviewHandler),
         (r"/api/v3/identities/requests/group/(.*?)/(.*)", IdentityRequestGroupHandler),
+        (r"/api/v3/identities/requests/groups", IdentityRequestGroupsHandler),
         # (r"/api/v3/identities/requests/user/(.*?)/(.*)", IdentityRequestUserHandler),
         (r"/api/v3/identities/requests_page_config", IdentityRequestsPageConfigHandler),
+        # (r"/api/v3/api_keys/add", AddApiKeyHandler),
+        # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
+        # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
     ]
 
     router = RuleRouter(routes)
-    # for domain in config.get("_global_.landing_page_domains", []):
-    #     router.rules.append(
-    #         Rule(
-    #             HostMatches(domain),
-    #             RuleRouter(
-    #                 [
-    #                     (r"/api/v3/tenant_registration", TenantRegistrationHandler)
-    #                         ]
-    #                        )
-    #         )
-    #     )
+    for domain in config.get("_global_.landing_page_domains", []):
+        router.rules.append(
+            Rule(
+                HostMatches(domain),
+                [(r"/api/v3/tenant_registration", TenantRegistrationHandler)],
+            )
+        )
 
     app = tornado.web.Application(
         router.rules,

@@ -128,7 +128,7 @@ def put_object(**kwargs):
                     f"site_configs.{host}.boto3.client_kwargs", host, {}
                 ),
             )
-    return client.put_object(Bucket=kwargs.get("Bucket"), Key=kwargs.get("Key"))
+    return client.put_object(**kwargs)
 
 
 def get_object(**kwargs):

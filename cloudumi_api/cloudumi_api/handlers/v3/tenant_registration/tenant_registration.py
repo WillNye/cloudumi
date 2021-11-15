@@ -476,7 +476,8 @@ class TenantRegistrationHandler(tornado.web.RequestHandler):
             return
         if dev_mode:
             uri_scheme = "https://"
-            port = ":3000"
+            port = ""
+            # port = ":3000"
         else:
             uri_scheme = "https://"
             port = ""
