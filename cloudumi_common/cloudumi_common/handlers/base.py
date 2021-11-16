@@ -42,7 +42,7 @@ log = config.get_logger()
 
 class TornadoRequestHandler(tornado.web.RequestHandler):
     def prepare(self):
-        unprotected_routes = ["/healthcheck"]
+        unprotected_routes = ["/healthcheck", "/api/v3/tenant_registration"]
         host = self.get_host_name()
         # Ensure request is for a valid host / tenant
         if config.get_host_specific_key(f"site_configs.{host}", host):
@@ -151,11 +151,11 @@ class BaseJSONHandler(TornadoRequestHandler):
         self.auth_context = payload
         self.user = payload["email"]
 
-    def set_default_headers(self, *args, **kwargs):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Methods", ",".join(self.allowed_methods))
-        self.set_header("Access-Control-Allow-Credentials", "true")
-        self.set_header("Content-Type", "application/json")
+    # def set_default_headers(self, *args, **kwargs):
+    #     self.set_header("Access-Control-Allow-Origin", "*")
+    #     self.set_header("Access-Control-Allow-Methods", ",".join(self.allowed_methods))
+    #     self.set_header("Access-Control-Allow-Credentials", "true")
+    #     self.set_header("Content-Type", "application/json")
 
     def write_error(self, status_code, **kwargs):
         self.set_header("Content-Type", "application/problem+json")
@@ -307,7 +307,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.set_header(k, v)
 
     def on_finish(self) -> None:
-        host = self.get_host_name()
+        # host = self.get_host_name()
         if hasattr(self, "tracer") and self.tracer:
             asyncio.ensure_future(
                 self.tracer.set_additional_tags({"http.status_code": self.get_status()})
@@ -875,7 +875,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         super(BaseMtlsHandler, self).write(chunk)
 
     def on_finish(self) -> None:
-        host = self.get_host_name()
+        # host = self.get_host_name()
         # if config.get_host_specific_key(
         #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
         # ):

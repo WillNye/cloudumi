@@ -526,7 +526,9 @@ class Configuration(metaclass=Singleton):
                     f"{host}_STATIC_CONFIGURATION",
                     json.dumps(self.tenant_configs[host]),
                 )
-        value = self.tenant_configs[host]["config"]
+        value = self.tenant_configs[host].get("config")
+        if not value:
+            return default
         for k in key.split("."):
             try:
                 value = value[k]

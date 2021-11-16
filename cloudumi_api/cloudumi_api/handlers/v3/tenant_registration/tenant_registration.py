@@ -4,19 +4,20 @@ import hmac
 import random
 from secrets import token_urlsafe
 from typing import List
+from urllib.parse import urlparse
 
 import boto3
 import sentry_sdk
 import tornado.escape
 import tornado.web
-import yaml
 from email_validator import validate_email
 from password_strength import PasswordPolicy
 
 from cloudumi_api.handlers.v3.tenant_registration.models import NewTenantRegistration
 from cloudumi_common.config import config
+from cloudumi_common.handlers.base import TornadoRequestHandler
 from cloudumi_common.lib.dynamo import RestrictedDynamoHandler
-from cloudumi_common.lib.password import generate_random_password
+from cloudumi_common.lib.free_email_domains import is_email_free
 
 
 async def generate_dev_domain(dev_mode):
@@ -384,9 +385,24 @@ async def create_user_pool_domain(user_pool_id, user_pool_domain_name):
     return user_pool_domain
 
 
-class TenantRegistrationHandler(tornado.web.RequestHandler):
+class TenantRegistrationHandler(TornadoRequestHandler):
+    def set_default_headers(self):
+        valid_referrers = ["localhost", "noq.dev", "www.noq.dev", "127.0.0.1"]
+        referrer = self.request.headers.get("Referer")
+        if referrer is not None:
+            referrer_host = urlparse(referrer).hostname
+            if referrer_host in valid_referrers:
+                self.set_header("Access-Control-Allow-Origin", "*")
+                self.set_header(
+                    "Access-Control-Allow-Headers",
+                    "content-type, x-requested-with, x-forwarded-host",
+                )
+                self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+
+    async def options(self, *args):
+        pass
+
     async def post(self):
-        # TODO: Restrict so this domain can only be accessed from dev domain
         # Get the data from the request
         data = tornado.escape.json_decode(self.request.body)
         # Check if the data is valid
@@ -400,13 +416,63 @@ class TenantRegistrationHandler(tornado.web.RequestHandler):
             )
             return
 
-        valid = validate_email(data.get("email"))
-        if not valid:
+        try:
+            valid = validate_email(data.get("email"))
+            if not valid:
+                self.set_status(400)
+                self.write(
+                    {
+                        "error": "Invalid email",
+                        "error_description": "The email is invalid",
+                    }
+                )
+                return
+        except Exception:
             self.set_status(400)
             self.write(
                 {
                     "error": "Invalid email",
                     "error_description": "The email is invalid",
+                }
+            )
+            sentry_sdk.capture_exception()
+            return
+
+        # Check if e-mail is a free e-mail
+        if await is_email_free(data.get("email")):
+            self.set_status(400)
+            self.write(
+                {
+                    "error": "Please enter a business e-mail address",
+                    "error_description": "Please enter a business e-mail address",
+                }
+            )
+            return
+
+        # TODO: Check if email already registered
+        # if await is_email_registered(data.get("email")):
+        #     self.set_status(400)
+        #     self.write(
+        #         {
+        #             "error": "Email already registered",
+        #             "error_description": "The email is already registered",
+        #         }
+        #     )
+        #     return
+
+        # TODO: When we allow custom domain registrations, don't allow noq, registration, or anything else in the domain
+        # name
+
+        valid_registration_code = hashlib.sha256(
+            "noq_tenant_{}".format(data.get("email")).encode()
+        ).hexdigest()[0:20]
+        # check if registration code is valid
+        if data["registration_code"] != valid_registration_code:
+            self.set_status(400)
+            self.write(
+                {
+                    "error": "Invalid registration code",
+                    "error_description": "The registration code is invalid",
                 }
             )
             return
@@ -523,6 +589,8 @@ class TenantRegistrationHandler(tornado.web.RequestHandler):
         tenant_config = f"""
 site_configs:
   {dev_domain}:
+    site_config:
+      landing_url: /settings
     headers:
       identity:
         enabled: true
