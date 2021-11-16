@@ -1,10 +1,35 @@
 import asyncio
+import random
+import string
 from typing import Dict, List, Optional, Union
 
 from password_strength import PasswordPolicy
 
 from cloudumi_common.config import config
 from cloudumi_common.lib.redis import RedisHandler
+
+
+async def generate_random_password(uchars=3, lchars=3, dchars=2, schars=2):
+    # Generates a 10 characters long random string
+    # with 3 upper case, 3 lowe case, 2 digits and 2 special characters
+
+    str_uchars, str_lchars, str_dchars, str_schars = "", "", "", ""
+
+    for i in range(uchars):
+        str_uchars += random.SystemRandom().choice(string.ascii_uppercase)
+
+    for i in range(lchars):
+        str_uchars += random.SystemRandom().choice(string.ascii_lowercase)
+
+    for i in range(dchars):
+        str_uchars += random.SystemRandom().choice(string.digits)
+
+    for i in range(schars):
+        str_uchars += random.SystemRandom().choice(string.punctuation)
+
+    random_str = str_uchars + str_lchars + str_dchars + str_schars
+    random_str = "".join(random.sample(random_str, len(random_str)))
+    return random_str
 
 
 async def wait_after_authentication_failure(user, host) -> str:

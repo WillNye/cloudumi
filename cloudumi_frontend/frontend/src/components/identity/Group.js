@@ -8,11 +8,15 @@ import {
   Popup,
   Input,
   Table,
+  Icon,
   Form,
   Ref,
+  TextArea,
 } from "semantic-ui-react";
 import { useAuth } from "../../auth/AuthProviderDefault";
 import { useForm, Controller } from "react-hook-form";
+import SemanticDatepicker from "react-semantic-ui-datepickers";
+import { DateTime } from "luxon";
 
 const IdentityGroupEdit = () => {
   const auth = useAuth();
@@ -22,6 +26,8 @@ const IdentityGroupEdit = () => {
   const [header, setHeader] = useState(null);
   const [attributes, setAttributes] = useState(null);
   const [groupDetails, setGroupDetails] = useState(null);
+  const [groupExpiration, setGroupExpiration] = useState(null);
+  const [justification, setJustification] = useState(null);
   const {
     control,
     register,
@@ -72,22 +78,34 @@ const IdentityGroupEdit = () => {
             if (attribute.type === "bool") {
               return (
                 <Form.Field>
-                  <Popup
-                    trigger={<label>{attribute.friendly_name}</label>}
-                    content={attribute.description}
-                    position="right center"
-                    size="mini"
-                  />
-                  {/* <div className={"ui fitted toggle checkbox"}> */}
-                  {/* <Input toggle type="checkbox" {...register(attribute.name)} /> */}
-                  {/* <Controller
+                  <div style={{ display: "block", width: "50px;" }}>
+                    <input
+                      type="checkbox"
+                      style={{ display: "inline" }}
+                      defaultChecked={attribute.value}
+                      {...register(attribute.name)}
+                    />
+                    {"    "}
+                    <Popup
+                      trigger={
+                        <label style={{ display: "inline" }}>
+                          {attribute.friendly_name}
+                        </label>
+                      }
+                      content={attribute.description}
+                      position="right center"
+                      size="mini"
+                    />
+                    {/* <div className={"ui fitted toggle checkbox"}> */}
+                    {/* <Input toggle type="checkbox" {...register(attribute.name)} /> */}
+                    {/* <Controller
                 name={attribute.name}
                 control={control}
                 render={({ field }) => <Checkbox toggle {...field} />}
               /> */}
 
-                  {/* <Checkbox toggle {...register(attribute.name)} /> */}
-                  {/* <Controller
+                    {/* <Checkbox toggle {...register(attribute.name)} /> */}
+                    {/* <Controller
                 name={attribute.name}
                 control={control}
                 error={!!errors.checkBox}
@@ -114,16 +132,12 @@ const IdentityGroupEdit = () => {
                   />
                   </Ref>
                 )} */}
-                  {/* render={({ field }) => <Form.Checkbox toggle {...field} />} */}
-                  {/* /> */}
-                  {/* Get them to the point where they can play around. Keep Step 3 manual. It will be*/}
-                  {/* Automated in the future but just not now */}
-                  {/* Experience to devs is the most important */}
-                  <input
-                    type="checkbox"
-                    defaultChecked={attribute.value}
-                    {...register(attribute.name)}
-                  />
+                    {/* render={({ field }) => <Form.Checkbox toggle {...field} />} */}
+                    {/* /> */}
+                    {/* Get them to the point where they can play around. Keep Step 3 manual. It will be*/}
+                    {/* Automated in the future but just not now */}
+                    {/* Experience to devs is the most important */}
+                  </div>
                 </Form.Field>
               );
             } else if (attribute.type === "array") {
@@ -170,6 +184,99 @@ const IdentityGroupEdit = () => {
           Save
         </Button>
       </Form>
+      <br />
+      <Header as="h3">Add Users to Group</Header>
+      {/* Bulk Add / Bulk Remove groups */}
+      {/* TODO: Implement multi-select table  to allow deleting multiple groups at once */}
+      <Form>
+        <TextArea placeholder="Comma or Newline-Separated List of Users" />
+        <br />
+        <br />
+        <Form.Field>
+          <Header as="h1">
+            <Header.Subheader>Justification</Header.Subheader>
+          </Header>
+          <TextArea
+            placeholder="Reason for requesting access"
+            onChange={(e) => {
+              setJustification(e.target.value);
+            }}
+          />
+        </Form.Field>
+        <Form.Field>
+          <Header as="h1">
+            <Header.Subheader>(Optional) Expiration</Header.Subheader>
+          </Header>
+          <SemanticDatepicker
+            filterDate={(date) => {
+              const now = new Date();
+              return date >= now;
+            }}
+            onChange={(e, data) => {
+              if (!data?.value) {
+                setGroupExpiration(null);
+                return;
+              }
+              const dateObj = DateTime.fromJSDate(data.value);
+              const dateString = dateObj.toFormat("yyyyMMdd");
+              setGroupExpiration(parseInt(dateString));
+            }}
+            type="basic"
+            compact
+          />
+        </Form.Field>
+        {/* TODO: Does bulk request need to be a feature? <Button
+          content={"Submit for Review"}
+          // onClick={handleRequestGroups}
+          // style={{
+          //   width: "50%",
+          //   display: "inline-block",
+          //   textAlign: "center",
+          // }}
+          positive
+        // attached="right"
+        /> */}
+        <Button
+          content={"Add Users"}
+          // onClick={handleAdminAddGroups}
+          // style={{
+          //   width: "50%",
+          //   display: "inline-block",
+          //   textAlign: "center",
+          //   maxWidth: "20em",
+          // }}
+          // floated={"right"}
+          color={"green"}
+        />
+        <br />
+        <Header as="h3">Members</Header>
+      </Form>
+      <Table celled striped>
+        <Table.Header>
+          <Table.Row>
+            <Table.HeaderCell>Username</Table.HeaderCell>
+            <Table.HeaderCell>Remove</Table.HeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {groupDetails?.group?.members?.map((member) => (
+            <Table.Row>
+              <Table.Cell>{member.username}</Table.Cell>
+              <Table.Cell>
+                <Button negative icon labelPosition="right">
+                  Request Removal
+                  <Icon name="delete" />
+                </Button>
+                <Button color={"orange"} icon labelPosition="right">
+                  Remove
+                  <Icon name="delete" />
+                </Button>
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>
+      <Header as="h3">Requests</Header>
     </>
   );
 };

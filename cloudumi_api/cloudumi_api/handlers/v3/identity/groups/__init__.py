@@ -1,5 +1,8 @@
 import ujson as json
-from cloudumi_identity.lib.groups.groups import get_identity_group_storage_keys
+from cloudumi_identity.lib.groups.groups import (
+    cache_identity_groups_for_host,
+    get_identity_group_storage_keys,
+)
 
 from cloudumi_common.config import config
 from cloudumi_common.handlers.base import BaseHandler
@@ -26,7 +29,7 @@ class IdentityGroupPageConfigHandler(BaseHandler):
         """
         host = self.ctx.host
         default_configuration = {
-            "pageName": "Group Identity Manager",
+            "pageName": "Group Manager",
             "pageDescription": "",
             "tableConfig": {
                 "expandableRows": True,
@@ -50,6 +53,12 @@ class IdentityGroupPageConfigHandler(BaseHandler):
                         "type": "input",
                         "style": {"width": "110px"},
                     },
+                    # {
+                    #     "placeholder": "Members",
+                    #     "key": "num_members",
+                    #     "type": "input",
+                    #     "style": {"width": "110px"},
+                    # },
                     {
                         "placeholder": "IDP Name",
                         "key": "idp_name",
@@ -111,6 +120,8 @@ class IdentityGroupsTableHandler(BaseHandler):
             "host": host,
         }
         log.debug(log_data)
+        # TODO: Cache if out-of-date, otherwise return cached data
+        await cache_identity_groups_for_host(host)
         items_d = await retrieve_json_data_from_redis_or_s3(
             config_keys["redis_key"],
             s3_bucket=config_keys["s3_bucket"],
@@ -144,7 +155,7 @@ class IdentityGroupsTableHandler(BaseHandler):
             else:
                 item["request_remove_link"] = "Not Requestable"
             if group_name in self.groups:
-                item["request_remove_link"] = f"[Remove Access]({group_remove_url})"
+                item["request_remove_link"] = f"[Remove My Access]({group_remove_url})"
 
             # Convert request_id and role ARN to link
             item["name"] = f"[{group_name}]({group_url})"

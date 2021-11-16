@@ -22,7 +22,9 @@ async def generate_jwt_token(
                 f"site_configs.{host}.jwt.expiration_hours", host, 1
             )
         )
-    jwt_secret = config.get_host_specific_key(f"site_configs.{host}.jwt_secret", host)
+    jwt_secret = config.get_host_specific_key(
+        f"site_configs.{host}.secrets.jwt_secret", host
+    )
     if not jwt_secret:
         raise Exception("jwt_secret is not defined")
     session = {
@@ -46,7 +48,9 @@ async def generate_jwt_token(
 
 
 async def validate_and_return_jwt_token(auth_cookie, host):
-    jwt_secret = config.get_host_specific_key(f"site_configs.{host}.jwt_secret", host)
+    jwt_secret = config.get_host_specific_key(
+        f"site_configs.{host}.secrets.jwt_secret", host
+    )
     if not jwt_secret:
         raise Exception("jwt_secret is not defined")
     try:

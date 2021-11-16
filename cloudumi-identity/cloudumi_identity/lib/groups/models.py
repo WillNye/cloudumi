@@ -22,20 +22,23 @@ class OktaIdentityProvider(IdentityProvider):
 
 class UserStatus(Enum):
     active = "active"
-    inactive = "inactive"
+    provisioned = "provisioned"
+    deprovisioned = "deprovisioned"
 
 
 class User(BaseModel):
+    idp_name: str
     username: str
     host: str
     user_id: Optional[str]
     domain: Optional[str]
     fullname: Optional[str]
-    status: Optional[str]
+    status: Optional[UserStatus]
     created: Optional[str]
     updated: Optional[str]
-    groups: List[str]
-    background_check_status: bool
+    groups: Optional[List[str]]
+    background_check_status: Optional[bool]
+    extra: Any = Field(None, description=("Extra attributes to store"))
 
 
 class GroupAttributes(BaseModel):
@@ -87,11 +90,12 @@ class GroupAttributes(BaseModel):
 class Group(BaseModel):
     host: str = Field(..., description="Host/Tenant associated with the group")
     name: str = Field(..., description="Name of the group")
+    owner: Optional[str] = Field(None, description="Owner of the group")
     idp_name: str = Field(
         ...,
         description="Name of the host's identity provider that's associated with the group",
     )
-    group_id: str = Field(
+    group_id: Optional[str] = Field(
         ..., description="Unique Group ID for the group. Usually it's {idp-name}-{name}"
     )
     description: Optional[str] = Field(None, description="Description of the group")
@@ -102,6 +106,7 @@ class Group(BaseModel):
         ),
     )
     extra: Any = Field(None, description=("Extra attributes to store"))
+    members: Optional[List[User]] = Field(None, description="Users in the group")
 
 
 class ActionStatus(Enum):
@@ -138,9 +143,11 @@ class GroupRequest(BaseModel):
     justification: str
     expires: Optional[int] = None
     status: GroupRequestStatus
+    created_time: int
     last_updated: List[LastUpdated]
     last_updated_time: int
     last_updated_by: User
+    reviewer_comments: Optional[str]
 
 
 class GroupRequests(BaseModel):
@@ -181,7 +188,7 @@ class GroupManagementPlugin:
         raise NotImplementedError
 
     async def add_user_to_group(
-        self, user: User, group: Group, requester: User
+        self, user: User, group: Group, requester: str
     ) -> ActionResponse:
         raise NotImplementedError
 

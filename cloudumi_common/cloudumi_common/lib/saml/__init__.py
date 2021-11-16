@@ -86,7 +86,10 @@ async def authenticate_user_by_saml(request):
     except OneLogin_Saml2_Error as e:
         log_data["error"] = e
         log.error(log_data)
-        login_endpoint = get_saml_login_endpoint(saml_auth.login(), host)
+        login_endpoint = get_saml_login_endpoint(
+            saml_auth.login(return_to=saml_req.get("get_data", {}).get("redirect_url")),
+            host,
+        )
         if force_redirect:
             return request.redirect(login_endpoint)
         else:

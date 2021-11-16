@@ -242,7 +242,7 @@ def boto3_cached_conn(
         for i in range(len(pre_assume_roles)):
             pre_assume_role = pre_assume_roles[i]
             assume_role_kwargs = {
-                "RoleArn": pre_assume_role,
+                "RoleArn": pre_assume_role["role_arn"],
                 "RoleSessionName": session_name,
             }
 

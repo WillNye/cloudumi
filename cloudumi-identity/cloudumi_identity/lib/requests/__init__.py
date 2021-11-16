@@ -1,10 +1,8 @@
-import datetime
 import time
 import uuid
 
-from cloudumi_identity.lib.groups.groups import get_group_by_name
+from cloudumi_identity.lib.groups.groups import add_users_to_groups, get_group_by_name
 from cloudumi_identity.lib.groups.models import (
-    Group,
     GroupRequest,
     GroupRequestStatus,
     LastUpdated,
@@ -12,6 +10,7 @@ from cloudumi_identity.lib.groups.models import (
 )
 
 from cloudumi_common.lib.dynamo import UserDynamoHandler
+from cloudumi_common.lib.slack import send_slack_notification_new_group_request
 
 
 async def get_request_by_id(host, request_id):
@@ -24,41 +23,75 @@ async def get_request_by_id(host, request_id):
     return request
 
 
+async def cancel_group_request(host, request, actor, reviewer_comments):
+    """
+    Approve a request to access a group.
+    """
+    ddb = UserDynamoHandler(host)
+    await ddb.change_request_status_by_id(
+        host, request.request_id, "cancelled", actor, reviewer_comments
+    )
+    # await send_slack_notification_new_group_request(host, request, actor)
+
+
+async def approve_group_request(host, request, actor, reviewer_comments):
+    """
+    Approve a request to access a group.
+    """
+    await add_users_to_groups(host, request.users, request.groups, actor)
+    ddb = UserDynamoHandler(host)
+    await ddb.change_request_status_by_id(
+        host, request.request_id, "approved", actor, reviewer_comments
+    )
+    # await send_slack_notification_new_group_request(host, request, actor)
+
+
 async def request_access_to_group(
-    host, user, user_groups, idp_name, group_name, justification, group_expiration
+    host,
+    user,
+    actor,
+    actor_groups,
+    idp_name,
+    group_name,
+    justification,
+    group_expiration,
 ):
     """
     Request access to a group.
     """
 
     # TODO: Support multiple users being added to multiple groups
-
+    ddb = UserDynamoHandler(host, user)
     errors = []
-
-    if group_name in user_groups:
-        raise Exception("User is already in group")
+    user_id = f"{idp_name}-{user}"
+    # TODO: get user's groups, and not actor's groups, to determine if user is in the group
+    # being requested or not
+    # if group_name in user_groups:
+    #     errors.append(f"User is already in group: {group_name}")
+    #     continue
 
     # Get the group
     group = await get_group_by_name(host, idp_name, group_name)
     if not group:
-        raise Exception("Group not found")
+        raise Exception("Group not found: {group_name}")
 
     if not group.attributes.requestable:
-        raise Exception("Group is not requestable")
-
-    ddb = UserDynamoHandler(host)
+        raise Exception(f"Group not requestable: {group_name}")
 
     # TODO: Check for existing pending requests
     pending_requests = await ddb.get_pending_identity_group_requests(
         host, user=user, group=group, status="pending"
     )
     if pending_requests:
-        raise Exception("User already has a pending request for this group")
+        errors.append(
+            f"User already has a pending request for this group: {group_name}"
+        )
 
     user_obj = User(
+        idp_name=idp_name,
+        user_id=user_id,
         username=user,
         host=host,
-        groups=user_groups,
         background_check_status=False,
     )
     # Create the request
@@ -86,15 +119,15 @@ async def request_access_to_group(
         request_status = GroupRequestStatus("approved")
         request_last_updated.comment = "Request Self-Approved - No Approval Chain"
 
-    # Approve if user in self-approval groups
-    if group.attributes.self_approval_groups:
-        for user_group in user_groups:
-            if user_group in group.attributes.self_approval_groups:
-                request_status = GroupRequestStatus("approved")
-                request_last_updated.comment = (
-                    "Request Self-Approved - User in Self Approval Group"
-                )
-                break
+    # TODO: Approve if user in self-approval groups
+    # if group.attributes.self_approval_groups:
+    #     for user_group in user_groups:
+    #         if user_group in group.attributes.self_approval_groups:
+    #             request_status = GroupRequestStatus("approved")
+    #             request_last_updated.comment = (
+    #                 "Request Self-Approved - User in Self Approval Group"
+    #             )
+    #             break
 
     users = [user_obj]
     groups = [group]
@@ -107,6 +140,7 @@ async def request_access_to_group(
         justification=justification,
         # TODO: expires=expires,
         status=request_status,
+        created_time=current_time,
         last_updated=[request_last_updated],
         last_updated_time=current_time,
         last_updated_by=user_obj,
@@ -116,12 +150,13 @@ async def request_access_to_group(
     # Create request in DynamoDB
     ddb = UserDynamoHandler(host, user=user)
     await ddb.create_identity_group_request(host, user, request)
+    # await send_slack_notification_new_group_request(host, request)
 
     # TODO: Notify approvers via Slack/Email
     # https://github.com/Netflix/consoleme/commit/8b1f020253dc4f90ef2b336a8b75032eab66f241
 
     # TODO: If status approved, call function to add user to group and notify user
-
+    # TODO: Trigger notification in ConsoleMe
     # TODO: Tell user request was successful and provide context
 
     return request

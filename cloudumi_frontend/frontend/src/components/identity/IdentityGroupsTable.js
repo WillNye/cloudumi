@@ -13,7 +13,7 @@ const IdentityGroupsTable = () => {
     (async () => {
       const data = await sendRequestCommon(
         null,
-        "/api/v3/identity_groups_page_config",
+        "/api/v3/identities/groups_page_config",
         "get"
       );
       if (!data) {

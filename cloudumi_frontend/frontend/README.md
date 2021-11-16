@@ -17,8 +17,21 @@
 ## Available Scripts
 
 In this directory, you can run:
+mkdir .certs
+cd .certs
+`mkcert -cert-file=server.pem -key-file=server.key.pem localhost "*.localhost" 127.0.0.1 ::1 cyberdyne.localhost`
+cd ..
+vim .env
 
-### `yarn start`
+```
+HTTPS=true
+SSL_CRT_FILE=./.certs/server.pem
+SSL_KEY_FILE=./.certs/server.key.pem
+NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
+DANGEROUSLY_DISABLE_HOST_CHECK=true
+```
+
+### `HTTPS=true yarn start`
 
 Runs the app in the development mode.<br />
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser. (You should also run the ConsoleMe Python backend to see data)

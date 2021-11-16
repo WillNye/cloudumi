@@ -32,7 +32,12 @@ const lintingErrorMapping = {
 const CHECK_POLICY_TIMEOUT = 500;
 
 const clearEditorDecorations = ({ editor }) => {
-  if (editor && editor.getModel && editor.getModel().getAllDecorations) {
+  if (
+    editor &&
+    editor.getModel &&
+    editor.getModel() &&
+    editor.getModel().getAllDecorations
+  ) {
     editor
       .getModel()
       .getAllDecorations()

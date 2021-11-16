@@ -16351,3 +16351,9 @@ zzz.pl""".split(
         "\n"
     )
 )
+
+
+async def is_email_free(email) -> bool:
+    if email.split("@")[1] in FREE_EMAIL_DOMAINS:
+        return True
+    return False

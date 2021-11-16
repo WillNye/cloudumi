@@ -38,8 +38,9 @@ from celery.signals import (
 )
 from cloudumi_identity.lib.groups.groups import (
     cache_identity_groups_for_host,
-    cache_identity_groups_requests_for_host,
+    cache_identity_requests_for_host,
 )
+from cloudumi_identity.lib.users.users import cache_identity_users_for_host
 from retrying import retry
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
@@ -54,6 +55,7 @@ from cloudumi_common.lib.account_indexers import (
 from cloudumi_common.lib.assume_role import boto3_cached_conn
 from cloudumi_common.lib.aws import aws_config
 from cloudumi_common.lib.aws.cloudtrail import CloudTrail
+from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role
 from cloudumi_common.lib.aws.iam import get_all_managed_policies
 from cloudumi_common.lib.aws.s3 import list_buckets
 from cloudumi_common.lib.aws.sanitize import sanitize_session_name
@@ -2760,7 +2762,7 @@ def cache_cloudtrail_denies(host=None):
     events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(app, host)
     if events["new_events"] > 0:
         # Spawn off a task to cache errors by ARN for the UI
-        cache_cloudtrail_errors_by_arn.delay()
+        cache_cloudtrail_errors_by_arn.delay(host=host)
     log_data = {
         "function": function,
         "message": "Successfully cached cloudtrail denies",
@@ -2788,7 +2790,7 @@ def refresh_iam_role(role_arn, host=None):
         )
     )()
     account_id = role_arn.split(":")[4]
-    async_to_sync(aws().fetch_iam_role)(
+    async_to_sync(fetch_iam_role)(
         account_id, role_arn, host, force_refresh=True, run_sync=True
     )
 
@@ -2838,6 +2840,20 @@ def cache_identity_groups_for_host_t(host: str) -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
+def cache_identity_users_for_host_t(host: str) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Caching Identity Users for Host",
+        "host": host,
+    }
+    log.debug(log_data)
+    # TODO: Finish this
+    res = async_to_sync(cache_identity_users_for_host)(host)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
 def cache_identities_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
@@ -2849,26 +2865,27 @@ def cache_identities_for_all_hosts() -> Dict:
     log.debug(log_data)
     for host in hosts:
         cache_identity_groups_for_host_t.apply_async((host,))
+        cache_identity_users_for_host_t.apply_async((host,))
         # TODO: Cache identity users for all hosts
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_group_requests_for_host_t(host: str) -> Dict:
+def cache_identity_requests_for_host_t(host: str) -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
-        "message": "Caching Identity Group Requests for Host",
+        "message": "Caching Identity Requests for Host",
         "host": host,
     }
     log.debug(log_data)
     # Fetch from Dynamo. Write to Redis and S3
-    res = async_to_sync(cache_identity_groups_requests_for_host)(host)
+    res = async_to_sync(cache_identity_requests_for_host)(host)
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_group_requests_for_all_hosts() -> Dict:
+def cache_identity_requests_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
     log_data = {
@@ -2878,7 +2895,7 @@ def cache_identity_group_requests_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_identity_group_requests_for_host_t.apply_async((host,))
+        cache_identity_requests_for_host_t.apply_async((host,))
     return log_data
 
 
@@ -3020,5 +3037,11 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
 
-cache_identity_groups_for_host_t("localhost")
-cache_identity_group_requests_for_all_hosts.delay()
+if "celery" in sys.argv[0]:
+    cache_identity_groups_for_host_t("cyberdyne_noq_dev")
+    cache_identity_users_for_host_t("cyberdyne_noq_dev")
+    cache_identity_requests_for_host_t("cyberdyne_noq_dev")
+    while True:
+        cache_cloudtrail_denies(host="cyberdyne_noq_dev")
+        cache_cloudtrail_errors_by_arn(host="cyberdyne_noq_dev")
+        cache_notifications(host="cyberdyne_noq_dev")

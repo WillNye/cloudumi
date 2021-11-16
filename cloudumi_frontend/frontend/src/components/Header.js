@@ -57,10 +57,13 @@ const ConsoleMeHeader = () => {
         <Dropdown text="Identity" pointing className="link item">
           <Dropdown.Menu>
             <Dropdown.Item as={NavLink} to="/users">
-              All Users
+              Users
             </Dropdown.Item>
             <Dropdown.Item as={NavLink} to="/groups">
-              All Groups
+              Groups
+            </Dropdown.Item>
+            <Dropdown.Item as={NavLink} to="/requests">
+              Requests
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
@@ -190,18 +193,19 @@ const ConsoleMeHeader = () => {
           as="a"
           header
           style={{
+            // margin: "auto",
             fontSize: "20px",
             textTransform: "uppercase",
             width: "240px",
           }}
           href="/"
         >
-          <Image
+          {/* <Image
             size="mini"
             src="/images/logos/logo192.png"
             style={{ marginRight: "1.5em" }}
-          />
-          ConsoleMe
+          /> */}
+          NOQ
         </Menu.Item>
         <Menu.Menu position="left">
           <Menu.Item active={false} exact as={NavLink} name="roles" to="/">
