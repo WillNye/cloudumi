@@ -41,6 +41,7 @@ const IdentityUsersTable = () => {
           />
         </Header.Subheader>
       </Header>
+      <Button basic color="blue" icon="refresh"></Button>
       <Button basic color="blue">
         Add User
       </Button>
