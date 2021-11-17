@@ -1,5 +1,29 @@
 site_configs:
   cognito_noq_localhost:
+    headers:
+      identity:
+        enabled: true
+    identity:
+      cache_groups:
+        enabled: true
+      identity_providers:
+        okta_test:
+          name: okta_test
+          idp_type: okta
+          org_url: https://dev-876967.okta.com/
+          # TODO: No secrets should be in plaintext configuration
+          api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
+    slack:
+      notifications_enabled: true
+      webhook_url: A_SECRET
+    site_config:
+      notifications:
+        enabled: false
+        request_interval: 5
+    account_ids_to_name:
+      "972417093400": skynet_prod
+      "694815895589": skynet_test
+      "259868150464": t-800
     policies:
       # the roles that SaaS consoleMe should assume to get to the central role in a client's account
       pre_role_arns_to_assume:
@@ -8,6 +32,7 @@ site_configs:
       role_name: ConsoleMeSpokeRole
     consoleme_s3_bucket: consolemecache
     secrets:
+      jwt_secret: uT213123p4`sSf-6E8\RAA
       auth:
         oidc:
           client_id: 1fpq9om50b4bm1225o8it875jj
@@ -61,7 +86,6 @@ site_configs:
         - consoleme_admins@example.com
     jwt:
       email_key: email
-    jwt_secret: usafasdfTp4`sSf-6E8\RAA
     support_contact: consoleme-support@example.com
     support_chat_url: https://www.example.com/slack/channel
     documentation_page: https://github.com/Netflix/consoleme/
