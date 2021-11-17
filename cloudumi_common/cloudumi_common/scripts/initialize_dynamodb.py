@@ -60,28 +60,35 @@ try:
         ],
     )
 
-    if ttl_enabled:
+except ClientError as e:
+    if str(e) != (
+        "An error occurred (ResourceInUseException) when calling the CreateTable operation: "
+        "Cannot create preexisting table"
+    ):
+        print(f"Unable to create table {table_name}. Error: {e}.")
+
+if ttl_enabled:
+    for attempt in Retrying(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(3),
+        retry=retry_if_exception_type(
+            (
+                ddb.exceptions.ResourceNotFoundException,
+                ddb.exceptions.ResourceInUseException,
+                ClientError,
+            )
+        ),
+    ):
         try:
-            for attempt in Retrying(
-                stop=stop_after_attempt(3),
-                wait=wait_fixed(3),
-                retry=retry_if_exception_type(
-                    (
-                        ddb.exceptions.ResourceNotFoundException,
-                        ddb.exceptions.ResourceInUseException,
-                        ClientError,
-                    )
-                ),
-            ):
-                with attempt:
-                    ddb.update_time_to_live(
-                        TableName=table_name,
-                        TimeToLiveSpecification={
-                            "Enabled": True,
-                            "AttributeName": "ttl",
-                        },
-                    )
-        except ClientError as e:
+            with attempt:
+                ddb.update_time_to_live(
+                    TableName=table_name,
+                    TimeToLiveSpecification={
+                        "Enabled": True,
+                        "AttributeName": "ttl",
+                    },
+                )
+        except Exception as e:
             if str(e) != (
                 "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
                 "TimeToLive is already enabled"
@@ -89,13 +96,8 @@ try:
                 print(
                     f"Unable to update TTL attribute on table {table_name}. Error: {e}."
                 )
-
-except ClientError as e:
-    if str(e) != (
-        "An error occurred (ResourceInUseException) when calling the CreateTable operation: "
-        "Cannot create preexisting table"
-    ):
-        print(f"Unable to create table {table_name}. Error: {e}.")
+            else:
+                raise
 
 table_name = "consoleme_config_multitenant"
 try:
@@ -262,41 +264,41 @@ try:
             },
         ],
     )
-    if ttl_enabled:
-        try:
-            for attempt in Retrying(
-                stop=stop_after_attempt(3),
-                wait=wait_fixed(3),
-                retry=retry_if_exception_type(
-                    (
-                        ddb.exceptions.ResourceNotFoundException,
-                        ddb.exceptions.ResourceInUseException,
-                        ClientError,
-                    )
-                ),
-            ):
-                with attempt:
-                    ddb.update_time_to_live(
-                        TableName=table_name,
-                        TimeToLiveSpecification={
-                            "Enabled": True,
-                            "AttributeName": "ttl",
-                        },
-                    )
-        except ClientError as e:
-            if str(e) != (
-                "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
-                "TimeToLive is already enabled"
-            ):
-                print(
-                    f"Unable to update TTL attribute on table {table_name}. Error: {e}."
-                )
+
 except ClientError as e:
     if str(e) != (
         "An error occurred (ResourceInUseException) when calling the CreateTable operation: "
         "Cannot create preexisting table"
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
+
+if ttl_enabled:
+    try:
+        for attempt in Retrying(
+            stop=stop_after_attempt(3),
+            wait=wait_fixed(3),
+            retry=retry_if_exception_type(
+                (
+                    ddb.exceptions.ResourceNotFoundException,
+                    ddb.exceptions.ResourceInUseException,
+                    ClientError,
+                )
+            ),
+        ):
+            with attempt:
+                ddb.update_time_to_live(
+                    TableName=table_name,
+                    TimeToLiveSpecification={
+                        "Enabled": True,
+                        "AttributeName": "ttl",
+                    },
+                )
+    except ClientError as e:
+        if str(e) != (
+            "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
+            "TimeToLive is already enabled"
+        ):
+            print(f"Unable to update TTL attribute on table {table_name}. Error: {e}.")
 
 try:
     table_name = "consoleme_users_multitenant"
@@ -587,32 +589,89 @@ except ClientError as e:
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
 
-    if ttl_enabled:
-        try:
-            for attempt in Retrying(
-                stop=stop_after_attempt(3),
-                wait=wait_fixed(3),
-                retry=retry_if_exception_type(
-                    (
-                        ddb.exceptions.ResourceNotFoundException,
-                        ddb.exceptions.ResourceInUseException,
-                        ClientError,
-                    )
-                ),
-            ):
-                with attempt:
-                    ddb.update_time_to_live(
-                        TableName=table_name,
-                        TimeToLiveSpecification={
-                            "Enabled": True,
-                            "AttributeName": "ttl",
-                        },
-                    )
-        except ClientError as e:
-            if str(e) != (
-                "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
-                "TimeToLive is already enabled"
-            ):
-                print(
-                    f"Unable to update TTL attribute on table {table_name}. Error: {e}."
+if ttl_enabled:
+    try:
+        for attempt in Retrying(
+            stop=stop_after_attempt(3),
+            wait=wait_fixed(3),
+            retry=retry_if_exception_type(
+                (
+                    ddb.exceptions.ResourceNotFoundException,
+                    ddb.exceptions.ResourceInUseException,
+                    ClientError,
                 )
+            ),
+        ):
+            with attempt:
+                ddb.update_time_to_live(
+                    TableName=table_name,
+                    TimeToLiveSpecification={
+                        "Enabled": True,
+                        "AttributeName": "ttl",
+                    },
+                )
+    except ClientError as e:
+        if str(e) != (
+            "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
+            "TimeToLive is already enabled"
+        ):
+            print(f"Unable to update TTL attribute on table {table_name}. Error: {e}.")
+
+table_name = "noq_aws_accounts"
+try:
+    ddb.create_table(
+        TableName=table_name,
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "aws_account_id", "KeyType": "RANGE"},
+        ],  # Partition key
+        AttributeDefinitions=[
+            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "aws_account_id", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
+        StreamSpecification={
+            "StreamEnabled": streams_enabled,
+            "StreamViewType": "NEW_AND_OLD_IMAGES",
+        },
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "host_index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "host",
+                        "KeyType": "HASH",
+                    },
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL",
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1,
+                    "WriteCapacityUnits": 1,
+                },
+            },
+            {
+                "IndexName": "aws_account_id_index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "aws_account_id",
+                        "KeyType": "HASH",
+                    },
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL",
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1,
+                    "WriteCapacityUnits": 1,
+                },
+            },
+        ],
+    )
+except ClientError as e:
+    if str(e) != (
+        "An error occurred (ResourceInUseException) when calling the CreateTable operation: "
+        "Cannot create preexisting table"
+    ):
+        print(f"Unable to create table {table_name}. Error: {e}.")

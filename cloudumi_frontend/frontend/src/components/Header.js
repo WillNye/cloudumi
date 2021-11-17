@@ -51,6 +51,17 @@ const ConsoleMeHeader = () => {
     return null;
   };
 
+  const generateRoleLoginDropDown = () => {
+    if (user?.pages?.role_login?.enabled === true) {
+      return (
+        <Menu.Item active={false} exact as={NavLink} name="roles" to="/">
+          Access
+        </Menu.Item>
+      );
+    }
+    return null;
+  };
+
   const generateIdentityDropDown = () => {
     if (user?.pages?.identity?.enabled === true) {
       return (
@@ -208,9 +219,7 @@ const ConsoleMeHeader = () => {
           NOQ
         </Menu.Item>
         <Menu.Menu position="left">
-          <Menu.Item active={false} exact as={NavLink} name="roles" to="/">
-            Access
-          </Menu.Item>
+          {generateRoleLoginDropDown()}
           {generatePoliciesDropDown()}
           {generateIdentityDropDown()}
           {generateAdvancedDropDown()}

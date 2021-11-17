@@ -100,6 +100,7 @@ from cloudumi_api.handlers.v3.identity.users import (
     IdentityUsersPageConfigHandler,
     IdentityUsersTableHandler,
 )
+from cloudumi_api.handlers.v3.integrations.aws import AwsIntegrationHandler
 from cloudumi_api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationHandler,
 )
@@ -195,6 +196,7 @@ def make_app(jwt_validator=None):
         (r"/api/v3/identities/requests/groups", IdentityRequestGroupsHandler),
         # (r"/api/v3/identities/requests/user/(.*?)/(.*)", IdentityRequestUserHandler),
         (r"/api/v3/identities/requests_page_config", IdentityRequestsPageConfigHandler),
+        (r"/api/v3/integrations/aws", AwsIntegrationHandler),
         # (r"/api/v3/api_keys/add", AddApiKeyHandler),
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),

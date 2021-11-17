@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import random
+from datetime import datetime
 from secrets import token_urlsafe
 from typing import List
 from urllib.parse import urlparse
@@ -260,6 +261,15 @@ async def get_secret_hash(username, client_id, client_secret):
         digestmod=hashlib.sha256,
     ).digest()
     return base64.b64encode(dig).decode()
+
+
+async def get_external_id(host, username):
+    dig = hmac.new(
+        str(host).encode("utf-8"),
+        msg=str(username).encode("utf-8"),
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+    return dig
 
 
 async def create_user_pool_user(
@@ -586,14 +596,22 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             sentry_sdk.capture_exception(e)
             return
 
+        external_id = await get_external_id(dev_domain, tenant.email)
+
         tenant_config = f"""
 site_configs:
   {dev_domain}:
+    tenant_details:
+      external_id: {external_id}
+      creator: {tenant.email}
+      creation_time: {datetime.now().isoformat()}
     site_config:
       landing_url: /settings
     headers:
       identity:
         enabled: true
+      role_login:
+        enabled: false
     identity:
       cache_groups:
         enabled: true

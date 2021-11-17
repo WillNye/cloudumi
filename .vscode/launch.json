@@ -52,7 +52,7 @@
       }
     },
     {
-      "name": "Local: Initialize Dynamo Tables",                         6064/chr
+      "name": "Local: Initialize Dynamo Tables",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/cloudumi_common/cloudumi_common/scripts/initialize_dynamodb.py",
