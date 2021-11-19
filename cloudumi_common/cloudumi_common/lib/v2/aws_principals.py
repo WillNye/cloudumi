@@ -7,6 +7,7 @@ from policy_sentry.util.arns import parse_arn
 
 from cloudumi_common.config import config
 from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
+from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
 from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.policies import get_aws_config_history_url_for_resource
 from cloudumi_common.lib.redis import RedisHandler, redis_get
@@ -165,7 +166,7 @@ async def get_user_details(
             f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
         )
     )()
-    user = await aws.fetch_iam_user(account_id, arn, host)
+    user = await fetch_iam_user(account_id, arn, host)
     # requested user doesn't exist
     if not user:
         return None
@@ -220,7 +221,7 @@ async def get_role_details(
             f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
         )
     )()
-    role = await aws.fetch_iam_role(account_id, arn, host, force_refresh=force_refresh)
+    role = await fetch_iam_role(account_id, arn, host, force_refresh=force_refresh)
     # requested role doesn't exist
     if not role:
         return None

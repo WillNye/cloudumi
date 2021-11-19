@@ -20,6 +20,7 @@ from asgiref.sync import sync_to_async
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import Binary  # noqa
 from cloudaux import get_iso_string
+from cloudumi_identity.lib.groups.models import GroupRequest, GroupRequests
 from retrying import retry
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
@@ -36,10 +37,18 @@ from cloudumi_common.lib.aws.session import (
     get_session_for_tenant,
     restricted_get_session_for_saas,
 )
+from cloudumi_common.lib.cache import (
+    retrieve_json_data_from_redis_or_s3,
+    store_json_results_in_redis_and_s3,
+)
 from cloudumi_common.lib.crypto import CryptoSign
+from cloudumi_common.lib.dynamo.host_restrict_session_policy import (
+    get_session_policy_for_host,
+)
 from cloudumi_common.lib.password import wait_after_authentication_failure
 from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.redis import RedisHandler
+from cloudumi_common.lib.s3_helpers import get_s3_bucket_for_host
 from cloudumi_common.models import AuthenticationResponse, ExtendedRequestModel
 
 # TODO: Partion key should be host key. Dynamo instance should be retrieved dynamically. Should use dynamodb:LeadingKeys
@@ -53,7 +62,6 @@ DYNAMODB_EMPTY_DECIMAL = Decimal(0)
 POSSIBLE_STATUSES = [
     "pending",
     "approved",
-    "rejected",
     "cancelled",
     "expired",
     "removed",
@@ -61,6 +69,23 @@ POSSIBLE_STATUSES = [
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger("consoleme")
+
+
+async def hash_api_key(api_key, user, host) -> str:
+    """
+    Hashes an API key.
+    """
+    import base64
+    import hashlib
+    import hmac
+
+    return base64.b64encode(
+        hmac.new(
+            api_key.encode("utf-8"),
+            f"{user}:{host}".encode("utf-8"),
+            hashlib.sha256,
+        ).digest()
+    ).decode("utf-8")
 
 
 class BaseDynamoHandler:
@@ -72,23 +97,7 @@ class BaseDynamoHandler:
         )
 
         # TODO: Support getting DynamoDB table in customer accounts through nested assume role calls
-        restrictive_session_policy = json.dumps(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": ["dynamodb:*"],
-                        "Resource": ["*"],
-                        "Condition": {
-                            "ForAllValues:StringEquals": {
-                                "dynamodb:LeadingKeys": [f"{host}"]
-                            }
-                        },
-                    }
-                ],
-            }
-        )
+        restrictive_session_policy = get_session_policy_for_host(host)
 
         try:
             # call sts_conn with my client and pass in forced_client
@@ -119,6 +128,7 @@ class BaseDynamoHandler:
                     pre_assume_roles=[],
                 )
             table = resource.Table(table_name)
+            return table
         except Exception as e:
             log.error(
                 {
@@ -287,16 +297,50 @@ class BaseDynamoHandler:
             items.extend(result)
         return items
 
+    def truncateTable(self, table, host):
+        """
+        Truncate a dynamo table - For development
+        """
+        # get the table keys
+        tableKeyNames = [key.get("AttributeName") for key in table.key_schema]
+
+        # Only retrieve the keys for each item in the table (minimize data transfer)
+        projectionExpression = ", ".join("#" + key for key in tableKeyNames)
+        expressionAttrNames = {"#" + key: key for key in tableKeyNames}
+        filterExpression = Key("host").eq(host)
+
+        counter = 0
+        page = table.scan(
+            ProjectionExpression=projectionExpression,
+            ExpressionAttributeNames=expressionAttrNames,
+            FilterExpression=filterExpression,
+        )
+        with table.batch_writer() as batch:
+            while page["Count"] > 0:
+                counter += page["Count"]
+                # Delete items in batches
+                for itemKeys in page["Items"]:
+                    batch.delete_item(Key=itemKeys)
+                # Fetch the next page
+                if "LastEvaluatedKey" in page:
+                    page = table.scan(
+                        ProjectionExpression=projectionExpression,
+                        ExpressionAttributeNames=expressionAttrNames,
+                        ExclusiveStartKey=page["LastEvaluatedKey"],
+                    )
+                else:
+                    break
+
 
 class UserDynamoHandler(BaseDynamoHandler):
     def __init__(self, host, user: Optional[str] = None) -> None:
         self.host = host
         try:
-            self.requests_table = self._get_dynamo_table(
+            self.identity_requests_table = self._get_dynamo_table(
                 config.get_host_specific_key(
                     f"site_configs.{host}.aws.requests_dynamo_table",
                     host,
-                    "consoleme_requests_global",
+                    "consoleme_identity_requests_multitenant",
                 ),
                 host,
             )
@@ -376,6 +420,24 @@ class UserDynamoHandler(BaseDynamoHandler):
                 host,
             )
 
+            self.tenant_static_configs = self._get_dynamo_table(
+                config.get_host_specific_key(
+                    f"site_configs.{host}.aws.tenant_static_config_table",
+                    host,
+                    "consoleme_tenant_static_configs",
+                ),
+                host,
+            )
+
+            self.noq_api_keys = self._get_dynamo_table(
+                config.get_host_specific_key(
+                    f"site_configs.{host}.aws.noq_api_keys_table",
+                    host,
+                    "noq_api_keys",
+                ),
+                host,
+            )
+
             if user and host:
                 self.user = self.get_or_create_user(user, host)
                 self.affected_user = self.user
@@ -407,6 +469,110 @@ class UserDynamoHandler(BaseDynamoHandler):
                     exc_info=True,
                 )
                 raise
+
+    async def create_api_key(self, user, host, ttl=None) -> str:
+        """
+        Creates a new API key for the user.
+
+        :param user: The user to create an API key for.
+        :param host: The host to create the API key for.
+        :param ttl: The TTL for the API key.
+        :return: The API key.
+        """
+
+        async def generate_api_key() -> str:
+            """
+            Generates an API key.
+            """
+            import secrets
+
+            return secrets.token_hex(32)
+
+        # Create a new API key
+        api_key = await generate_api_key()
+        hashed_api_key = await hash_api_key(api_key, user, host)
+
+        # Store hashed API Key in Dynamo
+        await sync_to_async(self.noq_api_keys.put_item)(
+            Item={
+                "host": host,
+                "user": user,
+                "api_key": hashed_api_key,
+                "id": str(uuid.uuid4()),
+                "ttl": ttl,
+            }
+        )
+
+        return api_key
+
+    async def verify_api_key(self, api_key, user, host) -> bool:
+        """
+        Verifies an API key.
+
+        :param api_key: The API key to verify.
+        :param user: The user to verify the API key for.
+        :param host: The host to verify the API key for.
+        :return: True if the API key is valid, False otherwise.
+        """
+        hashed_api_key = await hash_api_key(api_key, user, host)
+        # Get the hashed API key
+        hashed_api_entry = await sync_to_async(self.noq_api_keys.get_item)(
+            Key={"host": host, "api_key": hashed_api_key}
+        )
+
+        # Verify the API key
+        if hashed_api_entry.get("Item"):
+            if not hashed_api_entry["Item"]["user"] == user:
+                return False
+            return user
+        return False
+
+    async def delete_api_key(self, host, user, api_key=None, api_key_id=None):
+        """
+        Delete API Key from Dynamo
+        """
+        if api_key:
+            hashed_api_key = await hash_api_key(api_key, user, host)
+            await self.noq_api_keys.delete_item(
+                Key={"host": host, "api_key": hashed_api_key}
+            )
+            return True
+        elif api_key_id:
+            res = await sync_to_async(self.cloudtrail_table.query)(
+                IndexName="host_id_index",
+                KeyConditionExpression="id = :id AND host = :h",
+                ExpressionAttributeValues={":id": api_key_id, ":h": host},
+            )
+            items = res.get("Items", [])
+            for item in items:
+                await self.noq_api_keys.delete_item(
+                    Key={"host": host, "api_key": item["api_key"]}
+                )
+                return True
+
+    async def get_static_config_for_host(self, host) -> bytes:
+        """Retrieve dynamic configuration yaml asynchronously"""
+        c = b""
+        try:
+            current_config = await sync_to_async(self.tenant_static_configs.get_item)(
+                Key={"host": host, "id": "master"}
+            )
+            if not current_config:
+                return c
+            compressed_config = current_config.get("Item", {}).get("config", "")
+            if not compressed_config:
+                return c
+            c = zlib.decompress(compressed_config.value)
+        except Exception as e:  # noqa
+            log.error(
+                {
+                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+                    "message": "Error retrieving static configuration",
+                    "error": str(e),
+                }
+            )
+            sentry_sdk.capture_exception()
+        return c
 
     def write_resource_cache_data(self, data):
         self.parallel_write_table(
@@ -820,7 +986,7 @@ class UserDynamoHandler(BaseDynamoHandler):
     ) -> List[Dict[str, Union[int, str]]]:
         requests = []
         for request_id in request_ids:
-            request = self.requests_table.query(
+            request = self.identity_requests_table.query(
                 KeyConditionExpression="request_id = :ri AND host = :h",
                 ExpressionAttributeValues={":ri": request_id, ":h": host},
             )
@@ -935,7 +1101,9 @@ class UserDynamoHandler(BaseDynamoHandler):
                     f"Pending request for group: {group} already exists: {request}"
                 )
         try:
-            self.requests_table.put_item(Item=self._data_to_dynamo_replace(new_request))
+            self.identity_requests_table.put_item(
+                Item=self._data_to_dynamo_replace(new_request)
+            )
         except Exception as e:
             error = {
                 "error": f"Unable to add user request: {str(e)}",
@@ -948,35 +1116,45 @@ class UserDynamoHandler(BaseDynamoHandler):
 
         return new_request
 
-    async def get_all_requests(self, host: str, status=None):
+    async def get_identity_group_request_by_id(self, host, request_id):
+        response: Dict = await sync_to_async(self.identity_requests_table.query)(
+            KeyConditionExpression="request_id = :ri AND host = :h",
+            ExpressionAttributeValues={":ri": request_id, ":h": host},
+        )
+        items = response.get("Items", [])
+        if not items:
+            return None
+        if len(items) > 1:
+            raise Exception(f"Multiple requests found for request_id: {request_id}")
+        return self._data_from_dynamo_replace(items[0])
+
+    async def get_all_identity_group_requests(self, host: str, status=None):
         """Return all requests. If a status is specified, only requests with the specified status will be returned.
 
         :param status:
         :return:
         """
-        items = await sync_to_async(self.parallel_scan_table)(self.requests_table)
+        items = await sync_to_async(self.parallel_scan_table)(
+            self.identity_requests_table
+        )
 
         return_value = []
         for item in items:
             new_json = []
-            for j in item["json"]:
-                if status and not j["status"] == status:
-                    continue
-                if j["host"] != host:
-                    continue
-                new_json.append(j)
-            item["json"] = new_json
-            if new_json:
-                return_value.append(item)
+            if status and not item["status"] == status:
+                continue
+            if item["host"] != host:
+                continue
+            return_value.append(self._data_from_dynamo_replace(item))
         return return_value
 
-    def get_requests_by_user(
+    async def get_identity_group_requests_by_user(
         self,
         user_email: str,
         host: str,
         group: str = None,
+        idp: str = None,
         status: str = None,
-        use_cache: bool = False,
     ) -> Union[List[Dict[str, Union[int, str]]], Any]:
         """Get requests by user. Group and status can also be specified to filter results.
         :param user_email:
@@ -985,28 +1163,85 @@ class UserDynamoHandler(BaseDynamoHandler):
         :return:
         """
         red = RedisHandler().redis_sync(host)
-        red_key = f"USER_REQUESTS_{user_email}-{group}-{status}"
+        # TODO: Use cache
+        red_key = f"{host}_GROUP_IDENTITY_REQUESTS"
 
-        if use_cache:
-            requests_to_return = red.get(red_key)
-            if requests_to_return:
-                return json.loads(requests_to_return)
-
-        if self.affected_user.get("username") != user_email:
-            self.affected_user = self.get_or_create_user(user_email, host)
-        existing_request_ids = self.affected_user["requests"]
-        existing_requests = self.resolve_request_ids(existing_request_ids, host)
         requests_to_return = []
-        if existing_requests:
-            for request in existing_requests:
-                if group and request["group"] != group:
-                    continue
-                if status and request["status"] != status:
-                    continue
-                requests_to_return.append(request)
-        if use_cache:
-            red.setex(red_key, 120, json.dumps(requests_to_return))
+        requests = []
+        requests_j = red.hget(red_key, user_email)
+
+        requests_j = await retrieve_json_data_from_redis_or_s3(
+            redis_key=red_key,
+            redis_data_type="hash",
+            s3_bucket=await get_s3_bucket_for_host(host),
+            redis_field=user_email,
+            host=host,
+            default="[]",
+        )
+        if requests_j:
+            requests = GroupRequests(requests=json.loads(requests_j))
+        for request in requests.requests:
+            user_in_request = False
+            for user in request.users:
+                if user.username == user_email:
+                    user_in_request = True
+                    break
+            if not user_in_request:
+                continue
+            group_in_request = True if not group else False
+            for request_group in request.groups:
+                if request_group.group == group and request_group.idp == idp:
+                    group_in_request = True
+                    break
+            if not group_in_request:
+                continue
+            if status and request.status.value != status:
+                continue
+            requests_to_return.append(request)
         return requests_to_return
+
+    async def create_identity_group_request(
+        self, host, user_email, request: GroupRequest
+    ) -> GroupRequest:
+        """Create a new group request.
+
+        :param request:
+        :return:
+        """
+        from cloudumi_common.celery_tasks.celery_tasks import app as celery_app
+
+        request_dict = json.loads(request.json())
+        self.identity_requests_table.put_item(
+            Item=self._data_to_dynamo_replace(request_dict)
+        )
+        celery_app.send_task(
+            "cloudumi_common.celery_tasks.celery_tasks.cache_identity_group_requests_for_host_t",
+            kwargs={"host": host},
+        )
+
+        return request
+
+    async def get_pending_identity_group_requests(
+        self, host, user=None, group=None, idp=None, status=None
+    ):
+        """
+        Get all pending identity group requests.
+        :param host:
+        :param user:
+        :param group:
+        :param status:
+        :return:
+        """
+        if user:
+            return await self.get_identity_group_requests_by_user(
+                user,
+                host,
+                group=group,
+                idp=idp,
+                status=status,
+            )
+        else:
+            return await self.get_all_identity_group_requests(host, status=status)
 
     def change_request_status(
         self,
@@ -1058,7 +1293,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                     request["host"] = host
                     modified_request = request
                     try:
-                        self.requests_table.put_item(
+                        self.identity_requests_table.put_item(
                             Item=self._data_to_dynamo_replace(request)
                         )
                     except Exception as e:
@@ -1078,13 +1313,14 @@ class UserDynamoHandler(BaseDynamoHandler):
 
         return modified_request
 
-    def change_request_status_by_id(
+    async def change_request_status_by_id(
         self,
+        host: str,
         request_id: str,
         new_status: str,
-        host: str,
         updated_by: Optional[str] = None,
         reviewer_comments: Optional[str] = None,
+        expiration: Optional[int] = None,
     ) -> Dict[str, Union[int, str]]:
         """
         Change request status by ID
@@ -1109,12 +1345,15 @@ class UserDynamoHandler(BaseDynamoHandler):
         for request in requests:
             request["status"] = new_status
             request["updated_by"] = updated_by
-            request["last_updated"] = int(time.time())
+            request["last_updated_time"] = int(time.time())
             request["reviewer_comments"] = reviewer_comments
+            request["expiration"] = expiration
             request["host"] = host
             modified_request = request
             try:
-                self.requests_table.put_item(Item=self._data_to_dynamo_replace(request))
+                self.identity_requests_table.put_item(
+                    Item=self._data_to_dynamo_replace(request)
+                )
             except Exception as e:
                 error = f"Unable to add user request: {request} : {str(e)}"
                 log.error(error, exc_info=True)
@@ -1148,15 +1387,17 @@ class UserDynamoHandler(BaseDynamoHandler):
 
     def batch_write_cloudtrail_events(self, items, host: str):
         with self.cloudtrail_table.batch_writer(
-            overwrite_by_pkeys=["arn", "request_id"]
+            overwrite_by_pkeys=["host", "request_id"]
         ) as batch:
             for item in items:
-                batch.put_item(Item=self._data_to_dynamo_replace(item))
+                r = batch.put_item(Item=self._data_to_dynamo_replace(item))
         return True
 
     async def get_top_cloudtrail_errors_by_arn(self, arn, host, n=5):
         response: dict = await sync_to_async(self.cloudtrail_table.query)(
-            KeyConditionExpression=Key("arn").eq(arn)
+            IndexName="host-arn-index",
+            KeyConditionExpression="arn = :arn AND host = :h",
+            ExpressionAttributeValues={":arn": arn, ":h": host},
         )
         items = response.get("Items", [])
         aggregated_errors = defaultdict(dict)
@@ -1338,7 +1579,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
                 }
             )
             sentry_sdk.capture_exception()
-        return c
+        return yaml.safe_load(c)
 
     async def update_static_config_for_host(
         self,
@@ -1470,3 +1711,9 @@ class IAMRoleDynamoHandler(BaseDynamoHandler):
         #     )
         #     items.extend(self._data_from_dynamo_replace(response["Items"]))
         # return items
+
+
+# from asgiref.sync import async_to_sync
+# ddb = UserDynamoHandler("cyberdyne_noq_dev", user="ccastrapel@gmail.com")
+# api_key = async_to_sync(ddb.create_api_key)("ccastrapel@gmail.com", "cyberdyne_noq_dev")
+# print(api_key)

@@ -77,7 +77,7 @@ async def get_request_by_id(user, request_id, host):
 async def get_all_pending_requests_api(user, host):
     """Get all pending requests and add the group's secondary approvers"""
     dynamo_handler = UserDynamoHandler(host=host, user=user)
-    all_requests = await dynamo_handler.get_all_requests(host)
+    all_requests = await dynamo_handler.get_all_identity_group_requests(host)
     auth = get_plugin_by_name(
         config.get_host_specific_key(
             f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
@@ -226,7 +226,7 @@ async def get_user_requests(user, groups, host):
     secondary approver
     """
     dynamo_handler = UserDynamoHandler(host=host, user=user)
-    all_requests = await dynamo_handler.get_all_requests(host)
+    all_requests = await dynamo_handler.get_all_identity_group_requests(host)
     query = {
         "domains": config.get_host_specific_key(
             f"site_configs.{host}.dynamo.get_user_requests.domains", host, []

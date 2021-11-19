@@ -16,6 +16,7 @@ from cloudumi_common.lib.auth import (
     can_delete_iam_principals,
     can_delete_iam_principals_app,
 )
+from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role
 from cloudumi_common.lib.aws.utils import (
     allowed_to_sync_role,
     clone_iam_role,
@@ -372,6 +373,8 @@ class RoleDetailHandler(BaseAPIV2Handler):
                 account_id, role_name, host, extended=True, force_refresh=force_refresh
             )
         except Exception as e:
+            # TODO remove
+            raise
             sentry_sdk.capture_exception()
             log.error({**log_data, "error": e}, exc_info=True)
             role_details = None
@@ -467,7 +470,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
                 f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
             )
         )()
-        await aws.fetch_iam_role(account_id, arn, host, force_refresh=True)
+        await fetch_iam_role(account_id, arn, host, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",
@@ -555,7 +558,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
                 f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
             )
         )()
-        await aws.fetch_iam_role(account_id, arn, host, force_refresh=True)
+        await fetch_iam_role(account_id, arn, host, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",

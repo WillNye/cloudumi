@@ -22,19 +22,23 @@ class OktaIdentityProvider(IdentityProvider):
 
 class UserStatus(Enum):
     active = "active"
-    inactive = "inactive"
+    provisioned = "provisioned"
+    deprovisioned = "deprovisioned"
 
 
 class User(BaseModel):
+    idp_name: str
     username: str
-    user_id: str
-    domain: str
-    fullname: str
-    status: str
-    created: str
-    updated: str
-    groups: List[str]
-    background_check_status: str
+    host: str
+    user_id: Optional[str]
+    domain: Optional[str]
+    fullname: Optional[str]
+    status: Optional[UserStatus]
+    created: Optional[str]
+    updated: Optional[str]
+    groups: Optional[List[str]]
+    background_check_status: Optional[bool]
+    extra: Any = Field(None, description=("Extra attributes to store"))
 
 
 class GroupAttributes(BaseModel):
@@ -86,11 +90,12 @@ class GroupAttributes(BaseModel):
 class Group(BaseModel):
     host: str = Field(..., description="Host/Tenant associated with the group")
     name: str = Field(..., description="Name of the group")
+    owner: Optional[str] = Field(None, description="Owner of the group")
     idp_name: str = Field(
         ...,
         description="Name of the host's identity provider that's associated with the group",
     )
-    group_id: str = Field(
+    group_id: Optional[str] = Field(
         ..., description="Unique Group ID for the group. Usually it's {idp-name}-{name}"
     )
     description: Optional[str] = Field(None, description="Description of the group")
@@ -101,6 +106,7 @@ class Group(BaseModel):
         ),
     )
     extra: Any = Field(None, description=("Extra attributes to store"))
+    members: Optional[List[User]] = Field(None, description="Users in the group")
 
 
 class ActionStatus(Enum):
@@ -129,15 +135,33 @@ class LastUpdated(BaseModel):
 
 class GroupRequest(BaseModel):
     request_id: str
+    request_url: str
+    host: str
     users: List[User]
     groups: List[Group]
     requester: User
-    justification: Dict[str, str]
+    justification: str
     expires: Optional[int] = None
     status: GroupRequestStatus
+    created_time: int
     last_updated: List[LastUpdated]
     last_updated_time: int
     last_updated_by: User
+    reviewer_comments: Optional[str]
+
+
+class GroupRequests(BaseModel):
+    requests: List[GroupRequest]
+
+
+class GroupRequestsTable(BaseModel):
+    User: str
+    Group: str
+    Requester: str
+    Justification: str
+    Expires: Optional[str]
+    Status: str
+    Last_Updated: str
 
 
 # TODO: Justification might be multiple fields. Should be a struct. Should allow RegEx validation
@@ -164,7 +188,7 @@ class GroupManagementPlugin:
         raise NotImplementedError
 
     async def add_user_to_group(
-        self, user: User, group: Group, requester: User
+        self, user: User, group: Group, requester: str
     ) -> ActionResponse:
         raise NotImplementedError
 

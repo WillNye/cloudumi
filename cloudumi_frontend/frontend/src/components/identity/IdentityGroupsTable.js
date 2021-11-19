@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Header } from "semantic-ui-react";
+import { Header, Button } from "semantic-ui-react";
 import ConsoleMeDataTable from "../blocks/datatable/DataTableComponent";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "../../auth/AuthProviderDefault";
@@ -13,7 +13,7 @@ const IdentityGroupsTable = () => {
     (async () => {
       const data = await sendRequestCommon(
         null,
-        "/api/v3/identity_groups_page_config",
+        "/api/v3/identities/groups_page_config",
         "get"
       );
       if (!data) {
@@ -41,6 +41,10 @@ const IdentityGroupsTable = () => {
           />
         </Header.Subheader>
       </Header>
+      <Button basic color="blue" icon="refresh"></Button>
+      <Button basic color="blue">
+        Add Group
+      </Button>
       <ConsoleMeDataTable config={tableConfig} {...auth} />
     </>
   );

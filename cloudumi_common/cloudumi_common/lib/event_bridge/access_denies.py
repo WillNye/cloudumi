@@ -33,6 +33,13 @@ async def get_resource_from_cloudtrail_deny(ct_event, raw_ct_event):
     if resources:
         resource: str = max(resources, key=len)
         return resource
+
+    event_source = raw_ct_event.get("eventSource", "")
+    if event_source == "s3.amazonaws.com":
+        bucket_name = raw_ct_event.get("requestParameters", {}).get("bucketName", "")
+        if bucket_name:
+            return f"arn:aws:s3:::{bucket_name}"
+
     resource = "*"
 
     error_message = ct_event.get("error_message", "")

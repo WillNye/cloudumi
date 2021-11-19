@@ -32,12 +32,10 @@ class NotificationsHandler(BaseAPIV2Handler):
     async def get(self):
         host = self.ctx.host
         try:
-            max_notifications = (
-                config.get_host_specific_key(
-                    f"site_configs.{host}.get_notifications_for_user.max_notifications",
-                    host,
-                    5,
-                ),
+            max_notifications = config.get_host_specific_key(
+                f"site_configs.{host}.get_notifications_for_user.max_notifications",
+                host,
+                5,
             )
             notification_response: GetNotificationsForUserResponse = (
                 await get_notifications_for_user(
@@ -57,6 +55,7 @@ class NotificationsHandler(BaseAPIV2Handler):
             )
             self.write(response.json())
         except Exception as e:
+            raise
             sentry_sdk.capture_exception()
             self.set_status(500)
             response = WebResponse(
@@ -136,12 +135,10 @@ class NotificationsHandler(BaseAPIV2Handler):
             await write_notification(notification, host)
         try:
             # Retrieve and return updated notifications for user
-            max_notifications = (
-                config.get_host_specific_key(
-                    f"site_configs.{host}.get_notifications_for_user.max_notifications",
-                    host,
-                    5,
-                ),
+            max_notifications = config.get_host_specific_key(
+                f"site_configs.{host}.get_notifications_for_user.max_notifications",
+                host,
+                5,
             )
             notification_response: GetNotificationsForUserResponse = (
                 await get_notifications_for_user(
@@ -161,6 +158,7 @@ class NotificationsHandler(BaseAPIV2Handler):
             )
             self.write(response.json())
         except Exception as e:
+            raise
             sentry_sdk.capture_exception()
             self.set_status(500)
             response = WebResponse(
