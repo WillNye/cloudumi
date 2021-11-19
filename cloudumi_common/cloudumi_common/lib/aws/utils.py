@@ -1,4 +1,3 @@
-import asyncio
 import fnmatch
 import json
 import re
@@ -29,13 +28,7 @@ from cloudumi_common.lib.account_indexers.aws_organizations import (
 from cloudumi_common.lib.assume_role import boto3_cached_conn
 from cloudumi_common.lib.aws.aws_config import query
 from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
-from cloudumi_common.lib.aws.iam import (
-    get_managed_policy_document,
-    get_policy,
-    get_role_inline_policies,
-    get_role_managed_policies,
-    list_role_tags,
-)
+from cloudumi_common.lib.aws.iam import get_managed_policy_document, get_policy
 from cloudumi_common.lib.aws.s3 import (
     get_bucket_location,
     get_bucket_policy,

@@ -29,8 +29,8 @@ class AwsIntegrationHandler(BaseHandler):
                 "cloudformation_url_hub_account": (
                     "https://console.aws.amazon.com/cloudformation/home?region=us-east-1"
                     + "#/stacks/quickcreate?templateURL=https%3A%2F%2Fs3.us-east-1.amazonaws.com"
-                    + "%2Fcloudumi-cf-templates%2Fiam_stack_ecs.cf.yaml&"
-                    + f"param_ExternalID={external_id}&stackName=cloudumi-iam"
+                    + "%2Fcloudumi-cf-templates%2Fcloudumi_central_role.yaml&"
+                    + f"param_ExternalIDParameter={external_id}&param_HostParameter={host}&stackName=cloudumi-iam"
                 )
             },
         )

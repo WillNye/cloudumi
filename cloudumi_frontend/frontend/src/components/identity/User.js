@@ -1,24 +1,20 @@
-import React, { useCallback, useState, useEffect } from "react";
+import { DateTime } from "luxon";
+import React, { useCallback, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import ReactMarkdown from "react-markdown";
 import { useParams } from "react-router-dom";
+import SemanticDatepicker from "react-semantic-ui-datepickers";
 import {
   Button,
-  Checkbox,
-  Divider,
-  Header,
-  Popup,
-  Message,
-  Input,
-  Icon,
-  Table,
   Form,
-  Ref,
+  Header,
+  Icon,
+  Message,
+  Popup,
+  Table,
   TextArea,
 } from "semantic-ui-react";
-import SemanticDatepicker from "react-semantic-ui-datepickers";
 import { useAuth } from "../../auth/AuthProviderDefault";
-import { useForm, Controller } from "react-hook-form";
-import { DateTime } from "luxon";
-import ReactMarkdown from "react-markdown";
 
 const IdentityUserEdit = () => {
   const auth = useAuth();

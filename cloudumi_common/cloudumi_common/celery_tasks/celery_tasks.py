@@ -3037,11 +3037,11 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
 
-if "celery" in sys.argv[0]:
-    cache_identity_groups_for_host_t("cyberdyne_noq_dev")
-    cache_identity_users_for_host_t("cyberdyne_noq_dev")
-    cache_identity_requests_for_host_t("cyberdyne_noq_dev")
-    while True:
-        cache_cloudtrail_denies(host="cyberdyne_noq_dev")
-        cache_cloudtrail_errors_by_arn(host="cyberdyne_noq_dev")
-        cache_notifications(host="cyberdyne_noq_dev")
+# if "celery" in sys.argv[0]:
+#     cache_identity_groups_for_host_t("cyberdyne_noq_dev")
+#     cache_identity_users_for_host_t("cyberdyne_noq_dev")
+#     cache_identity_requests_for_host_t("cyberdyne_noq_dev")
+#     while True:
+#         cache_cloudtrail_denies(host="cyberdyne_noq_dev")
+#         cache_cloudtrail_errors_by_arn(host="cyberdyne_noq_dev")
+#         cache_notifications(host="cyberdyne_noq_dev")

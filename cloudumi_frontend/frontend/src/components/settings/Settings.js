@@ -1,5 +1,5 @@
-import React, { useEffect, Component } from "react";
-import { Button, Grid, Menu, Segment, Image } from "semantic-ui-react";
+import React, { useEffect } from "react";
+import { Button, Grid, Image, Menu, Segment } from "semantic-ui-react";
 import { useAuth } from "./../../auth/AuthProviderDefault";
 
 function modalReducer(state, action) {
@@ -32,7 +32,7 @@ export const Settings = () => {
       if (!resJson) {
         return;
       }
-      setConfig(resJson);
+      setConfig(resJson?.data);
     }
     fetchPageConfig();
   }, [sendRequestCommon]);
@@ -161,6 +161,8 @@ export const Settings = () => {
               <Grid.Column>
                 <Grid columns={2} divided padded>
                   <Grid.Row>
+                    TODO: Logos for specific providers, ie: Okta, Cognito, AWS
+                    SSO, Google, etc.
                     <Segment>
                       <Image
                         src="/images/logos/openid.svg"
@@ -170,6 +172,10 @@ export const Settings = () => {
                       />
                       <br />
                       <Button icon="settings" content="Configure" />
+                      OpenID settings required: - Client ID - Client Secret -
+                      Client Scopes (e.g. openid, profile, email) - Metadata URL
+                      - Advanced options: - jwt_email_key, jwt_groups_key,
+                      access_token_audience
                     </Segment>
                   </Grid.Row>
                 </Grid>
