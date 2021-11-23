@@ -90,6 +90,7 @@ from cloudumi_common.lib.redis import RedisHandler
 from cloudumi_common.lib.requests import cache_all_policy_requests
 from cloudumi_common.lib.self_service.typeahead import cache_self_service_typeahead
 from cloudumi_common.lib.templated_resources import cache_resource_templates
+from cloudumi_common.lib.tenant_integrations.aws import handle_tenant_integration_queue
 from cloudumi_common.lib.tenants import get_all_hosts
 from cloudumi_common.lib.timeout import Timeout
 from cloudumi_common.lib.v2.notifications import cache_notifications_to_redis_s3
@@ -2899,6 +2900,19 @@ def cache_identity_requests_for_all_hosts() -> Dict:
     return log_data
 
 
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def handle_tenant_aws_integration_queue(
+    soft_time_limit=600, **default_retry_kwargs
+) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Handling AWS Integration Queue",
+    }
+    log.debug(log_data)
+    res = async_to_sync(handle_tenant_integration_queue)(app)
+
+
 schedule_30_minute = timedelta(seconds=1800)
 schedule_45_minute = timedelta(seconds=2700)
 schedule_6_hours = timedelta(hours=6)
@@ -3024,6 +3038,11 @@ schedule = {
         "task": "cloudumi_common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
+    },
+    "handle_aws_integration_queue": {
+        "task": "cloudumi_common.celery_tasks.celery_tasks.handle_aws_integration_queue",
+        "options": {"expires": 180},
+        "schedule": schedule_minute,
     },
 }
 

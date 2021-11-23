@@ -13,8 +13,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 COPY cloudumi_api/ /apps/cloudumi_api/
-COPY cloudumi_identity/ /apps/cloudumi_identity/
-RUN pip install /apps/cloudumi_identity
+COPY cloudumi-identity/ /apps/cloudumi-identity/
+RUN pip install /apps/cloudumi-identity
 RUN pip install /apps/cloudumi_api
 EXPOSE 8092
 

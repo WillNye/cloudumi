@@ -524,7 +524,7 @@ class Configuration(metaclass=Singleton):
                 self.tenant_configs[host]["last_updated"] = current_time
                 red.set(
                     f"{host}_STATIC_CONFIGURATION",
-                    json.dumps(self.tenant_configs[host]),
+                    json.dumps(self.tenant_configs[host], default=str),
                 )
         value = self.tenant_configs[host].get("config")
         if not value:

@@ -477,7 +477,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             "noq_tenant_{}".format(data.get("email")).encode()
         ).hexdigest()[0:20]
         # check if registration code is valid
-        if data["registration_code"] != valid_registration_code:
+        if data.get("registration_code") != valid_registration_code:
             self.set_status(400)
             self.write(
                 {
