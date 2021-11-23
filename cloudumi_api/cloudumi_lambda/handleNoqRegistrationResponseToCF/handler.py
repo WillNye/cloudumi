@@ -4,7 +4,7 @@ import requests
 import boto3
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 PHYSICAL_RESOURCE_ID = "f4b52b3d-0056-4ec0-aca4-ac61ed2efd1d"
 
 def __return(status: int, msg: str):
