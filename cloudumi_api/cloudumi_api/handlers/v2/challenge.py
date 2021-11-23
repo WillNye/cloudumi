@@ -358,9 +358,14 @@ class ChallengePollerHandler(TornadoRequestHandler):
 
         ip = self.get_request_ip()
 
-        if ip != challenge.get("ip"):
-            self.write({"status": "unauthorized"})
-            return
+        if config.get_host_specific_key(
+            f"site_configs.{host}.challenge_url.request_ip_must_match_challenge_creation_ip",
+            host,
+            True,
+        ):
+            if ip != challenge.get("ip"):
+                self.write({"status": "unauthorized"})
+                return
 
         # Generate a jwt if user authentication was successful
         if challenge.get("status") == "success":

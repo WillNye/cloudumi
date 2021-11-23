@@ -51,6 +51,38 @@ const ConsoleMeHeader = () => {
     return null;
   };
 
+  const generateRoleLoginDropDown = () => {
+    if (user?.pages?.role_login?.enabled === true) {
+      return (
+        <Menu.Item active={false} exact as={NavLink} name="roles" to="/">
+          Access
+        </Menu.Item>
+      );
+    }
+    return null;
+  };
+
+  const generateIdentityDropDown = () => {
+    if (user?.pages?.identity?.enabled === true) {
+      return (
+        <Dropdown text="Identity" pointing className="link item">
+          <Dropdown.Menu>
+            <Dropdown.Item as={NavLink} to="/users">
+              Users
+            </Dropdown.Item>
+            <Dropdown.Item as={NavLink} to="/groups">
+              Groups
+            </Dropdown.Item>
+            <Dropdown.Item as={NavLink} to="/requests">
+              Requests
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      );
+    }
+    return null;
+  };
+
   const generateAdvancedDropDown = () => {
     if (user?.pages?.config?.enabled === true) {
       return (
@@ -58,6 +90,9 @@ const ConsoleMeHeader = () => {
           <Dropdown.Menu>
             <Dropdown.Item as={NavLink} to="/config">
               Config
+            </Dropdown.Item>
+            <Dropdown.Item as={NavLink} to="/settings">
+              Settings
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
@@ -172,24 +207,24 @@ const ConsoleMeHeader = () => {
           as="a"
           header
           style={{
+            // margin: "auto",
             fontSize: "20px",
             textTransform: "uppercase",
             width: "240px",
           }}
           href="/"
         >
-          <Image
+          {/* <Image
             size="mini"
             src="/images/logos/logo192.png"
             style={{ marginRight: "1.5em" }}
-          />
-          ConsoleMe
+          /> */}
+          NOQ
         </Menu.Item>
         <Menu.Menu position="left">
-          <Menu.Item active={false} exact as={NavLink} name="roles" to="/">
-            Access
-          </Menu.Item>
+          {generateRoleLoginDropDown()}
           {generatePoliciesDropDown()}
+          {generateIdentityDropDown()}
           {generateAdvancedDropDown()}
         </Menu.Menu>
         <Menu.Menu position="right">

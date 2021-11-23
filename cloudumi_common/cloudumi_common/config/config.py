@@ -8,6 +8,7 @@ import socket
 import sys
 import threading
 import time
+import zlib
 from logging import LoggerAdapter, LogRecord
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
@@ -23,6 +24,7 @@ from ruamel.yaml import YAML
 
 from cloudumi_common.lib.aws.aws_secret_manager import get_aws_secret
 from cloudumi_common.lib.aws.split_s3_path import split_s3_path
+from cloudumi_common.lib.singleton import Singleton
 
 main_exit_flag = threading.Event()
 
@@ -74,7 +76,7 @@ def refresh_dynamic_config(host, ddb=None):
     return ddb.get_dynamic_config_dict(host)
 
 
-class Configuration(object):
+class Configuration(metaclass=Singleton):
     """Load YAML configuration files. YAML files can be extended to extend each other, to include common configuration
     values."""
 
@@ -82,6 +84,7 @@ class Configuration(object):
         """Initialize empty configuration."""
         self.config = {}
         self.log = None
+        self.tenant_configs = collections.defaultdict(dict)
 
     def raise_if_invalid_aws_credentials(self):
         try:
@@ -127,6 +130,7 @@ class Configuration(object):
                 {
                     "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
                     "message": "Dynamic configuration changes detected and loaded",
+                    "host": host,
                 }
             )
             if not self.get("site_configs"):
@@ -417,12 +421,12 @@ class Configuration(object):
         if allow_start_background_threads and self.get("_global_.redis.use_redislite"):
             t = Timer(1, self.purge_redislite_cache, ())
             t.start()
-
-        if allow_start_background_threads and self.get(
-            "_global_.config.load_from_dynamo", True
-        ):
-            t = Timer(2, self.load_config_from_dynamo_bg_thread, ())
-            t.start()
+        #
+        # if allow_start_background_threads and self.get(
+        #     "_global_.config.load_from_dynamo", True
+        # ):
+        #     t = Timer(2, self.load_config_from_dynamo_bg_thread, ())
+        #     t.start()
 
         # if allow_start_background_threads and self.get(
         #     "_global_.config.run_recurring_internal_tasks"
@@ -430,17 +434,17 @@ class Configuration(object):
         #     t = Timer(3, config_plugin.internal_functions, kwargs={"cfg": self.config})
         #     t.start()
 
-        if allow_automatically_reload_configuration and self.get(
-            "_global_.config.automatically_reload_configuration"
-        ):
-            t = Timer(4, self.reload_config, ())
-            t.start()
-
-        if load_tenant_configurations_from_dynamo and self.get(
-            "_global_.config.load_tenant_configurations_from_dynamo"
-        ):
-            t = Timer(5, self.load_tenant_configurations_from_dynamo, ())
-            t.start()
+        # if allow_automatically_reload_configuration and self.get(
+        #     "_global_.config.automatically_reload_configuration"
+        # ):
+        #     t = Timer(4, self.reload_config, ())
+        #     t.start()
+        #
+        # if load_tenant_configurations_from_dynamo and self.get(
+        #     "_global_.config.load_tenant_configurations_from_dynamo"
+        # ):
+        #     t = Timer(5, self.load_tenant_configurations_from_dynamo, ())
+        #     t.start()
 
     def get(
         self, key: str, default: Optional[Union[List[str], int, bool, str, Dict]] = None
@@ -459,17 +463,78 @@ class Configuration(object):
                 return default
         return value
 
+    def get_tenant_static_config_from_dynamo(self, host):
+        dynamodb = boto3.resource(
+            "dynamodb",
+            endpoint_url=self.get(
+                "_global_.dynamodb_server",
+                self.get("_global_.boto3.client_kwargs.endpoint_url"),
+            ),
+        )
+        config_table = dynamodb.Table("consoleme_tenant_static_configs")
+        current_config = config_table.get_item(Key={"host": host, "id": "master"})
+        c = {}
+
+        compressed_config = current_config.get("Item", {}).get("config", "")
+        if not compressed_config:
+            return c
+        try:
+            c = zlib.decompress(compressed_config.value)
+        except Exception as e:  # noqa
+            sentry_sdk.capture_exception()
+        return yaml.load(c)
+
     def get_host_specific_key(self, key: str, host: str, default: Any = None) -> Any:
         """
         Get a host/"tenant" specific value for configuration entry in dot notation.
         """
-        # TODO: Load config from S3 or DDB and cache for 60s
-        # TODO: Verify signing key upon loading
-        # TODO: Verify model
-        # REF: Regex search: c|onfig.get\(f\"site_configs.\{host\}.([\.a-zA-Z0-9\_\-]+)"
-        if not key.startswith(f"site_configs.{host}"):
+        # Only support keys that explicitly call out a host
+        host_config_base_key = f"site_configs.{host}"
+        if not key.startswith(host_config_base_key):
             raise Exception(f"Configuration key is invalid: {key}")
-        return self.get(key, default=default)
+        else:
+            # If we've defined a static config yaml file for the host, that takes precedence over
+            # anything in Dynamo, even if the static config doesn't actually have the config
+            # key the user is querying.
+            if self.get(host_config_base_key):
+                return self.get(key, default=default)
+        # Otherwise, we need to get the config from local variable,
+        # fall back to Redis cache, and lastly fall back to Dynamo
+        current_time = int(time.time())
+        last_updated = self.tenant_configs[host].get("last_updated", 0)
+        if current_time - last_updated > 60:
+            from cloudumi_common.lib.redis import RedisHandler
+
+            red = RedisHandler().redis_sync(host)
+            tenant_config = json.loads(red.get(f"{host}_STATIC_CONFIGURATION") or "{}")
+            last_updated = tenant_config.get("last_updated", 0)
+            # If Redis config cahce for host is newer than 60 seconds, update in-memory variables
+            if current_time - last_updated < 60:
+                self.tenant_configs[host]["config"] = tenant_config["config"]
+                self.tenant_configs[host]["last_updated"] = last_updated
+        # If local variables and Redis config cache for the host are still older than 60 seconds,
+        # pull from Dynamo, update local cache, redis cache, and in-memory variables
+        if current_time - last_updated > 60:
+            config_item = self.get_tenant_static_config_from_dynamo(host)
+            if config_item:
+                from cloudumi_common.lib.redis import RedisHandler
+
+                red = RedisHandler().redis_sync(host)
+                self.tenant_configs[host]["config"] = config_item
+                self.tenant_configs[host]["last_updated"] = current_time
+                red.set(
+                    f"{host}_STATIC_CONFIGURATION",
+                    json.dumps(self.tenant_configs[host], default=str),
+                )
+        value = self.tenant_configs[host].get("config")
+        if not value:
+            return default
+        for k in key.split("."):
+            try:
+                value = value[k]
+            except KeyError:
+                return default
+        return value
 
     def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
         """Get logger."""
@@ -604,6 +669,7 @@ get_logger = CONFIG.get_logger
 get_host_specific_key = CONFIG.get_host_specific_key
 get_employee_photo_url = CONFIG.get_employee_photo_url
 get_employee_info_url = CONFIG.get_employee_info_url
+get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dynamo
 
 # Set logging levels
 CONFIG.set_logging_levels()

@@ -100,9 +100,19 @@ class UserProfileHandler(BaseAPIV1Handler):
                         "custom_header_message_route", ""
                     ),
                 },
+                "role_login": {
+                    "enabled": config.get_host_specific_key(
+                        f"site_configs.{host}.headers.role_login.enabled", host, True
+                    )
+                },
                 "groups": {
                     "enabled": config.get_host_specific_key(
                         f"site_configs.{host}.headers.group_access.enabled", host, False
+                    )
+                },
+                "identity": {
+                    "enabled": config.get_host_specific_key(
+                        f"site_configs.{host}.headers.identity.enabled", host, False
                     )
                 },
                 "users": {

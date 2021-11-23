@@ -15,7 +15,6 @@ services:
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data -port 8005"
     ports:
       - "8005:8005"
-    restart: always
     volumes:
       - ./dynamodb-data:/data:delegated
   cloudumi-dynamodb_admin:

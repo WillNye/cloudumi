@@ -10,6 +10,7 @@ import ujson as json
 from asgiref.sync import sync_to_async
 from redis.client import Redis
 from rediscluster import RedisCluster
+from rediscluster.exceptions import ClusterDownError
 
 from cloudumi_common.config import config
 from cloudumi_common.lib.plugins import get_plugin_by_name
@@ -80,7 +81,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
 
         try:
             result = super(ConsoleMeRedis, self).get(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
+        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -122,7 +123,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).set(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
+        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -162,7 +163,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         # We do not currently support caching data in S3 with expiration (SETEX)
         try:
             result = super(ConsoleMeRedis, self).setex(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
+        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -185,7 +186,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hmset(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
+        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -229,7 +230,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hset(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
+        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -277,7 +278,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hget(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
+        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -322,7 +323,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hmget(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
+        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -345,7 +346,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hgetall(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
+        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -488,7 +489,7 @@ def redis_get_sync(key: str, host: str, default: None = None) -> Optional[str]:
     red = RedisHandler().redis_sync(host)
     try:
         v = red.get(key)
-    except redis.exceptions.ConnectionError:
+    except (redis.exceptions.ConnectionError, ClusterDownError):
         v = None
     if not v:
         return default

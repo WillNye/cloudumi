@@ -1,4 +1,8 @@
 import ujson as json
+from cloudumi_identity.lib.groups.groups import (
+    cache_identity_groups_for_host,
+    get_identity_group_storage_keys,
+)
 
 from cloudumi_common.config import config
 from cloudumi_common.handlers.base import BaseHandler
@@ -7,7 +11,6 @@ from cloudumi_common.lib.generic import filter_table
 from cloudumi_common.lib.plugins import get_plugin_by_name
 from cloudumi_common.lib.timeout import Timeout
 from cloudumi_common.models import DataTableResponse
-from cloudumi_identity.lib.groups import get_identity_group_storage_keys
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -26,7 +29,7 @@ class IdentityGroupPageConfigHandler(BaseHandler):
         """
         host = self.ctx.host
         default_configuration = {
-            "pageName": "Group Identity Manager",
+            "pageName": "Group Manager",
             "pageDescription": "",
             "tableConfig": {
                 "expandableRows": True,
@@ -39,11 +42,23 @@ class IdentityGroupPageConfigHandler(BaseHandler):
                 "allowJsonExport": True,
                 "columns": [
                     {
+                        "placeholder": "Request Access",
+                        "key": "request_remove_link",
+                        "type": "input",
+                        "style": {"width": "150px"},
+                    },
+                    {
                         "placeholder": "Group Name",
                         "key": "name",
                         "type": "input",
                         "style": {"width": "110px"},
                     },
+                    # {
+                    #     "placeholder": "Members",
+                    #     "key": "num_members",
+                    #     "type": "input",
+                    #     "style": {"width": "110px"},
+                    # },
                     {
                         "placeholder": "IDP Name",
                         "key": "idp_name",
@@ -105,6 +120,8 @@ class IdentityGroupsTableHandler(BaseHandler):
             "host": host,
         }
         log.debug(log_data)
+        # TODO: Cache if out-of-date, otherwise return cached data
+        await cache_identity_groups_for_host(host)
         items_d = await retrieve_json_data_from_redis_or_s3(
             config_keys["redis_key"],
             s3_bucket=config_keys["s3_bucket"],
@@ -131,6 +148,15 @@ class IdentityGroupsTableHandler(BaseHandler):
             idp_name = item["idp_name"]
             group_name = item["name"]
             group_url = f"/group/{idp_name}/{group_name}"
+            group_request_url = f"/group_request/{idp_name}/{group_name}"
+            group_remove_url = f"/group_remove/{idp_name}/{group_name}"
+            if item["attributes"]["requestable"]:
+                item["request_remove_link"] = f"[Request Access]({group_request_url})"
+            else:
+                item["request_remove_link"] = "Not Requestable"
+            if group_name in self.groups:
+                item["request_remove_link"] = f"[Remove My Access]({group_remove_url})"
+
             # Convert request_id and role ARN to link
             item["name"] = f"[{group_name}]({group_url})"
             items_to_write.append(item)

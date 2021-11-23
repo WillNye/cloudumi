@@ -18,6 +18,7 @@ from cloudumi_common.lib.notifications.models import (
     ConsoleMeUserNotification,
     ConsoleMeUserNotificationAction,
 )
+from cloudumi_common.lib.slack import send_slack_notification_new_notification
 
 
 class CloudTrail:
@@ -139,6 +140,7 @@ was detected. This notification will disappear when a similar error has not occu
             ]
 
             generated_notification = ConsoleMeUserNotification(
+                host=host,
                 predictable_id=predictable_id,
                 type=notification_type,
                 users_or_groups=set(),
@@ -186,6 +188,15 @@ was detected. This notification will disappear when a similar error has not occu
                         cloudtrail_error.get("source_ip"),
                         host,
                     )
+                await send_slack_notification_new_notification(
+                    host,
+                    arn,
+                    event_call,
+                    resource,
+                    cloudtrail_error.get("source_ip"),
+                    session_name,
+                    encoded_request_url,
+                )
             if principal_owner and not all_notifications.get(predictable_id):
                 generated_notification.users_or_groups.add(principal_owner)
                 new_or_changed_notifications[predictable_id] = generated_notification
@@ -234,7 +245,7 @@ was detected. This notification will disappear when a similar error has not occu
                 redis_key=config.get_host_specific_key(
                     f"site_configs.{host}.notifications.redis_key",
                     host,
-                    "ALL_NOTIFICATIONS",
+                    f"{host}_ALL_NOTIFICATIONS",
                 ),
                 redis_data_type="hash",
                 s3_bucket=config.get_host_specific_key(

@@ -11,7 +11,7 @@ log = config.get_logger()
 class AuthHandler(BaseHandler):
     async def prepare(self):
         host = self.get_host_name()
-        if not config.get(f"site_configs.{host}"):
+        if not config.get_host_specific_key(f"site_configs.{host}", host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -24,7 +24,7 @@ class AuthHandler(BaseHandler):
             self.write(
                 {
                     "type": "redirect",
-                    "redirect_url": "https://cloudumi.com",
+                    "redirect_url": "https://noq.dev",
                     "reason": "unauthenticated",
                     "message": "Invalid host specified",
                 }

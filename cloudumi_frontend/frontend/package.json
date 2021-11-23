@@ -71,5 +71,5 @@
   },
   "author": "infrasec",
   "license": "Apache-2.0",
-  "proxy": "http://localhost:8081"
+  "proxy": "http://localhost:8092"
 }

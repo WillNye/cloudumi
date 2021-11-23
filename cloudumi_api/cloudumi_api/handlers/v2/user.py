@@ -9,6 +9,8 @@ from email_validator import validate_email
 from cloudumi_common.config import config
 from cloudumi_common.handlers.base import BaseAPIV2Handler, TornadoRequestHandler
 from cloudumi_common.lib.auth import can_admin_all
+
+# from cloudumi_common.lib.cognito.auth import get_secret_hash
 from cloudumi_common.lib.dynamo import UserDynamoHandler
 from cloudumi_common.lib.jwt import generate_jwt_token
 from cloudumi_common.lib.password import check_password_strength
@@ -137,8 +139,10 @@ class LoginConfigurationHandler(TornadoRequestHandler):
             "allow_password_login": config.get_host_specific_key(
                 f"site_configs.{host}.auth.get_user_by_password", host, True
             ),
-            "allow_sso_login": config.get(
-                "LoginConfigurationHandler.allow_sso_login", True
+            "allow_sso_login": config.get_host_specific_key(
+                f"site_configs.{host}.auth.LoginConfigurationHandler.allow_sso_login",
+                host,
+                True,
             ),
             "allow_sign_up": config.get_host_specific_key(
                 f"site_configs.{host}.auth.allow_user_registration", host, False
@@ -196,6 +200,25 @@ class LoginHandler(TornadoRequestHandler):
         login_attempt = LoginAttemptModel.parse_raw(self.request.body)
         log_data["username"] = login_attempt.username
         log_data["after_redirect_uri"] = login_attempt.after_redirect_uri
+        if not login_attempt.username:
+            errors = ["Username is required"]
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 400, "username_required", log_data
+            )
+            return
+        if not login_attempt.password:
+            errors = ["Password is required"]
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 400, "password_required", log_data
+            )
+            return
+        # if config.get_host_specific_key(
+        #     f"site_configs.{host}.auth.get_user_by_cognito_user_pool", host
+        # ):
+        #     user = await get_user_by_cognito_user_pool(
+        #         self, login_attempt.username, login_attempt.password
+        #     )
+        #     secret_hash = get_secret_hash(username)
         ddb = UserDynamoHandler(host=host)
         authenticated_response: AuthenticationResponse = await ddb.authenticate_user(
             login_attempt, host

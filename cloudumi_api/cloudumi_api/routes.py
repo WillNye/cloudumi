@@ -6,6 +6,7 @@ import tornado.web
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
+from tornado.routing import HostMatches, Rule, RuleRouter
 
 from cloudumi_api.handlers.auth import AuthHandler
 from cloudumi_api.handlers.v1.credentials import GetCredentialsHandler
@@ -85,8 +86,26 @@ from cloudumi_api.handlers.v3.identity.groups import (
     IdentityGroupPageConfigHandler,
     IdentityGroupsTableHandler,
 )
-from cloudumi_api.handlers.v3.identity.requests.group import IdentityRequestGroupHandler
+from cloudumi_api.handlers.v3.identity.requests.group import (
+    IdentityGroupRequestReviewHandler,
+    IdentityRequestGroupHandler,
+    IdentityRequestGroupsHandler,
+)
+from cloudumi_api.handlers.v3.identity.requests.table import (
+    IdentityRequestsPageConfigHandler,
+    IdentityRequestsTableHandler,
+)
+from cloudumi_api.handlers.v3.identity.users import (
+    IdentityUserHandler,
+    IdentityUsersPageConfigHandler,
+    IdentityUsersTableHandler,
+)
+from cloudumi_api.handlers.v3.integrations.aws import AwsIntegrationHandler
+from cloudumi_api.handlers.v3.tenant_registration.tenant_registration import (
+    TenantRegistrationHandler,
+)
 from cloudumi_common.config import config
+from cloudumi_saml.handlers.v1.saml import SamlHandler
 
 log = config.get_logger()
 
@@ -96,6 +115,7 @@ def make_app(jwt_validator=None):
 
     routes = [
         (r"/auth", AuthHandler),  # /auth is still used by OIDC callback
+        (r"/saml/(.*)", SamlHandler),
         (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
         (r"/api/v1/get_credentials", GetCredentialsHandler),
@@ -164,19 +184,41 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
-        (r"/api/v3/identity_groups_page_config", IdentityGroupPageConfigHandler),
+        (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
+        (r"/api/v3/identities/users_page_config", IdentityUsersPageConfigHandler),
+        (r"/api/v3/identities/users", IdentityUsersTableHandler),
+        (r"/api/v3/identities/requests", IdentityRequestsTableHandler),
         (r"/api/v3/identities/group/(.*?)/(.*)", IdentityGroupHandler),
+        (r"/api/v3/identities/user/(.*?)/(.*)", IdentityUserHandler),
+        (r"/api/v3/identities/group_requests/(.*)", IdentityGroupRequestReviewHandler),
         (r"/api/v3/identities/requests/group/(.*?)/(.*)", IdentityRequestGroupHandler),
+        (r"/api/v3/identities/requests/groups", IdentityRequestGroupsHandler),
+        # (r"/api/v3/identities/requests/user/(.*?)/(.*)", IdentityRequestUserHandler),
+        (r"/api/v3/identities/requests_page_config", IdentityRequestsPageConfigHandler),
+        (r"/api/v3/integrations/aws", AwsIntegrationHandler),
+        # (r"/api/v3/api_keys/add", AddApiKeyHandler),
+        # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
+        # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
     ]
 
+    router = RuleRouter(routes)
+    for domain in config.get("_global_.landing_page_domains", []):
+        router.rules.append(
+            Rule(
+                HostMatches(domain),
+                [(r"/api/v3/tenant_registration", TenantRegistrationHandler)],
+            )
+        )
+
     app = tornado.web.Application(
-        routes,
+        router.rules,
         debug=config.get("_global_.tornado.debug", False),
         xsrf_cookies=config.get("_global_.tornado.xsrf", True),
         xsrf_cookie_kwargs=config.get("_global_.tornado.xsrf_cookie_kwargs", {}),
     )
+
     sentry_dsn = config.get("_global_.sentry.dsn")
 
     if sentry_dsn:
