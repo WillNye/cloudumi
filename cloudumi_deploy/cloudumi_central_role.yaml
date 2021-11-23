@@ -12,6 +12,9 @@ Resources:
             Action:
               - "sts:AssumeRole"
               - "sts:TagSession"
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref ExternalIDParameter
       RoleName: !Join
         - "-"
         - - "cloudumi-central-role"
