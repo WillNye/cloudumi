@@ -15,6 +15,7 @@ from cloudumi_common.exceptions.exceptions import (
 )
 from cloudumi_common.lib.assume_role import boto3_cached_conn
 from cloudumi_common.lib.dynamo import RestrictedDynamoHandler
+from cloudumi_common.lib.messaging import iterate_event_messages
 
 log = config.get_logger()
 
@@ -121,28 +122,31 @@ async def handle_tenant_integration_queue(
         if num_events >= max_num_messages_to_process:
             break
         processed_messages = []
-        for message in messages:
+
+        for message in iterate_event_messages(queue_region, queue_name, messages)
             num_events += 1
             try:
-                message_body = json.loads(message["Body"])
-                print("here")
+                message_id = message.get("message_id")
+                receipt_handle = message.get("receipt_handle")
+                queue_arn = message.get("queue_arn")
+                body = message.get("body")
 
-                if message_body["RequestType"] != "Create":
+                if body.get("RequestType") != "Create":
                     log.error(
                         {
                             **log_data,
                             "error": "Unknown RequestType",
-                            "cf_message": message_body,
+                            "cf_message": body,
                         }
                     )
                     processed_messages.append(
                         {
-                            "Id": message["MessageId"],
-                            "ReceiptHandle": message["ReceiptHandle"],
+                            "Id": message_id,
+                            "ReceiptHandle": receipt_handle,
                         }
                     )
                     continue
-                response_url = message_body.get("ResponseURL")
+                response_url = body.get("ResponseURL")
                 if not response_url:
                     # We don't have a CFN response URL, so we can't respond to the request
                     # but we can make some noise in our logs
@@ -153,23 +157,23 @@ async def handle_tenant_integration_queue(
                         {
                             **log_data,
                             "error": "Unable to find ResponseUrl",
-                            "cf_message": message_body,
+                            "cf_message": body,
                         }
                     )
                     processed_messages.append(
                         {
-                            "Id": message["MessageId"],
-                            "ReceiptHandle": message["ReceiptHandle"],
+                            "Id": message_id,
+                            "ReceiptHandle": receipt_handle,
                         }
                     )
                     continue
                 partial_stack_id_for_role = (
-                    message_body["StackId"].split("/")[-1].split("-")[0]
+                    body["StackId"].split("/")[-1].split("-")[0]
                 )
-                account_id_for_role = message_body["ResourceProperties"]["AWSAccountId"]
+                account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
                 role_arn = f"arn:aws:iam::{account_id_for_role}:role/cloudumi-central-role-{partial_stack_id_for_role}"
-                external_id = message_body["ResourceProperties"]["ExternalId"]
-                host = message_body["ResourceProperties"]["Host"]
+                external_id = body["ResourceProperties"]["ExternalId"]
+                host = body["ResourceProperties"]["Host"]
 
                 # Verify External ID
                 external_id_in_config = config.get_host_specific_key(
@@ -185,7 +189,7 @@ async def handle_tenant_integration_queue(
                         {
                             **log_data,
                             "error": "External ID Mismatch",
-                            "cf_message": message_body,
+                            "cf_message": body,
                             "external_id_from_cf": external_id,
                             "external_id_in_config": external_id_in_config,
                             "host": host,
@@ -193,8 +197,8 @@ async def handle_tenant_integration_queue(
                     )
                     processed_messages.append(
                         {
-                            "Id": message["MessageId"],
-                            "ReceiptHandle": message["ReceiptHandle"],
+                            "Id": message_id,
+                            "ReceiptHandle": receipt_handle,
                         }
                     )
                     continue
@@ -215,7 +219,7 @@ async def handle_tenant_integration_queue(
                         {
                             **log_data,
                             "message": "Unable to assume customer's hub account role",
-                            "cf_message": message_body,
+                            "cf_message": body,
                             "external_id_from_cf": external_id,
                             "external_id_in_config": external_id_in_config,
                             "host": host,
@@ -224,8 +228,8 @@ async def handle_tenant_integration_queue(
                     )
                     processed_messages.append(
                         {
-                            "Id": message["MessageId"],
-                            "ReceiptHandle": message["ReceiptHandle"],
+                            "Id": message_id,
+                            "ReceiptHandle": receipt_handle,
                         }
                     )
                     continue
@@ -291,8 +295,8 @@ async def handle_tenant_integration_queue(
                 # TODO: Spawn tasks to cache resources from central account
                 processed_messages.append(
                     {
-                        "Id": message["MessageId"],
-                        "ReceiptHandle": message["ReceiptHandle"],
+                        "Id": message_id,
+                        "ReceiptHandle": receipt_handle,
                     }
                 )
 
