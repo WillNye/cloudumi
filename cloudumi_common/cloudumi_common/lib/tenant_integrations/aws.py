@@ -199,12 +199,6 @@ async def handle_tenant_integration_queue(
                     )
                     continue
 
-                # Verify Assume Role Functionality
-
-                if config.get("_global_.development"):
-                    # In development mode, we need to assume a role first
-                    pass
-
                 # Assume role from noq_dev_central_role
                 try:
                     sts_client = await sync_to_async(boto3_cached_conn)("sts", host)
