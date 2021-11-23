@@ -34,6 +34,7 @@ class AwsIntegrationHandler(BaseHandler):
                 )
             },
         )
+        # https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https%3A%2F%2Fs3.us-east-1.amazonaws.com%2Fcloudumi-cf-templates%2Fcloudumi_central_role.yaml&param_ExternalIDParameter=12345&param_HostParameter=abc_noq_dev&stackName=cloudumi-iam
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):

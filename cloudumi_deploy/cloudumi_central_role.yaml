@@ -1,42 +1,42 @@
 Resources:
   CloudUmiTaskRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
-              Service:
-                - ecs.amazonaws.com
+              AWS:
+                - arn:aws:iam::259868150464:role/NoqClusterRole1
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
+              - "sts:TagSession"
       RoleName: !Join
-          - '-'
-          - - 'cloudumi-central-role'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - "-"
+        - - "cloudumi-central-role"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - "/"
+                  - !Ref "AWS::StackId"
       Policies:
-        -
-          PolicyName: !Join
-          - '-'
-          - - 'cloudumi-central-acct-policy-ecs'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - PolicyName: !Join
+            - "-"
+            - - "cloudumi-central-acct-policy-ecs"
+              - !Select
+                - 0
+                - !Split
+                  - "-"
+                  - !Select
+                    - 2
+                    - !Split
+                      - "/"
+                      - !Ref "AWS::StackId"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -113,27 +113,39 @@ Resources:
                   - "sqs:UntagQueue"
                 Resource: "*"
   CloudUmiSnsCustomResource:
-    Type: 'Custom::CloudUmiSnsCustomResource'
+    Type: "Custom::CloudUmiSnsCustomResource"
     DeletionPolicy: Retain
     Properties:
       ServiceToken: arn:aws:sns:us-east-1:259868150464:noq_registration
-      IntegrationName: !Ref 'AWS::StackName'
+      IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
+      Host: !Ref HostParameter
       ActionType: "AWSCentralRegistration"
       Account: cloudumi
       TemplateVersion: 1.5
-      AWSAccountId: !Ref 'AWS::AccountId'
+      AWSAccountId: !Ref "AWS::AccountId"
 Parameters:
   ExternalIDParameter:
     Description: >-
       The cross-account access role created by the stack will use this value for
       its ExternalID. Do not change this value!
     Type: String
-    MinLength: '2'
-    MaxLength: '1224'
+    MinLength: "2"
+    MaxLength: "1224"
     AllowedPattern: '[\w+=,.@:\/-]*'
     ConstraintDescription: 'Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]*'
+  HostParameter:
+    Description: >-
+      The host parameter. Do not change this value!
+    Type: String
+    MinLength: "2"
+    MaxLength: "1224"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: 'Invalid Host value.  Must match pattern [\w+_-]*'
 Outputs:
   ExternalID:
     Description: ExternalID to share with NOQ on Cloudumi credential deployments
     Value: !Ref ExternalIDParameter
+  Host:
+    Description: Host to share with NOQ for CloudUmi deployment
+    Value: !Ref HostParameter

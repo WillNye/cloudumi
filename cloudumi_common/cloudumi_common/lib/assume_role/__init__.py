@@ -193,8 +193,13 @@ def boto3_cached_conn(
     :return: boto3 client or resource connection
     """
     if host and pre_assume_roles is None:
-        pre_assume_roles = consoleme_config.get_host_specific_key(
-            f"site_configs.{host}.policies.pre_role_arns_to_assume", host, []
+        pre_assume_roles = consoleme_config.get(
+            f"_global_.aws.pre_role_arns_to_assume", []
+        )
+        pre_assume_roles.extend(
+            consoleme_config.get_host_specific_key(
+                f"site_configs.{host}.policies.pre_role_arns_to_assume", host, []
+            )
         )
     elif pre_assume_roles is None:
         pre_assume_roles = []
@@ -245,6 +250,9 @@ def boto3_cached_conn(
                 "RoleArn": pre_assume_role["role_arn"],
                 "RoleSessionName": session_name,
             }
+
+            if pre_assume_role.get("external_id"):
+                assume_role_kwargs["ExternalId"] = pre_assume_role["external_id"]
 
             # If we're on the last pre_assume_role,  there's no other role to assume, and session policy hasn't been
             # applied, let's apply it here
