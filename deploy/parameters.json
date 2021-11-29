@@ -1,0 +1,10 @@
+[
+    {
+        "ParameterKey": "ExternalIDParameter",
+        "ParameterValue": "1234567"
+    },
+    {
+        "ParameterKey": "CloudUmiCentralAcctArn",
+        "ParameterValue": "arn:aws:iam::259868150464:role/cloudumi-central-role-c2c7f160"
+    }
+]

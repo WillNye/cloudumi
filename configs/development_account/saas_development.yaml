@@ -1,0 +1,119 @@
+# When running this locally, ensure your /etc/hosts file has the following configuration:
+# 127.0.0.1 localhost redis-cluster cloudumi-dynamodb cloudumi-redis localstack1 localstack2 localstack3
+# TODO: Extends must NOT modify _global_. It must ONLY exist in the site_config specific namespace
+
+# AWS_PROFILE=noq_dev aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
+extends:
+  # - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
+  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cyberdyne_localhost.yaml
+  # - saas_bain_noq_dev.yaml
+  - saas_localhost.yaml
+  # - saas_oidc_noq_dev.yaml
+  # - saas_saml_noq_dev.yaml
+  # - saas_auth0_noq_dev.yaml
+  # - saas_aws_sso_noq_dev.yaml
+  # - saas_cognito_noq_dev.yaml
+#  - saas_cognito_noq_localhost.yaml
+#  - saas_cyberdyne_noq_dev.yaml
+  # - saas_dm_noq_dev.yaml
+  # - saas_stark_noq_dev.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_oidc_noq_dev.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_saml_noq_dev.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_auth0_noq_dev.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_aws_sso_noq_dev.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cognito_noq_dev.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cyberdyne_noq_dev.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_dm_noq_dev.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_stark_noq_dev.yaml
+_global_:
+  landing_page_domains:
+    - localhost
+    - www.noq.localhost
+    - noq.localhost
+    - noq.dev
+    - www.noq.dev
+    - 127.0.0.1
+    - registration.noq.dev
+  dynamodb_server: http://localhost:8005
+  aws:
+    node_role: arn:aws:iam::259868150464:role/NoqClusterRole1
+    pre_role_arns_to_assume:
+      - role_arn: arn:aws:iam::259868150464:role/NoqClusterRole1
+  # elastic_apn:
+  #   enabled: false # TODO: Maybe change me
+  #   service_name: cloudumi
+  #   server_url: http://apmserver:8200
+  logging:
+    file: ~/logs/cloudumi/cloudumi_tornado.log
+  # sentry:
+  #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
+  config:
+    load_from_dynamo: true
+    automatically_reload_configuration: true
+    load_tenant_configurations_from_dynamo: true
+  consoleme_s3_bucket: consolemecache
+  environment: dev
+  development: true
+  tornado:
+    debug: false
+    port: 8081
+    xsrf: false
+    xsrf_cookie_kwargs:
+      samesite: strict
+  plugins:
+    auth: cmsaas_auth
+    aws: cmsaas_aws
+    group_mapping: cmsaas_group_mapping
+    internal_celery_tasks: cmsaas_celery_tasks
+    metrics: cmsaas_metrics
+    internal_config: cmsaas_config
+    internal_routes: cmsaas_internal_routes
+    internal_policies: cmsaas_policies
+  celery:
+    purge: true
+    broker:
+      us-east-1: redis://cloudumi-redis:6379/1
+      us-west-2: redis://cloudumi-redis:6379/1
+      global: redis://cloudumi-redis:6379/1
+    backend:
+      us-east-1: redis://cloudumi-redis:6379/2
+      us-west-2: redis://cloudumi-redis:6379/2
+      global: redis://cloudumi-redis:6379/2
+    debug: true
+  # Saas Configuration
+  redis:
+    cluster_mode:
+      enabled: true
+      nodes:
+        global:
+          - host: redis-cluster
+            port: "7000"
+          - host: redis-cluster
+            port: "7001"
+          - host: redis-cluster
+            port: "7002"
+          - host: redis-cluster
+            port: "7003"
+          - host: redis-cluster
+            port: "7004"
+          - host: redis-cluster
+            port: "7005"
+# Localhost configuration
+#  redis:
+#    cluster_mode:
+#      enabled: true
+#      nodes:
+#        - host: 127.0.0.1
+#          port: "7000"
+#        - host: 127.0.0.1
+#          port: "7001"
+#        - host: 127.0.0.1
+#          port: "7002"
+#        - host: 127.0.0.1
+#          port: "7003"
+#        - host: 127.0.0.1
+#          port: "7004"
+#        - host: 127.0.0.1
+#          port: "7005"
+# TBD: Celery Redis configuration

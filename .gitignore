@@ -143,4 +143,7 @@ consoleme.yaml
 cdk/config.yaml
 
 # Bazel
+bazel-*.vscode
+.vscode/**
+bazel-bin
 bazel-*
