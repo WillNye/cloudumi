@@ -21,15 +21,15 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//cloudumi_common/cloudumi_common/config:lib",
-        "//cloudumi_common/cloudumi_common/lib",
+        "//common/config:lib",
+        "//common/lib",
     ],
     visibility = ["//visibility:public"],
 )
 
 py_wheel(
     name = "py_wheel",
-    distribution = "cloudumi_common_plugin_metrics",
+    distribution = "common_plugin_metrics",
     python_tag = "py3",
     version = "$(VERSION)",
     deps = [":lib"],

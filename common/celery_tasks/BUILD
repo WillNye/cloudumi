@@ -28,7 +28,7 @@ py_library(
 py_binary(
     name = "bin.local",
     data = [
-        "//cloudumi_config/configs/development_account:configs",
+        "//configs/development_account:configs",
     ],
     srcs_version = "PY3",
     srcs = [
@@ -36,7 +36,7 @@ py_binary(
     ],
     main = "run.py",
     env = {
-        "CONFIG_LOCATION": "cloudumi_config/configs/development_account:saas_development.yaml",
+        "CONFIG_LOCATION": "//configs/development_account:saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -65,7 +65,7 @@ py_binary(
 
 py_wheel(
     name = "py_wheel",
-    distribution = "cloudumi_common_lib",
+    distribution = "common_lib",
     python_tag = "py3",
     version = "$(VERSION)",
     deps = [":lib"],

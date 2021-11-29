@@ -17,7 +17,7 @@ filegroup(
     name = "v1",
     srcs = [
         ":src",
-        "//cloudumi_api/cloudumi_api/handlers:v1",
+        "//api/handlers:v1",
     ]
 )
 
@@ -25,7 +25,7 @@ filegroup(
     name = "v2",
     srcs = [
         ":src",
-        "//cloudumi_api/cloudumi_api/handlers:v2",
+        "//api/handlers:v2",
     ]
 )
 
@@ -33,7 +33,7 @@ filegroup(
     name = "v3",
     srcs = [
         ":src",
-        "//cloudumi_api/cloudumi_api/handlers:v3",
+        "//api/handlers:v3",
     ]
 )
 

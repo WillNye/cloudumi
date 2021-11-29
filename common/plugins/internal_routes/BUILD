@@ -18,14 +18,14 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//cloudumi_common/cloudumi_plugins/cloudumi_plugins/plugins/internal_routes/handlers:lib",
+        "//common/cloudumi_plugins/cloudumi_plugins/plugins/internal_routes/handlers:lib",
     ],
     visibility = ["//visibility:public"],
 )
 
 py_wheel(
     name = "py_wheel",
-    distribution = "cloudumi_common_plugin_internal_routes",
+    distribution = "common_plugin_internal_routes",
     python_tag = "py3",
     version = "$(VERSION)",
     deps = [":lib"],

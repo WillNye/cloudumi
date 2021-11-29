@@ -17,9 +17,9 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//cloudumi_common/cloudumi_common/config:lib",
-        "//cloudumi_common/cloudumi_common/handlers:lib",
-        "//cloudumi_common/cloudumi_common/lib",
+        "//common/config:lib",
+        "//common/handlers:lib",
+        "//common/lib",
     ],
     visibility = ["//visibility:public"],
 )

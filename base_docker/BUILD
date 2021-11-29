@@ -34,7 +34,7 @@ container_layer(
 )
 
 container_run_and_commit(
-    name = "cloudumi_base_docker_raw",
+    name = "base_docker_raw",
     commands = [
         "mkdir -p /apps",
         "apt-get update -y",
@@ -67,8 +67,8 @@ container_run_and_commit(
 )
 
 container_image(
-    name = "cloudumi_base_docker",
-    base = ":cloudumi_base_docker_raw",
+    name = "base_docker",
+    base = ":base_docker_raw",
     layers = [
         ":etc_layer",
         ":home_layer",

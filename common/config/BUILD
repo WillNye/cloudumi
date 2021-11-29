@@ -20,7 +20,7 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//cloudumi_common/cloudumi_common/lib",
+        "//common/lib",
         requirement("boto3"),
         requirement("botocore"),
         requirement("logmatic"),
@@ -35,7 +35,7 @@ py_library(
 
 py_wheel(
     name = "py_wheel",
-    distribution = "cloudumi_common_lib",
+    distribution = "common_lib",
     python_tag = "py3",
     version = "$(VERSION)",
     deps = [":lib"],

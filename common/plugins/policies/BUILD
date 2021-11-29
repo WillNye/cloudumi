@@ -19,9 +19,9 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//cloudumi_common/cloudumi_common/config:lib",
-        "//cloudumi_common/cloudumi_common/lib",
-        "//cloudumi_common/cloudumi_common:lib",
+        "//common/config:lib",
+        "//common/lib",
+        "//common:lib",
         requirement("sentry_sdk"),
     ],
     visibility = ["//visibility:public"],
@@ -29,7 +29,7 @@ py_library(
 
 py_wheel(
     name = "py_wheel",
-    distribution = "cloudumi_common_plugin_policies",
+    distribution = "common_plugin_policies",
     python_tag = "py3",
     version = "$(VERSION)",
     deps = [":lib"],

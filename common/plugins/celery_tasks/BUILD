@@ -19,8 +19,8 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//cloudumi_common/cloudumi_common/config:lib",
-        "//cloudumi_common/cloudumi_common/lib",
+        "//common/config:lib",
+        "//common/lib",
         requirement("celery"),
     ],
     visibility = ["//visibility:public"],
@@ -28,7 +28,7 @@ py_library(
 
 py_wheel(
     name = "py_wheel",
-    distribution = "cloudumi_common_plugin_celery_tasks",
+    distribution = "common_plugin_celery_tasks",
     python_tag = "py3",
     version = "$(VERSION)",
     deps = [":lib"],
