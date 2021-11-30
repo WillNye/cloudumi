@@ -6,7 +6,7 @@ import boto3
 import sentry_sdk
 from cloudumi_plugins.plugins.metrics.base_metric import Metric
 
-from cloudumi_common.config import config
+from common.config import config
 
 # TODO: Do we want metrics to be global to the SaaS or should it be possible to put tenant specific metrics in different
 #  places?

@@ -9,10 +9,10 @@ from datetime import timedelta
 
 from celery import Celery
 
-from cloudumi_common.config import config
-from cloudumi_common.lib.json_encoder import SetEncoder
-from cloudumi_common.lib.redis import RedisHandler
-from cloudumi_common.lib.timeout import Timeout
+from common.config import config
+from common.lib.json_encoder import SetEncoder
+from common.lib.redis import RedisHandler
+from common.lib.timeout import Timeout
 
 region = config.region
 

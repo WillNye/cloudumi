@@ -17,7 +17,7 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def test_profile(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         self.maxDiff = None
         headers = {

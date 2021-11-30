@@ -1,18 +1,18 @@
 import tornado.escape
 import ujson as json
-from cloudumi_identity.lib.groups.groups import add_users_to_groups, get_group_by_name
-from cloudumi_identity.lib.groups.models import Group, GroupRequestsTable, User
-from cloudumi_identity.lib.requests import (
+from identity.lib.groups.groups import add_users_to_groups, get_group_by_name
+from identity.lib.groups.models import Group, GroupRequestsTable, User
+from identity.lib.requests import (
     approve_group_request,
     cancel_group_request,
     get_request_by_id,
     request_access_to_group,
 )
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseHandler
-from cloudumi_common.lib.auth import can_admin_identity
-from cloudumi_common.models import Status2, WebResponse
+from common.config import config
+from common.handlers.base import BaseHandler
+from common.lib.auth import can_admin_identity
+from common.models import Status2, WebResponse
 
 log = config.get_logger()
 

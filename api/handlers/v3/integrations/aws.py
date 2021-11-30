@@ -1,6 +1,6 @@
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseHandler
-from cloudumi_common.models import WebResponse
+from common.config import config
+from common.handlers.base import BaseHandler
+from common.models import WebResponse
 
 
 class AwsIntegrationHandler(BaseHandler):

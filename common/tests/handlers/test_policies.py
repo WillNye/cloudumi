@@ -32,8 +32,8 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
     #     "cloudumi_api.handlers.v1.policies.ResourceTypeAheadHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
-    # @patch("cloudumi_common.lib.aws.RedisHandler", mock_policy_redis)
-    # @patch("cloudumi_common.handlers.base.auth")
+    # @patch("common.lib.aws.RedisHandler", mock_policy_redis)
+    # @patch("common.handlers.base.auth")
     # @patch("consoleme_saas_plugins.plugins.auth.auth.Auth")
     @patch("cloudumi_api.handlers.v1.policies.retrieve_json_data_from_redis_or_s3")
     def test_resource_typeahead(

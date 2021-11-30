@@ -8,28 +8,28 @@ import ujson as json
 from furl import furl
 from pydantic import ValidationError
 
-from cloudumi_common.celery_tasks.celery_tasks import app as celery_app
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseAPIV2Handler, BaseMtlsHandler
-from cloudumi_common.lib.auth import (
+from common.celery_tasks.celery_tasks import app as celery_app
+from common.config import config
+from common.handlers.base import BaseAPIV2Handler, BaseMtlsHandler
+from common.lib.auth import (
     can_create_roles,
     can_delete_iam_principals,
     can_delete_iam_principals_app,
 )
-from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role
-from cloudumi_common.lib.aws.utils import (
+from common.lib.aws.fetch_iam_principal import fetch_iam_role
+from common.lib.aws.utils import (
     allowed_to_sync_role,
     clone_iam_role,
     create_iam_role,
     delete_iam_role,
 )
-from cloudumi_common.lib.generic import str2bool
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.v2.aws_principals import (
+from common.lib.generic import str2bool
+from common.lib.plugins import get_plugin_by_name
+from common.lib.v2.aws_principals import (
     get_eligible_role_details,
     get_role_details,
 )
-from cloudumi_common.models import (
+from common.models import (
     CloneRoleRequestModel,
     RoleCreationRequestModel,
     Status2,
@@ -226,11 +226,11 @@ class RolesHandler(BaseAPIV2Handler):
         # Force refresh of crednetial authorization mapping after the dynamic config sync period to ensure all workers
         # have the updated configuration
         celery_app.send_task(
-            "cloudumi_common.celery_tasks.celery_tasks.cache_policies_table_details",
+            "common.celery_tasks.celery_tasks.cache_policies_table_details",
             kwargs={"host": host},
         )
         celery_app.send_task(
-            "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
             kwargs={"host": host},
         )
 

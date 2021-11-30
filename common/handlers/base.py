@@ -16,8 +16,8 @@ import ujson as json
 from rediscluster.exceptions import ClusterDownError
 from tornado import httputil
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import (
+from common.config import config
+from common.exceptions.exceptions import (
     InvalidCertificateException,
     MissingCertificateException,
     MissingConfigurationValue,
@@ -26,16 +26,16 @@ from cloudumi_common.exceptions.exceptions import (
     SilentException,
     WebAuthNError,
 )
-from cloudumi_common.lib.alb_auth import authenticate_user_by_alb_auth
-from cloudumi_common.lib.auth import AuthenticationError
-from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
-from cloudumi_common.lib.oidc import authenticate_user_by_oidc
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.redis import RedisHandler
-from cloudumi_common.lib.request_context.models import RequestContext
-from cloudumi_common.lib.saml import authenticate_user_by_saml
-from cloudumi_common.lib.tracing import ConsoleMeTracer
+from common.lib.alb_auth import authenticate_user_by_alb_auth
+from common.lib.auth import AuthenticationError
+from common.lib.dynamo import UserDynamoHandler
+from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
+from common.lib.oidc import authenticate_user_by_oidc
+from common.lib.plugins import get_plugin_by_name
+from common.lib.redis import RedisHandler
+from common.lib.request_context.models import RequestContext
+from common.lib.saml import authenticate_user_by_saml
+from common.lib.tracing import ConsoleMeTracer
 
 log = config.get_logger()
 

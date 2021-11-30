@@ -1,5 +1,5 @@
-from cloudumi_common.handlers.base import BaseAPIV2Handler
-from cloudumi_common.lib.templated_resources import retrieve_cached_resource_templates
+from common.handlers.base import BaseAPIV2Handler
+from common.lib.templated_resources import retrieve_cached_resource_templates
 
 
 class TemplatedResourceDetailHandler(BaseAPIV2Handler):

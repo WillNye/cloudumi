@@ -23,7 +23,7 @@ py_library(
         "//common/lib",
         requirement("boto3"),
         requirement("botocore"),
-        requirement("logmatic"),
+        requirement("logmatic-python"),
         requirement("sentry_sdk"),
         requirement("ujson"),
         requirement("asgiref"),

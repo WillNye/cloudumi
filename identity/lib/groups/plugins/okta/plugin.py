@@ -1,7 +1,7 @@
 import sys
 from typing import Dict, List, Optional, Tuple
 
-from cloudumi_identity.lib.groups.models import (
+from identity.lib.groups.models import (
     ActionResponse,
     Group,
     GroupManagementPlugin,
@@ -10,8 +10,8 @@ from cloudumi_identity.lib.groups.models import (
 )
 from okta.client import Client as OktaClient
 
-from cloudumi_common.config import config
-from cloudumi_common.lib.dynamo import UserDynamoHandler
+from common.config import config
+from common.lib.dynamo import UserDynamoHandler
 
 log = config.get_logger()
 

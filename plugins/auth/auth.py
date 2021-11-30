@@ -4,14 +4,14 @@ from typing import List
 
 import ujson as json
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import (
+from common.config import config
+from common.exceptions.exceptions import (
     InvalidCertificateException,
     MissingConfigurationValue,
     NoUserException,
 )
-from cloudumi_common.lib.generic import str2bool
-from cloudumi_common.lib.plugins import get_plugin_by_name
+from common.lib.generic import str2bool
+from common.lib.plugins import get_plugin_by_name
 
 log = config.get_logger("consoleme")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -177,7 +177,7 @@ class Auth:
         elif config.get_host_specific_key(
             f"site_configs.{host}.auth.get_groups_from_google", host
         ):
-            from cloudumi_common.lib.google import get_group_memberships
+            from common.lib.google import get_group_memberships
 
             google_groups = await get_group_memberships(user, host)
             if google_groups:

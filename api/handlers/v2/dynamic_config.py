@@ -6,13 +6,13 @@ import sentry_sdk
 import tornado.escape
 import tornado.web
 
-from cloudumi_common.celery_tasks.celery_tasks import app as celery_app
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseHandler
-from cloudumi_common.lib.auth import can_edit_dynamic_config
-from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_common.lib.json_encoder import SetEncoder
-from cloudumi_common.lib.redis import RedisHandler
+from common.celery_tasks.celery_tasks import app as celery_app
+from common.config import config
+from common.handlers.base import BaseHandler
+from common.lib.auth import can_edit_dynamic_config
+from common.lib.dynamo import UserDynamoHandler
+from common.lib.json_encoder import SetEncoder
+from common.lib.redis import RedisHandler
 
 log = config.get_logger()
 
@@ -26,7 +26,7 @@ class DynamicConfigApiHandler(BaseHandler):
         # TODO: Trigger this to run cross-region
         # TODO: Delete server-side user-role cache intelligently so users get immediate access
         celery_app.send_task(
-            "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
             countdown=config.get_host_specific_key(
                 f"site_configs.{host}.dynamic_config.dynamo_load_interval", host
             ),

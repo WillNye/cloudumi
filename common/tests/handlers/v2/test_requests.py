@@ -8,7 +8,7 @@ from tests.util import ConsoleMeAsyncHTTPTestCase
 
 class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         self.config = config
 
@@ -49,7 +49,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             "data": mock_request_data,
         }
 
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.redis import RedisHandler
 
         # Mocked by fakeredis
         red = RedisHandler().redis_sync(host)
@@ -109,7 +109,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             },
         }
 
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.redis import RedisHandler
 
         # Mocked by fakeredis
         red = RedisHandler().redis_sync(host)
@@ -174,7 +174,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             },
         }
 
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.redis import RedisHandler
 
         # Mocked by fakeredis
         red = RedisHandler().redis_sync(host)
@@ -213,7 +213,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             {"request_id": 12346, "username": "userb@example.com"},
         ]
 
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.redis import RedisHandler
 
         # Mocked by fakeredis
         red = RedisHandler().redis_sync(host)
@@ -241,7 +241,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             {"request_id": 12346, "username": "userb@example.com"},
         ]
 
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.redis import RedisHandler
 
         # Mocked by fakeredis
         red = RedisHandler().redis_sync(host)
@@ -736,7 +736,7 @@ Policies:
             yaml_policy = result["extended_request"]["changes"]["changes"][0].pop(
                 "policy"
             )
-            from cloudumi_common.lib.yaml import yaml
+            from common.lib.yaml import yaml
 
             # Get this in a standard dictionary format
             generated_policy = json.loads(json.dumps(yaml.load(yaml_policy)))

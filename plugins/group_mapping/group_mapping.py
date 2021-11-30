@@ -4,12 +4,12 @@ from typing import List
 
 import sentry_sdk
 
-from cloudumi_common.config import config
-from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
-from cloudumi_common.lib.cloud_credential_authorization_mapping import (
+from common.config import config
+from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.cloud_credential_authorization_mapping import (
     CredentialAuthorizationMapping,
 )
-from cloudumi_common.lib.plugins import get_plugin_by_name
+from common.lib.plugins import get_plugin_by_name
 
 log = config.get_logger("consoleme")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()

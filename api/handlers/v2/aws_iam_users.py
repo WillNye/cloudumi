@@ -4,14 +4,14 @@ from typing import Optional
 import sentry_sdk
 import tornado.escape
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseAPIV2Handler
-from cloudumi_common.lib.auth import can_delete_iam_principals
-from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_user
-from cloudumi_common.lib.aws.utils import delete_iam_user
-from cloudumi_common.lib.generic import str2bool
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.v2.aws_principals import get_user_details
+from common.config import config
+from common.handlers.base import BaseAPIV2Handler
+from common.lib.auth import can_delete_iam_principals
+from common.lib.aws.fetch_iam_principal import fetch_iam_user
+from common.lib.aws.utils import delete_iam_user
+from common.lib.generic import str2bool
+from common.lib.plugins import get_plugin_by_name
+from common.lib.v2.aws_principals import get_user_details
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()

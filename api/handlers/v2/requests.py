@@ -8,32 +8,32 @@ import ujson as json
 from policy_sentry.util.arns import parse_arn
 from pydantic import ValidationError
 
-from cloudumi_common.celery_tasks.celery_tasks import app as celery_app
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import (
+from common.celery_tasks.celery_tasks import app as celery_app
+from common.config import config
+from common.exceptions.exceptions import (
     InvalidRequestParameter,
     MustBeFte,
     NoMatchingRequest,
     ResourceNotFound,
     Unauthorized,
 )
-from cloudumi_common.handlers.base import BaseAPIV2Handler, BaseHandler
-from cloudumi_common.lib.auth import can_admin_policies
-from cloudumi_common.lib.aws.fetch_iam_principal import fetch_iam_role
-from cloudumi_common.lib.aws.utils import get_resource_account
-from cloudumi_common.lib.cache import retrieve_json_data_from_redis_or_s3
-from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_common.lib.generic import filter_table, write_json_error
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.policies import (
+from common.handlers.base import BaseAPIV2Handler, BaseHandler
+from common.lib.auth import can_admin_policies
+from common.lib.aws.fetch_iam_principal import fetch_iam_role
+from common.lib.aws.utils import get_resource_account
+from common.lib.cache import retrieve_json_data_from_redis_or_s3
+from common.lib.dynamo import UserDynamoHandler
+from common.lib.generic import filter_table, write_json_error
+from common.lib.plugins import get_plugin_by_name
+from common.lib.policies import (
     can_move_back_to_pending_v2,
     can_update_cancel_requests_v2,
     get_url_for_resource,
     should_auto_approve_policy_v2,
 )
-from cloudumi_common.lib.slack import send_slack_notification_new_request
-from cloudumi_common.lib.timeout import Timeout
-from cloudumi_common.lib.v2.requests import (
+from common.lib.slack import send_slack_notification_new_request
+from common.lib.timeout import Timeout
+from common.lib.v2.requests import (
     generate_request_from_change_model_array,
     get_request_url,
     is_request_eligible_for_auto_approval,
@@ -42,7 +42,7 @@ from cloudumi_common.lib.v2.requests import (
     populate_old_managed_policies,
     populate_old_policies,
 )
-from cloudumi_common.models import (
+from common.models import (
     CommentModel,
     DataTableResponse,
     ExtendedRequestModel,
@@ -73,11 +73,11 @@ class RequestHandler(BaseAPIV2Handler):
                 seconds=5, error_message="Timeout: Are you sure Celery is running?"
             ):
                 celery_app.send_task(
-                    "cloudumi_common.celery_tasks.celery_tasks.cache_policy_requests",
+                    "common.celery_tasks.celery_tasks.cache_policy_requests",
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+                    "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
                     kwargs={"host": host},
                 )
         except TimeoutError:
@@ -601,11 +601,11 @@ class RequestDetailHandler(BaseAPIV2Handler):
         host = self.ctx.host
         # TODO: Only cache policy requests / Credential AuthZ for host
         celery_app.send_task(
-            "cloudumi_common.celery_tasks.celery_tasks.cache_policy_requests",
+            "common.celery_tasks.celery_tasks.cache_policy_requests",
             kwargs={"host": host},
         )
         celery_app.send_task(
-            "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
             kwargs={"host": host},
         )
 

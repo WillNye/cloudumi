@@ -1,9 +1,9 @@
 import sys
 import time
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import SilentException
-from cloudumi_common.handlers.base import BaseHandler
+from common.config import config
+from common.exceptions.exceptions import SilentException
+from common.handlers.base import BaseHandler
 
 log = config.get_logger()
 

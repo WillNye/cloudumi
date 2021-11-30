@@ -3,12 +3,12 @@ import sys
 import sentry_sdk
 from pydantic import ValidationError
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import InvalidRequestParameter
-from cloudumi_common.handlers.base import BaseAPIV2Handler
-from cloudumi_common.lib.change_request import generate_change_model_array
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.models import ChangeGeneratorModelArray
+from common.config import config
+from common.exceptions.exceptions import InvalidRequestParameter
+from common.handlers.base import BaseAPIV2Handler
+from common.lib.change_request import generate_change_model_array
+from common.lib.plugins import get_plugin_by_name
+from common.models import ChangeGeneratorModelArray
 
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()

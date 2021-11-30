@@ -43,14 +43,13 @@ load(
     "container_pull",
 )
 
-# The Alpine container is primarily for testing
+# Redis container
 container_pull(
   architecture = "amd64",
-  name = "python_alpine_base_amd64",
+  name = "cloudumi_redis",
   registry = "index.docker.io",
-  repository = "library/python",
-  tag = "3-alpine",
-  # digest = "sha256:1f7d284b9480f13289d42dc6a19a5be292dcfc2b9bc60916d1bccb8791177874"
+  repository = "library/redis",
+  tag = "alpine",
 )
 
 # This will be the cloudumi_base_docker container

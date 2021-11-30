@@ -5,18 +5,18 @@ import sentry_sdk
 import ujson as json
 from policy_sentry.util.arns import parse_arn
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import MustBeFte, ResourceNotFound
-from cloudumi_common.handlers.base import BaseAPIV2Handler, BaseMtlsHandler
-from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
-from cloudumi_common.lib.auth import can_admin_policies
-from cloudumi_common.lib.aws.utils import fetch_resource_details
-from cloudumi_common.lib.cache import retrieve_json_data_from_redis_or_s3
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.policies import get_url_for_resource
-from cloudumi_common.lib.redis import RedisHandler, redis_hget
-from cloudumi_common.lib.web import handle_generic_error_response
-from cloudumi_common.models import WebResponse
+from common.config import config
+from common.exceptions.exceptions import MustBeFte, ResourceNotFound
+from common.handlers.base import BaseAPIV2Handler, BaseMtlsHandler
+from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.auth import can_admin_policies
+from common.lib.aws.utils import fetch_resource_details
+from common.lib.cache import retrieve_json_data_from_redis_or_s3
+from common.lib.plugins import get_plugin_by_name
+from common.lib.policies import get_url_for_resource
+from common.lib.redis import RedisHandler, redis_hget
+from common.lib.web import handle_generic_error_response
+from common.models import WebResponse
 
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()

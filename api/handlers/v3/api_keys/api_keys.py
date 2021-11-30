@@ -1,8 +1,8 @@
 import tornado.escape
 
-from cloudumi_common.handlers.base import BaseHandler
-from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_common.models import Status2, WebResponse
+from common.handlers.base import BaseHandler
+from common.lib.dynamo import UserDynamoHandler
+from common.models import Status2, WebResponse
 
 
 class AddApiKeyHandler(BaseHandler):

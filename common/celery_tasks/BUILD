@@ -20,7 +20,10 @@ py_library(
         ":src_files",
     ],
     deps = [
+        "//common/config:lib",
+        "//identity:lib",
         requirement("celery"),
+        requirement("ujson"),
     ],
     visibility = ["//visibility:public"],
 )
@@ -36,11 +39,21 @@ py_binary(
     ],
     main = "run.py",
     env = {
-        "CONFIG_LOCATION": "//configs/development_account:saas_development.yaml",
+        #"CONFIG_LOCATION": "$(RULEDIR)/configs/development_account:saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
+        "//common/config:lib",
+        "//common/exceptions:lib",
+        "//identity:lib",
+        "//plugins:lib",
+        "//plugins/auth:lib",
+        "//plugins/celery_tasks:lib",
+        "//plugins/config:lib",
+        "//plugins/metrics:lib",
+        "//util/log:lib",
         requirement("celery"),
+        requirement("ujson"),
     ],
     visibility = ["//visibility:public"],
 )
@@ -59,6 +72,7 @@ py_binary(
     },
     deps = [
         requirement("celery"),
+        requirement("ujson"),
     ],
     visibility = ["//visibility:public"],
 )
@@ -68,6 +82,9 @@ py_wheel(
     distribution = "common_lib",
     python_tag = "py3",
     version = "$(VERSION)",
+    requires = [
+        requirement("celery"),
+    ], 
     deps = [":lib"],
     tags = ["manual"],
 )

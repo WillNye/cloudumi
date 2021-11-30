@@ -64,7 +64,7 @@ else:
     test_reqs = [str(ir.req) for ir in test_requirements]
 
 setup(
-    name="cloudumi_common",
+    name="common",
     author="Curtis Castrapel",
     author_email="ccastrapel@gmail.com",
     python_requires=">=3.8",
@@ -81,4 +81,4 @@ setup(
 )
 
 
-setup(name="cloudumi_common", versioning="distance", setup_requires="setupmeta")
+setup(name="common", versioning="distance", setup_requires="setupmeta")

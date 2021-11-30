@@ -1,9 +1,9 @@
 import tornado.web
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseHandler
-from cloudumi_common.lib.loader import WebpackLoader
-from cloudumi_common.models import DataTableResponse
+from common.config import config
+from common.handlers.base import BaseHandler
+from common.lib.loader import WebpackLoader
+from common.models import DataTableResponse
 
 log = config.get_logger()
 

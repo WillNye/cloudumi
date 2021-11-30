@@ -1,8 +1,8 @@
 import ujson as json
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseMtlsHandler
-from cloudumi_common.lib.plugins import get_plugin_by_name
+from common.config import config
+from common.handlers.base import BaseMtlsHandler
+from common.lib.plugins import get_plugin_by_name
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()

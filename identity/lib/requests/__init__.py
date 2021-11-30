@@ -1,16 +1,16 @@
 import time
 import uuid
 
-from cloudumi_identity.lib.groups.groups import add_users_to_groups, get_group_by_name
-from cloudumi_identity.lib.groups.models import (
+from identity.lib.groups.groups import add_users_to_groups, get_group_by_name
+from identity.lib.groups.models import (
     GroupRequest,
     GroupRequestStatus,
     LastUpdated,
     User,
 )
 
-from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_common.lib.slack import send_slack_notification_new_group_request
+from common.lib.dynamo import UserDynamoHandler
+from common.lib.slack import send_slack_notification_new_group_request
 
 
 async def get_request_by_id(host, request_id):

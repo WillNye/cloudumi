@@ -18,7 +18,7 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//common/cloudumi_plugins/cloudumi_plugins/plugins/internal_routes/handlers:lib",
+        "//plugins/internal_routes/handlers:lib",
     ],
     visibility = ["//visibility:public"],
 )

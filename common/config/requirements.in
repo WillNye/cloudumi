@@ -1,6 +1,6 @@
 boto3
 botocore
-logmatic
+logmatic-python
 sentry_sdk
 ujson
 asgiref

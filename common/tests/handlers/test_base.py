@@ -14,11 +14,11 @@ class TestBaseJSONHandler(ConsoleMeAsyncHTTPTestCase):
         return self.app
 
     def get_handlers(self):
-        from cloudumi_common.handlers.base import BaseJSONHandler
+        from common.handlers.base import BaseJSONHandler
 
         class JSONHandlerExample(BaseJSONHandler):
             def __init__(self, *args, **kwargs):
-                from cloudumi_common.lib.auth import mk_jwt_validator
+                from common.lib.auth import mk_jwt_validator
 
                 TEST_VALIDATOR = mk_jwt_validator(
                     TEST_SECRET, {"alg": {"enum": TEST_ALG}}, {}
@@ -37,7 +37,7 @@ class TestBaseJSONHandler(ConsoleMeAsyncHTTPTestCase):
             allowed_methods = ["GET", "PUT"]
 
             def __init__(self, *args, **kwargs):
-                from cloudumi_common.lib.auth import mk_jwt_validator
+                from common.lib.auth import mk_jwt_validator
 
                 TEST_VALIDATOR = mk_jwt_validator(
                     TEST_SECRET, {"alg": {"enum": TEST_ALG}}, {}

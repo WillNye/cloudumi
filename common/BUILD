@@ -11,6 +11,10 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+exports_files(
+    ["models.py"],
+)
+
 py_library(
     name = "lib",
     data = [],

@@ -91,7 +91,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
     def test_delete_user_forbidden(self):
         import boto3
 
-        from cloudumi_common.config import config
+        from common.config import config
 
         user_name = "test_delete_user_forbidden"
         iam = boto3.client(
@@ -118,7 +118,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
     def test_delete_user_allowed(self):
         import boto3
 
-        from cloudumi_common.config import config
+        from common.config import config
 
         user_name = "test_delete_user_allowed"
         iam = boto3.client(

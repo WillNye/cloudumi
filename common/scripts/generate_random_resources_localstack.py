@@ -7,13 +7,13 @@ from string import ascii_lowercase
 
 from asgiref.sync import async_to_sync
 
-from cloudumi_common.config import config
-from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
-from cloudumi_common.lib.aws.session import get_session_for_tenant
-from cloudumi_common.lib.tenants import get_all_hosts
+from common.config import config
+from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.aws.session import get_session_for_tenant
+from common.lib.tenants import get_all_hosts
 
 # TODO: Generate fake cloudtrail messages for SQS
-from cloudumi_common.lib.timeout import Timeout
+from common.lib.timeout import Timeout
 
 disable_creation_for_real_aws = True
 hosts = get_all_hosts()

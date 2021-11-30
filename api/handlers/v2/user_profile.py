@@ -1,17 +1,17 @@
 from typing import Dict
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseAPIV1Handler
-from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
-from cloudumi_common.lib.auth import (
+from common.config import config
+from common.handlers.base import BaseAPIV1Handler
+from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.auth import (
     can_admin_policies,
     can_create_roles,
     can_delete_iam_principals,
     can_edit_dynamic_config,
 )
-from cloudumi_common.lib.generic import get_random_security_logo, is_in_group
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.v2.user_profile import get_custom_page_header
+from common.lib.generic import get_random_security_logo, is_in_group
+from common.lib.plugins import get_plugin_by_name
+from common.lib.v2.user_profile import get_custom_page_header
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()

@@ -7,7 +7,7 @@ from tests.util import ConsoleMeAsyncHTTPTestCase
 
 class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         config.CONFIG.config["site_configs"][host]["auth"][
             "get_user_by_password"
@@ -20,7 +20,7 @@ class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def tearDown(self) -> None:
-        from cloudumi_common.config import config
+        from common.config import config
 
         config.CONFIG.config["site_configs"][host]["auth"][
             "get_user_by_password"
@@ -70,7 +70,7 @@ class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
 
 class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         config.CONFIG.config["site_configs"][host]["auth"][
             "get_user_by_password"
@@ -81,7 +81,7 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def tearDown(self) -> None:
-        from cloudumi_common.config import config
+        from common.config import config
 
         config.CONFIG.config["site_configs"][host]["auth"][
             "get_user_by_password"
@@ -108,7 +108,7 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
         )
 
     def test_login_post_invalid_password(self):
-        from cloudumi_common.lib.dynamo import UserDynamoHandler
+        from common.lib.dynamo import UserDynamoHandler
 
         ddb = UserDynamoHandler(host=host)
         ddb.create_user(
@@ -133,7 +133,7 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
         )
 
     def test_login_post_success(self):
-        from cloudumi_common.lib.dynamo import UserDynamoHandler
+        from common.lib.dynamo import UserDynamoHandler
 
         ddb = UserDynamoHandler(host=host)
         ddb.create_user(
@@ -189,8 +189,8 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
         )
 
         # Verify new user works
-        from cloudumi_common.lib.dynamo import UserDynamoHandler
-        from cloudumi_common.models import LoginAttemptModel
+        from common.lib.dynamo import UserDynamoHandler
+        from common.models import LoginAttemptModel
 
         ddb = UserDynamoHandler(host=host)
         login_attempt_success = LoginAttemptModel(

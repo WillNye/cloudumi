@@ -104,7 +104,7 @@ from cloudumi_api.handlers.v3.integrations.aws import AwsIntegrationHandler
 from cloudumi_api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationHandler,
 )
-from cloudumi_common.config import config
+from common.config import config
 from cloudumi_saml.handlers.v1.saml import SamlHandler
 
 log = config.get_logger()

@@ -17,7 +17,7 @@ class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def test_policies_api(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         headers = {
             config.get_host_specific_key(
@@ -40,7 +40,7 @@ class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(first_entity["account_name"], "default_account")
 
     def test_policies_check_api(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         headers = {
             config.get_host_specific_key(

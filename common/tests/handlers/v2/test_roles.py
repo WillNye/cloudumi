@@ -7,7 +7,7 @@ from tests.util import ConsoleMeAsyncHTTPTestCase
 
 class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         self.config = config
         from cloudumi_api.routes import make_app
@@ -99,7 +99,7 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
 
 class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         self.config = config
         from cloudumi_api.routes import make_app
@@ -186,7 +186,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
     def test_delete_authorized_user_valid_role(self, mock_can_delete_iam_principals):
         import boto3
 
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",
@@ -257,7 +257,7 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
     def test_clone_authorized_user(self, mock_can_create_roles):
         import boto3
 
-        from cloudumi_common.config import config
+        from common.config import config
 
         mock_can_create_roles.return_value = True
         input_body = {

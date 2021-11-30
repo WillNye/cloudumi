@@ -1,9 +1,9 @@
 from typing import Any, Dict, List
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseAPIV2Handler
-from cloudumi_common.lib.auth import can_admin_policies
-from cloudumi_common.lib.defaults import (
+from common.config import config
+from common.handlers.base import BaseAPIV2Handler
+from common.lib.auth import can_admin_policies
+from common.lib.defaults import (
     PERMISSION_TEMPLATE_DEFAULTS,
     SELF_SERVICE_IAM_DEFAULTS,
 )

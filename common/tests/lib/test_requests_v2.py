@@ -9,8 +9,8 @@ from pydantic import ValidationError
 from tests.conftest import create_future
 from tests.globals import host
 
-from cloudumi_common.lib.assume_role import boto3_cached_conn
-from cloudumi_common.models import (
+from common.lib.assume_role import boto3_cached_conn
+from common.models import (
     Action,
     AssumeRolePolicyChangeModel,
     ChangeModelArray,
@@ -102,7 +102,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.maxDiff = None
         from botocore.exceptions import ClientError
 
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",
@@ -123,13 +123,13 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         role_name = test_role_name
-        from cloudumi_common.lib.aws.utils import delete_iam_role
+        from common.lib.aws.utils import delete_iam_role
 
         await delete_iam_role("123456789012", role_name, "consoleme-unit-test", host)
 
     async def test_validate_inline_policy_change(self):
-        from cloudumi_common.exceptions.exceptions import InvalidRequestParameter
-        from cloudumi_common.lib.v2.requests import validate_inline_policy_change
+        from common.exceptions.exceptions import InvalidRequestParameter
+        from common.lib.v2.requests import validate_inline_policy_change
 
         role = ExtendedAwsPrincipalModel(
             name="role_name",
@@ -279,8 +279,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_validate_managed_policy_change(self):
-        from cloudumi_common.exceptions.exceptions import InvalidRequestParameter
-        from cloudumi_common.lib.v2.requests import validate_managed_policy_change
+        from common.exceptions.exceptions import InvalidRequestParameter
+        from common.lib.v2.requests import validate_managed_policy_change
 
         role = ExtendedAwsPrincipalModel(
             name="role_name",
@@ -357,8 +357,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_validate_managed_policy_resource_change(self):
-        from cloudumi_common.exceptions.exceptions import InvalidRequestParameter
-        from cloudumi_common.lib.v2.requests import (
+        from common.exceptions.exceptions import InvalidRequestParameter
+        from common.lib.v2.requests import (
             validate_managed_policy_resource_change,
         )
 
@@ -433,8 +433,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_validate_permissions_boundary_change(self):
-        from cloudumi_common.exceptions.exceptions import InvalidRequestParameter
-        from cloudumi_common.lib.v2.requests import validate_permissions_boundary_change
+        from common.exceptions.exceptions import InvalidRequestParameter
+        from common.lib.v2.requests import validate_permissions_boundary_change
 
         role = ExtendedAwsPrincipalModel(
             name="role_name",
@@ -502,8 +502,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_validate_assume_role_policy_change(self):
-        from cloudumi_common.exceptions.exceptions import InvalidRequestParameter
-        from cloudumi_common.lib.v2.requests import validate_assume_role_policy_change
+        from common.exceptions.exceptions import InvalidRequestParameter
+        from common.lib.v2.requests import validate_assume_role_policy_change
 
         role = ExtendedAwsPrincipalModel(
             name="role_name",
@@ -576,8 +576,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_generate_resource_policies(self):
-        from cloudumi_common.lib.redis import RedisHandler
-        from cloudumi_common.lib.v2.requests import generate_resource_policies
+        from common.lib.redis import RedisHandler
+        from common.lib.v2.requests import generate_resource_policies
 
         # Redis is globally mocked. Let's store and retrieve a fake value
         red = RedisHandler().redis_sync(host)
@@ -793,8 +793,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         red.delete(f"{host}_AWSCONFIG_RESOURCE_CACHE")
 
     async def test_apply_changes_to_role_inline_policy(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_changes_to_role
+        from common.config import config
+        from common.lib.v2.requests import apply_changes_to_role
 
         inline_policy_change = {
             "principal": {
@@ -956,8 +956,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             self.assertIn("not attached to role", str(e))
 
     async def test_apply_changes_to_role_managed_policy(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_changes_to_role
+        from common.config import config
+        from common.lib.v2.requests import apply_changes_to_role
 
         managed_policy_change = {
             "principal": {
@@ -1079,8 +1079,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(role_attached_policies.get("AttachedPolicies")), 0)
 
     async def test_apply_changes_to_role_assume_role_policy(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_changes_to_role
+        from common.config import config
+        from common.lib.v2.requests import apply_changes_to_role
 
         assume_role_policy_change = {
             "principal": {
@@ -1158,7 +1158,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_apply_changes_to_role_unsupported_change(self):
-        from cloudumi_common.lib.v2.requests import apply_changes_to_role
+        from common.lib.v2.requests import apply_changes_to_role
 
         resource_policy_change = {
             "principal": {
@@ -1219,8 +1219,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertIn("not supported", dict(response.action_results[0]).get("message"))
 
     async def test_apply_specific_change_to_role(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_changes_to_role
+        from common.config import config
+        from common.lib.v2.requests import apply_changes_to_role
 
         assume_role_policy_change = {
             "principal": {
@@ -1347,8 +1347,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_populate_old_policies(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import populate_old_policies
+        from common.config import config
+        from common.lib.v2.requests import populate_old_policies
 
         client = boto3.client(
             "iam",
@@ -1446,8 +1446,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_populate_old_managed_policies(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import populate_old_managed_policies
+        from common.config import config
+        from common.lib.v2.requests import populate_old_managed_policies
 
         client = boto3.client(
             "iam",
@@ -1528,8 +1528,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_apply_managed_policy_resource_change(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_managed_policy_resource_change
+        from common.config import config
+        from common.lib.v2.requests import apply_managed_policy_resource_change
 
         client = boto3.client(
             "iam",
@@ -1666,7 +1666,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     # TODO: tag_policy hasn't been implemented in moto3 yet (https://github.com/spulec/moto/blob/master/IMPLEMENTATION_COVERAGE.md)
     # This test will have to wait until it has been implemented
     # async def test_apply_managed_policy_resource_tag_change(self):
-    #     from cloudumi_common.lib.v2.requests import apply_managed_policy_resource_tag_change
+    #     from common.lib.v2.requests import apply_managed_policy_resource_tag_change
     #
     #     client = boto3.client("iam", region_name="us-east-1", **config.get_host_specific_key(f"site_configs.{host}.boto3.client_kwargs", host, {}))
     #
@@ -1723,7 +1723,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     #     self.assertEqual(1, len(policy_response))
 
     async def test_apply_resource_policy_change_unsupported(self):
-        from cloudumi_common.lib.v2.requests import apply_resource_policy_change
+        from common.lib.v2.requests import apply_resource_policy_change
 
         resource_policy_change = {
             "principal": {
@@ -1788,8 +1788,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertIn("not supported", dict(response.action_results[0]).get("message"))
 
     async def test_apply_resource_policy_change_iam(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_resource_policy_change
+        from common.config import config
+        from common.lib.v2.requests import apply_resource_policy_change
 
         resource_policy_change = {
             "principal": {
@@ -1894,8 +1894,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(Status.applied, resource_policy_change_model.status)
 
     async def test_apply_resource_policy_change_s3(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_resource_policy_change
+        from common.config import config
+        from common.lib.v2.requests import apply_resource_policy_change
 
         resource_policy_change = {
             "principal": {
@@ -2005,8 +2005,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_apply_resource_policy_change_sqs(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_resource_policy_change
+        from common.config import config
+        from common.lib.v2.requests import apply_resource_policy_change
 
         resource_policy_change = {
             "principal": {
@@ -2112,8 +2112,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_apply_resource_policy_change_sns(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.v2.requests import apply_resource_policy_change
+        from common.config import config
+        from common.lib.v2.requests import apply_resource_policy_change
 
         resource_policy_change = {
             "principal": {
@@ -2215,12 +2215,12 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model.policy.policy_document,
         )
 
-    @patch("cloudumi_common.lib.v2.requests.send_communications_new_comment")
-    @patch("cloudumi_common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    @patch("common.lib.v2.requests.send_communications_new_comment")
+    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_add_comment(
         self, mock_dynamo_write, mock_send_comment
     ):
-        from cloudumi_common.lib.v2.requests import (
+        from common.lib.v2.requests import (
             parse_and_apply_policy_request_modification,
         )
 
@@ -2264,11 +2264,11 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(comment.user_email, "user2@example.com")
         self.assertEqual(comment.text, "Sample comment")
 
-    @patch("cloudumi_common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_update_change(
         self, mock_dynamo_write
     ):
-        from cloudumi_common.lib.v2.requests import (
+        from common.lib.v2.requests import (
             parse_and_apply_policy_request_modification,
         )
 
@@ -2301,7 +2301,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         mock_dynamo_write.return_value = create_future(None)
 
         # Trying to update while not being authorized
-        from cloudumi_common.exceptions.exceptions import Unauthorized
+        from common.exceptions.exceptions import Unauthorized
 
         with pytest.raises(Unauthorized) as e:
             await parse_and_apply_policy_request_modification(
@@ -2315,7 +2315,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             self.assertIn("Unauthorized", str(e))
 
         # Trying to update a non-existent change
-        from cloudumi_common.exceptions.exceptions import NoMatchingRequest
+        from common.exceptions.exceptions import NoMatchingRequest
 
         with pytest.raises(NoMatchingRequest) as e:
             await parse_and_apply_policy_request_modification(
@@ -2347,21 +2347,21 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             updated_policy_doc,
         )
 
-    @patch("cloudumi_common.lib.v2.requests.populate_old_policies")
-    @patch("cloudumi_common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
-    @patch("cloudumi_common.lib.v2.requests.can_admin_policies")
+    @patch("common.lib.v2.requests.populate_old_policies")
+    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    @patch("common.lib.v2.requests.can_admin_policies")
     async def test_parse_and_apply_policy_request_modification_apply_change(
         self,
         can_admin_policies,
         mock_dynamo_write,
         mock_populate_old_policies,
     ):
-        from cloudumi_common.config import config
-        from cloudumi_common.exceptions.exceptions import (
+        from common.config import config
+        from common.exceptions.exceptions import (
             NoMatchingRequest,
             Unauthorized,
         )
-        from cloudumi_common.lib.v2.requests import (
+        from common.lib.v2.requests import (
             parse_and_apply_policy_request_modification,
         )
 
@@ -2463,17 +2463,17 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     @patch(
-        "cloudumi_common.lib.v2.requests.send_communications_policy_change_request_v2"
+        "common.lib.v2.requests.send_communications_policy_change_request_v2"
     )
-    @patch("cloudumi_common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_cancel_request(
         self, mock_dynamo_write, mock_send_email
     ):
-        from cloudumi_common.exceptions.exceptions import (
+        from common.exceptions.exceptions import (
             InvalidRequestParameter,
             Unauthorized,
         )
-        from cloudumi_common.lib.v2.requests import (
+        from common.lib.v2.requests import (
             parse_and_apply_policy_request_modification,
         )
 
@@ -2543,18 +2543,18 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(RequestStatus.cancelled, extended_request.request_status)
 
     @patch(
-        "cloudumi_common.lib.v2.requests.send_communications_policy_change_request_v2"
+        "common.lib.v2.requests.send_communications_policy_change_request_v2"
     )
-    @patch("cloudumi_common.lib.v2.requests.can_move_back_to_pending_v2")
-    @patch("cloudumi_common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    @patch("common.lib.v2.requests.can_move_back_to_pending_v2")
+    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_reject_and_move_back_to_pending_request(
         self, mock_dynamo_write, mock_move_back_to_pending, mock_send_email
     ):
-        from cloudumi_common.exceptions.exceptions import (
+        from common.exceptions.exceptions import (
             InvalidRequestParameter,
             Unauthorized,
         )
-        from cloudumi_common.lib.v2.requests import (
+        from common.lib.v2.requests import (
             parse_and_apply_policy_request_modification,
         )
 
@@ -2651,15 +2651,15 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(RequestStatus.pending, extended_request.request_status)
 
     @patch(
-        "cloudumi_common.lib.v2.requests.send_communications_policy_change_request_v2"
+        "common.lib.v2.requests.send_communications_policy_change_request_v2"
     )
     @patch(
         "cloudumi_plugins.plugins.aws.aws.Aws.fetch_iam_role",
     )
-    @patch("cloudumi_common.lib.v2.requests.populate_old_policies")
-    @patch("cloudumi_common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
-    @patch("cloudumi_common.lib.v2.requests.can_admin_policies")
-    @patch("cloudumi_common.lib.v2.requests.can_update_cancel_requests_v2")
+    @patch("common.lib.v2.requests.populate_old_policies")
+    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    @patch("common.lib.v2.requests.can_admin_policies")
+    @patch("common.lib.v2.requests.can_update_cancel_requests_v2")
     async def test_parse_and_apply_policy_request_modification_approve_request(
         self,
         mock_can_update_cancel_requests_v2,
@@ -2671,10 +2671,10 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     ):
         from asgiref.sync import sync_to_async
 
-        from cloudumi_common.config import config
-        from cloudumi_common.exceptions.exceptions import Unauthorized
-        from cloudumi_common.lib.redis import RedisHandler
-        from cloudumi_common.lib.v2.requests import (
+        from common.config import config
+        from common.exceptions.exceptions import Unauthorized
+        from common.lib.redis import RedisHandler
+        from common.lib.v2.requests import (
             parse_and_apply_policy_request_modification,
         )
 

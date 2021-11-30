@@ -4,11 +4,11 @@ import pytz
 from asgiref.sync import sync_to_async
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseHandler
-from cloudumi_common.lib.jwt import generate_jwt_token
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.saml import init_saml_auth, prepare_tornado_request_for_saml
+from common.config import config
+from common.handlers.base import BaseHandler
+from common.lib.jwt import generate_jwt_token
+from common.lib.plugins import get_plugin_by_name
+from common.lib.saml import init_saml_auth, prepare_tornado_request_for_saml
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()

@@ -1,9 +1,9 @@
 import sys
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseHandler
-from cloudumi_common.lib.web import handle_generic_error_response
-from cloudumi_common.models import WebResponse
+from common.config import config
+from common.handlers.base import BaseHandler
+from common.lib.web import handle_generic_error_response
+from common.models import WebResponse
 
 log = config.get_logger()
 

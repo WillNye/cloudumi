@@ -5,11 +5,11 @@ from tests.conftest import create_future
 from tests.globals import host
 from tests.util import ConsoleMeAsyncHTTPTestCase
 
-from cloudumi_common.lib.self_service.models import (
+from common.lib.self_service.models import (
     SelfServiceTypeaheadModel,
     SelfServiceTypeaheadModelArray,
 )
-from cloudumi_common.models import AwsResourcePrincipalModel
+from common.models import AwsResourcePrincipalModel
 
 
 class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
@@ -26,7 +26,7 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
     #     MockBaseHandler.authorization_flow,
     # )
     def test_typeahead_get(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         headers = {
             config.get_host_specific_key(
@@ -36,7 +36,7 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
                 f"site_configs.{host}.auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.redis import RedisHandler
 
         red = RedisHandler().redis_sync(host)
         red.hmset(
@@ -115,7 +115,7 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(len(responseJSON), 2)
 
     def test_cache_self_service_template_and_typeahead(self):
-        from cloudumi_common.lib.templated_resources import (
+        from common.lib.templated_resources import (
             TemplatedFileModelArray,
             TemplateFile,
         )
@@ -152,20 +152,20 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
         patch_cache_resource_templates_for_repository = patch(
-            "cloudumi_common.lib.templated_resources.cache_resource_templates_for_repository",
+            "common.lib.templated_resources.cache_resource_templates_for_repository",
             Mock(return_value=create_future(mock_template_file_model_array)),
         )
 
         # Cache resource templates, but let's not go down the rabbit hole of trying to mock a Git repo
         patch_cache_resource_templates_for_repository.start()
-        from cloudumi_common.lib.templated_resources import cache_resource_templates
+        from common.lib.templated_resources import cache_resource_templates
 
         result = async_to_sync(cache_resource_templates)(host)
         patch_cache_resource_templates_for_repository.stop()
         self.assertEqual(result, mock_template_file_model_array)
 
         # Retrieve cached resource templates and ensure it is correct
-        from cloudumi_common.lib.templated_resources import (
+        from common.lib.templated_resources import (
             retrieve_cached_resource_templates,
         )
 
@@ -173,7 +173,7 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(result, mock_template_file_model_array)
 
         # Cache and verify Self Service Typeahead
-        from cloudumi_common.lib.self_service.typeahead import (
+        from common.lib.self_service.typeahead import (
             cache_self_service_typeahead,
         )
 
@@ -197,7 +197,7 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertIn(mock_template_typeahead_model, result.typeahead_entries)
 
         # Now let's mock the web requests
-        from cloudumi_common.config import config
+        from common.config import config
 
         headers = {
             config.get_host_specific_key(

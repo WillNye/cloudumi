@@ -1,4 +1,4 @@
-from cloudumi_common.handlers.base import BaseHandler
+from common.handlers.base import BaseHandler
 
 
 class IdentityUserHandler(BaseHandler):

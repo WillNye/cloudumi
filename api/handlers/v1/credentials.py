@@ -5,13 +5,13 @@ import ujson as json
 from asgiref.sync import sync_to_async
 from marshmallow import Schema, ValidationError, fields, validates_schema
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import CertTooOldException
-from cloudumi_common.handlers.base import BaseMtlsHandler
-from cloudumi_common.lib.account_indexers import get_cloud_account_model_array
-from cloudumi_common.lib.duo import duo_mfa_user
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.models import Environment
+from common.config import config
+from common.exceptions.exceptions import CertTooOldException
+from common.handlers.base import BaseMtlsHandler
+from common.lib.account_indexers import get_cloud_account_model_array
+from common.lib.duo import duo_mfa_user
+from common.lib.plugins import get_plugin_by_name
+from common.models import Environment
 
 log = config.get_logger()
 

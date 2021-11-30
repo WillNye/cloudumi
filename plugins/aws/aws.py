@@ -10,15 +10,15 @@ from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient
 from tornado.httputil import url_concat
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import UserRoleNotAssumableYet
-from cloudumi_common.lib.assume_role import boto3_cached_conn
-from cloudumi_common.lib.aws.sanitize import sanitize_session_name
-from cloudumi_common.lib.aws.utils import (
+from common.config import config
+from common.exceptions.exceptions import UserRoleNotAssumableYet
+from common.lib.assume_role import boto3_cached_conn
+from common.lib.aws.sanitize import sanitize_session_name
+from common.lib.aws.utils import (
     raise_if_background_check_required_and_no_background_check,
 )
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.policies import send_communications_policy_change_request_v2
+from common.lib.plugins import get_plugin_by_name
+from common.lib.policies import send_communications_policy_change_request_v2
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 

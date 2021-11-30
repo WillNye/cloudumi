@@ -1,4 +1,4 @@
-from cloudumi_common.lib.pydantic import BaseModel
+from common.lib.pydantic import BaseModel
 
 
 class NewTenantRegistration(BaseModel):

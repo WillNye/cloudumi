@@ -1,13 +1,13 @@
 import sys
 
 import ujson as json
-from cloudumi_identity.lib.groups.models import OktaIdentityProvider, User
-from cloudumi_identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
+from identity.lib.groups.models import OktaIdentityProvider, User
+from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 
-from cloudumi_common.config import config
-from cloudumi_common.lib.cache import store_json_results_in_redis_and_s3
-from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_common.lib.s3_helpers import get_s3_bucket_for_host
+from common.config import config
+from common.lib.cache import store_json_results_in_redis_and_s3
+from common.lib.dynamo import UserDynamoHandler
+from common.lib.s3_helpers import get_s3_bucket_for_host
 
 log = config.get_logger()
 

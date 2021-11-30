@@ -7,11 +7,11 @@ from tests.globals import host
 class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(cls):
-        from cloudumi_common.celery_tasks.celery_tasks import (
+        from common.celery_tasks.celery_tasks import (
             cache_iam_resources_across_accounts,
             cache_iam_resources_for_account,
         )
-        from cloudumi_common.config.config import CONFIG
+        from common.config.config import CONFIG
 
         old_config = copy.deepcopy(CONFIG.config)
         CONFIG.config = {
@@ -44,7 +44,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         pass
 
     async def test_generate_and_store_credential_authorization_mapping(self):
-        from cloudumi_common.lib.cloud_credential_authorization_mapping import (
+        from common.lib.cloud_credential_authorization_mapping import (
             RoleAuthorizations,
             generate_and_store_credential_authorization_mapping,
         )
@@ -271,7 +271,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(mapping.get(k), v)
 
     async def test_generate_and_store_reverse_authorization_mapping(self):
-        from cloudumi_common.lib.cloud_credential_authorization_mapping import (
+        from common.lib.cloud_credential_authorization_mapping import (
             RoleAuthorizations,
             generate_and_store_reverse_authorization_mapping,
         )
@@ -568,7 +568,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         self.assertDictEqual(reverse_mapping, expected)
 
     async def test_RoleTagAuthorizationMappingGenerator(self):
-        from cloudumi_common.lib.cloud_credential_authorization_mapping import (
+        from common.lib.cloud_credential_authorization_mapping import (
             RoleAuthorizations,
             RoleTagAuthorizationMappingGenerator,
         )
@@ -783,7 +783,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(authorization_mapping.get(k), v)
 
     async def test_DynamicConfigAuthorizationMappingGenerator(self):
-        from cloudumi_common.lib.cloud_credential_authorization_mapping import (
+        from common.lib.cloud_credential_authorization_mapping import (
             DynamicConfigAuthorizationMappingGenerator,
             RoleAuthorizations,
         )
@@ -813,7 +813,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(authorization_mapping.get(k), v)
 
     async def test_InternalPluginAuthorizationMappingGenerator(self):
-        from cloudumi_common.lib.cloud_credential_authorization_mapping import (
+        from common.lib.cloud_credential_authorization_mapping import (
             InternalPluginAuthorizationMappingGenerator,
             RoleAuthorizations,
         )

@@ -6,9 +6,9 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 from asgiref.sync import async_to_sync
 
-from cloudumi_common.celery_tasks import celery_tasks as celery
-from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
-from cloudumi_common.lib.tenants import get_all_hosts
+from common.celery_tasks import celery_tasks as celery
+from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.tenants import get_all_hosts
 
 start_time = int(time.time())
 
@@ -41,7 +41,7 @@ args = parser.parse_args()
 if args.use_celery:
     # Initialize Redis locally. If use_celery is set to `True`, you must be running a celery beat and worker. You can
     # run this locally with the following command:
-    # `celery -A cloudumi_common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8`
+    # `celery -A common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8`
 
     celery.cache_iam_resources_across_accounts_for_all_hosts()
     celery.cache_s3_buckets_across_accounts_for_all_hosts()

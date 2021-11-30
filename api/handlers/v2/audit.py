@@ -1,12 +1,12 @@
 import sys
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseMtlsHandler
-from cloudumi_common.lib.cloud_credential_authorization_mapping import (
+from common.config import config
+from common.handlers.base import BaseMtlsHandler
+from common.lib.cloud_credential_authorization_mapping import (
     CredentialAuthorizationMapping,
 )
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.models import Status2, WebResponse
+from common.lib.plugins import get_plugin_by_name
+from common.models import Status2, WebResponse
 
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()

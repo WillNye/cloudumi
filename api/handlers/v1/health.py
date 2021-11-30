@@ -1,5 +1,5 @@
 """Health handler."""
-from cloudumi_common.handlers.base import TornadoRequestHandler
+from common.handlers.base import TornadoRequestHandler
 
 
 class HealthHandler(TornadoRequestHandler):

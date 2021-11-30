@@ -28,8 +28,8 @@ policy_document = json.dumps(
 
 class TestHandler(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.role_updater import handler
+        from common.config import config
+        from common.lib.role_updater import handler
 
         self.handler = handler
         client = boto3.client(
@@ -44,7 +44,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         role_name = "role_name"
-        from cloudumi_common.lib.aws.utils import delete_iam_role
+        from common.lib.aws.utils import delete_iam_role
 
         await delete_iam_role("123456789012", role_name, "consoleme-unit-test", host)
 
@@ -64,7 +64,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(role_name, "testrole")
 
     def test_update_inline_policy_attach(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",
@@ -83,7 +83,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         async_to_sync(self.handler.update_inline_policy)(client, role_name, policy)
 
     def test_update_inline_policy_attach_then_detach(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",
@@ -111,7 +111,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_update_managed_policy_attach(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",
@@ -128,7 +128,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         async_to_sync(self.handler.update_managed_policy)(client, role_name, policy)
 
     def test_update_managed_policy_attach_then_detach(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",
@@ -154,7 +154,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_update_assume_role_policy_document(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",
@@ -179,7 +179,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         )
 
     def test_add_tag(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",
@@ -193,7 +193,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         async_to_sync(self.handler.update_tags)(client, role_name, tag)
 
     def test_remove_tag(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         client = boto3.client(
             "iam",

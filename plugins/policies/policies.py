@@ -2,9 +2,9 @@ from typing import List
 
 import sentry_sdk
 
-from cloudumi_common.config import config
-from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_common.models import AppDetailsArray, AppDetailsModel, AwsPrincipalModel
+from common.config import config
+from common.lib.dynamo import UserDynamoHandler
+from common.models import AppDetailsArray, AppDetailsModel, AwsPrincipalModel
 
 
 class Policies:

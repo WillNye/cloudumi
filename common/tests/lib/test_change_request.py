@@ -1,7 +1,7 @@
 import tornado
 from tornado.testing import AsyncTestCase
 
-from cloudumi_common.models import (
+from common.models import (
     AwsResourcePrincipalModel,
     InlinePolicyChangeModel,
     ResourceModel,
@@ -11,14 +11,14 @@ from cloudumi_common.models import (
 class TestChangeRequestLib(AsyncTestCase):
     @tornado.testing.gen_test
     async def test_generate_policy_sid(self):
-        from cloudumi_common.lib.change_request import _generate_policy_sid
+        from common.lib.change_request import _generate_policy_sid
 
         random_sid = await _generate_policy_sid("username@example.com")
         self.assertRegex(random_sid, "^cmusername\d{10}[a-z]{4}$")  # noqa
 
     @tornado.testing.gen_test
     async def test_generate_policy_name(self):
-        from cloudumi_common.lib.change_request import generate_policy_name
+        from common.lib.change_request import generate_policy_name
 
         random_sid = await generate_policy_name(None, "username@example.com")
         self.assertRegex(random_sid, "^cm_username_\d{10}_[a-z]{4}$")  # noqa
@@ -29,7 +29,7 @@ class TestChangeRequestLib(AsyncTestCase):
     async def test_generate_inline_policy_model_from_statements(self):
         from copy import deepcopy
 
-        from cloudumi_common.lib.change_request import (
+        from common.lib.change_request import (
             _generate_inline_policy_model_from_statements,
         )
 
@@ -94,7 +94,7 @@ class TestChangeRequestLib(AsyncTestCase):
 
     @tornado.testing.gen_test
     async def test_generate_policy_statement(self):
-        from cloudumi_common.lib.change_request import _generate_policy_statement
+        from common.lib.change_request import _generate_policy_statement
 
         actions = ["iam:List*"]
         resources = ["arn:aws:iam::123456789012:role/resource1"]
@@ -114,7 +114,7 @@ class TestChangeRequestLib(AsyncTestCase):
 
     @tornado.testing.gen_test
     async def test_generate_inline_policy_change_model(self):
-        from cloudumi_common.lib.change_request import (
+        from common.lib.change_request import (
             _generate_inline_policy_change_model,
         )
 

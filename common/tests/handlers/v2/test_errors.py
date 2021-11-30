@@ -5,7 +5,7 @@ from tests.util import ConsoleMeAsyncHTTPTestCase
 
 class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_common.config import config
+        from common.config import config
 
         self.config = config
         from cloudumi_api.routes import make_app

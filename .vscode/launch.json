@@ -4,6 +4,25 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+  
+    {
+      "name": "PTVSD Attach",
+      "type": "python",
+      "request": "attach",
+      "port": 5724,
+      "host": "localhost",
+    },
+    {
+      "name": "Starlark Config: Session Attach",
+      "type": "starlark",
+      "request": "attach",
+    },
+    {
+      "name": "Starlark Config: CloudUmi Celery",
+      "type": "starlark",
+      "request": "launch",
+      "targetLabel": "//common/celery_tasks:lib",
+    },
     {
       "name": "S3 Config: CloudUmi Celery",
       "args": [

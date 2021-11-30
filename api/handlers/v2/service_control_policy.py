@@ -1,10 +1,10 @@
 import sentry_sdk
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import MustBeFte
-from cloudumi_common.handlers.base import BaseAPIV2Handler
-from cloudumi_common.lib.aws.utils import get_scps_for_account_or_ou
-from cloudumi_common.models import Status2, WebResponse
+from common.config import config
+from common.exceptions.exceptions import MustBeFte
+from common.handlers.base import BaseAPIV2Handler
+from common.lib.aws.utils import get_scps_for_account_or_ou
+from common.models import Status2, WebResponse
 
 log = config.get_logger()
 

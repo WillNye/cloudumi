@@ -13,7 +13,7 @@ mock_aws_config_resources_redis = MagicMock(
 
 class TestPoliciesLib(TestCase):
     def test_get_actions_for_resource(self):
-        from cloudumi_common.lib.policies import get_actions_for_resource
+        from common.lib.policies import get_actions_for_resource
 
         test_cases = [
             {
@@ -42,9 +42,9 @@ class TestPoliciesLib(TestCase):
             result = get_actions_for_resource(tc["arn"], tc["statement"])
             self.assertListEqual(tc["expected"], result, tc["description"])
 
-    @patch("cloudumi_common.lib.aws.utils.redis_hget", mock_aws_config_resources_redis)
+    @patch("common.lib.aws.utils.redis_hget", mock_aws_config_resources_redis)
     def test_get_resources_from_events(self):
-        from cloudumi_common.lib.policies import get_resources_from_events
+        from common.lib.policies import get_resources_from_events
 
         policy_changes = [
             {

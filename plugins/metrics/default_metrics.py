@@ -1,6 +1,6 @@
 from typing import Dict, Optional, Union
 
-from cloudumi_plugins.plugins.metrics.base_metric import Metric
+from plugins.metrics.base_metric import Metric
 
 
 class DefaultMetric(Metric):

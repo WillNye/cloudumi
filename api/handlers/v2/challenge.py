@@ -6,15 +6,15 @@ import pytz
 import tornado.escape
 import ujson as json
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import MissingConfigurationValue
-from cloudumi_common.handlers.base import BaseHandler, TornadoRequestHandler
-from cloudumi_common.lib.challenge import (
+from common.config import config
+from common.exceptions.exceptions import MissingConfigurationValue
+from common.handlers.base import BaseHandler, TornadoRequestHandler
+from common.lib.challenge import (
     delete_expired_challenges,
     retrieve_user_challenge,
 )
-from cloudumi_common.lib.jwt import generate_jwt_token
-from cloudumi_common.lib.redis import RedisHandler
+from common.lib.jwt import generate_jwt_token
+from common.lib.redis import RedisHandler
 
 log = config.get_logger()
 

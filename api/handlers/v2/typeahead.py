@@ -4,13 +4,13 @@ import sentry_sdk
 import ujson as json
 from asgiref.sync import sync_to_async
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import DataNotRetrievable
-from cloudumi_common.handlers.base import BaseAPIV2Handler
-from cloudumi_common.lib.aws.typeahead_cache import get_all_resource_arns
-from cloudumi_common.lib.cache import retrieve_json_data_from_redis_or_s3
-from cloudumi_common.lib.redis import RedisHandler
-from cloudumi_common.models import ArnArray
+from common.config import config
+from common.exceptions.exceptions import DataNotRetrievable
+from common.handlers.base import BaseAPIV2Handler
+from common.lib.aws.typeahead_cache import get_all_resource_arns
+from common.lib.cache import retrieve_json_data_from_redis_or_s3
+from common.lib.redis import RedisHandler
+from common.models import ArnArray
 
 
 class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):

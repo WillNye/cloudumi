@@ -212,7 +212,7 @@ class AWSHelper:
 
 @pytest.fixture(autouse=True, scope="session")
 def redis_prereqs(redis):
-    from cloudumi_common.lib.redis import RedisHandler
+    from common.lib.redis import RedisHandler
 
     red = RedisHandler().redis_sync(host)
     red.hmset(
@@ -238,7 +238,7 @@ def aws_credentials():
 @pytest.fixture(autouse=True, scope="session")
 def sts(aws_credentials):
     """Mocked STS Fixture."""
-    from cloudumi_common.config import config
+    from common.config import config
 
     with mock_sts():
         yield boto3.client(
@@ -253,7 +253,7 @@ def sts(aws_credentials):
 @pytest.fixture(autouse=True, scope="session")
 def ec2(aws_credentials):
     """Mocked ec2 Fixture."""
-    from cloudumi_common.config import config
+    from common.config import config
 
     with mock_sts():
         yield boto3.client(
@@ -268,7 +268,7 @@ def ec2(aws_credentials):
 @pytest.fixture(autouse=True, scope="session")
 def iam(aws_credentials):
     """Mocked IAM Fixture."""
-    from cloudumi_common.config import config
+    from common.config import config
 
     with mock_iam():
         yield boto3.client(
@@ -283,7 +283,7 @@ def iam(aws_credentials):
 @pytest.fixture(autouse=True, scope="session")
 def aws_config(aws_credentials):
     """Mocked Config Fixture."""
-    from cloudumi_common.config import config
+    from common.config import config
 
     with mock_config():
         yield boto3.client(
@@ -298,7 +298,7 @@ def aws_config(aws_credentials):
 @pytest.fixture(autouse=True, scope="session")
 def s3(aws_credentials):
     """Mocked S3 Fixture."""
-    from cloudumi_common.config import config
+    from common.config import config
 
     with mock_s3():
         yield boto3.client(
@@ -313,7 +313,7 @@ def s3(aws_credentials):
 @pytest.fixture(autouse=True, scope="session")
 def ses(aws_credentials):
     """Mocked SES Fixture."""
-    from cloudumi_common.config import config
+    from common.config import config
 
     with mock_ses():
         client = boto3.client(
@@ -330,7 +330,7 @@ def ses(aws_credentials):
 @pytest.fixture(autouse=True, scope="session")
 def sqs(aws_credentials):
     """Mocked SQS Fixture."""
-    from cloudumi_common.config import config
+    from common.config import config
 
     with mock_sqs():
         yield boto3.client(
@@ -345,7 +345,7 @@ def sqs(aws_credentials):
 @pytest.fixture(autouse=True, scope="session")
 def sns(aws_credentials):
     """Mocked S3 Fixture."""
-    from cloudumi_common.config import config
+    from common.config import config
 
     with mock_sns():
         yield boto3.client(
@@ -361,8 +361,8 @@ def sns(aws_credentials):
 def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_table):
     from asgiref.sync import async_to_sync
 
-    from cloudumi_common.config import config
-    from cloudumi_common.lib.cache import store_json_results_in_redis_and_s3
+    from common.config import config
+    from common.lib.cache import store_json_results_in_redis_and_s3
 
     global all_roles
     buckets = [
@@ -390,11 +390,11 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
             host=host,
         )
         return
-    from cloudumi_common.celery_tasks.celery_tasks import (
+    from common.celery_tasks.celery_tasks import (
         cache_iam_resources_for_account,
     )
-    from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
-    from cloudumi_common.lib.redis import RedisHandler
+    from common.lib.account_indexers import get_account_id_to_name_mapping
+    from common.lib.redis import RedisHandler
 
     red = RedisHandler().redis_sync(host)
 
@@ -426,7 +426,7 @@ def dynamodb(aws_credentials):
     """Mocked DynamoDB Fixture."""
     with mock_dynamodb2():
         # Remove the config value for the DynamoDB Server
-        from cloudumi_common.config.config import CONFIG
+        from common.config.config import CONFIG
 
         old_value = CONFIG.config.pop("_global_.dynamodb_server", None)
 
@@ -796,7 +796,7 @@ def dummy_requests_data(requests_table):
         "username": {"S": "test@user.xyz"},
         "reviewer_commnets": {"S": "All the access!"},
     }
-    from cloudumi_common.lib.dynamo import BaseDynamoHandler
+    from common.lib.dynamo import BaseDynamoHandler
 
     requests_table.put_item(
         TableName="consoleme_requests_global",
@@ -816,7 +816,7 @@ def dummy_users_data(users_table):
         "last_udpated": {"N": "1547848006"},
         "requests": {"L": [{"S": "abc-def-ghi"}]},
     }
-    from cloudumi_common.lib.dynamo import BaseDynamoHandler
+    from common.lib.dynamo import BaseDynamoHandler
 
     users_table.put_item(
         TableName="consoleme_users_multitenant",
@@ -1029,13 +1029,13 @@ class FakeRedis(redislite.StrictRedis):
 def redis(session_mocker):
     session_mocker.patch("redis.Redis", FakeRedis)
     session_mocker.patch("redis.StrictRedis", FakeRedis)
-    session_mocker.patch("cloudumi_common.lib.redis.redis.StrictRedis", FakeRedis)
-    session_mocker.patch("cloudumi_common.lib.redis.redis.Redis", FakeRedis)
+    session_mocker.patch("common.lib.redis.redis.StrictRedis", FakeRedis)
+    session_mocker.patch("common.lib.redis.redis.Redis", FakeRedis)
     session_mocker.patch(
-        "cloudumi_common.lib.redis.RedisHandler.redis_sync", return_value=FakeRedis()
+        "common.lib.redis.RedisHandler.redis_sync", return_value=FakeRedis()
     )
     session_mocker.patch(
-        "cloudumi_common.lib.redis.RedisHandler.redis", return_value=FakeRedis()
+        "common.lib.redis.RedisHandler.redis", return_value=FakeRedis()
     )
     return True
 
@@ -1109,7 +1109,7 @@ def parliament(session_mocker):
 
 @pytest.fixture(scope="session")
 def user_iam_role(iamrole_table, www_user):
-    from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
+    from common.lib.dynamo import IAMRoleDynamoHandler
 
     ddb = IAMRoleDynamoHandler(host)
     role_entry = {
@@ -1125,7 +1125,7 @@ def user_iam_role(iamrole_table, www_user):
 
 @pytest.fixture(autouse=True, scope="session")
 def mock_exception_stats():
-    p = patch("cloudumi_common.exceptions.exceptions.get_plugin_by_name")
+    p = patch("common.exceptions.exceptions.get_plugin_by_name")
 
     yield p.start()
 
@@ -1134,7 +1134,7 @@ def mock_exception_stats():
 
 @pytest.fixture(autouse=True, scope="session")
 def mock_celery_stats(mock_exception_stats):
-    p = patch("cloudumi_common.celery_tasks.celery_tasks.stats")
+    p = patch("common.celery_tasks.celery_tasks.stats")
 
     yield p.start()
 
@@ -1177,8 +1177,8 @@ def populate_caches(
         celery_tasks as default_celery_tasks,
     )
 
-    from cloudumi_common.celery_tasks import celery_tasks as celery
-    from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
+    from common.celery_tasks import celery_tasks as celery
+    from common.lib.account_indexers import get_account_id_to_name_mapping
 
     celery.cache_cloud_account_mapping(host)
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)

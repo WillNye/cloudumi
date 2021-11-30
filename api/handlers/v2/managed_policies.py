@@ -3,16 +3,16 @@ import tornado.escape
 import ujson as json
 from asgiref.sync import sync_to_async
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import MustBeFte
-from cloudumi_common.handlers.base import BaseAPIV2Handler
-from cloudumi_common.lib.aws.iam import (
+from common.config import config
+from common.exceptions.exceptions import MustBeFte
+from common.handlers.base import BaseAPIV2Handler
+from common.lib.aws.iam import (
     get_all_iam_managed_policies_for_account,
     get_managed_policy_document,
     get_role_managed_policy_documents,
     get_user_managed_policy_documents,
 )
-from cloudumi_common.models import Status2, WebResponse
+from common.models import Status2, WebResponse
 
 log = config.get_logger()
 

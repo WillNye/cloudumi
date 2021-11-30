@@ -6,16 +6,16 @@ import pytz
 import sentry_sdk
 from email_validator import validate_email
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseAPIV2Handler, TornadoRequestHandler
-from cloudumi_common.lib.auth import can_admin_all
+from common.config import config
+from common.handlers.base import BaseAPIV2Handler, TornadoRequestHandler
+from common.lib.auth import can_admin_all
 
-# from cloudumi_common.lib.cognito.auth import get_secret_hash
-from cloudumi_common.lib.dynamo import UserDynamoHandler
-from cloudumi_common.lib.jwt import generate_jwt_token
-from cloudumi_common.lib.password import check_password_strength
-from cloudumi_common.lib.web import handle_generic_error_response
-from cloudumi_common.models import (
+# from common.lib.cognito.auth import get_secret_hash
+from common.lib.dynamo import UserDynamoHandler
+from common.lib.jwt import generate_jwt_token
+from common.lib.password import check_password_strength
+from common.lib.web import handle_generic_error_response
+from common.models import (
     AuthenticationResponse,
     LoginAttemptModel,
     RegistrationAttemptModel,

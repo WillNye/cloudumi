@@ -6,8 +6,8 @@
 from botocore.exceptions import ClientError
 from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from cloudumi_common.config import config
-from cloudumi_common.lib.aws.session import restricted_get_session_for_saas
+from common.config import config
+from common.lib.aws.session import restricted_get_session_for_saas
 
 streams_enabled = config.get("_global_.dynamodb.streams_enabled", True)
 ttl_enabled = config.get("_global_.dynamodb.ttl_enabled", True)

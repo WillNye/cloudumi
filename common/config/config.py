@@ -22,9 +22,9 @@ from asgiref.sync import async_to_sync
 from pytz import timezone
 from ruamel.yaml import YAML
 
-from cloudumi_common.lib.aws.aws_secret_manager import get_aws_secret
-from cloudumi_common.lib.aws.split_s3_path import split_s3_path
-from cloudumi_common.lib.singleton import Singleton
+from common.lib.aws.aws_secret_manager import get_aws_secret
+from common.lib.aws.split_s3_path import split_s3_path
+from common.lib.singleton import Singleton
 
 main_exit_flag = threading.Event()
 
@@ -69,7 +69,7 @@ def refresh_dynamic_config(host, ddb=None):
     if not ddb:
         # This function runs frequently. We provide the option to pass in a UserDynamoHandler
         # so we don't need to import on every invocation
-        from cloudumi_common.lib.dynamo import UserDynamoHandler
+        from common.lib.dynamo import UserDynamoHandler
 
         # TODO: Figure out host
         ddb = UserDynamoHandler(host)
@@ -107,7 +107,7 @@ class Configuration(metaclass=Singleton):
 
     def load_config_from_dynamo(self, host, ddb=None, red=None):
         if not ddb:
-            from cloudumi_common.lib.dynamo import UserDynamoHandler
+            from common.lib.dynamo import UserDynamoHandler
 
             ddb = UserDynamoHandler(host=host)
 
@@ -116,7 +116,7 @@ class Configuration(metaclass=Singleton):
 
     def set_config_for_host(self, host, dynamic_config, red=None):
         if not red:
-            from cloudumi_common.lib.redis import RedisHandler
+            from common.lib.redis import RedisHandler
 
             red = RedisHandler().redis_sync(host)
         if dynamic_config and dynamic_config != self.get_host_specific_key(
@@ -143,7 +143,7 @@ class Configuration(metaclass=Singleton):
         self, log_data: Dict[str, Any], host: str, red=None
     ):
         if not red:
-            from cloudumi_common.lib.redis import RedisHandler
+            from common.lib.redis import RedisHandler
 
             red = RedisHandler().redis_sync(host)
         dynamic_config = red.get(f"{host}_DYNAMIC_CONFIG_CACHE")
@@ -165,8 +165,8 @@ class Configuration(metaclass=Singleton):
     def load_config_from_dynamo_bg_thread(self):
         """If enabled, we can load a configuration dynamically from Dynamo at a certain time interval. This reduces
         the need for code redeploys to make configuration changes"""
-        from cloudumi_common.lib.dynamo import UserDynamoHandler
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.dynamo import UserDynamoHandler
+        from common.lib.redis import RedisHandler
 
         while threading.main_thread().is_alive():
             for host, _ in self.get("site_configs", {}).items():
@@ -222,7 +222,7 @@ class Configuration(metaclass=Singleton):
         Loads tenant static configurations from DynamoDB and sets them in our giant configuration dictionary
         :return:
         """
-        from cloudumi_common.lib.dynamo import RestrictedDynamoHandler
+        from common.lib.dynamo import RestrictedDynamoHandler
 
         ddb = RestrictedDynamoHandler()
         try:
@@ -249,7 +249,7 @@ class Configuration(metaclass=Singleton):
         """
         if not self.get("redis.use_redislite"):
             return
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.redis import RedisHandler
 
         red = RedisHandler().redis_sync("_global_")
         while threading.main_thread().is_alive():
@@ -296,8 +296,8 @@ class Configuration(metaclass=Singleton):
         validate_config(self.config)
 
     def reload_config(self):
-        from cloudumi_common.lib.dynamo import UserDynamoHandler
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.lib.dynamo import UserDynamoHandler
+        from common.lib.redis import RedisHandler
 
         # We don't want to start additional background threads when we're reloading static configuration.
         while threading.main_thread().is_alive():
@@ -503,7 +503,7 @@ class Configuration(metaclass=Singleton):
         current_time = int(time.time())
         last_updated = self.tenant_configs[host].get("last_updated", 0)
         if current_time - last_updated > 60:
-            from cloudumi_common.lib.redis import RedisHandler
+            from common.lib.redis import RedisHandler
 
             red = RedisHandler().redis_sync(host)
             tenant_config = json.loads(red.get(f"{host}_STATIC_CONFIGURATION") or "{}")
@@ -517,7 +517,7 @@ class Configuration(metaclass=Singleton):
         if current_time - last_updated > 60:
             config_item = self.get_tenant_static_config_from_dynamo(host)
             if config_item:
-                from cloudumi_common.lib.redis import RedisHandler
+                from common.lib.redis import RedisHandler
 
                 red = RedisHandler().redis_sync(host)
                 self.tenant_configs[host]["config"] = config_item

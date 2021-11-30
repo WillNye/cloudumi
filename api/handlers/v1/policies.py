@@ -4,12 +4,12 @@ from typing import Dict, List, Optional
 import ujson as json
 from policyuniverse.expander_minimizer import _expand_wildcard_action
 
-from cloudumi_common.config import config
-from cloudumi_common.exceptions.exceptions import InvalidRequestParameter, MustBeFte
-from cloudumi_common.handlers.base import BaseAPIV1Handler, BaseHandler, BaseMtlsHandler
-from cloudumi_common.lib.account_indexers import get_account_id_to_name_mapping
-from cloudumi_common.lib.cache import retrieve_json_data_from_redis_or_s3
-from cloudumi_common.lib.redis import redis_get, redis_hgetall
+from common.config import config
+from common.exceptions.exceptions import InvalidRequestParameter, MustBeFte
+from common.handlers.base import BaseAPIV1Handler, BaseHandler, BaseMtlsHandler
+from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.cache import retrieve_json_data_from_redis_or_s3
+from common.lib.redis import redis_get, redis_hgetall
 
 log = config.get_logger()
 

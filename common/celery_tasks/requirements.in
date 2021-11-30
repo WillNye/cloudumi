@@ -1,0 +1,6 @@
+asgiref
+billiard
+celery
+retrying
+sentry_sdk
+ujson

@@ -2,7 +2,7 @@ from asgiref.sync import async_to_sync
 from tests.globals import host, host_header
 from tornado.testing import AsyncHTTPTestCase
 
-from cloudumi_common.lib.jwt import generate_jwt_token
+from common.lib.jwt import generate_jwt_token
 
 
 def generate_jwt_token_for_testing(

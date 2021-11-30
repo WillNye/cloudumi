@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field, constr
 
-from cloudumi_common.lib.pydantic import BaseModel
+from common.lib.pydantic import BaseModel
 
 
 class ActionResult(BaseModel):

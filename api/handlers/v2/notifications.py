@@ -2,22 +2,22 @@ from typing import List
 
 import sentry_sdk
 
-from cloudumi_common.config import config
-from cloudumi_common.handlers.base import BaseAPIV2Handler
-from cloudumi_common.lib.generic import is_in_group
-from cloudumi_common.lib.notifications.models import (
+from common.config import config
+from common.handlers.base import BaseAPIV2Handler
+from common.lib.generic import is_in_group
+from common.lib.notifications.models import (
     ConsoleMeNotificationUpdateAction,
     ConsoleMeNotificationUpdateRequest,
     ConsoleMeUserNotification,
     GetNotificationsForUserResponse,
 )
-from cloudumi_common.lib.plugins import get_plugin_by_name
-from cloudumi_common.lib.v2.notifications import (
+from common.lib.plugins import get_plugin_by_name
+from common.lib.v2.notifications import (
     fetch_notification,
     get_notifications_for_user,
     write_notification,
 )
-from cloudumi_common.models import Status2, WebResponse
+from common.models import Status2, WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()

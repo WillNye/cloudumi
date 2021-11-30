@@ -22,57 +22,57 @@ ROLE = {
 
 class TestAwsLib(TestCase):
     def test_is_role_instance_profile(self):
-        from cloudumi_common.lib.aws.utils import is_role_instance_profile
+        from common.lib.aws.utils import is_role_instance_profile
 
         self.assertTrue(is_role_instance_profile(ROLE))
 
     def test_is_role_instance_profile_false(self):
-        from cloudumi_common.lib.aws.utils import is_role_instance_profile
+        from common.lib.aws.utils import is_role_instance_profile
 
         role = {"RoleName": "Test"}
         self.assertFalse(is_role_instance_profile(role))
 
     def test_role_newer_than_x_days(self):
-        from cloudumi_common.lib.aws.utils import role_newer_than_x_days
+        from common.lib.aws.utils import role_newer_than_x_days
 
         self.assertTrue(role_newer_than_x_days(ROLE, 30))
 
     def test_role_newer_than_x_days_false(self):
-        from cloudumi_common.lib.aws.utils import role_newer_than_x_days
+        from common.lib.aws.utils import role_newer_than_x_days
 
         self.assertFalse(role_newer_than_x_days(ROLE, 1))
 
     def test_role_has_managed_policy(self):
-        from cloudumi_common.lib.aws.utils import role_has_managed_policy
+        from common.lib.aws.utils import role_has_managed_policy
 
         self.assertTrue(role_has_managed_policy(ROLE, "Policy1"))
 
     def test_role_has_managed_policy_false(self):
-        from cloudumi_common.lib.aws.utils import role_has_managed_policy
+        from common.lib.aws.utils import role_has_managed_policy
 
         self.assertFalse(role_has_managed_policy(ROLE, "Policy3"))
 
     def test_role_has_tag(self):
-        from cloudumi_common.lib.aws.utils import role_has_tag
+        from common.lib.aws.utils import role_has_tag
 
         self.assertTrue(role_has_tag(ROLE, "tag1"))
         self.assertTrue(role_has_tag(ROLE, "tag1", "value1"))
 
     def test_role_has_tag_false(self):
-        from cloudumi_common.lib.aws.utils import role_has_tag
+        from common.lib.aws.utils import role_has_tag
 
         self.assertFalse(role_has_tag(ROLE, "tag2"))
         self.assertFalse(role_has_tag(ROLE, "tag2", "value1"))
         self.assertFalse(role_has_tag(ROLE, "tag1", "value2"))
 
     def test_apply_managed_policy_to_role(self):
-        from cloudumi_common.lib.aws.utils import apply_managed_policy_to_role
+        from common.lib.aws.utils import apply_managed_policy_to_role
 
         apply_managed_policy_to_role(ROLE, "policy-one", "session", host)
 
-    @patch("cloudumi_common.lib.aws.utils.redis_hget")
+    @patch("common.lib.aws.utils.redis_hget")
     def test_get_resource_account(self, mock_aws_config_resources_redis):
-        from cloudumi_common.lib.aws.utils import get_resource_account
+        from common.lib.aws.utils import get_resource_account
 
         mock_aws_config_resources_redis.return_value = create_future(None)
         test_cases = [
@@ -118,7 +118,7 @@ class TestAwsLib(TestCase):
         )
 
     def test_is_member_of_ou(self):
-        from cloudumi_common.lib.aws.utils import _is_member_of_ou
+        from common.lib.aws.utils import _is_member_of_ou
 
         loop = asyncio.get_event_loop()
         fake_org = {
@@ -154,8 +154,8 @@ class TestAwsLib(TestCase):
         self.assertEqual(ous, set())
 
     def test_scp_targets_account_or_ou(self):
-        from cloudumi_common.lib.aws.utils import _scp_targets_account_or_ou
-        from cloudumi_common.models import (
+        from common.lib.aws.utils import _scp_targets_account_or_ou
+        from common.models import (
             ServiceControlPolicyDetailsModel,
             ServiceControlPolicyModel,
             ServiceControlPolicyTargetModel,
@@ -217,8 +217,8 @@ class TestAwsLib(TestCase):
         self.assertFalse(result)
 
     def test_fetch_managed_policy_details(self):
-        from cloudumi_common.config import config
-        from cloudumi_common.lib.aws.utils import fetch_managed_policy_details
+        from common.config import config
+        from common.lib.aws.utils import fetch_managed_policy_details
 
         loop = asyncio.get_event_loop()
 
@@ -272,8 +272,8 @@ class TestAwsLib(TestCase):
         )
 
     def test_allowed_to_sync_role(self):
-        from cloudumi_common.config.config import CONFIG
-        from cloudumi_common.lib.aws.utils import allowed_to_sync_role
+        from common.config.config import CONFIG
+        from common.lib.aws.utils import allowed_to_sync_role
 
         old_config = copy.deepcopy(CONFIG.config)
         test_role_arn = "arn:aws:iam::111111111111:role/role-name-here-1"

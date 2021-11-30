@@ -17,7 +17,7 @@ class TestConfig(TestCase):
         tf.flush()
         config_file = tf.name
         os.environ["CONFIG_LOCATION"] = config_file
-        from cloudumi_common.config import config
+        from common.config import config
 
         async_to_sync(config.CONFIG.load_config)()
         self.assertEqual(config.get("_global_.config_item_a"), "b")
@@ -139,7 +139,7 @@ class TestConfig(TestCase):
 
         config_file = tf1.name
         os.environ["CONFIG_LOCATION"] = config_file
-        from cloudumi_common.config import config
+        from common.config import config
 
         async_to_sync(config.CONFIG.load_config)()
         del config.CONFIG.config["extends"]

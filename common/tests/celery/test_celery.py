@@ -14,14 +14,14 @@ sys.path.append(os.path.join(APP_ROOT, ".."))
 
 class TestCelerySync(TestCase):
     def setUp(self):
-        from cloudumi_common.celery_tasks import celery_tasks as celery
+        from common.celery_tasks import celery_tasks as celery
 
         self.celery = celery
 
     def cache_iam_resources_for_account(self):
-        from cloudumi_common.config.config import CONFIG
-        from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.config.config import CONFIG
+        from common.lib.dynamo import IAMRoleDynamoHandler
+        from common.lib.redis import RedisHandler
 
         red = RedisHandler().redis_sync(host)
 
@@ -90,7 +90,7 @@ class TestCelerySync(TestCase):
         self.assertEqual(
             res,
             {
-                "function": "cloudumi_common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts",
+                "function": "common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts",
                 "cache_key": "cache_iam_resources_for_account",
                 "num_roles": 15,
                 "num_accounts": 1,
@@ -100,7 +100,7 @@ class TestCelerySync(TestCase):
         self.assertEqual(
             res,
             {
-                "function": "cloudumi_common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts",
+                "function": "common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts",
                 "cache_key": "cache_iam_resources_for_account",
                 "num_roles": 15,
                 "num_accounts": 1,
@@ -112,8 +112,8 @@ class TestCelerySync(TestCase):
         CONFIG.config = old_config
 
     def test_clear_old_redis_iam_cache(self):
-        from cloudumi_common.config.config import CONFIG
-        from cloudumi_common.lib.redis import RedisHandler
+        from common.config.config import CONFIG
+        from common.lib.redis import RedisHandler
 
         red = RedisHandler().redis_sync(host)
 
@@ -196,7 +196,7 @@ class TestCelerySync(TestCase):
         self.assertEqual(
             res,
             {
-                "function": "cloudumi_common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes",
+                "function": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes",
                 "message": "Successfully checked role changes",
                 "num_roles_changed": 2,
             },
@@ -207,7 +207,7 @@ class TestCelerySync(TestCase):
         self.assertEqual(
             res,
             {
-                "function": "cloudumi_common.celery_tasks.celery_tasks.cache_cloudtrail_denies",
+                "function": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies",
                 "host": host,
                 "message": "Successfully cached cloudtrail denies",
                 "num_new_cloudtrail_denies": 1,

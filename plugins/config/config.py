@@ -1,7 +1,7 @@
 import os
 from typing import List
 
-from cloudumi_common.lib.aws.aws_secret_manager import get_aws_secret
+from common.lib.aws.aws_secret_manager import get_aws_secret
 
 
 def split_s3_path(s3_path):
