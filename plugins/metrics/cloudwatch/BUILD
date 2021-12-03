@@ -18,7 +18,7 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//common/cloudumi_plugins/cloudumi_plugins/plugins/metrics:lib",
+        "//plugins/metrics:lib",
         requirement("boto3"),
         requirement("sentry_sdk"),
     ],

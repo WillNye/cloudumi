@@ -17,7 +17,7 @@ container_layer(
 
 container_image(
     name = "common_docker",
-    base = "//base_docker:base_docker",
+    base = "//docker/base:base_docker",
     layers = [
     ],
     workdir = "/apps/common",
