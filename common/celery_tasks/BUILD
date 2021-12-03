@@ -1,6 +1,8 @@
 load("@rules_python//python:defs.bzl", "py_library")
-load("@rules_python//python:packaging.bzl", "py_wheel")
+load("@rules_python//python:packaging.bzl", "py_package","py_wheel")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
+#load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 filegroup(
     name = "src_files",
@@ -21,7 +23,14 @@ py_library(
     ],
     deps = [
         "//common/config:lib",
+        "//common/exceptions:lib",
         "//identity:lib",
+        "//plugins:lib",
+        "//plugins/auth:lib",
+        "//plugins/celery_tasks:lib",
+        "//plugins/config:lib",
+        "//plugins/metrics:lib",
+        "//util/log:lib",
         requirement("celery"),
         requirement("ujson"),
     ],
@@ -77,14 +86,67 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
-py_wheel(
-    name = "py_wheel",
-    distribution = "common_lib",
-    python_tag = "py3",
-    version = "$(VERSION)",
-    requires = [
+py_package(
+    name = "lib_pkg",
+    deps = [
+        ":lib",
+        "//common/config:lib",
+        "//common/exceptions:lib",
+        "//identity:lib",
+        "//plugins:lib",
+        "//plugins/auth:lib",
+        "//plugins/celery_tasks:lib",
+        "//plugins/config:lib",
+        "//plugins/metrics:lib",
+        "//util/log:lib",
         requirement("celery"),
-    ], 
-    deps = [":lib"],
+        requirement("ujson"),
+    ],
+    packages = [
+        "common/celery_tasks",
+    ],
+)
+
+py_wheel(
+    name = "wheel",
+    distribution = "cloudumi_common_celery_tasks",
+    python_tag = "py3",
+    version = "0.0.1",
+    # entry_points = {
+    #     "console_scripts": [""],
+    # },
+    deps = [":lib_pkg"],
+    requires = ["celery", "ujson"],
+    strip_path_prefixes = [
+    ],
+)
+
+container_layer(
+    name = "lib_layer",
+    files = [
+        ":lib",
+    ],
+    data_path = ".",
+    directory = "/",
+)
+
+container_image(
+    name = "container",
+    base = "//docker/base:base_docker",
+    files = [
+        "//configs/development_account:configs",
+    ],
+    layers = [
+        ":lib_layer",
+    ],
+    env = {
+        "TZ": "America/Los_Angeles",
+        "PYTHONPATH": "PYTHONPATH:/usr/lib/python3/dist-packages:/usr/local/lib/python3.9:/usr/lib/python3.9",
+    },
+    cmd = ["/usr/local/bin/python3", "run.py"],
+    ports = [],
+    #entrypoint = "./entrypoint.sh",
+    symlinks = { 
+    },
     tags = ["manual"],
 )

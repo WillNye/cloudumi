@@ -537,6 +537,7 @@ class Configuration(metaclass=Singleton):
         return value
 
     def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
+        # TODO: put into util/log
         """Get logger."""
         if self.log:
             return self.log
