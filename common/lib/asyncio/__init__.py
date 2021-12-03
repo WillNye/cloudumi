@@ -1,0 +1,112 @@
+import asyncio
+import multiprocessing as mp
+import os
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from typing import List
+
+from asgiref.sync import sync_to_async
+
+
+async def bound_fetch(sem, fn, args, kwargs):
+    # Getter function with semaphore.
+    async with sem:
+        return {
+            "fn": fn,
+            "args": args,
+            "kwargs": kwargs,
+            "result": await fn(*args, **kwargs),
+        }
+
+
+async def bound_fetch_sync(sem, fn, args, kwargs):
+    # Getter function with semaphore.
+    async with sem:
+        return {
+            "fn": fn,
+            "args": args,
+            "kwargs": kwargs,
+            "result": await sync_to_async(fn)(*args, **kwargs),
+        }
+
+
+async def run_in_parallel(task_list: List, threads=os.cpu_count(), sync=True):
+    async def run():
+        sem = asyncio.Semaphore(threads)
+        futures = []
+        for task in task_list:
+            if sync:
+                futures.append(
+                    asyncio.ensure_future(
+                        bound_fetch_sync(
+                            sem,
+                            task.get("fn"),
+                            task.get("args", ()),
+                            task.get("kwargs", {}),
+                        )
+                    )
+                )
+            else:
+                futures.append(
+                    asyncio.ensure_future(
+                        bound_fetch(
+                            sem,
+                            task.get("fn"),
+                            task.get("args", ()),
+                            task.get("kwargs", {}),
+                        )
+                    )
+                )
+        responses = asyncio.gather(*futures)
+        return await responses
+
+    return await run()
+
+
+def run_io_tasks_in_parallel(tasks):
+    results = []
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+        running_tasks = [executor.submit(task) for task in tasks]
+        for running_task in running_tasks:
+            result = running_task.result()
+            results.append(result)
+    return results
+
+
+async def run_io_tasks_in_parallel_v2(executor, tasks):
+    import functools
+
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(
+        None,
+        functools.partial(
+            update_contacts,
+            data={"email": email, "access_token": g.tokens["access_token"]},
+        ),
+    )
+    results = []
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+        running_tasks = [executor.submit(task) for task in tasks]
+        for running_task in running_tasks:
+            result = running_task.result()
+            results.append(result)
+    return results
+
+
+def run_cpu_tasks_in_parallel(tasks):
+    results = {}
+    with ProcessPoolExecutor() as executor:
+        running_tasks = [executor.submit(task) for task in tasks]
+        for running_task in running_tasks:
+            result = running_task.result()
+            results[running_task] = result
+    return results
+
+
+#
+# def run_cpu_tasks_in_parallel(tasks):
+#     qout = mp.Queue()
+#     running_tasks = [mp.Process(target=task) for task in tasks]
+#     for running_task in running_tasks:
+#         running_task.start()
+#     for running_task in running_tasks:
+#         running_task.join()
