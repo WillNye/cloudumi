@@ -1,6 +1,6 @@
 filegroup(
     name = "configs",
-    data = glob([
+    srcs = glob([
         "*.yaml",
         "saas_saml_cloudumi_com_certs/*.yaml",
         "ssas_auth0_cloudumi_com/*.yaml",

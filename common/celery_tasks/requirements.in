@@ -1,6 +1,7 @@
 asgiref
 billiard
 celery
+logmatic-python
 retrying
 sentry_sdk
 ujson
