@@ -1,0 +1,112 @@
+# This configuration is not working and I am not sure why
+#Oops, something went wrong
+#Provide your administrator with the following info:
+#No access
+#Request ID: c25c9776-d2d4-473e-bbf7-69503b84db02
+#HTTP status: 403
+
+site_configs:
+  aws_sso_cloudumi_com:
+    consoleme_s3_bucket: consolemecache
+    boto3:
+      client_kwargs:
+        # http://localhost:4568
+        endpoint_url: http://localstack3:4566
+      session_kwargs:
+        profile_name: localstack
+    dynamodb_server: http://cloudumi-dynamodb:8005 # Not allowed in non localhost configuration
+    url: https://aws_sso.cloudumi.com/ # You must have / at end of URL for AWS SSO
+    application_admin: consoleme_admins@example.com
+    environment: dev
+    development: true
+    challenge_url:
+      request_ip_must_match_challenge_creation_ip: true
+    auth:
+      get_user_by_saml: true
+      set_auth_cookie: true
+      force_redirect_to_identity_provider: false
+    get_user_by_saml_settings:
+      # On the provider, set ACS url to https://your_consoleme_url/saml/acs and saml audience to "https://your_consoleme_url/"
+      idp_metadata_url: "https://portal.sso.us-east-1.amazonaws.com/saml/metadata/MjU5ODY4MTUwNDY0X2lucy02NjFhZTFhMzI3MTcxYjhj"
+      # TODO: This is not valid. SAML data must be downloadable from S3
+#      saml_path: /apps/cloudumi_config/ssas_aws_sso_cloudumi_com
+      jwt:
+        expiration_hours: 1
+        email_key: email
+        groups_key: groups
+      attributes:
+        user: user
+        groups: groups
+        email: email
+      saml_settings:
+        debug: false
+        # IDP settings are not necessary if you provided the get_user_by_saml_settings.idp_metadata_url configuration setting
+        # They are provided here as an example
+        #    idp:
+        #      entityId: https://portal.sso.us-east-1.amazonaws.com/saml/assertion/CUSTOMENDPOINT
+        #      singleLogoutService:
+        #        binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
+        #        url: https://portal.sso.us-east-1.amazonaws.com/saml/logout/CUSTOMENDPOINT
+        #      singleSignOnService:
+        #        binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
+        #        url: https://portal.sso.us-east-1.amazonaws.com/saml/assertion/CUSTOMENDPOINT
+        #      x509cert: MIIDAz.....
+        sp:
+          NameIDFormat: urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
+          assertionConsumerService:
+            binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST
+            url: https://aws_sso.cloudumi.com/saml/acs
+          entityId: https://aws_sso.cloudumi.com/ # You must have / at end of URL for AWS SSO
+          singleLogoutService:
+            binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
+            url: https://aws_sso.cloudumi.com/saml/sls
+        strict: false
+        support:
+          emailAddress: support@example.com
+          givenName: support_name
+          technical:
+            emailAddress: technical@example.com
+            givenName: technical_name
+        organization:
+          en-US:
+            displayname: ConsoleMe
+            name: ConsoleMe
+            url: https://aws_sso.cloudumi.com/ # You must have / at end of URL for AWS SSO
+        security:
+          authnRequestsSigned: true
+          digestAlgorithm: http://www.w3.org/2000/09/xmldsig#sha1
+          logoutRequestSigned: true
+          logoutResponseSigned: true
+          nameIdEncrypted: true
+          signMetadata: true
+          signatureAlgorithm: http://www.w3.org/2000/09/xmldsig#rsa-sha1
+          wantAssertionsEncrypted: true
+          wantAssertionsSigned: true
+          wantMessagesSigned: true
+          wantNameId: true
+          wantNameIdEncrypted: false
+    cloud_credential_authorization_mapping:
+      role_tags:
+        enabled: true
+        authorized_groups_tags:
+          - consoleme-authorized
+        authorized_groups_cli_only_tags:
+          - consoleme-owner-dl
+          - consoleme-authorized-cli-only
+    aws:
+      issuer: YourCompany
+      region: "us-east-1"
+    celery:
+      cache_resources_from_aws_config_across_accounts:
+        enabled: false
+    groups:
+      can_edit_config:
+        - configeditors@example.com
+      can_admin_policies:
+        - consoleme_admins@example.com
+    jwt:
+      email_key: email
+    jwt_secret: uTp4`sSf-6E8\RAA
+    support_contact: consoleme-support@example.com
+    support_chat_url: https://www.example.com/slack/channel
+    documentation_page: https://github.com/Netflix/consoleme/

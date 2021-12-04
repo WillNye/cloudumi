@@ -1,0 +1,115 @@
+# AWS_PROFILE=noq_dev aws s3 cp saas_localhost.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
+site_configs:
+  localhost:
+    tenant_details:
+      external_id: local-dev-9fcfd5-local-dev
+    # Customer controlled
+    secrets:
+      jwt_secret: uT213123p4`sSf-6E8\RAA
+      pagerduty_api_key: y_NbAkKc66ryYTWUXYEu
+      auth:
+        oidc:
+          client_id: 0oaatebhlkuDajVAr4x6
+          client_secret: A_SECRET
+    slack:
+      notifications_enabled: true
+      webhook_url: https://hooks.slack.com/services/A_SECRET
+    headers:
+      identity:
+        enabled: true
+    identity:
+      cache_groups:
+        enabled: true
+      identity_providers:
+        okta_test:
+          name: okta_test
+          idp_type: okta
+          org_url: https://dev-876967.okta.com/
+          # TODO: No secrets should be in plaintext configuration
+          api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
+    # Customer controlled (Need to instruct them to give us write access
+    consoleme_s3_bucket: consolemecache
+    jwt_secret: local_secret_insecure # TODO: Autogenerate this during tenant creation
+    policies:
+      # the roles that SaaS consoleMe should assume to get to the central role in a client's account
+      pre_role_arns_to_assume:
+        - role_arn: arn:aws:iam::259868150464:role/NoqClusterRole1
+        - role_arn: arn:aws:iam::259868150464:role/ConsoleMeCentralRole
+          # external_id: ff949f35-52c4-4c24-8f79-f2176e083161
+      role_name: ConsoleMeSpokeRole
+    cache_cloud_accounts:
+      from_aws_organizations: true
+    cache_accounts_from_aws_organizations:
+      - organizations_master_account_id: "259868150464"
+    celery:
+      cache_resources_from_aws_config_across_accounts:
+        enabled: false # This is only needed for Localstack usage
+    url: http://localhost:3000 # Generated and controlled by SaaS
+    application_admin: ccastrapel@gmail.com # TODO: How do we know if this is a user or group
+    environment: dev
+    development: true
+    _development_user_override: user@example.com # Not allowed in non localhost configuration
+    _development_groups_override: # Not allowed in non localhost configuration
+      - groupa@example.com
+      - groupb@example.com
+      - configeditors@example.com
+      - consoleme_admins@example.com
+      - consoleme_admins
+    dynamodb_server: http://cloudumi-dynamodb:8005 # Not allowed in non localhost configuration
+    challenge_url:
+      enabled: true
+      request_ip_must_match_challenge_creation_ip: false
+    auth:
+      get_user_by_headers: true
+#      get_user_by_password: true
+#      get_user_by_oidc: true
+#      get_user_by_cognito: true
+#      cognito_config:
+#        user_pool: 123456789012
+      get_groups_by_header: true
+      get_user_by_header: true
+      groups_header_name: group_header
+      user_header_name: user_header
+#    get_user_by_oidc_settings:
+#      client_scopes:
+#        - email
+#        - groups
+#        - openid
+#      resource: consoleme-oidc
+#      metadata_url: https://dev-876967.okta.com/oauth2/default/.well-known/oauth-authorization-server
+#      # If you have a metadata URL and it returns JSON with authorization_endpoint, token_endpoint, and jwks_uri, you do
+#      # not need to specify those values in the configuration.
+#      #authorization_endpoint: https://dev-123456.okta.com/oauth2/default/v1/authorize
+#      #token_endpoint: https://dev-123456.okta.com/oauth2/default/v1/token
+#      #jwks_uri: https://dev-123456.okta.com/oauth2/default/v1/keys
+#      jwt_verify: true
+#      jwt_email_key: email
+#      jwt_groups_key: groups
+#      grant_type: authorization_code
+#      id_token_response_key: id_token
+#      access_token_response_key: access_token
+#      access_token_audience: "consoleme"
+    cloud_credential_authorization_mapping:
+      role_tags:
+        enabled: true
+        authorized_groups_tags:
+          - consoleme-authorized
+        authorized_groups_cli_only_tags:
+          - consoleme-owner-dl
+          - consoleme-authorized-cli-only
+    aws:
+      issuer: http://localhost:3000
+      region: "us-east-1"
+    groups:
+      can_edit_config:
+        - configeditors@example.com
+      can_admin_policies:
+        - consoleme_admins@example.com
+        - ccastrapel@gmail.com
+      can_admin_identity:
+        - ccastrapel@gmail.com
+    jwt:
+      email_key: email
+    support_contact: consoleme-support@example.com
+    support_chat_url: https://www.example.com/slack/channel
+    documentation_page: https://github.com/Netflix/consoleme/

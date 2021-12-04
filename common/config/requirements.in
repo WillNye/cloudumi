@@ -1,0 +1,8 @@
+boto3
+botocore
+logmatic-python
+sentry_sdk
+ujson
+asgiref
+pytz
+ruamel.yaml

@@ -1,1 +1,0 @@
-# Group identity management stuff

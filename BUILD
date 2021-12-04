@@ -1,6 +1,6 @@
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 #load("@io_bazel_rules_docker//container:container.bzl", "container_layer")
-#load("@nexus_python_ext//:requirements.bzl", "requirement")
+#load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 #load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 container_run_and_commit(
