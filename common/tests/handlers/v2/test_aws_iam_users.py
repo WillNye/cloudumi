@@ -6,7 +6,7 @@ from tests.util import ConsoleMeAsyncHTTPTestCase
 
 class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 

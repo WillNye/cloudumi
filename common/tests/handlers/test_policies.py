@@ -24,7 +24,7 @@ mock_policy_redis = MagicMock(
 
 class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 

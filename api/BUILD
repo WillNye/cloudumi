@@ -38,7 +38,7 @@ filegroup(
 )
 
 py_library(
-    name = "lib.v1",
+    name = "bin.v1",
     srcs_version = "PY3",
     srcs = [
         ":v1",
@@ -46,10 +46,16 @@ py_library(
     data = [
     ],
     deps = [
+        "//common/config:lib",
         requirement("email_validator"),
         requirement("uvloop"),
         requirement("marshmallow"),
         requirement("policyuniverse"),
+        requirement("newrelic"),
+        requirement("tornado"),
+        requirement("sentry_sdk"),
+        requirement("aiohttp"),
+        requirement("ujson"),
     ]
 )
 
@@ -63,10 +69,16 @@ py_binary(
     data = [
     ],
     deps = [
+        "//common/config:lib",
         requirement("email_validator"),
         requirement("uvloop"),
         requirement("marshmallow"),
         requirement("policyuniverse"),
+        requirement("newrelic"),
+        requirement("tornado"),
+        requirement("sentry_sdk"),
+        requirement("aiohttp"),
+        requirement("ujson"),
     ],
 )
 
@@ -80,10 +92,16 @@ py_binary(
     data = [
     ],
     deps = [
+        "//common/config:lib",
         requirement("email_validator"),
         requirement("uvloop"),
         requirement("marshmallow"),
         requirement("policyuniverse"),
+        requirement("newrelic"),
+        requirement("tornado"),
+        requirement("sentry_sdk"),
+        requirement("aiohttp"),
+        requirement("ujson"),
     ],
 )
 

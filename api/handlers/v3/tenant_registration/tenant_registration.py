@@ -14,7 +14,7 @@ import tornado.web
 from email_validator import validate_email
 from password_strength import PasswordPolicy
 
-from cloudumi_api.handlers.v3.tenant_registration.models import NewTenantRegistration
+from api.handlers.v3.tenant_registration.models import NewTenantRegistration
 from common.config import config
 from common.handlers.base import TornadoRequestHandler
 from common.lib.dynamo import RestrictedDynamoHandler

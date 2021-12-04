@@ -14,7 +14,7 @@ from common.models import AwsResourcePrincipalModel
 
 class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
@@ -115,10 +115,7 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(len(responseJSON), 2)
 
     def test_cache_self_service_template_and_typeahead(self):
-        from common.lib.templated_resources import (
-            TemplatedFileModelArray,
-            TemplateFile,
-        )
+        from common.lib.templated_resources import TemplatedFileModelArray, TemplateFile
 
         mock_template_file_model_array = TemplatedFileModelArray(
             templated_resources=[
@@ -165,17 +162,13 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(result, mock_template_file_model_array)
 
         # Retrieve cached resource templates and ensure it is correct
-        from common.lib.templated_resources import (
-            retrieve_cached_resource_templates,
-        )
+        from common.lib.templated_resources import retrieve_cached_resource_templates
 
         result = async_to_sync(retrieve_cached_resource_templates)(host)
         self.assertEqual(result, mock_template_file_model_array)
 
         # Cache and verify Self Service Typeahead
-        from common.lib.self_service.typeahead import (
-            cache_self_service_typeahead,
-        )
+        from common.lib.self_service.typeahead import cache_self_service_typeahead
 
         result = async_to_sync(cache_self_service_typeahead)(host)
         self.assertIsInstance(result, SelfServiceTypeaheadModelArray)

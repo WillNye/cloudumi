@@ -15,7 +15,7 @@ class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
         config.CONFIG.config["site_configs"][host]["auth"][
             "allow_user_registration"
         ] = True
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
@@ -76,7 +76,7 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
             "get_user_by_password"
         ] = True
         config.CONFIG.config["site_configs"][host]["auth"]["set_auth_cookie"] = True
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
@@ -162,7 +162,7 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
 
 class TestUserApi(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
