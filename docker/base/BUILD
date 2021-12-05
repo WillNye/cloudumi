@@ -33,6 +33,7 @@ container_layer(
     ]
 )
 
+# TODO: let's do without this
 container_run_and_commit(
     name = "base_docker_raw",
     commands = [
@@ -41,7 +42,7 @@ container_run_and_commit(
         "apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y",
         "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
         "echo 'deb https://artifacts.elastic.co/packages/7.x/apt stable main' | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list",
-        "sudo apt-get update && sudo apt-get install logstash",
+        "sudo apt-get update && sudo apt-get install -y logstash libxmlsec1 libxmlsec1-dev",
         "pip install aenum aiohttp bcrypt boto3 cloudaux cryptography deepdiff ed25519 flatdict jsonschema jwt logmatic-python marshmallow okta pandas parliament password_strength policy_sentry PyYAML redis redis-py-cluster retrying simplejson tenacity xmltodict",
         "systemctl enable logstash",
         "systemctl start logstash",
