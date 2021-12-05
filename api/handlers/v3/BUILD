@@ -8,10 +8,6 @@ filegroup(
     name = "src",
     srcs = glob([
         "*.py",
-        "api_keys/*.py",
-        "identity/*.py",
-        "integrations/*.py",
-        "tenant_registration/*.py",
     ]),
 )
 
@@ -21,6 +17,10 @@ py_library(
     srcs_version = "PY3",
     srcs = [
         ":src",
+        "//api/handlers/v3/api_keys:src",
+        "//api/handlers/v3/identity:src",
+        "//api/handlers/v3/integrations:src",
+        "//api/handlers/v3/tenant_registration:src",
     ],
     deps = [
         "//common/config:lib",
