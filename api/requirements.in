@@ -12,6 +12,7 @@ kombu
 newrelic
 okta
 okta-jwt
+onelogin
 pydantic
 pyjwt
 python3_saml

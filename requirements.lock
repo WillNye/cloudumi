@@ -31,7 +31,9 @@ asgiref==3.4.1
 async-timeout==3.0.1
     # via aiohttp
 atlassian-python-api==3.14.1
-    # via -r ./common/util/requirements.in
+    # via
+    #   -r ./api/requirements.in
+    #   -r ./common/util/requirements.in
 attrs==21.2.0
     # via
     #   aiohttp
@@ -113,7 +115,9 @@ cryptography==35.0.0
 deepdiff==5.6.0
     # via -r ./common/util/requirements.in
 defusedxml==0.7.1
-    # via cloudaux
+    # via
+    #   cloudaux
+    #   onelogin
 deprecated==1.2.13
     # via atlassian-python-api
 dnspython==2.1.0
@@ -223,6 +227,8 @@ okta-jwt==1.3.5
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
+onelogin==2.0.2
+    # via -r ./api/requirements.in
 ordered-set==4.0.2
     # via deepdiff
 orderedmultidict==1.0.1
@@ -276,6 +282,7 @@ pyrsistent==0.18.0
 python-dateutil==2.8.2
     # via
     #   botocore
+    #   onelogin
     #   pandas
 python-jose==3.3.0
     # via
@@ -321,6 +328,7 @@ requests==2.26.0
     #   -r ./api/requirements.in
     #   atlassian-python-api
     #   okta-jwt
+    #   onelogin
     #   pdpyras
     #   policy-sentry
     #   requests-oauthlib
