@@ -1,7 +1,6 @@
 load("@rules_python//python:defs.bzl", "py_library")
-load("@rules_python//python:packaging.bzl", "py_wheel")
-load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
-load("@io_bazel_rules_docker//container:container.bzl", "container_image")
+load("@rules_python//python:packaging.bzl", "py_package", "py_wheel")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 filegroup(
@@ -10,106 +9,294 @@ filegroup(
         "__init__.py",
         "__main__.py",
         "routes.py",
-    ],
-)
-
-filegroup(
-    name = "v1",
-    srcs = [
-        ":src",
-        "//api/handlers:v1",
-    ]
-)
-
-filegroup(
-    name = "v2",
-    srcs = [
-        ":src",
-        "//api/handlers:v2",
-    ]
-)
-
-filegroup(
-    name = "v3",
-    srcs = [
-        ":src",
-        "//api/handlers:v3",
     ]
 )
 
 py_library(
-    name = "bin.v1",
+    name = "lib",
+    data = [],
     srcs_version = "PY3",
     srcs = [
-        ":v1",
-    ],
-    data = [
+        ":src",
     ],
     deps = [
+        "//api/handlers:lib",
         "//common/config:lib",
-        requirement("email_validator"),
-        requirement("uvloop"),
-        requirement("marshmallow"),
-        requirement("policyuniverse"),
-        requirement("newrelic"),
-        requirement("tornado"),
-        requirement("sentry_sdk"),
+        "//common/handlers:lib",
+        "//identity:lib",
+        "//plugins:lib",
+        "//plugins/auth:lib",
+        "//plugins/celery_tasks:lib",
+        "//plugins/config:lib",
+        "//plugins/metrics:lib",
+        "//saml:lib",
+        "//util/log:lib",
         requirement("aiohttp"),
+        requirement("email_validator"),
+        requirement("marshmallow"),
+        requirement("newrelic"),
+        requirement("okta-jwt"),
+        requirement("policyuniverse"),
+        requirement("pyjwt"),
+        requirement("python3-saml"),
+        requirement("requests"),
+        requirement("sentry_sdk"),
+        requirement("tornado"),
         requirement("ujson"),
-    ]
+        requirement("uvloop"),
+    ],
+    visibility = ["//visibility:public"],
 )
 
 py_binary(
-    name = "bin.v2",
+    name = "bin.local",
+    data = [
+        "//configs/development_account:configs",
+    ],
     srcs_version = "PY3",
     srcs = [
-        ":v2",
+        ":src",
     ],
     main = "__main__.py",
-    data = [
-    ],
+    env = {
+        # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
+        # Note: `bazel info --show_make_env` will show all available predefined variables
+        # "CONFIG_LOCATION": "$(GENDIR)/api/bin.local.runfiles/cloudumi/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev",
+    },
     deps = [
+        "//api/handlers:lib",
         "//common/config:lib",
-        requirement("email_validator"),
-        requirement("uvloop"),
-        requirement("marshmallow"),
-        requirement("policyuniverse"),
-        requirement("newrelic"),
-        requirement("tornado"),
-        requirement("sentry_sdk"),
+        "//common/handlers:lib",
+        "//identity:lib",
+        "//plugins:lib",
+        "//plugins/auth:lib",
+        "//plugins/celery_tasks:lib",
+        "//plugins/config:lib",
+        "//plugins/metrics:lib",
+        "//saml:lib",
+        "//util/log:lib",
         requirement("aiohttp"),
+        requirement("email_validator"),
+        requirement("marshmallow"),
+        requirement("newrelic"),
+        requirement("okta-jwt"),
+        requirement("policyuniverse"),
+        requirement("pyjwt"),
+        requirement("python3-saml"),
+        requirement("requests"),
+        requirement("sentry_sdk"),
+        requirement("tornado"),
         requirement("ujson"),
+        requirement("uvloop"),
     ],
+    visibility = ["//visibility:public"],
 )
 
 py_binary(
-    name = "bin.v3",
+    name = "bin.s3",
+    data = [],
     srcs_version = "PY3",
     srcs = [
-        ":v3",
+        ":src",
     ],
     main = "__main__.py",
-    data = [
-    ],
+    env = {
+        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev"
+    },
     deps = [
+        "//api/handlers:lib",
         "//common/config:lib",
-        requirement("email_validator"),
-        requirement("uvloop"),
-        requirement("marshmallow"),
-        requirement("policyuniverse"),
-        requirement("newrelic"),
-        requirement("tornado"),
-        requirement("sentry_sdk"),
+        "//common/handlers:lib",
+        "//identity:lib",
+        "//plugins:lib",
+        "//plugins/auth:lib",
+        "//plugins/celery_tasks:lib",
+        "//plugins/config:lib",
+        "//plugins/metrics:lib",
+        "//saml:lib",
+        "//util/log:lib",
         requirement("aiohttp"),
+        requirement("email_validator"),
+        requirement("marshmallow"),
+        requirement("newrelic"),
+        requirement("okta-jwt"),
+        requirement("policyuniverse"),
+        requirement("pyjwt"),
+        requirement("python3-saml"),
+        requirement("requests"),
+        requirement("sentry_sdk"),
+        requirement("tornado"),
         requirement("ujson"),
+        requirement("uvloop"),
+    ],
+    visibility = ["//visibility:public"],
+)
+
+py_package(
+    name = "lib_pkg",
+    deps = [
+        ":lib",
+        "//common:lib",
+        "//common/config:lib",
+        "//common/exceptions:lib",
+        "//identity:lib",
+        "//plugins:lib",
+        "//plugins/auth:lib",
+        "//plugins/celery_tasks:lib",
+        "//plugins/config:lib",
+        "//plugins/metrics:lib",
+        "//util/log:lib",
+        requirement("amqp"),
+        requirement("asgiref"),
+        requirement("billiard"),
+        requirement("celery"),
+        requirement("certifi"),
+        requirement("click"),
+        requirement("kombu"),
+        requirement("newrelic"),
+        requirement("okta"),
+        requirement("okta-jwt"),
+        requirement("pydantic"),
+        requirement("pyjwt"),
+        requirement("python3_saml"),
+        requirement("pytz"),
+        requirement("PyYAML"),
+        requirement("requests"),
+        requirement("ruamel.yaml"),
+        requirement("sentry_sdk"),
+        requirement("tornado"),
+        requirement("typing_extensions"),
+        requirement("ujson"),
+        requirement("urllib3"),
+        requirement("uvloop"),
+        requirement("vine"),
+    ],
+    packages = [
+        "common",
+        "common.celery_tasks",
+        "common.config",
+        "common.exception",
+        "identity",
+        "plugins",
+        "plugins.auth",
+        "plugins.celery_tasks",
+        "plugins.config",
+        "plugins.metrics",
+        "util.log",
+        "amqp",
+        "asgiref",
+        "billiard",
+        "celery",
+        "certifi",
+        "click",
+        "kombu",
+        "newrelic",
+        "okta",
+        "okta-jwt",
+        "pydantic",
+        "pyjwt",
+        "python3_saml",
+        "pytz",
+        "PyYAML",
+        "requests",
+        "ruamel.yaml",
+        "sentry_sdk",
+        "tornado",
+        "typing_extensions",
+        "ujson",
+        "urllib3",
+        "uvloop",
+        "vine",
     ],
 )
 
 py_wheel(
-    name = "py_wheel",
+    name = "wheel",
     distribution = "cloudumi_api",
     python_tag = "py3",
     version = "0.0.1",
-    deps = [":lib"],
+    # entry_points = {
+    #     "console_scripts": [""],
+    # },
+    deps = [":lib_pkg"],
+    requires = ["celery", "ujson"],
+    strip_path_prefixes = [
+    ],
+)
+
+container_layer(
+    name = "lib_layer",
+    files = [
+        ":lib",
+    ],
+    data_path = ".",
+    directory = "/api",
+)
+
+container_layer(
+    name = "pkg_layer",
+    files = [
+        ":lib_pkg",
+    ],
+    data_path = ".",
+    directory = ".",
+)
+
+container_layer(
+    name = "config_layer",
+    files = [
+        "//configs/development_account:configs",
+    ],
+    data_path = ".",
+    directory = ".",
+)
+
+container_image(
+    name = "container-dev-local",
+    base = "//docker/base:base_docker",
+    layers = [
+        ":lib_layer",
+        ":pkg_layer",
+        ":config_layer",
+    ],
+    env = {
+        "TZ": "America/Los_Angeles",
+        "PYTHONPATH": "PYTHONPATH:/usr/lib/python3/dist-packages:/usr/local/lib/python3.9:/usr/lib/python3.9",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONUNBUFFERED": "1",
+        "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev",
+    },
+    cmd = ["/usr/local/bin/python3", "__main__.py"],
+    ports = ["8092"],
+    symlinks = { 
+        "amqp": "cloudumi_python_ext_pypi__amqp/amqp",
+        "asgiref": "cloudumi_python_ext_pypi__asgiref/asgiref",
+        "billiard": "cloudumi_python_ext_pypi__billiard/billiard",
+        "celery": "cloudumi_python_ext_pypi__celery/celery",
+        "certifi": "cloudumi_python_ext_pypi__certifi/certifi",
+        "click": "cloudumi_python_ext_pypi__click/click",
+        "kombu": "cloudumi_python_ext_pypi__kombu/kombu",
+        "newrelic": "cloudumi_python_ext_pypi__newrelic/newrelic",
+        "okta": "cloudumi_python_ext_pypi__okta/okta",
+        "okta-jwt": "cloudumi_python_ext_pypi__okta-jwt/okta-jwt",
+        "pydantic": "cloudumi_python_ext_pypi__pydantic/pydantic",
+        "pyjwt": "cloudumi_python_ext_pypi__pyjwt/pyjwt",
+        "python3_saml": "cloudumi_python_ext_pypi__python3_saml/python3_saml",
+        "pytz": "cloudumi_python_ext_pypi__pytz/pytz",
+        "PyYAML": "cloudumi_python_ext_pypi__pyyaml/PyYAML",
+        "requests": "cloudumi_python_ext_pypi__requests/requests",
+        "ruamel": "cloudumi_python_ext_pypi__ruamel_yaml/ruamel",
+        "sentry_sdk": "cloudumi_python_ext_pypi__sentry_sdk/sentry_sdk",
+        "tornado": "cloudumi_python_ext_pypi__tornado/tornado",
+        "typing_extensions.py": "cloudumi_python_ext_pypi__typing_extensions/typing_extensions.py",
+        "ujson": "cloudumi_python_ext_pypi__ujson",
+        "urllib3": "cloudumi_python_ext_pypi__urllib3/urllib3",
+        "uvloop": "cloudumi_python_ext_pypi__uvloop/uvloop",
+        "vine": "cloudumi_python_ext_pypi__vine/vine",
+    },
     tags = ["manual"],
 )

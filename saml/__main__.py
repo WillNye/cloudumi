@@ -13,7 +13,7 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 
 from common.config import config
 from common.lib.plugins import get_plugin_by_name
-from cloudumi_saml.routes import make_app
+from saml.routes import make_app
 
 logging.basicConfig(level=logging.DEBUG, format=config.get("_global_.logging.format"))
 logging.getLogger("_global_.urllib3.connectionpool").setLevel(logging.CRITICAL)

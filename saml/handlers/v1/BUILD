@@ -8,8 +8,7 @@ filegroup(
     name = "src",
     srcs = [
         "__init__.py",
-        "__main__.py",
-        "routes.py",
+        "saml.py",
     ],
 )
 
@@ -19,18 +18,9 @@ py_library(
     srcs_version = "PY3",
     srcs = [
         ":src",
-        "//saml/handlers/v1:lib",
     ],
     deps = [
+        requirement("python3-saml"),
     ],
     visibility = ["//visibility:public"],
-)
-
-py_wheel(
-    name = "py_wheel",
-    distribution = "cloudumi_saml",
-    python_tag = "py3",
-    version = "0.0.1",
-    deps = [":lib"],
-    tags = ["manual"],
 )

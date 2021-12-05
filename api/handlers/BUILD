@@ -1,3 +1,9 @@
+load("@rules_python//python:defs.bzl", "py_library")
+load("@rules_python//python:packaging.bzl", "py_wheel")
+load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+
 filegroup(
     name = "src",
     srcs = [
@@ -6,29 +12,28 @@ filegroup(
     ]
 )
 
-filegroup(
-    name = "v1",
+py_library(
+    name = "lib",
+    data = [],
+    srcs_version = "PY3",
     srcs = [
         ":src",
-        "//api/handlers/v1:src",
     ],
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "v2",
-    srcs = [
-        ":src",
-        "//api/handlers/v2:src",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "v3",
-    srcs = [
-        ":src",
-        "//api/handlers/v3:src",
+    deps = [
+        "//api/handlers/v1:lib",
+        "//api/handlers/v2:lib",
+        "//api/handlers/v3:lib",
+        "//common/config:lib",
+        "//saml:lib",
+        requirement("email_validator"),
+        requirement("uvloop"),
+        requirement("marshmallow"),
+        requirement("policyuniverse"),
+        requirement("newrelic"),
+        requirement("tornado"),
+        requirement("sentry_sdk"),
+        requirement("aiohttp"),
+        requirement("ujson"),
     ],
     visibility = ["//visibility:public"],
 )
