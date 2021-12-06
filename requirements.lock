@@ -20,7 +20,7 @@ anyio==3.3.4
     # via
     #   httpcore
     #   starlette
-asgiref==3.4.1
+asgiref==3.4.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/celery_tasks/requirements.in
