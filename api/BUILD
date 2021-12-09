@@ -10,6 +10,7 @@ filegroup(
     srcs = [
         "__init__.py",
         "__main__.py",
+        "debug.py",
         "routes.py",
     ]
 )
@@ -36,6 +37,7 @@ EXT_DEPS = [
     requirement("bcrypt"),
     requirement("cloudaux"),
     requirement("cryptography"),
+    requirement("debugpy"),
     requirement("deepdiff"),
     requirement("ed25519"),
     requirement("email_validator"),
@@ -70,6 +72,7 @@ REQUIRES = [
     "bcrypt",
     "cloudaux",
     "cryptography",
+    "debugpy",
     "deepdiff",
     "ed25519",
     "email_validator",
@@ -118,7 +121,7 @@ py_binary(
     srcs = [
         ":src",
     ],
-    main = "__main__.py",
+    main = "debug.py",
     env = {
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
         # Note: `bazel info --show_make_env` will show all available predefined variables

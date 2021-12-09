@@ -112,6 +112,8 @@ cryptography==35.0.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
+debugpy==1.5.1
+    # via -r ./api/requirements.in
 deepdiff==5.6.0
     # via -r ./common/util/requirements.in
 defusedxml==0.7.1
