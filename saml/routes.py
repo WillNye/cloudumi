@@ -7,7 +7,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
 from common.config import config
-from cloudumi_saml.handlers.v1.saml import SamlHandler
+from saml.handlers.v1.saml import SamlHandler
 
 log = config.get_logger()
 

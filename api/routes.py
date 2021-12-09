@@ -3,59 +3,54 @@
 import sentry_sdk
 import tornado.autoreload
 import tornado.web
+from saml.handlers.v1.saml import SamlHandler
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 from tornado.routing import HostMatches, Rule, RuleRouter
 
-from cloudumi_api.handlers.auth import AuthHandler
-from cloudumi_api.handlers.v1.credentials import GetCredentialsHandler
-from cloudumi_api.handlers.v1.headers import ApiHeaderHandler, HeaderHandler
-from cloudumi_api.handlers.v1.health import HealthHandler
-from cloudumi_api.handlers.v1.policies import (
+from api.handlers.auth import AuthHandler
+from api.handlers.v1.credentials import GetCredentialsHandler
+from api.handlers.v1.headers import ApiHeaderHandler, HeaderHandler
+from api.handlers.v1.health import HealthHandler
+from api.handlers.v1.policies import (
     ApiResourceTypeAheadHandler,
     AutocompleteHandler,
     ResourceTypeAheadHandler,
 )
-from cloudumi_api.handlers.v1.roles import GetRolesHandler
-from cloudumi_api.handlers.v2.audit import AuditRolesAccessHandler, AuditRolesHandler
-from cloudumi_api.handlers.v2.aws_iam_users import UserDetailHandler
-from cloudumi_api.handlers.v2.challenge import (
+from api.handlers.v1.roles import GetRolesHandler
+from api.handlers.v2.audit import AuditRolesAccessHandler, AuditRolesHandler
+from api.handlers.v2.aws_iam_users import UserDetailHandler
+from api.handlers.v2.challenge import (
     ChallengeGeneratorHandler,
     ChallengePollerHandler,
     ChallengeValidatorHandler,
 )
-from cloudumi_api.handlers.v2.dynamic_config import DynamicConfigApiHandler
-from cloudumi_api.handlers.v2.errors import NotFoundHandler as V2NotFoundHandler
-from cloudumi_api.handlers.v2.generate_changes import GenerateChangesHandler
-from cloudumi_api.handlers.v2.generate_policy import GeneratePolicyHandler
-from cloudumi_api.handlers.v2.index import (
-    EligibleRoleHandler,
-    EligibleRolePageConfigHandler,
-)
-from cloudumi_api.handlers.v2.logout import LogOutHandler
-from cloudumi_api.handlers.v2.managed_policies import (
+from api.handlers.v2.dynamic_config import DynamicConfigApiHandler
+from api.handlers.v2.errors import NotFoundHandler as V2NotFoundHandler
+from api.handlers.v2.generate_changes import GenerateChangesHandler
+from api.handlers.v2.generate_policy import GeneratePolicyHandler
+from api.handlers.v2.index import EligibleRoleHandler, EligibleRolePageConfigHandler
+from api.handlers.v2.logout import LogOutHandler
+from api.handlers.v2.managed_policies import (
     ManagedPoliciesForAccountHandler,
     ManagedPoliciesHandler,
     ManagedPoliciesOnPrincipalHandler,
 )
-from cloudumi_api.handlers.v2.notifications import NotificationsHandler
-from cloudumi_api.handlers.v2.policies import (
+from api.handlers.v2.notifications import NotificationsHandler
+from api.handlers.v2.policies import (
     CheckPoliciesHandler,
     PoliciesHandler,
     PoliciesPageConfigHandler,
 )
-from cloudumi_api.handlers.v2.requests import (
+from api.handlers.v2.requests import (
     RequestDetailHandler,
     RequestHandler,
     RequestsHandler,
     RequestsPageConfigHandler,
 )
-from cloudumi_api.handlers.v2.resources import (
-    GetResourceURLHandler,
-    ResourceDetailHandler,
-)
-from cloudumi_api.handlers.v2.roles import (
+from api.handlers.v2.resources import GetResourceURLHandler, ResourceDetailHandler
+from api.handlers.v2.roles import (
     AccountRolesHandler,
     GetRolesMTLSHandler,
     RoleCloneHandler,
@@ -64,48 +59,47 @@ from cloudumi_api.handlers.v2.roles import (
     RoleDetailHandler,
     RolesHandler,
 )
-from cloudumi_api.handlers.v2.self_service import (
+from api.handlers.v2.self_service import (
     PermissionTemplatesHandler,
     SelfServiceConfigHandler,
 )
-from cloudumi_api.handlers.v2.service_control_policy import ServiceControlPolicyHandler
-from cloudumi_api.handlers.v2.templated_resources import TemplatedResourceDetailHandler
-from cloudumi_api.handlers.v2.typeahead import (
+from api.handlers.v2.service_control_policy import ServiceControlPolicyHandler
+from api.handlers.v2.templated_resources import TemplatedResourceDetailHandler
+from api.handlers.v2.typeahead import (
     ResourceTypeAheadHandlerV2,
     SelfServiceStep1ResourceTypeahead,
 )
-from cloudumi_api.handlers.v2.user import (
+from api.handlers.v2.user import (
     LoginConfigurationHandler,
     LoginHandler,
     UserManagementHandler,
     UserRegistrationHandler,
 )
-from cloudumi_api.handlers.v2.user_profile import UserProfileHandler
-from cloudumi_api.handlers.v3.identity.group import IdentityGroupHandler
-from cloudumi_api.handlers.v3.identity.groups import (
+from api.handlers.v2.user_profile import UserProfileHandler
+from api.handlers.v3.identity.group import IdentityGroupHandler
+from api.handlers.v3.identity.groups import (
     IdentityGroupPageConfigHandler,
     IdentityGroupsTableHandler,
 )
-from cloudumi_api.handlers.v3.identity.requests.group import (
+from api.handlers.v3.identity.requests.group import (
     IdentityGroupRequestReviewHandler,
     IdentityRequestGroupHandler,
     IdentityRequestGroupsHandler,
 )
-from cloudumi_api.handlers.v3.identity.requests.table import (
+from api.handlers.v3.identity.requests.table import (
     IdentityRequestsPageConfigHandler,
     IdentityRequestsTableHandler,
 )
-from cloudumi_api.handlers.v3.identity.users import (
+from api.handlers.v3.identity.users import (
     IdentityUserHandler,
     IdentityUsersPageConfigHandler,
     IdentityUsersTableHandler,
 )
-from cloudumi_api.handlers.v3.integrations.aws import AwsIntegrationHandler
-from cloudumi_api.handlers.v3.tenant_registration.tenant_registration import (
+from api.handlers.v3.integrations.aws import AwsIntegrationHandler
+from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationHandler,
 )
 from common.config import config
-from cloudumi_saml.handlers.v1.saml import SamlHandler
 
 log = config.get_logger()
 

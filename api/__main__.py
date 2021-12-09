@@ -12,7 +12,7 @@ import tornado.ioloop
 import uvloop
 from tornado.platform.asyncio import AsyncIOMainLoop
 
-from cloudumi_api.routes import make_app
+from api.routes import make_app
 from common.config import config
 from common.lib.plugins import get_plugin_by_name
 

@@ -10,7 +10,7 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
         from common.config import config
 
         self.config = config
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
@@ -102,7 +102,7 @@ class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
         from common.config import config
 
         self.config = config
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
@@ -129,7 +129,7 @@ class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
 
 class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
@@ -214,7 +214,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
 
 class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
@@ -231,7 +231,7 @@ class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
 
 class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
-        from cloudumi_api.routes import make_app
+        from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
 
