@@ -14,6 +14,7 @@ newrelic
 okta
 okta-jwt
 onelogin
+ptvsd
 pydantic
 pyjwt
 python3_saml

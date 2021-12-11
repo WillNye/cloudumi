@@ -257,6 +257,8 @@ protobuf==3.18.1
     # via grpcio-tools
 psutil==5.8.0
     # via redislite
+ptvsd==4.3.2
+    # via -r ./api/requirements.in
 pyasn1==0.4.8
     # via
     #   python-jose

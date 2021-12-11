@@ -5,6 +5,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: Attach",
+      "type": "python",
+      "request": "attach",
+      "port": 9092,
+      "host": "localhost",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "${workspaceFolder}"
+        }
+      ]
+    },
+    {
       "name": "Launch Go File",
       "type": "go",
       "request": "launch",
