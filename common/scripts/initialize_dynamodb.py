@@ -8,6 +8,7 @@ from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait
 
 from common.config import config
 from common.lib.aws.session import restricted_get_session_for_saas
+import util.debug
 
 streams_enabled = config.get("_global_.dynamodb.streams_enabled", True)
 ttl_enabled = config.get("_global_.dynamodb.ttl_enabled", True)
@@ -79,8 +80,8 @@ if ttl_enabled:
             )
         ),
     ):
-        try:
-            with attempt:
+        with attempt:
+            try:
                 ddb.update_time_to_live(
                     TableName=table_name,
                     TimeToLiveSpecification={
@@ -88,16 +89,17 @@ if ttl_enabled:
                         "AttributeName": "ttl",
                     },
                 )
-        except Exception as e:
-            if str(e) != (
-                "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
-                "TimeToLive is already enabled"
-            ):
-                print(
-                    f"Unable to update TTL attribute on table {table_name}. Error: {e}."
-                )
-            else:
-                raise
+            except Exception as e:
+                if str(e) == (
+                    "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
+                    "TimeToLive is already enabled"
+                ):
+                    pass
+                else:
+                    print(
+                        f"Unable to update TTL attribute on table {table_name}. Error: {e}."
+                    )
+                    raise
 
 table_name = "consoleme_config_multitenant"
 try:
@@ -273,19 +275,19 @@ except ClientError as e:
         print(f"Unable to create table {table_name}. Error: {e}.")
 
 if ttl_enabled:
-    try:
-        for attempt in Retrying(
-            stop=stop_after_attempt(3),
-            wait=wait_fixed(3),
-            retry=retry_if_exception_type(
-                (
-                    ddb.exceptions.ResourceNotFoundException,
-                    ddb.exceptions.ResourceInUseException,
-                    ClientError,
-                )
-            ),
-        ):
-            with attempt:
+    for attempt in Retrying(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(3),
+        retry=retry_if_exception_type(
+            (
+                ddb.exceptions.ResourceNotFoundException,
+                ddb.exceptions.ResourceInUseException,
+                ClientError,
+            )
+        ),
+    ):
+        with attempt:
+            try:
                 ddb.update_time_to_live(
                     TableName=table_name,
                     TimeToLiveSpecification={
@@ -293,12 +295,17 @@ if ttl_enabled:
                         "AttributeName": "ttl",
                     },
                 )
-    except ClientError as e:
-        if str(e) != (
-            "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
-            "TimeToLive is already enabled"
-        ):
-            print(f"Unable to update TTL attribute on table {table_name}. Error: {e}.")
+            except Exception as e:
+                if str(e) == (
+                    "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
+                    "TimeToLive is already enabled"
+                ):
+                    pass
+                else:
+                    print(
+                        f"Unable to update TTL attribute on table {table_name}. Error: {e}."
+                    )
+                    raise
 
 try:
     table_name = "consoleme_users_multitenant"
@@ -590,19 +597,19 @@ except ClientError as e:
         print(f"Unable to create table {table_name}. Error: {e}.")
 
 if ttl_enabled:
-    try:
-        for attempt in Retrying(
-            stop=stop_after_attempt(3),
-            wait=wait_fixed(3),
-            retry=retry_if_exception_type(
-                (
-                    ddb.exceptions.ResourceNotFoundException,
-                    ddb.exceptions.ResourceInUseException,
-                    ClientError,
-                )
-            ),
-        ):
-            with attempt:
+    for attempt in Retrying(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(3),
+        retry=retry_if_exception_type(
+            (
+                ddb.exceptions.ResourceNotFoundException,
+                ddb.exceptions.ResourceInUseException,
+                ClientError,
+            )
+        ),
+    ):
+        with attempt:
+            try:
                 ddb.update_time_to_live(
                     TableName=table_name,
                     TimeToLiveSpecification={
@@ -610,12 +617,16 @@ if ttl_enabled:
                         "AttributeName": "ttl",
                     },
                 )
-    except ClientError as e:
-        if str(e) != (
-            "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
-            "TimeToLive is already enabled"
-        ):
-            print(f"Unable to update TTL attribute on table {table_name}. Error: {e}.")
+            except Exception as e:
+                if str(e) == (
+                    "An error occurred (ValidationException) when calling the UpdateTimeToLive operation: "
+                    "TimeToLive is already enabled"
+                ):
+                    pass
+                else:
+                    print(
+                        f"Unable to update TTL attribute on table {table_name}. Error: {e}."
+                    )
 
 table_name = "noq_aws_accounts"
 try:

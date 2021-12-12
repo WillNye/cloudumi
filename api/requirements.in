@@ -7,12 +7,14 @@ celery
 certifi
 click
 cryptography
+debugpy
 gitpython
 kombu
 newrelic
 okta
 okta-jwt
 onelogin
+ptvsd
 pydantic
 pyjwt
 python3_saml

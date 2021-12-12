@@ -10,7 +10,6 @@ command: celery -A consoleme.celery_tasks.celery_tasks worker --loglevel=info -l
 from __future__ import absolute_import
 
 import json  # We use a separate SetEncoder here so we cannot use ujson
-
 import os
 import sys
 import time
@@ -37,11 +36,6 @@ from celery.signals import (
     task_success,
     task_unknown,
 )
-from identity.lib.groups.groups import (
-    cache_identity_groups_for_host,
-    cache_identity_requests_for_host,
-)
-from identity.lib.users.users import cache_identity_users_for_host
 from retrying import retry
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
@@ -80,9 +74,7 @@ from common.lib.cloud_credential_authorization_mapping import (
 from common.lib.event_bridge.access_denies import (
     detect_cloudtrail_denies_and_update_cache,
 )
-from common.lib.event_bridge.role_updates import (
-    detect_role_changes_and_update_cache,
-)
+from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
 from common.lib.plugins import get_plugin_by_name
@@ -95,6 +87,11 @@ from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
 from common.lib.tenants import get_all_hosts
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
+from identity.lib.groups.groups import (
+    cache_identity_groups_for_host,
+    cache_identity_requests_for_host,
+)
+from identity.lib.users.users import cache_identity_users_for_host
 
 asynpool.PROC_ALIVE_TIMEOUT = config.get(
     "_global_.celery.asynpool_proc_alive_timeout", 60.0
@@ -1978,6 +1975,7 @@ def cache_sns_topics_for_account(
         "account_id": account_id,
         "host": host,
     }
+    log.debug({**log_data, "message": "Caching SNS topics for account"})
     red = RedisHandler().redis_sync(host)
     all_topics: set = set()
     enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, host)
@@ -2786,11 +2784,6 @@ def refresh_iam_role(role_arn, host=None):
     """
     if not host:
         raise Exception("`host` must be passed to this task.")
-    aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
-    )()
     account_id = role_arn.split(":")[4]
     async_to_sync(fetch_iam_role)(
         account_id, role_arn, host, force_refresh=True, run_sync=True
@@ -2837,7 +2830,7 @@ def cache_identity_groups_for_host_t(host: str) -> Dict:
     }
     log.debug(log_data)
     # TODO: Finish this
-    res = async_to_sync(cache_identity_groups_for_host)(host)
+    async_to_sync(cache_identity_groups_for_host)(host)
     return log_data
 
 
@@ -2851,7 +2844,7 @@ def cache_identity_users_for_host_t(host: str) -> Dict:
     }
     log.debug(log_data)
     # TODO: Finish this
-    res = async_to_sync(cache_identity_users_for_host)(host)
+    async_to_sync(cache_identity_users_for_host)(host)
     return log_data
 
 
@@ -2882,7 +2875,7 @@ def cache_identity_requests_for_host_t(host: str) -> Dict:
     }
     log.debug(log_data)
     # Fetch from Dynamo. Write to Redis and S3
-    res = async_to_sync(cache_identity_requests_for_host)(host)
+    async_to_sync(cache_identity_requests_for_host)(host)
     return log_data
 
 
@@ -2911,7 +2904,7 @@ def handle_tenant_aws_integration_queue(
         "message": "Handling AWS Integration Queue",
     }
     log.debug(log_data)
-    res = async_to_sync(handle_tenant_integration_queue)(app)
+    async_to_sync(handle_tenant_integration_queue)(app)
 
 
 schedule_30_minute = timedelta(seconds=1800)

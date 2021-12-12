@@ -49,7 +49,7 @@ def init():
     stats = get_plugin_by_name(
         config.get("_global_.plugins.metrics", "cmsaas_metrics")
     )()
-    if __name__ == "__main__":
+    if __name__ in ["__main__", "api.__main__"]:
         port = 8092
         stats.count("start")
 

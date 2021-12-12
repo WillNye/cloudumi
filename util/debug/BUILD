@@ -6,29 +6,20 @@ filegroup(
     name = "src_files",
     srcs = (
         "__init__.py",
-        "config.py",
     ),
     visibility = ["//visibility:public"],
 )
 
 py_library(
-    name = "lib",
+    name = "debug",  # can be pulled in like this: //util/debug
     data = [],
     srcs_version = "PY3",
     srcs = [
         ":src_files",
     ],
     deps = [
-        "//common/config:lib",
+        requirement("ptvsd"),
     ],
     visibility = ["//visibility:public"],
 )
 
-py_wheel(
-    name = "py_wheel",
-    distribution = "common_plugin_config",
-    python_tag = "py3",
-    version = "$(VERSION)",
-    deps = [":lib"],
-    tags = ["manual"],
-)

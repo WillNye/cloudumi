@@ -10,6 +10,7 @@ filegroup(
     srcs = [
         "__init__.py",
         "__main__.py",
+        "debug.py",
         "routes.py",
     ]
 )
@@ -24,6 +25,7 @@ INT_DEPS = [
     "//plugins/auth:lib",
     "//plugins/celery_tasks:lib",
     "//plugins/config:lib",
+    "//plugins/group_mapping:lib",
     "//plugins/metrics:lib",
     "//saml:lib",
     "//util/log:lib",
@@ -36,6 +38,7 @@ EXT_DEPS = [
     requirement("bcrypt"),
     requirement("cloudaux"),
     requirement("cryptography"),
+    requirement("debugpy"),
     requirement("deepdiff"),
     requirement("ed25519"),
     requirement("email_validator"),
@@ -51,6 +54,7 @@ EXT_DEPS = [
     requirement("password_strength"),
     requirement("policy_sentry"),
     requirement("policyuniverse"),
+    requirement("ptvsd"),
     requirement("pyjwt"),
     requirement("python3-saml"),
     requirement("requests"),
@@ -70,6 +74,7 @@ REQUIRES = [
     "bcrypt",
     "cloudaux",
     "cryptography",
+    "debugpy",
     "deepdiff",
     "ed25519",
     "email_validator",
@@ -87,6 +92,7 @@ REQUIRES = [
     "policyuniverse",
     "pyjwt",
     "python3-saml",
+    "ptvsd",
     "requests",
     "retrying",
     "sentry_sdk",
@@ -118,7 +124,7 @@ py_binary(
     srcs = [
         ":src",
     ],
-    main = "__main__.py",
+    main = "debug.py",
     env = {
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
         # Note: `bazel info --show_make_env` will show all available predefined variables
@@ -168,13 +174,13 @@ py_layer(
 
 py_layer(
     name = "dep_layer",
-    filter = "@",
+    filter = "/",
     deps = EXT_DEPS,
 )
 
 py_layer(
     name = "int_dep_layer",
-    filter = "@",
+    filter = "/",
     deps = INT_DEPS,
 )
 
