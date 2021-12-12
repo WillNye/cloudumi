@@ -25,6 +25,7 @@ INT_DEPS = [
     "//plugins/auth:lib",
     "//plugins/celery_tasks:lib",
     "//plugins/config:lib",
+    "//plugins/group_mapping:lib",
     "//plugins/metrics:lib",
     "//saml:lib",
     "//util/log:lib",
@@ -173,13 +174,13 @@ py_layer(
 
 py_layer(
     name = "dep_layer",
-    filter = "@",
+    filter = "/",
     deps = EXT_DEPS,
 )
 
 py_layer(
     name = "int_dep_layer",
-    filter = "@",
+    filter = "/",
     deps = INT_DEPS,
 )
 
