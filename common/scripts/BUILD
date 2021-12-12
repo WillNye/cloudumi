@@ -1,5 +1,6 @@
-load("@rules_python//python:defs.bzl", "py_binary")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
+
 py_binary(
     name = "initialize_dynamodb",
     data = [
@@ -7,7 +8,7 @@ py_binary(
     ],
     srcs_version = "PY3",
     srcs = [
-        "initialize_dynamodb.py"
+        "initialize_dynamodb.py",
     ],
     env = {
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
@@ -19,9 +20,10 @@ py_binary(
     deps = [
         "//common/config:lib",
         "//common:lib",
+        "//util/debug",
         requirement("botocore"),
         requirement("tenacity"),
-        requirement("ujson"),
     ],
     visibility = ["//visibility:public"],
 )
+
