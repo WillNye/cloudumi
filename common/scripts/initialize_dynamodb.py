@@ -8,6 +8,7 @@ from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait
 
 from common.config import config
 from common.lib.aws.session import restricted_get_session_for_saas
+import util.debug
 
 streams_enabled = config.get("_global_.dynamodb.streams_enabled", True)
 ttl_enabled = config.get("_global_.dynamodb.ttl_enabled", True)

@@ -11,6 +11,7 @@ DEBUG_PORT = os.getenv('DEBUG_PORT', 9092)
 DEBUG_ENABLED = os.getenv('DEBUG', False)
 
 if DEBUG_ENABLED:
+    print(" ===> DEBUG ENABLED THERE GOOD BUDDYS <=== ")
     ptvsd.enable_attach(address=('localhost', DEBUG_PORT), redirect_output=True)
     print("Debugger listening on port 9092. Waiting for debugger to attach...")
     ptvsd.wait_for_attach()
