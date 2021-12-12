@@ -28,7 +28,7 @@ py_library(
 
 py_wheel(
     name = "py_wheel",
-    distribution = "common_plugin_aws",
+    distribution = "common_plugin_group_mapping",
     python_tag = "py3",
     version = "$(VERSION)",
     deps = [":lib"],
