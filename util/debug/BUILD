@@ -18,6 +18,7 @@ py_library(
         ":src_files",
     ],
     deps = [
+        requirement("ptvsd"),
     ],
     visibility = ["//visibility:public"],
 )
