@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Generator
+from typing import Dict, Generator, List
 
 import boto3
 
@@ -42,7 +42,7 @@ def __extract_subscription_notification_message_body(payload: dict) -> dict:
 
 
 def iterate_event_messages(
-    region: str, queue_name: str, event_message: dict
+    region: str, queue_name: str, messages: List[Dict[str, str]]
 ) -> Generator[dict, None, None]:
     """Return iterator of messages with the following structure:
     - message_id
@@ -59,30 +59,19 @@ def iterate_event_messages(
         raise RuntimeError(f"Invalid queue name: {queue_name}")
     resp = client.get_queue_attributes(QueueUrl=queue_url, AttributeNames=["QueueArn"])
     queue_arn = resp.get("Attributes", {}).get("QueueArn")
-    messages = event_message.get("Messages", [])
-    if not messages:
-        messages = event_message.get("Records", [])
+
     for message in messages:
-        receipt_handle = ""
-        if "ReceiptHandle" in message:
-            receipt_handle = message.get("ReceiptHandle")
-        elif "receiptHandle" in message:
-            receipt_handle = message.get("receiptHandle")
-        else:
-            logger.error(f"Unable to get receipt handle from {message}")
-        if "MessageId" in message:
-            message_id = message.get("MessageId")
-        else:
-            message_id = "not set"
-        if "body" in message:
-            body = message.get("body")
-        elif "Body" in message:
-            body = message.get("Body")
-        else:
+        receipt_handle = message.get("ReceiptHandle")
+        if not receipt_handle:
+            raise RuntimeError(
+                f"Non-standard event message, does not have a b|ReceiptHandle: {message}"
+            )
+        message_id = message.get("MessageId", "unset")
+        body = json.loads(message.get("Body", "{}"))
+        if not body:
             raise RuntimeError(
                 f"Non-standard event message, does not have a b|Body: {message}"
             )
-        body = json.loads(body)
         if __is_payload_subscription_notification(body):
             body = __extract_subscription_notification_message_body(body)
         yield __build_event_message(message_id, receipt_handle, queue_arn, body)

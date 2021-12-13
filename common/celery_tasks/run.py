@@ -1,8 +1,3 @@
-import logging
-
-import celery
-
-import plugins
 from common.celery_tasks import celery_tasks
 from util.log import logger
 

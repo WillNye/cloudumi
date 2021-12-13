@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from pkg_resources import Distribution, EntryPoint, WorkingSet, load_entry_point
+from pkg_resources import Distribution, EntryPoint
 
 from util.log import logger
 

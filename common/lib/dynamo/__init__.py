@@ -36,10 +36,7 @@ from common.lib.aws.session import (
     get_session_for_tenant,
     restricted_get_session_for_saas,
 )
-from common.lib.cache import (
-    retrieve_json_data_from_redis_or_s3,
-    store_json_results_in_redis_and_s3,
-)
+from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.crypto import CryptoSign
 from common.lib.dynamo.host_restrict_session_policy import get_session_policy_for_host
 from common.lib.password import wait_after_authentication_failure
@@ -151,13 +148,10 @@ class BaseDynamoHandler:
         ],
     ) -> Union[int, Dict[str, Union[int, str]], str, List[Dict[str, Union[int, str]]]]:
         """Traverse a potentially nested object and replace all Dynamo placeholders with actual empty strings
-
         Args:
             obj (object)
-
         Returns:
             object: Object with original empty strings
-
         """
         if isinstance(obj, dict):
             for k in ["aws:rep:deleting", "aws:rep:updateregion", "aws:rep:updatetime"]:
@@ -177,13 +171,10 @@ class BaseDynamoHandler:
 
     def _data_to_dynamo_replace(self, obj: Any) -> Any:
         """Traverse a potentially nested object and replace all instances of an empty string with a placeholder
-
         Args:
             obj (object)
-
         Returns:
             object: Object with Dynamo friendly empty strings
-
         """
         if isinstance(obj, dict):
             for k in ["aws:rep:deleting", "aws:rep:updateregion", "aws:rep:updatetime"]:
@@ -471,7 +462,6 @@ class UserDynamoHandler(BaseDynamoHandler):
     async def create_api_key(self, user, host, ttl=None) -> str:
         """
         Creates a new API key for the user.
-
         :param user: The user to create an API key for.
         :param host: The host to create the API key for.
         :param ttl: The TTL for the API key.
@@ -506,7 +496,6 @@ class UserDynamoHandler(BaseDynamoHandler):
     async def verify_api_key(self, api_key, user, host) -> bool:
         """
         Verifies an API key.
-
         :param api_key: The API key to verify.
         :param user: The user to verify the API key for.
         :param host: The host to verify the API key for.
@@ -699,7 +688,6 @@ class UserDynamoHandler(BaseDynamoHandler):
     ) -> List[Dict[str, Union[int, List[str], str]]]:
         """Return all policy requests. If a status is specified, only requests with the specified status will be
         returned.
-
         :param status:
         :return:
         """
@@ -1025,10 +1013,8 @@ class UserDynamoHandler(BaseDynamoHandler):
     ) -> Dict[str, Union[int, str]]:
         """
         Add a user request to the dynamo table
-
         Sample run:
         add_request("user@example.com", "engtest", "because")
-
         :param user_email: Email address of user
         :param group: Name of group user is requesting access to
         :param justification:
@@ -1048,7 +1034,6 @@ class UserDynamoHandler(BaseDynamoHandler):
           updated_by
           approval_reason
           status
-
         user@example.com:
           requests: []
           last_updated: 1
@@ -1060,7 +1045,6 @@ class UserDynamoHandler(BaseDynamoHandler):
         # What if we want to send email saying your request is expiring in 7 days? Maybe celery to query all
         # What about concept of request ID? Maybe base64 encoded thing?
         # Need an all-in-one page to show all pending requests, all expired/approved requests
-
       """
         request_time = request_time or int(time.time())
 
@@ -1128,7 +1112,6 @@ class UserDynamoHandler(BaseDynamoHandler):
 
     async def get_all_identity_group_requests(self, host: str, status=None):
         """Return all requests. If a status is specified, only requests with the specified status will be returned.
-
         :param status:
         :return:
         """
@@ -1138,7 +1121,6 @@ class UserDynamoHandler(BaseDynamoHandler):
 
         return_value = []
         for item in items:
-            new_json = []
             if status and not item["status"] == status:
                 continue
             if item["host"] != host:
@@ -1202,18 +1184,17 @@ class UserDynamoHandler(BaseDynamoHandler):
         self, host, user_email, request: GroupRequest
     ) -> GroupRequest:
         """Create a new group request.
-
         :param request:
         :return:
         """
-        from common.celery_tasks.celery_tasks import app as celery_app
+        from cloudumi_common.celery_tasks.celery_tasks import app as celery_app
 
         request_dict = json.loads(request.json())
         self.identity_requests_table.put_item(
             Item=self._data_to_dynamo_replace(request_dict)
         )
         celery_app.send_task(
-            "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_host_t",
+            "cloudumi_common.celery_tasks.celery_tasks.cache_identity_group_requests_for_host_t",
             kwargs={"host": host},
         )
 
@@ -1251,7 +1232,6 @@ class UserDynamoHandler(BaseDynamoHandler):
         reviewer_comments=None,
     ):
         """
-
         :param user:
         :param status:
         :param request_id:
@@ -1322,7 +1302,6 @@ class UserDynamoHandler(BaseDynamoHandler):
     ) -> Dict[str, Union[int, str]]:
         """
         Change request status by ID
-
         :param request_id:
         :param new_status:
         :param updated_by:
@@ -1388,7 +1367,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             overwrite_by_pkeys=["host", "request_id"]
         ) as batch:
             for item in items:
-                r = batch.put_item(Item=self._data_to_dynamo_replace(item))
+                batch.put_item(Item=self._data_to_dynamo_replace(item))
         return True
 
     async def get_top_cloudtrail_errors_by_arn(self, arn, host, n=5):
@@ -1474,7 +1453,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             config.get(
                 "_global_.aws.tenant_static_config_dynamo_table",
                 "consoleme_tenant_static_configs",
-            ),
+            )
         )
 
     def _get_dynamo_table_restricted(self, table_name):
@@ -1567,8 +1546,12 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             compressed_config = current_config.get("Item", {}).get("config", "")
             if not compressed_config:
                 return c
-            c = zlib.decompress(compressed_config.value)
+            try:
+                c = zlib.decompress(compressed_config.value)
+            except Exception:
+                c = compressed_config.value
         except Exception as e:  # noqa
+
             log.error(
                 {
                     "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
@@ -1577,7 +1560,23 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
                 }
             )
             sentry_sdk.capture_exception()
+            c = compressed_config
         return yaml.safe_load(c)
+
+    def get_all_hosts(self) -> List[str]:
+        hosts = set()
+        items = self.parallel_scan_table(
+            self.tenant_static_configs,
+            dynamodb_kwargs={
+                "Select": "SPECIFIC_ATTRIBUTES",
+                "AttributesToGet": [
+                    "host",
+                ],
+            },
+        )
+        for item in items:
+            hosts.add(item["host"])
+        return list(hosts)
 
     async def update_static_config_for_host(
         self,
@@ -1592,15 +1591,16 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         # Validate that config loads as yaml, raises exception if not
         yaml.safe_load(new_config)
         stats.count("update_dynamic_config", tags={"updated_by": updated_by})
-        current_config_entry = self.tenant_static_configs.get_item(
+        current_config_entry = await sync_to_async(self.tenant_static_configs.get_item)(
             Key={"host": host, "id": "master"}
         )
-        if current_config_entry.get("Item"):
+        current_config_entry = current_config_entry.get("Item", {})
+        if current_config_entry:
             old_config = {
                 "host": host,
-                "id": current_config_entry["Item"]["updated_at"],
-                "updated_by": current_config_entry["Item"]["updated_by"],
-                "config": current_config_entry["Item"]["config"],
+                "id": current_config_entry["updated_at"],
+                "updated_by": current_config_entry["updated_by"],
+                "config": current_config_entry["config"],
                 "updated_at": str(int(time.time())),
             }
 
@@ -1611,7 +1611,8 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         new_config_writable = {
             "host": host,
             "id": "master",
-            "config": zlib.compress(new_config.encode()),
+            "config": new_config,
+            # "config": zlib.compress(new_config.encode()),
             "updated_by": updated_by,
             "updated_at": str(int(time.time())),
         }
@@ -1672,7 +1673,6 @@ class IAMRoleDynamoHandler(BaseDynamoHandler):
 
     def sync_iam_role_for_account(self, role_ddb: dict) -> None:
         """Sync the IAM roles received to DynamoDB.
-
         :param role_ddb:
         :return:
         """

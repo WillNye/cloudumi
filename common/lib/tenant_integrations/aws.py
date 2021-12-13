@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 import boto3
 import sentry_sdk
 import ujson as json
+import yaml
 from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
@@ -76,6 +77,204 @@ async def return_error_response_for_noq_registration(
     return {"statusCode": status, "body": resp.body}
 
 
+async def handle_spoke_account_registration(body):
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+    }
+    spoke_role_name = config.get(
+        "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
+    )
+    account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
+    spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
+    host = body["ResourceProperties"]["Host"]
+
+    external_id = config.get_host_specific_key(
+        f"site_configs.{host}.tenant_details.external_id", host
+    )
+    # Get central role arn
+    pre_role_arns_to_assume = config.get_host_specific_key(
+        f"site_configs.{host}.policies.pre_role_arns_to_assume", host, []
+    )
+    if pre_role_arns_to_assume:
+        central_role_arn = pre_role_arns_to_assume[-1]["role_arn"]
+    else:
+        raise Exception("No Central Role ARN detected in configuration.")
+
+    # Assume role from noq_dev_central_role
+    try:
+        sts_client = await sync_to_async(boto3_cached_conn)("sts", host)
+        central_role_credentials = await sync_to_async(sts_client.assume_role)(
+            RoleArn=central_role_arn,
+            RoleSessionName="noq_registration_verification",
+            ExternalId=external_id,
+        )
+    except ClientError as e:
+        sentry_sdk.capture_message(
+            "Unable to assume customer's central account role", "error"
+        )
+        log.error(
+            {
+                **log_data,
+                "message": "Unable to assume customer's hub account role",
+                "cf_message": body,
+                "external_id": external_id,
+                "host": host,
+                "error": str(e),
+            }
+        )
+        return False
+
+    customer_central_role_sts_client = await sync_to_async(boto3.client)(
+        "sts",
+        aws_access_key_id=central_role_credentials["Credentials"]["AccessKeyId"],
+        aws_secret_access_key=central_role_credentials["Credentials"][
+            "SecretAccessKey"
+        ],
+        aws_session_token=central_role_credentials["Credentials"]["SessionToken"],
+    )
+
+    try:
+        customer_spoke_role_credentials = await sync_to_async(
+            customer_central_role_sts_client.assume_role
+        )(
+            RoleArn=spoke_role_arn,
+            RoleSessionName="noq_registration_verification",
+        )
+    except ClientError as e:
+        sentry_sdk.capture_exception()
+        log.error(
+            {
+                **log_data,
+                "message": "Unable to assume customer's spoke account role",
+                "cf_message": body,
+                "external_id": external_id,
+                "host": host,
+                "error": str(e),
+            }
+        )
+        return False
+
+    customer_spoke_role_iam_client = await sync_to_async(boto3.client)(
+        "iam",
+        aws_access_key_id=customer_spoke_role_credentials["Credentials"]["AccessKeyId"],
+        aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
+            "SecretAccessKey"
+        ],
+        aws_session_token=customer_spoke_role_credentials["Credentials"][
+            "SessionToken"
+        ],
+    )
+
+    account_aliases = await sync_to_async(
+        customer_spoke_role_iam_client.list_account_aliases
+    )()["AccountAliases"]
+    if account_aliases:
+        account_name = account_aliases[0]
+    else:
+        account_name = account_id_for_role
+
+    # Write tenant configuration to DynamoDB
+    ddb = RestrictedDynamoHandler()
+    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)
+    if not host_config["site_configs"][host].get("account_ids_to_name"):
+        host_config["site_configs"][host]["account_ids_to_name"] = {}
+    host_config["site_configs"][host]["account_ids_to_name"][
+        account_id_for_role
+    ] = account_name
+    if not host_config["site_configs"][host].get("policies"):
+        host_config["site_configs"][host]["policies"] = {}
+    if not host_config["site_configs"][host]["policies"].get("role_name"):
+        host_config["site_configs"][host]["policies"]["role_name"] = spoke_role_name
+
+    await ddb.update_static_config_for_host(
+        yaml.dump(host_config), "aws_integration", host
+    )
+    return True
+
+
+async def handle_central_account_registration(body):
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+    }
+    central_role_name = config.get(
+        "_global_.integrations.aws.central_role_name", "NoqCentralRole"
+    )
+    account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
+    role_arn = f"arn:aws:iam::{account_id_for_role}:role/{central_role_name}"
+    external_id = body["ResourceProperties"]["ExternalId"]
+    host = body["ResourceProperties"]["Host"]
+
+    # Verify External ID
+    external_id_in_config = config.get_host_specific_key(
+        f"site_configs.{host}.tenant_details.external_id", host
+    )
+
+    if external_id != external_id_in_config:
+        sentry_sdk.capture_message(
+            "External ID from CF doesn't match host's external ID configuration",
+            "error",
+        )
+        log.error(
+            {
+                **log_data,
+                "error": "External ID Mismatch",
+                "cf_message": body,
+                "external_id_from_cf": external_id,
+                "external_id_in_config": external_id_in_config,
+                "host": host,
+            }
+        )
+        return False
+
+    # Assume role from noq_dev_central_role
+    try:
+        sts_client = await sync_to_async(boto3_cached_conn)("sts", host)
+        await sync_to_async(sts_client.assume_role)(
+            RoleArn=role_arn,
+            RoleSessionName="noq_registration_verification",
+            ExternalId=external_id,
+        )
+    except ClientError as e:
+        sentry_sdk.capture_message(
+            "Unable to assume customer's central account role", "error"
+        )
+        log.error(
+            {
+                **log_data,
+                "message": "Unable to assume customer's hub account role",
+                "cf_message": body,
+                "external_id_from_cf": external_id,
+                "external_id_in_config": external_id_in_config,
+                "host": host,
+                "error": str(e),
+            }
+        )
+        return False
+
+    # Write tenant configuration to DynamoDB
+    ddb = RestrictedDynamoHandler()
+    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)
+    if not host_config["site_configs"][host].get("account_ids_to_name"):
+        host_config["site_configs"][host]["account_ids_to_name"] = {}
+    host_config["site_configs"][host]["account_ids_to_name"][
+        account_id_for_role
+    ] = account_id_for_role
+    if not host_config["site_configs"][host].get("policies"):
+        host_config["site_configs"][host]["policies"] = {}
+    if not host_config["site_configs"][host]["policies"].get("pre_role_arns_to_assume"):
+        host_config["site_configs"][host]["policies"]["pre_role_arns_to_assume"] = []
+    host_config["site_configs"][host]["policies"]["pre_role_arns_to_assume"] = [
+        {
+            "role_arn": role_arn,
+            "external_id": external_id,
+        }
+    ]
+    await ddb.update_static_config_for_host(
+        yaml.dump(host_config), "aws_integration", host
+    )
+    return True
+
+
 async def handle_tenant_integration_queue(
     celery_app,
     max_num_messages_to_process: Optional[int] = None,
@@ -125,9 +324,22 @@ async def handle_tenant_integration_queue(
             try:
                 message_id = message.get("message_id")
                 receipt_handle = message.get("receipt_handle")
-                queue_arn = message.get("queue_arn")
+                processed_messages.append(
+                    {
+                        "Id": message_id,
+                        "ReceiptHandle": receipt_handle,
+                    }
+                )
+                action_type = message["body"]["ResourceProperties"]["ActionType"]
+                if action_type not in [
+                    "AWSSpokeAcctRegistration",
+                    "AWSCentralAcctRegistration",
+                ]:
+                    log_data["message"] = f"ActionType {action_type} not supported"
+                    log.debug(log_data)
+                    continue
                 body = message.get("body")
-
+                # TODO: Handle all request types. Valid request types: Create, Update, Delete
                 if body.get("RequestType") != "Create":
                     log.error(
                         {
@@ -136,13 +348,8 @@ async def handle_tenant_integration_queue(
                             "cf_message": body,
                         }
                     )
-                    processed_messages.append(
-                        {
-                            "Id": message_id,
-                            "ReceiptHandle": receipt_handle,
-                        }
-                    )
                     continue
+
                 response_url = body.get("ResponseURL")
                 if not response_url:
                     # We don't have a CFN response URL, so we can't respond to the request
@@ -157,145 +364,46 @@ async def handle_tenant_integration_queue(
                             "cf_message": body,
                         }
                     )
-                    processed_messages.append(
-                        {
-                            "Id": message_id,
-                            "ReceiptHandle": receipt_handle,
-                        }
-                    )
                     continue
-                partial_stack_id_for_role = body["StackId"].split("/")[-1].split("-")[0]
-                account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
-                role_arn = f"arn:aws:iam::{account_id_for_role}:role/cloudumi-central-role-{partial_stack_id_for_role}"
-                external_id = body["ResourceProperties"]["ExternalId"]
+
+                if action_type == "AWSSpokeAcctRegistration":
+                    await handle_spoke_account_registration(body)
+                elif action_type == "AWSCentralAcctRegistration":
+                    await handle_central_account_registration(body)
                 host = body["ResourceProperties"]["Host"]
-
-                # Verify External ID
-                external_id_in_config = config.get_host_specific_key(
-                    f"site_configs.{host}.tenant_details.external_id", host
-                )
-
-                if external_id != external_id_in_config:
-                    sentry_sdk.capture_message(
-                        "External ID from CF doesn't match host's external ID configuration",
-                        "error",
-                    )
-                    log.error(
-                        {
-                            **log_data,
-                            "error": "External ID Mismatch",
-                            "cf_message": body,
-                            "external_id_from_cf": external_id,
-                            "external_id_in_config": external_id_in_config,
-                            "host": host,
-                        }
-                    )
-                    processed_messages.append(
-                        {
-                            "Id": message_id,
-                            "ReceiptHandle": receipt_handle,
-                        }
-                    )
-                    continue
-
-                # Assume role from noq_dev_central_role
-                try:
-                    sts_client = await sync_to_async(boto3_cached_conn)("sts", host)
-                    await sync_to_async(sts_client.assume_role)(
-                        RoleArn=role_arn,
-                        RoleSessionName="noq_registration_verification",
-                        ExternalId=external_id,
-                    )
-                except ClientError as e:
-                    sentry_sdk.capture_message(
-                        "Unable to assume customer's hub account role", "error"
-                    )
-                    log.error(
-                        {
-                            **log_data,
-                            "message": "Unable to assume customer's hub account role",
-                            "cf_message": body,
-                            "external_id_from_cf": external_id,
-                            "external_id_in_config": external_id_in_config,
-                            "host": host,
-                            "error": str(e),
-                        }
-                    )
-                    processed_messages.append(
-                        {
-                            "Id": message_id,
-                            "ReceiptHandle": receipt_handle,
-                        }
-                    )
-                    continue
-
-                # Write tenant configuration to DynamoDB
-                ddb = RestrictedDynamoHandler()
-                host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(
-                    host
-                )
-                if not host_config.get("account_ids_to_name"):
-                    host_config["account_ids_to_name"] = {}
-                host_config["account_ids_to_name"][
-                    account_id_for_role
-                ] = account_id_for_role
-                if not host_config.get("policies"):
-                    host_config["policies"] = {}
-                if not host_config["policies"].get("pre_role_arns_to_assume"):
-                    host_config["policies"]["pre_role_arns_to_assume"] = []
-                host_config["policies"]["pre_role_arns_to_assume"].append(
-                    [
-                        {
-                            "role_arn": role_arn,
-                            "external_id": external_id,
-                        }
-                    ]
-                )
-                await ddb.update_static_config_for_host(
-                    host_config, "aws_integration", host
-                )
-
+                account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
                 celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
+                    "cloudumi_common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
+                    "cloudumi_common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
+                    "cloudumi_common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
+                    "cloudumi_common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
+                    "cloudumi_common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
+                    "cloudumi_common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
 
-                # TODO: notify user in the UI that connection was successful
-                # TODO: Spawn tasks to cache resources from central account
-                processed_messages.append(
-                    {
-                        "Id": message_id,
-                        "ReceiptHandle": receipt_handle,
-                    }
-                )
-
-            except Exception as e:
+            except Exception:
                 raise
         if processed_messages:
             await sync_to_async(sqs_client.delete_message_batch)(
@@ -306,8 +414,3 @@ async def handle_tenant_integration_queue(
         )
         messages = messages_awaitable.get("Messages", [])
     return {"message": "Successfully processed all messages", "num_events": num_events}
-
-
-# To run manually, uncomment the lines below:
-# from common.celery_tasks.celery_tasks import app as celery_app
-# async_to_sync(handle_tenant_integration_queue)(celery_app)

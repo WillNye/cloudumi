@@ -22,4 +22,10 @@ module.exports = function (app) {
       changeOrigin: false,
     })
   );
+  app.use(
+    proxy("/noauth", {
+      target: "http://localhost:8092",
+      changeOrigin: false,
+    })
+  );
 };

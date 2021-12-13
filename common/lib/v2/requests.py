@@ -2237,11 +2237,7 @@ async def apply_resource_policy_change(
         "host": host,
     }
     log.info(log_data)
-    aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
-    )()
+
     resource_arn_parsed = parse_arn(change.arn)
     resource_type = resource_arn_parsed["service"]
     resource_name = resource_arn_parsed["resource"]
@@ -2452,11 +2448,6 @@ async def maybe_approve_reject_request(
     any_changes_cancelled = False
     request_status_changed = False
 
-    aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
-    )()
     for change in extended_request.changes.changes:
         if change.status == Status.applied:
             any_changes_applied = True
@@ -2539,12 +2530,6 @@ async def parse_and_apply_policy_request_modification(
         "message": "Parsing request modification changes",
         "host": host,
     }
-
-    aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
-    )()
 
     log.debug(log_data)
 

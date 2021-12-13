@@ -1,5 +1,5 @@
 Resources:
-  CloudUmiTaskRole:
+  SpokeRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -7,41 +7,14 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service:
-                - ecs.amazonaws.com
-            Action:
-              - "sts:AssumeRole"
-          - Effect: Allow
-            Principal:
               AWS:
-                - !Ref CloudUmiCentralAcctArn
+                - !Ref CentralAccountArnParameter
             Action:
               - "sts:AssumeRole"
-      RoleName: !Join
-        - "-"
-        - - "cloudumi-spoke-role"
-          - !Select
-            - 0
-            - !Split
-              - "-"
-              - !Select
-                - 2
-                - !Split
-                  - "/"
-                  - !Ref "AWS::StackId"
+              - "sts:TagSession"
+      RoleName: !Ref SpokeRoleNameParameter
       Policies:
-        - PolicyName: !Join
-            - "-"
-            - - "cloudumi-spoke-acct-policy-ecs"
-              - !Select
-                - 0
-                - !Split
-                  - "-"
-                  - !Select
-                    - 2
-                    - !Split
-                      - "/"
-                      - !Ref "AWS::StackId"
+        - PolicyName: "spoke-acct-policy"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -78,38 +51,61 @@ Resources:
                   - "sqs:TagQueue"
                   - "sqs:UntagQueue"
                 Resource: "*"
-  CloudUmiSnsCustomResource:
-    Type: "Custom::CloudUmiSnsCustomResource"
+  SnsCustomResource:
+    Type: "Custom::SnsCustomResource"
     Properties:
-      ServiceToken: arn:aws:sns:us-east-1:259868150464:noq_registration
+      ServiceToken: !Ref RegistrationSnsQueArnParameter
       IntegrationName: !Ref "AWS::StackName"
-      ExternalId: !Ref ExternalIDParameter
-      ActionType: "AWSSpokeAcctRegistration"
-      Account: cloudumi
+      Host: !Ref HostParameter
+      ActionType: "SpokeRegistration"
       TemplateVersion: 1.5
       AWSAccountId: !Ref "AWS::AccountId"
+      CentralAccountArn: !Ref CentralAccountArnParameter
+      SpokeRoleName: !Ref SpokeRoleNameParameter
+
 Parameters:
-  ExternalIDParameter:
+  CentralAccountArnParameter:
     Description: >-
-      The cross-account access role created by the stack will use this value for
-      its ExternalID. Do not change this value!
+      The cross account role in customer's environment that will be allowed to assume this spoke role account.
     Type: String
     MinLength: "2"
-    MaxLength: "1224"
-    AllowedPattern: '[\w=,.@:\/-]*'
-    ConstraintDescription: 'Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]*'
-  CloudUmiCentralAcctArn:
+    MaxLength: "100"
+    AllowedPattern: '^arn:aws:iam::\d{12}:role/.+'
+    ConstraintDescription: 'Invalid CentralAccountArn value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+'
+  HostParameter:
     Description: >-
-      The cross account role that will be allowed to assume this spoke role account.
+      The host parameter. Do not change this value!
     Type: String
-    MinLength: "2" # iam role arn is around 61 with stackid at the end usually
-    MaxLength: "1224" # see above
-    #AllowedPattern: '[\w\d\/-:]*'
-    #ConstraintDescription: 'Invalid CloudUmiCentralAcctArn. Must match pattern [\w\d\/-:]*'
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: 'Invalid Host value.  Must match pattern [\w+_-]*'
+  SpokeRoleNameParameter:
+    Description: >-
+      The name of the spoke role in each customer account. Do not change this value!
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]*'
+  RegistrationSnsQueArnParameter:
+    Description: >-
+      The SNS queue ARN that will be used to send registration messages to the SaaS
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '^arn:aws:sns:[\w-]*:\d{12}:.+'
+    ConstraintDescription: 'Invalid RegistrationSnsQueArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
 Outputs:
-  ExternalID:
-    Description: ExternalID to share with NOQ on Cloudumi credential deployments
-    Value: !Ref ExternalIDParameter
-  CloudUmiCentralAcctArn:
-    Description: The cross accoutn role that will be allowed to assume this spoke role account.
-    Value: !Ref CloudUmiCentralAcctArn
+  CentralAccountArn:
+    Description: The central role in the customer's environment that will be allowed to assume the created spoke role.
+    Value: !Ref CentralAccountArnParameter
+  Host:
+    Description: Host to share with the SaaS provider for deployment
+    Value: !Ref HostParameter
+  SpokeRoleName:
+    Description: The name of the spoke role in each customer account.
+    Value: !Ref SpokeRoleNameParameter
+  RegistrationSnsQueArn:
+    Description: SNS Registration queue ARN
+    Value: !Ref RegistrationSnsQueArnParameter

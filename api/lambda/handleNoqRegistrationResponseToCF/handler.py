@@ -49,7 +49,7 @@ def emit_s3_response(event, context):
     sqs = boto3.client("sqs")
     if not isinstance(event, dict):
         return __return(400, "Not processing non-dict event message")
-    if not "Records" in event:
+    if "Records" not in event:
         return __return(500, "Unexpected event - looking for Record key")
     records = event.get("Records", [])
     bodies = [json.loads(x.get("body", "")) for x in records]
@@ -107,7 +107,7 @@ def emit_s3_response(event, context):
 
         logger.info(f"Sending SUCCESS to {response_url}")
         requests.put(response_url, data=response_data_json, headers=response_header)
-        logger.info(f"Deleting sqs message from queue")
+        logger.info("Deleting sqs message from queue")
         sqs.delete_message(
             QueueUrl="https://sqs.us-east-1.amazonaws.com/259868150464/noq_registration_response_queue",
             ReceiptHandle=receipt_handlers[idx],

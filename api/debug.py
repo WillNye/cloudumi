@@ -10,4 +10,4 @@ ptvsd.enable_attach(address=("localhost", 9092), redirect_output=True)
 print("Debugger listening on port 9092. Waiting for debugger to attach...")
 ptvsd.wait_for_attach()
 
-import api.__main__  # noqa: E402
+import api.__main__  # noqa

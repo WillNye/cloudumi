@@ -5,7 +5,7 @@ from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_identity
 from common.models import Status2, WebResponse
-from identity.lib.groups.groups import add_users_to_groups, get_group_by_name
+from identity.lib.groups.groups import add_users_to_groups
 from identity.lib.groups.models import Group, GroupRequestsTable, User
 from identity.lib.requests import (
     approve_group_request,
@@ -164,7 +164,7 @@ class IdentityRequestGroupsHandler(BaseHandler):
 
         user = data["user"]
         justification = data["justification"]
-        group_expiration = data["groupExpiration"]
+        # group_expiration = data["groupExpiration"]
         bulk_group_edit_field = data["bulkGroupEditField"]
         idp_name = data["idpName"]
 
@@ -223,7 +223,7 @@ class IdentityRequestGroupsHandler(BaseHandler):
 
         res = WebResponse(
             status=Status2.success,
-            message=f"Successfully added user to groups",
+            message="Successfully added user to groups",
         )
         self.write(json.loads(res.json()))
 

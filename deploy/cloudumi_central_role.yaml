@@ -1,5 +1,5 @@
 Resources:
-  CloudUmiTaskRole:
+  CentralRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -8,29 +8,18 @@ Resources:
           - Effect: Allow
             Principal:
               AWS:
-                - arn:aws:iam::259868150464:role/NoqClusterRole1
+                - !Ref ClusterRoleParameter
             Action:
               - "sts:AssumeRole"
               - "sts:TagSession"
             Condition:
               StringEquals:
                 sts:ExternalId: !Ref ExternalIDParameter
-      RoleName: !Join
-        - "-"
-        - - "cloudumi-central-role"
-          - !Select
-            - 0
-            - !Split
-              - "-"
-              - !Select
-                - 2
-                - !Split
-                  - "/"
-                  - !Ref "AWS::StackId"
+      RoleName: !Ref CentralRoleNameParameter
       Policies:
         - PolicyName: !Join
             - "-"
-            - - "cloudumi-central-acct-policy-ecs"
+            - - "central-account-policy"
               - !Select
                 - 0
                 - !Split
@@ -115,16 +104,16 @@ Resources:
                   - "sqs:TagQueue"
                   - "sqs:UntagQueue"
                 Resource: "*"
-  CloudUmiSnsCustomResource:
-    Type: "Custom::CloudUmiSnsCustomResource"
+  SnsCustomResource:
+    Type: "Custom::SnsCustomResource"
     DeletionPolicy: Retain
     Properties:
-      ServiceToken: arn:aws:sns:us-east-1:259868150464:noq_registration
+      ServiceToken: !Ref RegistrationSnsQueArnParameter
       IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
+      ClusterRole: !Ref ClusterRoleParameter
       Host: !Ref HostParameter
-      ActionType: "AWSCentralRegistration"
-      Account: cloudumi
+      ActionType: "AWSCentralAcctRegistration"
       TemplateVersion: 1.5
       AWSAccountId: !Ref "AWS::AccountId"
 Parameters:
@@ -134,21 +123,54 @@ Parameters:
       its ExternalID. Do not change this value!
     Type: String
     MinLength: "2"
-    MaxLength: "1224"
+    MaxLength: "100"
     AllowedPattern: '[\w+=,.@:\/-]*'
     ConstraintDescription: 'Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]*'
+  ClusterRoleParameter:
+    Description: >-
+      The SaaS Cluster role that will assume into the role created by this stack. Do not change this value!
+    Type: String
+    MinLength: "10"
+    MaxLength: "100"
+    AllowedPattern: '^arn:aws:iam::\d{12}:role/.+'
+    ConstraintDescription: 'Invalid ClusterRole value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+'
   HostParameter:
     Description: >-
       The host parameter. Do not change this value!
     Type: String
     MinLength: "2"
-    MaxLength: "1224"
+    MaxLength: "100"
     AllowedPattern: '[\w+_-]*'
     ConstraintDescription: 'Invalid Host value.  Must match pattern [\w+_-]*'
+  CentralRoleNameParameter:
+    Description: >-
+      The name of the Central role in the customer's environment. Do not change this value!
+    Type: String
+    MinLength: "10"
+    MaxLength: "100"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: 'Invalid CentralRoleName value.  Must match pattern [\w+_-]*'
+  RegistrationSnsQueArnParameter:
+    Description: >-
+      The SNS queue ARN that will be used to send registration messages to the SaaS
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '^arn:aws:sns:[\w-]*:\d{12}:.+'
+    ConstraintDescription: 'Invalid RegistrationSnsQueArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
 Outputs:
   ExternalID:
-    Description: ExternalID to share with NOQ on Cloudumi credential deployments
+    Description: ExternalID to share with the SaaS for assume-role deployments
     Value: !Ref ExternalIDParameter
   Host:
-    Description: Host to share with NOQ for CloudUmi deployment
+    Description: Host to share with the SaaS for deployment
     Value: !Ref HostParameter
+  ClusterRole:
+    Description: ClusterRole to share with the SaaS for deployment
+    Value: !Ref ClusterRoleParameter
+  CentralRoleName:
+    Description: The name of the Central role in customer's environment
+    Value: !Ref CentralRoleNameParameter
+  RegistrationSnsQueArn:
+    Description: SNS Registration queue ARN
+    Value: !Ref RegistrationSnsQueArnParameter

@@ -29,7 +29,11 @@ from api.handlers.v2.dynamic_config import DynamicConfigApiHandler
 from api.handlers.v2.errors import NotFoundHandler as V2NotFoundHandler
 from api.handlers.v2.generate_changes import GenerateChangesHandler
 from api.handlers.v2.generate_policy import GeneratePolicyHandler
-from api.handlers.v2.index import EligibleRoleHandler, EligibleRolePageConfigHandler
+from api.handlers.v2.index import (
+    EligibleRoleHandler,
+    EligibleRolePageConfigHandler,
+    EligibleRoleRefreshHandler,
+)
 from api.handlers.v2.logout import LogOutHandler
 from api.handlers.v2.managed_policies import (
     ManagedPoliciesForAccountHandler,
@@ -75,6 +79,7 @@ from api.handlers.v2.user import (
     UserRegistrationHandler,
 )
 from api.handlers.v2.user_profile import UserProfileHandler
+from api.handlers.v3.config import ConfigHandler
 from api.handlers.v3.identity.group import IdentityGroupHandler
 from api.handlers.v3.identity.groups import (
     IdentityGroupPageConfigHandler,
@@ -95,7 +100,9 @@ from api.handlers.v3.identity.users import (
     IdentityUsersTableHandler,
 )
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
+from api.handlers.v3.tasks import TasksHandler
 from api.handlers.v3.tenant_registration.tenant_registration import (
+    TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
 from common.config import config
@@ -126,6 +133,7 @@ def make_app(jwt_validator=None):
         (r"/api/v2/policies/check", CheckPoliciesHandler),
         (r"/api/v2/dynamic_config", DynamicConfigApiHandler),
         (r"/api/v2/eligible_roles", EligibleRoleHandler),
+        (r"/api/v2/eligible_roles/refresh", EligibleRoleRefreshHandler),
         (r"/api/v2/eligible_roles_page_config", EligibleRolePageConfigHandler),
         (r"/api/v2/policies_page_config", PoliciesPageConfigHandler),
         (r"/api/v2/requests_page_config", RequestsPageConfigHandler),
@@ -191,6 +199,8 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/identities/requests/user/(.*?)/(.*)", IdentityRequestUserHandler),
         (r"/api/v3/identities/requests_page_config", IdentityRequestsPageConfigHandler),
         (r"/api/v3/integrations/aws", AwsIntegrationHandler),
+        (r"/api/v3/tasks", TasksHandler),
+        (r"/api/v3/config", ConfigHandler),
         # (r"/api/v3/api_keys/add", AddApiKeyHandler),
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
@@ -202,7 +212,13 @@ def make_app(jwt_validator=None):
         router.rules.append(
             Rule(
                 HostMatches(domain),
-                [(r"/api/v3/tenant_registration", TenantRegistrationHandler)],
+                [
+                    (r"/api/v3/tenant_registration", TenantRegistrationHandler),
+                    (
+                        r"/api/v3/tenant_registration_aws_marketplace",
+                        TenantRegistrationAwsMarketplaceHandler,
+                    ),
+                ],
             )
         )
 
