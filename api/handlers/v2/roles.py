@@ -462,11 +462,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
 
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        aws = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-            )
-        )()
+
         await fetch_iam_role(account_id, arn, host, force_refresh=True)
         response_json = {
             "status": "success",
@@ -550,11 +546,6 @@ class RoleDetailAppHandler(BaseMtlsHandler):
 
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        aws = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-            )
-        )()
         await fetch_iam_role(account_id, arn, host, force_refresh=True)
         response_json = {
             "status": "success",

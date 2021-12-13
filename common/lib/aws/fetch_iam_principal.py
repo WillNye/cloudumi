@@ -175,8 +175,6 @@ async def _get_iam_role_async(
 
     import concurrent.futures
 
-    from common.lib.asyncio import run_io_tasks_in_parallel_v2
-
     executor = concurrent.futures.ThreadPoolExecutor(
         max_workers=4,
     )

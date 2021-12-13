@@ -6,7 +6,7 @@
 from botocore.exceptions import ClientError
 from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-import util.debug
+import util.debug  # noqa
 from common.config import config
 from common.lib.aws.session import restricted_get_session_for_saas
 

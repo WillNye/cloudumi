@@ -2,6 +2,7 @@ import urllib.parse
 
 from common.config import config
 from common.handlers.base import BaseHandler
+from common.lib.auth import can_admin_all
 from common.models import WebResponse
 
 

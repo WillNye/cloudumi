@@ -1,7 +1,7 @@
 from typing import List
 
-from config import config
-from lib.dynamo import RestrictedDynamoHandler
+from common.config import config
+from common.lib.dynamo import RestrictedDynamoHandler
 
 ddb = RestrictedDynamoHandler()
 

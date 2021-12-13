@@ -4,7 +4,7 @@ import ujson as json
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.loader import WebpackLoader
-from common.models import DataTableResponse
+from common.models import DataTableResponse, WebResponse
 
 log = config.get_logger()
 

@@ -5,7 +5,6 @@ import ujson as json
 from common.config import config
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler
-from common.lib.s3_helpers import get_s3_bucket_for_host
 from identity.lib.groups.models import OktaIdentityProvider, User
 from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 

@@ -1,5 +1,4 @@
 import asyncio
-import multiprocessing as mp
 import os
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from typing import List
@@ -72,26 +71,6 @@ def run_io_tasks_in_parallel(tasks):
     return results
 
 
-async def run_io_tasks_in_parallel_v2(executor, tasks):
-    import functools
-
-    loop = asyncio.get_event_loop()
-    loop.run_in_executor(
-        None,
-        functools.partial(
-            update_contacts,
-            data={"email": email, "access_token": g.tokens["access_token"]},
-        ),
-    )
-    results = []
-    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
-        running_tasks = [executor.submit(task) for task in tasks]
-        for running_task in running_tasks:
-            result = running_task.result()
-            results.append(result)
-    return results
-
-
 def run_cpu_tasks_in_parallel(tasks):
     results = {}
     with ProcessPoolExecutor() as executor:
@@ -100,13 +79,3 @@ def run_cpu_tasks_in_parallel(tasks):
             result = running_task.result()
             results[running_task] = result
     return results
-
-
-#
-# def run_cpu_tasks_in_parallel(tasks):
-#     qout = mp.Queue()
-#     running_tasks = [mp.Process(target=task) for task in tasks]
-#     for running_task in running_tasks:
-#         running_task.start()
-#     for running_task in running_tasks:
-#         running_task.join()

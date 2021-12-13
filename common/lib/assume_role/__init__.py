@@ -194,7 +194,7 @@ def boto3_cached_conn(
     """
     if host and pre_assume_roles is None:
         pre_assume_roles = consoleme_config.get(
-            f"_global_.aws.pre_role_arns_to_assume", []
+            "_global_.aws.pre_role_arns_to_assume", []
         )
         pre_assume_roles.extend(
             consoleme_config.get_host_specific_key(

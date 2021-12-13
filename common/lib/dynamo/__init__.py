@@ -36,10 +36,7 @@ from common.lib.aws.session import (
     get_session_for_tenant,
     restricted_get_session_for_saas,
 )
-from common.lib.cache import (
-    retrieve_json_data_from_redis_or_s3,
-    store_json_results_in_redis_and_s3,
-)
+from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.crypto import CryptoSign
 from common.lib.dynamo.host_restrict_session_policy import get_session_policy_for_host
 from common.lib.password import wait_after_authentication_failure
@@ -1124,7 +1121,6 @@ class UserDynamoHandler(BaseDynamoHandler):
 
         return_value = []
         for item in items:
-            new_json = []
             if status and not item["status"] == status:
                 continue
             if item["host"] != host:
@@ -1371,7 +1367,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             overwrite_by_pkeys=["host", "request_id"]
         ) as batch:
             for item in items:
-                r = batch.put_item(Item=self._data_to_dynamo_replace(item))
+                batch.put_item(Item=self._data_to_dynamo_replace(item))
         return True
 
     async def get_top_cloudtrail_errors_by_arn(self, arn, host, n=5):
@@ -1552,7 +1548,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
                 return c
             try:
                 c = zlib.decompress(compressed_config.value)
-            except Exception as e:
+            except Exception:
                 c = compressed_config.value
         except Exception as e:  # noqa
 

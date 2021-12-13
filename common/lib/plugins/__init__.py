@@ -1,8 +1,5 @@
 import pkgutil
-from collections import namedtuple
 from typing import Any
-
-import pkg_resources
 
 from plugins import entrypoints
 

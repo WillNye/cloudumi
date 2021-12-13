@@ -408,7 +408,7 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
         customer_data = await sync_to_async(marketplace_client.resolve_customer)(
             amazon_marketplace_reg_token
         )
-        customer_id = customer_data["CustomerIdentifier"]
+        # customer_id = customer_data["CustomerIdentifier"]
         # Expected customer_id: {
         #     'CustomerIdentifier': 'string',
         #     'ProductCode': 'string'

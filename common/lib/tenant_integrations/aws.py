@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 import boto3
 import sentry_sdk
 import ujson as json
+import yaml
 from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
@@ -402,7 +403,7 @@ async def handle_tenant_integration_queue(
                     kwargs={"host": host},
                 )
 
-            except Exception as e:
+            except Exception:
                 raise
         if processed_messages:
             await sync_to_async(sqs_client.delete_message_batch)(

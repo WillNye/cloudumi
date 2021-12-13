@@ -36,6 +36,8 @@ from celery.signals import (
     task_success,
     task_unknown,
 )
+
+# from celery_progress.backend import ProgressRecorder
 from retrying import retry
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
@@ -43,6 +45,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
 from common.config import config
+from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.account_indexers import (
     cache_cloud_accounts,
     get_account_id_to_name_mapping,
@@ -929,8 +932,8 @@ def cache_policies_table_details(host=None) -> bool:
 def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[str, Any]:
     if not host:
         raise Exception("`host` must be passed to this task.")
-    progress_recorder = ProgressRecorder(self)
-    from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
+    # progress_recorder = ProgressRecorder(self)
+    from common.lib.dynamo import IAMRoleDynamoHandler
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     aws = get_plugin_by_name(
@@ -1243,7 +1246,7 @@ def cache_iam_resources_across_accounts(
 ) -> Dict:
     if not host:
         raise Exception("`host` must be passed to this task.")
-    from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
+    from common.lib.dynamo import IAMRoleDynamoHandler
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(host)
@@ -2195,7 +2198,7 @@ def clear_old_redis_iam_cache(host=None) -> bool:
 
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
 def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
-    from cloudumi_common.lib.dynamo import UserDynamoHandler
+    from common.lib.dynamo import UserDynamoHandler
 
     if not host:
         raise Exception("`host` must be passed to this task.")
@@ -2786,11 +2789,7 @@ def refresh_iam_role(role_arn, host=None):
     """
     if not host:
         raise Exception("`host` must be passed to this task.")
-    aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
-    )()
+
     account_id = role_arn.split(":")[4]
     async_to_sync(fetch_iam_role)(
         account_id, role_arn, host, force_refresh=True, run_sync=True
@@ -2839,7 +2838,7 @@ def cache_identity_groups_for_host_t(host: str = None) -> Dict:
     }
     log.debug(log_data)
     # TODO: Finish this
-    res = async_to_sync(cache_identity_groups_for_host)(host)
+    async_to_sync(cache_identity_groups_for_host)(host)
     return log_data
 
 
@@ -2855,7 +2854,7 @@ def cache_identity_users_for_host_t(host: str = None) -> Dict:
     }
     log.debug(log_data)
     # TODO: Finish this
-    res = async_to_sync(cache_identity_users_for_host)(host)
+    async_to_sync(cache_identity_users_for_host)(host)
     return log_data
 
 
@@ -2888,7 +2887,7 @@ def cache_identity_requests_for_host_t(host: str = None) -> Dict:
     }
     log.debug(log_data)
     # Fetch from Dynamo. Write to Redis and S3
-    res = async_to_sync(cache_identity_requests_for_host)(host)
+    async_to_sync(cache_identity_requests_for_host)(host)
     return log_data
 
 
@@ -2915,7 +2914,7 @@ def handle_tenant_aws_integration_queue() -> Dict:
         "message": "Handling AWS Integration Queue",
     }
     log.debug(log_data)
-    res = async_to_sync(handle_tenant_integration_queue)(app)
+    async_to_sync(handle_tenant_integration_queue)(app)
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)

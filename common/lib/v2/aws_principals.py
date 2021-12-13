@@ -161,11 +161,7 @@ async def get_user_details(
 ) -> Optional[Union[ExtendedAwsPrincipalModel, AwsPrincipalModel]]:
     account_ids_to_name = await get_account_id_to_name_mapping(host)
     arn = f"arn:aws:iam::{account_id}:user/{user_name}"
-    aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
-    )()
+
     user = await fetch_iam_user(account_id, arn, host)
     # requested user doesn't exist
     if not user:
@@ -216,11 +212,6 @@ async def get_role_details(
 ) -> Optional[Union[ExtendedAwsPrincipalModel, AwsPrincipalModel]]:
     account_ids_to_name = await get_account_id_to_name_mapping(host)
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-    aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
-    )()
     role = await fetch_iam_role(account_id, arn, host, force_refresh=force_refresh)
     # requested role doesn't exist
     if not role:

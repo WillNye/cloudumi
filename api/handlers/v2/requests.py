@@ -653,11 +653,6 @@ class RequestDetailHandler(BaseAPIV2Handler):
             "host": host,
         }
         log.debug(log_data)
-        aws = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-            )
-        )()
         if (
             config.get_host_specific_key(
                 f"site_configs.{host}.policy_editor.disallow_contractors", host, True

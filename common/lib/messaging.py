@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Generator, List
+from typing import Dict, Generator, List
 
 import boto3
 

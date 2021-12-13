@@ -63,7 +63,7 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
                 f"site_configs.{host}.generate_and_store_credential_authorization_mapping.s3.bucket",
                 host,
                 config.get(
-                    f"_global_.consoleme_s3_bucket",
+                    "_global_.consoleme_s3_bucket",
                 ),
             )
             s3_key = config.get_host_specific_key(
@@ -260,7 +260,7 @@ async def generate_and_store_reverse_authorization_mapping(
             f"site_configs.{host}.generate_and_store_credential_authorization_mapping.s3.bucket",
             host,
             config.get(
-                f"_global_.consoleme_s3_bucket",
+                "_global_.consoleme_s3_bucket",
             ),
         )
         s3_key = config.get_host_specific_key(
@@ -327,7 +327,7 @@ async def generate_and_store_credential_authorization_mapping(
             f"site_configs.{host}.generate_and_store_credential_authorization_mapping.s3.bucket",
             host,
             config.get(
-                f"_global_.consoleme_s3_bucket",
+                "_global_.consoleme_s3_bucket",
             ),
         )
 
