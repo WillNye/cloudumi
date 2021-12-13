@@ -5,8 +5,8 @@
 # AWS_PROFILE=noq_dev aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
 extends:
   # - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
-  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cyberdyne_localhost.yaml
-  # - saas_bain_noq_dev.yaml
+  #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cyberdyne_localhost.yaml
+  #  - saas_bain_noq_dev.yaml
   - saas_localhost.yaml
   # - saas_oidc_noq_dev.yaml
   # - saas_saml_noq_dev.yaml
@@ -71,6 +71,7 @@ _global_:
     internal_routes: cmsaas_internal_routes
     internal_policies: cmsaas_policies
   celery:
+    clear_tasks_for_development: false
     purge: true
     broker:
       us-east-1: redis://cloudumi-redis:6379/1

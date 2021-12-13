@@ -1,4 +1,5 @@
 import tornado.web
+import ujson as json
 
 from common.config import config
 from common.handlers.base import BaseHandler
@@ -51,6 +52,28 @@ async def get_as_tags(name="main", extension=None, config=config, attrs=""):
                 )
             )
     return tags
+
+
+class EligibleRoleRefreshHandler(BaseHandler):
+    async def get(self):
+        host = self.ctx.host
+        from common.celery_tasks.celery_tasks import app as celery_app
+
+        res = celery_app.send_task(
+            "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            args=[host],
+        )
+        self.write(
+            json.loads(
+                WebResponse(
+                    status="success",
+                    message="Refresh task submitted",
+                    data={
+                        "task_id": res.id,
+                    },
+                ).json()
+            )
+        )
 
 
 class EligibleRoleHandler(BaseHandler):
@@ -117,6 +140,10 @@ class EligibleRolePageConfigHandler(BaseHandler):
                 host,
                 "Select a role to login to the AWS console.",
             ),
+            "refresh": {
+                "enabled": True,
+                "endpoint": "/api/v2/eligible_roles/refresh",
+            },
             "tableConfig": {
                 "expandableRows": True,
                 "dataEndpoint": "/api/v2/eligible_roles",

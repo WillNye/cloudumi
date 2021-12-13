@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Button, Grid, Image, Menu, Segment } from "semantic-ui-react";
+import { Button, Grid, Image, Menu, Segment, Header } from "semantic-ui-react";
 import { useAuth } from "./../../auth/AuthProviderDefault";
 
 function modalReducer(state, action) {
@@ -61,12 +61,16 @@ export const Settings = () => {
 
   return (
     <Grid>
-      <Grid.Column width={4}>
+      <Grid.Column width={3}>
         <Menu pointing secondary vertical>
+          <Menu.Header>
+            <Header as="h2">Integrations</Header>
+          </Menu.Header>
           {/* AWS (Event Bridge, User Authentication), Google, Slack, Logging,  */}
           <Menu.Item
-            name="integrations"
-            active={activeItem === "integrations"}
+            name="aws"
+            content="AWS"
+            active={activeItem === "aws"}
             onClick={handleItemClick}
           />
           {/* SSO Integrations, who is an admin in Noq? */}
@@ -91,35 +95,96 @@ export const Settings = () => {
         </Menu>
       </Grid.Column>
       <Grid.Column stretched width={12}>
-        {activeItem === "integrations" ? (
-          <Grid columns={5}>
+        {activeItem === "aws" ? (
+          <Grid columns={2}>
             <Grid.Row>
               <Grid.Column>
-                <Grid columns={2} divided padded>
+                <Grid columns={1}>
                   <Grid.Row>
                     <Segment>
                       <Image
                         src="/images/logos/aws.svg"
-                        size="tiny"
-                        circular
+                        size="small"
                         centered
                       />
                       <br />
-                      <Button
-                        icon="settings"
-                        content="Configure Hub Account"
-                        onClick={handleAwsConfigureHubAccount}
-                      />
-                      <Button
-                        icon="settings"
-                        content="Configure Spoke Account"
-                        onClick={handleAwsConfigureSpokeAccount}
-                      />
+                      The AWS integration allows NOQ to manage AWS access,
+                      permissions, and resources for your accounts.
+                      <Header as="h2">Central Account</Header>
+                      Your central account is an AWS account of your choosing
+                      that will be the entrypoint for Noq into your environment.
+                      We will help you create a role on this account that Noq
+                      will assume. Noq will assume this role before assuming
+                      other roles in your environment.
+                      <br />
+                      <br />
+                      <Header as="h3">Automatic Setup</Header>
+                      {config?.central_account_role?.cloudformation_url ? (
+                        <div>
+                          <a
+                            href={
+                              config.central_account_role.cloudformation_url
+                            }
+                          >
+                            Click here
+                          </a>{" "}
+                          to setup NOQ's role in your account automatically with
+                          a Cloudformation stack. After the role has been
+                          created, the stack will call back to an SNS topic
+                          owned by NOQ to register your account.
+                        </div>
+                      ) : null}
+                      <Header as="h3">Manual Setup</Header>
+                      {config?.central_account_role
+                        ?.central_role_trust_policy ? (
+                        <div>
+                          You can create a role manually by following the
+                          instructions below: 1) Create a role in your account
+                          with the following trust policy:
+                          <br />
+                          <pre>
+                            {
+                              config.central_account_role
+                                .central_role_trust_policy
+                            }
+                          </pre>
+                        </div>
+                      ) : null}
+                      {config?.central_account_role?.external_id ? (
+                        <div>
+                          External ID: {config.central_account_role.external_id}
+                        </div>
+                      ) : null}
+                      {config?.central_account_role?.node_role ? (
+                        <div>
+                          Node Role: {config.central_account_role.node_role}
+                        </div>
+                      ) : null}
+                      <Header as="h2">Spoke Accounts</Header>
+                      Your spoke accounts are all of the AWS accounts that you
+                      want to use Noq in. We will help you create spoke roles on
+                      these accounts. Noq will access these roles by first
+                      assuming your central account role and then assuming the
+                      spoke roles.
+                      <Header as="h3">Automatic Setup</Header>
+                      {config?.spoke_account_role?.cloudformation_url ? (
+                        <div>
+                          <a
+                            href={config.spoke_account_role.cloudformation_url}
+                          >
+                            Click here
+                          </a>{" "}
+                          to setup a Noq spoke role in your account
+                          automatically with a Cloudformation stack. After the
+                          role has been created, the stack will call back to an
+                          SNS topic owned by NOQ to register your account.
+                        </div>
+                      ) : null}
                     </Segment>
                   </Grid.Row>
                 </Grid>
               </Grid.Column>
-              <Grid.Column>
+              {/* <Grid.Column>
                 <Grid columns={2} divided padded>
                   <Grid.Row>
                     <Segment>
@@ -150,7 +215,7 @@ export const Settings = () => {
                     </Segment>
                   </Grid.Row>
                 </Grid>
-              </Grid.Column>
+              </Grid.Column> */}
             </Grid.Row>
           </Grid>
         ) : null}

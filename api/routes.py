@@ -126,6 +126,7 @@ def make_app(jwt_validator=None):
         (r"/api/v2/policies/check", CheckPoliciesHandler),
         (r"/api/v2/dynamic_config", DynamicConfigApiHandler),
         (r"/api/v2/eligible_roles", EligibleRoleHandler),
+        (r"/api/v2/eligible_roles/refresh", EligibleRoleRefreshHandler),
         (r"/api/v2/eligible_roles_page_config", EligibleRolePageConfigHandler),
         (r"/api/v2/policies_page_config", PoliciesPageConfigHandler),
         (r"/api/v2/requests_page_config", RequestsPageConfigHandler),
@@ -191,6 +192,8 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/identities/requests/user/(.*?)/(.*)", IdentityRequestUserHandler),
         (r"/api/v3/identities/requests_page_config", IdentityRequestsPageConfigHandler),
         (r"/api/v3/integrations/aws", AwsIntegrationHandler),
+        (r"/api/v3/tasks", TasksHandler),
+        (r"/api/v3/config", ConfigHandler),
         # (r"/api/v3/api_keys/add", AddApiKeyHandler),
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
@@ -202,7 +205,13 @@ def make_app(jwt_validator=None):
         router.rules.append(
             Rule(
                 HostMatches(domain),
-                [(r"/api/v3/tenant_registration", TenantRegistrationHandler)],
+                [
+                    (r"/api/v3/tenant_registration", TenantRegistrationHandler),
+                    (
+                        r"/api/v3/tenant_registration_aws_marketplace",
+                        TenantRegistrationAwsMarketplaceHandler,
+                    ),
+                ],
             )
         )
 

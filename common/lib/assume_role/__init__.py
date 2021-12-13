@@ -150,7 +150,7 @@ def boto3_cached_conn(
     external_id=None,
     arn_partition="aws",
     read_only=False,
-    retry_max_attempts=10,
+    retry_max_attempts=2,
     config=None,
     sts_client_kwargs=None,
     client_kwargs=None,

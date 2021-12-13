@@ -11,6 +11,7 @@ import boto3
 import sentry_sdk
 import tornado.escape
 import tornado.web
+from asgiref.sync import sync_to_async
 from email_validator import validate_email
 from password_strength import PasswordPolicy
 
@@ -395,6 +396,28 @@ async def create_user_pool_domain(user_pool_id, user_pool_domain_name):
     return user_pool_domain
 
 
+class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
+    async def post(self):
+        body = tornado.escape.json_decode(self.request.body)
+        amazon_marketplace_reg_token = body.get("x-amzn-marketplace-token")
+        if not amazon_marketplace_reg_token:
+            self.set_status(400)
+            self.write({"error": "x-amzn-marketplace-token is required"})
+            return
+        marketplace_client = boto3.client("meteringmarketplace")
+        customer_data = await sync_to_async(marketplace_client.resolve_customer)(
+            amazon_marketplace_reg_token
+        )
+        customer_id = customer_data["CustomerIdentifier"]
+        # Expected customer_id: {
+        #     'CustomerIdentifier': 'string',
+        #     'ProductCode': 'string'
+        # }
+        # TODO: Validate no other accounts share the same customerID
+        # TODO: Store customer information
+        # TODO: Should we give the user a signed cookie, then ask them to specify credentials / domain?
+
+
 class TenantRegistrationHandler(TornadoRequestHandler):
     def set_default_headers(self):
         valid_referrers = ["localhost", "noq.dev", "www.noq.dev", "127.0.0.1"]
@@ -601,6 +624,9 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         tenant_config = f"""
 site_configs:
   {dev_domain}:
+    challenge_url:
+      enabled: true
+    environment: prod
     tenant_details:
       external_id: {external_id}
       creator: {tenant.email}

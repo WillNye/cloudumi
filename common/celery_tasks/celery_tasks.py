@@ -175,7 +175,6 @@ REDIS_IAM_COUNT = 1000
 def report_celery_last_success_metrics() -> bool:
     """
     For each celery task, this will determine the number of seconds since it has last been successful.
-
     Celery tasks should be emitting redis stats with a deterministic key (In our case, `f"{task}.last_success"`.
     report_celery_last_success_metrics should be ran periodically to emit metrics on when a task was last successful.
     We can then alert when tasks are not ran when intended. We should also alert when no metrics are emitted
@@ -283,7 +282,6 @@ def report_number_pending_tasks(**kwargs):
     Report the number of pending tasks to our metrics broker every time a task is published. This metric can be used
     for autoscaling workers.
     https://docs.celeryproject.org/en/latest/userguide/signals.html#task-received
-
     :param sender:
     :param headers:
     :param body:
@@ -301,7 +299,6 @@ def report_successful_task(**kwargs):
     Report a generic success metric as tasks to our metrics broker every time a task finished correctly.
     This metric can be used for autoscaling workers.
     https://docs.celeryproject.org/en/latest/userguide/signals.html#task-success
-
     :param sender:
     :param headers:
     :param body:
@@ -323,7 +320,6 @@ def report_task_retry(**kwargs):
     Report a generic retry metric as tasks to our metrics broker every time a task is retroed.
     This metric can be used for alerting.
     https://docs.celeryproject.org/en/latest/userguide/signals.html#task-retry
-
     :param sender:
     :param headers:
     :param body:
@@ -354,10 +350,8 @@ def report_failed_task(**kwargs):
     """
     Report a generic failure metric as tasks to our metrics broker every time a task fails. This is also called when
     a task has hit a SoftTimeLimit.
-
     The metric emited by this function can be used for alerting.
     https://docs.celeryproject.org/en/latest/userguide/signals.html#task-failure
-
     :param sender:
     :param headers:
     :param body:
@@ -389,7 +383,6 @@ def report_unknown_task(**kwargs):
     Report a generic failure metric as tasks to our metrics broker every time a worker receives an unknown task.
     The metric emited by this function can be used for alerting.
     https://docs.celeryproject.org/en/latest/userguide/signals.html#task-unknown
-
     :param sender:
     :param headers:
     :param body:
@@ -416,7 +409,6 @@ def report_rejected_task(**kwargs):
     Report a generic failure metric as tasks to our metrics broker every time a task is rejected.
     The metric emited by this function can be used for alerting.
     https://docs.celeryproject.org/en/latest/userguide/signals.html#task-rejected
-
     :param sender:
     :param headers:
     :param body:
@@ -443,7 +435,6 @@ def report_revoked_task(**kwargs):
     Report a generic failure metric as tasks to our metrics broker every time a task is revoked.
     This metric can be used for alerting.
     https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
-
     :param sender:
     :param headers:
     :param body:
@@ -497,9 +488,7 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
     """
     This function will add IAM role data to redis so that policy details can be quickly retrieved by the policies
     endpoint.
-
     IAM role data is stored in the `redis_key` redis key by the role's ARN.
-
     Parameters
     ----------
     redis_key : str
@@ -936,11 +925,12 @@ def cache_policies_table_details(host=None) -> bool:
     return True
 
 
-@app.task(soft_time_limit=2700, **default_retry_kwargs)
-def cache_iam_resources_for_account(account_id: str, host=None) -> Dict[str, Any]:
+@app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
+def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[str, Any]:
     if not host:
         raise Exception("`host` must be passed to this task.")
-    from common.lib.dynamo import IAMRoleDynamoHandler
+    progress_recorder = ProgressRecorder(self)
+    from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     aws = get_plugin_by_name(
@@ -1253,7 +1243,7 @@ def cache_iam_resources_across_accounts(
 ) -> Dict:
     if not host:
         raise Exception("`host` must be passed to this task.")
-    from common.lib.dynamo import IAMRoleDynamoHandler
+    from cloudumi_common.lib.dynamo import IAMRoleDynamoHandler
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(host)
@@ -1975,7 +1965,6 @@ def cache_sns_topics_for_account(
         "account_id": account_id,
         "host": host,
     }
-    log.debug({**log_data, "message": "Caching SNS topics for account"})
     red = RedisHandler().redis_sync(host)
     all_topics: set = set()
     enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, host)
@@ -2206,7 +2195,7 @@ def clear_old_redis_iam_cache(host=None) -> bool:
 
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
 def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
-    from common.lib.dynamo import UserDynamoHandler
+    from cloudumi_common.lib.dynamo import UserDynamoHandler
 
     if not host:
         raise Exception("`host` must be passed to this task.")
@@ -2591,14 +2580,30 @@ def cache_organization_structure(host=None) -> Dict:
     if not host:
         raise Exception("`host` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    org_structure = async_to_sync(cache_org_structure)(host)
+
     log_data = {
         "function": function,
-        "message": "Successfully cached organization structure",
-        "num_organizations": len(org_structure),
         "host": host,
     }
-    log.debug(log_data)
+
+    try:
+        org_structure = async_to_sync(cache_org_structure)(host)
+    except MissingConfigurationValue as e:
+        log.debug(
+            {
+                **log_data,
+                "message": "Missing configuration value",
+                "error": str(e),
+            }
+        )
+        return log_data
+    log.debug(
+        {
+            **log_data,
+            "message": "Successfully cached organization structure",
+            "num_organizations": len(org_structure),
+        }
+    )
     return log_data
 
 
@@ -2688,9 +2693,7 @@ def trigger_credential_mapping_refresh_from_role_changes(host=None):
     """
     This task triggers a role cache refresh for any role that a change was detected for. This feature requires an
     Event Bridge rule monitoring Cloudtrail for your accounts for IAM role mutation.
-
     This task will trigger a credential authorization refresh if any changes were detected.
-
     This task should run in all regions to force IAM roles to be refreshed in each region's cache on change.
     :return:
     """
@@ -2780,10 +2783,14 @@ def cache_cloudtrail_denies(host=None):
 def refresh_iam_role(role_arn, host=None):
     """
     This task is called on demand to asynchronously refresh an AWS IAM role in Redis/DDB
-
     """
     if not host:
         raise Exception("`host` must be passed to this task.")
+    aws = get_plugin_by_name(
+        config.get_host_specific_key(
+            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
+        )
+    )()
     account_id = role_arn.split(":")[4]
     async_to_sync(fetch_iam_role)(
         account_id, role_arn, host, force_refresh=True, run_sync=True
@@ -2821,7 +2828,9 @@ def cache_notifications(host=None) -> Dict[str, Any]:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_groups_for_host_t(host: str) -> Dict:
+def cache_identity_groups_for_host_t(host: str = None) -> Dict:
+    if not host:
+        raise Exception("Host not provided")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
@@ -2830,12 +2839,14 @@ def cache_identity_groups_for_host_t(host: str) -> Dict:
     }
     log.debug(log_data)
     # TODO: Finish this
-    async_to_sync(cache_identity_groups_for_host)(host)
+    res = async_to_sync(cache_identity_groups_for_host)(host)
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_users_for_host_t(host: str) -> Dict:
+def cache_identity_users_for_host_t(host: str = None) -> Dict:
+    if not host:
+        raise Exception("Host not provided")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
@@ -2844,7 +2855,7 @@ def cache_identity_users_for_host_t(host: str) -> Dict:
     }
     log.debug(log_data)
     # TODO: Finish this
-    async_to_sync(cache_identity_users_for_host)(host)
+    res = async_to_sync(cache_identity_users_for_host)(host)
     return log_data
 
 
@@ -2866,7 +2877,9 @@ def cache_identities_for_all_hosts() -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_requests_for_host_t(host: str) -> Dict:
+def cache_identity_requests_for_host_t(host: str = None) -> Dict:
+    if not host:
+        raise Exception("Host not provided")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
@@ -2875,7 +2888,7 @@ def cache_identity_requests_for_host_t(host: str) -> Dict:
     }
     log.debug(log_data)
     # Fetch from Dynamo. Write to Redis and S3
-    async_to_sync(cache_identity_requests_for_host)(host)
+    res = async_to_sync(cache_identity_requests_for_host)(host)
     return log_data
 
 
@@ -2895,16 +2908,49 @@ def cache_identity_requests_for_all_hosts() -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def handle_tenant_aws_integration_queue(
-    soft_time_limit=600, **default_retry_kwargs
-) -> Dict:
+def handle_tenant_aws_integration_queue() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
         "message": "Handling AWS Integration Queue",
     }
     log.debug(log_data)
-    async_to_sync(handle_tenant_integration_queue)(app)
+    res = async_to_sync(handle_tenant_integration_queue)(app)
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def get_current_celery_tasks(host: str = None, status: str = None) -> List[Any]:
+    # TODO: We may need to build a custom DynamoDB backend to segment tasks by host and maintain task status
+    if not host:
+        raise Exception("Host is required")
+    if not status:
+        raise Exception("Status is required")
+    inspect = app.control.inspect()
+    if (
+        status not in ["active", "scheduled", "reserved", "registered", "revoked"]
+        or not inspect
+    ):
+        return []
+    tasks = {}
+    if status == "active":
+        tasks = inspect.active()
+    elif status == "scheduled":
+        tasks = inspect.scheduled()
+    elif status == "reserved":
+        tasks = inspect.reserved()
+    elif status == "registered":
+        tasks = inspect.registered()
+    elif status == "revoked":
+        tasks = inspect.revoked()
+
+    # Filter tasks to only include the ones for the requested host
+    filtered_tasks = []
+    for k, v in tasks.items():
+        for task in v:
+            if task["kwargs"].get("host") != host:
+                continue
+            filtered_tasks.append(task)
+    return filtered_tasks
 
 
 schedule_30_minute = timedelta(seconds=1800)
@@ -2927,114 +2973,114 @@ if config.get("_global_.development", False):
 
 schedule = {
     "cache_iam_resources_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "clear_old_redis_iam_cache_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.clear_old_redis_iam_cache_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.clear_old_redis_iam_cache_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },
     "cache_policies_table_details_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     # TODO: Get this task for a similar task working so we can alert on failing tasks or tasks that do not run as
     #  planned
     # "report_celery_last_success_metrics": {
-    #     "task": "common.celery_tasks.celery_tasks.report_celery_last_success_metrics",
+    #     "task": "cloudumi_common.celery_tasks.celery_tasks.report_celery_last_success_metrics",
     #     "options": {"expires": 60},
     #     "schedule": schedule_minute,
     # },
     "cache_managed_policies_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_managed_policies_across_accounts_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_managed_policies_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_s3_buckets_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_s3_buckets_across_accounts_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_s3_buckets_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_sqs_queues_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_sqs_queues_across_accounts_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_sqs_queues_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_sns_topics_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_sns_topics_across_accounts_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_sns_topics_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_cloudtrail_errors_by_arn_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_errors_by_arn_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloudtrail_errors_by_arn_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_resources_from_aws_config_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_policy_requests_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_policy_requests_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_policy_requests_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_5_minutes,
     },
     "cache_cloud_account_mapping_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_credential_authorization_mapping_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_5_minutes,
     },
     "cache_scps_across_organizations_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_scps_across_organizations_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_scps_across_organizations_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_organization_structure_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_organization_structure_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_organization_structure_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_resource_templates_task_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_resource_templates_task_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_resource_templates_task_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     "cache_self_service_typeahead_task_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_self_service_typeahead_task_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     "trigger_credential_mapping_refresh_from_role_changes_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
     "cache_cloudtrail_denies_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
     "cache_identities_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
+        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
-    "cache_identity_group_requests_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_hosts",
-        "options": {"expires": 180},
-        "schedule": schedule_30_minute,
-    },
-    "handle_aws_integration_queue": {
-        "task": "common.celery_tasks.celery_tasks.handle_aws_integration_queue",
+    # "cache_identity_group_requests_for_all_hosts": {
+    #     "task": "cloudumi_common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_hosts",
+    #     "options": {"expires": 180},
+    #     "schedule": schedule_30_minute,
+    # },
+    "handle_tenant_aws_integration_queue": {
+        "task": "cloudumi_common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
@@ -3049,12 +3095,3 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
-
-# if "celery" in sys.argv[0]:
-#     cache_identity_groups_for_host_t("cyberdyne_noq_dev")
-#     cache_identity_users_for_host_t("cyberdyne_noq_dev")
-#     cache_identity_requests_for_host_t("cyberdyne_noq_dev")
-#     while True:
-#         cache_cloudtrail_denies(host="cyberdyne_noq_dev")
-#         cache_cloudtrail_errors_by_arn(host="cyberdyne_noq_dev")
-#         cache_notifications(host="cyberdyne_noq_dev")

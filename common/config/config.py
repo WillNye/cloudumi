@@ -1,5 +1,6 @@
 """Configuration handling library."""
 import collections
+import copy
 import datetime
 import logging
 import logging.handlers
@@ -69,7 +70,7 @@ def refresh_dynamic_config(host, ddb=None):
     if not ddb:
         # This function runs frequently. We provide the option to pass in a UserDynamoHandler
         # so we don't need to import on every invocation
-        from common.lib.dynamo import UserDynamoHandler
+        from cloudumi_common.lib.dynamo import UserDynamoHandler
 
         # TODO: Figure out host
         ddb = UserDynamoHandler(host)
@@ -107,7 +108,7 @@ class Configuration(metaclass=Singleton):
 
     def load_config_from_dynamo(self, host, ddb=None, red=None):
         if not ddb:
-            from common.lib.dynamo import UserDynamoHandler
+            from cloudumi_common.lib.dynamo import UserDynamoHandler
 
             ddb = UserDynamoHandler(host=host)
 
@@ -116,7 +117,7 @@ class Configuration(metaclass=Singleton):
 
     def set_config_for_host(self, host, dynamic_config, red=None):
         if not red:
-            from common.lib.redis import RedisHandler
+            from cloudumi_common.lib.redis import RedisHandler
 
             red = RedisHandler().redis_sync(host)
         if dynamic_config and dynamic_config != self.get_host_specific_key(
@@ -143,7 +144,7 @@ class Configuration(metaclass=Singleton):
         self, log_data: Dict[str, Any], host: str, red=None
     ):
         if not red:
-            from common.lib.redis import RedisHandler
+            from cloudumi_common.lib.redis import RedisHandler
 
             red = RedisHandler().redis_sync(host)
         dynamic_config = red.get(f"{host}_DYNAMIC_CONFIG_CACHE")
@@ -165,8 +166,8 @@ class Configuration(metaclass=Singleton):
     def load_config_from_dynamo_bg_thread(self):
         """If enabled, we can load a configuration dynamically from Dynamo at a certain time interval. This reduces
         the need for code redeploys to make configuration changes"""
-        from common.lib.dynamo import UserDynamoHandler
-        from common.lib.redis import RedisHandler
+        from cloudumi_common.lib.dynamo import UserDynamoHandler
+        from cloudumi_common.lib.redis import RedisHandler
 
         while threading.main_thread().is_alive():
             for host, _ in self.get("site_configs", {}).items():
@@ -183,21 +184,15 @@ class Configuration(metaclass=Singleton):
         """
         Initially, we're going to work with tenants on their SaaS tenant configuration. In the future, they will have
         a web interface for configuration. We want to support secure S3 storage and retrieval of tenant configuration.
-
         The SaaS compute that responds to tenant web requests does not need to be aware of tenant configuration until
         a web request to a tenant is received.
-
         The SaaS Celery compute (Caches tenant resources) does not receive tenant web requests, and it DOES need to be
         aware of tenant configuration.
-
         This means we can:
-
          1) Create a Celery task that caches tenant configuration from S3 to a Redis hash every minute or so,
         or caches specific tenant configuration on-demand. We need to take care to delete Redis hash keys for tenants
         that are no longer valid
-
          2) Celery workers that need all tenant configuration will pull it all in to their configuration
-
          3) Web hosts will pull configuration from Redis, and fall back to "s3 -> cache to redis" on demand
         :return:
         """
@@ -211,7 +206,6 @@ class Configuration(metaclass=Singleton):
         """
         Loads a single tenant static configuration from S3. TODO: Support S3 access points and custom assume role
         policies to prevent one tenant from pulling another tenant's configuration
-
         :param host: host, aka tenant, ID
         :return:
         """
@@ -222,7 +216,7 @@ class Configuration(metaclass=Singleton):
         Loads tenant static configurations from DynamoDB and sets them in our giant configuration dictionary
         :return:
         """
-        from common.lib.dynamo import RestrictedDynamoHandler
+        from cloudumi_common.lib.dynamo import RestrictedDynamoHandler
 
         ddb = RestrictedDynamoHandler()
         try:
@@ -249,7 +243,7 @@ class Configuration(metaclass=Singleton):
         """
         if not self.get("redis.use_redislite"):
             return
-        from common.lib.redis import RedisHandler
+        from cloudumi_common.lib.redis import RedisHandler
 
         red = RedisHandler().redis_sync("_global_")
         while threading.main_thread().is_alive():
@@ -296,8 +290,8 @@ class Configuration(metaclass=Singleton):
         validate_config(self.config)
 
     def reload_config(self):
-        from common.lib.dynamo import UserDynamoHandler
-        from common.lib.redis import RedisHandler
+        from cloudumi_common.lib.dynamo import UserDynamoHandler
+        from cloudumi_common.lib.redis import RedisHandler
 
         # We don't want to start additional background threads when we're reloading static configuration.
         while threading.main_thread().is_alive():
@@ -450,7 +444,7 @@ class Configuration(metaclass=Singleton):
         self, key: str, default: Optional[Union[List[str], int, bool, str, Dict]] = None
     ) -> Any:
         """Get value for configuration entry in dot notation."""
-        value = self.config
+        value = copy.deepcopy(self.config)
         # Only support keys that explicitly call out a host
         if key not in ["extends", "site_configs"] and (
             not key.startswith("site_configs.") and not key.startswith("_global_.")
@@ -464,6 +458,10 @@ class Configuration(metaclass=Singleton):
         return value
 
     def get_tenant_static_config_from_dynamo(self, host):
+        """
+        Get tenant static configuration from DynamoDB. Supports zlib compressed
+        configuration.
+        """
         dynamodb = boto3.resource(
             "dynamodb",
             endpoint_url=self.get(
@@ -472,7 +470,11 @@ class Configuration(metaclass=Singleton):
             ),
         )
         config_table = dynamodb.Table("consoleme_tenant_static_configs")
-        current_config = config_table.get_item(Key={"host": host, "id": "master"})
+        try:
+            current_config = config_table.get_item(Key={"host": host, "id": "master"})
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Code"] == "ResourceNotFoundException":
+                return {}
         c = {}
 
         compressed_config = current_config.get("Item", {}).get("config", "")
@@ -482,6 +484,7 @@ class Configuration(metaclass=Singleton):
             c = zlib.decompress(compressed_config.value)
         except Exception as e:  # noqa
             sentry_sdk.capture_exception()
+            c = compressed_config
         return yaml.load(c)
 
     def get_host_specific_key(self, key: str, host: str, default: Any = None) -> Any:
@@ -503,7 +506,7 @@ class Configuration(metaclass=Singleton):
         current_time = int(time.time())
         last_updated = self.tenant_configs[host].get("last_updated", 0)
         if current_time - last_updated > 60:
-            from common.lib.redis import RedisHandler
+            from cloudumi_common.lib.redis import RedisHandler
 
             red = RedisHandler().redis_sync(host)
             tenant_config = json.loads(red.get(f"{host}_STATIC_CONFIGURATION") or "{}")
@@ -517,7 +520,7 @@ class Configuration(metaclass=Singleton):
         if current_time - last_updated > 60:
             config_item = self.get_tenant_static_config_from_dynamo(host)
             if config_item:
-                from common.lib.redis import RedisHandler
+                from cloudumi_common.lib.redis import RedisHandler
 
                 red = RedisHandler().redis_sync(host)
                 self.tenant_configs[host]["config"] = config_item
@@ -537,7 +540,6 @@ class Configuration(metaclass=Singleton):
         return value
 
     def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
-        # TODO: put into util/log
         """Get logger."""
         if self.log:
             return self.log
