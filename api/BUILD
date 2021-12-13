@@ -190,7 +190,7 @@ container_layer(
         "//configs/development_account:configs",
     ],
     data_path = ".",
-    directory = "/configs",
+    directory = "/",
 )
 
 container_image(
