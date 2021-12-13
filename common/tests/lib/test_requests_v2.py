@@ -358,9 +358,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
     async def test_validate_managed_policy_resource_change(self):
         from common.exceptions.exceptions import InvalidRequestParameter
-        from common.lib.v2.requests import (
-            validate_managed_policy_resource_change,
-        )
+        from common.lib.v2.requests import validate_managed_policy_resource_change
 
         managed_policy_change = {
             "principal": {
@@ -2220,9 +2218,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     async def test_parse_and_apply_policy_request_modification_add_comment(
         self, mock_dynamo_write, mock_send_comment
     ):
-        from common.lib.v2.requests import (
-            parse_and_apply_policy_request_modification,
-        )
+        from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
         extended_request = await get_extended_request_helper()
         input_body = {"modification_model": {"command": "add_comment"}}
@@ -2268,9 +2264,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     async def test_parse_and_apply_policy_request_modification_update_change(
         self, mock_dynamo_write
     ):
-        from common.lib.v2.requests import (
-            parse_and_apply_policy_request_modification,
-        )
+        from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
         extended_request = await get_extended_request_helper()
         updated_policy_doc = {
@@ -2357,13 +2351,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         mock_populate_old_policies,
     ):
         from common.config import config
-        from common.exceptions.exceptions import (
-            NoMatchingRequest,
-            Unauthorized,
-        )
-        from common.lib.v2.requests import (
-            parse_and_apply_policy_request_modification,
-        )
+        from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
+        from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
         extended_request = await get_extended_request_helper()
         updated_policy_doc = {
@@ -2462,20 +2451,13 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             inline_policy.get("PolicyDocument"),
         )
 
-    @patch(
-        "common.lib.v2.requests.send_communications_policy_change_request_v2"
-    )
+    @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_cancel_request(
         self, mock_dynamo_write, mock_send_email
     ):
-        from common.exceptions.exceptions import (
-            InvalidRequestParameter,
-            Unauthorized,
-        )
-        from common.lib.v2.requests import (
-            parse_and_apply_policy_request_modification,
-        )
+        from common.exceptions.exceptions import InvalidRequestParameter, Unauthorized
+        from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
         extended_request = await get_extended_request_helper()
 
@@ -2542,21 +2524,14 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         # Make sure request got cancelled
         self.assertEqual(RequestStatus.cancelled, extended_request.request_status)
 
-    @patch(
-        "common.lib.v2.requests.send_communications_policy_change_request_v2"
-    )
+    @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch("common.lib.v2.requests.can_move_back_to_pending_v2")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_reject_and_move_back_to_pending_request(
         self, mock_dynamo_write, mock_move_back_to_pending, mock_send_email
     ):
-        from common.exceptions.exceptions import (
-            InvalidRequestParameter,
-            Unauthorized,
-        )
-        from common.lib.v2.requests import (
-            parse_and_apply_policy_request_modification,
-        )
+        from common.exceptions.exceptions import InvalidRequestParameter, Unauthorized
+        from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
         extended_request = await get_extended_request_helper()
 
@@ -2650,9 +2625,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         # Make sure request got moved back
         self.assertEqual(RequestStatus.pending, extended_request.request_status)
 
-    @patch(
-        "common.lib.v2.requests.send_communications_policy_change_request_v2"
-    )
+    @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch(
         "cloudumi_plugins.plugins.aws.aws.Aws.fetch_iam_role",
     )
@@ -2674,9 +2647,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         from common.config import config
         from common.exceptions.exceptions import Unauthorized
         from common.lib.redis import RedisHandler
-        from common.lib.v2.requests import (
-            parse_and_apply_policy_request_modification,
-        )
+        from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
         # Redis is globally mocked. Let's store and retrieve a fake value
         red = RedisHandler().redis_sync(host)

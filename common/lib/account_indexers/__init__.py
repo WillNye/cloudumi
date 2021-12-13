@@ -4,12 +4,8 @@ from common.config import config
 from common.lib.account_indexers.aws_organizations import (
     retrieve_accounts_from_aws_organizations,
 )
-from common.lib.account_indexers.current_account import (
-    retrieve_current_account,
-)
-from common.lib.account_indexers.local_config import (
-    retrieve_accounts_from_config,
-)
+from common.lib.account_indexers.current_account import retrieve_current_account
+from common.lib.account_indexers.local_config import retrieve_accounts_from_config
 from common.lib.account_indexers.swag import retrieve_accounts_from_swag
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,

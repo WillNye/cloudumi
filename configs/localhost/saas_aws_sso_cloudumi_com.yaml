@@ -29,7 +29,7 @@ site_configs:
       # On the provider, set ACS url to https://your_consoleme_url/saml/acs and saml audience to "https://your_consoleme_url/"
       idp_metadata_url: "https://portal.sso.us-east-1.amazonaws.com/saml/metadata/MjU5ODY4MTUwNDY0X2lucy02NjFhZTFhMzI3MTcxYjhj"
       # TODO: This is not valid. SAML data must be downloadable from S3
-#      saml_path: /apps/cloudumi_config/ssas_aws_sso_cloudumi_com
+      #      saml_path: /apps/cloudumi_config/ssas_aws_sso_cloudumi_com
       jwt:
         expiration_hours: 1
         email_key: email

@@ -9,16 +9,12 @@ repos:
       - id: debug-statements
       - id: check-yaml
         args: [--allow-multiple-documents]
-        exclude: "^docs/gitbook/|^helm/cloudumi|cdk/resources/create_config_lambda/config.yaml"
+        exclude: "^docs/gitbook/|^helm/cloudumi|cdk/resources/create_config_lambda/config.yaml|^deploy"
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:
       - id: flake8
-        args:
-          [
-            "--exclude",
-            "cloudumi_common/cloudumi_common/models.py,cloudumi_identity/cloudumi_identity/lib/groups/models.py",
-          ]
+        args: ["--exclude", "common/models.py,identity/lib/groups/models.py"]
 
   - repo: https://github.com/asottile/seed-isort-config
     rev: v2.2.0
@@ -61,11 +57,11 @@ repos:
             "--max-warnings",
             "0",
             "--resolve-plugins-relative-to",
-            "./cloudumi_frontend/frontend",
+            "./frontend",
             "-c",
-            "./cloudumi_frontend/frontend/.eslintrc",
+            "./frontend/.eslintrc",
             "--ignore-path",
-            "./cloudumi_frontend/frontend/.eslintignore",
+            "./frontend/.eslintignore",
           ]
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.12

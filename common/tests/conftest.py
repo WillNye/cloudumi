@@ -390,9 +390,7 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
             host=host,
         )
         return
-    from common.celery_tasks.celery_tasks import (
-        cache_iam_resources_for_account,
-    )
+    from common.celery_tasks.celery_tasks import cache_iam_resources_for_account
     from common.lib.account_indexers import get_account_id_to_name_mapping
     from common.lib.redis import RedisHandler
 

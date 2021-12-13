@@ -1,12 +1,5 @@
 import tornado.escape
 import ujson as json
-from identity.lib.groups.groups import get_group_by_name
-from identity.lib.groups.models import (
-    Group,
-    GroupAttributes,
-    OktaIdentityProvider,
-)
-from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 
 from common.celery_tasks.celery_tasks import app as celery_app
 from common.config import config
@@ -16,6 +9,9 @@ from common.lib.dynamo import UserDynamoHandler
 from common.lib.plugins import get_plugin_by_name
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
+from identity.lib.groups.groups import get_group_by_name
+from identity.lib.groups.models import Group, GroupAttributes, OktaIdentityProvider
+from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()

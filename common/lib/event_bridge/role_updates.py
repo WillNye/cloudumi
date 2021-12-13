@@ -4,10 +4,7 @@ import sentry_sdk
 import ujson as json
 
 from common.config import config
-from common.exceptions.exceptions import (
-    DataNotRetrievable,
-    MissingConfigurationValue,
-)
+from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
 

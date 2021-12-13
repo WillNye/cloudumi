@@ -3,10 +3,7 @@ from typing import Any, Dict, List
 from common.config import config
 from common.handlers.base import BaseAPIV2Handler
 from common.lib.auth import can_admin_policies
-from common.lib.defaults import (
-    PERMISSION_TEMPLATE_DEFAULTS,
-    SELF_SERVICE_IAM_DEFAULTS,
-)
+from common.lib.defaults import PERMISSION_TEMPLATE_DEFAULTS, SELF_SERVICE_IAM_DEFAULTS
 
 
 class SelfServiceConfigHandler(BaseAPIV2Handler):

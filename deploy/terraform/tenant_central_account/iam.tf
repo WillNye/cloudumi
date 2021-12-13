@@ -1,21 +1,21 @@
 terraform {
-    required_providers {
-        aws = {
-            source = "hashicorp/aws"
-            version = "~> 3.0"
-        }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
     }
+  }
 }
 
 provider "aws" {
-    region = "us-east-1"
+  region = "us-east-1"
 }
 
 resource "aws_iam_role" "ConsoleMeSpokeRole" {
-    path = "/"
-    name = "ConsoleMeSpokeRole"
-    assume_role_policy = data.aws_iam_policy_document.consoleme_target_trust_policy.json
-    max_session_duration = 3600
+  path                 = "/"
+  name                 = "ConsoleMeSpokeRole"
+  assume_role_policy   = data.aws_iam_policy_document.consoleme_target_trust_policy.json
+  max_session_duration = 3600
 }
 
 data "aws_iam_policy_document" "consoleme_target_trust_policy" {
@@ -47,14 +47,14 @@ data "aws_iam_policy_document" "consoleme_central_trust_policy" {
 }
 
 resource "aws_iam_role" "ConsoleMeCentralRole" {
-    path = "/"
-    name = "ConsoleMeCentralRole"
-    assume_role_policy = data.aws_iam_policy_document.consoleme_central_trust_policy.json
-    max_session_duration = 3600
+  path                 = "/"
+  name                 = "ConsoleMeCentralRole"
+  assume_role_policy   = data.aws_iam_policy_document.consoleme_central_trust_policy.json
+  max_session_duration = 3600
 }
 
 resource "aws_iam_role_policy" "IAMPolicy" {
-    policy = <<EOF
+  policy = <<EOF
 {
     "Statement": [
         {
@@ -151,11 +151,11 @@ resource "aws_iam_role_policy" "IAMPolicy" {
     "Version": "2012-10-17"
 }
 EOF
-    role = "${aws_iam_role.ConsoleMeCentralRole.name}"
+  role   = aws_iam_role.ConsoleMeCentralRole.name
 }
 
 resource "aws_iam_role_policy" "IAMPolicy2" {
-    policy = <<EOF
+  policy = <<EOF
 {
     "Statement": [
         {
@@ -202,5 +202,5 @@ resource "aws_iam_role_policy" "IAMPolicy2" {
     "Version": "2012-10-17"
 }
 EOF
-    role = "${aws_iam_role.ConsoleMeSpokeRole.name}"
+  role   = aws_iam_role.ConsoleMeSpokeRole.name
 }

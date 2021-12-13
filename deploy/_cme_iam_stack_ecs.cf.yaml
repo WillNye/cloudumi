@@ -1,21 +1,21 @@
 Resources:
   CloudUmiS3Bucket:
-    Type: 'AWS::S3::Bucket'
+    Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Join
-          - '-'
-          - - 'cloudumi-bucket'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - "-"
+        - - "cloudumi-bucket"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - "/"
+                  - !Ref "AWS::StackId"
   CloudUmiTaskRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -25,33 +25,32 @@ Resources:
               Service:
                 - ecs.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
       RoleName: !Join
-          - '-'
-          - - 'cloudumi-task-role'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - "-"
+        - - "cloudumi-task-role"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - "/"
+                  - !Ref "AWS::StackId"
       Policies:
-        -
-          PolicyName: !Join
-          - '-'
-          - - 'cloudumi-base-policy-ecs'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - PolicyName: !Join
+            - "-"
+            - - "cloudumi-base-policy-ecs"
+              - !Select
+                - 0
+                - !Split
+                  - "-"
+                  - !Select
+                    - 2
+                    - !Split
+                      - "/"
+                      - !Ref "AWS::StackId"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -123,19 +122,18 @@ Resources:
                   - "sqs:UntagQueue"
                   - "sts:assumerole"
                 Resource: "*"
-        -
-          PolicyName: !Join
-          - '-'
-          - - 'cloudumi-policy-ecs-bucket-access'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - PolicyName: !Join
+            - "-"
+            - - "cloudumi-policy-ecs-bucket-access"
+              - !Select
+                - 0
+                - !Split
+                  - "-"
+                  - !Select
+                    - 2
+                    - !Split
+                      - "/"
+                      - !Ref "AWS::StackId"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -146,11 +144,11 @@ Resources:
                 Resource:
                   - !GetAtt CloudUmiS3Bucket.Arn
                   - !Join
-                    - ''
+                    - ""
                     - - !GetAtt CloudUmiS3Bucket.Arn
-                      - '/*'
+                      - "/*"
   CloudUmiTrustRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -160,33 +158,32 @@ Resources:
               AWS:
                 - !GetAtt CloudUmiTaskRole.Arn
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
       RoleName: !Join
-          - '-'
-          - - 'cloudumi-trust-role'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - "-"
+        - - "cloudumi-trust-role"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - "/"
+                  - !Ref "AWS::StackId"
       Policies:
-        -
-          PolicyName: !Join
-          - '-'
-          - - 'cloudumi-base-trust-policy-ecs'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - PolicyName: !Join
+            - "-"
+            - - "cloudumi-base-trust-policy-ecs"
+              - !Select
+                - 0
+                - !Split
+                  - "-"
+                  - !Select
+                    - 2
+                    - !Split
+                      - "/"
+                      - !Ref "AWS::StackId"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -253,7 +250,7 @@ Resources:
                   - "sqs:UntagQueue"
                 Resource: "*"
   CloudUmiTaskExecutionRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -263,23 +260,23 @@ Resources:
               Service:
                 - ecs-tasks.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
       RoleName: !Join
-          - '-'
-          - - 'cloudumi-task-execution-role'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - "-"
+        - - "cloudumi-task-execution-role"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - "/"
+                  - !Ref "AWS::StackId"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
   CloudUmiCreateConfigurationFileLambdaRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -289,35 +286,34 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
       RoleName: !Join
-          - '-'
-          - - 'cloudumi-create-configuration-file-lambda-role'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - "-"
+        - - "cloudumi-create-configuration-file-lambda-role"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - "/"
+                  - !Ref "AWS::StackId"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
       Policies:
-        -
-          PolicyName: !Join
-          - '-'
-          - - 'cloudumi-create-configuration-file-lambda-role-bucket-access'
-            - !Select
-              - 0
-              - !Split
-                - '-'
-                - !Select
-                  - 2
-                  - !Split
-                    - '/'
-                    - !Ref "AWS::StackId"
+        - PolicyName: !Join
+            - "-"
+            - - "cloudumi-create-configuration-file-lambda-role-bucket-access"
+              - !Select
+                - 0
+                - !Split
+                  - "-"
+                  - !Select
+                    - 2
+                    - !Split
+                      - "/"
+                      - !Ref "AWS::StackId"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -327,6 +323,6 @@ Resources:
                   - "s3:DeleteObject"
                 Resource:
                   - !Join
-                    - ''
+                    - ""
                     - - !GetAtt CloudUmiS3Bucket.Arn
-                      - '/*'
+                      - "/*"

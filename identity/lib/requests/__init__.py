@@ -1,6 +1,8 @@
 import time
 import uuid
 
+from common.lib.dynamo import UserDynamoHandler
+from common.lib.slack import send_slack_notification_new_group_request
 from identity.lib.groups.groups import add_users_to_groups, get_group_by_name
 from identity.lib.groups.models import (
     GroupRequest,
@@ -8,9 +10,6 @@ from identity.lib.groups.models import (
     LastUpdated,
     User,
 )
-
-from common.lib.dynamo import UserDynamoHandler
-from common.lib.slack import send_slack_notification_new_group_request
 
 
 async def get_request_by_id(host, request_id):

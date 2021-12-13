@@ -9,10 +9,7 @@ import ujson as json
 from asgiref.sync import sync_to_async
 
 from common.config import config
-from common.exceptions.exceptions import (
-    DataNotRetrievable,
-    MissingConfigurationValue,
-)
+from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.dynamo import UserDynamoHandler
 

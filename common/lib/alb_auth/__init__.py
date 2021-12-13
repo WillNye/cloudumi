@@ -16,10 +16,7 @@ from jwt.exceptions import (
 from okta_jwt.utils import verify_exp, verify_iat
 
 from common.config import config
-from common.exceptions.exceptions import (
-    MissingConfigurationValue,
-    UnableToAuthenticate,
-)
+from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
 
 log = config.get_logger()
 

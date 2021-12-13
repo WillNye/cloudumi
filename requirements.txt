@@ -1,6 +1,0 @@
-# To ensure app dependencies are ported from your virtual environment/host machine into your container, run 'pip freeze > requirements.txt' in the terminal to overwrite this file
--e cloudumi_common
--e cloudumi_api
--e cloudumi_saml
--e cloudumi-identity
--e cloudumi_common/cloudumi_plugins/

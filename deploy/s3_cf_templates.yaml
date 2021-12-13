@@ -1,24 +1,24 @@
 Resources:
   CloudUmiS3BucketCFTemplates:
-    Type: 'AWS::S3::Bucket'
+    Type: "AWS::S3::Bucket"
     Properties:
       BucketName: "cloudumi-cf-templates"
   CloudUmiS3BucketCFTemplatesPermissions:
-    Type: 'AWS::S3::BucketPolicy'
+    Type: "AWS::S3::BucketPolicy"
     Properties:
       Bucket: !Ref CloudUmiS3BucketCFTemplates
       PolicyDocument:
         Version: 2012-10-17
         Statement:
           - Action:
-              - 's3:GetObject'
+              - "s3:GetObject"
             Effect: Allow
             Resource: !Join
-              - ''
-              - - 'arn:aws:s3:::'
+              - ""
+              - - "arn:aws:s3:::"
                 - !Ref CloudUmiS3BucketCFTemplates
                 - /*
-            Principal: '*'
+            Principal: "*"
             # Condition:
             #   StringLike:
             #     'aws:Referer':

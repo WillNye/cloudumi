@@ -114,9 +114,7 @@ class TestChangeRequestLib(AsyncTestCase):
 
     @tornado.testing.gen_test
     async def test_generate_inline_policy_change_model(self):
-        from common.lib.change_request import (
-            _generate_inline_policy_change_model,
-        )
+        from common.lib.change_request import _generate_inline_policy_change_model
 
         is_new = True
         policy_name = None

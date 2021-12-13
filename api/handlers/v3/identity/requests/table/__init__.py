@@ -1,13 +1,5 @@
 import tornado.escape
 import ujson as json
-from identity.lib.groups.groups import (
-    cache_identity_requests_for_host,
-    get_group_by_name,
-    get_identity_group_storage_keys,
-    get_identity_request_storage_keys,
-)
-from identity.lib.groups.models import GroupRequestsTable
-from identity.lib.requests import get_request_by_id, request_access_to_group
 
 from common.config import config
 from common.handlers.base import BaseHandler
@@ -16,6 +8,14 @@ from common.lib.generic import filter_table
 from common.lib.plugins import get_plugin_by_name
 from common.lib.timeout import Timeout
 from common.models import DataTableResponse, Status2, WebResponse
+from identity.lib.groups.groups import (
+    cache_identity_requests_for_host,
+    get_group_by_name,
+    get_identity_group_storage_keys,
+    get_identity_request_storage_keys,
+)
+from identity.lib.groups.models import GroupRequestsTable
+from identity.lib.requests import get_request_by_id, request_access_to_group
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()

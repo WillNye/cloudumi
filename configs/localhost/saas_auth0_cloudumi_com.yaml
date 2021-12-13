@@ -31,7 +31,7 @@ site_configs:
       # parameter organization is required for this client
       # On the provider, set ACS url to https://your_consoleme_url/saml/acs and saml audience to "https://your_consoleme_url/"
       idp_metadata_url: "https://dev-o6hu-9yg.us.auth0.com/samlp/metadata/qOQcmWU2t3thJ1umrGpGHBRnkhq48FOa"
-    #  saml_path: /apps/cloudumi_config/ssas_auth0_cloudumi_com
+      #  saml_path: /apps/cloudumi_config/ssas_auth0_cloudumi_com
       attributes:
         user: user
         groups: groups

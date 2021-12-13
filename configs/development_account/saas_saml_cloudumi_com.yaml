@@ -15,7 +15,7 @@ site_configs:
     get_user_by_saml_settings:
       # On the provider, set ACS url to https://your_consoleme_url/saml/acs and saml audience to "https://your_consoleme_url/"
       idp_metadata_url: "https://dev-876967.okta.com/app/exk1fi2rau14hDLnB4x7/sso/saml/metadata"
-#      saml_path: /apps/cloudumi_config/saas_saml_cloudumi_com_certs
+      #      saml_path: /apps/cloudumi_config/saas_saml_cloudumi_com_certs
       attributes:
         user: user
         groups: groups

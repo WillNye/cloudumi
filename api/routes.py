@@ -3,7 +3,6 @@
 import sentry_sdk
 import tornado.autoreload
 import tornado.web
-from saml.handlers.v1.saml import SamlHandler
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
@@ -100,6 +99,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationHandler,
 )
 from common.config import config
+from saml.handlers.v1.saml import SamlHandler
 
 log = config.get_logger()
 

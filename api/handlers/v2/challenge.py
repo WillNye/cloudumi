@@ -9,10 +9,7 @@ import ujson as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.handlers.base import BaseHandler, TornadoRequestHandler
-from common.lib.challenge import (
-    delete_expired_challenges,
-    retrieve_user_challenge,
-)
+from common.lib.challenge import delete_expired_challenges, retrieve_user_challenge
 from common.lib.jwt import generate_jwt_token
 from common.lib.redis import RedisHandler
 

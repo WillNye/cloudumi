@@ -25,10 +25,7 @@ from common.lib.aws.utils import (
 )
 from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name
-from common.lib.v2.aws_principals import (
-    get_eligible_role_details,
-    get_role_details,
-)
+from common.lib.v2.aws_principals import get_eligible_role_details, get_role_details
 from common.models import (
     CloneRoleRequestModel,
     RoleCreationRequestModel,

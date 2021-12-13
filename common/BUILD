@@ -6,7 +6,7 @@ filegroup(
     name = "src_files",
     srcs = (
         "__init__.py",
-        "models.py",    
+        "models.py",
     ),
     visibility = ["//visibility:public"],
 )

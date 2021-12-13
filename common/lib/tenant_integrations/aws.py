@@ -9,10 +9,7 @@ from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 
 from common.config import config
-from common.exceptions.exceptions import (
-    DataNotRetrievable,
-    MissingConfigurationValue,
-)
+from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.messaging import iterate_event_messages
@@ -167,9 +164,7 @@ async def handle_tenant_integration_queue(
                         }
                     )
                     continue
-                partial_stack_id_for_role = (
-                    body["StackId"].split("/")[-1].split("-")[0]
-                )
+                partial_stack_id_for_role = body["StackId"].split("/")[-1].split("-")[0]
                 account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
                 role_arn = f"arn:aws:iam::{account_id_for_role}:role/cloudumi-central-role-{partial_stack_id_for_role}"
                 external_id = body["ResourceProperties"]["ExternalId"]

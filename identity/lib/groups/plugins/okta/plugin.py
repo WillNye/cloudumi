@@ -1,6 +1,10 @@
 import sys
 from typing import Dict, List, Optional, Tuple
 
+from okta.client import Client as OktaClient
+
+from common.config import config
+from common.lib.dynamo import UserDynamoHandler
 from identity.lib.groups.models import (
     ActionResponse,
     Group,
@@ -8,10 +12,6 @@ from identity.lib.groups.models import (
     OktaIdentityProvider,
     User,
 )
-from okta.client import Client as OktaClient
-
-from common.config import config
-from common.lib.dynamo import UserDynamoHandler
 
 log = config.get_logger()
 

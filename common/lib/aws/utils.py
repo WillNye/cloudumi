@@ -38,23 +38,14 @@ from common.lib.aws.s3 import (
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
 from common.lib.aws.sns import get_topic_attributes
-from common.lib.aws.sqs import (
-    get_queue_attributes,
-    get_queue_url,
-    list_queue_tags,
-)
+from common.lib.aws.sqs import get_queue_attributes, get_queue_url, list_queue_tags
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
 from common.lib.generic import sort_dict
 from common.lib.plugins import get_plugin_by_name
-from common.lib.redis import (
-    RedisHandler,
-    redis_hget,
-    redis_hgetex,
-    redis_hsetex,
-)
+from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
 from common.models import (
     CloneRoleRequestModel,
     RoleCreationRequestModel,

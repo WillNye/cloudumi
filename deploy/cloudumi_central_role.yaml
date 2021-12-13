@@ -116,7 +116,7 @@ Resources:
                   - "sqs:UntagQueue"
                 Resource: "*"
   CloudUmiSnsCustomResource:
-    Type: 'Custom::CloudUmiSnsCustomResource'
+    Type: "Custom::CloudUmiSnsCustomResource"
     DeletionPolicy: Retain
     Properties:
       ServiceToken: arn:aws:sns:us-east-1:259868150464:noq_registration

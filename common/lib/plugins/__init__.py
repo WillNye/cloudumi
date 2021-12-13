@@ -1,10 +1,13 @@
-from collections import namedtuple
-import pkg_resources
 import pkgutil
+from collections import namedtuple
 from typing import Any
+
+import pkg_resources
+
 from plugins import entrypoints
 
 global_plugins = {}
+
 
 def iter_namespace(ns_pkg):
     # Specifying the second argument (prefix) to iter_modules makes the
@@ -18,6 +21,7 @@ def get_plugin_by_name(plugin_name: str) -> Any:
     plugin = entrypoints[plugin_name]
     plugin.load()
     return plugin.resolve()
+
 
 """
     if global_plugins.get(plugin_name):

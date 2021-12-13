@@ -209,7 +209,7 @@ container_image(
     },
     cmd = ["/usr/local/bin/python3", "run.py"],
     ports = [],
-    symlinks = { 
+    symlinks = {
         "amqp": "cloudumi_python_ext_pypi__amqp/amqp",
         "asgiref": "cloudumi_python_ext_pypi__asgiref/asgiref",
         "billiard": "cloudumi_python_ext_pypi__billiard/billiard",

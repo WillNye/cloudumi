@@ -20,7 +20,6 @@ from asgiref.sync import sync_to_async
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import Binary  # noqa
 from cloudaux import get_iso_string
-from identity.lib.groups.models import GroupRequest, GroupRequests
 from retrying import retry
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
@@ -42,14 +41,13 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.crypto import CryptoSign
-from common.lib.dynamo.host_restrict_session_policy import (
-    get_session_policy_for_host,
-)
+from common.lib.dynamo.host_restrict_session_policy import get_session_policy_for_host
 from common.lib.password import wait_after_authentication_failure
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
 from common.lib.s3_helpers import get_s3_bucket_for_host
 from common.models import AuthenticationResponse, ExtendedRequestModel
+from identity.lib.groups.models import GroupRequest, GroupRequests
 
 # TODO: Partion key should be host key. Dynamo instance should be retrieved dynamically. Should use dynamodb:LeadingKeys
 # to restrict.

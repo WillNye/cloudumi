@@ -1,5 +1,10 @@
 import tornado.escape
 import ujson as json
+
+from common.config import config
+from common.handlers.base import BaseHandler
+from common.lib.auth import can_admin_identity
+from common.models import Status2, WebResponse
 from identity.lib.groups.groups import add_users_to_groups, get_group_by_name
 from identity.lib.groups.models import Group, GroupRequestsTable, User
 from identity.lib.requests import (
@@ -8,11 +13,6 @@ from identity.lib.requests import (
     get_request_by_id,
     request_access_to_group,
 )
-
-from common.config import config
-from common.handlers.base import BaseHandler
-from common.lib.auth import can_admin_identity
-from common.models import Status2, WebResponse
 
 log = config.get_logger()
 

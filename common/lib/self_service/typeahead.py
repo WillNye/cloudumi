@@ -17,9 +17,7 @@ from common.models import (
 
 
 async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelArray:
-    from common.lib.templated_resources import (
-        retrieve_cached_resource_templates,
-    )
+    from common.lib.templated_resources import retrieve_cached_resource_templates
 
     app_name_tag = config.get_host_specific_key(
         f"site_configs.{host}.cache_self_service_typeahead.app_name_tag", host

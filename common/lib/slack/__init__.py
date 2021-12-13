@@ -2,7 +2,6 @@ import sys
 
 import tornado.escape
 import ujson as json
-from identity.lib.groups.models import GroupRequest
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 from tornado.httputil import HTTPHeaders
 
@@ -10,6 +9,7 @@ from common.config import config
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_policy_request_uri_v2
 from common.models import ExtendedRequestModel
+from identity.lib.groups.models import GroupRequest
 
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()

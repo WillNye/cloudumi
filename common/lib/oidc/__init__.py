@@ -12,10 +12,7 @@ from jwt.exceptions import DecodeError
 from tornado import httputil
 
 from common.config import config
-from common.exceptions.exceptions import (
-    MissingConfigurationValue,
-    UnableToAuthenticate,
-)
+from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
 from common.lib.generic import should_force_redirect
 from common.lib.jwt import generate_jwt_token
 

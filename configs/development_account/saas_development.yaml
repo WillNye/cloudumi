@@ -15,8 +15,8 @@ extends:
   # - saas_cognito_noq_dev.yaml
 #  - saas_cognito_noq_localhost.yaml
 #  - saas_cyberdyne_noq_dev.yaml
-  # - saas_dm_noq_dev.yaml
-  # - saas_stark_noq_dev.yaml
+# - saas_dm_noq_dev.yaml
+# - saas_stark_noq_dev.yaml
 #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
 #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_oidc_noq_dev.yaml
 #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_saml_noq_dev.yaml

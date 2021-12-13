@@ -14,10 +14,7 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.git import clone_repo
-from common.lib.templated_resources.models import (
-    TemplatedFileModelArray,
-    TemplateFile,
-)
+from common.lib.templated_resources.models import TemplatedFileModelArray, TemplateFile
 
 log = config.get_logger()
 

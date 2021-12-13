@@ -61,34 +61,34 @@ site_configs:
       request_ip_must_match_challenge_creation_ip: false
     auth:
       get_user_by_headers: true
-#      get_user_by_password: true
-#      get_user_by_oidc: true
-#      get_user_by_cognito: true
-#      cognito_config:
-#        user_pool: 123456789012
+      #      get_user_by_password: true
+      #      get_user_by_oidc: true
+      #      get_user_by_cognito: true
+      #      cognito_config:
+      #        user_pool: 123456789012
       get_groups_by_header: true
       get_user_by_header: true
       groups_header_name: group_header
       user_header_name: user_header
-#    get_user_by_oidc_settings:
-#      client_scopes:
-#        - email
-#        - groups
-#        - openid
-#      resource: consoleme-oidc
-#      metadata_url: https://dev-876967.okta.com/oauth2/default/.well-known/oauth-authorization-server
-#      # If you have a metadata URL and it returns JSON with authorization_endpoint, token_endpoint, and jwks_uri, you do
-#      # not need to specify those values in the configuration.
-#      #authorization_endpoint: https://dev-123456.okta.com/oauth2/default/v1/authorize
-#      #token_endpoint: https://dev-123456.okta.com/oauth2/default/v1/token
-#      #jwks_uri: https://dev-123456.okta.com/oauth2/default/v1/keys
-#      jwt_verify: true
-#      jwt_email_key: email
-#      jwt_groups_key: groups
-#      grant_type: authorization_code
-#      id_token_response_key: id_token
-#      access_token_response_key: access_token
-#      access_token_audience: "consoleme"
+    #    get_user_by_oidc_settings:
+    #      client_scopes:
+    #        - email
+    #        - groups
+    #        - openid
+    #      resource: consoleme-oidc
+    #      metadata_url: https://dev-876967.okta.com/oauth2/default/.well-known/oauth-authorization-server
+    #      # If you have a metadata URL and it returns JSON with authorization_endpoint, token_endpoint, and jwks_uri, you do
+    #      # not need to specify those values in the configuration.
+    #      #authorization_endpoint: https://dev-123456.okta.com/oauth2/default/v1/authorize
+    #      #token_endpoint: https://dev-123456.okta.com/oauth2/default/v1/token
+    #      #jwks_uri: https://dev-123456.okta.com/oauth2/default/v1/keys
+    #      jwt_verify: true
+    #      jwt_email_key: email
+    #      jwt_groups_key: groups
+    #      grant_type: authorization_code
+    #      id_token_response_key: id_token
+    #      access_token_response_key: access_token
+    #      access_token_audience: "consoleme"
     cloud_credential_authorization_mapping:
       role_tags:
         enabled: true
