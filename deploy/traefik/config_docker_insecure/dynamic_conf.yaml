@@ -1,33 +1,21 @@
 http:
   routers:
-    cloudumi_frontend:
+    frontend:
       entrypoints: web
-      service: cloudumi_frontend
+      service: frontend
       rule: "PathPrefix(`/`)"
       priority: 1 # Lowest priority, last thing we will match
-    cloudumi_api:
+    api:
       entrypoints: web
-      service: cloudumi_api
-      rule: "PathPrefix(`/api`) || PathPrefix(`/auth`) || PathPrefix(`/noauth`)"
-    cloudumi_saml:
-      entrypoints: web
-      service: cloudumi_saml
-      rule: "PathPrefix(`/saml`)"
+      service: api
+      rule: "PathPrefix(`/api`) || PathPrefix(`/saml`) || PathPrefix(`/auth`) || PathPrefix(`/noauth`)"
 
   services:
-    cloudumi_healthcheck:
+    api:
       loadbalancer:
         servers:
-          - url: "http://cloudumi_healthcheck:8090/"
-    cloudumi_saml:
+          - url: "http://api:8092/"
+    frontend:
       loadbalancer:
         servers:
-          - url: "http://cloudumi_saml:8091/"
-    cloudumi_api:
-      loadbalancer:
-        servers:
-          - url: "http://cloudumi_api:8092/"
-    cloudumi_frontend:
-      loadbalancer:
-        servers:
-          - url: "http://cloudumi_frontend:8081/"
+          - url: "http://frontend:8081/"

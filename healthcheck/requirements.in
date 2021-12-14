@@ -1,3 +1,0 @@
-fastapi
-grpcio==1.41.0
-uvicorn

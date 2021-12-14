@@ -14,7 +14,7 @@ FROM tiangolo/node-frontend as build-stage
 
 FROM nginx:1.15
 
-WORKDIR /apps/cloudumi_frontend
+WORKDIR /apps/frontend
 # Install Node, Yarn, and their dependencies
 RUN apt-get clean
 RUN apt-get update
@@ -25,9 +25,7 @@ RUN apt-get install nodejs build-essential -y
 RUN npm install yarn -g
 
 # Copy frontend on to container
-COPY cloudumi_frontend/ /apps/cloudumi_frontend/
-WORKDIR /apps/cloudumi_frontend/frontend
-
+COPY . /apps/frontend/
 # Install node dependencies
 RUN yarn
 
@@ -37,7 +35,7 @@ RUN yarn build
 
 EXPOSE 8081
 
-RUN cp -R /apps/cloudumi_frontend/frontend/build/* /usr/share/nginx/html
+RUN cp -R /apps/frontend/build/* /usr/share/nginx/html
 
 COPY --from=build-stage /nginx.conf /etc/nginx/conf.d/default.conf
 

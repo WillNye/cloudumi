@@ -18,6 +18,7 @@ from api.handlers.v1.policies import (
     ResourceTypeAheadHandler,
 )
 from api.handlers.v1.roles import GetRolesHandler
+from api.handlers.v1.saml import SamlHandler
 from api.handlers.v2.audit import AuditRolesAccessHandler, AuditRolesHandler
 from api.handlers.v2.aws_iam_users import UserDetailHandler
 from api.handlers.v2.challenge import (
@@ -106,7 +107,6 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationHandler,
 )
 from common.config import config
-from saml.handlers.v1.saml import SamlHandler
 
 log = config.get_logger()
 

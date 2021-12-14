@@ -2,14 +2,19 @@
 version: "3"
 services:
   api:
-    image: bazel/api:container-dev-local
+    build:
+      context: ../
     volumes:
       - ~/.aws:/root/.aws:cached
+    #    command: tail -f /dev/null
     depends_on:
       - redis-cluster
       - cloudumi-dynamodb
     links:
       - redis-cluster
       - cloudumi-dynamodb
-    ports:
-      - 8092:8092
+    environment:
+      AWS_PROFILE: noq_dev
+  frontend:
+    build:
+      context: ../frontend

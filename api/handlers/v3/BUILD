@@ -18,6 +18,7 @@ py_library(
     srcs = [
         ":src",
         "//api/handlers/v3/api_keys:src",
+        "//api/handlers/v3/config:src",
         "//api/handlers/v3/identity:src",
         "//api/handlers/v3/integrations:src",
         "//api/handlers/v3/tenant_registration:src",
