@@ -1,6 +1,7 @@
 """Entrypoint for ConsoleMe. To run service, set CONFIG_LOCATION environmental variable and run
 python -m consoleme.__main__"""
 
+
 import asyncio
 import logging
 import os
@@ -12,6 +13,7 @@ import tornado.ioloop
 import uvloop
 from tornado.platform.asyncio import AsyncIOMainLoop
 
+import util.debug  # noqa
 from api.routes import make_app
 from common.config import config
 from common.lib.plugins import get_plugin_by_name

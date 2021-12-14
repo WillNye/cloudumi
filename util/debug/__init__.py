@@ -1,4 +1,5 @@
 import os
+import sys
 
 # Set this to true in the environment if debugging is desired
 DEBUG_ENABLED = os.getenv("DEBUG", False)
@@ -12,6 +13,13 @@ if DEBUG_ENABLED:
     DEBUG_PORT = os.getenv("DEBUG_PORT", 9092)
 
     print(" ===> DEBUG ENABLED THERE GOOD BUDDYS <=== ")
-    ptvsd.enable_attach(address=("localhost", DEBUG_PORT), redirect_output=True)
-    print("Debugger listening on port 9092. Waiting for debugger to attach...")
+    ptvsd.enable_attach(address=(DEBUG_HOST, DEBUG_PORT), redirect_output=True)
+    print(f"Debugger listening on port {DEBUG_PORT}. Waiting for debugger to attach...")
     ptvsd.wait_for_attach()
+
+FAULTHANDLER_ENABLED = os.getenv("FAULTHANDLER_ENABLED", False)
+if FAULTHANDLER_ENABLED:
+    import faulthandler
+
+    faulthandler.enable(file=sys.stderr, all_threads=True)
+    faulthandler.dump_traceback_later(10, repeat=True, file=sys.stderr, exit=False)

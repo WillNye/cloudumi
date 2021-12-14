@@ -7,6 +7,8 @@ services:
     volumes:
       - ~/.aws:/root/.aws:cached
     #    command: tail -f /dev/null
+    # command: "python api/debug.py"
+    command: bash -c 'pip install debugpy && python -m debugpy --listen 0.0.0.0:9092 api/__main__.py'
     depends_on:
       - redis-cluster
       - cloudumi-dynamodb
@@ -15,6 +17,9 @@ services:
       - cloudumi-dynamodb
     environment:
       AWS_PROFILE: noq_dev
+      FAULTHANDLER_ENABLED: "true"
+    ports:
+      - 9092:9092
   frontend:
     build:
       context: ../frontend
