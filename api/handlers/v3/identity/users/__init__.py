@@ -13,6 +13,7 @@ from common.lib.timeout import Timeout
 from common.lib.web import handle_generic_error_response
 from common.models import DataTableResponse, WebResponse
 from identity.lib.groups.models import OktaIdentityProvider
+from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 from identity.lib.users.users import (
     cache_identity_users_for_host,
     get_identity_user_storage_keys,
@@ -211,7 +212,7 @@ class IdentityUserHandler(BaseHandler):
             raise Exception("Invalid IDP specified")
         if idp_d["idp_type"] == "okta":
             idp = OktaIdentityProvider.parse_obj(idp_d)
-            idp_plugin = OktaUserManagementPlugin(host, idp)
+            idp_plugin = OktaGroupManagementPlugin(host, idp)
         else:
             raise Exception("IDP type is not supported.")
         user = await idp_plugin.get_user(_user_name)

@@ -1,5 +1,5 @@
 import sys
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from okta.client import Client as OktaClient
 
