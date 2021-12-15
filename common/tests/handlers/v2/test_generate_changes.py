@@ -13,7 +13,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
     def test_post_no_user(self):
         expected = {
             "type": "redirect",
-            "redirect_url": "https://cloudumi.com",
+            "redirect_url": "https://noq.dev",
             "reason": "unauthenticated",
             "message": "Invalid host specified",
         }

@@ -728,7 +728,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             comments=[],
         )
         len_before_call = len(extended_request.changes.changes)
-        number_of_resources = 4
+        number_of_resources = 5
         await generate_resource_policies(
             extended_request, extended_request.requester_email, host
         )
@@ -2627,7 +2627,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
     @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch(
-        "plugins.plugins.aws.aws.Aws.fetch_iam_role",
+        "common.lib.aws.fetch_iam_principal.fetch_iam_role",
     )
     @patch("common.lib.v2.requests.populate_old_policies")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
