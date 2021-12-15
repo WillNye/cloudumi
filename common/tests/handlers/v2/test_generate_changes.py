@@ -1,6 +1,7 @@
 import ujson as json
 from mock import patch
-from tests.util import ConsoleMeAsyncHTTPTestCase
+
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
@@ -23,7 +24,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(json.loads(response.body), expected)
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_invalid_requests(self):
@@ -55,7 +56,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(response.code, 400)
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_valid_request_generic(self):
@@ -115,7 +116,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_valid_request_wildcard(self):
@@ -171,7 +172,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_valid_request_s3(self):
@@ -203,7 +204,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_valid_request_s3_multi(self):
@@ -261,7 +262,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_valid_request_s3_combined_inline(self):
@@ -367,12 +368,10 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
-    @patch(
-        "cloudumi_api.handlers.v2.generate_changes.ChangeGeneratorModelArray.parse_raw"
-    )
+    @patch("api.handlers.v2.generate_changes.ChangeGeneratorModelArray.parse_raw")
     def test_post_raises(self, mock_change_generator_model_array_parse_raw):
         mock_change_generator_model_array_parse_raw.side_effect = Exception(
             "Unknown Exception!"
@@ -401,7 +400,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertIn("Error generating changes", str(response.body))
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_valid_request_sns(self):
@@ -433,7 +432,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_valid_request_sns_multi(self):
@@ -489,7 +488,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_post_valid_request_sqs(self):
@@ -519,7 +518,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
+    #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_generate_changes_honeybee_template(self):

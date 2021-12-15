@@ -2,8 +2,9 @@ from unittest.mock import mock_open, patch
 
 import ujson as json
 from deepdiff import DeepDiff
-from tests.globals import host
-from tests.util import ConsoleMeAsyncHTTPTestCase
+
+from common.tests.globals import host
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):

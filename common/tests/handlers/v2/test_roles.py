@@ -1,8 +1,9 @@
 import ujson as json
 from mock import patch
-from tests.conftest import create_future
-from tests.globals import host
-from tests.util import ConsoleMeAsyncHTTPTestCase
+
+from common.tests.conftest import create_future
+from common.tests.globals import host
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
@@ -30,7 +31,7 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(0, len(responseJSON["eligible_roles"]))
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.roles.RolesHandler.authorization_flow",
+    #     "api.handlers.v2.roles.RolesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_create_unauthorized_user(self):
@@ -44,10 +45,10 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertDictEqual(json.loads(response.body), expected)
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.roles.RolesHandler.authorization_flow",
+    #     "api.handlers.v2.roles.RolesHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
-    @patch("cloudumi_api.handlers.v2.roles.can_create_roles")
+    @patch("api.handlers.v2.roles.can_create_roles")
     def test_create_authorized_user(self, mock_can_create_roles):
         mock_can_create_roles.return_value = True
         input_body = {
@@ -133,7 +134,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
 
         return make_app(jwt_validator=lambda x: {})
 
-    @patch("cloudumi_api.handlers.v2.roles.RoleDetailHandler.authorization_flow")
+    @patch("api.handlers.v2.roles.RoleDetailHandler.authorization_flow")
     def test_delete_no_user(self, mock_auth):
         mock_auth.return_value = create_future(None)
         expected = {"status": 403, "title": "Forbidden", "message": "No user detected"}
@@ -144,7 +145,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertDictEqual(json.loads(response.body), expected)
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.roles.RoleDetailHandler.authorization_flow",
+    #     "api.handlers.v2.roles.RoleDetailHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_delete_unauthorized_user(self):
@@ -160,10 +161,10 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertDictEqual(json.loads(response.body), expected)
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.roles.RoleDetailHandler.authorization_flow",
+    #     "api.handlers.v2.roles.RoleDetailHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
-    @patch("cloudumi_api.handlers.v2.roles.can_delete_iam_principals")
+    @patch("api.handlers.v2.roles.can_delete_iam_principals")
     def test_delete_authorized_user_invalid_role(self, mock_can_delete_iam_principals):
         expected = {
             "status": 500,
@@ -179,10 +180,10 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertDictEqual(json.loads(response.body), expected)
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.roles.RoleDetailHandler.authorization_flow",
+    #     "api.handlers.v2.roles.RoleDetailHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
-    @patch("cloudumi_api.handlers.v2.roles.can_delete_iam_principals")
+    @patch("api.handlers.v2.roles.can_delete_iam_principals")
     def test_delete_authorized_user_valid_role(self, mock_can_delete_iam_principals):
         import boto3
 
@@ -218,7 +219,7 @@ class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
 
         return make_app(jwt_validator=lambda x: {})
 
-    @patch("cloudumi_api.handlers.v2.roles.can_delete_iam_principals_app")
+    @patch("api.handlers.v2.roles.can_delete_iam_principals_app")
     def test_delete_role_by_app_denied(self, mock_can_delete_roles):
         expected = {"code": "403", "message": "Invalid Certificate"}
         mock_can_delete_roles.return_value = False
@@ -236,7 +237,7 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.roles.RoleCloneHandler.authorization_flow",
+    #     "api.handlers.v2.roles.RoleCloneHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_clone_unauthorized_user(self):
@@ -250,10 +251,10 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertDictEqual(json.loads(response.body), expected)
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.roles.RoleCloneHandler.authorization_flow",
+    #     "api.handlers.v2.roles.RoleCloneHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
-    @patch("cloudumi_api.handlers.v2.roles.can_create_roles")
+    @patch("api.handlers.v2.roles.can_create_roles")
     def test_clone_authorized_user(self, mock_can_create_roles):
         import boto3
 

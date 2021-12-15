@@ -4,8 +4,9 @@ import sys
 
 import ujson as json
 from mock import MagicMock, patch
-from tests.conftest import MockRedisHandler, create_future
-from tests.util import ConsoleMeAsyncHTTPTestCase
+
+from common.tests.conftest import MockRedisHandler, create_future
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
@@ -29,13 +30,13 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     # @patch(
-    #     "cloudumi_api.handlers.v1.policies.ResourceTypeAheadHandler.authorization_flow",
+    #     "api.handlers.v1.policies.ResourceTypeAheadHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     # @patch("common.lib.aws.RedisHandler", mock_policy_redis)
     # @patch("common.handlers.base.auth")
     # @patch("consoleme_saas_plugins.plugins.auth.auth.Auth")
-    @patch("cloudumi_api.handlers.v1.policies.retrieve_json_data_from_redis_or_s3")
+    @patch("api.handlers.v1.policies.retrieve_json_data_from_redis_or_s3")
     def test_resource_typeahead(
         self,
         mock_retrieve_json_data_from_redis_or_s3,  # mock_auth

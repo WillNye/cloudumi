@@ -1,4 +1,4 @@
-from cloudumi_plugins.plugins.internal_routes.handlers.internal_demo_route import (
+from plugins.internal_routes.handlers.internal_demo_route import (
     InternalDemoRouteHandler,
 )
 

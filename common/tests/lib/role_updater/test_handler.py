@@ -4,7 +4,8 @@ import unittest
 
 import boto3
 from asgiref.sync import async_to_sync
-from tests.globals import host
+
+from common.tests.globals import host
 
 os.environ["AWS_ACCESS_KEY_ID"] = "testing"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"

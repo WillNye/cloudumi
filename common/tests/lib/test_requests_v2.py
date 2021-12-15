@@ -6,8 +6,6 @@ import pytest
 import ujson as json
 from mock import patch
 from pydantic import ValidationError
-from tests.conftest import create_future
-from tests.globals import host
 
 from common.lib.assume_role import boto3_cached_conn
 from common.models import (
@@ -29,6 +27,8 @@ from common.models import (
     Status,
     UserModel,
 )
+from common.tests.conftest import create_future
+from common.tests.globals import host
 
 test_role_name = "TestRequestsLibV2RoleName"
 test_role_arn = f"arn:aws:iam::123456789012:role/{test_role_name}"
@@ -2627,7 +2627,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
     @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch(
-        "cloudumi_plugins.plugins.aws.aws.Aws.fetch_iam_role",
+        "plugins.plugins.aws.aws.Aws.fetch_iam_role",
     )
     @patch("common.lib.v2.requests.populate_old_policies")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
