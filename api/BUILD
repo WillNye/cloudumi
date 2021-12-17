@@ -10,7 +10,6 @@ filegroup(
     srcs = [
         "__init__.py",
         "__main__.py",
-        "debug.py",
         "routes.py",
     ]
 )
@@ -27,7 +26,7 @@ INT_DEPS = [
     "//plugins/config:lib",
     "//plugins/group_mapping:lib",
     "//plugins/metrics:lib",
-    "//saml:lib",
+    "//util/debug",
     "//util/log:lib",
 ]
 

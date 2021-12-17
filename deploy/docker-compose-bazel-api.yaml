@@ -19,6 +19,7 @@ services:
     environment:
       AWS_PROFILE: noq_dev
       CONFIG_LOCATION: /app/configs/development_account/saas_development.yaml
+      # FAULTHANDLER_ENABLED: "true"
     ports:
       - 8092:8092
       - 9092:9092

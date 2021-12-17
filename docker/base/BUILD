@@ -43,7 +43,6 @@ container_run_and_commit(
         "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
         "echo 'deb https://artifacts.elastic.co/packages/7.x/apt stable main' | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list",
         "sudo apt-get update && sudo apt-get install -y logstash",
-        "pip install aenum aiohttp bcrypt boto3 cloudaux cryptography deepdiff ed25519 flatdict jsonschema jwt logmatic-python marshmallow okta pandas parliament password_strength policy_sentry PyYAML redis redis-py-cluster retrying simplejson tenacity xmlsec xmltodict",
         "systemctl enable logstash",
         "systemctl start logstash",
 
