@@ -55,6 +55,12 @@ jobs:
           docker tag cloudumi 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:$NOQ_PATCH
           docker tag cloudumi 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:latest
           docker push --all-tags 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi
+      - name: Setup ECS CLI
+        run: |-
+          mkdir -p "$HOME/tools/ecs-cli"
+          curl -Lo "$HOME/tools/ecs-cli/ecs-cli" https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
+          chmod +x "$HOME/tools/ecs-cli/ecs-cli"
+          echo "$HOME/tools/ecs-cli" >> $GITHUB_PATH
       - name: Deploy to ECS Fargate
         run: |-
           chmod +x deploy/ecs/staging-1/deploy.sh
