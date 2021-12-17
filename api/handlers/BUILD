@@ -24,7 +24,6 @@ py_library(
         "//api/handlers/v2:lib",
         "//api/handlers/v3:lib",
         "//common/config:lib",
-        "//saml:lib",
         requirement("email_validator"),
         requirement("uvloop"),
         requirement("marshmallow"),

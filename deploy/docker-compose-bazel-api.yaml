@@ -15,9 +15,13 @@ services:
     links:
       - redis-cluster
       - cloudumi-dynamodb
+    volumes:
+      - /home/matt/dev/noq/cloudumi/configs:/configs:rw
+      - /home/matt/.aws:/root/.aws
     environment:
       AWS_PROFILE: noq_dev
-      FAULTHANDLER_ENABLED: "true"
+      CONFIG_LOCATION: /configs/development_account/saas_development.yaml
+      # FAULTHANDLER_ENABLED: "true"
     ports:
       - 9092:9092
   frontend:

@@ -20,7 +20,6 @@ py_library(
     ],
     deps = [
         "//common/config:lib",
-        "//saml:lib",
         requirement("email_validator"),
         requirement("uvloop"),
         requirement("marshmallow"),

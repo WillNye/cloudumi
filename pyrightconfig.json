@@ -1,0 +1,8 @@
+{
+    "exclude": [
+            "**/bazel-*/**",
+            "bazel-*/**",
+            "bazel-*"
+        ]
+}
+
