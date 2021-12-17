@@ -57,5 +57,5 @@ jobs:
           docker push --all-tags 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi
       - name: Deploy to ECS Fargate
         run: |-
-          chmod +x deploy.sh
-          ./deploy.sh
+          chmod +x deploy/ecs/staging-1/deploy.sh
+          ./deploy/ecs/staging-1/deploy.sh
