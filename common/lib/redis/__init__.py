@@ -416,6 +416,7 @@ class RedisHandler:
                 startup_nodes=cluster_mode_nodes,
                 decode_responses=True,
                 required_key_prefix=host,
+                skip_full_coverage_check=True,
             )
         else:
             self.red = await sync_to_async(ConsoleMeRedis)(
@@ -442,6 +443,7 @@ class RedisHandler:
                 startup_nodes=cluster_mode_nodes,
                 decode_responses=True,
                 required_key_prefix=host,
+                skip_full_coverage_check=True,
             )
         else:
             self.red = ConsoleMeRedis(

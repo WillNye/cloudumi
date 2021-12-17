@@ -59,7 +59,7 @@ _global_:
       enabled: true
       nodes:
         global:
-          - host: noq-staging-1-redis-cluster-0001-001.eb1l6j.0001.usw2.cache.amazonaws.com
+          - host: noq-staging-1-redis-cluster.eb1l6j.clustercfg.usw2.cache.amazonaws.com
             port: "6379"
 # Localhost configuration
 #  redis:
