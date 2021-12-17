@@ -1,9 +1,12 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
 FROM python:3.9.7
 RUN mkdir -p /apps
+RUN apt clean
+RUN apt update
+
 RUN apt-get update
 RUN apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y
-
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash
 # logstash
 # test with: /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/00-cloudumi-s3-es.conf
 RUN bash -c 'wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -'
@@ -43,7 +46,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Install system requirements
 RUN apt-get install build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev nodejs -y
-
+RUN npm install yarn -g
 # Install pip requirements
 COPY requirements.lock .
 RUN python -m pip install -r requirements.lock
@@ -52,6 +55,10 @@ WORKDIR /app
 COPY . /app
 
 RUN python -m pip install -e .
+
+# Install SPA frontend
+RUN yarn --cwd frontend
+RUN yarn --cwd frontend build_template
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["python", "api/__main__.py"]

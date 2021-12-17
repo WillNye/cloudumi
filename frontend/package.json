@@ -39,7 +39,10 @@
     "test": "craco test --env=jsdom",
     "eject": "craco eject",
     "lint": "prettier --check './src/**/*.{jsx,js}'",
-    "lint:fix": "prettier --write './src/**/*.{jsx,js}'"
+    "lint:fix": "prettier --write './src/**/*.{jsx,js}'",
+    "copy": "cp -a build/ ../api/templates",
+    "clean": "rm -rf build && rm -rf ../api/templates",
+    "build_template": "yarn run clean && yarn build && yarn run copy"
   },
   "eslintConfig": {
     "extends": "react-app"

@@ -6,6 +6,7 @@ services:
       context: ../
     volumes:
       - ~/.aws:/root/.aws:cached
+      - ../configs:/app/configs:cached
     #    command: tail -f /dev/null
     # command: "python api/debug.py"
     command: bash -c 'pip install debugpy && python -m debugpy --listen 0.0.0.0:9092 api/__main__.py'
@@ -17,9 +18,7 @@ services:
       - cloudumi-dynamodb
     environment:
       AWS_PROFILE: noq_dev
-      FAULTHANDLER_ENABLED: "true"
+      CONFIG_LOCATION: /app/configs/development_account/saas_development.yaml
     ports:
+      - 8092:8092
       - 9092:9092
-  frontend:
-    build:
-      context: ../frontend

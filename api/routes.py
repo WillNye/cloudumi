@@ -1,5 +1,5 @@
 """Web routes."""
-
+import pkg_resources
 import sentry_sdk
 import tornado.autoreload
 import tornado.web
@@ -34,6 +34,7 @@ from api.handlers.v2.index import (
     EligibleRoleHandler,
     EligibleRolePageConfigHandler,
     EligibleRoleRefreshHandler,
+    FrontendHandler,
 )
 from api.handlers.v2.logout import LogOutHandler
 from api.handlers.v2.managed_policies import (
@@ -113,6 +114,8 @@ log = config.get_logger()
 
 def make_app(jwt_validator=None):
     """make_app."""
+
+    path = pkg_resources.resource_filename("api", "templates")
 
     routes = [
         (r"/auth", AuthHandler),  # /auth is still used by OIDC callback
@@ -205,6 +208,11 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
+        (
+            r"/(.*)",
+            FrontendHandler,
+            dict(path=path, default_filename="index.html"),
+        ),
     ]
 
     router = RuleRouter(routes)

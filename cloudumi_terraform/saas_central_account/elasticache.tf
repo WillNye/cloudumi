@@ -16,7 +16,7 @@ module "redis" {
   source  = "umotif-public/elasticache-redis/aws"
   version = "2.2.0"
 
-  name_prefix           = "redis-clustered-example"
+  name_prefix           = "noq-sharded"
   number_cache_clusters = 2
   node_type             = "cache.t3.small"
 
@@ -40,10 +40,11 @@ module "redis" {
   family            = "redis6.x"
   description       = "Test elasticache redis."
 
-  subnet_ids = data.aws_subnet_ids.all.ids
-  vpc_id     = data.aws_vpc.default.id
+  subnet_ids         = data.aws_subnet_ids.all.ids
+  vpc_id             = data.aws_vpc.default.id
+  security_group_ids = []
 
-  ingress_cidr_blocks = ["0.0.0.0/0"]
+  ingress_cidr_blocks = []
 
   parameter = [
     {

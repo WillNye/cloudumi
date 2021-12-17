@@ -35,7 +35,7 @@ _global_:
     - www.noq.dev
     - 127.0.0.1
     - registration.noq.dev
-  dynamodb_server: http://localhost:8005
+  dynamodb_server: http://cloudumi-dynamodb:8005
   aws:
     node_role: arn:aws:iam::259868150464:role/NoqClusterRole1
     pre_role_arns_to_assume:

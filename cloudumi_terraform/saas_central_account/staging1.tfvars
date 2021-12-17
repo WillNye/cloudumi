@@ -1,5 +1,7 @@
 // AWS_PROFILE=noq_dev terraform plan -var-file="staging.tfvars"
-name       = "cloudumi-staging"
 region     = "us-west-2"
 stage      = "staging"
-cluster_id = "staging1"
+cluster_id = "1"
+subnet_azs = ["us-west-2a", "us-west-2b"]
+
+allowed_inbound_cidr_blocks = ["70.187.228.241/32"]

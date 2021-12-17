@@ -10,10 +10,34 @@ variable "bucket_name_prefix" {
   default     = "cloudumi-cache"
 }
 
+variable "namespace" {
+  description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence."
+  default     = "noq"
+  type        = string
+}
+
+variable "capacity_providers" {
+  description = "List of short names of one or more capacity providers to associate with the cluster. Valid values also include FARGATE and FARGATE_SPOT."
+  type        = list(string)
+  default     = ["FARGATE_SPOT", "FARGATE"]
+}
+
+
+variable "stage" {
+  description = "Stage, e.g. `prod`, `staging`, `dev`, or `test`. Second item in naming sequence."
+}
+
 variable "cluster_id" {
   description = "The cluster ID for CloudUmi."
   type        = string
 }
+
+variable "container_insights" {
+  description = "Controls if ECS Cluster has container insights enabled"
+  type        = bool
+  default     = false
+}
+
 variable "default_tags" {
   description = "Default billing tags to be applied across all resources"
   type        = map(string)
@@ -128,13 +152,7 @@ variable "ec2_ami_name_filter" {
 # This manages the names of resources in this module.
 # ---------------------------------------------------------------------------------------------------------------------
 
-variable "stage" {
-  description = "Stage, e.g. `prod`, `staging`, `dev`, or `test`. Second item in naming sequence."
-}
 
-variable "name" {
-  description = "Name, which could be the name of your solution or app. Third item in naming sequence."
-}
 
 variable "attributes" {
   type        = list(string)
@@ -172,3 +190,11 @@ variable "sync_accounts_from_organizations_account_map" {
   description = "Organizations master account ID"
   default     = []
 }
+
+variable "subnet_azs" {
+  description = "Subnets will be created in these availability zones (need at least two for load balancer)."
+  type        = list(string)
+
+}
+
+
