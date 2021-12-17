@@ -3,8 +3,9 @@ import os
 import sys
 
 import ujson as json
-from tests.globals import host
-from tests.util import ConsoleMeAsyncHTTPTestCase
+
+from common.tests.globals import host
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
@@ -48,7 +49,7 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
                     "notifications": {"enabled": None, "request_interval": 60},
                 },
                 "user": "testuser@example.com",
-                "can_logout": False,
+                "can_logout": True,
                 "is_contractor": False,
                 "employee_photo_url": "",
                 "employee_info_url": "",
@@ -63,7 +64,9 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
                         "custom_header_message_text": "",
                         "custom_header_message_route": ".*",
                     },
+                    "role_login": {"enabled": True},
                     "groups": {"enabled": False},
+                    "identity": {"enabled": False},
                     "users": {"enabled": False},
                     "policies": {"enabled": True},
                     "self_service": {"enabled": True},

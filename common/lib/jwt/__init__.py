@@ -26,7 +26,7 @@ async def generate_jwt_token(
         f"site_configs.{host}.secrets.jwt_secret", host
     )
     if not jwt_secret:
-        raise Exception("jwt_secret is not defined")
+        raise Exception(f"jwt_secret is not defined for {host}")
     session = {
         "nbf": nbf,
         "iat": iat,

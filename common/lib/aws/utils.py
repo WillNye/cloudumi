@@ -939,11 +939,6 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
     log.info(log_data)
     # Force caching of role
     try:
-        aws = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-            )
-        )()
         role_arn = (
             f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
         )

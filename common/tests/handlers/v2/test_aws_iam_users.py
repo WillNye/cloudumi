@@ -1,7 +1,7 @@
 import json
 
-from tests.globals import host
-from tests.util import ConsoleMeAsyncHTTPTestCase
+from common.tests.globals import host
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
@@ -11,7 +11,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.aws_iam_users.UserDetailHandler.authorization_flow",
+    #     "api.handlers.v2.aws_iam_users.UserDetailHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_fetch_nonexistent_user(self):
@@ -29,7 +29,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.aws_iam_users.UserDetailHandler.authorization_flow",
+    #     "api.handlers.v2.aws_iam_users.UserDetailHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_fetch_user(self):
@@ -85,7 +85,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
         )
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.aws_iam_users.UserDetailHandler.authorization_flow",
+    #     "api.handlers.v2.aws_iam_users.UserDetailHandler.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_delete_user_forbidden(self):

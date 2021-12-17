@@ -1,6 +1,7 @@
 import ujson as json
-from tests.globals import host
-from tests.util import ConsoleMeAsyncHTTPTestCase
+
+from common.tests.globals import host
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):

@@ -20,10 +20,10 @@ from moto import (
     mock_sqs,
     mock_sts,
 )
+from tornado.concurrent import Future
 
 # Unit tests will create mock resources in us-east-1
-from tests.globals import host
-from tornado.concurrent import Future
+from common.tests.globals import host
 
 os.environ["AWS_REGION"] = "us-east-1"
 
@@ -1171,12 +1171,10 @@ def populate_caches(
     ec2,
 ):
     from asgiref.sync import async_to_sync
-    from cloudumi_plugins.plugins.celery_tasks import (
-        celery_tasks as default_celery_tasks,
-    )
 
     from common.celery_tasks import celery_tasks as celery
     from common.lib.account_indexers import get_account_id_to_name_mapping
+    from plugins.celery_tasks import celery_tasks as default_celery_tasks
 
     celery.cache_cloud_account_mapping(host)
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)

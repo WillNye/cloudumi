@@ -1,6 +1,0 @@
-#-e ../cloudumi_common
-fastapi
-uvicorn
-python3-saml
-python-multipart
-httpx # HTTP Client

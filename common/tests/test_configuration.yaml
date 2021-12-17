@@ -16,7 +16,8 @@ site_configs:
       can_delete_iam_principals:
         - test_delete_user_allowed
     application_admin: consoleme_admins@example.com
-    jwt_secret: T3sts3cr3t
+    secrets:
+      jwt_secret: T3sts3cr3t
     consoleme_s3_bucket: fakebucket
     celery:
       active_region: us-east-1

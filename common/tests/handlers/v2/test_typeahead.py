@@ -1,15 +1,15 @@
 import ujson as json
 from asgiref.sync import async_to_sync
 from mock import Mock, patch
-from tests.conftest import create_future
-from tests.globals import host
-from tests.util import ConsoleMeAsyncHTTPTestCase
 
 from common.lib.self_service.models import (
     SelfServiceTypeaheadModel,
     SelfServiceTypeaheadModelArray,
 )
 from common.models import AwsResourcePrincipalModel
+from common.tests.conftest import create_future
+from common.tests.globals import host
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
@@ -22,7 +22,7 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         super(TestTypeAheadHandler, self).setUp()
 
     # @patch(
-    #     "cloudumi_api.handlers.v2.typeahead.ResourceTypeAheadHandlerV2.authorization_flow",
+    #     "api.handlers.v2.typeahead.ResourceTypeAheadHandlerV2.authorization_flow",
     #     MockBaseHandler.authorization_flow,
     # )
     def test_typeahead_get(self):

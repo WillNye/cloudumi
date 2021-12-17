@@ -1,5 +1,5 @@
 amqp
-asgiref
+asgiref==3.3.4 # Deadlock error during unit tests with 3.4.1
 atlassian-python-api
 bcrypt
 billiard

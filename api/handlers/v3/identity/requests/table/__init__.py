@@ -1,4 +1,3 @@
-import tornado.escape
 import ujson as json
 
 from common.config import config
@@ -7,7 +6,7 @@ from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.generic import filter_table
 from common.lib.plugins import get_plugin_by_name
 from common.lib.timeout import Timeout
-from common.models import DataTableResponse, Status2, WebResponse
+from common.models import DataTableResponse
 from identity.lib.groups.groups import (
     cache_identity_requests_for_host,
     get_identity_request_storage_keys,

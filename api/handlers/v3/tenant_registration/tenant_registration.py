@@ -11,7 +11,6 @@ import boto3
 import sentry_sdk
 import tornado.escape
 import tornado.web
-from asgiref.sync import sync_to_async
 from email_validator import validate_email
 from password_strength import PasswordPolicy
 
@@ -404,10 +403,10 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write({"error": "x-amzn-marketplace-token is required"})
             return
-        marketplace_client = boto3.client("meteringmarketplace")
-        customer_data = await sync_to_async(marketplace_client.resolve_customer)(
-            amazon_marketplace_reg_token
-        )
+        # marketplace_client = boto3.client("meteringmarketplace")
+        # customer_data = await sync_to_async(marketplace_client.resolve_customer)(
+        #     amazon_marketplace_reg_token
+        # )
         # customer_id = customer_data["CustomerIdentifier"]
         # Expected customer_id: {
         #     'CustomerIdentifier': 'string',

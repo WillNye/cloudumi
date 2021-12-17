@@ -1,8 +1,9 @@
 import json
 
 import jwt
-from tests.util import ConsoleMeAsyncHTTPTestCase
 from tornado.web import Application
+
+from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 TEST_SECRET = "SECRET"
 TEST_ALG = ["HS256"]
@@ -61,14 +62,12 @@ class TestBaseJSONHandler(ConsoleMeAsyncHTTPTestCase):
         response = self.fetch("/", method="OPTIONS")
         self.assertEqual(
             response.headers.get("Access-Control-Allow-Methods"),
-            "GET,HEAD,PUT,PATCH,POST,DELETE",
+            None,
         )
 
     def test_options_override(self):
         response = self.fetch("/methodOverride", method="OPTIONS")
-        self.assertEqual(
-            response.headers.get("Access-Control-Allow-Methods"), "GET,PUT"
-        )
+        self.assertEqual(response.headers.get("Access-Control-Allow-Methods"), None)
 
     def test_missing_auth_header(self):
         response = self.fetch("/")

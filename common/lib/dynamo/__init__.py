@@ -1187,7 +1187,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         :param request:
         :return:
         """
-        from cloudumi_common.celery_tasks.celery_tasks import app as celery_app
+        from common.celery_tasks.celery_tasks import app as celery_app
 
         request_dict = json.loads(request.json())
         self.identity_requests_table.put_item(
