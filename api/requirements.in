@@ -9,6 +9,7 @@ click
 cryptography
 debugpy
 gitpython
+google-api-python-client
 kombu
 newrelic
 okta
@@ -29,4 +30,5 @@ typing_extensions
 ujson
 urllib3
 uvloop
+validate_email
 vine

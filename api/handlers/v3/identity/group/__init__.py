@@ -1,7 +1,6 @@
 import tornado.escape
 import ujson as json
 
-from common.celery_tasks.celery_tasks import app as celery_app
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
@@ -112,6 +111,8 @@ class IdentityGroupHandler(BaseHandler):
 
     async def post(self, _idp, _group_name):
         host = self.ctx.host
+        from common.celery_tasks.celery_tasks import app as celery_app
+
         log_data = {
             "function": "IdentityGroupHandler.post",
             "user": self.user,

@@ -347,7 +347,7 @@ def can_edit_attributes(
 
 
 def can_modify_members(
-    user: str, user_groups: List[str], group_info: Optional[Any], host: str
+    host: str, user: str, user_groups: List[str], group_info: Optional[Any]
 ) -> bool:
     # No users can modify members on restricted groups
     if group_info and group_info.restricted:

@@ -179,7 +179,7 @@ class Auth:
         ):
             from common.lib.google import get_group_memberships
 
-            google_groups = await get_group_memberships(user, host)
+            google_groups = await get_group_memberships(host, user)
             if google_groups:
                 groups.extend(google_groups)
         if groups_to_add_for_all_users:
@@ -314,7 +314,7 @@ class Auth:
             "primaryEmail": user,
         }
 
-    async def get_group_info(self, group, members=True):
+    async def get_group_info(self, host, group, members=True):
         raise NotImplementedError()
 
     async def put_group_attribute(self, group, attribute_name, attribute_value):
@@ -329,7 +329,7 @@ class Auth:
     async def is_requestable(self, group):
         raise NotImplementedError()
 
-    async def does_user_exist(self, user):
+    async def does_user_exist(self, host, user):
         raise NotImplementedError()
 
     async def get_group_attribute(self, group, attribute_name):

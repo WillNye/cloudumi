@@ -8,7 +8,6 @@ import ujson as json
 from furl import furl
 from pydantic import ValidationError
 
-from common.celery_tasks.celery_tasks import app as celery_app
 from common.config import config
 from common.handlers.base import BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -219,6 +218,8 @@ class RolesHandler(BaseAPIV2Handler):
     def on_finish(self) -> None:
         if self.request.method != "POST":
             return
+        from common.celery_tasks.celery_tasks import app as celery_app
+
         host = self.ctx.host
         # Force refresh of crednetial authorization mapping after the dynamic config sync period to ensure all workers
         # have the updated configuration

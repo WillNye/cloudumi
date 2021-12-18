@@ -45,6 +45,7 @@ def validate_config(dct: Dict):
             isinstance(dct[k], dict)
             and k not in ["logging_levels"]
             and k not in ["group_mapping"]
+            and k not in ["google"]
         ):
             validate_config(dct[k])
 
@@ -470,6 +471,7 @@ class Configuration(metaclass=Singleton):
             ),
         )
         config_table = dynamodb.Table("consoleme_tenant_static_configs")
+        current_config = {}
         try:
             current_config = config_table.get_item(Key={"host": host, "id": "master"})
         except botocore.exceptions.ClientError as e:

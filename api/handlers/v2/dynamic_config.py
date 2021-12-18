@@ -6,7 +6,6 @@ import sentry_sdk
 import tornado.escape
 import tornado.web
 
-from common.celery_tasks.celery_tasks import app as celery_app
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_edit_dynamic_config
@@ -21,6 +20,8 @@ class DynamicConfigApiHandler(BaseHandler):
     def on_finish(self) -> None:
         if self.request.method != "POST":
             return
+        from common.celery_tasks.celery_tasks import app as celery_app
+
         host = self.ctx.host
         # Force a refresh of credential authorization mapping in current region
         # TODO: Trigger this to run cross-region

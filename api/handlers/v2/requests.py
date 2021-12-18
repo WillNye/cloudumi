@@ -8,7 +8,6 @@ import ujson as json
 from policy_sentry.util.arns import parse_arn
 from pydantic import ValidationError
 
-from common.celery_tasks.celery_tasks import app as celery_app
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
@@ -67,6 +66,8 @@ class RequestHandler(BaseAPIV2Handler):
     def on_finish(self) -> None:
         if self.request.method != "POST":
             return
+        from common.celery_tasks.celery_tasks import app as celery_app
+
         host = self.ctx.host
         try:
             with Timeout(
@@ -598,6 +599,8 @@ class RequestDetailHandler(BaseAPIV2Handler):
     def on_finish(self) -> None:
         if self.request.method != "PUT":
             return
+        from common.celery_tasks.celery_tasks import app as celery_app
+
         host = self.ctx.host
         # TODO: Only cache policy requests / Credential AuthZ for host
         celery_app.send_task(
