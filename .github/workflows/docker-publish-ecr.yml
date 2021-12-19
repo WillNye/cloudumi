@@ -1,4 +1,4 @@
-name: Create and publish docker image on ECR, then deploy to ECS
+name: Create and publish docker image on ECR then deploy to ECS
 on: workflow_dispatch
 # The  below will trigger build on any push to main branch
 #on:
@@ -40,11 +40,11 @@ jobs:
       - name: Build Image
         run: |
           docker build -t cloudumi .
-      - name: Tag, and push unstable image to Amazon ECR
+      - name: Tag and push unstable image to Amazon ECR
         run: |
           docker tag cloudumi 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:unstable
           docker push 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:unstable
-      - name: Tag, and push versioned image to ECR on tag
+      - name: Tag and push versioned image to ECR on tag
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           # Extract tags from version
