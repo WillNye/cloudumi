@@ -64,6 +64,7 @@ EXT_DEPS = [
     requirement("tornado"),
     requirement("ujson"),
     requirement("uvloop"),
+    requirement("xmlsec"),
 ]
 
 REQUIRES = [
@@ -111,6 +112,9 @@ py_library(
         ":src",
     ],
     deps = INT_DEPS + EXT_DEPS,
+    imports = [
+        ".",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -194,11 +198,11 @@ container_layer(
 
 container_image(
     name = "base-api-dev-local",
-    base = "//docker/base:base_docker",
+    base = "//docker/base:base_docker_alpine",
     env = {
         "TZ": "America/Los_Angeles",
         "PYTHONPATH": "PYTHONPATH:/usr/lib/python3/dist-packages:/usr/local/lib/python3.9:/usr/lib/python3.9",
-        "PYTHONDONTWRITEBYTECODE": "1",
+        # "PYTHONDONTWRITEBYTECODE": "1",
         "PYTHONUNBUFFERED": "1",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
@@ -210,6 +214,9 @@ container_image(
     symlinks = {
         "/usr/bin/python": "/usr/bin/python3",
     }
+    entrypoint = [
+        "/usr/bin/python3",
+    ]
 )
 
 py3_image(

@@ -37,24 +37,19 @@ container_layer(
 container_run_and_commit(
     name = "base_docker_raw",
     commands = [
-        "mkdir -p /apps",
         "apt-get update -y",
-        "apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl -y",
-        "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
-        "echo 'deb https://artifacts.elastic.co/packages/7.x/apt stable main' | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list",
-        "sudo apt-get update && sudo apt-get install -y logstash",
-        "systemctl enable logstash",
-        "systemctl start logstash",
+        "apt-get install build-essential curl telnet iputils-ping sudo vim systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev nodejs -y",
+        "pip install xmlsec",
+        # "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
+        # "echo 'deb https://artifacts.elastic.co/packages/7.x/apt stable main' | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list",
+        # "sudo apt-get update && sudo apt-get install -y logstash",
+        # "systemctl enable logstash",
+        # "systemctl start logstash",
 
         # Metricsbeat (System metrics)
-        "curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb",
-        "dpkg -i metricbeat-7.14.2-amd64.deb",
-        "rm -rf metricbeat-7.14.2-amd64.deb",
-
-        "addgroup --gid 1111 appgroup",
-        "adduser -uid 1111 --gid 1111 --disabled-password --no-create-hom --gecos '' appuser && chown -R appuser /apps",
-        "mkdir -p /home/appuser/.aws",
-        "chown -R appuser /home/appuser",
+        # "curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb",
+        # "dpkg -i metricbeat-7.14.2-amd64.deb",
+        # "rm -rf metricbeat-7.14.2-amd64.deb",
     ],
     # Example of using select
     # image = select({
@@ -64,6 +59,34 @@ container_run_and_commit(
     #     "//conditions:default": "@python_3.9.7_container//image",
     # }),
     image = "@python_3.9.7_container//image",
+    visibility = ["//visibility:public"],
+)
+
+# TODO: let's do without this
+container_run_and_commit(
+    name = "base_docker_raw_alpine",
+    commands = [
+        "apk update",
+        "apk add build-base libressl libffi-dev libressl-dev libxslt-dev libxml2-dev xmlsec-dev xmlsec",
+        # "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
+        # "echo 'deb https://artifacts.elastic.co/packages/7.x/apt stable main' | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list",
+        # "sudo apt-get update && sudo apt-get install -y logstash",
+        # "systemctl enable logstash",
+        # "systemctl start logstash",
+
+        # Metricsbeat (System metrics)
+        # "curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb",
+        # "dpkg -i metricbeat-7.14.2-amd64.deb",
+        # "rm -rf metricbeat-7.14.2-amd64.deb",
+    ],
+    # Example of using select
+    # image = select({
+    #     "//:amd64": "@python_3.9.7_container//image",
+    #     "//:arm64": "@python_3.9.7_container//image",
+    #     "//:aarch64": "@python_3.9.7_container//image",
+    #     "//conditions:default": "@python_3.9.7_container//image",
+    # }),
+    image = "@python_3.9.7_alpine_container//image",
     visibility = ["//visibility:public"],
 )
 
@@ -78,3 +101,13 @@ container_image(
     visibility = ["//visibility:public"],
 )
 
+container_image(
+    name = "base_docker_alpine",
+    base = ":base_docker_raw_alpine",
+    layers = [
+        ":etc_layer",
+        ":home_layer",
+    ],
+    data_path = "/",
+    visibility = ["//visibility:public"],
+)

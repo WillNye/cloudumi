@@ -69,6 +69,14 @@ container_pull(
     tag = "3.9.7",
 )
 
+container_pull(
+    name = "python_3.9.7_alpine_container",
+    architecture = "amd64",
+    registry = "index.docker.io",
+    repository = "library/python",
+    tag = "3.9.7-alpine",
+)
+
 # Setup Python Configuration to include a central pip repo
 load("@rules_python//python:pip.bzl", "pip_parse")
 
