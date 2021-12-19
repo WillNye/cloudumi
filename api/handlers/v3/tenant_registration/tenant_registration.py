@@ -634,9 +634,9 @@ site_configs:
       landing_url: /settings
     headers:
       identity:
-        enabled: true
-      role_login:
         enabled: false
+      role_login:
+        enabled: true
     identity:
       cache_groups:
         enabled: true
