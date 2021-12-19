@@ -23,3 +23,25 @@ services:
     ports:
       - 8092:8092
       - 9092:9092
+  celery:
+    build:
+      context: ../
+    volumes:
+      - ~/.aws:/root/.aws:cached
+      - ../configs:/app/configs:cached
+    #    command: tail -f /dev/null
+    # command: "python api/debug.py"
+    command: >
+      bash -c '
+      python common/scripts/initialize_redis.py;
+      celery -A common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8'
+    depends_on:
+      - redis-cluster
+      - cloudumi-dynamodb
+    links:
+      - redis-cluster
+      - cloudumi-dynamodb
+    environment:
+      AWS_PROFILE: noq_dev
+      CONFIG_LOCATION: /app/configs/development_account/saas_development.yaml
+      # FAULTHANDLER_ENABLED: "true"

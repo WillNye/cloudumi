@@ -1,4 +1,4 @@
-name: Create and publish docker image on ECR
+name: Create and publish docker image on ECR, then deploy to ECS
 on: workflow_dispatch
 # The  below will trigger build on any push to main branch
 #on:
@@ -7,9 +7,9 @@ on: workflow_dispatch
 #    tags:
 #      - "*"
 jobs:
-  ecr_public:
+  ecr_and_deploy:
     runs-on: ubuntu-latest
-    name: ECR public action
+    name: ECR/ECS deploy action
     if: github.repository == 'castrapel/cloudumi'
     steps:
       - name: Check out the repo
