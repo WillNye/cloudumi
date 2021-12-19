@@ -2972,114 +2972,114 @@ if config.get("_global_.development", False):
 
 schedule = {
     "cache_iam_resources_across_accounts_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "clear_old_redis_iam_cache_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.clear_old_redis_iam_cache_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.clear_old_redis_iam_cache_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },
     "cache_policies_table_details_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     # TODO: Get this task for a similar task working so we can alert on failing tasks or tasks that do not run as
     #  planned
     # "report_celery_last_success_metrics": {
-    #     "task": "cloudumi_common.celery_tasks.celery_tasks.report_celery_last_success_metrics",
+    #     "task": "common.celery_tasks.celery_tasks.report_celery_last_success_metrics",
     #     "options": {"expires": 60},
     #     "schedule": schedule_minute,
     # },
     "cache_managed_policies_across_accounts_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_managed_policies_across_accounts_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_managed_policies_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_s3_buckets_across_accounts_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_s3_buckets_across_accounts_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_s3_buckets_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_sqs_queues_across_accounts_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_sqs_queues_across_accounts_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_sqs_queues_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_sns_topics_across_accounts_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_sns_topics_across_accounts_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_sns_topics_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
     "cache_cloudtrail_errors_by_arn_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloudtrail_errors_by_arn_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_errors_by_arn_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_resources_from_aws_config_across_accounts_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_policy_requests_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_policy_requests_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_policy_requests_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_5_minutes,
     },
     "cache_cloud_account_mapping_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_credential_authorization_mapping_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_5_minutes,
     },
     "cache_scps_across_organizations_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_scps_across_organizations_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_scps_across_organizations_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_organization_structure_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_organization_structure_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_organization_structure_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
     "cache_resource_templates_task_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_resource_templates_task_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_resource_templates_task_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     "cache_self_service_typeahead_task_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_self_service_typeahead_task_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     "trigger_credential_mapping_refresh_from_role_changes_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
     "cache_cloudtrail_denies_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
     "cache_identities_for_all_hosts": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
+        "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
     # "cache_identity_group_requests_for_all_hosts": {
-    #     "task": "cloudumi_common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_hosts",
+    #     "task": "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_hosts",
     #     "options": {"expires": 180},
     #     "schedule": schedule_30_minute,
     # },
     "handle_tenant_aws_integration_queue": {
-        "task": "cloudumi_common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
+        "task": "common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
