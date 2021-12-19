@@ -32,7 +32,7 @@ class CloudTrail:
         :return:
         """
         notification_ttl_seconds = config.get_host_specific_key(
-            f"site_configs.{host}.process_cloudtrail_errors.notification_ttl",
+            "process_cloudtrail_errors.notification_ttl",
             host,
             86400,
         )
@@ -114,7 +114,7 @@ class CloudTrail:
             ).decode("utf-8")
             encoded_request_url = f"/selfservice?encoded_request={encoded_request}"
             notification_message = config.get_host_specific_key(
-                f"site_configs.{host}.process_cloudtrail_errors.generate_notifications.message",
+                "process_cloudtrail_errors.generate_notifications.message",
                 host,
                 """We've generated a policy suggestion for a recent permissions error with **[{arn}]({url_role_path})**.
 Please click the button below to review it.
@@ -173,7 +173,7 @@ was detected. This notification will disappear when a similar error has not occu
                 # We don't want to simulate events for every single update of a notification, just one time for
                 # Initial creation
                 if config.get_host_specific_key(
-                    f"site_configs.{host}.process_cloudtrail_errors.simulate_iam_principal_action",
+                    "process_cloudtrail_errors.simulate_iam_principal_action",
                     host,
                 ):
                     generated_notification.details[
@@ -218,7 +218,7 @@ was detected. This notification will disappear when a similar error has not occu
             new_or_changed_notifications[predictable_id].users_or_groups.update(
                 set(
                     config.get_host_specific_key(
-                        f"site_configs.{host}.process_cloudtrail_errors.additional_notify_users",
+                        "process_cloudtrail_errors.additional_notify_users",
                         host,
                         [],
                     )
@@ -240,16 +240,14 @@ was detected. This notification will disappear when a similar error has not occu
             await store_json_results_in_redis_and_s3(
                 notifications_by_user_group,
                 redis_key=config.get_host_specific_key(
-                    f"site_configs.{host}.notifications.redis_key",
+                    "notifications.redis_key",
                     host,
                     f"{host}_ALL_NOTIFICATIONS",
                 ),
                 redis_data_type="hash",
-                s3_bucket=config.get_host_specific_key(
-                    f"site_configs.{host}.notifications.s3.bucket", host
-                ),
+                s3_bucket=config.get_host_specific_key("notifications.s3.bucket", host),
                 s3_key=config.get_host_specific_key(
-                    f"site_configs.{host}.notifications.s3.key",
+                    "notifications.s3.key",
                     host,
                     "notifications/all_notifications_v1.json.gz",
                 ),

@@ -7,16 +7,12 @@ async def retrieve_current_account(host) -> CloudAccountModelArray:
     session = get_session_for_tenant(host)
     client = session.client(
         "sts",
-        **config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        **config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     identity = client.get_caller_identity()
     account_aliases = session.client(
         "iam",
-        **config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        **config.get_host_specific_key("boto3.client_kwargs", host, {}),
     ).list_account_aliases()["AccountAliases"]
     account_id = None
     if identity and identity.get("Account"):

@@ -17,10 +17,10 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -33,10 +33,10 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -49,10 +49,10 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -65,10 +65,10 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -81,10 +81,10 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(

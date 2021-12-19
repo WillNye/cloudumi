@@ -34,9 +34,7 @@ async def can_cancel_request(current_user, requesting_user, groups, host):
         return True
 
     # Allow restricted admins to cancel requests
-    for g in config.get_host_specific_key(
-        f"site_configs.{host}.groups.can_admin_restricted", host
-    ):
+    for g in config.get_host_specific_key("groups.can_admin_restricted", host):
         if g in groups:
             return True
 
@@ -63,9 +61,7 @@ async def get_request_by_id(user, request_id, host):
         for req in requests:
             group = req.get("group")
             auth = get_plugin_by_name(
-                config.get_host_specific_key(
-                    f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
-                )
+                config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
             )()
             secondary_approvers = await auth.get_secondary_approvers(group, host)
             req["secondary_approvers"] = ",".join(secondary_approvers)
@@ -79,9 +75,7 @@ async def get_all_pending_requests_api(user, host):
     dynamo_handler = UserDynamoHandler(host=host, user=user)
     all_requests = await dynamo_handler.get_all_identity_group_requests(host)
     auth = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
-        )
+        config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
     )()
     pending_requests = []
 
@@ -139,22 +133,22 @@ async def cache_all_policy_requests(
         raise Exception("Unknown host")
     if not redis_key:
         redis_key = config.get_host_specific_key(
-            f"site_configs.{host}.cache_policy_requests.redis_key",
+            "cache_policy_requests.redis_key",
             host,
             f"{host}_ALL_POLICY_REQUESTS",
         )
     if not s3_bucket and not s3_key:
         if config.region == config.get_host_specific_key(
-            f"site_configs.{host}.celery.active_region", host, config.region
-        ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+            "celery.active_region", host, config.region
+        ) or config.get_host_specific_key("environment", host) in [
             "dev",
             "test",
         ]:
             s3_bucket = config.get_host_specific_key(
-                f"site_configs.{host}.cache_policy_requests.s3.bucket", host
+                "cache_policy_requests.s3.bucket", host
             )
             s3_key = config.get_host_specific_key(
-                f"site_configs.{host}.cache_policy_requests.s3.file",
+                "cache_policy_requests.s3.file",
                 host,
                 "policy_requests/all_policy_requests_v1.json.gz",
             )
@@ -206,7 +200,7 @@ async def get_all_pending_requests(user, groups, host):
 
     for req in all_policy_requests:
         req["secondary_approvers"] = config.get_host_specific_key(
-            f"site_configs.{host}.groups.can_admin_policies", host
+            "groups.can_admin_policies", host
         )
 
         for sa in req["secondary_approvers"]:
@@ -229,7 +223,7 @@ async def get_user_requests(user, groups, host):
     all_requests = await dynamo_handler.get_all_identity_group_requests(host)
     query = {
         "domains": config.get_host_specific_key(
-            f"site_configs.{host}.dynamo.get_user_requests.domains", host, []
+            "dynamo.get_user_requests.domains", host, []
         ),
         "filters": [
             {
@@ -246,9 +240,7 @@ async def get_user_requests(user, groups, host):
         "size": 500,
     }
     auth = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
-        )
+        config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
     )()
     approver_groups = await auth.query_cached_groups(query=query)
     approver_groups = [g["name"] for g in approver_groups]
@@ -300,16 +292,16 @@ async def get_existing_pending_request(user: str, group_info: Any, host: str) ->
 
 
 def get_pending_requests_url(host):
-    return f"{config.get(f'site_configs.{host}.url')}/accessui/pending"
+    return f"{config.get_host_specific_key('url', host)}/accessui/pending"
 
 
 def get_request_review_url(request_id: str, host: str) -> str:
-    return f"{config.get(f'site_configs.{host}.url')}/accessui/request/{request_id}"
+    return f"{config.get_host_specific_key('url', host)}/accessui/request/{request_id}"
 
 
 def get_accessui_pending_requests_url(host):
-    return f"{config.get(f'site_configs.{host}.accessui_url')}/requests"
+    return f"{config.get_host_specific_key('accessui_url', host)}/requests"
 
 
 def get_accessui_request_review_url(request_id, host):
-    return f"{config.get(f'site_configs.{host}.accessui_url')}/requests/{request_id}"
+    return f"{config.get_host_specific_key('accessui_url', host)}/requests/{request_id}"

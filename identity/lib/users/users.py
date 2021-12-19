@@ -13,17 +13,17 @@ log = config.get_logger()
 
 def get_identity_user_storage_keys(host):
     s3_bucket = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_users.bucket",
+        "identity.cache_users.bucket",
         host,
         config.get("_global_.consoleme_s3_bucket"),
     )
     redis_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_users.redis_key",
+        "identity.cache_users.redis_key",
         host,
         default=f"{host}_IDENTITY_USERS",
     )
     s3_key = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_users.key",
+        "identity.cache_users.key",
         host,
         default="identity/users/identity_users_cache_v1.json.gz",
     )
@@ -57,9 +57,7 @@ async def cache_identity_users_for_host(host):
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "host": host,
     }
-    enabled = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_users.enabled", host
-    )
+    enabled = config.get_host_specific_key("identity.cache_users.enabled", host)
     if not enabled:
         log.debug(
             {
@@ -77,7 +75,7 @@ async def cache_identity_users_for_host(host):
     all_users = {}
 
     for idp_name, idp_d in config.get_host_specific_key(
-        f"site_configs.{host}.identity.identity_providers", host, default={}
+        "identity.identity_providers", host, default={}
     ).items():
         if idp_d["idp_type"] == "okta":
             idp = OktaIdentityProvider.parse_obj(idp_d)
@@ -144,7 +142,7 @@ async def get_user_by_name(host, idp, user_name):
         return User.parse_obj(ddb._data_from_dynamo_replace(matching_user["Item"]))
     else:
         idp_d = config.get_host_specific_key(
-            f"site_configs.{host}.identity.identity_providers", host, default={}
+            "identity.identity_providers", host, default={}
         ).get(idp)
         if not idp_d:
             raise Exception("Invalid IDP specified")

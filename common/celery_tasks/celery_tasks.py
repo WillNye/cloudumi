@@ -541,9 +541,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(host)
     aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
+        config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
     )()
     log_data: Dict = {"function": function}
     if is_task_already_running(function, []):
@@ -557,7 +555,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
     cloudtrail_errors = process_cloudtrail_errors_res["error_count_by_role"]
     red.setex(
         config.get_host_specific_key(
-            f"site_configs.{host}.celery.cache_cloudtrail_errors_by_arn.redis_key",
+            "celery.cache_cloudtrail_errors_by_arn.redis_key",
             host,
             f"{host}_CLOUDTRAIL_ERRORS_BY_ARN",
         ),
@@ -597,7 +595,7 @@ def cache_policies_table_details(host=None) -> bool:
     cloudtrail_errors = {}
     cloudtrail_errors_j = red.get(
         config.get_host_specific_key(
-            f"site_configs.{host}.celery.cache_cloudtrail_errors_by_arn.redis_key",
+            "celery.cache_cloudtrail_errors_by_arn.redis_key",
             host,
             f"{host}_CLOUDTRAIL_ERRORS_BY_ARN",
         )
@@ -607,7 +605,7 @@ def cache_policies_table_details(host=None) -> bool:
         cloudtrail_errors = json.loads(cloudtrail_errors_j)
 
     s3_error_topic = config.get_host_specific_key(
-        f"site_configs.{host}.redis.s3_errors", host, f"{host}_S3_ERRORS"
+        "redis.s3_errors", host, f"{host}_S3_ERRORS"
     )
     all_s3_errors = red.get(s3_error_topic)
     s3_errors = {}
@@ -616,22 +614,22 @@ def cache_policies_table_details(host=None) -> bool:
 
     # IAM Roles
     skip_iam_roles = config.get_host_specific_key(
-        f"site_configs.{host}.cache_policies_table_details.skip_iam_roles", host, False
+        "cache_policies_table_details.skip_iam_roles", host, False
     )
     if not skip_iam_roles:
         all_iam_roles = async_to_sync(retrieve_json_data_from_redis_or_s3)(
             redis_key=config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamroles_redis_key",
+                "aws.iamroles_redis_key",
                 host,
                 f"{host}_IAM_ROLE_CACHE",
             ),
             redis_data_type="hash",
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
                 host,
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
                 host,
                 "account_resource_cache/cache_all_roles_v1.json.gz",
             ),
@@ -663,7 +661,7 @@ def cache_policies_table_details(host=None) -> bool:
                     "technology": "AWS::IAM::Role",
                     "templated": red.hget(
                         config.get_host_specific_key(
-                            f"site_configs.{host}.templated_roles.redis_key",
+                            "templated_roles.redis_key",
                             host,
                             f"{host}_TEMPLATED_ROLES_v2",
                         ),
@@ -678,22 +676,22 @@ def cache_policies_table_details(host=None) -> bool:
 
     # IAM Users
     skip_iam_users = config.get_host_specific_key(
-        f"site_configs.{host}.cache_policies_table_details.skip_iam_users", host, False
+        "cache_policies_table_details.skip_iam_users", host, False
     )
     if not skip_iam_users:
         all_iam_users = async_to_sync(retrieve_json_data_from_redis_or_s3)(
             redis_key=config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamusers_redis_key",
+                "aws.iamusers_redis_key",
                 host,
                 f"{host}_IAM_USER_CACHE",
             ),
             redis_data_type="hash",
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_users_combined.s3.bucket",
+                "cache_iam_resources_across_accounts.all_users_combined.s3.bucket",
                 host,
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_users_combined.s3.file",
+                "cache_iam_resources_across_accounts.all_users_combined.s3.file",
                 host,
                 "account_resource_cache/cache_all_users_v1.json.gz",
             ),
@@ -718,7 +716,7 @@ def cache_policies_table_details(host=None) -> bool:
                     "technology": "AWS::IAM::User",
                     "templated": red.hget(
                         config.get_host_specific_key(
-                            f"site_configs.{host}.templated_roles.redis_key",
+                            "templated_roles.redis_key",
                             host,
                             f"{host}_TEMPLATED_ROLES_v2",
                         ),
@@ -732,11 +730,11 @@ def cache_policies_table_details(host=None) -> bool:
             )
     # S3 Buckets
     skip_s3_buckets = config.get_host_specific_key(
-        f"site_configs.{host}.cache_policies_table_details.skip_s3_buckets", host, False
+        "cache_policies_table_details.skip_s3_buckets", host, False
     )
     if not skip_s3_buckets:
         s3_bucket_key: str = config.get_host_specific_key(
-            f"site_configs.{host}.redis.s3_bucket_key", host, f"{host}_S3_BUCKETS"
+            "redis.s3_bucket_key", host, f"{host}_S3_BUCKETS"
         )
         s3_accounts = red.hkeys(s3_bucket_key)
         if s3_accounts:
@@ -764,11 +762,11 @@ def cache_policies_table_details(host=None) -> bool:
 
     # SNS Topics
     skip_sns_topics = config.get_host_specific_key(
-        f"site_configs.{host}.cache_policies_table_details.skip_sns_topics", host, False
+        "cache_policies_table_details.skip_sns_topics", host, False
     )
     if not skip_sns_topics:
         sns_topic_key: str = config.get_host_specific_key(
-            f"site_configs.{host}.redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
+            "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
         )
         sns_accounts = red.hkeys(sns_topic_key)
         if sns_accounts:
@@ -791,11 +789,11 @@ def cache_policies_table_details(host=None) -> bool:
 
     # SQS Queues
     skip_sqs_queues = config.get_host_specific_key(
-        f"site_configs.{host}.cache_policies_table_details.skip_sqs_queues", host, False
+        "cache_policies_table_details.skip_sqs_queues", host, False
     )
     if not skip_sqs_queues:
         sqs_queue_key: str = config.get_host_specific_key(
-            f"site_configs.{host}.redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
+            "redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
         )
         sqs_accounts = red.hkeys(sqs_queue_key)
         if sqs_accounts:
@@ -818,13 +816,13 @@ def cache_policies_table_details(host=None) -> bool:
 
     # Managed Policies
     skip_managed_policies = config.get_host_specific_key(
-        f"site_configs.{host}.cache_policies_table_details.skip_managed_policies",
+        "cache_policies_table_details.skip_managed_policies",
         host,
         False,
     )
     if not skip_managed_policies:
         managed_policies_key: str = config.get_host_specific_key(
-            f"site_configs.{host}.redis.iam_managed_policies_key",
+            "redis.iam_managed_policies_key",
             host,
             f"{host}_IAM_MANAGED_POLICIES",
         )
@@ -857,13 +855,13 @@ def cache_policies_table_details(host=None) -> bool:
 
     # AWS Config Resources
     skip_aws_config_resources = config.get_host_specific_key(
-        f"site_configs.{host}.cache_policies_table_details.skip_aws_config_resources",
+        "cache_policies_table_details.skip_aws_config_resources",
         host,
         False,
     )
     if not skip_aws_config_resources:
         resources_from_aws_config_redis_key: str = config.get_host_specific_key(
-            f"site_configs.{host}.aws_config_cache.redis_key",
+            "aws_config_cache.redis_key",
             host,
             f"{host}_AWSCONFIG_RESOURCE_CACHE",
         )
@@ -897,23 +895,23 @@ def cache_policies_table_details(host=None) -> bool:
     s3_bucket = None
     s3_key = None
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
         s3_bucket = config.get_host_specific_key(
-            f"site_configs.{host}.cache_policies_table_details.s3.bucket", host
+            "cache_policies_table_details.s3.bucket", host
         )
         s3_key = config.get_host_specific_key(
-            f"site_configs.{host}.cache_policies_table_details.s3.file",
+            "cache_policies_table_details.s3.file",
             host,
             "policies_table/cache_policies_table_details_v1.json.gz",
         )
     async_to_sync(store_json_results_in_redis_and_s3)(
         items,
         redis_key=config.get_host_specific_key(
-            f"site_configs.{host}.policies.redis_policies_key",
+            "policies.redis_policies_key",
             host,
             f"{host}_ALL_POLICIES",
         ),
@@ -937,9 +935,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
+        config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
     )()
     red = RedisHandler().redis_sync(host)
     log_data = {
@@ -950,28 +946,28 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
     cache_keys = {
         "iam_roles": {
             "temp_cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamroles_redis_key_temp",
+                "aws.iamroles_redis_key_temp",
                 host,
                 f"{host}_IAM_ROLE_CACHE_TEMP",
             )
         },
         "iam_users": {
             "temp_cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamusers_redis_key_temp",
+                "aws.iamusers_redis_key_temp",
                 host,
                 f"{host}_IAM_USER_CACHE_TEMP",
             )
         },
         "iam_groups": {
             "temp_cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamgroups_redis_key_temp",
+                "aws.iamgroups_redis_key_temp",
                 host,
                 f"{host}_IAM_GROUP_CACHE_TEMP",
             )
         },
         "iam_policies": {
             "temp_cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iampolicies_redis_key_temp",
+                "aws.iampolicies_redis_key_temp",
                 host,
                 f"{host}_IAM_POLICIES_CACHE_TEMP",
             )
@@ -980,12 +976,12 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
     # Get the DynamoDB handler:
     dynamo = IAMRoleDynamoHandler(host)
     cache_key = config.get_host_specific_key(
-        f"site_configs.{host}.aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
+        "aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
     )
     # Only query IAM and put data in Dynamo if we're in the active region
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
@@ -993,17 +989,13 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             "iam",
             host,
             account_number=account_id,
-            assume_role=config.get_host_specific_key(
-                f"site_configs.{host}.policies.role_name", host
-            ),
+            assume_role=config.get_host_specific_key("policies.role_name", host),
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             session_name=sanitize_session_name(
                 "consoleme_cache_iam_resources_for_account"
             ),
@@ -1036,10 +1028,10 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         async_to_sync(store_json_results_in_redis_and_s3)(
             all_iam_resources,
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_for_account.s3.bucket", host
+                "cache_iam_resources_for_account.s3.bucket", host
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_for_account.s3.file",
+                "cache_iam_resources_for_account.s3.file",
                 host,
                 "get_account_authorization_details/get_account_authorization_details_{account_id}_v1.json.gz",
             ).format(account_id=account_id),
@@ -1065,11 +1057,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             async_to_sync(store_json_results_in_redis_and_s3)(
                 iam_roles,
                 s3_bucket=config.get_host_specific_key(
-                    f"site_configs.{host}.cache_iam_resources_for_account.iam_roles.s3.bucket",
+                    "cache_iam_resources_for_account.iam_roles.s3.bucket",
                     host,
                 ),
                 s3_key=config.get_host_specific_key(
-                    f"site_configs.{host}.cache_iam_resources_for_account.iam_roles.s3.file",
+                    "cache_iam_resources_for_account.iam_roles.s3.file",
                     host,
                     "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
                 ).format(resource_type="iam_roles", account_id=account_id),
@@ -1081,11 +1073,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             async_to_sync(store_json_results_in_redis_and_s3)(
                 iam_users,
                 s3_bucket=config.get_host_specific_key(
-                    f"site_configs.{host}.cache_iam_resources_for_account.iam_users.s3.bucket",
+                    "cache_iam_resources_for_account.iam_users.s3.bucket",
                     host,
                 ),
                 s3_key=config.get_host_specific_key(
-                    f"site_configs.{host}.cache_iam_resources_for_account.iam_users.s3.file",
+                    "cache_iam_resources_for_account.iam_users.s3.file",
                     host,
                     "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
                 ).format(resource_type="iam_users", account_id=account_id),
@@ -1097,11 +1089,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             async_to_sync(store_json_results_in_redis_and_s3)(
                 iam_groups,
                 s3_bucket=config.get_host_specific_key(
-                    f"site_configs.{host}.cache_iam_resources_for_account.iam_groups.s3.bucket",
+                    "cache_iam_resources_for_account.iam_groups.s3.bucket",
                     host,
                 ),
                 s3_key=config.get_host_specific_key(
-                    f"site_configs.{host}.cache_iam_resources_for_account.iam_groups.s3.file",
+                    "cache_iam_resources_for_account.iam_groups.s3.file",
                     host,
                     "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
                 ).format(resource_type="iam_groups", account_id=account_id),
@@ -1113,11 +1105,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             async_to_sync(store_json_results_in_redis_and_s3)(
                 iam_policies,
                 s3_bucket=config.get_host_specific_key(
-                    f"site_configs.{host}.cache_iam_resources_for_account.iam_policies.s3.bucket",
+                    "cache_iam_resources_for_account.iam_policies.s3.bucket",
                     host,
                 ),
                 s3_key=config.get_host_specific_key(
-                    f"site_configs.{host}.cache_iam_resources_for_account.iam_policies.s3.file",
+                    "cache_iam_resources_for_account.iam_policies.s3.file",
                     host,
                     "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
                 ).format(resource_type="iam_policies", account_id=account_id),
@@ -1139,7 +1131,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "policy": dynamo.convert_iam_resource_to_json(role),
                 "templated": red.hget(
                     config.get_host_specific_key(
-                        f"site_configs.{host}.templated_roles.redis_key",
+                        "templated_roles.redis_key",
                         host,
                         f"{host}_TEMPLATED_ROLES_v2",
                     ),
@@ -1210,7 +1202,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
 
         # Maybe store all resources in git
         if config.get_host_specific_key(
-            f"site_configs.{host}.cache_iam_resources_for_account.store_in_git.enabled",
+            "cache_iam_resources_for_account.store_in_git.enabled",
             host,
         ):
             store_iam_resources_in_git(all_iam_resources, account_id, host)
@@ -1253,48 +1245,48 @@ def cache_iam_resources_across_accounts(
     cache_keys = {
         "iam_roles": {
             "cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamroles_redis_key",
+                "aws.iamroles_redis_key",
                 host,
                 f"{host}_IAM_ROLE_CACHE",
             ),
             "temp_cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamroles_redis_key_temp",
+                "aws.iamroles_redis_key_temp",
                 host,
                 f"{host}_IAM_ROLE_CACHE_TEMP",
             ),
         },
         "iam_users": {
             "cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamusers_redis_key",
+                "aws.iamusers_redis_key",
                 host,
                 f"{host}_IAM_USER_CACHE",
             ),
             "temp_cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamusers_redis_key_temp",
+                "aws.iamusers_redis_key_temp",
                 host,
                 f"{host}_IAM_USER_CACHE_TEMP",
             ),
         },
         "iam_groups": {
             "cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamgroups_redis_key",
+                "aws.iamgroups_redis_key",
                 host,
                 f"{host}_IAM_GROUP_CACHE",
             ),
             "temp_cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamgroups_redis_key_temp",
+                "aws.iamgroups_redis_key_temp",
                 host,
                 f"{host}_IAM_GROUP_CACHE_TEMP",
             ),
         },
         "iam_policies": {
             "cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iampolicies_redis_key",
+                "aws.iampolicies_redis_key",
                 host,
                 f"{host}_IAM_POLICY_CACHE",
             ),
             "temp_cache_key": config.get_host_specific_key(
-                f"site_configs.{host}.aws.iampolicies_redis_key_temp",
+                "aws.iampolicies_redis_key_temp",
                 host,
                 f"{host}_IAM_POLICIES_CACHE_TEMP",
             ),
@@ -1318,30 +1310,26 @@ def cache_iam_resources_across_accounts(
     accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(host)
     tasks = []
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
-        "dev"
-    ]:
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in ["dev"]:
         # First, get list of accounts
         # Second, call tasks to enumerate all the roles across all accounts
         for account_id in accounts_d.keys():
-            if config.get_host_specific_key(
-                f"site_configs.{host}.environment", host
-            ) in ["prod", "dev"]:
+            if config.get_host_specific_key("environment", host) in ["prod", "dev"]:
                 tasks.append(cache_iam_resources_for_account.s(account_id, host))
             else:
                 log.debug(
                     {
                         **log_data,
                         "message": (
-                            f"`site_configs.{host}.environment` configuration is not set. Only running tasks "
+                            "`environment` configuration is not set. Only running tasks "
                             "for accounts in configuration "
-                            f"key `site_configs.{host}.celery.test_account_ids`"
+                            "key `celery.test_account_ids`"
                         ),
                     }
                 )
                 if account_id in config.get_host_specific_key(
-                    f"site_configs.{host}.celery.test_account_ids", host, []
+                    "celery.test_account_ids", host, []
                 ):
                     tasks.append(cache_iam_resources_for_account.s(account_id, host))
         if run_subtasks:
@@ -1383,11 +1371,11 @@ def cache_iam_resources_across_accounts(
             redis_key=cache_keys["iam_roles"]["cache_key"],
             redis_data_type="hash",
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
                 host,
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
                 host,
                 "account_resource_cache/cache_all_roles_v1.json.gz",
             ),
@@ -1404,11 +1392,11 @@ def cache_iam_resources_across_accounts(
             redis_key=cache_keys["iam_users"]["cache_key"],
             redis_data_type="hash",
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_users_combined.s3.bucket",
+                "cache_iam_resources_across_accounts.all_users_combined.s3.bucket",
                 host,
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_users_combined.s3.file",
+                "cache_iam_resources_across_accounts.all_users_combined.s3.file",
                 host,
                 "account_resource_cache/cache_all_users_v1.json.gz",
             ),
@@ -1426,11 +1414,11 @@ def cache_iam_resources_across_accounts(
             redis_key=cache_keys["iam_groups"]["cache_key"],
             redis_data_type="hash",
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_groups_combined.s3.bucket",
+                "cache_iam_resources_across_accounts.all_groups_combined.s3.bucket",
                 host,
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_groups_combined.s3.file",
+                "cache_iam_resources_across_accounts.all_groups_combined.s3.file",
                 host,
                 "account_resource_cache/cache_all_groups_v1.json.gz",
             ),
@@ -1448,11 +1436,11 @@ def cache_iam_resources_across_accounts(
             redis_key=cache_keys["iam_policies"]["cache_key"],
             redis_data_type="hash",
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_policies_combined.s3.bucket",
+                "cache_iam_resources_across_accounts.all_policies_combined.s3.bucket",
                 host,
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_policies_combined.s3.file",
+                "cache_iam_resources_across_accounts.all_policies_combined.s3.file",
                 host,
                 "account_resource_cache/cache_all_policies_v1.json.gz",
             ),
@@ -1480,13 +1468,9 @@ def cache_managed_policies_for_account(
     managed_policies: List[Dict] = get_all_managed_policies(
         host=host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         region=config.region,
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     red = RedisHandler().redis_sync(host)
     all_policies: List = []
@@ -1507,23 +1491,23 @@ def cache_managed_policies_for_account(
     )
 
     policy_key = config.get_host_specific_key(
-        f"site_configs.{host}.redis.iam_managed_policies_key",
+        "redis.iam_managed_policies_key",
         host,
         f"{host}_IAM_MANAGED_POLICIES",
     )
     red.hset(policy_key, account_id, json.dumps(all_policies))
 
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
         s3_bucket = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.s3.bucket", host
+            "account_resource_cache.s3.bucket", host
         )
         s3_key = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.s3.file",
+            "account_resource_cache.s3.file",
             host,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="managed_policies", account_id=account_id)
@@ -1560,14 +1544,11 @@ def cache_managed_policies_across_accounts(host=None) -> bool:
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
     # Second, call tasks to enumerate all the roles across all accounts
     for account_id in accounts_d.keys():
-        if (
-            config.get_host_specific_key(f"site_configs.{host}.environment", host)
-            == "prod"
-        ):
+        if config.get_host_specific_key("environment", host) == "prod":
             cache_managed_policies_for_account.delay(account_id, host)
         else:
             if account_id in config.get_host_specific_key(
-                f"site_configs.{host}.celery.test_account_ids", host, []
+                "celery.test_account_ids", host, []
             ):
                 cache_managed_policies_for_account.delay(account_id, host)
 
@@ -1598,13 +1579,13 @@ def cache_s3_buckets_across_accounts(
         raise Exception("`host` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
     s3_bucket_redis_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.redis.s3_buckets_key", host, f"{host}_S3_BUCKETS"
+        "redis.s3_buckets_key", host, f"{host}_S3_BUCKETS"
     )
     s3_bucket = config.get_host_specific_key(
-        f"site_configs.{host}.account_resource_cache.s3_combined.bucket", host
+        "account_resource_cache.s3_combined.bucket", host
     )
     s3_key = config.get_host_specific_key(
-        f"site_configs.{host}.account_resource_cache.s3_combined.file",
+        "account_resource_cache.s3_combined.file",
         host,
         "account_resource_cache/cache_s3_combined_v1.json.gz",
     )
@@ -1619,19 +1600,15 @@ def cache_s3_buckets_across_accounts(
     }
     tasks = []
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
-        "dev"
-    ]:
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in ["dev"]:
         # Call tasks to enumerate all S3 buckets across all accounts
         for account_id in accounts_d.keys():
-            if config.get_host_specific_key(
-                f"site_configs.{host}.environment", host
-            ) in ["prod", "dev"]:
+            if config.get_host_specific_key("environment", host) in ["prod", "dev"]:
                 tasks.append(cache_s3_buckets_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
-                    f"site_configs.{host}.celery.test_account_ids", host, []
+                    "celery.test_account_ids", host, []
                 ):
                     tasks.append(cache_s3_buckets_for_account.s(account_id, host))
     log_data["num_tasks"] = len(tasks)
@@ -1641,8 +1618,8 @@ def cache_s3_buckets_across_accounts(
             # results.join() forces function to wait until all tasks are complete
             results.join(disable_sync_subtasks=False)
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
@@ -1695,13 +1672,13 @@ def cache_sqs_queues_across_accounts(
         raise Exception("`host` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
     sqs_queue_redis_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.redis.sqs_queues_key", host, f"{host}.SQS_QUEUES"
+        "redis.sqs_queues_key", host, f"{host}.SQS_QUEUES"
     )
     s3_bucket = config.get_host_specific_key(
-        f"site_configs.{host}.account_resource_cache.sqs_combined.bucket", host
+        "account_resource_cache.sqs_combined.bucket", host
     )
     s3_key = config.get_host_specific_key(
-        f"site_configs.{host}.account_resource_cache.sqs_combined.file",
+        "account_resource_cache.sqs_combined.file",
         host,
         "account_resource_cache/cache_sqs_queues_combined_v1.json.gz",
     )
@@ -1717,18 +1694,14 @@ def cache_sqs_queues_across_accounts(
     }
     tasks = []
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
-        "dev"
-    ]:
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get_host_specific_key(
-                f"site_configs.{host}.environment", host
-            ) in ["prod", "dev"]:
+            if config.get_host_specific_key("environment", host) in ["prod", "dev"]:
                 tasks.append(cache_sqs_queues_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
-                    f"site_configs.{host}.celery.test_account_ids", host, []
+                    "celery.test_account_ids", host, []
                 ):
                     tasks.append(cache_sqs_queues_for_account.s(account_id, host))
     log_data["num_tasks"] = len(tasks)
@@ -1738,8 +1711,8 @@ def cache_sqs_queues_across_accounts(
             # results.join() forces function to wait until all tasks are complete
             results.join(disable_sync_subtasks=False)
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
@@ -1788,15 +1761,16 @@ def cache_sns_topics_across_accounts(
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(host)
     sns_topic_redis_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
+        "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
     )
     s3_bucket = config.get_host_specific_key(
-        f"site_configs.{host}.account_resource_cache.sns_topics_combined.bucket", host
+        "account_resource_cache.sns_topics_combined.bucket", host
     )
-    s3_key = config.get(
-        "site_configs.{host}.account_resource_cache.{resource_type}_topics_combined.file",
+    s3_key = config.get_host_specific_key(
+        "account_resource_cache.{resource_type}_topics_combined.file",
+        host,
         "account_resource_cache/cache_{resource_type}_combined_v1.json.gz",
-    ).format(resource_type="sns_topics", host=host)
+    ).format(resource_type="sns_topics")
 
     # First, get list of accounts
     accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(host)
@@ -1809,18 +1783,14 @@ def cache_sns_topics_across_accounts(
     }
     tasks = []
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
-        "dev"
-    ]:
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get_host_specific_key(
-                f"site_configs.{host}.environment", host
-            ) in ["prod", "dev"]:
+            if config.get_host_specific_key("environment", host) in ["prod", "dev"]:
                 tasks.append(cache_sns_topics_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
-                    f"site_configs.{host}.celery.test_account_ids", host, []
+                    "celery.test_account_ids", host, []
                 ):
                     tasks.append(cache_sns_topics_for_account.s(account_id, host))
     log_data["num_tasks"] = len(tasks)
@@ -1830,8 +1800,8 @@ def cache_sns_topics_across_accounts(
             # results.join() forces function to wait until all tasks are complete
             results.join(disable_sync_subtasks=False)
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
@@ -1881,9 +1851,7 @@ def cache_sqs_queues_for_account(
                 "sqs",
                 host,
                 account_number=account_id,
-                assume_role=config.get_host_specific_key(
-                    f"site_configs.{host}.policies.role_name", host
-                ),
+                assume_role=config.get_host_specific_key("policies.role_name", host),
                 region=region,
                 read_only=True,
                 sts_client_kwargs=dict(
@@ -1891,7 +1859,7 @@ def cache_sqs_queues_for_account(
                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",
                 ),
                 client_kwargs=config.get_host_specific_key(
-                    f"site_configs.{host}.boto3.client_kwargs", host, {}
+                    "boto3.client_kwargs", host, {}
                 ),
                 session_name=sanitize_session_name(
                     "consoleme_cache_sqs_queues_for_account"
@@ -1918,7 +1886,7 @@ def cache_sqs_queues_for_account(
             )
             sentry_sdk.capture_exception()
     sqs_queue_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
+        "redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
     )
     red.hset(sqs_queue_key, account_id, json.dumps(list(all_queues)))
 
@@ -1931,16 +1899,17 @@ def cache_sqs_queues_for_account(
     )
 
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
         s3_bucket = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.sqs.bucket", host
+            "account_resource_cache.sqs.bucket", host
         )
-        s3_key = config.get(
-            "site_configs.{host}.account_resource_cache.{resource_type}.file",
+        s3_key = config.get_host_specific_key(
+            "account_resource_cache.{resource_type}.file",
+            host,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(
             resource_type="sqs_queues",
@@ -1976,9 +1945,7 @@ def cache_sns_topics_for_account(
             topics = list_topics(
                 host=host,
                 account_number=account_id,
-                assume_role=config.get_host_specific_key(
-                    f"site_configs.{host}.policies.role_name", host
-                ),
+                assume_role=config.get_host_specific_key("policies.role_name", host),
                 region=region,
                 read_only=True,
                 sts_client_kwargs=dict(
@@ -1986,7 +1953,7 @@ def cache_sns_topics_for_account(
                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",
                 ),
                 client_kwargs=config.get_host_specific_key(
-                    f"site_configs.{host}.boto3.client_kwargs", host, {}
+                    "boto3.client_kwargs", host, {}
                 ),
             )
             for topic in topics:
@@ -2003,7 +1970,7 @@ def cache_sns_topics_for_account(
             sentry_sdk.capture_exception()
 
     sns_topic_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
+        "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
     )
     red.hset(sns_topic_key, account_id, json.dumps(list(all_topics)))
 
@@ -2020,16 +1987,16 @@ def cache_sns_topics_for_account(
     )
 
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
         s3_bucket = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.s3.bucket", host
+            "account_resource_cache.s3.bucket", host
         )
         s3_key = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.s3.file",
+            "account_resource_cache.s3.file",
             host,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="sns_topics", account_id=account_id)
@@ -2052,20 +2019,16 @@ def cache_s3_buckets_for_account(
     s3_buckets: List = list_buckets(
         host=host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         region=config.region,
         read_only=True,
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     buckets: List = []
     for bucket in s3_buckets["Buckets"]:
         buckets.append(bucket["Name"])
     s3_bucket_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.redis.s3_buckets_key", host, f"{host}_S3_BUCKETS"
+        "redis.s3_buckets_key", host, f"{host}_S3_BUCKETS"
     )
     red.hset(s3_bucket_key, account_id, json.dumps(buckets))
 
@@ -2082,16 +2045,16 @@ def cache_s3_buckets_for_account(
     )
 
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
         s3_bucket = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.s3.bucket", host
+            "account_resource_cache.s3.bucket", host
         )
         s3_key = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.s3.file",
+            "account_resource_cache.s3.file",
             host,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="s3_buckets", account_id=account_id)
@@ -2141,13 +2104,13 @@ def clear_old_redis_iam_cache(host=None) -> bool:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     # Do not run if this is not in the active region:
     if config.region != config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
+        "celery.active_region", host, config.region
     ):
         return False
     red = RedisHandler().redis_sync(host)
     # Need to loop over all items in the set:
     cache_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
+        "aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
     )
     index: int = 0
     expire_ttl: int = int((datetime.utcnow() - timedelta(hours=6)).timestamp())
@@ -2209,10 +2172,10 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
         "host": host,
     }
     if not config.get_host_specific_key(
-        f"site_configs.{host}.celery.cache_resources_from_aws_config_across_accounts.enabled",
+        "celery.cache_resources_from_aws_config_across_accounts.enabled",
         host,
         config.get(
-            f"site_configs.{host}.celery.cache_resources_from_aws_config_for_account.{account_id}.enabled",
+            "celery.cache_resources_from_aws_config_for_account.{account_id}.enabled",
             True,
         ),
     ):
@@ -2222,25 +2185,23 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
         log.debug(log_data)
         return log_data
 
-    s3_bucket = config.get_host_specific_key(
-        f"site_configs.{host}.aws_config_cache.s3.bucket", host
-    )
+    s3_bucket = config.get_host_specific_key("aws_config_cache.s3.bucket", host)
     s3_key = config.get_host_specific_key(
-        f"site_configs.{host}.aws_config_cache.s3.file",
+        "aws_config_cache.s3.file",
         host,
         "aws_config_cache/cache_{account_id}_v1.json.gz",
     ).format(account_id=account_id)
     dynamo = UserDynamoHandler(host=host)
     # Only query in active region, otherwise get data from DDB
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
         results = aws_config.query(
             config.get_host_specific_key(
-                f"site_configs.{host}.cache_all_resources_from_aws_config.aws_config.all_resources_query",
+                "cache_all_resources_from_aws_config.aws_config.all_resources_query",
                 host,
                 "select * where accountId = '{account_id}'",
             ).format(account_id=account_id),
@@ -2262,7 +2223,7 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
             async_to_sync(store_json_results_in_redis_and_s3)(
                 un_wrap_json_and_dump_values(redis_result_set),
                 redis_key=config.get_host_specific_key(
-                    f"site_configs.{host}.aws_config_cache.redis_key",
+                    "aws_config_cache.redis_key",
                     host,
                     f"{host}_AWSCONFIG_RESOURCE_CACHE",
                 ),
@@ -2281,7 +2242,7 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
         async_to_sync(store_json_results_in_redis_and_s3)(
             redis_result_set,
             redis_key=config.get_host_specific_key(
-                f"site_configs.{host}.aws_config_cache.redis_key",
+                "aws_config_cache.redis_key",
                 host,
                 f"{host}_AWSCONFIG_RESOURCE_CACHE",
             ),
@@ -2322,7 +2283,7 @@ def cache_resources_from_aws_config_across_accounts(
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(host)
     resource_redis_cache_key = config.get_host_specific_key(
-        f"site_configs.{host}.aws_config_cache.redis_key",
+        "aws_config_cache.redis_key",
         host,
         f"{host}_AWSCONFIG_RESOURCE_CACHE",
     )
@@ -2333,7 +2294,7 @@ def cache_resources_from_aws_config_across_accounts(
     }
 
     if not config.get_host_specific_key(
-        f"site_configs.{host}.celery.cache_resources_from_aws_config_across_accounts.enabled",
+        "celery.cache_resources_from_aws_config_across_accounts.enabled",
         host,
         True,
     ):
@@ -2348,7 +2309,7 @@ def cache_resources_from_aws_config_across_accounts(
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
     # Second, call tasks to enumerate all the roles across all tenant accounts
     for account_id in accounts_d.keys():
-        if config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        if config.get_host_specific_key("environment", host) in [
             "prod",
             "dev",
         ]:
@@ -2356,7 +2317,7 @@ def cache_resources_from_aws_config_across_accounts(
                 cache_resources_from_aws_config_for_account.s(account_id, host)
             )
         elif account_id in config.get_host_specific_key(
-            f"site_configs.{host}.celery.test_account_ids", host, []
+            "celery.test_account_ids", host, []
         ):
             tasks.append(
                 cache_resources_from_aws_config_for_account.s(account_id, host)
@@ -2394,17 +2355,15 @@ def cache_resources_from_aws_config_across_accounts(
         # resource collection on all accounts to happen asynchronously. That means when we store or delete data within
         # this task, we're always going to be caching the results from the previous task.
         if config.region == config.get_host_specific_key(
-            f"site_configs.{host}.celery.active_region", host, config.region
-        ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
-            "dev"
-        ]:
+            "celery.active_region", host, config.region
+        ) or config.get_host_specific_key("environment", host) in ["dev"]:
             # Refresh all resources after deletion of expired entries
             all_resources = red.hgetall(resource_redis_cache_key)
             s3_bucket = config.get_host_specific_key(
-                f"site_configs.{host}.aws_config_cache_combined.s3.bucket", host
+                "aws_config_cache_combined.s3.bucket", host
             )
             s3_key = config.get_host_specific_key(
-                f"site_configs.{host}.aws_config_cache_combined.s3.file",
+                "aws_config_cache_combined.s3.file",
                 host,
                 "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
             )
@@ -2684,7 +2643,7 @@ def trigger_credential_mapping_refresh_from_role_changes_for_all_hosts() -> Dict
     log.debug(log_data)
     for host in hosts:
         if config.get_host_specific_key(
-            f"site_configs.{host}.celery.trigger_credential_mapping_refresh_from_role_changes.enabled",
+            "celery.trigger_credential_mapping_refresh_from_role_changes.enabled",
             host,
         ):
             trigger_credential_mapping_refresh_from_role_changes.apply_async((host,))
@@ -2704,7 +2663,7 @@ def trigger_credential_mapping_refresh_from_role_changes(host=None):
         raise Exception("`host` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     if not config.get_host_specific_key(
-        f"site_configs.{host}.celery.trigger_credential_mapping_refresh_from_role_changes.enabled",
+        "celery.trigger_credential_mapping_refresh_from_role_changes.enabled",
         host,
     ):
         return {
@@ -2737,9 +2696,7 @@ def cache_cloudtrail_denies_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        if config.get_host_specific_key(
-            f"site_configs.{host}.celery.cache_cloudtrail_denies.enabled", host
-        ):
+        if config.get_host_specific_key("celery.cache_cloudtrail_denies.enabled", host):
             cache_cloudtrail_denies.apply_async((host,))
     return log_data
 
@@ -2755,11 +2712,8 @@ def cache_cloudtrail_denies(host=None):
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     if not (
         config.region
-        == config.get_host_specific_key(
-            f"site_configs.{host}.celery.active_region", host, config.region
-        )
-        or config.get_host_specific_key(f"site_configs.{host}.environment", host)
-        in ["dev", "test"]
+        == config.get_host_specific_key("celery.active_region", host, config.region)
+        or config.get_host_specific_key("environment", host) in ["dev", "test"]
     ):
         return {
             "function": function,

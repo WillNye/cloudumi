@@ -24,9 +24,7 @@ async def send_slack_notification_new_request(
     """
     Sends a notification using specified webhook URL about a new request created
     """
-    if not config.get_host_specific_key(
-        f"site_configs.{host}.slack.notifications_enabled", host, False
-    ):
+    if not config.get_host_specific_key("slack.notifications_enabled", host, False):
         return
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -45,9 +43,7 @@ async def send_slack_notification_new_request(
         "approval_probe_approved": approval_probe_approved,
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_host_specific_key(
-        f"site_configs.{host}.slack.webhook_url", host
-    )
+    slack_webhook_url = config.get_host_specific_key("slack.webhook_url", host)
     if not slack_webhook_url:
         log_data["message"] = "Missing webhook URL for slack notification"
         log.error(log_data)
@@ -136,9 +132,7 @@ async def send_slack_notification_new_group_request(
     """
     Sends a notification using specified webhook URL about a new identity request
     """
-    if not config.get_host_specific_key(
-        f"site_configs.{host}.slack.notifications_enabled", host, False
-    ):
+    if not config.get_host_specific_key("slack.notifications_enabled", host, False):
         return
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -156,9 +150,7 @@ async def send_slack_notification_new_group_request(
         "request": json.loads(request.json()),
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_host_specific_key(
-        f"site_configs.{host}.slack.webhook_url", host
-    )
+    slack_webhook_url = config.get_host_specific_key("slack.webhook_url", host)
     if not slack_webhook_url:
         log_data["message"] = "Missing webhook URL for slack notification"
         log.error(log_data)
@@ -187,7 +179,7 @@ async def send_slack_notification_new_group_request(
 async def get_payload_for_group_request(
     request, requester, requested_users, requested_groups, host
 ):
-    host_url = config.get_host_specific_key(f"site_configs.{host}.url", host)
+    host_url = config.get_host_specific_key("url", host)
     if not host_url:
         raise Exception("No host URI")
     request_uri = f"{host_url}/{request.request_url}".replace("//", "/")
@@ -298,9 +290,7 @@ async def send_slack_notification_new_notification(
     """
     Sends a notification using specified webhook URL about a new identity request
     """
-    if not config.get_host_specific_key(
-        f"site_configs.{host}.slack.notifications_enabled", host, False
-    ):
+    if not config.get_host_specific_key("slack.notifications_enabled", host, False):
         return
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -315,18 +305,13 @@ async def send_slack_notification_new_notification(
         "session_name": session_name,
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_host_specific_key(
-        f"site_configs.{host}.slack.webhook_url", host
-    )
+    slack_webhook_url = config.get_host_specific_key("slack.webhook_url", host)
     if not slack_webhook_url:
         log_data["message"] = "Missing webhook URL for slack notification"
         log.error(log_data)
         return
     message = "We've generated a policy to resolve a detected permissions error"
-    request_url = (
-        config.get_host_specific_key(f"site_configs.{host}.url", host)
-        + encoded_request_url
-    )
+    request_url = config.get_host_specific_key("url", host) + encoded_request_url
     payload = await get_payload_for_policy_notification(
         message, session_name, arn, event_call, resource, source_ip, request_url
     )

@@ -22,16 +22,12 @@ async def send_email(
     sending_app: str = "consoleme",
     charset: str = "UTF-8",
 ) -> None:
-    region: str = config.get_host_specific_key(
-        f"site_configs.{host}.ses.region", host, config.region
-    )
+    region: str = config.get_host_specific_key("ses.region", host, config.region)
     session = get_session_for_tenant(host)
     client = session.client(
         "ses",
         region_name=region,
-        **config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        **config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     sender = config.get(f"_global_.ses.{sending_app}.sender")
     log_data = {
@@ -43,7 +39,7 @@ async def send_email(
         "host": host,
     }
 
-    if not config.get_host_specific_key(f"site_configs.{host}.ses.arn", host):
+    if not config.get_host_specific_key("ses.arn", host):
         log.error(
             {
                 **log_data,
@@ -85,9 +81,7 @@ async def send_email(
                 "Subject": {"Charset": charset, "Data": subject},
             },
             Source=sender,
-            SourceArn=config.get_host_specific_key(
-                f"site_configs.{host}.ses.arn", host
-            ),
+            SourceArn=config.get_host_specific_key("ses.arn", host),
         )
     # Display an error if something goes wrong.
     except Exception:
@@ -112,7 +106,7 @@ async def send_access_email_to_user(
     reviewer_comments: None = None,
     sending_app: str = "consoleme",
 ) -> None:
-    app_name = config.get(f"site_configs.{host}.ses.{sending_app}.name", sending_app)
+    app_name = config.get("ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Request for group {group} has been {status}"
     to_addresses = [user, updated_by]
     group_link = f"<a href={group_url}>{group}</a>"
@@ -133,7 +127,7 @@ async def send_access_email_to_user(
     {reviewer_comments_section} <br>
     See your request here: {request_url}.<br>
     <br>
-    {config.get(f'site_configs.{host}.ses.support_reference', '')}
+    {config.get_host_specific_key('ses.support_reference', host, '')}
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     </body>
     </html>"""
@@ -143,7 +137,7 @@ async def send_access_email_to_user(
 async def send_request_created_to_user(
     user, group, updated_by, status, request_url, host, sending_app="consoleme"
 ):
-    app_name = config.get(f"site_configs.{host}.ses.{sending_app}.name", sending_app)
+    app_name = config.get("ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Request for group {group} has been created"
     to_addresses = [user, updated_by]
     message = f"Your request for group {group} has been created."
@@ -159,7 +153,7 @@ async def send_request_created_to_user(
     <br>
     See your request here: {request_url}.<br>
     <br>
-    {config.get(f'site_configs.{host}.ses.support_reference', '')}
+    {config.get_host_specific_key('ses.support_reference', host, '')}
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     </body>
     </html>"""
@@ -174,7 +168,7 @@ async def send_request_to_secondary_approvers(
     host: str,
     sending_app="consoleme",
 ):
-    app_name = config.get(f"site_configs.{host}.ses.{sending_app}.name", sending_app)
+    app_name = config.get("ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: A request for group {group} requires your approval"
     to_addresses = secondary_approvers
     message = f"A request for group {group} requires your approval."
@@ -190,7 +184,7 @@ async def send_request_to_secondary_approvers(
         <br>
         You can find all pending requests waiting your approval here: {pending_requests_url}. <br>
         <br>
-        {config.get(f'site_configs.{host}.ses.support_reference', '')}
+        {config.get_host_specific_key('ses.support_reference', host, '')}
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         </body>
         </html>"""
@@ -222,7 +216,7 @@ async def send_group_modification_notification(
     :param sending_app: name of application
     :type sending_app: str
     """
-    app_name = config.get(f"site_configs.{host}.ses.{sending_app}.name", sending_app)
+    app_name = config.get("ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Groups modified"
     message = f"""Groups modified in {app_name}.<br>
     You or a group you belong to are configured to receive a notification when new members are added to this group.<br>
@@ -245,7 +239,7 @@ async def send_group_modification_notification(
          {added_members_snippet}<br>
         <br>
         <br>
-        {config.get(f'site_configs.{host}.ses.support_reference', '')}
+        {config.get_host_specific_key('ses.support_reference', host, '')}
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         </body>
         </html>"""
@@ -255,7 +249,7 @@ async def send_group_modification_notification(
 async def send_new_aws_groups_notification(
     to_addresses, new_aws_groups, host, sending_app="consoleme"
 ):
-    app_name = config.get(f"site_configs.{host}.ses.{sending_app}.name", sending_app)
+    app_name = config.get("ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: New AWS groups detected"
     message = """New AWS login groups were created.<br>
     ConsoleMe is configured to send notifications when new AWS-related google groups are detected.
@@ -275,7 +269,7 @@ async def send_new_aws_groups_notification(
          {added_groups_snippet}<br>
         <br>
         <br>
-        {config.get(f'site_configs.{host}.ses.support_reference', '')}
+        {config.get_host_specific_key('ses.support_reference', host, '')}
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         </body>
         </html>"""
@@ -285,7 +279,7 @@ async def send_new_aws_groups_notification(
 async def send_policy_request_status_update(
     request, policy_change_uri, host: str, sending_app="consoleme"
 ):
-    app_name = config.get(f"site_configs.{host}.ses.{sending_app}.name", sending_app)
+    app_name = config.get("ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Policy change request for {request['arn']} has been {request['status']}"
     if request["status"] == "pending":
         subject = (
@@ -311,7 +305,7 @@ async def send_policy_request_status_update(
             See the request here: {policy_change_uri}.<br>
             <br>
             <br>
-            {config.get(f'site_configs.{host}.ses.support_reference', '')}
+            {config.get_host_specific_key('ses.support_reference', host, '')}
             <meta http-equiv="content-type" content="text/html; charset=UTF-8">
             </body>
             </html>"""
@@ -324,7 +318,7 @@ async def send_policy_request_status_update_v2(
     host,
     sending_app="consoleme",
 ):
-    app_name = config.get(f"site_configs.{host}.ses.{sending_app}.name", sending_app)
+    app_name = config.get("ses.{sending_app}.name", sending_app)
     to_addresses = [extended_request.requester_email]
     principal = await get_principal_friendly_name(extended_request.principal)
 
@@ -332,9 +326,7 @@ async def send_policy_request_status_update_v2(
         subject = f"{app_name}: Policy change request for {principal} has been created"
         message = f"A policy change request for {principal} has been created."
         # This is a new request, also send email to application admins
-        to_addresses.append(
-            config.get_host_specific_key(f"site_configs.{host}.application_admin", host)
-        )
+        to_addresses.append(config.get_host_specific_key("application_admin", host))
     else:
         subject = (
             f"{app_name}: Policy change request for {principal} has been "
@@ -359,7 +351,7 @@ async def send_policy_request_status_update_v2(
             See the request here: {policy_change_uri}.<br>
             <br>
             <br>
-            {config.get(f'site_configs.{host}.ses.support_reference', '')}
+            {config.get_host_specific_key('ses.support_reference', host, '')}
             <meta http-equiv="content-type" content="text/html; charset=UTF-8">
             </body>
             </html>"""
@@ -374,7 +366,7 @@ async def send_new_comment_notification(
     host,
     sending_app="consoleme",
 ):
-    app_name = config.get(f"site_configs.{host}.ses.{sending_app}.name", sending_app)
+    app_name = config.get("ses.{sending_app}.name", sending_app)
     principal = await get_principal_friendly_name(extended_request.principal)
     subject = f"{app_name}: A new comment has been added to Policy Change request for {principal}"
     message = f"A new comment has been added to the policy change request for {principal} by {user}"
@@ -389,7 +381,7 @@ async def send_new_comment_notification(
                 See the request here: {policy_change_uri}.<br>
                 <br>
                 <br>
-                {config.get(f'site_configs.{host}.ses.support_reference', '')}
+                {config.get_host_specific_key('ses.support_reference', host, '')}
                 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
                 </body>
                 </html>"""

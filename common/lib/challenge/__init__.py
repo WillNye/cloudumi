@@ -20,7 +20,7 @@ async def delete_expired_challenges(all_challenges, host):
     if expired_challenge_tokens:
         red.hdel(
             config.get_host_specific_key(
-                f"site_configs.{host}.challenge_url.redis_key",
+                "challenge_url.redis_key",
                 host,
                 f"{host}_TOKEN_CHALLENGES_TEMP",
             ),
@@ -34,7 +34,7 @@ async def retrieve_user_challenge(request, requested_challenge_token, log_data, 
     # Get fresh challenge for user's request
     user_challenge_j = red.hget(
         config.get_host_specific_key(
-            f"site_configs.{host}.challenge_url.redis_key",
+            "challenge_url.redis_key",
             host,
             f"{host}_TOKEN_CHALLENGES_TEMP",
         ),

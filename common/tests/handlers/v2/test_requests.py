@@ -21,10 +21,10 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         # Method not allowed
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch("/api/v2/requests", method="GET", headers=headers)
@@ -56,7 +56,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         red = RedisHandler().redis_sync(host)
         red.set(
             self.config.get_host_specific_key(
-                f"site_configs.{host}.cache_policy_requests.redis_key",
+                "cache_policy_requests.redis_key",
                 host,
                 f"{host}_ALL_POLICY_REQUESTS",
             ),
@@ -65,10 +65,10 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
 
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -116,19 +116,19 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         red = RedisHandler().redis_sync(host)
         red.set(
             self.config.get_host_specific_key(
-                f"site_configs.{host}.cache_policy_requests.redis_key",
+                "cache_policy_requests.redis_key",
                 host,
-                f"site_configs.{host}.ALL_POLICY_REQUESTS",
+                "ALL_POLICY_REQUESTS",
             ),
             json.dumps(mock_request_data),
         )
 
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -181,7 +181,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         red = RedisHandler().redis_sync(host)
         red.set(
             self.config.get_host_specific_key(
-                f"site_configs.{host}.cache_policy_requests.redis_key",
+                "cache_policy_requests.redis_key",
                 host,
                 f"{host}_ALL_POLICY_REQUESTS",
             ),
@@ -220,7 +220,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         red = RedisHandler().redis_sync(host)
         red.set(
             self.config.get_host_specific_key(
-                f"site_configs.{host}.cache_policy_requests.redis_key",
+                "cache_policy_requests.redis_key",
                 host,
                 f"{host}_ALL_POLICY_REQUESTS",
             ),
@@ -248,7 +248,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         red = RedisHandler().redis_sync(host)
         red.set(
             self.config.get_host_specific_key(
-                f"site_configs.{host}.cache_policy_requests.redis_key",
+                "cache_policy_requests.redis_key",
                 host,
                 f"{host}_ALL_POLICY_REQUESTS",
             ),
@@ -269,10 +269,10 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
     def test_post_new_managed_policy_resource_request(self):
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
 
@@ -863,8 +863,8 @@ class TestRequestDetailHandler(ConsoleMeAsyncHTTPTestCase):
         #     "message": "Get request details",
         # }
         # headers = {
-        #     config.get_host_specific_key(f"site_configs.{host}.auth.user_header_name", host): "user@github.com",
-        #     config.get_host_specific_key(f"site_configs.{host}.auth.groups_header_name", host): "groupa,groupb,groupc",
+        #     config.get_host_specific_key("auth.user_header_name", host): "user@github.com",
+        #     config.get_host_specific_key("auth.groups_header_name", host): "groupa,groupb,groupc",
         # }
         # response = self.fetch(
         #     "/api/v2/requests/16fd2706-8baf-433b-82eb-8c7fada847da",
@@ -883,8 +883,8 @@ class TestRequestDetailHandler(ConsoleMeAsyncHTTPTestCase):
         #     "message": "Update request details",
         # }
         # headers = {
-        #     config.get_host_specific_key(f"site_configs.{host}.auth.user_header_name", host): "user@github.com",
-        #     config.get_host_specific_key(f"site_configs.{host}.auth.groups_header_name", host): "groupa,groupb,groupc",
+        #     config.get_host_specific_key("auth.user_header_name", host): "user@github.com",
+        #     config.get_host_specific_key("auth.groups_header_name", host): "groupa,groupb,groupc",
         # }
         # response = self.fetch(
         #     "/api/v2/requests/16fd2706-8baf-433b-82eb-8c7fada847da",

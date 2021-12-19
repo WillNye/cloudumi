@@ -33,23 +33,21 @@ class RetrieveNotifications(metaclass=Singleton):
         if force_refresh or (
             int(time.time()) - self.last_update
             > config.get_host_specific_key(
-                f"site_configs.{host}.get_notifications_for_user.notification_retrieval_interval",
+                "get_notifications_for_user.notification_retrieval_interval",
                 host,
                 20,
             )
         ):
             self.all_notifications = await retrieve_json_data_from_redis_or_s3(
                 redis_key=config.get_host_specific_key(
-                    f"site_configs.{host}.notifications.redis_key",
+                    "notifications.redis_key",
                     host,
                     f"{host}_ALL_NOTIFICATIONS",
                 ),
                 redis_data_type="hash",
-                s3_bucket=config.get_host_specific_key(
-                    f"site_configs.{host}.notifications.s3.bucket", host
-                ),
+                s3_bucket=config.get_host_specific_key("notifications.s3.bucket", host),
                 s3_key=config.get_host_specific_key(
-                    f"site_configs.{host}.notifications.s3.key",
+                    "notifications.s3.key",
                     host,
                     "notifications/all_notifications_v1.json.gz",
                 ),
@@ -176,16 +174,14 @@ async def cache_notifications_to_redis_s3(host) -> Dict[str, int]:
         await store_json_results_in_redis_and_s3(
             notifications_by_user_group,
             redis_key=config.get_host_specific_key(
-                f"site_configs.{host}.notifications.redis_key",
+                "notifications.redis_key",
                 host,
                 f"{host}_ALL_NOTIFICATIONS",
             ),
             redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.notifications.s3.bucket", host
-            ),
+            s3_bucket=config.get_host_specific_key("notifications.s3.bucket", host),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.notifications.s3.key",
+                "notifications.s3.key",
                 host,
                 "notifications/all_notifications_v1.json.gz",
             ),

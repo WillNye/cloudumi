@@ -38,7 +38,7 @@ class SamlHandler(BaseHandler):
                 saml_attributes = await sync_to_async(auth.get_attributes)()
                 email = saml_attributes[
                     config.get_host_specific_key(
-                        f"site_configs.{host}.get_user_by_saml_settings.attributes.email",
+                        "get_user_by_saml_settings.attributes.email",
                         host,
                     )
                 ]
@@ -46,7 +46,7 @@ class SamlHandler(BaseHandler):
                     email = email[0]
                 groups = saml_attributes.get(
                     config.get_host_specific_key(
-                        f"site_configs.{host}.get_user_by_saml_settings.attributes.groups",
+                        "get_user_by_saml_settings.attributes.groups",
                         host,
                     ),
                     [],
@@ -55,7 +55,7 @@ class SamlHandler(BaseHandler):
                 self_url = await sync_to_async(OneLogin_Saml2_Utils.get_self_url)(req)
                 expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                     minutes=config.get_host_specific_key(
-                        f"site_configs.{host}.jwt.expiration_minutes", host, 60
+                        "jwt.expiration_minutes", host, 60
                     )
                 )
                 encoded_cookie = await generate_jwt_token(
@@ -66,18 +66,15 @@ class SamlHandler(BaseHandler):
                     encoded_cookie,
                     expires=expiration,
                     secure=config.get_host_specific_key(
-                        f"site_configs.{host}.auth.cookie.secure",
+                        "auth.cookie.secure",
                         host,
-                        "https://"
-                        in config.get_host_specific_key(
-                            f"site_configs.{host}.url", host
-                        ),
+                        "https://" in config.get_host_specific_key("url", host),
                     ),
                     httponly=config.get_host_specific_key(
-                        f"site_configs.{host}.auth.cookie.httponly", host, True
+                        "auth.cookie.httponly", host, True
                     ),
                     samesite=config.get_host_specific_key(
-                        f"site_configs.{host}.auth.cookie.samesite", host, True
+                        "auth.cookie.samesite", host, True
                     ),
                 )
                 if (

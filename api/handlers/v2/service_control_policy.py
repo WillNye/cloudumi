@@ -22,12 +22,12 @@ class ServiceControlPolicyHandler(BaseAPIV2Handler):
         host = self.ctx.host
         if (
             config.get_host_specific_key(
-                f"site_configs.{host}.policy_editor.disallow_contractors", host, True
+                "policy_editor.disallow_contractors", host, True
             )
             and self.contractor
         ):
             if self.user not in config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_bypass_contractor_restrictions",
+                "groups.can_bypass_contractor_restrictions",
                 host,
                 [],
             ):

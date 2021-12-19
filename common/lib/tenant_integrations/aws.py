@@ -88,12 +88,10 @@ async def handle_spoke_account_registration(body):
     spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
     host = body["ResourceProperties"]["Host"]
 
-    external_id = config.get_host_specific_key(
-        f"site_configs.{host}.tenant_details.external_id", host
-    )
+    external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
     pre_role_arns_to_assume = config.get_host_specific_key(
-        f"site_configs.{host}.policies.pre_role_arns_to_assume", host, []
+        "policies.pre_role_arns_to_assume", host, []
     )
     if pre_role_arns_to_assume:
         central_role_arn = pre_role_arns_to_assume[-1]["role_arn"]
@@ -176,15 +174,13 @@ async def handle_spoke_account_registration(body):
     # Write tenant configuration to DynamoDB
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)
-    if not host_config["site_configs"][host].get("account_ids_to_name"):
-        host_config["site_configs"][host]["account_ids_to_name"] = {}
-    host_config["site_configs"][host]["account_ids_to_name"][
-        account_id_for_role
-    ] = account_name
-    if not host_config["site_configs"][host].get("policies"):
-        host_config["site_configs"][host]["policies"] = {}
-    if not host_config["site_configs"][host]["policies"].get("role_name"):
-        host_config["site_configs"][host]["policies"]["role_name"] = spoke_role_name
+    if not host_config.get("account_ids_to_name"):
+        host_config["account_ids_to_name"] = {}
+    host_config["account_ids_to_name"][account_id_for_role] = account_name
+    if not host_config.get("policies"):
+        host_config["policies"] = {}
+    if not host_config["policies"].get("role_name"):
+        host_config["policies"]["role_name"] = spoke_role_name
 
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), "aws_integration", host
@@ -206,7 +202,7 @@ async def handle_central_account_registration(body):
 
     # Verify External ID
     external_id_in_config = config.get_host_specific_key(
-        f"site_configs.{host}.tenant_details.external_id", host
+        "tenant_details.external_id", host
     )
 
     if external_id != external_id_in_config:
@@ -254,16 +250,14 @@ async def handle_central_account_registration(body):
     # Write tenant configuration to DynamoDB
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)
-    if not host_config["site_configs"][host].get("account_ids_to_name"):
-        host_config["site_configs"][host]["account_ids_to_name"] = {}
-    host_config["site_configs"][host]["account_ids_to_name"][
-        account_id_for_role
-    ] = account_id_for_role
-    if not host_config["site_configs"][host].get("policies"):
-        host_config["site_configs"][host]["policies"] = {}
-    if not host_config["site_configs"][host]["policies"].get("pre_role_arns_to_assume"):
-        host_config["site_configs"][host]["policies"]["pre_role_arns_to_assume"] = []
-    host_config["site_configs"][host]["policies"]["pre_role_arns_to_assume"] = [
+    if not host_config.get("account_ids_to_name"):
+        host_config["account_ids_to_name"] = {}
+    host_config["account_ids_to_name"][account_id_for_role] = account_id_for_role
+    if not host_config.get("policies"):
+        host_config["policies"] = {}
+    if not host_config["policies"].get("pre_role_arns_to_assume"):
+        host_config["policies"]["pre_role_arns_to_assume"] = []
+    host_config["policies"]["pre_role_arns_to_assume"] = [
         {
             "role_arn": role_arn,
             "external_id": external_id,

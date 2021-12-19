@@ -15,12 +15,12 @@ from typing import Any, Dict, List, Optional, Union
 import bcrypt
 import sentry_sdk
 import simplejson as json
-import yaml
 from asgiref.sync import sync_to_async
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import Binary  # noqa
 from cloudaux import get_iso_string
 from retrying import retry
+from ruamel.yaml import YAML
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
@@ -45,6 +45,11 @@ from common.lib.redis import RedisHandler
 from common.lib.s3_helpers import get_s3_bucket_for_host
 from common.models import AuthenticationResponse, ExtendedRequestModel
 from identity.lib.groups.models import GroupRequest, GroupRequests
+
+yaml = YAML()
+yaml.preserve_quotes = True
+yaml.indent(mapping=2, sequence=4, offset=2)
+yaml.width = 4096
 
 # TODO: Partion key should be host key. Dynamo instance should be retrieved dynamically. Should use dynamodb:LeadingKeys
 # to restrict.
@@ -112,7 +117,7 @@ class BaseDynamoHandler:
                     host,
                     service_type="resource",
                     account_number=config.get_host_specific_key(
-                        f"site_configs.{host}.aws.account_number", host
+                        "aws.account_number", host
                     ),
                     session_name=sanitize_session_name("consoleme_dynamodb"),
                     region=config.region,
@@ -327,7 +332,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         try:
             self.identity_requests_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.requests_dynamo_table",
+                    "aws.requests_dynamo_table",
                     host,
                     "consoleme_identity_requests_multitenant",
                 ),
@@ -335,7 +340,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             )
             self.users_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.users_dynamo_table",
+                    "aws.users_dynamo_table",
                     host,
                     "consoleme_users_multitenant",
                 ),
@@ -343,7 +348,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             )
             self.group_log = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.group_log_dynamo_table",
+                    "aws.group_log_dynamo_table",
                     host,
                     "consoleme_audit_global",
                 ),
@@ -351,7 +356,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             )
             self.dynamic_config = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.dynamic_config_dynamo_table",
+                    "aws.dynamic_config_dynamo_table",
                     host,
                     "consoleme_config_multitenant",
                 ),
@@ -359,7 +364,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             )
             self.policy_requests_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.policy_requests_dynamo_table",
+                    "aws.policy_requests_dynamo_table",
                     host,
                     "consoleme_policy_requests_multitenant",
                 ),
@@ -367,7 +372,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             )
             self.resource_cache_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.resource_cache_dynamo_table",
+                    "aws.resource_cache_dynamo_table",
                     host,
                     "consoleme_resource_cache_multitenant",
                 ),
@@ -375,7 +380,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             )
             self.cloudtrail_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.cloudtrail_table",
+                    "aws.cloudtrail_table",
                     host,
                     "consoleme_cloudtrail_multitenant",
                 ),
@@ -384,7 +389,7 @@ class UserDynamoHandler(BaseDynamoHandler):
 
             self.notifications_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.notifications_table",
+                    "aws.notifications_table",
                     host,
                     "consoleme_notifications_multitenant",
                 ),
@@ -393,7 +398,7 @@ class UserDynamoHandler(BaseDynamoHandler):
 
             self.identity_groups_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.identity_groups_table",
+                    "aws.identity_groups_table",
                     host,
                     "consoleme_identity_groups_multitenant",
                 ),
@@ -402,7 +407,7 @@ class UserDynamoHandler(BaseDynamoHandler):
 
             self.identity_users_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.identity_users_table",
+                    "aws.identity_users_table",
                     host,
                     "consoleme_identity_users_multitenant",
                 ),
@@ -411,7 +416,7 @@ class UserDynamoHandler(BaseDynamoHandler):
 
             self.tenant_static_configs = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.tenant_static_config_table",
+                    "aws.tenant_static_config_table",
                     host,
                     "consoleme_tenant_static_configs",
                 ),
@@ -420,7 +425,7 @@ class UserDynamoHandler(BaseDynamoHandler):
 
             self.noq_api_keys = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.noq_api_keys_table",
+                    "aws.noq_api_keys_table",
                     host,
                     "noq_api_keys",
                 ),
@@ -605,7 +610,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             current_config_yaml = self.get_dynamic_config_yaml_sync(host)
         else:
             current_config_yaml = asyncio.run(self.get_dynamic_config_yaml(host))
-        config_d = yaml.safe_load(current_config_yaml)
+        config_d = yaml.load(current_config_yaml)
         return config_d
 
     async def write_policy_request_v2(
@@ -713,7 +718,7 @@ class UserDynamoHandler(BaseDynamoHandler):
     ) -> None:
         """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
         # Validate that config loads as yaml, raises exception if not
-        yaml.safe_load(new_config)
+        yaml.load(new_config)
         stats.count("update_dynamic_config", tags={"updated_by": updated_by})
         current_config_entry = self.dynamic_config.get_item(
             Key={"host": host, "id": "master"}
@@ -1509,7 +1514,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
                 continue
             try:
                 config_uncompressed = zlib.decompress(c["config"].value)
-                config_d = yaml.safe_load(config_uncompressed)
+                config_d = yaml.load(config_uncompressed)
                 # TODO: Validate Pydantic Model of tenant configuration here
             except Exception as e:
                 log.error(
@@ -1534,9 +1539,11 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         )
         return self.validate_and_return_tenant_configurations(tenant_configs_l)
 
-    def get_static_config_for_host_sync(self, host) -> bytes:
+    def get_static_config_for_host_sync(
+        self, host, return_format="dict", filter_secrets=False
+    ) -> bytes:
         """Retrieve dynamic configuration yaml synchronously"""
-        c = b""
+        c = compressed_config = b""
         try:
             current_config = self.tenant_static_configs.get_item(
                 Key={"host": host, "id": "master"}
@@ -1561,7 +1568,15 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             )
             sentry_sdk.capture_exception()
             c = compressed_config
-        return yaml.safe_load(c)
+        c_dict = yaml.load(c)
+        secrets = c_dict.get("site_configs.secrets", {})
+        # TODO: Clean up secrets
+        if return_format == "dict":
+            return yaml.load(c)
+        elif return_format == "bytes":
+            return c.encode()
+        else:
+            return c
 
     def get_all_hosts(self) -> List[str]:
         hosts = set()
@@ -1589,7 +1604,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         # passed in from AWS Secrets Manager or something else
         """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
         # Validate that config loads as yaml, raises exception if not
-        yaml.safe_load(new_config)
+        yaml.load(new_config)
         stats.count("update_dynamic_config", tags={"updated_by": updated_by})
         current_config_entry = await sync_to_async(self.tenant_static_configs.get_item)(
             Key={"host": host, "id": "master"}
@@ -1626,7 +1641,7 @@ class IAMRoleDynamoHandler(BaseDynamoHandler):
         try:
             self.role_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.aws.iamroles_dynamo_table",
+                    "aws.iamroles_dynamo_table",
                     host,
                     "consoleme_iamroles_multitenant",
                 ),

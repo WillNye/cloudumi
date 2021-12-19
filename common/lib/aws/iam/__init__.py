@@ -310,7 +310,7 @@ async def get_all_iam_managed_policies_for_account(account_id, host):
     global ALL_IAM_MANAGED_POLICIES
     # TODO: Use redis clusters for this type of thing and not a global var
     policy_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.redis.iam_managed_policies_key",
+        "redis.iam_managed_policies_key",
         host,
         f"{host}_IAM_MANAGED_POLICIES",
     )
@@ -328,10 +328,10 @@ async def get_all_iam_managed_policies_for_account(account_id, host):
         )
     else:
         s3_bucket = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.s3.bucket", host
+            "account_resource_cache.s3.bucket", host
         )
         s3_key = config.get_host_specific_key(
-            f"site_configs.{host}.account_resource_cache.s3.file",
+            "account_resource_cache.s3.file",
             host,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="managed_policies", account_id=account_id)

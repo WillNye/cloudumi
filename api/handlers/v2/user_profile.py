@@ -29,42 +29,36 @@ class UserProfileHandler(BaseAPIV1Handler):
             "consoleme_logo": await get_random_security_logo(host),
             "google_analytics": {
                 "tracking_id": config.get_host_specific_key(
-                    f"site_configs.{host}.google_analytics.tracking_id", host
+                    "google_analytics.tracking_id", host
                 ),
                 "options": config.get_host_specific_key(
-                    f"site_configs.{host}.google_analytics.options", host, {}
+                    "google_analytics.options", host, {}
                 ),
             },
             "documentation_url": config.get_host_specific_key(
-                f"site_configs.{host}.documentation_page",
+                "documentation_page",
                 host,
                 "https://hawkins.gitbook.io/consoleme/",
             ),
-            "support_contact": config.get_host_specific_key(
-                f"site_configs.{host}.support_contact", host
-            ),
+            "support_contact": config.get_host_specific_key("support_contact", host),
             "support_chat_url": config.get_host_specific_key(
-                f"site_configs.{host}.support_chat_url",
+                "support_chat_url",
                 host,
                 "https://discord.com/invite/nQVpNGGkYu",
             ),
-            "security_logo": config.get_host_specific_key(
-                f"site_configs.{host}.security_logo.image", host
-            ),
-            "security_url": config.get_host_specific_key(
-                f"site_configs.{host}.security_logo.url", host
-            ),
+            "security_logo": config.get_host_specific_key("security_logo.image", host),
+            "security_url": config.get_host_specific_key("security_logo.url", host),
             # If site_config.landing_url is set, users will be redirected to the landing URL after authenticating
             # on the frontend.
             "landing_url": config.get_host_specific_key(
-                f"site_configs.{host}.site_config.landing_url", host
+                "site_config.landing_url", host
             ),
             "notifications": {
                 "enabled": config.get_host_specific_key(
-                    f"site_configs.{host}.site_config.notifications.enabled", host
+                    "site_config.notifications.enabled", host
                 ),
                 "request_interval": config.get_host_specific_key(
-                    f"site_configs.{host}.site_config.notifications.request_interval",
+                    "site_config.notifications.request_interval",
                     host,
                     60,
                 ),
@@ -102,33 +96,33 @@ class UserProfileHandler(BaseAPIV1Handler):
                 },
                 "role_login": {
                     "enabled": config.get_host_specific_key(
-                        f"site_configs.{host}.headers.role_login.enabled", host, True
+                        "headers.role_login.enabled", host, True
                     )
                 },
                 "groups": {
                     "enabled": config.get_host_specific_key(
-                        f"site_configs.{host}.headers.group_access.enabled", host, False
+                        "headers.group_access.enabled", host, False
                     )
                 },
                 "identity": {
                     "enabled": config.get_host_specific_key(
-                        f"site_configs.{host}.headers.identity.enabled", host, False
+                        "headers.identity.enabled", host, False
                     )
                 },
                 "users": {
                     "enabled": config.get_host_specific_key(
-                        f"site_configs.{host}.headers.group_access.enabled", host, False
+                        "headers.group_access.enabled", host, False
                     )
                 },
                 "policies": {
                     "enabled": config.get_host_specific_key(
-                        f"site_configs.{host}.headers.policies.enabled", host, True
+                        "headers.policies.enabled", host, True
                     )
                     and not is_contractor
                 },
                 "self_service": {
                     "enabled": config.get_host_specific_key(
-                        f"site_configs.{host}.enable_self_service", host, True
+                        "enable_self_service", host, True
                     )
                     and not is_contractor
                 },
@@ -137,7 +131,7 @@ class UserProfileHandler(BaseAPIV1Handler):
                         self.user,
                         self.groups,
                         config.get_host_specific_key(
-                            f"site_configs.{host}.groups.can_edit_health_alert",
+                            "groups.can_edit_health_alert",
                             host,
                             [],
                         ),
@@ -147,9 +141,7 @@ class UserProfileHandler(BaseAPIV1Handler):
                     "enabled": is_in_group(
                         self.user,
                         self.groups,
-                        config.get_host_specific_key(
-                            f"site_configs.{host}.groups.can_audit", host, []
-                        ),
+                        config.get_host_specific_key("groups.can_audit", host, []),
                     )
                 },
                 "config": {

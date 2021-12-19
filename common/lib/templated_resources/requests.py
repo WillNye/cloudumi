@@ -34,16 +34,14 @@ async def generate_honeybee_request_from_change_model_array(
     t = int(time.time())
     generated_branch_name = f"{user}-{t}"
     policy_name = config.get_host_specific_key(
-        f"site_configs.{host}.generate_honeybee_request_from_change_model_array.policy_name",
+        "generate_honeybee_request_from_change_model_array.policy_name",
         host,
         "self_service_generated",
     )
     repo_config = None
 
     auth = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
-        )
+        config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
     )()
     # Checkout Git Repo and generate a branch name for the user's change
     for change in request_creation.changes.changes:
@@ -55,7 +53,7 @@ async def generate_honeybee_request_from_change_model_array(
             continue
         # Find repo
         for r in config.get_host_specific_key(
-            f"site_configs.{host}.cache_resource_templates.repositories", host, []
+            "cache_resource_templates.repositories", host, []
         ):
             if r["name"] == change.principal.repository_name:
                 repo_config = r
@@ -182,8 +180,7 @@ async def generate_honeybee_request_from_change_model_array(
             bitbucket = BitBucket(
                 repo_config["code_repository_config"]["url"],
                 config.get_host_specific_key(
-                    "site_configs.{host}.{key}".format(
-                        host=host,
+                    "{key}".format(
                         key=repo_config["code_repository_config"][
                             "username_config_key"
                         ],
@@ -191,12 +188,7 @@ async def generate_honeybee_request_from_change_model_array(
                     host,
                 ),
                 config.get_host_specific_key(
-                    "site_configs.{host}.{key}".format(
-                        host=host,
-                        key=repo_config["code_repository_config"][
-                            "password_config_key"
-                        ],
-                    ),
+                    repo_config["code_repository_config"]["password_config_key"],
                     host,
                 ),
             )

@@ -23,10 +23,10 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
         self.maxDiff = None
         headers = {
             config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@example.com",
             config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
 

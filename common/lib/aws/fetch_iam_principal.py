@@ -39,7 +39,7 @@ def _fetch_role_from_redis(role_arn: str, host: str):
     :return:
     """
     redis_key = config.get_host_specific_key(
-        f"site_configs.{host}.aws.iamroles_redis_key",
+        "aws.iamroles_redis_key",
         host,
         f"{host}_IAM_ROLE_CACHE",
     )
@@ -59,7 +59,7 @@ def _add_role_to_redis(role_entry: dict, host: str):
     :return:
     """
     redis_key = config.get_host_specific_key(
-        f"site_configs.{host}.aws.iamroles_redis_key",
+        "aws.iamroles_redis_key",
         host,
         f"{host}_IAM_ROLE_CACHE",
     )
@@ -123,14 +123,10 @@ def _get_iam_role_sync(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         read_only=True,
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         session_name=sanitize_session_name("consoleme_get_iam_role"),
     )
     role = client.get_role(RoleName=role_name)["Role"]
@@ -152,14 +148,10 @@ async def _get_iam_role_async(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         read_only=True,
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     role_details = asyncio.ensure_future(
         sync_to_async(client.get_role)(RoleName=role_name)
@@ -299,12 +291,10 @@ async def fetch_iam_role(
             role_name = role_arn.split("/")[-1]
             conn = {
                 "account_number": account_id,
-                "assume_role": config.get_host_specific_key(
-                    f"site_configs.{host}.policies.role_name", host
-                ),
+                "assume_role": config.get_host_specific_key("policies.role_name", host),
                 "region": config.region,
                 "client_kwargs": config.get_host_specific_key(
-                    f"site_configs.{host}.boto3.client_kwargs", host, {}
+                    "boto3.client_kwargs", host, {}
                 ),
             }
             if run_sync:
@@ -345,7 +335,7 @@ async def fetch_iam_role(
             "permissions_boundary": role.get("PermissionsBoundary", {}),
             "templated": red.hget(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.templated_roles.redis_key",
+                    "templated_roles.redis_key",
                     host,
                     f"{host}_TEMPLATED_ROLES_v2",
                 ),
@@ -391,14 +381,10 @@ def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, 
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         read_only=True,
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         session_name=sanitize_session_name("consoleme_get_iam_user"),
     )
     user = client.get_user(UserName=user_name)["User"]
@@ -417,14 +403,10 @@ async def _get_iam_user_async(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         read_only=True,
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     user_details = asyncio.ensure_future(
         sync_to_async(client.get_user)(UserName=user_name)
@@ -489,12 +471,10 @@ async def fetch_iam_user(
         user_name = user_arn.split("/")[-1]
         conn = {
             "account_number": account_id,
-            "assume_role": config.get_host_specific_key(
-                f"site_configs.{host}.policies.role_name", host
-            ),
+            "assume_role": config.get_host_specific_key("policies.role_name", host),
             "region": config.region,
             "client_kwargs": config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
+                "boto3.client_kwargs", host, {}
             ),
         }
         if run_sync:

@@ -136,7 +136,7 @@ class IdentityGroupHandler(BaseHandler):
         data = tornado.escape.json_decode(self.request.body)
 
         idp_d = config.get_host_specific_key(
-            f"site_configs.{host}.identity.identity_providers", host, default={}
+            "identity.identity_providers", host, default={}
         ).get(_idp)
         if not idp_d:
             raise Exception("Invalid IDP specified")

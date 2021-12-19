@@ -11,7 +11,7 @@ log = config.get_logger()
 class AuthHandler(BaseHandler):
     async def prepare(self):
         host = self.get_host_name()
-        if not config.get_host_specific_key(f"site_configs.{host}", host):
+        if not config.is_host_configured(host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )

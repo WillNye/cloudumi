@@ -41,17 +41,13 @@ async def list_resource_type(host, account_id, region, resource_type):
         "cloudcontrol",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         region=region,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         session_name=sanitize_session_name("cloudcontrol_list_resource_type"),
     )
     next_token = ""

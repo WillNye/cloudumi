@@ -67,15 +67,11 @@ class Aws:
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             session_name=sanitize_session_name("consoleme_get_credentials"),
         )
 
-        ip_restrictions = config.get_host_specific_key(
-            f"site_configs.{host}.aws.ip_restrictions", host
-        )
+        ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host)
         stats.count("aws.get_credentials", tags={"role": role, "user": user})
 
         # If this is a dynamic request, then we need to fetch the role details, call out to the lambda
@@ -124,7 +120,7 @@ class Aws:
                     RoleSessionName=user.lower(),
                     Policy=policy,
                     DurationSeconds=config.get_host_specific_key(
-                        f"site_configs.{host}.aws.session_duration", host, 3600
+                        "aws.session_duration", host, 3600
                     ),
                 )
                 credentials["Credentials"]["Expiration"] = int(
@@ -171,7 +167,7 @@ class Aws:
                     RoleSessionName=user.lower(),
                     Policy=policy,
                     DurationSeconds=config.get_host_specific_key(
-                        f"site_configs.{host}.aws.session_duration", host, 3600
+                        "aws.session_duration", host, 3600
                     ),
                 )
                 credentials["Credentials"]["Expiration"] = int(
@@ -189,7 +185,7 @@ class Aws:
                 RoleArn=role,
                 RoleSessionName=user.lower(),
                 DurationSeconds=config.get_host_specific_key(
-                    f"site_configs.{host}.aws.session_duration", host, 3600
+                    "aws.session_duration", host, 3600
                 ),
             )
             credentials["Credentials"]["Expiration"] = int(
@@ -244,7 +240,7 @@ class Aws:
             "Action": "getSigninToken",
             "Session": bleach.clean(json.dumps(credentials_d)),
             "DurationSeconds": config.get_host_specific_key(
-                f"site_configs.{host}.aws.session_duration", host, 3600
+                "aws.session_duration", host, 3600
             ),
         }
 
@@ -252,7 +248,7 @@ class Aws:
 
         url_with_params: str = url_concat(
             config.get_host_specific_key(
-                f"site_configs.{host}.aws.federation_url",
+                "aws.federation_url",
                 host,
                 "https://signin.aws.amazon.com/federation",
             ),
@@ -263,13 +259,11 @@ class Aws:
 
         login_req_params = {
             "Action": "login",
-            "Issuer": config.get_host_specific_key(
-                f"site_configs.{host}.aws.issuer", host
-            ),
+            "Issuer": config.get_host_specific_key("aws.issuer", host),
             "Destination": (
                 "{}".format(
                     config.get_host_specific_key(
-                        f"site_configs.{host}.aws.console_url",
+                        "aws.console_url",
                         host,
                         "https://{}.console.aws.amazon.com",
                     ).format(region)
@@ -277,14 +271,14 @@ class Aws:
             ),
             "SigninToken": bleach.clean(token.get("SigninToken")),
             "SessionDuration": config.get_host_specific_key(
-                f"site_configs.{host}.aws.session_duration", host, 3600
+                "aws.session_duration", host, 3600
             ),
         }
 
         r2 = requests_sync.Request(
             "GET",
             config.get_host_specific_key(
-                f"site_configs.{host}.aws.federation_url",
+                "aws.federation_url",
                 host,
                 "https://signin.aws.amazon.com/federation",
             ),

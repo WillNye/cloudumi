@@ -295,7 +295,7 @@ async def update_role_policy(events, host: str):
 async def get_policy_request_uri_v2(extended_request: ExtendedRequestModel, host: str):
     if extended_request.request_url:
         return extended_request.request_url
-    return f"{config.get(f'site_configs.{host}.url')}/policies/request/{extended_request.id}"
+    return f"{config.get_host_specific_key('url', host)}/policies/request/{extended_request.id}"
 
 
 async def validate_policy_name(policy_name):
@@ -504,9 +504,7 @@ async def should_auto_approve_policy_v2(
     set included in ConsoleMe OSS will return False.
     """
     aws = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-        )
+        config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
     )()
     return await aws.should_auto_approve_policy_v2(
         extended_request, user, user_groups, host
@@ -542,7 +540,7 @@ async def send_communications_new_comment(
     """
     if not to_addresses:
         to_addresses = config.get_host_specific_key(
-            f"site_configs.{host}.groups.fallback_policy_request_reviewers", host, []
+            "groups.fallback_policy_request_reviewers", host, []
         )
 
     request_uri = await get_policy_request_uri_v2(extended_request, host)
@@ -883,13 +881,9 @@ async def get_aws_config_history_url_for_resource(
     region: Optional[str] = None,
 ):
     if not region:
-        region = (
-            config.get_host_specific_key(
-                f"site_configs.{host}.aws.region", host, config.region
-            ),
-        )
+        region = (config.get_host_specific_key("aws.region", host, config.region),)
     if config.get_host_specific_key(
-        f"site_configs.{host}.get_aws_config_history_url_for_resource.generate_conglomo_url",
+        "get_aws_config_history_url_for_resource.generate_conglomo_url",
         host,
     ):
         return await get_conglomo_url_for_resource(
@@ -909,7 +903,7 @@ async def get_conglomo_url_for_resource(
     account_id, resource_id, technology, host, region="global"
 ):
     conglomo_url = config.get_host_specific_key(
-        f"site_configs.{host}.get_aws_config_history_url_for_resource.conglomo_url",
+        "get_aws_config_history_url_for_resource.conglomo_url",
         host,
     )
     if not conglomo_url:

@@ -36,9 +36,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "role_name"
         client.create_role(RoleName=role_name, AssumeRolePolicyDocument="{}")
@@ -70,9 +68,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "role_name"
 
@@ -89,9 +85,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "role_name"
         attach_policy = {
@@ -117,9 +111,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "role_name"
         policy = {
@@ -134,9 +126,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "role_name"
         attach_policy = {
@@ -160,9 +150,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "role_name"
         policy = {
@@ -185,9 +173,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "role_name"
         tag = {"action": "add", "key": "testkey", "value": "testvalue"}
@@ -199,9 +185,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "role_name"
         tag = {"action": "remove", "key": "testkey"}

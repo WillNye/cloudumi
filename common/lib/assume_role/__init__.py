@@ -63,13 +63,13 @@ class ConsoleMeCloudAux:
 # client = boto3_cached_conn(
 #             "iam",
 #             account_number=account_id,
-#             assume_role=config.get_host_specific_key(f"site_configs.{host}.policies.role_name", host),
+#             assume_role=config.get_host_specific_key("policies.role_name", host),
 #             region=config.region,
 #             sts_client_kwargs=dict(
 #                 region_name=config.region,
 #                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
 #             ),
-#             client_kwargs=config.get_host_specific_key(f"site_configs.{host}.boto3.client_kwargs", host, {}),
+#             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
 #         )
 
 
@@ -198,11 +198,13 @@ def boto3_cached_conn(
         )
         pre_assume_roles.extend(
             consoleme_config.get_host_specific_key(
-                f"site_configs.{host}.policies.pre_role_arns_to_assume", host, []
+                "policies.pre_role_arns_to_assume", host, []
             )
         )
     elif pre_assume_roles is None:
         pre_assume_roles = []
+    if not pre_assume_roles:
+        raise Exception("Unable to assume central role on customer's account")
     key = (
         host,
         account_number,

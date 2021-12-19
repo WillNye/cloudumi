@@ -60,7 +60,7 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
             ui_formatted = False
 
         resource_redis_cache_key = config.get_host_specific_key(
-            f"site_configs.{host}.aws_config_cache.redis_key",
+            "aws_config_cache.redis_key",
             host,
             f"{host}_AWSCONFIG_RESOURCE_CACHE",
         )
@@ -68,10 +68,10 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
         # Fall back to DynamoDB or S3?
         if not all_resource_arns:
             s3_bucket = config.get_host_specific_key(
-                f"site_configs.{host}.aws_config_cache_combined.s3.bucket", host
+                "aws_config_cache_combined.s3.bucket", host
             )
             s3_key = config.get_host_specific_key(
-                f"site_configs.{host}.aws_config_cache_combined.s3.file",
+                "aws_config_cache_combined.s3.file",
                 host,
                 "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
             )
@@ -129,7 +129,7 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
             self.write(json.dumps([]))
             return
         max_limit: int = config.get_host_specific_key(
-            f"site_configs.{host}.self_service_step_1_resource_typeahead.max_limit",
+            "self_service_step_1_resource_typeahead.max_limit",
             host,
             10000,
         )
@@ -146,15 +146,15 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
 
         typehead_data = await retrieve_json_data_from_redis_or_s3(
             redis_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_self_service_typeahead.redis.key",
+                "cache_self_service_typeahead.redis.key",
                 host,
                 f"{host}_cache_self_service_typeahead_v1",
             ),
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_self_service_typeahead.s3.bucket", host
+                "cache_self_service_typeahead.s3.bucket", host
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_self_service_typeahead.s3.file",
+                "cache_self_service_typeahead.s3.file",
                 host,
                 "cache_self_service_typeahead/cache_self_service_typeahead_v1.json.gz",
             ),

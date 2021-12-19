@@ -107,9 +107,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = test_role_name
         try:
@@ -865,9 +863,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
         # Detaching inline policy that isn't attached -> error
@@ -999,9 +995,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
         # Detaching a managed policy that's not attached
@@ -1138,9 +1132,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
         # Attach the assume role policy document -> no errors
@@ -1279,9 +1271,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         client.update_assume_role_policy(
             RoleName=test_role_name,
@@ -1351,9 +1341,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         client.put_role_policy(
             RoleName=test_role_name,
@@ -1450,9 +1438,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         for path in ["/", "/testpath/test2/"]:
             client.create_policy(
@@ -1532,9 +1518,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         for path in ["/", "/testpath/test2/"]:
             policy_name_and_path = path + existing_policy_name + "managed2"
@@ -1666,7 +1650,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     # async def test_apply_managed_policy_resource_tag_change(self):
     #     from common.lib.v2.requests import apply_managed_policy_resource_tag_change
     #
-    #     client = boto3.client("iam", region_name="us-east-1", **config.get_host_specific_key(f"site_configs.{host}.boto3.client_kwargs", host, {}))
+    #     client = boto3.client("iam", region_name="us-east-1", **config.get_host_specific_key("boto3.client_kwargs", host, {}))
     #
     #     managed_policy_resource_tag_change = {
     #         "principal": {
@@ -1863,9 +1847,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "test_2"
         client.create_role(RoleName=role_name, AssumeRolePolicyDocument="{}")
@@ -1978,9 +1960,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         conn = boto3.resource(
             "s3",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         conn.create_bucket(Bucket="test_bucket")
         response.errors = 0
@@ -2082,9 +2062,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "sqs",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         client.create_queue(QueueName="test_sqs")
         response.errors = 0
@@ -2187,9 +2165,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "sns",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         client.create_topic(Name="test_sns")
         response.errors = 0
@@ -2387,9 +2363,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
         # Trying to apply while not being authorized
@@ -2668,9 +2642,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             region="us-east-1",
             session_name="ConsoleMe_UnitTest",
             arn_partition="aws",
-            client_kwargs=config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         s3_client.create_bucket(Bucket="test_bucket")
 
@@ -2738,9 +2710,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
         # Trying to approve while not being authorized

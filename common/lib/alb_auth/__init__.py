@@ -24,7 +24,7 @@ log = config.get_logger()
 async def populate_oidc_config(host):
     http_client = tornado.httpclient.AsyncHTTPClient()
     metadata_url = config.get_host_specific_key(
-        f"site_configs.{host}.get_user_by_aws_alb_auth_settings.access_token_validation.metadata_url",
+        "get_user_by_aws_alb_auth_settings.access_token_validation.metadata_url",
         host,
     )
 
@@ -40,7 +40,7 @@ async def populate_oidc_config(host):
         oidc_config = json.loads(res.body)
     else:
         jwks_uri = config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_aws_alb_auth_settings.access_token_validation.jwks_uri",
+            "get_user_by_aws_alb_auth_settings.access_token_validation.jwks_uri",
             host,
         )
         if not jwks_uri:
@@ -68,7 +68,7 @@ async def populate_oidc_config(host):
         elif key_type == "EC":
             oidc_config["jwt_keys"][key_id] = ECAlgorithm.from_jwk(json.dumps(k))
     oidc_config["aud"] = config.get_host_specific_key(
-        f"site_configs.{host}.get_user_by_aws_alb_auth_settings.access_token_validation.client_id",
+        "get_user_by_aws_alb_auth_settings.access_token_validation.client_id",
         host,
     )
     return oidc_config
@@ -77,12 +77,12 @@ async def populate_oidc_config(host):
 async def authenticate_user_by_alb_auth(request):
     host = request.get_host_name()
     aws_alb_auth_header_name = config.get_host_specific_key(
-        f"site_configs.{host}.get_user_by_aws_alb_auth_settings.aws_alb_auth_header_name",
+        "get_user_by_aws_alb_auth_settings.aws_alb_auth_header_name",
         host,
         "X-Amzn-Oidc-Data",
     )
     aws_alb_claims_header_name = config.get_host_specific_key(
-        f"site_configs.{host}.get_user_by_aws_alb_auth_settings.aws_alb_claims_header_name",
+        "get_user_by_aws_alb_auth_settings.aws_alb_claims_header_name",
         host,
         "X-Amzn-Oidc-Accesstoken",
     )
@@ -108,7 +108,7 @@ async def authenticate_user_by_alb_auth(request):
     payload = jwt.decode(encoded_auth_jwt, pub_key, algorithms=["ES256"])
     email = payload.get(
         config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_aws_alb_auth_settings.jwt_email_key",
+            "get_user_by_aws_alb_auth_settings.jwt_email_key",
             host,
             "email",
         )
@@ -121,7 +121,7 @@ async def authenticate_user_by_alb_auth(request):
     # User has already passed ALB auth and successfully authenticated
     access_token_pub_key = None
     jwt_verify = config.get_host_specific_key(
-        f"site_configs.{host}.get_user_by_aws_alb_auth_settings.jwt_verify", host, True
+        "get_user_by_aws_alb_auth_settings.jwt_verify", host, True
     )
     access_token_verify_options = {"verify_signature": jwt_verify}
     oidc_config = {}
@@ -143,12 +143,8 @@ async def authenticate_user_by_alb_auth(request):
             access_token_pub_key,
             algorithms=[algorithm],
             options=access_token_verify_options,
-            audience=oidc_config.get_host_specific_key(
-                f"site_configs.{host}.aud", host
-            ),
-            issuer=oidc_config.get_host_specific_key(
-                f"site_configs.{host}.issuer", host
-            ),
+            audience=oidc_config.get_host_specific_key("aud", host),
+            issuer=oidc_config.get_host_specific_key("issuer", host),
         )
         # Step 5: Verify the access token.
         if not jwt_verify:
@@ -159,7 +155,7 @@ async def authenticate_user_by_alb_auth(request):
         for token in [decoded_access_token, payload]:
             groups = token.get(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.get_user_by_aws_alb_auth_settings.jwt_groups_key",
+                    "get_user_by_aws_alb_auth_settings.jwt_groups_key",
                     host,
                     "groups",
                 )

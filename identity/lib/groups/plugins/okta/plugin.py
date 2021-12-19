@@ -345,7 +345,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
 # async def main():
 #     # TODO: Fix
 #     a = OktaGroupManagementPlugin(host="localhost", idp=OktaIdentityProvider.parse_obj(
-#         config.get("site_configs.localhost.identity.identity_providers.okta_test")
+#         config.get("identity.identity_providers.okta_test")
 #     ))
 #     # res = await a.list_all_groups()
 #     res = await a.get_group("awssg-bunker_dev-admin-1231231231")

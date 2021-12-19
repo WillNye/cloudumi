@@ -16,7 +16,7 @@ class InternalPluginAuthorizationMappingGenerator(CredentialAuthzMappingGenerato
         """This will list accounts that meet the account attribute search criteria."""
         group_mapping = get_plugin_by_name(
             config.get_host_specific_key(
-                f"site_configs.{host}.plugins.group_mapping",
+                "plugins.group_mapping",
                 host,
                 "cmsaas_group_mapping",
             )

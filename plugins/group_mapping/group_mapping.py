@@ -94,9 +94,7 @@ class GroupMapping:
         return {}
 
     async def get_secondary_approvers(self, group, host, return_default=False):
-        return config.get_host_specific_key(
-            f"site_configs.{host}.access_requests.default_approver", host
-        )
+        return config.get_host_specific_key("access_requests.default_approver", host)
 
     def get_account_names_to_ids(self, force_refresh: bool = False) -> dict:
         """Get account name to id mapping"""

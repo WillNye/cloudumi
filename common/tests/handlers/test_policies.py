@@ -50,10 +50,10 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
         # mock_auth.return_value.get_cert_age_seconds.return_value = create_future(100)
         # headers = {
         #     config.get(
-        #         f"site_configs.{host}.auth.user_header_name"
+        #         "auth.user_header_name"
         #     ): "user@example.com",
         #     config.get(
-        #         f"site_configs.{host}.auth.groups_header_name"
+        #         "auth.groups_header_name"
         #     ): "groupa,groupb,groupc",
         # }
         # Invalid resource, no search string

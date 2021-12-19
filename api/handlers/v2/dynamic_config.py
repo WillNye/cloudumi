@@ -5,13 +5,13 @@ from hashlib import sha256
 import sentry_sdk
 import tornado.escape
 import tornado.web
+from asgiref.sync import sync_to_async
 
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_edit_dynamic_config
-from common.lib.dynamo import UserDynamoHandler
+from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.json_encoder import SetEncoder
-from common.lib.redis import RedisHandler
 
 log = config.get_logger()
 
@@ -29,7 +29,7 @@ class DynamicConfigApiHandler(BaseHandler):
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
             countdown=config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.dynamo_load_interval", host
+                "dynamic_config.dynamo_load_interval", host
             ),
             kwargs={"host": host},
         )
@@ -53,8 +53,12 @@ class DynamicConfigApiHandler(BaseHandler):
             raise tornado.web.HTTPError(
                 403, "Only application admins are authorized to view this page."
             )
-        ddb = UserDynamoHandler(host=host)
-        dynamic_config = await ddb.get_dynamic_config_yaml(host)
+        ddb = RestrictedDynamoHandler()
+        dynamic_config = await sync_to_async(ddb.get_static_config_for_host_sync)(
+            host,
+            return_format="bytes",
+            filter_secrets=True,
+        )
 
         self.write(
             {
@@ -78,15 +82,16 @@ class DynamicConfigApiHandler(BaseHandler):
         if not self.user:
             return
         host = self.ctx.host
-        red = await RedisHandler().redis(host)
         if not can_edit_dynamic_config(self.user, self.groups, host):
             raise tornado.web.HTTPError(
                 403, "Only application admins are authorized to view this page."
             )
-        ddb = UserDynamoHandler(host=host)
-        existing_dynamic_config = await ddb.get_dynamic_config_yaml(host)
-        if existing_dynamic_config:
-            existing_dynamic_config_sha256 = sha256(existing_dynamic_config).hexdigest()
+        ddb = RestrictedDynamoHandler()
+        existing_config = await sync_to_async(ddb.get_static_config_for_host_sync)(
+            host, return_format="bytes"
+        )
+        if existing_config:
+            existing_dynamic_config_sha256 = sha256(existing_config).hexdigest()
         else:
             existing_dynamic_config_sha256 = None
         result = {"status": "success"}
@@ -115,7 +120,7 @@ class DynamicConfigApiHandler(BaseHandler):
                     "Please refresh your page and try again."
                 )
 
-            await ddb.update_dynamic_config(data["new_config"], self.user, host)
+            await ddb.update_static_config_for_host(data["new_config"], self.user, host)
         except Exception as e:
             result["status"] = "error"
             result["error"] = f"There was an error processing your request: {e}"
@@ -128,7 +133,4 @@ class DynamicConfigApiHandler(BaseHandler):
         result["newsha56"] = new_sha256
         self.write(result)
         await self.finish()
-        # Force a refresh of dynamic configuration in the current region. Other regions will need to wait until the
-        # next background thread refreshes it automatically. By default, this happens every 60 seconds.
-        config.CONFIG.load_config_from_dynamo(host, ddb=ddb, red=red)
         return

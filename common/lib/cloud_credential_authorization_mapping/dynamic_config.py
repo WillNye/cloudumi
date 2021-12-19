@@ -23,16 +23,14 @@ class DynamicConfigAuthorizationMappingGenerator(CredentialAuthzMappingGenerator
         if config.get("_global_.config.load_from_dynamo", True):
             config.CONFIG.load_dynamic_config_from_redis(log_data, host, red)
         group_mapping_configuration = config.get_host_specific_key(
-            f"site_configs.{host}.dynamic_config.group_mapping", host
+            "dynamic_config.group_mapping", host
         )
 
         if not group_mapping_configuration:
             return authorization_mapping
 
         for group, role_mapping in group_mapping_configuration.items():
-            if config.get_host_specific_key(
-                f"site_configs.{host}.auth.force_groups_lowercase", host, False
-            ):
+            if config.get_host_specific_key("auth.force_groups_lowercase", host, False):
                 group = group.lower()
             if not authorization_mapping.get(group):
                 authorization_mapping[group] = RoleAuthorizations.parse_obj(

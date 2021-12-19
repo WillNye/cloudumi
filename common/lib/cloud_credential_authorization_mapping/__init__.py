@@ -55,19 +55,19 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
             > 60
         ):
             redis_topic = config.get_host_specific_key(
-                f"site_configs.{host}.generate_and_store_credential_authorization_mapping.redis_key",
+                "generate_and_store_credential_authorization_mapping.redis_key",
                 host,
                 f"{host}_CREDENTIAL_AUTHORIZATION_MAPPING_V1",
             )
             s3_bucket = config.get_host_specific_key(
-                f"site_configs.{host}.generate_and_store_credential_authorization_mapping.s3.bucket",
+                "generate_and_store_credential_authorization_mapping.s3.bucket",
                 host,
                 config.get(
                     "_global_.consoleme_s3_bucket",
                 ),
             )
             s3_key = config.get_host_specific_key(
-                f"site_configs.{host}.generate_and_store_credential_authorization_mapping.s3.file",
+                "generate_and_store_credential_authorization_mapping.s3.file",
                 host,
                 "credential_authorization_mapping/credential_authorization_mapping_v1.json.gz",
             )
@@ -115,16 +115,16 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
             > 60
         ):
             redis_topic = config.get_host_specific_key(
-                f"site_configs.{host}.generate_and_store_reverse_authorization_mapping.redis_key",
+                "generate_and_store_reverse_authorization_mapping.redis_key",
                 host,
                 f"{host}_REVERSE_AUTHORIZATION_MAPPING_V1",
             )
             s3_bucket = config.get_host_specific_key(
-                f"site_configs.{host}.generate_and_store_reverse_authorization_mapping.s3.bucket",
+                "generate_and_store_reverse_authorization_mapping.s3.bucket",
                 host,
             )
             s3_key = config.get_host_specific_key(
-                f"site_configs.{host}.generate_and_store_reverse_authorization_mapping.s3.file",
+                "generate_and_store_reverse_authorization_mapping.s3.file",
                 host,
                 "reverse_authorization_mapping/reverse_authorization_mapping_v1.json.gz",
             )
@@ -159,16 +159,16 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
             or int(time.time()) - self._all_roles_last_update.get(host, 0) > 600
         ):
             redis_topic = config.get_host_specific_key(
-                f"site_configs.{host}.aws.iamroles_redis_key",
+                "aws.iamroles_redis_key",
                 host,
                 f"{host}_IAM_ROLE_CACHE",
             )
             s3_bucket = config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
                 host,
             )
             s3_key = config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
                 host,
                 "account_resource_cache/cache_all_roles_v1.json.gz",
             )
@@ -247,24 +247,24 @@ async def generate_and_store_reverse_authorization_mapping(
 
     # Store in S3 and Redis
     redis_topic = config.get_host_specific_key(
-        f"site_configs.{host}.generate_and_store_reverse_authorization_mapping.redis_key",
+        "generate_and_store_reverse_authorization_mapping.redis_key",
         host,
         f"{host}_REVERSE_AUTHORIZATION_MAPPING_V1",
     )
     s3_bucket = None
     s3_key = None
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
+        "celery.active_region", host, config.region
     ) or config.get("environment") in ["dev", "test"]:
         s3_bucket = config.get_host_specific_key(
-            f"site_configs.{host}.generate_and_store_credential_authorization_mapping.s3.bucket",
+            "generate_and_store_credential_authorization_mapping.s3.bucket",
             host,
             config.get(
                 "_global_.consoleme_s3_bucket",
             ),
         )
         s3_key = config.get_host_specific_key(
-            f"site_configs.{host}.generate_and_store_reverse_authorization_mapping.s3.file",
+            "generate_and_store_reverse_authorization_mapping.s3.file",
             host,
             "reverse_authorization_mapping/reverse_authorization_mapping_v1.json.gz",
         )
@@ -285,7 +285,7 @@ async def generate_and_store_credential_authorization_mapping(
     authorization_mapping: Dict[user_or_group, RoleAuthorizations] = {}
 
     if config.get_host_specific_key(
-        f"site_configs.{host}.cloud_credential_authorization_mapping.role_tags.enabled",
+        "cloud_credential_authorization_mapping.role_tags.enabled",
         host,
         True,
     ):
@@ -293,7 +293,7 @@ async def generate_and_store_credential_authorization_mapping(
             authorization_mapping, host
         )
     if config.get_host_specific_key(
-        f"site_configs.{host}.cloud_credential_authorization_mapping.dynamic_config.enabled",
+        "cloud_credential_authorization_mapping.dynamic_config.enabled",
         host,
         True,
     ):
@@ -301,7 +301,7 @@ async def generate_and_store_credential_authorization_mapping(
             authorization_mapping, host
         )
     if config.get_host_specific_key(
-        f"site_configs.{host}.cloud_credential_authorization_mapping.internal_plugin.enabled",
+        "cloud_credential_authorization_mapping.internal_plugin.enabled",
         host,
         False,
     ):
@@ -311,20 +311,20 @@ async def generate_and_store_credential_authorization_mapping(
 
     # Store in S3 and Redis
     redis_topic = config.get_host_specific_key(
-        f"site_configs.{host}.generate_and_store_credential_authorization_mapping.redis_key",
+        "generate_and_store_credential_authorization_mapping.redis_key",
         host,
         f"{host}_CREDENTIAL_AUTHORIZATION_MAPPING_V1",
     )
     s3_bucket = None
     s3_key = None
     if config.region == config.get_host_specific_key(
-        f"site_configs.{host}.celery.active_region", host, config.region
-    ) or config.get_host_specific_key(f"site_configs.{host}.environment", host) in [
+        "celery.active_region", host, config.region
+    ) or config.get_host_specific_key("environment", host) in [
         "dev",
         "test",
     ]:
         s3_bucket = config.get_host_specific_key(
-            f"site_configs.{host}.generate_and_store_credential_authorization_mapping.s3.bucket",
+            "generate_and_store_credential_authorization_mapping.s3.bucket",
             host,
             config.get(
                 "_global_.consoleme_s3_bucket",
@@ -332,7 +332,7 @@ async def generate_and_store_credential_authorization_mapping(
         )
 
         s3_key = config.get_host_specific_key(
-            f"site_configs.{host}.generate_and_store_credential_authorization_mapping.s3.file",
+            "generate_and_store_credential_authorization_mapping.s3.file",
             host,
             "credential_authorization_mapping/credential_authorization_mapping_v1.json.gz",
         )

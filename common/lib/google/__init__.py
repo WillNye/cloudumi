@@ -233,28 +233,20 @@ async def get_service(
         "message": f"Building service connection for {service_name} / {service_path}",
     }
     log.debug(log_data)
-    if config.get_host_specific_key(
-        f"site_configs.{host}.google.service_key_file", host
-    ):
+    if config.get_host_specific_key("google.service_key_file", host):
         admin_credentials = service_account.Credentials.from_service_account_file(
-            config.get_host_specific_key(
-                f"site_configs.{host}.google.service_key_file", host
-            ),
+            config.get_host_specific_key("google.service_key_file", host),
             scopes=config.get_host_specific_key(
-                f"site_configs.{host}.google.admin_scopes",
+                "google.admin_scopes",
                 host,
                 ["https://www.googleapis.com/auth/admin.directory.group"],
             ),
         )
-    elif config.get_host_specific_key(
-        f"site_configs.{host}.secrets.google.service_key_dict", host
-    ):
+    elif config.get_host_specific_key("secrets.google.service_key_dict", host):
         admin_credentials = service_account.Credentials.from_service_account_info(
-            config.get_host_specific_key(
-                f"site_configs.{host}.secrets.google.service_key_dict", host
-            ),
+            config.get_host_specific_key("secrets.google.service_key_dict", host),
             scopes=config.get_host_specific_key(
-                f"site_configs.{host}.google.admin_scopes",
+                "google.admin_scopes",
                 host,
                 ["https://www.googleapis.com/auth/admin.directory.group"],
             ),
@@ -267,7 +259,7 @@ async def get_service(
 
     # Change credential subject based on group domain
     credential_subjects = config.get_host_specific_key(
-        f"site_configs.{host}.google.credential_subject", host
+        "google.credential_subject", host
     )
     credential_subject = None
     for k, v in credential_subjects.items():
@@ -280,9 +272,7 @@ async def get_service(
             "Error: Unable to find Google credential subject for domain {}. "
             "{}".format(
                 group.split("@")[1],
-                config.get_host_specific_key(
-                    f"site_configs.{host}.ses.support_reference", host, ""
-                ),
+                config.get_host_specific_key("ses.support_reference", host, ""),
             )
         )
 
@@ -398,7 +388,7 @@ async def raise_if_requires_bgcheck_and_no_bgcheck(
         return True
     raise BackgroundCheckNotPassedException(
         config.get_host_specific_key(
-            f"site_configs.{host}.google.background_check_fail_message",
+            "google.background_check_fail_message",
             host,
             "User {user} has not passed background check Group {group_name} requires a background check.",
         ).format(user=user, group_name=group_info.name)
@@ -429,7 +419,7 @@ async def raise_if_not_same_domain(host: str, user: str, group_info: Any) -> Non
     if user.split("@")[1] != group_info.name.split("@")[1]:
         raise DifferentUserGroupDomainException(
             config.get_host_specific_key(
-                f"site_configs.{host}.google.different_domain_fail_message",
+                "google.different_domain_fail_message",
                 host,
                 "Unable to add user to a group that is in a different domain. User: {user}. Group: {group_name}",
             ).format(user=user, group_name=group_info.name)
@@ -476,7 +466,7 @@ async def raise_if_bulk_add_disabled_and_no_request(
     }
     log.debug(log_data)
     error = config.get_host_specific_key(
-        f"site_configs.{host}.google.bulk_add_disabled_fail_message",
+        "google.bulk_add_disabled_fail_message",
         host,
         "Group {group_name} has an attribute to prevent manually adding users to it. "
         "Users must manually request access to it".format(group_name=group_info.name),

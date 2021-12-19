@@ -22,7 +22,7 @@ log = config.get_logger()
 async def populate_oidc_config(host):
     http_client = tornado.httpclient.AsyncHTTPClient()
     metadata_url = config.get_host_specific_key(
-        f"site_configs.{host}.get_user_by_oidc_settings.metadata_url", host
+        "get_user_by_oidc_settings.metadata_url", host
     )
 
     if metadata_url:
@@ -37,14 +37,14 @@ async def populate_oidc_config(host):
         oidc_config = json.loads(res.body)
     else:
         authorization_endpoint = config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_oidc_settings.authorization_endpoint",
+            "get_user_by_oidc_settings.authorization_endpoint",
             host,
         )
         token_endpoint = config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_oidc_settings.token_endpoint", host
+            "get_user_by_oidc_settings.token_endpoint", host
         )
         jwks_uri = config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_oidc_settings.jwks_uri", host
+            "get_user_by_oidc_settings.jwks_uri", host
         )
         if not (authorization_endpoint or token_endpoint or jwks_uri):
             raise MissingConfigurationValue("Missing OIDC Configuration.")
@@ -53,11 +53,9 @@ async def populate_oidc_config(host):
             "token_endpoint": token_endpoint,
             "jwks_uri": jwks_uri,
         }
-    client_id = config.get_host_specific_key(
-        f"site_configs.{host}.secrets.auth.oidc.client_id", host
-    )
+    client_id = config.get_host_specific_key("secrets.auth.oidc.client_id", host)
     client_secret = config.get_host_specific_key(
-        f"site_configs.{host}.secrets.auth.oidc.client_secret", host
+        "secrets.auth.oidc.client_secret", host
     )
     if not (client_id or client_secret):
         raise MissingConfigurationValue("Missing OIDC Secrets")
@@ -67,7 +65,7 @@ async def populate_oidc_config(host):
     jwks_uris = [oidc_config["jwks_uri"]]
     jwks_uris.extend(
         config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_oidc_settings.extra_jwks_uri", host, []
+            "get_user_by_oidc_settings.extra_jwks_uri", host, []
         )
     )
     for jwks_uri in jwks_uris:
@@ -108,7 +106,7 @@ async def authenticate_user_by_oidc(request):
     log_data = {"function": function}
     code = request.get_argument("code", None)
     protocol = request.request.protocol
-    if "https://" in config.get_host_specific_key(f"site_configs.{host}.url", host):
+    if "https://" in config.get_host_specific_key("url", host):
         # If we're behind a load balancer that terminates tls for us, request.request.protocol will be "http://" and our
         # oidc redirect will be invalid
         protocol = "https"
@@ -125,7 +123,7 @@ async def authenticate_user_by_oidc(request):
         after_redirect_uri = after_redirect_uri.decode("utf-8")
     if not after_redirect_uri:
         after_redirect_uri = config.get_host_specific_key(
-            f"site_configs.{host}.url", host, f"{protocol}://{full_host}/"
+            "url", host, f"{protocol}://{full_host}/"
         )
 
     if not code:
@@ -138,7 +136,7 @@ async def authenticate_user_by_oidc(request):
     if not code:
         args = {"response_type": "code"}
         client_scope = config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_oidc_settings.client_scopes", host
+            "get_user_by_oidc_settings.client_scopes", host
         )
         if request.request.uri is not None:
             args["redirect_uri"] = oidc_redirect_uri
@@ -170,7 +168,7 @@ async def authenticate_user_by_oidc(request):
         # exchange the authorization code with the access token
         http_client = tornado.httpclient.AsyncHTTPClient()
         grant_type = config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_oidc_settings.grant_type",
+            "get_user_by_oidc_settings.grant_type",
             host,
             "authorization_code",
         )
@@ -182,7 +180,7 @@ async def authenticate_user_by_oidc(request):
         ).decode("UTF-8")
         url = f"{oidc_config['token_endpoint']}"
         client_scope = config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_oidc_settings.client_scopes", host
+            "get_user_by_oidc_settings.client_scopes", host
         )
         if client_scope:
             client_scope = " ".join(client_scope)
@@ -205,21 +203,21 @@ async def authenticate_user_by_oidc(request):
 
         id_token = token_exchange_response_body_dict.get(
             config.get_host_specific_key(
-                f"site_configs.{host}.get_user_by_oidc_settings.id_token_response_key",
+                "get_user_by_oidc_settings.id_token_response_key",
                 host,
                 "id_token",
             )
         )
         access_token = token_exchange_response_body_dict.get(
             config.get_host_specific_key(
-                f"site_configs.{host}.get_user_by_oidc_settings.access_token_response_key",
+                "get_user_by_oidc_settings.access_token_response_key",
                 host,
                 "access_token",
             )
         )
 
         jwt_verify = config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_oidc_settings.jwt_verify", host, True
+            "get_user_by_oidc_settings.jwt_verify", host, True
         )
         if jwt_verify:
             header = jwt.get_unverified_header(id_token)
@@ -240,7 +238,7 @@ async def authenticate_user_by_oidc(request):
 
             email = decoded_id_token.get(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.get_user_by_oidc_settings.jwt_email_key",
+                    "get_user_by_oidc_settings.jwt_email_key",
                     host,
                     "email",
                 )
@@ -248,7 +246,7 @@ async def authenticate_user_by_oidc(request):
 
             # For google auth, the access_token does not contain JWT-parsable claims.
             if config.get_host_specific_key(
-                f"site_configs.{host}.get_user_by_oidc_settings.get_groups_from_access_token",
+                "get_user_by_oidc_settings.get_groups_from_access_token",
                 host,
                 True,
             ):
@@ -267,7 +265,7 @@ async def authenticate_user_by_oidc(request):
                         access_token,
                         pub_key,
                         audience=config.get_host_specific_key(
-                            f"site_configs.{host}.get_user_by_oidc_settings.access_token_audience",
+                            "get_user_by_oidc_settings.access_token_audience",
                             host,
                         ),
                         algorithms=algorithm,
@@ -294,7 +292,7 @@ async def authenticate_user_by_oidc(request):
 
         email = email or decoded_id_token.get(
             config.get_host_specific_key(
-                f"site_configs.{host}.get_user_by_oidc_settings.jwt_email_key",
+                "get_user_by_oidc_settings.jwt_email_key",
                 host,
                 "email",
             )
@@ -307,14 +305,14 @@ async def authenticate_user_by_oidc(request):
             groups
             or decoded_access_token.get(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.get_user_by_oidc_settings.jwt_groups_key",
+                    "get_user_by_oidc_settings.jwt_groups_key",
                     host,
                     "groups",
                 ),
             )
             or decoded_id_token.get(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.get_user_by_oidc_settings.jwt_groups_key",
+                    "get_user_by_oidc_settings.jwt_groups_key",
                     host,
                     "groups",
                 ),
@@ -326,7 +324,7 @@ async def authenticate_user_by_oidc(request):
             not groups
             and oidc_config.get("userinfo_endpoint")
             and config.get_host_specific_key(
-                f"site_configs.{host}.get_user_by_oidc_settings.get_groups_from_userinfo_endpoint",
+                "get_user_by_oidc_settings.get_groups_from_userinfo_endpoint",
                 host,
                 True,
             )
@@ -342,7 +340,7 @@ async def authenticate_user_by_oidc(request):
             )
             groups = json.loads(user_info.body).get(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.get_user_by_oidc_settings.user_info_groups_key",
+                    "get_user_by_oidc_settings.user_info_groups_key",
                     host,
                     "groups",
                 ),
@@ -351,9 +349,7 @@ async def authenticate_user_by_oidc(request):
 
         if config.get("_global_.auth.set_auth_cookie", True):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                minutes=config.get_host_specific_key(
-                    f"site_configs.{host}.jwt.expiration_minutes", host, 60
-                )
+                minutes=config.get_host_specific_key("jwt.expiration_minutes", host, 60)
             )
             encoded_cookie = await generate_jwt_token(
                 email, groups, host, exp=expiration
@@ -363,16 +359,15 @@ async def authenticate_user_by_oidc(request):
                 encoded_cookie,
                 expires=expiration,
                 secure=config.get_host_specific_key(
-                    f"site_configs.{host}.auth.cookie.secure",
+                    "auth.cookie.secure",
                     host,
-                    "https://"
-                    in config.get_host_specific_key(f"site_configs.{host}.url", host),
+                    "https://" in config.get_host_specific_key("url", host),
                 ),
                 httponly=config.get_host_specific_key(
-                    f"site_configs.{host}.auth.cookie.httponly", host, True
+                    "auth.cookie.httponly", host, True
                 ),
                 samesite=config.get_host_specific_key(
-                    f"site_configs.{host}.auth.cookie.samesite", host, True
+                    "auth.cookie.samesite", host, True
                 ),
             )
 

@@ -122,7 +122,7 @@ class Configuration(metaclass=Singleton):
 
             red = RedisHandler().redis_sync(host)
         if dynamic_config and dynamic_config != self.get_host_specific_key(
-            f"site_configs.{host}.dynamic_config", host
+            "dynamic_config", host
         ):
             red.set(
                 f"{host}_DYNAMIC_CONFIG_CACHE",
@@ -152,10 +152,7 @@ class Configuration(metaclass=Singleton):
         if not dynamic_config:
             return
         dynamic_config_j = json.loads(dynamic_config)
-        if (
-            self.get_host_specific_key(f"site_configs.{host}.dynamic_config", host, {})
-            != dynamic_config_j
-        ):
+        if self.get_host_specific_key("dynamic_config", host, {}) != dynamic_config_j:
             self.get_logger("config").debug(
                 {
                     **log_data,
@@ -321,7 +318,7 @@ class Configuration(metaclass=Singleton):
         # Try to get a custom employee photo url by formatting a string provided through configuration
 
         custom_employee_photo_url = self.get_host_specific_key(
-            f"site_configs.{host}.get_employee_photo_url.custom_employee_url", host, ""
+            "get_employee_photo_url.custom_employee_url", host, ""
         ).format(user=user)
         if custom_employee_photo_url:
             return custom_employee_photo_url
@@ -489,20 +486,34 @@ class Configuration(metaclass=Singleton):
             c = compressed_config
         return yaml.load(c)
 
+    def is_host_configured(self, host) -> bool:
+        """
+        Check if host is configured in DynamoDB.
+        """
+        host_config_base_key = f"site_configs.{host}"
+        if self.get(host_config_base_key):
+            return True
+        from common.lib.redis import RedisHandler
+
+        red = RedisHandler().redis_sync(host)
+        if red.get(f"{host}_STATIC_CONFIGURATION"):
+            return True
+        if self.get_tenant_static_config_from_dynamo(host):
+            return True
+        return False
+
     def get_host_specific_key(self, key: str, host: str, default: Any = None) -> Any:
         """
         Get a host/"tenant" specific value for configuration entry in dot notation.
         """
         # Only support keys that explicitly call out a host
         host_config_base_key = f"site_configs.{host}"
-        if not key.startswith(host_config_base_key):
-            raise Exception(f"Configuration key is invalid: {key}")
-        else:
-            # If we've defined a static config yaml file for the host, that takes precedence over
-            # anything in Dynamo, even if the static config doesn't actually have the config
-            # key the user is querying.
-            if self.get(host_config_base_key):
-                return self.get(key, default=default)
+        # If we've defined a static config yaml file for the host, that takes precedence over
+        # anything in Dynamo, even if the static config doesn't actually have the config
+        # key the user is querying.
+        if self.get(host_config_base_key):
+            return self.get(f"{host_config_base_key}.{key}", default=default)
+
         # Otherwise, we need to get the config from local variable,
         # fall back to Redis cache, and lastly fall back to Dynamo
         current_time = int(time.time())
@@ -675,7 +686,7 @@ get_host_specific_key = CONFIG.get_host_specific_key
 get_employee_photo_url = CONFIG.get_employee_photo_url
 get_employee_info_url = CONFIG.get_employee_info_url
 get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dynamo
-
+is_host_configured = CONFIG.is_host_configured
 # Set logging levels
 CONFIG.set_logging_levels()
 

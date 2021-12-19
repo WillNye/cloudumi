@@ -17,7 +17,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         CONFIG.config = {
             **CONFIG.config,
             "aws": {
-                **CONFIG.get_host_specific_key(f"site_configs.{host}.aws", host, {}),
+                **CONFIG.get_host_specific_key("aws", host, {}),
                 "iamroles_redis_key": "test_cache_iam_resources_for_account",
             },
             "cache_iam_resources_across_accounts": {

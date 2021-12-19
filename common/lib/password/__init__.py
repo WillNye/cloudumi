@@ -55,25 +55,19 @@ async def check_password_strength(
 ) -> Optional[Union[Dict[str, str], Dict[str, List[str]]]]:
     password_policy_args = {
         "strength": config.get_host_specific_key(
-            f"site_configs.{host}.auth.password_policy.strength", host, 0.5
+            "auth.password_policy.strength", host, 0.5
         ),
         "entropy_bits": config.get_host_specific_key(
-            f"site_configs.{host}.auth.password_policy.entry_bits", host
+            "auth.password_policy.entry_bits", host
         ),
-        "length": config.get_host_specific_key(
-            f"site_configs.{host}.auth.password_policy.length", host
-        ),
+        "length": config.get_host_specific_key("auth.password_policy.length", host),
         "uppercase": config.get_host_specific_key(
-            f"site_configs.{host}.auth.password_policy.uppercase", host
+            "auth.password_policy.uppercase", host
         ),
-        "numbers": config.get_host_specific_key(
-            f"site_configs.{host}.auth.password_policy.numbers", host
-        ),
-        "special": config.get_host_specific_key(
-            f"site_configs.{host}.auth.password_policy.special", host
-        ),
+        "numbers": config.get_host_specific_key("auth.password_policy.numbers", host),
+        "special": config.get_host_specific_key("auth.password_policy.special", host),
         "nonletters": config.get_host_specific_key(
-            f"site_configs.{host}.auth.password_policy.nonletters", host
+            "auth.password_policy.nonletters", host
         ),
     }
 

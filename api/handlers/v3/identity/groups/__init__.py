@@ -77,7 +77,7 @@ class IdentityGroupPageConfigHandler(BaseHandler):
         }
 
         table_configuration = config.get_host_specific_key(
-            f"site_configs.{host}.IdentityGroupTableConfigHandler.configuration",
+            "IdentityGroupTableConfigHandler.configuration",
             host,
             default_configuration,
         )

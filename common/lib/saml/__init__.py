@@ -19,11 +19,11 @@ log = config.get_logger()
 async def init_saml_auth(request, host):
     saml_config = copy.deepcopy(
         config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_saml_settings.saml_settings", host, {}
+            "get_user_by_saml_settings.saml_settings", host, {}
         )
     )
     idp_metadata_url = config.get_host_specific_key(
-        f"site_configs.{host}.get_user_by_saml_settings.idp_metadata_url", host
+        "get_user_by_saml_settings.idp_metadata_url", host
     )
     if idp_metadata_url:
         idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(idp_metadata_url)
@@ -32,7 +32,7 @@ async def init_saml_auth(request, host):
         request,
         saml_config,
         custom_base_path=config.get_host_specific_key(
-            f"site_configs.{host}.get_user_by_saml_settings.saml_path", host
+            "get_user_by_saml_settings.saml_path", host
         ),
     )
     return auth
@@ -41,7 +41,7 @@ async def init_saml_auth(request, host):
 def get_saml_login_endpoint(saml_login_endpoint, host):
     redirect_uri_f = furl(saml_login_endpoint)
     additional_request_parameters = config.get_host_specific_key(
-        f"site_configs.{host}.get_user_by_saml_settings.additional_saml_request_parameters",
+        "get_user_by_saml_settings.additional_saml_request_parameters",
         host,
         {},
     )

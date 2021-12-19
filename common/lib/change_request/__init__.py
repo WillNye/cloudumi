@@ -28,7 +28,7 @@ from common.models import (
 
 def get_self_service_iam_config(host):
     return config.get_host_specific_key(
-        f"site_configs.{host}.self_service_iam", host, SELF_SERVICE_IAM_DEFAULTS
+        "self_service_iam", host, SELF_SERVICE_IAM_DEFAULTS
     )
 
 

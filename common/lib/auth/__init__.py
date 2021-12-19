@@ -47,7 +47,7 @@ async def generate_auth_token(
     stats.count("generate_auth_token")
     if not expiration:
         expiration = config.get_host_specific_key(
-            f"site_configs.{host}.challenge.token_expiration", host, 3600
+            "challenge.token_expiration", host, 3600
         )
     log_data = {
         "user": user,
@@ -156,9 +156,7 @@ async def validate_auth_token(user, ip, token, request_object):
 
 
 def can_admin_all(user: str, user_groups: List[str], host: str):
-    application_admin = config.get_host_specific_key(
-        f"site_configs.{host}.application_admin", host
-    )
+    application_admin = config.get_host_specific_key("application_admin", host)
     if application_admin:
         if user == application_admin or application_admin in user_groups:
             return True
@@ -166,12 +164,8 @@ def can_admin_all(user: str, user_groups: List[str], host: str):
         user,
         user_groups,
         [
-            *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_admin", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_admin", host, []
-            ),
+            *config.get_host_specific_key("groups.can_admin", host, []),
+            *config.get_host_specific_key("dynamic_config.groups.can_admin", host, []),
         ],
     ):
         return True
@@ -185,11 +179,9 @@ def can_admin_identity(user: str, user_groups: List[str], host: str):
         user,
         user_groups,
         [
+            *config.get_host_specific_key("groups.can_admin_identity", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_admin_identity", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_admin_identity",
+                "dynamic_config.groups.can_admin_identity",
                 host,
                 [],
             ),
@@ -206,11 +198,9 @@ def can_create_roles(user: str, user_groups: List[str], host: str) -> bool:
         user,
         user_groups,
         [
+            *config.get_host_specific_key("groups.can_create_roles", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_create_roles", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_create_roles", host, []
+                "dynamic_config.groups.can_create_roles", host, []
             ),
         ],
     ):
@@ -225,11 +215,9 @@ def can_admin_policies(user: str, user_groups: List[str], host: str) -> bool:
         user,
         user_groups,
         [
+            *config.get_host_specific_key("groups.can_admin_policies", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_admin_policies", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_admin_policies",
+                "dynamic_config.groups.can_admin_policies",
                 host,
                 [],
             ),
@@ -241,11 +229,9 @@ def can_admin_policies(user: str, user_groups: List[str], host: str) -> bool:
 
 def can_delete_iam_principals_app(app_name, host):
     if app_name in [
+        *config.get_host_specific_key("groups.can_delete_roles_apps", host, []),
         *config.get_host_specific_key(
-            f"site_configs.{host}.groups.can_delete_roles_apps", host, []
-        ),
-        *config.get_host_specific_key(
-            f"site_configs.{host}.dynamic_config.groups.can_delete_roles_apps", host, []
+            "dynamic_config.groups.can_delete_roles_apps", host, []
         ),
     ]:
         return True
@@ -264,18 +250,14 @@ def can_delete_iam_principals(
         user_groups,
         [
             # TODO: Officially deprecate groups.can_delete_roles config key
-            *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_delete_roles", host, []
-            ),
+            *config.get_host_specific_key("groups.can_delete_roles", host, []),
             # TODO: Officially deprecate dynamic_config.groups.can_delete_roles config key
             *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_delete_roles", host, []
+                "dynamic_config.groups.can_delete_roles", host, []
             ),
+            *config.get_host_specific_key("groups.can_delete_iam_principals", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_delete_iam_principals", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_delete_iam_principals",
+                "dynamic_config.groups.can_delete_iam_principals",
                 host,
                 [],
             ),
@@ -292,11 +274,9 @@ def can_edit_dynamic_config(user: str, user_groups: List[str], host: str) -> boo
         user,
         user_groups,
         [
+            *config.get_host_specific_key("groups.can_edit_config", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_edit_config", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_edit_config", host, []
+                "dynamic_config.groups.can_edit_config", host, []
             ),
         ],
     ):
@@ -317,11 +297,9 @@ def can_edit_attributes(
         user,
         user_groups,
         [
+            *config.get_host_specific_key("groups.can_admin_restricted", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_admin_restricted", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_admin_restricted",
+                "dynamic_config.groups.can_admin_restricted",
                 host,
                 [],
             ),
@@ -332,11 +310,9 @@ def can_edit_attributes(
         user,
         user_groups,
         [
+            *config.get_host_specific_key("groups.can_edit_attributes", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_edit_attributes", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_edit_attributes",
+                "dynamic_config.groups.can_edit_attributes",
                 host,
                 [],
             ),
@@ -360,11 +336,9 @@ def can_modify_members(
         user,
         user_groups,
         [
+            *config.get_host_specific_key("groups.can_admin_restricted", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_admin_restricted", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_admin_restricted",
+                "dynamic_config.groups.can_admin_restricted",
                 host,
                 [],
             ),
@@ -376,11 +350,9 @@ def can_modify_members(
         user,
         user_groups,
         [
+            *config.get_host_specific_key("groups.can_modify_members", host, []),
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_modify_members", host, []
-            ),
-            *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_modify_members",
+                "dynamic_config.groups.can_modify_members",
                 host,
                 [],
             ),
@@ -400,10 +372,10 @@ def can_edit_sensitive_attributes(
         user_groups,
         [
             *config.get_host_specific_key(
-                f"site_configs.{host}.groups.can_edit_sensitive_attributes", host, []
+                "groups.can_edit_sensitive_attributes", host, []
             ),
             *config.get_host_specific_key(
-                f"site_configs.{host}.dynamic_config.groups.can_edit_sensitive_attributes",
+                "dynamic_config.groups.can_edit_sensitive_attributes",
                 host,
                 [],
             ),
@@ -415,22 +387,18 @@ def can_edit_sensitive_attributes(
 
 def is_sensitive_attr(attribute, host):
     for attr in [
+        *config.get_host_specific_key("groups.attributes.boolean", host, []),
         *config.get_host_specific_key(
-            f"site_configs.{host}.groups.attributes.boolean", host, []
-        ),
-        *config.get_host_specific_key(
-            f"site_configs.{host}.dynamic_config.groups.attributes.boolean", host, []
+            "dynamic_config.groups.attributes.boolean", host, []
         ),
     ]:
         if attr.get("name") == attribute:
             return attr.get("sensitive", False)
 
     for attr in [
+        *config.get_host_specific_key("groups.attributes.list", host, []),
         *config.get_host_specific_key(
-            f"site_configs.{host}.groups.attributes.list", host, []
-        ),
-        *config.get_host_specific_key(
-            f"site_configs.{host}.dynamic_config.groups.attributes.list", host, []
+            "dynamic_config.groups.attributes.list", host, []
         ),
     ]:
         if attr.get("name") == attribute:

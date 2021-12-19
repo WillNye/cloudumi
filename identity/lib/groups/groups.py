@@ -15,7 +15,7 @@ log = config.get_logger()
 
 async def get_identity_provider_plugin(host: str, idp_name: str):
     idp_d = config.get_host_specific_key(
-        f"site_configs.{host}.identity.identity_providers", host, default={}
+        "identity.identity_providers", host, default={}
     ).get(idp_name)
     if not idp_d:
         raise Exception("Invalid IDP specified")
@@ -72,17 +72,17 @@ async def add_user_to_group(host, user: User, group: Group, actor: str):
 
 def get_identity_request_storage_keys(host):
     s3_bucket = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_requests.bucket",
+        "identity.cache_requests.bucket",
         host,
         config.get("_global_.consoleme_s3_bucket"),
     )
     redis_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_requests.redis_key",
+        "identity.cache_requests.redis_key",
         host,
         default=f"{host}_IDENTITY_REQUESTS",
     )
     s3_key = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_requests.key",
+        "identity.cache_requests.key",
         host,
         default="identity/requests/identity_requests_cache_v1.json.gz",
     )
@@ -95,17 +95,17 @@ def get_identity_request_storage_keys(host):
 
 def get_identity_group_storage_keys(host):
     s3_bucket = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_groups.bucket",
+        "identity.cache_groups.bucket",
         host,
         config.get("_global_.consoleme_s3_bucket"),
     )
     redis_key: str = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_groups.redis_key",
+        "identity.cache_groups.redis_key",
         host,
         default=f"{host}_IDENTITY_GROUPS",
     )
     s3_key = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_groups.key",
+        "identity.cache_groups.key",
         host,
         default="identity/groups/identity_groups_cache_v1.json.gz",
     )
@@ -165,9 +165,7 @@ async def cache_identity_groups_for_host(host):
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "host": host,
     }
-    enabled = config.get_host_specific_key(
-        f"site_configs.{host}.identity.cache_groups.enabled", host
-    )
+    enabled = config.get_host_specific_key("identity.cache_groups.enabled", host)
     if not enabled:
         log.debug(
             {
@@ -185,7 +183,7 @@ async def cache_identity_groups_for_host(host):
     all_groups = {}
 
     for idp_name, idp_d in config.get_host_specific_key(
-        f"site_configs.{host}.identity.identity_providers", host, default={}
+        "identity.identity_providers", host, default={}
     ).items():
         if idp_d["idp_type"] == "okta":
             idp = OktaIdentityProvider.parse_obj(idp_d)

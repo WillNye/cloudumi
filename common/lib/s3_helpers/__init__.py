@@ -20,7 +20,7 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 
 async def get_s3_bucket_for_host(host):
     return config.get_host_specific_key(
-        f"site_configs.{host}.consoleme_s3_bucket",
+        "consoleme_s3_bucket",
         host,
         config.get("_global_.consoleme_s3_bucket"),
     )
@@ -49,9 +49,7 @@ async def is_object_older_than_seconds(
         session = get_session_for_tenant(host)
         s3_client = session.client(
             "s3",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
     try:
         res = await sync_to_async(s3_client.head_object)(Bucket=bucket, Key=key)
@@ -74,9 +72,7 @@ async def does_object_exist(bucket: str, key: str, host: str, s3_client=None) ->
         session = get_session_for_tenant(host)
         s3_client = session.client(
             "s3",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
     try:
         await sync_to_async(s3_client.head_object)(Bucket=bucket, Key=key)
@@ -96,7 +92,7 @@ async def does_object_exist(bucket: str, key: str, host: str, s3_client=None) ->
 #     if not host:
 #         raise Exception("No host specified")
 #     client_kwargs = config.get(
-#         f"site_configs.{host}.boto3.client_kwargs", {}
+#         "boto3.client_kwargs", {}
 #     )
 #     return client.put_object(**kwargs, **client_kwargs)
 
@@ -117,16 +113,14 @@ def put_object(**kwargs):
                 region=kwargs.get("region", config.region),
                 retry_max_attempts=2,
                 client_kwargs=config.get_host_specific_key(
-                    f"site_configs.{host}.boto3.client_kwargs", host, {}
+                    "boto3.client_kwargs", host, {}
                 ),
             )
         else:
             session = get_session_for_tenant(host)
             client = session.client(
                 "s3",
-                **config.get_host_specific_key(
-                    f"site_configs.{host}.boto3.client_kwargs", host, {}
-                ),
+                **config.get_host_specific_key("boto3.client_kwargs", host, {}),
             )
     return client.put_object(**kwargs)
 
@@ -146,16 +140,14 @@ def get_object(**kwargs):
                 region=kwargs.get("region", config.region),
                 retry_max_attempts=2,
                 client_kwargs=config.get_host_specific_key(
-                    f"site_configs.{host}.boto3.client_kwargs", host, {}
+                    "boto3.client_kwargs", host, {}
                 ),
             )
         else:
             session = get_session_for_tenant(host)
             client = session.client(
                 "s3",
-                **config.get_host_specific_key(
-                    f"site_configs.{host}.boto3.client_kwargs", host, {}
-                ),
+                **config.get_host_specific_key("boto3.client_kwargs", host, {}),
             )
     return client.get_object(Bucket=kwargs.get("Bucket"), Key=kwargs.get("Key"))
 

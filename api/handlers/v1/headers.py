@@ -36,9 +36,7 @@ class HeaderHandler(BaseHandler):
         for k, v in dict(self.request.headers).items():
             if k.lower() in map(
                 str.lower,
-                config.get(
-                    f"site_configs.{self.ctx.host}.headers.sensitive_headers", []
-                ),
+                config.get("headers.sensitive_headers", []),
             ):
                 continue
             response_html.append(
@@ -70,9 +68,7 @@ class ApiHeaderHandler(BaseMtlsHandler):
         for k, v in dict(self.request.headers).items():
             if k.lower() in map(
                 str.lower,
-                config.get(
-                    f"site_configs.{self.ctx.host}.headers.sensitive_headers", []
-                ),
+                config.get("headers.sensitive_headers", []),
             ):
                 continue
             response[k] = v

@@ -248,9 +248,7 @@ class TestAwsLib(TestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         policy_name = "policy_with_paths"
         policy_path = "/testpath/testpath2/"

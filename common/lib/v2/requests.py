@@ -113,9 +113,7 @@ async def generate_request_from_change_model_array(
     }
     log.info(log_data)
     auth = get_plugin_by_name(
-        config.get_host_specific_key(
-            f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
-        )
+        config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
     )()
     primary_principal = None
     change_models = request_creation.changes
@@ -137,7 +135,7 @@ async def generate_request_from_change_model_array(
     extended_request_uuid = str(uuid.uuid4())
     incremental_change_id = 0
     supported_resource_policies = config.get_host_specific_key(
-        f"site_configs.{host}.policies.supported_resource_types_for_policy_application",
+        "policies.supported_resource_types_for_policy_application",
         host,
         ["s3", "sqs", "sns"],
     )
@@ -284,7 +282,7 @@ async def generate_request_from_change_model_array(
                     policy_arn=primary_principal.principal_arn,
                     account_number=account_id,
                     assume_role=config.get_host_specific_key(
-                        f"site_configs.{host}.policies.role_name", host
+                        "policies.role_name", host
                     ),
                     region=config.region,
                     retry_max_attempts=2,
@@ -495,12 +493,12 @@ async def generate_resource_policies(
     log.debug(log_data)
 
     supported_resource_policies = config.get_host_specific_key(
-        f"site_configs.{host}.policies.supported_resource_types_for_policy_application",
+        "policies.supported_resource_types_for_policy_application",
         host,
         ["s3", "sqs", "sns"],
     )
     supported_trust_policy_permissions = config.get_host_specific_key(
-        f"site_configs.{host}.policies.supported_trust_policy_permissions",
+        "policies.supported_trust_policy_permissions",
         host,
         [
             "sts:assumerole",
@@ -913,18 +911,14 @@ async def apply_changes_to_role(
         service_type="client",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         session_name=sanitize_session_name("principal-updater-" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     for change in extended_request.changes.changes:
         if change.status == Status.applied:
@@ -1438,9 +1432,7 @@ async def populate_old_managed_policies(
                 host=host,
                 policy_arn=principal_arn,
                 account_number=arn_parsed["account"],
-                assume_role=config.get_host_specific_key(
-                    f"site_configs.{host}.policies.role_name", host
-                ),
+                assume_role=config.get_host_specific_key("policies.role_name", host),
                 region=config.region,
                 retry_max_attempts=2,
             )
@@ -1495,15 +1487,15 @@ async def populate_cross_account_resource_policy_for_change(
 ):
     resource_policies_changed = False
     supported_resource_policies = config.get_host_specific_key(
-        f"site_configs.{host}.policies.supported_resource_types_for_policy_application",
+        "policies.supported_resource_types_for_policy_application",
         host,
         ["s3", "sqs", "sns"],
     )
     sts_resource_policy_supported = config.get_host_specific_key(
-        f"site_configs.{host}.policies.sts_resource_policy_supported", host, True
+        "policies.sts_resource_policy_supported", host, True
     )
     supported_trust_policy_permissions = config.get_host_specific_key(
-        f"site_configs.{host}.policies.supported_trust_policy_permissions",
+        "policies.supported_trust_policy_permissions",
         host,
         [
             "sts:assumerole",
@@ -1760,18 +1752,14 @@ async def apply_managed_policy_resource_tag_change(
         service_type="client",
         account_number=resource_account,
         region=config.region,
-        assume_role=config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        assume_role=config.get_host_specific_key("policies.role_name", host),
         session_name=sanitize_session_name("tag-updater-" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     principal_arn = change.principal.principal_arn
     if change.tag_action in [TagAction.create, TagAction.update]:
@@ -1906,7 +1894,7 @@ async def apply_non_iam_resource_tag_change(
         return response
 
     supported_resource_types = config.get_host_specific_key(
-        f"site_configs.{host}.policies.supported_resource_types_for_policy_application",
+        "policies.supported_resource_types_for_policy_application",
         host,
         ["s3", "sqs", "sns"],
     )
@@ -1930,9 +1918,7 @@ async def apply_non_iam_resource_tag_change(
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
-            assume_role=config.get_host_specific_key(
-                f"site_configs.{host}.policies.role_name", host
-            ),
+            assume_role=config.get_host_specific_key("policies.role_name", host),
             region=resource_region or config.region,
             session_name=sanitize_session_name("apply-resource-tag-" + user),
             arn_partition="aws",
@@ -1940,9 +1926,7 @@ async def apply_non_iam_resource_tag_change(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
         )
 
@@ -2124,13 +2108,9 @@ async def apply_managed_policy_resource_change(
 
     conn_details = {
         "account_number": resource_account,
-        "assume_role": config.get_host_specific_key(
-            f"site_configs.{host}.policies.role_name", host
-        ),
+        "assume_role": config.get_host_specific_key("policies.role_name", host),
         "session_name": sanitize_session_name(f"ConsoleMe_MP_{user}"),
-        "client_kwargs": config.get_host_specific_key(
-            f"site_configs.{host}.boto3.client_kwargs", host, {}
-        ),
+        "client_kwargs": config.get_host_specific_key("boto3.client_kwargs", host, {}),
         "host": host,
     }
 
@@ -2265,12 +2245,12 @@ async def apply_resource_policy_change(
         return response
 
     supported_resource_types = config.get_host_specific_key(
-        f"site_configs.{host}.policies.supported_resource_types_for_policy_application",
+        "policies.supported_resource_types_for_policy_application",
         host,
         ["s3", "sqs", "sns"],
     )
     sts_resource_policy_supported = config.get_host_specific_key(
-        f"site_configs.{host}.policies.sts_resource_policy_supported", host, True
+        "policies.sts_resource_policy_supported", host, True
     )
 
     if (
@@ -2302,9 +2282,7 @@ async def apply_resource_policy_change(
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
-            assume_role=config.get_host_specific_key(
-                f"site_configs.{host}.policies.role_name", host
-            ),
+            assume_role=config.get_host_specific_key("policies.role_name", host),
             region=resource_region or config.region,
             session_name=sanitize_session_name("apply-resource-policy-" + user),
             arn_partition="aws",
@@ -2312,9 +2290,7 @@ async def apply_resource_policy_change(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
         )
         if resource_type == "s3":
@@ -2583,9 +2559,7 @@ async def parse_and_apply_policy_request_modification(
 
     if request_changes.command == Command.add_comment:
         auth = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
-            )
+            config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
         )()
         # TODO: max comment size? prevent spamming?
         comment_model = CommentRequestModificationModel.parse_obj(request_changes)

@@ -81,14 +81,14 @@ class GetCredentialsHandler(BaseMtlsHandler):
         host = self.ctx.host
         group_mapping = get_plugin_by_name(
             config.get_host_specific_key(
-                f"site_configs.{host}.plugins.group_mapping",
+                "plugins.group_mapping",
                 host,
                 "cmsaas_group_mapping",
             )
         )()
         log_data = {} if not log_data else log_data
         max_cert_age_message = config.get_host_specific_key(
-            f"site_configs.{host}.errors.custom_max_cert_age_message",
+            "errors.custom_max_cert_age_message",
             host,
             "Please refresh your certificate.",
         )
@@ -139,7 +139,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
         host = web_request.host_name
         group_mapping = get_plugin_by_name(
             config.get_host_specific_key(
-                f"site_configs.{host}.plugins.group_mapping",
+                "plugins.group_mapping",
                 host,
                 "cmsaas_group_mapping",
             )
@@ -149,7 +149,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
         elif request.get("app_name"):
             internal_policies = get_plugin_by_name(
                 config.get_host_specific_key(
-                    f"site_configs.{host}.plugins.internal_policies",
+                    "plugins.internal_policies",
                     host,
                     "cmsaas_policies",
                 )
@@ -307,11 +307,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 403:
                     description: No matching roles found, or user has failed authn/authz.
         """
-        stats = get_plugin_by_name(
-            config.get(
-                f"site_configs.{self.ctx.host}.plugins.metrics", "cmsaas_metrics"
-            )
-        )()
+        stats = get_plugin_by_name(config.get("plugins.metrics", "cmsaas_metrics"))()
         log_data = {
             "function": "GetCredentialsHandler.post",
             "user-agent": self.request.headers.get("User-Agent"),
@@ -357,18 +353,14 @@ class GetCredentialsHandler(BaseMtlsHandler):
     async def get_credentials_app_flow(self, app_name, app, request, stats, log_data):
         host = self.ctx.host
         aws = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-            )
+            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
         )()
         requested_role = request["requested_role"]
         log_data["requested_role"] = requested_role
         log_data["app"] = app_name
         log_data["host"] = host
         log_data["message"] = "App is requesting role"
-        log_data["custom_ip_restrictions"] = request.get(
-            f"site_configs.{host}.custom_ip_restrictions"
-        )
+        log_data["custom_ip_restrictions"] = request.get("custom_ip_restrictions")
         log_data["request"] = json.dumps(request)
         log.debug(log_data)
         arn_parts = requested_role.split(":")
@@ -422,9 +414,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             enforce_ip_restrictions=False,
             user_role=False,
             account_id=None,
-            custom_ip_restrictions=request.get(
-                f"site_configs.{host}.custom_ip_restrictions"
-            ),
+            custom_ip_restrictions=request.get("custom_ip_restrictions"),
         )
         self.set_header("Content-Type", "application/json")
         credentials.pop("ResponseMetadata", None)
@@ -439,15 +429,13 @@ class GetCredentialsHandler(BaseMtlsHandler):
         host = self.ctx.host
         group_mapping = get_plugin_by_name(
             config.get_host_specific_key(
-                f"site_configs.{host}.plugins.group_mapping",
+                "plugins.group_mapping",
                 host,
                 "cmsaas_group_mapping",
             )
         )()
         aws = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-            )
+            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
         )()
         log_data["user"] = user_email
 

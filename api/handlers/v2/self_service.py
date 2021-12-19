@@ -15,15 +15,15 @@ class SelfServiceConfigHandler(BaseAPIV2Handler):
             self.user, self.groups, host
         )
         export_to_terraform_enabled: bool = config.get_host_specific_key(
-            f"site_configs.{host}.export_to_terraform_enabled", host, False
+            "export_to_terraform_enabled", host, False
         )
         self_service_iam_config: dict = config.get_host_specific_key(
-            f"site_configs.{host}.self_service_iam", host, SELF_SERVICE_IAM_DEFAULTS
+            "self_service_iam", host, SELF_SERVICE_IAM_DEFAULTS
         )
 
         # Help message can be configured with Markdown for link handling
         help_message: str = config.get_host_specific_key(
-            f"site_configs.{host}.self_service_iam_help_message", host
+            "self_service_iam_help_message", host
         )
 
         self.write(
@@ -53,13 +53,13 @@ class PermissionTemplatesHandler(BaseAPIV2Handler):
         permission_templates_dynamic_config: List[
             Dict[str, Any]
         ] = config.get_host_specific_key(
-            f"site_configs.{host}.dynamic_config.permission_templates", host, []
+            "dynamic_config.permission_templates", host, []
         )
 
         permission_templates_config: List[
             Dict[str, Any]
         ] = config.get_host_specific_key(
-            f"site_configs.{host}.permission_templates",
+            "permission_templates",
             host,
             PERMISSION_TEMPLATE_DEFAULTS,
         )

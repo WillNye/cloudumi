@@ -621,62 +621,60 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         external_id = await get_external_id(dev_domain, tenant.email)
 
         tenant_config = f"""
-site_configs:
-  {dev_domain}:
-    challenge_url:
-      enabled: true
-    environment: prod
-    tenant_details:
-      external_id: {external_id}
-      creator: {tenant.email}
-      creation_time: {datetime.now().isoformat()}
-    site_config:
-      landing_url: /settings
-    headers:
-      identity:
-        enabled: false
-      role_login:
-        enabled: true
-    identity:
-      cache_groups:
-        enabled: true
-      identity_providers:
-        okta_test:
-          name: okta_test
-          idp_type: okta
-          org_url: https://dev-876967.okta.com/
-          # TODO: No secrets should be in plaintext configuration
-          api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
-    url: {dev_domain_url}
-    application_admin: {tenant.email}
-    secrets:
-      jwt_secret: {token_urlsafe(32)}
-      auth:
-        oidc:
-          client_id: {cognito_client_id}
-          client_secret: {cognito_user_pool_client_secret}
-    get_user_by_oidc_settings:
-      client_scopes:
-        - email
-        - openid
-      resource: noq_tenant
-      metadata_url: https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration
-      jwt_verify: true
-      jwt_email_key: email
-      jwt_groups_key: "cognito:groups"
-      grant_type: authorization_code
-      id_token_response_key: id_token
-      access_token_response_key: access_token
-      access_token_audience: null
-    auth:
-      get_user_by_oidc: true
-      force_redirect_to_identity_provider: false
-      # get_user_by_password: true
-      # get_user_by_cognito: true
-      cognito_config:
-        user_pool_id: {user_pool_id}
-        user_pool_client_id: {cognito_client_id}
-        user_pool_client_secret: {cognito_user_pool_client_secret}
+challenge_url:
+  enabled: true
+environment: prod
+tenant_details:
+  external_id: {external_id}
+  creator: {tenant.email}
+  creation_time: {datetime.now().isoformat()}
+site_config:
+  landing_url: /settings
+headers:
+  identity:
+    enabled: false
+  role_login:
+    enabled: true
+identity:
+  cache_groups:
+    enabled: true
+  identity_providers:
+    okta_test:
+      name: okta_test
+      idp_type: okta
+      org_url: https://dev-876967.okta.com/
+      # TODO: No secrets should be in plaintext configuration
+      api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
+url: {dev_domain_url}
+application_admin: {tenant.email}
+secrets:
+  jwt_secret: {token_urlsafe(32)}
+  auth:
+    oidc:
+      client_id: {cognito_client_id}
+      client_secret: {cognito_user_pool_client_secret}
+get_user_by_oidc_settings:
+  client_scopes:
+    - email
+    - openid
+  resource: noq_tenant
+  metadata_url: https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration
+  jwt_verify: true
+  jwt_email_key: email
+  jwt_groups_key: "cognito:groups"
+  grant_type: authorization_code
+  id_token_response_key: id_token
+  access_token_response_key: access_token
+  access_token_audience: null
+auth:
+  get_user_by_oidc: true
+  force_redirect_to_identity_provider: false
+  # get_user_by_password: true
+  # get_user_by_cognito: true
+  cognito_config:
+    user_pool_id: {user_pool_id}
+    user_pool_client_id: {cognito_client_id}
+    user_pool_client_secret: {cognito_user_pool_client_secret}
 """
 
         # Store tenant information in DynamoDB

@@ -45,7 +45,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         unprotected_routes = ["/healthcheck", "/api/v3/tenant_registration"]
         host = self.get_host_name()
         # Ensure request is for a valid host / tenant
-        if config.get_host_specific_key(f"site_configs.{host}", host):
+        if not config.is_host_configured(host):
             return
 
         # Ignore unprotected routes, like /healthcheck
@@ -87,7 +87,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
     def get_request_ip(self):
         host = self.get_host_name()
         trusted_remote_ip_header = config.get_host_specific_key(
-            f"site_configs.{host}.auth.remote_ip.trusted_remote_ip_header", host
+            "auth.remote_ip.trusted_remote_ip_header", host
         )
         if trusted_remote_ip_header:
             return self.request.headers[trusted_remote_ip_header].split(",")[0]
@@ -121,7 +121,7 @@ class BaseJSONHandler(TornadoRequestHandler):
 
     async def prepare(self):
         host = self.get_host_name()
-        if not config.get_host_specific_key(f"site_configs.{host}", host):
+        if not config.is_host_configured(host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -173,12 +173,10 @@ class BaseJSONHandler(TornadoRequestHandler):
         host = self.get_host_name()
         try:
             if config.get_host_specific_key(
-                f"site_configs.{host}.development", host
-            ) and config.get_host_specific_key(
-                f"site_configs.{host}.json_authentication_override", host
-            ):
+                "development", host
+            ) and config.get_host_specific_key("json_authentication_override", host):
                 return config.get_host_specific_key(
-                    f"site_configs.{host}.json_authentication_override", host
+                    "json_authentication_override", host
                 )
             tkn_header = self.request.headers["authorization"]
         except KeyError:
@@ -216,7 +214,7 @@ class BaseHandler(TornadoRequestHandler):
                 "<body>%(code)d: %(message)s</body></html>"
                 % {
                     "code": status_code,
-                    "message": f"{self._reason} - {config.get(f'site_configs.{host}.errors.custom_website_error_message', '')}",
+                    "message": f"{self._reason} - {config.get_host_specific_key('errors.custom_website_error_message',host, '')}",
                 }
             )
 
@@ -232,7 +230,7 @@ class BaseHandler(TornadoRequestHandler):
 
     async def prepare(self) -> None:
         host = self.get_host_name()
-        if not config.get_host_specific_key(f"site_configs.{host}", host):
+        if not config.is_host_configured(host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -259,16 +257,12 @@ class BaseHandler(TornadoRequestHandler):
 
         await self.configure_tracing()
 
-        if config.get_host_specific_key(
-            f"site_configs.{host}.tornado.xsrf", host, True
-        ):
+        if config.get_host_specific_key("tornado.xsrf", host, True):
             cookie_kwargs = config.get_host_specific_key(
-                f"site_configs.{host}.tornado.xsrf_cookie_kwargs", host, {}
+                "tornado.xsrf_cookie_kwargs", host, {}
             )
             self.set_cookie(
-                config.get_host_specific_key(
-                    f"site_configs.{host}.xsrf_cookie_name", host, "_xsrf"
-                ),
+                config.get_host_specific_key("xsrf_cookie_name", host, "_xsrf"),
                 self.xsrf_token,
                 **cookie_kwargs,
             )
@@ -279,7 +273,7 @@ class BaseHandler(TornadoRequestHandler):
     def write(self, chunk: Union[str, bytes, dict]) -> None:
         # host = self.get_host_name()
         # if config.get_host_specific_key(
-        #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
+        #     "_security_risk_full_debugging.enabled", host
         # ):
         #     if not hasattr(self, "responses"):
         #         self.responses = []
@@ -316,7 +310,7 @@ class BaseHandler(TornadoRequestHandler):
             asyncio.ensure_future(self.tracer.disable_tracing())
 
         # if config.get_host_specific_key(
-        #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
+        #     "_security_risk_full_debugging.enabled", host
         # ):
         #     responses = None
         #     if hasattr(self, "responses"):
@@ -336,7 +330,7 @@ class BaseHandler(TornadoRequestHandler):
         #     }
         #     with open(
         #         config.get_host_specific_key(
-        #             f"site_configs.{host}._security_risk_full_debugging.file", host
+        #             "_security_risk_full_debugging.file", host
         #         ),
         #         "a+",
         #     ) as f:
@@ -355,9 +349,7 @@ class BaseHandler(TornadoRequestHandler):
          allow authenticating users by a combination of user/password and SSO. In this case, we need to tell
         Returns: boolean
         """
-        if not config.get_host_specific_key(
-            f"site_configs.{host}.auth.get_user_by_password", host, False
-        ):
+        if not config.get_host_specific_key("auth.get_user_by_password", host, False):
             return True
 
         # force_use_sso indicates the user's intent to authenticate via SSO
@@ -386,15 +378,13 @@ class BaseHandler(TornadoRequestHandler):
         host = self.get_host_name()
         group_mapping = get_plugin_by_name(
             config.get_host_specific_key(
-                f"site_configs.{host}.plugins.group_mapping",
+                "plugins.group_mapping",
                 host,
                 "cmsaas_group_mapping",
             )
         )()
         auth = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
-            )
+            config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
         )()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
@@ -444,27 +434,19 @@ class BaseHandler(TornadoRequestHandler):
         # if host in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
         if config.get_host_specific_key(
-            f"site_configs.{host}.development", host
-        ) and config.get_host_specific_key(
-            f"site_configs.{host}._development_user_override", host
-        ):
-            self.user = config.get_host_specific_key(
-                f"site_configs.{host}._development_user_override", host
-            )
+            "development", host
+        ) and config.get_host_specific_key("_development_user_override", host):
+            self.user = config.get_host_specific_key("_development_user_override", host)
         if config.get_host_specific_key(
-            f"site_configs.{host}.development", host
-        ) and config.get_host_specific_key(
-            f"site_configs.{host}._development_groups_override", host
-        ):
+            "development", host
+        ) and config.get_host_specific_key("_development_groups_override", host):
             self.groups = config.get_host_specific_key(
-                f"site_configs.{host}._development_groups_override", host
+                "_development_groups_override", host
             )
 
         if not self.user:
             # Authenticate user by API Key
-            if config.get_host_specific_key(
-                f"site_configs.{host}.auth.get_user_by_api_key", host, False
-            ):
+            if config.get_host_specific_key("auth.get_user_by_api_key", host, False):
                 api_key = self.request.headers.get("X-API-Key")
                 api_user = self.request.headers.get("X-API-User")
                 if bool(api_key) != bool(api_user):
@@ -480,9 +462,7 @@ class BaseHandler(TornadoRequestHandler):
             # through this flow.
 
             if (
-                config.get_host_specific_key(
-                    f"site_configs.{host}.auth.get_user_by_saml", host, False
-                )
+                config.get_host_specific_key("auth.get_user_by_saml", host, False)
                 and attempt_sso_authn
             ):
                 res = await authenticate_user_by_saml(self)
@@ -499,9 +479,7 @@ class BaseHandler(TornadoRequestHandler):
 
         if not self.user:
             if (
-                config.get_host_specific_key(
-                    f"site_configs.{host}.auth.get_user_by_oidc", host, False
-                )
+                config.get_host_specific_key("auth.get_user_by_oidc", host, False)
                 and attempt_sso_authn
             ):
                 res = await authenticate_user_by_oidc(self)
@@ -516,7 +494,7 @@ class BaseHandler(TornadoRequestHandler):
 
         if not self.user:
             if config.get_host_specific_key(
-                f"site_configs.{host}.auth.get_user_by_aws_alb_auth", host, False
+                "auth.get_user_by_aws_alb_auth", host, False
             ):
                 res = await authenticate_user_by_alb_auth(self)
                 if not res:
@@ -527,9 +505,7 @@ class BaseHandler(TornadoRequestHandler):
 
         if not self.user:
             # Username/Password authn flow
-            if config.get_host_specific_key(
-                f"site_configs.{host}.auth.get_user_by_password", host, False
-            ):
+            if config.get_host_specific_key("auth.get_user_by_password", host, False):
                 after_redirect_uri = self.request.arguments.get("redirect_url", [""])[0]
                 if after_redirect_uri and isinstance(after_redirect_uri, bytes):
                     after_redirect_uri = after_redirect_uri.decode("utf-8")
@@ -577,9 +553,7 @@ class BaseHandler(TornadoRequestHandler):
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
         if (
-            config.get_host_specific_key(
-                f"site_configs.{host}.auth.cache_user_info_server_side", host, True
-            )
+            config.get_host_specific_key("auth.cache_user_info_server_side", host, True)
             and not refresh_cache
         ):
             try:
@@ -614,12 +588,8 @@ class BaseHandler(TornadoRequestHandler):
 
         # Set Per-User Role Name (This logic is not used in OSS deployment)
         if (
-            config.get_host_specific_key(
-                f"site_configs.{host}.user_roles.opt_in_group", host
-            )
-            and config.get_host_specific_key(
-                f"site_configs.{host}.user_roles.opt_in_group", host
-            )
+            config.get_host_specific_key("user_roles.opt_in_group", host)
+            and config.get_host_specific_key("user_roles.opt_in_group", host)
             in self.groups
         ):
             # Get or create user_role_name attribute
@@ -652,9 +622,7 @@ class BaseHandler(TornadoRequestHandler):
                 log.error(log_data, exc_info=True)
                 raise
         if (
-            config.get_host_specific_key(
-                f"site_configs.{host}.auth.cache_user_info_server_side", host, True
-            )
+            config.get_host_specific_key("auth.cache_user_info_server_side", host, True)
             and self.groups
             # Only set role cache if we didn't retrieve user's existing roles from cache
             and not refreshed_user_roles_from_cache
@@ -664,7 +632,7 @@ class BaseHandler(TornadoRequestHandler):
                 red.setex(
                     f"{host}_USER-{self.user}-CONSOLE-{console_only}",
                     config.get_host_specific_key(
-                        f"site_configs.{host}.role_cache.cache_expiration", host, 60
+                        "role_cache.cache_expiration", host, 60
                     ),
                     json.dumps(
                         {
@@ -681,9 +649,7 @@ class BaseHandler(TornadoRequestHandler):
             config.get("_global_.auth.cookie.name", "consoleme_auth")
         ):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                minutes=config.get_host_specific_key(
-                    f"site_configs.{host}.jwt.expiration_minutes", host, 60
-                )
+                minutes=config.get_host_specific_key("jwt.expiration_minutes", host, 60)
             )
 
             encoded_cookie = await generate_jwt_token(
@@ -694,16 +660,15 @@ class BaseHandler(TornadoRequestHandler):
                 encoded_cookie,
                 expires=expiration,
                 secure=config.get_host_specific_key(
-                    f"site_configs.{host}.auth.cookie.secure",
+                    "auth.cookie.secure",
                     host,
-                    "https://"
-                    in config.get_host_specific_key(f"site_configs.{host}.url", host),
+                    "https://" in config.get_host_specific_key("url", host),
                 ),
                 httponly=config.get_host_specific_key(
-                    f"site_configs.{host}.auth.cookie.httponly", host, True
+                    "auth.cookie.httponly", host, True
                 ),
                 samesite=config.get_host_specific_key(
-                    f"site_configs.{host}.auth.cookie.samesite", host, True
+                    "auth.cookie.samesite", host, True
                 ),
             )
         if self.tracer:
@@ -764,7 +729,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
         host = self.get_host_name()
-        if not config.get_host_specific_key(f"site_configs.{host}", host):
+        if not config.is_host_configured(host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -788,13 +753,9 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         )()
         stats.timer("base_handler.incoming_request")
         auth = get_plugin_by_name(
-            config.get_host_specific_key(
-                f"site_configs.{host}.plugins.auth", host, "cmsaas_auth"
-            )
+            config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
         )()
-        if config.get_host_specific_key(
-            f"site_configs.{host}.auth.require_mtls", host, False
-        ):
+        if config.get_host_specific_key("auth.require_mtls", host, False):
             try:
                 await auth.validate_certificate(self)
             except InvalidCertificateException:
@@ -825,9 +786,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.write({"code": "400", "message": message})
                 await self.finish()
                 return
-        elif config.get_host_specific_key(
-            f"site_configs.{host}.auth.require_jwt", host, True
-        ):
+        elif config.get_host_specific_key("auth.require_jwt", host, True):
             auth_cookie = self.get_cookie(
                 config.get("_global_.auth.cookie.name", "consoleme_auth")
             )
@@ -869,7 +828,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
     def write(self, chunk: Union[str, bytes, dict]) -> None:
         # host = self.get_host_name()
         # if config.get_host_specific_key(
-        #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
+        #     "_security_risk_full_debugging.enabled", host
         # ):
         #     self.responses.append(chunk)
         super(BaseMtlsHandler, self).write(chunk)
@@ -877,7 +836,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
     def on_finish(self) -> None:
         # host = self.get_host_name()
         # if config.get_host_specific_key(
-        #     f"site_configs.{host}._security_risk_full_debugging.enabled", host
+        #     "_security_risk_full_debugging.enabled", host
         # ):
         #     request_details = {
         #         "path": self.request.path,
@@ -894,7 +853,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         #     }
         #     with open(
         #         config.get_host_specific_key(
-        #             f"site_configs.{host}._security_risk_full_debugging.file", host
+        #             "_security_risk_full_debugging.file", host
         #         ),
         #         "a+",
         #     ) as f:

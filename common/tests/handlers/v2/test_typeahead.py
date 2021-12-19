@@ -30,10 +30,10 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
 
         headers = {
             config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         from common.lib.redis import RedisHandler
@@ -194,10 +194,10 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
 
         headers = {
             config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
 

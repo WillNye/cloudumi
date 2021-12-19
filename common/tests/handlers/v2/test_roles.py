@@ -18,10 +18,10 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
     def test_get(self):
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch("/api/v2/roles", method="GET", headers=headers)
@@ -115,10 +115,10 @@ class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
         }
         headers = {
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.user_header_name", host
+                "auth.user_header_name", host
             ): "user@github.com",
             self.config.get_host_specific_key(
-                f"site_configs.{host}.auth.groups_header_name", host
+                "auth.groups_header_name", host
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -192,9 +192,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "fake_account_admin"
         account_id = "123456789012"
@@ -288,9 +286,7 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         role_name = "fake_account_admin"
         client.create_role(

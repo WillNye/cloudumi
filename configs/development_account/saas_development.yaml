@@ -4,10 +4,10 @@
 
 # AWS_PROFILE=noq_dev aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
 extends:
-  - /home/ccastrapel/.config/consoleme_config/noq_localhost.yaml
-  # - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
-  #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cyberdyne_localhost.yaml
-  #  - saas_bain_noq_dev.yaml
+  # - /home/ccastrapel/.config/consoleme_config/noq_localhost.yaml
+# - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
+#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cyberdyne_localhost.yaml
+#  - saas_bain_noq_dev.yaml
 #  - saas_localhost.yaml
 # - saas_oidc_noq_dev.yaml
 # - saas_saml_noq_dev.yaml

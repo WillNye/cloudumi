@@ -45,9 +45,7 @@ function ConsoleMeDynamicConfig() {
       setStatusMessage(
         <Message positive>
           <Message.Header>Success</Message.Header>
-          <Message.Content>
-            Successfully updated Dynamic Configuration
-          </Message.Content>
+          <Message.Content>Successfully updated Configuration</Message.Content>
         </Message>
       );
       setConfigSha256(res.newsha56);
@@ -67,7 +65,7 @@ function ConsoleMeDynamicConfig() {
     <div>
       <Header as="h1">
         <Icon name="book" />
-        Update Dynamic Configuration
+        Update Configuration
       </Header>
       <Divider />
     </div>
@@ -106,7 +104,7 @@ function ConsoleMeDynamicConfig() {
       {statusMessage}
       <Segment basic textAlign="center">
         <Button primary type="submit" onClick={updateConfig}>
-          Save Dynamic Configuration
+          Save Configuration
         </Button>
       </Segment>
     </div>

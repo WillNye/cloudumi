@@ -244,9 +244,7 @@ def sts(aws_credentials):
         yield boto3.client(
             "sts",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
 
@@ -259,9 +257,7 @@ def ec2(aws_credentials):
         yield boto3.client(
             "ec2",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
 
@@ -274,9 +270,7 @@ def iam(aws_credentials):
         yield boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
 
@@ -289,9 +283,7 @@ def aws_config(aws_credentials):
         yield boto3.client(
             "config",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
 
@@ -304,9 +296,7 @@ def s3(aws_credentials):
         yield boto3.client(
             "s3",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
 
@@ -319,9 +309,7 @@ def ses(aws_credentials):
         client = boto3.client(
             "ses",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         client.verify_email_address(EmailAddress="consoleme_test@example.com")
         yield client
@@ -336,9 +324,7 @@ def sqs(aws_credentials):
         yield boto3.client(
             "sqs",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
 
@@ -351,9 +337,7 @@ def sns(aws_credentials):
         yield boto3.client(
             "sns",
             region_name="us-east-1",
-            **config.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
 
@@ -367,7 +351,7 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
     global all_roles
     buckets = [
         config.get_host_specific_key(
-            f"site_configs.{host}.consoleme_s3_bucket",
+            "consoleme_s3_bucket",
             host,
             config.get("_global_.consoleme_s3_bucket"),
         )
@@ -379,11 +363,11 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
         async_to_sync(store_json_results_in_redis_and_s3)(
             all_roles,
             s3_bucket=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
                 host,
             ),
             s3_key=config.get_host_specific_key(
-                f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
                 host,
                 "account_resource_cache/cache_all_roles_v1.json.gz",
             ),
@@ -401,17 +385,17 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
         cache_iam_resources_for_account(account_id, host=host)
 
     cache_key = config.get_host_specific_key(
-        f"site_configs.{host}.aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
+        "aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
     )
     all_roles = red.hgetall(cache_key)
     async_to_sync(store_json_results_in_redis_and_s3)(
         all_roles,
         s3_bucket=config.get_host_specific_key(
-            f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
+            "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
             host,
         ),
         s3_key=config.get_host_specific_key(
-            f"site_configs.{host}.cache_iam_resources_across_accounts.all_roles_combined.s3.file",
+            "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
             host,
             "account_resource_cache/cache_all_roles_v1.json.gz",
         ),
@@ -431,9 +415,7 @@ def dynamodb(aws_credentials):
         yield boto3.client(
             "dynamodb",
             region_name="us-east-1",
-            **CONFIG.get_host_specific_key(
-                f"site_configs.{host}.boto3.client_kwargs", host, {}
-            ),
+            **CONFIG.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
 
         # Reset the config value:

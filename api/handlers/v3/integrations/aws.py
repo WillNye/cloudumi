@@ -19,9 +19,7 @@ class AwsIntegrationHandler(BaseHandler):
         if not can_admin_all(self.user, self.groups, host):
             self.set_status(403)
             return
-        external_id = config.get_host_specific_key(
-            f"site_configs.{host}.tenant_details.external_id", host
-        )
+        external_id = config.get_host_specific_key("tenant_details.external_id", host)
         if not external_id:
             self.set_status(400)
             res = WebResponse(status_code=400, message="External ID not found")
@@ -118,7 +116,7 @@ class AwsIntegrationHandler(BaseHandler):
         )
 
         pre_role_arns_to_assume = config.get_host_specific_key(
-            f"site_configs.{host}.policies.pre_role_arns_to_assume", host, []
+            "policies.pre_role_arns_to_assume", host, []
         )
         if pre_role_arns_to_assume:
             customer_central_account_role = pre_role_arns_to_assume[-1]["role_arn"]

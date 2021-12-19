@@ -68,15 +68,13 @@ def cache_application_information(host):
     :return:
     """
     apps_to_roles = {}
-    for k, v in config.get_host_specific_key(
-        f"site_configs.{host}.application_settings", host, {}
-    ).items():
+    for k, v in config.get_host_specific_key("application_settings", host, {}).items():
         apps_to_roles[k] = v.get("roles", [])
 
     red = RedisHandler().redis_sync(host)
     red.set(
         config.get_host_specific_key(
-            f"site_configs.{host}.celery.apps_to_roles.redis_key",
+            "celery.apps_to_roles.redis_key",
             host,
             f"{host}_APPS_TO_ROLES",
         ),

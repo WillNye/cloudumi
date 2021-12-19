@@ -126,9 +126,7 @@ class Auth:
         """Get the user identity."""
         host = request_object.get_host_name()
         headers = request_object.request.headers
-        if config.get_host_specific_key(
-            f"site_configs.{host}.auth.get_user_by_header", host
-        ):
+        if config.get_host_specific_key("auth.get_user_by_header", host):
             return await self.get_user_by_header(headers, request_object)
         else:
             raise Exception("auth.get_user not configured")
@@ -138,15 +136,13 @@ class Auth:
         host = request_object.get_host_name()
         if not headers:
             raise Exception(
-                f"site_configs.{host}.auth.get_user_by_header enabled, but no headers were passed in"
+                "auth.get_user_by_header enabled, but no headers were passed in"
             )
 
-        user_header_name = config.get_host_specific_key(
-            f"site_configs.{host}.auth.user_header_name", host
-        )
+        user_header_name = config.get_host_specific_key("auth.user_header_name", host)
         if not user_header_name:
             raise Exception(
-                f"site_configs.{host}.auth.user_header_name configuration not set, but auth.get_user_by_header is enabled."
+                "auth.user_header_name configuration not set, but auth.get_user_by_header is enabled."
             )
 
         user = headers.get(user_header_name)
@@ -165,18 +161,16 @@ class Auth:
         """Get the user's groups."""
         host = request_object.get_host_name()
         groups_to_add_for_all_users = config.get_host_specific_key(
-            f"site_configs.{host}.auth.groups_to_add_for_all_users", host, []
+            "auth.groups_to_add_for_all_users", host, []
         )
         groups = []
         if get_header_groups or config.get_host_specific_key(
-            f"site_configs.{host}.auth.get_groups_by_header", host
+            "auth.get_groups_by_header", host
         ):
             header_groups = await self.get_groups_by_header(headers, request_object)
             if header_groups:
                 groups.extend(header_groups)
-        elif config.get_host_specific_key(
-            f"site_configs.{host}.auth.get_groups_from_google", host
-        ):
+        elif config.get_host_specific_key("auth.get_groups_from_google", host):
             from common.lib.google import get_group_memberships
 
             google_groups = await get_group_memberships(host, user)
@@ -188,13 +182,11 @@ class Auth:
         if not groups:
             log.error(
                 {
-                    "message": f"site_configs.{host}.auth.get_groups not configured properly or no groups were obtained."
+                    "message": "auth.get_groups not configured properly or no groups were obtained."
                 },
                 exc_info=True,
             )
-        if config.get_host_specific_key(
-            f"site_configs.{host}.auth.force_groups_lowercase", host, False
-        ):
+        if config.get_host_specific_key("auth.force_groups_lowercase", host, False):
             groups = [x.lower() for x in groups]
         return list(set(groups))
 
@@ -212,7 +204,7 @@ class Auth:
             return groups
 
         groups_header_name = config.get_host_specific_key(
-            f"site_configs.{host}.auth.groups_header_name", host, None
+            "auth.groups_header_name", host, None
         )
         if not groups_header_name:
             log_data = {
@@ -221,7 +213,7 @@ class Auth:
             }
             log.debug(log_data, exc_info=True)
             raise Exception(
-                f"site_configs.{host}.auth.groups_header_name configuration not set, but "
+                "auth.groups_header_name configuration not set, but "
                 "auth.get_groups_by_header is enabled."
             )
 
@@ -246,12 +238,12 @@ class Auth:
         headers = request_object.request.headers
         host = request_object.get_host_name()
         cli_auth_required_headers = config.get_host_specific_key(
-            f"site_configs.{host}.cli_auth.required_headers", host
+            "cli_auth.required_headers", host
         )
         if not cli_auth_required_headers:
             raise MissingConfigurationValue(
                 "You must specified the header key and expected value in order to validate a certificate for mutual "
-                f"TLS authentication. Refer to the `site_configs.{host}.cli_auth.required_headers` configuration"
+                "TLS authentication. Refer to the `cli_auth.required_headers` configuration"
             )
         for header in cli_auth_required_headers:
             for k, v in header.items():
@@ -275,7 +267,7 @@ class Auth:
 
     async def validate_and_return_api_caller(self, headers: dict, host: str):
         cli_auth_required_headers = config.get_host_specific_key(
-            f"site_configs.{host}.cli_auth.required_headers", host
+            "cli_auth.required_headers", host
         )
         if not cli_auth_required_headers:
             raise MissingConfigurationValue(
@@ -291,7 +283,7 @@ class Auth:
         cert = await self.extract_user_from_certificate(headers)
         user = cert.get("name")
         if not user or user not in config.get_host_specific_key(
-            f"site_configs.{host}.api_auth.valid_entities", host, []
+            "api_auth.valid_entities", host, []
         ):
             raise Exception("Not authorized to call this API with that certificate.")
         return user

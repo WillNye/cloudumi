@@ -51,7 +51,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
         role = role.lower()
         group_mapping = get_plugin_by_name(
             config.get_host_specific_key(
-                f"site_configs.{host}.plugins.group_mapping",
+                "plugins.group_mapping",
                 host,
                 "cmsaas_group_mapping",
             )
@@ -59,9 +59,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
         selected_roles = await group_mapping.filter_eligible_roles(role, self)
         region = arguments.get(
             "r",
-            config.get_host_specific_key(
-                f"site_configs.{host}.aws.region", host, config.region
-            ),
+            config.get_host_specific_key("aws.region", host, config.region),
         )
         redirect = arguments.get("redirect")
         log_data = {
@@ -163,9 +161,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 user_role = True
                 account_id = selected_role.split("arn:aws:iam::")[1].split(":role")[0]
             aws = get_plugin_by_name(
-                config.get_host_specific_key(
-                    f"site_configs.{host}.plugins.aws", host, "cmsaas_aws"
-                )
+                config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
             )()
             url = await aws.generate_url(
                 self.user,
