@@ -10,6 +10,7 @@ from datetime import datetime
 # used as a placeholder for empty SID to work around this:
 # https://github.com/aws/aws-sdk-js/issues/833
 from decimal import Decimal
+from io import StringIO
 from typing import Any, Dict, List, Optional, Union
 
 import bcrypt
@@ -51,6 +52,19 @@ yaml.preserve_quotes = True
 yaml.indent(mapping=2, sequence=4, offset=2)
 yaml.width = 4096
 
+
+def dump(self, data, stream=None, **kw):
+    inefficient = False
+    if stream is None:
+        inefficient = True
+        stream = StringIO()
+    YAML.dump(self, data, stream, **kw)
+    if inefficient:
+        return stream.getvalue()
+
+
+yaml.dump = dump
+
 # TODO: Partion key should be host key. Dynamo instance should be retrieved dynamically. Should use dynamodb:LeadingKeys
 # to restrict.
 DYNAMO_EMPTY_STRING = "---DYNAMO-EMPTY-STRING---"
@@ -69,6 +83,40 @@ POSSIBLE_STATUSES = [
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger("consoleme")
+
+
+def filter_config_secrets(d):
+    if isinstance(d, dict):
+        for k, v in d.items():
+            if isinstance(v, dict):
+                d[k] = filter_config_secrets(v)
+            if isinstance(v, str):
+                d[k] = "****"
+    elif isinstance(d, list):
+        for v in d:
+            if isinstance(v, dict) or isinstance(v, list):
+                v = filter_config_secrets(v)
+    elif isinstance(d, str):
+        d = "****"
+    return d
+
+
+def decode_config_secrets(original, new):
+    if isinstance(new, dict):
+        for k, v in new.items():
+            if isinstance(v, dict):
+                new[k] = decode_config_secrets(original.get(k), v)
+            if isinstance(v, str):
+                if v == "****":
+                    new[k] = original.get(k)
+    elif isinstance(new, list):
+        for i in range(len(new)):
+            if isinstance(new[i], dict) or isinstance(new[i], list):
+                new[i] = decode_config_secrets(original[i], new[i])
+    elif isinstance(new, str):
+        if new == "****":
+            new = original
+    return new
 
 
 async def hash_api_key(api_key, user, host) -> str:
@@ -1569,14 +1617,16 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             sentry_sdk.capture_exception()
             c = compressed_config
         c_dict = yaml.load(c)
-        secrets = c_dict.get("site_configs.secrets", {})
+        secrets = c_dict.get("secrets", {})
+        if secrets and filter_secrets:
+            filter_config_secrets(secrets)
         # TODO: Clean up secrets
         if return_format == "dict":
-            return yaml.load(c)
+            return c_dict
         elif return_format == "bytes":
-            return c.encode()
+            return yaml.dump(yaml, c_dict).encode()
         else:
-            return c
+            return yaml.dump(yaml, c_dict)
 
     def get_all_hosts(self) -> List[str]:
         hosts = set()
@@ -1604,7 +1654,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         # passed in from AWS Secrets Manager or something else
         """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
         # Validate that config loads as yaml, raises exception if not
-        yaml.load(new_config)
+        new_config_d = yaml.load(new_config)
         stats.count("update_dynamic_config", tags={"updated_by": updated_by})
         current_config_entry = await sync_to_async(self.tenant_static_configs.get_item)(
             Key={"host": host, "id": "master"}
@@ -1622,11 +1672,14 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             self.tenant_static_configs.put_item(
                 Item=self._data_to_dynamo_replace(old_config)
             )
-
+        original_config_d = yaml.load(current_config_entry["config"])
+        # TODO: Update all of the secrets within the configuration so it's not ****
+        if "secrets" in new_config_d:
+            decode_config_secrets(original_config_d, new_config_d)
         new_config_writable = {
             "host": host,
             "id": "master",
-            "config": new_config,
+            "config": yaml.dump(yaml, new_config_d),
             # "config": zlib.compress(new_config.encode()),
             "updated_by": updated_by,
             "updated_at": str(int(time.time())),
