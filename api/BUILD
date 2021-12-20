@@ -213,7 +213,7 @@ container_image(
     ports = ["8092"],
     symlinks = {
         "/usr/bin/python": "/usr/bin/python3",
-    }
+    },
     entrypoint = [
         "/usr/bin/python3",
     ]
