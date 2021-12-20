@@ -67,6 +67,7 @@ jobs:
           echo "$HOME/tools/ecs-cli" >> $GITHUB_PATH
       - name: Deploy to ECS Fargate
         env:
+          AWS_DEFAULT_REGION: us-west-2
           AWS_ACCESS_KEY_ID: ${{ secrets.NOQ_ECR_USER_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.NOQ_ECR_USER_SECRET_ACCESS_KEY }}
         run: |-
