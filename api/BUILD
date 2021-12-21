@@ -1,6 +1,6 @@
 load("@rules_python//python:defs.bzl", "py_library")
-load("@rules_python//python:packaging.bzl", "py_package", "py_wheel")
-load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer")
+load("@rules_python//python:packaging.bzl", "py_wheel")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
 load("@io_bazel_rules_docker//python:image.bzl", "py_layer")
 load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
@@ -112,9 +112,6 @@ py_library(
         ":src",
     ],
     deps = INT_DEPS + EXT_DEPS,
-    imports = [
-        ".",
-    ],
     visibility = ["//visibility:public"],
 )
 
@@ -177,13 +174,13 @@ py_layer(
 
 py_layer(
     name = "dep_layer",
-    filter = "/",
+    filter = "@",
     deps = EXT_DEPS,
 )
 
 py_layer(
     name = "int_dep_layer",
-    filter = "/",
+    filter = "@",
     deps = INT_DEPS,
 )
 
@@ -198,12 +195,13 @@ container_layer(
 
 container_image(
     name = "base-api-dev-local",
-    base = "//docker/base:base_docker_alpine",
+    base = "//docker/base:base_docker",
+    # base = "@python_3.8.12_container//image",
     env = {
-        "TZ": "America/Los_Angeles",
-        "PYTHONPATH": "PYTHONPATH:/usr/lib/python3/dist-packages:/usr/local/lib/python3.9:/usr/lib/python3.9",
+        # "TZ": "America/Los_Angeles",
+        "PYTHONPATH": "/app/",
         # "PYTHONDONTWRITEBYTECODE": "1",
-        "PYTHONUNBUFFERED": "1",
+        # "PYTHONUNBUFFERED": "1",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
@@ -212,11 +210,12 @@ container_image(
     ],
     ports = ["8092"],
     symlinks = {
-        "/usr/bin/python": "/usr/bin/python3",
+        "/usr/bin/python": "/usr/local/bin/python",
     },
-    entrypoint = [
-        "/usr/bin/python3",
-    ]
+    docker_run_flags = "-v ~/.aws:/root/.aws"
+    # entrypoint = [
+    #     "/usr/local/bin/python",
+    # ],
 )
 
 py3_image(
@@ -229,6 +228,40 @@ py3_image(
         ":dep_layer",
         ":int_dep_layer",
     ],
+    deps = EXT_DEPS + INT_DEPS,
     main = "__main__.py",
     tags = ["manual"],
+)
+
+container_image(
+    name = "base-api-image",
+    base = "//docker/base:base_docker",
+    ports = ["8092"],
+    symlinks = {
+        "/usr/bin/python": "/usr/local/bin/python",
+    },
+)
+
+py3_image(
+    name = "container-api",
+    base = ":base-api-image",
+    srcs = [
+        ":lib",
+    ],
+    layers = [
+        ":dep_layer",
+        ":int_dep_layer",
+    ],
+    deps = EXT_DEPS + INT_DEPS,
+    main = "__main__.py",
+    tags = ["manual"],
+)
+
+container_push(
+    name = "container-deploy-staging",
+    format = "Docker",
+    repository = "cloudumi",
+    image = "container-api",
+    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
+    tag = "staging",
 )
