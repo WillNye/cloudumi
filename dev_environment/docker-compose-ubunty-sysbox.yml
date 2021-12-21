@@ -1,0 +1,14 @@
+# docker-compose -f dev_environment/docker-compose-ubunty-sysbox.yaml up -d
+# docker attach 
+version: "3"
+services:
+  ubunty-sysbox:
+    build:
+      context: ubunty_sysbox/
+    volumes:
+      - ~/.aws:$HOME/.aws
+      - ~/.cache/bazel:$HOME/.cache/bazel
+      - $PWD:$HOME/cloudumi
+    stdin_open: true
+    tty: true
+    runtime: sysbox-runc

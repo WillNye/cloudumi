@@ -21,6 +21,7 @@ py_library(
         "//api/handlers/v3/config:src",
         "//api/handlers/v3/identity:src",
         "//api/handlers/v3/integrations:src",
+        "//api/handlers/v3/tasks:src",
         "//api/handlers/v3/tenant_registration:src",
     ],
     deps = [

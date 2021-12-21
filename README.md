@@ -34,10 +34,38 @@ Each target has a name that uniquely identifies a build target. The path disambi
 
 ## Quick Start
 * Get bazelisk from https://github.com/bazelbuild/bazelisk/releases
-* Ensure you have a python environment with version 3.8.12 (required for building xmlsec) - I suggest installing pyenv to make python versioning easier: https://github.com/pyenv/pyenv#basic-github-checkout.
+* Ensure you have a python environment with version 3.9+ - I suggest installing pyenv to make python versioning easier: https://github.com/pyenv/pyenv#basic-github-checkout.
 * Type: `bazelisk query //...` to get a list of all targets
 * To build: `bazelisk build //...` - this builds everything locally
 * To run the API container: `bazelisk run //api/local-container-dev` - this will install the container build in your local docker cache; you can run it with volumes mounted using the `docker run` command. The container name will be something like: `api:local-container-dev`.
+
+## More Bazel stuff
+
+> Note on deployments - you must first authenticate with the ECR: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`.
+
+> Also: you don't have to run all steps in sequence as the build targets depend on each other. For instance if you run the `//api:container-deploy-staging` target, it will automatically resolve the dependency chain, build the image, which depends on the library, which is built first.
+
+### API
+* Run a local test of the API service using one of the py_binary targets.
+  * To run local-dev: `bazelisk run //api:bin.local`
+  * To run S3-dev: `bazelisk run //api:bin.s3` -- note that the only difference here is that the config files are pulled form S3
+* Build the API project library: `bazelisk build //api:lib`
+* Test the API project library: `bazelisk test //api` -- coming SOON
+* Run the API project local dev container: `bazelisk run //api:container-dev-local`
+* Deploy the API project container to staging: `bazelisk run //api:container-deploy-staging`
+* Deploy the API project container to production: `bazelisk run //api:container-deploy-prod`
+
+### Build Celery
+TODO
+
+### Publish to Staging
+Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
+
+* bazelisk build //deploy/staging:deploy
+
+### Publish to Prod
+> Do you really want this? Do you have access?
+TODO
 
 ## Troubleshooting
 * In the event that docker containers fail to run with an error on a symbol not found *.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.
@@ -48,4 +76,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 * Customize:
 * 1. Change ubunty_sysbox/Dockerfile and change all occurrences of "matt" to your user name
 * 2. Build: `docker build -t local/ubuntu-focal-systemd-docker:latest`
-* Then run the container: `docker run -v /home/matt/.cache/bazel:/home/matt/.cache/bazel -v $(pwd):/cloudumi --runtime=sysbox-runc -it --rm -P --hostname=syscont local/ubuntu-focal-systemd-docker:latest`
+* Then run the container: `docker run -v /home/matt/.aws:/home/matt/.aws -v /home/matt/.cache/bazel:/home/matt/.cache/bazel -v $(pwd):/cloudumi --runtime=sysbox-runc -it --rm -P --hostname=syscont local/ubuntu-focal-systemd-docker:latest`
+* OR! run the container using the `docker-compose` orchestration script, from the project root: `docker-compose -f dev_environment/docker-compose-ubunty-sysbox.yml up -d`
+  * And attach: `docker attach dev_environment_ubunty-sysbox_1`
+* Once in the container, install python: `pyenv install 3.9.7`
