@@ -48,7 +48,7 @@ ENV PYTHONUNBUFFERED=1
 RUN apt-get install build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev nodejs -y
 RUN npm install yarn -g
 # Install pip requirements
-COPY requirements.lock .
+ADD requirements.lock .
 RUN python -m pip install -r requirements.lock
 
 WORKDIR /app

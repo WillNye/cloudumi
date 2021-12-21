@@ -91,7 +91,7 @@ function ConsoleMeDynamicConfig() {
       <Grid centered columns={1}>
         <Grid.Column>
           <Editor
-            height="25vh"
+            height="50vh"
             defaultLanguage="yaml"
             theme={editorTheme}
             value={config}

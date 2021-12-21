@@ -105,20 +105,21 @@ class DynamicConfigApiHandler(BaseHandler):
 
         data = tornado.escape.json_decode(self.request.body)
         try:
-            existing_sha256 = data.get("existing_sha256")
+            # TODO: Figure out change control, hash is manipulated when we filter out secrets
+            # existing_sha256 = data.get("existing_sha256")
             new_sha256 = sha256(data["new_config"].encode("utf-8")).hexdigest()
-            if existing_sha256 == new_sha256:
-                raise Exception(
-                    "You didn't change the dynamic configuration. Try again!"
-                )
-            if (
-                existing_dynamic_config_sha256
-                and not existing_dynamic_config_sha256 == existing_sha256
-            ):
-                raise Exception(
-                    "Dynamic configuration was updated by another user before your changes were processed. "
-                    "Please refresh your page and try again."
-                )
+            # if existing_sha256 == new_sha256:
+            #     raise Exception(
+            #         "You didn't change the dynamic configuration. Try again!"
+            #     )
+            # if (
+            #     existing_dynamic_config_sha256
+            #     and not existing_dynamic_config_sha256 == existing_sha256
+            # ):
+            #     raise Exception(
+            #         "Dynamic configuration was updated by another user before your changes were processed. "
+            #         "Please refresh your page and try again."
+            #     )
 
             await ddb.update_static_config_for_host(data["new_config"], self.user, host)
         except Exception as e:

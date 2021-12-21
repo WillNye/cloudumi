@@ -10,7 +10,7 @@ ecs-cli compose -f deploy/ecs/staging-1/docker-compose-ecs.yaml \
 ecs-cli configure --cluster noq-staging-1 --default-launch-type FARGATE --config-name noq-staging-1-celery --region us-west-2
 
 ecs-cli compose -f deploy/ecs/staging-1/docker-compose-ecs-celery.yaml \
---cluster-config noq-staging-1 --ecs-params deploy/ecs/staging-1/ecs-params.yml -p noq-staging-1-celery --task-role-arn arn:aws:iam::259868150464:role/NoqClusterRole1 \
+--cluster-config noq-staging-1-celery --ecs-params deploy/ecs/staging-1/ecs-params.yml -p noq-staging-1-celery --task-role-arn arn:aws:iam::259868150464:role/NoqClusterRole1 \
 --region us-west-2 service up --create-log-groups --timeout 15
 
 #ecs-cli configure --cluster noq-staging --default-launch-type FARGATE --config-name noq-staging-celery --region us-west-2
