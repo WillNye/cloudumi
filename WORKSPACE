@@ -6,22 +6,22 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Python build rules: https://github.com/bazelbuild/rules_python
 http_archive(
     name = "rules_python",
-    sha256 = "934c9ceb552e84577b0faf1e5a2f0450314985b4d8712b2b70717dc679fdc01b",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.3.0/rules_python-0.3.0.tar.gz",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.5.0/rules_python-0.5.0.tar.gz",
+    sha256 = "cd6730ed53a002c56ce4e2f396ba3b3be262fd7cb68339f0377a45e8227fe332",
 )
 
 http_archive(
     name = "io_bazel_rules_docker",
-    sha256 = "1f4e59843b61981a96835dc4ac377ad4da9f8c334ebe5e0bb3f58f80c09735f4",
-    strip_prefix = "rules_docker-0.19.0",
-    urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.19.0/rules_docker-v0.19.0.tar.gz"],
+    sha256 = "59536e6ae64359b716ba9c46c39183403b01eabfbd57578e84398b4829ca499a",
+    strip_prefix = "rules_docker-0.22.0",
+    urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.22.0/rules_docker-v0.22.0.tar.gz"],
 )
 
 http_archive(
     name = "rules_proto_grpc",
-    sha256 = "4202a150910712d00d95f11e240ad6da4c92e542d3b9fbb5b3a3d60abba3de77",
-    strip_prefix = "rules_proto_grpc-4.0.0",
-    urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.0.0.tar.gz"],
+    sha256 = "8383116d4c505e93fd58369841814acc3f25bdb906887a2023980d8f49a0b95b",
+    strip_prefix = "rules_proto_grpc-4.1.0",
+    urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.1.0.tar.gz"],
 )
 
 http_archive(
@@ -66,7 +66,8 @@ container_pull(
     architecture = "amd64",
     registry = "index.docker.io",
     repository = "library/python",
-    tag = "3.9.7",
+    digest = "sha256:ff27cd87bc7dbdb5e4f413d4e09d04cb59499457dff85c02055a9b93196c7804",
+    # tag = "3.9.7",
 )
 
 container_pull(
@@ -75,6 +76,24 @@ container_pull(
     registry = "index.docker.io",
     repository = "library/python",
     tag = "3.9.7-alpine",
+)
+
+# This is the default image to make sure xmlsec works
+container_pull(
+    name = "python_3.8.12_container",
+    architecture = "amd64",
+    registry = "index.docker.io",
+    repository = "library/python",
+    digest = "sha256:a874dcabc74ca202b92b826521ff79dede61caca00ceab0b65024e895baceb58",
+    # tag = "3.8.12",
+)
+
+container_pull(
+    name = "python_3.8.12_alpine_container",
+    architecture = "amd64",
+    registry = "index.docker.io",
+    repository = "library/python",
+    tag = "3.8.12-alpine",
 )
 
 # Setup Python Configuration to include a central pip repo

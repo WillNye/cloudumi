@@ -34,6 +34,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 
 ## Quick Start
 * Get bazelisk from https://github.com/bazelbuild/bazelisk/releases
+* Ensure you have a python environment with version 3.8.12 (required for building xmlsec) - I suggest installing pyenv to make python versioning easier: https://github.com/pyenv/pyenv#basic-github-checkout.
 * Type: `bazelisk query //...` to get a list of all targets
 * To build: `bazelisk build //...` - this builds everything locally
 * To run the API container: `bazelisk run //api/local-container-dev` - this will install the container build in your local docker cache; you can run it with volumes mounted using the `docker run` command. The container name will be something like: `api:local-container-dev`.
