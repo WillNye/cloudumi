@@ -91,13 +91,13 @@ def filter_config_secrets(d):
             if isinstance(v, dict):
                 d[k] = filter_config_secrets(v)
             if isinstance(v, str):
-                d[k] = "****"
+                d[k] = "********"
     elif isinstance(d, list):
         for v in d:
             if isinstance(v, dict) or isinstance(v, list):
                 v = filter_config_secrets(v)
     elif isinstance(d, str):
-        d = "****"
+        d = "********"
     return d
 
 
@@ -107,14 +107,14 @@ def decode_config_secrets(original, new):
             if isinstance(v, dict):
                 new[k] = decode_config_secrets(original.get(k), v)
             if isinstance(v, str):
-                if v == "****":
+                if v == "********":
                     new[k] = original.get(k)
     elif isinstance(new, list):
         for i in range(len(new)):
             if isinstance(new[i], dict) or isinstance(new[i], list):
                 new[i] = decode_config_secrets(original[i], new[i])
     elif isinstance(new, str):
-        if new == "****":
+        if new == "********":
             new = original
     return new
 
