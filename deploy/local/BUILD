@@ -1,9 +1,9 @@
 genrule(
     name = "containers-dev",
-    cmd = "docker-compose -f deploy/docker-compose-dependencies.yaml \
+    cmd = "echo 'docker-compose -f deploy/docker-compose-dependencies.yaml \
            -f deploy/docker-compose-bazel-containers.yaml \
-           up -d &>$@",
-    executable = False,
+           up -d' &>$@",
+    executable = True,
     outs = [
         "running",
     ],
@@ -17,9 +17,9 @@ genrule(
 
 genrule(
     name = "containers-dev-kill",
-    cmd = "docker-compose -f deploy/docker-compose-dependencies.yaml \
+    cmd = "echo 'docker-compose -f deploy/docker-compose-dependencies.yaml \
            -f deploy/docker-compose-bazel-containers.yaml \
-           down -v &>$@",
+           down -v' &>$@",
     executable = False,
     outs = [
         "removed",
