@@ -32,9 +32,15 @@ If you are unfamiliar with the bazel target syntax, take a moment to review the 
 
 Each target has a name that uniquely identifies a build target. The path disambiguates build targets within different projects / folders.
 
+## Pre-requisites
+* Install ecs-cli: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
+* Install docker: https://docs.docker.com/get-docker/
+* Install docker-compose: https://docs.docker.com/compose/install/
+* Install bazelisk: https://github.com/bazelbuild/bazelisk/releases
+* Optionally install pyenv: https://github.com/pyenv/pyenv#basic-github-checkout 
+
 ## Quick Start
-* Get bazelisk from https://github.com/bazelbuild/bazelisk/releases
-* Ensure you have a python environment with version 3.9+ - I suggest installing pyenv to make python versioning easier: https://github.com/pyenv/pyenv#basic-github-checkout.
+* Ensure you have a python environment with version 3.9+
 * Type: `bazelisk query //...` to get a list of all targets
 * To build: `bazelisk build //...` - this builds everything locally
 * To run the API container: `bazelisk run //api/local-container-dev` - this will install the container build in your local docker cache; you can run it with volumes mounted using the `docker run` command. The container name will be something like: `api:local-container-dev`.
@@ -65,7 +71,7 @@ TODO
 ### Publish to Staging
 Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
 
-* bazelisk build //deploy/staging:deploy
+* `bazelisk build //deploy/staging:deploy`
 
 ### Publish to Prod
 > Do you really want this? Do you have access?

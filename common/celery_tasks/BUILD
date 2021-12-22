@@ -155,6 +155,40 @@ py3_image(
     visibility = ["//visibility:public"],
 )
 
+container_image(
+    name = "base-celery-api",
+    base = "//docker/base:base_docker",
+    env = {
+        "TZ": "America/Los_Angeles",
+        "PYTHONPATH": "PYTHONPATH:/usr/lib/python3/dist-packages:/usr/local/lib/python3.9:/usr/lib/python3.9",
+        "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev",
+    },
+    layers = [
+        ":config_layer",
+    ],
+    ports = [],
+    symlinks = {
+        "/usr/bin/python": "/usr/local/bin/python",
+    },
+    docker_run_flags = "-v ~/.aws:/root/.aws",
+)
+
+py3_image(
+    name = "container-api",
+    base = ":base-celery-api",
+    layers = [
+        ":lib_layer",
+        ":pkg_layer",
+    ],
+    srcs = [
+        ":lib",
+    ],
+    deps = EXT_DEPS + INT_DEPS,
+    main = "run.py",
+    visibility = ["//visibility:public"],
+)
+
 container_push(
     name = "container-deploy-staging",
     format = "Docker",
@@ -162,6 +196,7 @@ container_push(
     image = "container-api",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "staging",
+    visibility = ["//visibility:public"],
 )
 
 container_push(
@@ -171,4 +206,5 @@ container_push(
     image = "container-api",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "prod",
+    visibility = ["//visibility:public"],
 )

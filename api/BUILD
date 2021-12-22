@@ -211,6 +211,24 @@ container_image(
     docker_run_flags = "-v ~/.aws:/root/.aws",
 )
 
+container_image(
+    name = "base-api-image",
+    base = "//docker/base:base_docker",
+    env = {
+        "TZ": "America/Los_Angeles",
+        "PYTHONPATH": "/app/",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONUNBUFFERED": "1",
+    },
+    layers = [
+        ":config_layer",
+    ],
+    ports = ["8092"],
+    symlinks = {
+        "/usr/bin/python": "/usr/local/bin/python",
+    },
+)
+
 py3_image(
     name = "container-dev-local",
     base = ":base-api-dev-local",
@@ -248,6 +266,7 @@ container_push(
     image = "container-api",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "staging",
+    visibility = ["//visibility:public"],
 )
 
 container_push(
@@ -257,4 +276,5 @@ container_push(
     image = "container-api",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "prod",
+    visibility = ["//visibility:public"],
 )

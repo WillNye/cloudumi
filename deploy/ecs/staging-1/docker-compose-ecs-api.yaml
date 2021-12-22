@@ -16,8 +16,12 @@
 # If you SSH into the container, the task environment variables can be read from this file: /proc/1/task/1/environ
 version: "3"
 services:
-  noq-staging-celery:
-    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi-celery:staging"
+  noq-staging:
+    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi-api:staging"
+    ports:
+      #      # Serve ConsoleMe's backend (Python Tornado) port, which is used to serve the frontend when built
+      - "8092:8092"
+    #      - "22:22"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
       - CONFIG_LOCATION=s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/noq-staging-1/noq-staging-1.yaml
@@ -31,10 +35,10 @@ services:
       service ssh restart;
       echo "export $$(strings /proc/1/environ | grep AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)" >> /root/.profile;
       pip install awscli;
-      celery -A common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8'
+      python api/__main__.py'
     logging:
       driver: awslogs
       options:
         awslogs-group: noq-staging
         awslogs-region: us-west-2
-        awslogs-stream-prefix: celery
+        awslogs-stream-prefix: web
