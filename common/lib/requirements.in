@@ -1,0 +1,13 @@
+bcrypt
+boto
+cloudaux
+cryptography
+deepdiff
+ed25519
+parliament
+policy_sentry
+pyjwt
+redis
+redis-py-cluster
+simplejson
+tenacity
