@@ -20,7 +20,7 @@ genrule(
     cmd = "echo 'docker-compose -f deploy/docker-compose-dependencies.yaml \
            -f deploy/docker-compose-bazel-containers.yaml \
            down -v' &>$@",
-    executable = False,
+    executable = True,
     outs = [
         "removed",
     ],
