@@ -157,9 +157,6 @@ py_wheel(
     distribution = "cloudumi_api",
     python_tag = "py3",
     version = "0.0.1",
-    # entry_points = {
-    #     "console_scripts": [""],
-    # },
     deps = [":lib_pkg"],
     requires = REQUIRES,
     strip_path_prefixes = [
@@ -196,12 +193,11 @@ container_layer(
 container_image(
     name = "base-api-dev-local",
     base = "//docker/base:base_docker",
-    # base = "@python_3.8.12_container//image",
     env = {
-        # "TZ": "America/Los_Angeles",
+        "TZ": "America/Los_Angeles",
         "PYTHONPATH": "/app/",
-        # "PYTHONDONTWRITEBYTECODE": "1",
-        # "PYTHONUNBUFFERED": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONUNBUFFERED": "1",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
@@ -212,10 +208,7 @@ container_image(
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
-    docker_run_flags = "-v ~/.aws:/root/.aws"
-    # entrypoint = [
-    #     "/usr/local/bin/python",
-    # ],
+    docker_run_flags = "-v ~/.aws:/root/.aws",
 )
 
 py3_image(
@@ -230,16 +223,7 @@ py3_image(
     ],
     deps = EXT_DEPS + INT_DEPS,
     main = "__main__.py",
-    tags = ["manual"],
-)
-
-container_image(
-    name = "base-api-image",
-    base = "//docker/base:base_docker",
-    ports = ["8092"],
-    symlinks = {
-        "/usr/bin/python": "/usr/local/bin/python",
-    },
+    visibility = ["//visibility:public"],
 )
 
 py3_image(
@@ -260,8 +244,17 @@ py3_image(
 container_push(
     name = "container-deploy-staging",
     format = "Docker",
-    repository = "cloudumi",
+    repository = "cloudumi-api",
     image = "container-api",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "staging",
+)
+
+container_push(
+    name = "container-deploy-prod",
+    format = "Docker",
+    repository = "cloudumi-api",
+    image = "container-api",
+    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
+    tag = "prod",
 )

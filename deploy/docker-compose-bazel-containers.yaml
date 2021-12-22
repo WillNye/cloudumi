@@ -1,0 +1,39 @@
+# docker-compose -f deploy/docker-compose-dependencies.yaml -f docker-compose-bazel-api.yaml up -d
+version: "3"
+services:
+  api:
+    image: bazel/api:container-dev-local
+    volumes:
+      - ~/.aws:/root/.aws:cached
+    command: bash -c 'pip install debugpy && python -m debugpy --listen 0.0.0.0:9092 api/__main__.py'
+    depends_on:
+      - redis-cluster
+      - cloudumi-dynamodb
+    links:
+      - redis-cluster
+      - cloudumi-dynamodb
+    environment:
+      AWS_PROFILE: noq_dev
+      CONFIG_LOCATION: /configs/development_account/saas_development.yaml
+      # FAULTHANDLER_ENABLED: "true"
+    ports:
+      - 8092:8092
+      - 9092:9092
+  celery:
+    image: bazel/common/celery_tasks:container-dev-local
+    volumes:
+      - ~/.aws:/root/.aws:cached
+    command: >
+      bash -c '
+      python common/scripts/initialize_redis.py;
+      celery -A common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8'
+    depends_on:
+      - redis-cluster
+      - cloudumi-dynamodb
+    links:
+      - redis-cluster
+      - cloudumi-dynamodb
+    environment:
+      AWS_PROFILE: noq_dev
+      CONFIG_LOCATION: /configs/development_account/saas_development.yaml
+      # FAULTHANDLER_ENABLED: "true"

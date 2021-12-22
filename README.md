@@ -39,6 +39,10 @@ Each target has a name that uniquely identifies a build target. The path disambi
 * To build: `bazelisk build //...` - this builds everything locally
 * To run the API container: `bazelisk run //api/local-container-dev` - this will install the container build in your local docker cache; you can run it with volumes mounted using the `docker run` command. The container name will be something like: `api:local-container-dev`.
 
+### Setup your dev environment
+* Start your local dev environment by running: `bazelisk build //deploy/local:containers-dev` - this starts all the containers to run Cloudumi
+* TODO: start all containers and py-binaries for projects
+
 ## More Bazel stuff
 
 > Note on deployments - you must first authenticate with the ECR: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`.
