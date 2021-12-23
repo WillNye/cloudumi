@@ -51,7 +51,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 * TODO: start all containers and py-binaries for projects
 
 ### Local environment
-* Visual Studio Code (and pretty much any other IDE): we ship .vscode config files for VSC specifically to run targets. For other IDEs, ensure that your PYTHONPATH is set to the root of the mono repo; this "should" just work.
+* Visual Studio Code (and pretty much any other IDE): we ship .vscode config files for VSC specifically to run targets. For other IDEs, ensure that your PYTHONPATH is set to the root of the mono repo; this "should" just work. For VSCODE, just make sure you have the bazel plugin (and relevant plugin for your choice of IDE: https://marketplace.visualstudio.com/items?itemName=BazelBuild.vscode-bazel)
 * For command line development: set your PYTHONPATH to the root of the monorepo - `PYTHONPATH=~/dev/noq/cloudumi python ...`
 * For convenience we also include `py_venv` targets - you can run them thusly `bazelisk run //:lib-venv <target venv dir>` (for instance, use `bazelisk query //:all` to find all the `-venv` targets)
   * The venv targets will require an output venv that points to the path of the desired venv to store all internal and external deps in
