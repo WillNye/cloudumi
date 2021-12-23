@@ -62,7 +62,7 @@
       "name": "Local Config: CloudUmi Celery",
       "args": [
         "-A",
-        "cloudumi_common.celery_tasks.celery_tasks",
+        "common.celery_tasks.celery_tasks",
         "worker",
         "-l",
         "DEBUG",
@@ -76,7 +76,7 @@
       "console": "integratedTerminal",
       "module": "celery",
       "env": {
-        "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
         "AWS_PROFILE": "noq_dev"
       }
@@ -98,10 +98,10 @@
       "name": "Local Config: CloudUmi API",
       "type": "python",
       "request": "launch",
-      "program": "${workspaceFolder}/cloudumi_api/cloudumi_api/__main__.py",
+      "program": "${workspaceFolder}/api/__main__.py",
       "console": "integratedTerminal",
       "env": {
-        "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
         "AWS_PROFILE": "noq_dev"
       }

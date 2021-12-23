@@ -30,6 +30,13 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/4.4.6/rules_nodejs-4.4.6.tar.gz"],
 )
 
+http_archive(
+    name = "rules_pyvenv",
+    strip_prefix = "rules_pyvenv-main",
+    url = "https://github.com/cedarai/rules_pyvenv/archive/main.tar.gz",
+    sha256 = "f840539ef95e57740156bb0ebd34571c4b3501c0cef398eaf752e49c4d8e54f9",
+)
+
 # Setup Docker stuff
 load(
     "@io_bazel_rules_docker//repositories:repositories.bzl",
@@ -119,6 +126,10 @@ load("@cloudumi_python_ext//:requirements.bzl", "install_deps")
 
 # Call it to define repos for your requirements.
 install_deps()
+
+# Setup pyvenv stuff
+load("@rules_pyvenv//:repositories.bzl", rules_pyvenv_repositories = "repositories")
+rules_pyvenv_repositories()
 
 # Proto and Grpc build stuff: https://github.com/rules-proto-grpc/rules_proto_grpc
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")

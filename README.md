@@ -45,9 +45,17 @@ Each target has a name that uniquely identifies a build target. The path disambi
 * To build: `bazelisk build //...` - this builds everything locally
 * To run the API container: `bazelisk run //api/local-container-dev` - this will install the container build in your local docker cache; you can run it with volumes mounted using the `docker run` command. The container name will be something like: `api:local-container-dev`.
 
-### Setup your dev environment
+## Setup your dev environment
+### Containers
 * Start your local dev environment by running: `bazelisk build //deploy/local:containers-dev` - this starts all the containers to run Cloudumi
 * TODO: start all containers and py-binaries for projects
+
+### Local environment
+* Visual Studio Code (and pretty much any other IDE): we ship .vscode config files for VSC specifically to run targets. For other IDEs, ensure that your PYTHONPATH is set to the root of the mono repo; this "should" just work.
+* For command line development: set your PYTHONPATH to the root of the monorepo - `PYTHONPATH=~/dev/noq/cloudumi python ...`
+* For convenience we also include `py_venv` targets - you can run them thusly `bazelisk run //:lib-venv <target venv dir>` (for instance, use `bazelisk query //:all` to find all the `-venv` targets)
+  * The venv targets will require an output venv that points to the path of the desired venv to store all internal and external deps in
+  * You can use virtualenvwrapper as well by pointing the output argument at the root of the relevant venv under .virtualenvs: `bazelisk run //:lib-venv ~/.virtualenvs/noq` (for instance)
 
 ## More Bazel stuff
 
