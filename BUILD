@@ -1,13 +1,7 @@
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
-load("@rules_pyvenv//:venv.bzl", "py_venv")
 #load("@io_bazel_rules_docker//container:container.bzl", "container_layer")
 #load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 #load("@rules_pkg//:pkg.bzl", "pkg_tar")
-
-py_venv(
-    name = "lib-venv",
-    deps = INT_DEPS + EXT_DEPS,
-)
 
 container_run_and_commit(
     name = "cloudumi_base_docker",
