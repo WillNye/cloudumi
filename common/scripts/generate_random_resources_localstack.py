@@ -324,7 +324,7 @@ for host in hosts:
             try:
                 print("Attempting to create s3 bucket")
                 s3.create_bucket(
-                    Bucket="consolemecache",
+                    Bucket="noqcache",
                 )
             except Exception as e:
                 print(f"Unable to create resource: {e}")

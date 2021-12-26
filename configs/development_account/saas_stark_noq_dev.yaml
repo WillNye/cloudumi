@@ -11,7 +11,7 @@ site_configs:
       role_name: ConsoleMeSpokeRole
     security_logo:
       image: /images/logos/stark.png
-    consoleme_s3_bucket: consolemecache
+    s3_cache_bucket: noqcache
     oidc_secrets:
       client_id: 0oaatebhlkuDajVAr4x6
       secret: A_SECRET

@@ -45,7 +45,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         unprotected_routes = ["/healthcheck", "/api/v3/tenant_registration"]
         host = self.get_host_name()
         # Ensure request is for a valid host / tenant
-        if not config.is_host_configured(host):
+        if config.is_host_configured(host):
             return
 
         # Ignore unprotected routes, like /healthcheck
@@ -214,7 +214,7 @@ class BaseHandler(TornadoRequestHandler):
                 "<body>%(code)d: %(message)s</body></html>"
                 % {
                     "code": status_code,
-                    "message": f"{self._reason} - {config.get_host_specific_key('errors.custom_website_error_message',host, '')}",
+                    "message": f"{self._reason} - {config.get_host_specific_key('errors.custom_website_error_message', host, '')}",
                 }
             )
 

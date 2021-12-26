@@ -20,9 +20,9 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 
 async def get_s3_bucket_for_host(host):
     return config.get_host_specific_key(
-        "consoleme_s3_bucket",
+        "s3_cache_bucket",
         host,
-        config.get("_global_.consoleme_s3_bucket"),
+        config.get("_global_.s3_cache_bucket"),
     )
 
 
@@ -42,7 +42,7 @@ async def is_object_older_than_seconds(
     if not bucket:
         raise MissingConfigurationValue(
             "`bucket` not defined, and we can't find the default bucket in "
-            "the configuration key `consoleme_s3_bucket`."
+            "the configuration key `s3_cache_bucket`."
         )
     now = datetime.utcnow().replace(tzinfo=pytz.utc)
     if not s3_client:

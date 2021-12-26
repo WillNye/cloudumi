@@ -7,7 +7,7 @@
 
 site_configs:
   aws_sso_cloudumi_com:
-    consoleme_s3_bucket: consolemecache
+    s3_cache_bucket: noqcache
     url: https://aws_sso.cloudumi.com/ # You must have / at end of URL for AWS SSO
     application_admin: consoleme_admins@example.com
     environment: dev

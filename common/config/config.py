@@ -97,7 +97,7 @@ class Configuration(metaclass=Singleton):
             ).get_caller_identity()
         except botocore.exceptions.NoCredentialsError:
             raise Exception(
-                "We were unable to detect valid AWS credentials. ConsoleMe needs valid AWS credentials to "
+                "We were unable to detect valid AWS credentials. Noq needs valid AWS credentials to "
                 "run.\n\n"
                 "For local development: Provide credentials via environment variables, in your "
                 "~/.aws/credentials file, or via Weep EC2 IMDS / ECS credential provider emulation.\n\n"
@@ -500,19 +500,22 @@ class Configuration(metaclass=Singleton):
             return True
         if self.get_tenant_static_config_from_dynamo(host):
             return True
+        if self.get("_global_.environment") == "test":
+            return True
         return False
 
     def get_host_specific_key(self, key: str, host: str, default: Any = None) -> Any:
         """
         Get a host/"tenant" specific value for configuration entry in dot notation.
         """
-        # Only support keys that explicitly call out a host
-        host_config_base_key = f"site_configs.{host}"
-        # If we've defined a static config yaml file for the host, that takes precedence over
-        # anything in Dynamo, even if the static config doesn't actually have the config
-        # key the user is querying.
-        if self.get(host_config_base_key):
-            return self.get(f"{host_config_base_key}.{key}", default=default)
+        # Only support keys that explicitly call out a host in development mode
+        if self.get("_global_.development"):
+            host_config_base_key = f"site_configs.{host}"
+            # If we've defined a static config yaml file for the host, that takes precedence over
+            # anything in Dynamo, even if the static config doesn't actually have the config
+            # key the user is querying.
+            if self.get(host_config_base_key):
+                return self.get(f"{host_config_base_key}.{key}", default=default)
 
         # Otherwise, we need to get the config from local variable,
         # fall back to Redis cache, and lastly fall back to Dynamo

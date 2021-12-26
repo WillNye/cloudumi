@@ -74,7 +74,7 @@ def get_identity_request_storage_keys(host):
     s3_bucket = config.get_host_specific_key(
         "identity.cache_requests.bucket",
         host,
-        config.get("_global_.consoleme_s3_bucket"),
+        config.get("_global_.s3_cache_bucket"),
     )
     redis_key: str = config.get_host_specific_key(
         "identity.cache_requests.redis_key",
@@ -97,7 +97,7 @@ def get_identity_group_storage_keys(host):
     s3_bucket = config.get_host_specific_key(
         "identity.cache_groups.bucket",
         host,
-        config.get("_global_.consoleme_s3_bucket"),
+        config.get("_global_.s3_cache_bucket"),
     )
     redis_key: str = config.get_host_specific_key(
         "identity.cache_groups.redis_key",

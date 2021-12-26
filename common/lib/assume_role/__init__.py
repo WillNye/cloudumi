@@ -145,7 +145,7 @@ def boto3_cached_conn(
     account_number=None,
     assume_role=None,
     session_name="consoleme",
-    region="us-east-1",
+    region=consoleme_config.region,
     return_credentials=False,
     external_id=None,
     arn_partition="aws",
@@ -203,8 +203,10 @@ def boto3_cached_conn(
         )
     elif pre_assume_roles is None:
         pre_assume_roles = []
-    if not pre_assume_roles:
-        raise Exception("Unable to assume central role on customer's account")
+    if not assume_role and consoleme_config.get("_global_.environment") != "test":
+        raise ValueError("Must provide role to assume")
+    if not pre_assume_roles and consoleme_config.get("_global_.environment") != "test":
+        raise Exception("Customer hasn't configured central role for Noq.")
     key = (
         host,
         account_number,

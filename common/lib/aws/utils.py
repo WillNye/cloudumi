@@ -1235,8 +1235,8 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
     global configuration of static regions (Configuration key: `celery.sync_regions`), or a configuration of specific
     regions per account (Configuration key:  `get_enabled_regions_for_account.{account_id}`)
     """
-    enabled_regions_for_account = config.get(
-        "get_enabled_regions_for_account.{account_id}"
+    enabled_regions_for_account = config.get_host_specific_key(
+        f"get_enabled_regions_for_account.{account_id}", host
     )
     if enabled_regions_for_account:
         return enabled_regions_for_account

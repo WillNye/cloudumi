@@ -351,9 +351,9 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
     global all_roles
     buckets = [
         config.get_host_specific_key(
-            "consoleme_s3_bucket",
+            "s3_cache_bucket",
             host,
-            config.get("_global_.consoleme_s3_bucket"),
+            config.get("_global_.s3_cache_bucket"),
         )
     ]
     for bucket in buckets:

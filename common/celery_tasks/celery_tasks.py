@@ -2174,8 +2174,9 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
     if not config.get_host_specific_key(
         "celery.cache_resources_from_aws_config_across_accounts.enabled",
         host,
-        config.get(
-            "celery.cache_resources_from_aws_config_for_account.{account_id}.enabled",
+        config.get_host_specific_key(
+            f"celery.cache_resources_from_aws_config_for_account.{account_id}.enabled",
+            host,
             True,
         ),
     ):

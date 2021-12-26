@@ -19,7 +19,7 @@ site_configs:
           # TODO: No secrets should be in plaintext configuration
           api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
     # Customer controlled (Need to instruct them to give us write access
-    consoleme_s3_bucket: consolemecache
+    s3_cache_bucket: noqcache
     jwt_secret: local_secret_insecure # TODO: Autogenerate this during tenant creation
     #    policies:
     #      # the roles that SaaS consoleMe should assume to get to the central role in a client's account

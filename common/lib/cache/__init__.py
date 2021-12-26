@@ -87,9 +87,9 @@ async def store_json_results_in_redis_and_s3(
     # If we've defined an S3 key, but not a bucket, let's use the default bucket if it's defined in configuration.
     if s3_key and not s3_bucket:
         s3_bucket = config.get_host_specific_key(
-            "consoleme_s3_bucket",
+            "s3_cache_bucket",
             host,
-            config.get("_global_.consoleme_s3_bucket"),
+            config.get("_global_.s3_cache_bucket"),
         )
 
     if redis_key:
@@ -182,9 +182,9 @@ async def retrieve_json_data_from_redis_or_s3(
     # If we've defined an S3 key, but not a bucket, let's use the default bucket if it's defined in configuration.
     if s3_key and not s3_bucket:
         s3_bucket = config.get_host_specific_key(
-            "consoleme_s3_bucket",
+            "s3_cache_bucket",
             host,
-            config.get("_global_.consoleme_s3_bucket"),
+            config.get("_global_.s3_cache_bucket"),
         )
 
     data = None

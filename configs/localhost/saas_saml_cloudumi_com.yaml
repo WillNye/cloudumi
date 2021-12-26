@@ -1,6 +1,6 @@
 site_configs:
   saml_cloudumi_com:
-    consoleme_s3_bucket: consolemecache
+    s3_cache_bucket: noqcache
     boto3:
       client_kwargs:
         # http://localhost:4567

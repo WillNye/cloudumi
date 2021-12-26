@@ -1,6 +1,6 @@
 site_configs:
   oidc_cloudumi_com:
-    consoleme_s3_bucket: consolemecache
+    s3_cache_bucket: noqcache
     oidc_secrets:
       client_id: 0oaatebhlkuDajVAr4x6
       secret: A_SECRET

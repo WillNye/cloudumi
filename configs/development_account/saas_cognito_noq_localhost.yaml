@@ -30,7 +30,7 @@ site_configs:
         - arn:aws:iam::259868150464:role/NoqClusterRole1
         - arn:aws:iam::259868150464:role/ConsoleMeCentralRole
       role_name: ConsoleMeSpokeRole
-    consoleme_s3_bucket: consolemecache
+    s3_cache_bucket: noqcache
     secrets:
       jwt_secret: uT213123p4`sSf-6E8\RAA
       auth:

@@ -18,7 +18,7 @@ site_configs:
     application_admin: consoleme_admins@example.com
     secrets:
       jwt_secret: T3sts3cr3t
-    consoleme_s3_bucket: fakebucket
+    s3_cache_bucket: fakebucket
     celery:
       active_region: us-east-1
       test_account_ids:

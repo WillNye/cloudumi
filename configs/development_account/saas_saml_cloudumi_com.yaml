@@ -1,6 +1,6 @@
 site_configs:
   saml_cloudumi_com:
-    consoleme_s3_bucket: consolemecache
+    s3_cache_bucket: noqcache
     url: https://saml.cloudumi.com
     application_admin: bayareasec@gmail.com
     environment: dev

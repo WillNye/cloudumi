@@ -26,7 +26,7 @@ _global_:
     load_from_dynamo: true
     automatically_reload_configuration: false # TODO: This setting breaks loading of tenant configuration
     load_tenant_configurations_from_dynamo: true
-  consoleme_s3_bucket: consolemecache
+  s3_cache_bucket: noqcache
   consoleme_tenant_configurations:
     s3:
       bucket: noq-tenant-configuration.node.dev1.259868150464.us-west-2

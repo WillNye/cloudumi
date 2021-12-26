@@ -327,7 +327,7 @@ export const questions_json = {
     },
     {
       isRequired: true,
-      name: "consoleme_s3_bucket_PLACEHOLDER_35",
+      name: "s3_cache_bucket_PLACEHOLDER_35",
       title:
         "What should the value be for ConsoleMe's S3 bucket (a (preferably versioned) S3 bucket that I can cache and retrieve data from? The role that ConsoleMe runs\nas must have access to this bucket)?",
       type: "text",

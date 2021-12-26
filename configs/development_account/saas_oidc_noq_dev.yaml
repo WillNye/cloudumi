@@ -6,7 +6,7 @@ site_configs:
         - arn:aws:iam::259868150464:role/NoqClusterRole1
         - arn:aws:iam::259868150464:role/ConsoleMeCentralRole
       role_name: ConsoleMeSpokeRole
-    consoleme_s3_bucket: consolemecache
+    s3_cache_bucket: noqcache
     oidc_secrets:
       client_id: 0oaatebhlkuDajVAr4x6
       secret: A_SECRET
