@@ -2,6 +2,7 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
+import boto3
 import pytz
 import ujson as json
 from asgiref.sync import sync_to_async
@@ -102,6 +103,7 @@ def put_object(**kwargs):
     host = kwargs.pop("host")
     client = kwargs.pop("client", None)
     assume_role = kwargs.pop("assume_role", None)
+
     if not client:
         if assume_role:
             client = boto3_cached_conn(
@@ -116,12 +118,16 @@ def put_object(**kwargs):
                     "boto3.client_kwargs", host, {}
                 ),
             )
-        else:
+        elif config.get_host_specific_key(
+            "policies.s3.store_data_plane_in_tenant_account", host
+        ):
             session = get_session_for_tenant(host)
             client = session.client(
                 "s3",
                 **config.get_host_specific_key("boto3.client_kwargs", host, {}),
             )
+        else:
+            client = boto3.client("s3")
     return client.put_object(**kwargs)
 
 

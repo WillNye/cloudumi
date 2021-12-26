@@ -10,7 +10,6 @@ from datetime import datetime
 # used as a placeholder for empty SID to work around this:
 # https://github.com/aws/aws-sdk-js/issues/833
 from decimal import Decimal
-from io import StringIO
 from typing import Any, Dict, List, Optional, Union
 
 import bcrypt
@@ -21,7 +20,6 @@ from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import Binary  # noqa
 from cloudaux import get_iso_string
 from retrying import retry
-from ruamel.yaml import YAML
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
@@ -44,26 +42,9 @@ from common.lib.password import wait_after_authentication_failure
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
 from common.lib.s3_helpers import get_s3_bucket_for_host
+from common.lib.yaml import yaml
 from common.models import AuthenticationResponse, ExtendedRequestModel
 from identity.lib.groups.models import GroupRequest, GroupRequests
-
-yaml = YAML()
-yaml.preserve_quotes = True
-yaml.indent(mapping=2, sequence=4, offset=2)
-yaml.width = 4096
-
-
-def dump(self, data, stream=None, **kw):
-    inefficient = False
-    if stream is None:
-        inefficient = True
-        stream = StringIO()
-    YAML.dump(self, data, stream, **kw)
-    if inefficient:
-        return stream.getvalue()
-
-
-yaml.dump = dump
 
 # TODO: Partion key should be host key. Dynamo instance should be retrieved dynamically. Should use dynamodb:LeadingKeys
 # to restrict.
@@ -1606,12 +1587,12 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             except Exception:
                 c = compressed_config.value
         except Exception as e:  # noqa
-
             log.error(
                 {
                     "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-                    "message": "Error retrieving dynamic configuration",
+                    "message": "Error retrieving static configuration",
                     "error": str(e),
+                    "host": host,
                 }
             )
             sentry_sdk.capture_exception()
@@ -1624,9 +1605,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         if return_format == "dict":
             return c_dict
         elif return_format == "bytes":
-            return yaml.dump(yaml, c_dict).encode()
+            return yaml.dump(c_dict).encode()
         else:
-            return yaml.dump(yaml, c_dict)
+            return yaml.dump(c_dict)
 
     def get_all_hosts(self) -> List[str]:
         hosts = set()
@@ -1679,7 +1660,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         new_config_writable = {
             "host": host,
             "id": "master",
-            "config": yaml.dump(yaml, new_config_d),
+            "config": yaml.dump(new_config_d),
             # "config": zlib.compress(new_config.encode()),
             "updated_by": updated_by,
             "updated_at": str(int(time.time())),

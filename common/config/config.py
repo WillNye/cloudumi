@@ -21,18 +21,13 @@ import sentry_sdk
 import ujson as json
 from asgiref.sync import async_to_sync
 from pytz import timezone
-from ruamel.yaml import YAML
 
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.aws.split_s3_path import split_s3_path
 from common.lib.singleton import Singleton
+from common.lib.yaml import yaml
 
 main_exit_flag = threading.Event()
-
-yaml = YAML(typ="safe")
-yaml.preserve_quotes = True
-yaml.indent(mapping=2, sequence=4, offset=2)
-yaml.width = 4096
 
 
 def validate_config(dct: Dict):
@@ -504,6 +499,25 @@ class Configuration(metaclass=Singleton):
             return True
         return False
 
+    def copy_tenant_config_dynamo_to_redis(self, host):
+        config_item = self.get_tenant_static_config_from_dynamo(host)
+        if config_item:
+            from common.lib.redis import RedisHandler
+
+            red = RedisHandler().redis_sync(host)
+            self.tenant_configs[host]["config"] = config_item
+            self.tenant_configs[host]["last_updated"] = int(time.time())
+            red.set(
+                f"{host}_STATIC_CONFIGURATION",
+                json.dumps(self.tenant_configs[host], default=str),
+            )
+
+    def load_tenant_config_from_redis(self, host):
+        from common.lib.redis import RedisHandler
+
+        red = RedisHandler().redis_sync(host)
+        return json.loads(red.get(f"{host}_STATIC_CONFIGURATION") or "{}")
+
     def get_host_specific_key(self, key: str, host: str, default: Any = None) -> Any:
         """
         Get a host/"tenant" specific value for configuration entry in dot notation.
@@ -522,29 +536,16 @@ class Configuration(metaclass=Singleton):
         current_time = int(time.time())
         last_updated = self.tenant_configs[host].get("last_updated", 0)
         if current_time - last_updated > 60:
-            from common.lib.redis import RedisHandler
-
-            red = RedisHandler().redis_sync(host)
-            tenant_config = json.loads(red.get(f"{host}_STATIC_CONFIGURATION") or "{}")
+            tenant_config = self.load_tenant_config_from_redis(host)
             last_updated = tenant_config.get("last_updated", 0)
-            # If Redis config cahce for host is newer than 60 seconds, update in-memory variables
+            # If Redis config cache for host is newer than 60 seconds, update in-memory variables
             if current_time - last_updated < 60:
                 self.tenant_configs[host]["config"] = tenant_config["config"]
                 self.tenant_configs[host]["last_updated"] = last_updated
         # If local variables and Redis config cache for the host are still older than 60 seconds,
         # pull from Dynamo, update local cache, redis cache, and in-memory variables
         if current_time - last_updated > 60:
-            config_item = self.get_tenant_static_config_from_dynamo(host)
-            if config_item:
-                from common.lib.redis import RedisHandler
-
-                red = RedisHandler().redis_sync(host)
-                self.tenant_configs[host]["config"] = config_item
-                self.tenant_configs[host]["last_updated"] = current_time
-                red.set(
-                    f"{host}_STATIC_CONFIGURATION",
-                    json.dumps(self.tenant_configs[host], default=str),
-                )
+            self.copy_tenant_config_dynamo_to_redis(host)
         value = self.tenant_configs[host].get("config")
         if not value:
             return default

@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 import boto3
 import sentry_sdk
 import ujson as json
-import yaml
 from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
@@ -14,6 +13,7 @@ from common.exceptions.exceptions import DataNotRetrievable, MissingConfiguratio
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.messaging import iterate_event_messages
+from common.lib.yaml import yaml
 
 log = config.get_logger()
 
@@ -195,6 +195,9 @@ async def handle_central_account_registration(body):
     central_role_name = config.get(
         "_global_.integrations.aws.central_role_name", "NoqCentralRole"
     )
+    spoke_role_name = config.get(
+        "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
+    )
     account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
     role_arn = f"arn:aws:iam::{account_id_for_role}:role/{central_role_name}"
     external_id = body["ResourceProperties"]["ExternalId"]
@@ -224,8 +227,8 @@ async def handle_central_account_registration(body):
 
     # Assume role from noq_dev_central_role
     try:
-        sts_client = await sync_to_async(boto3_cached_conn)("sts", host)
-        await sync_to_async(sts_client.assume_role)(
+        sts_client = boto3.client("sts")
+        customer_central_account_creds = await sync_to_async(sts_client.assume_role)(
             RoleArn=role_arn,
             RoleSessionName="noq_registration_verification",
             ExternalId=external_id,
@@ -238,6 +241,40 @@ async def handle_central_account_registration(body):
             {
                 **log_data,
                 "message": "Unable to assume customer's hub account role",
+                "cf_message": body,
+                "external_id_from_cf": external_id,
+                "external_id_in_config": external_id_in_config,
+                "host": host,
+                "error": str(e),
+            }
+        )
+        return False
+
+    try:
+        central_account_sts_client = await sync_to_async(boto3.client)(
+            "sts",
+            aws_access_key_id=customer_central_account_creds["Credentials"][
+                "AccessKeyId"
+            ],
+            aws_secret_access_key=customer_central_account_creds["Credentials"][
+                "SecretAccessKey"
+            ],
+            aws_session_token=customer_central_account_creds["Credentials"][
+                "SessionToken"
+            ],
+        )
+        central_account_sts_client.assume_role(
+            RoleArn=f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}",
+            RoleSessionName="noq_registration_verification",
+        )
+    except ClientError as e:
+        sentry_sdk.capture_message(
+            "Unable to assume customer's spoke account role", "error"
+        )
+        log.error(
+            {
+                **log_data,
+                "message": "Unable to assume customer's spoke account role",
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
@@ -263,9 +300,11 @@ async def handle_central_account_registration(body):
             "external_id": external_id,
         }
     ]
+    host_config["policies"]["role_name"] = spoke_role_name
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), "aws_integration", host
     )
+    config.CONFIG.copy_tenant_config_dynamo_to_redis(host)
     return True
 
 
@@ -364,35 +403,38 @@ async def handle_tenant_integration_queue(
                     await handle_spoke_account_registration(body)
                 elif action_type == "AWSCentralAcctRegistration":
                     await handle_central_account_registration(body)
+                # TODO: Refresh configuration
+                # Ensure it is written to Redis. trigger refresh job in worker
+
                 host = body["ResourceProperties"]["Host"]
                 account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
                 celery_app.send_task(
-                    "cloudumi_common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
+                    "common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "cloudumi_common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
+                    "common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "cloudumi_common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
+                    "common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "cloudumi_common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
+                    "common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "cloudumi_common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
+                    "common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )
                 celery_app.send_task(
-                    "cloudumi_common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
+                    "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
                     args=[account_id_for_role],
                     kwargs={"host": host},
                 )

@@ -270,13 +270,12 @@ def get_celery_request_tags(**kwargs):
 
 
 @task_prerun.connect
-def refresh_dynamic_config_in_worker(**kwargs):
-    tags = get_celery_request_tags(**kwargs)
-    log_data = {"function": f"{__name__}.{sys._getframe().f_code.co_name}", **tags}
-    hosts = get_all_hosts()
-    for host in hosts:
-        red = RedisHandler().redis_sync(host)
-        config.CONFIG.load_dynamic_config_from_redis(log_data, host, red)
+def refresh_tenant_config_in_worker(**kwargs):
+    host = kwargs.get("kwargs", {}).get("host")
+    if not host:
+        return
+    config.CONFIG.copy_tenant_config_dynamo_to_redis(host)
+    config.CONFIG.tenant_configs[host]["last_updated"] = 0
 
 
 @task_received.connect
@@ -1227,7 +1226,7 @@ def cache_iam_resources_across_accounts_for_all_hosts() -> Dict:
     for host in hosts:
         # TODO: Figure out why wait_for_subtask_completion=True is failing here
         cache_iam_resources_across_accounts.delay(
-            host, wait_for_subtask_completion=False
+            host=host, wait_for_subtask_completion=False
         )
     return log_data
 
@@ -1545,12 +1544,12 @@ def cache_managed_policies_across_accounts(host=None) -> bool:
     # Second, call tasks to enumerate all the roles across all accounts
     for account_id in accounts_d.keys():
         if config.get_host_specific_key("environment", host) == "prod":
-            cache_managed_policies_for_account.delay(account_id, host)
+            cache_managed_policies_for_account.delay(account_id, host=host)
         else:
             if account_id in config.get_host_specific_key(
                 "celery.test_account_ids", host, []
             ):
-                cache_managed_policies_for_account.delay(account_id, host)
+                cache_managed_policies_for_account.delay(account_id, host=host)
 
     stats.count(f"{function}.success")
     return True
@@ -1567,7 +1566,9 @@ def cache_s3_buckets_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_s3_buckets_across_accounts.delay(host, wait_for_subtask_completion=False)
+        cache_s3_buckets_across_accounts.delay(
+            host=host, wait_for_subtask_completion=False
+        )
     return log_data
 
 
@@ -1660,7 +1661,9 @@ def cache_sqs_queues_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_sqs_queues_across_accounts.delay(host, wait_for_subtask_completion=False)
+        cache_sqs_queues_across_accounts.delay(
+            host=host, wait_for_subtask_completion=False
+        )
     return log_data
 
 
@@ -1748,7 +1751,9 @@ def cache_sns_topics_across_accounts_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        cache_sns_topics_across_accounts.delay(host, wait_for_subtask_completion=False)
+        cache_sns_topics_across_accounts.delay(
+            host=host, wait_for_subtask_completion=False
+        )
     return log_data
 
 
@@ -2268,7 +2273,7 @@ def cache_resources_from_aws_config_across_accounts_for_all_hosts() -> Dict:
     log.debug(log_data)
     for host in hosts:
         cache_resources_from_aws_config_across_accounts.delay(
-            host, wait_for_subtask_completion=False
+            host=host, wait_for_subtask_completion=False
         )
     return log_data
 

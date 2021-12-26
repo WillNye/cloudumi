@@ -82,6 +82,10 @@ class AwsIntegrationHandler(BaseHandler):
                 "ParameterValue": central_role_name,
             },
             {
+                "ParameterKey": "SpokeRoleNameParameter",
+                "ParameterValue": spoke_role_name,
+            },
+            {
                 "ParameterKey": "RegistrationSnsQueArnParameter",
                 "ParameterValue": registration_queue_arn,
             },
@@ -98,6 +102,8 @@ class AwsIntegrationHandler(BaseHandler):
                         + f"&param_ExternalIDParameter={external_id}&param_HostParameter={host}&stackName={stack_name}"
                         + f"&param_ClusterRoleParameter={cluster_role}"
                         + f"&param_CentralRoleNameParameter={central_role_name}"
+                        + f"&param_RegistrationSnsQueArnParameter={registration_queue_arn}"
+                        + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                     ),
                     "template_url": central_role_template_url,
                     "stack_name": stack_name,
@@ -156,6 +162,7 @@ class AwsIntegrationHandler(BaseHandler):
                     + f"&param_CentralAccountArnParameter={customer_central_account_role}"
                     + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                     + f"&stackName={spoke_stack_name}"
+                    + f"&param_RegistrationSnsQueArnParameter={registration_queue_arn}"
                 ),
                 "template_url": spoke_role_template_url,
                 "stack_name": spoke_stack_name,

@@ -104,6 +104,58 @@ Resources:
                   - "sqs:TagQueue"
                   - "sqs:UntagQueue"
                 Resource: "*"
+  SpokeRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt CentralRole.Arn
+            Action:
+              - "sts:AssumeRole"
+              - "sts:TagSession"
+      RoleName: !Ref SpokeRoleNameParameter
+      Policies:
+        - PolicyName: "spoke-acct-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "autoscaling:Describe*"
+                  - "cloudwatch:Get*"
+                  - "cloudwatch:List*"
+                  - "config:BatchGet*"
+                  - "config:List*"
+                  - "config:Select*"
+                  - "ec2:describeregions"
+                  - "ec2:DescribeSubnets"
+                  - "ec2:describevpcendpoints"
+                  - "ec2:DescribeVpcs"
+                  - "iam:*"
+                  - "s3:GetBucketPolicy"
+                  - "s3:GetBucketTagging"
+                  - "s3:ListAllMyBuckets"
+                  - "s3:ListBucket"
+                  - "s3:PutBucketPolicy"
+                  - "s3:PutBucketTagging"
+                  - "sns:GetTopicAttributes"
+                  - "sns:ListTagsForResource"
+                  - "sns:ListTopics"
+                  - "sns:SetTopicAttributes"
+                  - "sns:TagResource"
+                  - "sns:UnTagResource"
+                  - "sqs:GetQueueAttributes"
+                  - "sqs:GetQueueUrl"
+                  - "sqs:ListQueues"
+                  - "sqs:ListQueueTags"
+                  - "sqs:SetQueueAttributes"
+                  - "sqs:TagQueue"
+                  - "sqs:UntagQueue"
+                Resource: "*"
   SnsCustomResource:
     Type: "Custom::SnsCustomResource"
     DeletionPolicy: Retain
@@ -112,6 +164,9 @@ Resources:
       IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
       ClusterRole: !Ref ClusterRoleParameter
+      ClustRoleArn: !GetAtt CentralRole.Arn
+      SpokeRole: !Ref SpokeRoleNameParameter
+      SpokeRoleArn: !GetAtt SpokeRole.Arn
       Host: !Ref HostParameter
       ActionType: "AWSCentralAcctRegistration"
       TemplateVersion: 1.5
@@ -150,6 +205,14 @@ Parameters:
     MaxLength: "100"
     AllowedPattern: '[\w+_-]*'
     ConstraintDescription: 'Invalid CentralRoleName value.  Must match pattern [\w+_-]*'
+  SpokeRoleNameParameter:
+    Description: >-
+      The name of the spoke role in each customer account. Do not change this value!
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]*'
   RegistrationSnsQueArnParameter:
     Description: >-
       The SNS queue ARN that will be used to send registration messages to the SaaS
@@ -168,9 +231,21 @@ Outputs:
   ClusterRole:
     Description: ClusterRole to share with the SaaS for deployment
     Value: !Ref ClusterRoleParameter
+  ClustRoleArn:
+    Description: ClusterRoleArn to share with the SaaS for deployment
+    Value: !GetAtt CentralRole.Arn
+  SpokeRole:
+    Description: SpokeRole to share with the SaaS for deployment
+    Value: !Ref SpokeRoleNameParameter
+  SpokeRoleArn:
+    Description: SpokeRoleArn to share with the SaaS for deployment
+    Value: !GetAtt SpokeRole.Arn
   CentralRoleName:
-    Description: The name of the Central role in customer's environment
+    Description: The name of the Central (hub) role in customer's environment
     Value: !Ref CentralRoleNameParameter
+  SpokeRoleName:
+    Description: The name of the spoke role in each customer account.
+    Value: !Ref SpokeRoleNameParameter
   RegistrationSnsQueArn:
     Description: SNS Registration queue ARN
     Value: !Ref RegistrationSnsQueArnParameter

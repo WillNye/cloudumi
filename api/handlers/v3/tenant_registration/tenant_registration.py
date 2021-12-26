@@ -621,6 +621,12 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         external_id = await get_external_id(dev_domain, tenant.email)
 
         tenant_config = f"""
+cloud_credential_authorization_mapping:
+  role_tags:
+    authorized_groups_tags:
+      - noq_authorized
+    authorized_groups_cli_only_tags:
+      - noq_authorized_cli
 challenge_url:
   enabled: true
 environment: prod
