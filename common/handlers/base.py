@@ -9,6 +9,7 @@ from typing import Any, Union
 
 import pytz
 import redis
+import sentry_sdk
 import tornado.httpclient
 import tornado.httputil
 import tornado.web
@@ -573,9 +574,12 @@ class BaseHandler(TornadoRequestHandler):
 
         try:
             if not self.groups:
-                self.groups = await auth.get_groups(
-                    self.user, self, headers=self.request.headers
-                )
+                try:
+                    self.groups = await auth.get_groups(
+                        self.user, self, headers=self.request.headers
+                    )
+                except Exception:
+                    sentry_sdk.capture_exception()
             if not self.groups:
                 raise NoGroupsException(
                     f"Groups not detected. Headers: {self.request.headers}"
