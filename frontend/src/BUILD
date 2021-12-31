@@ -39,18 +39,37 @@ filegroup(
 #     ],
 # )
 
+# webpack(
+#     name = "bundle",
+#     outs = ["app.bundle.js"],
+#     args = [
+#         "index.js",
+#         "--config",
+#         "webpack.config.js",
+#         "-o",
+#         "$@",
+#     ],
+#     data = [
+#         "index.js",
+#         "webpack.config.js",
+#         "@npm//:node_modules",
+#     ],
+# )
+
 webpack(
     name = "bundle",
     outs = ["app.bundle.js"],
     args = [
-        "index.js",
+        "$(execpath index.js)",
         "--config",
-        "webpack.config.js",
+        "$(execpath webpack.config.js)",
         "-o",
         "$@",
     ],
     data = [
         "index.js",
+        # "somestyles.css",
+        # "styles.css",
         "webpack.config.js",
         "@npm//:node_modules",
     ],
