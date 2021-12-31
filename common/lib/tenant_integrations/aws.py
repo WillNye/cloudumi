@@ -77,6 +77,19 @@ async def return_error_response_for_noq_registration(
     return {"statusCode": status, "body": resp.body}
 
 
+async def get_central_role_arn(host):
+    """
+    Get the ARN of the central role for the given host.
+    """
+    # Get the central role ARN
+    pre_role_arns_to_assume = config.get_host_specific_key(
+        "policies.pre_role_arns_to_assume", host, []
+    )
+    if pre_role_arns_to_assume:
+        return pre_role_arns_to_assume[-1]["role_arn"]
+    return None
+
+
 async def handle_spoke_account_registration(body):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -90,12 +103,8 @@ async def handle_spoke_account_registration(body):
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
-    pre_role_arns_to_assume = config.get_host_specific_key(
-        "policies.pre_role_arns_to_assume", host, []
-    )
-    if pre_role_arns_to_assume:
-        central_role_arn = pre_role_arns_to_assume[-1]["role_arn"]
-    else:
+    central_role_arn = await get_central_role_arn(host)
+    if not central_role_arn:
         raise Exception("No Central Role ARN detected in configuration.")
 
     # Assume role from noq_dev_central_role
@@ -163,9 +172,10 @@ async def handle_spoke_account_registration(body):
         ],
     )
 
-    account_aliases = await sync_to_async(
+    account_aliases_co = await sync_to_async(
         customer_spoke_role_iam_client.list_account_aliases
-    )()["AccountAliases"]
+    )()
+    account_aliases = account_aliases_co["AccountAliases"]
     if account_aliases:
         account_name = account_aliases[0]
     else:
@@ -363,6 +373,13 @@ async def handle_tenant_integration_queue(
                         "ReceiptHandle": receipt_handle,
                     }
                 )
+
+                if message["body"]["RequestType"] != "Create":
+                    log_data[
+                        "message"
+                    ] = f"RequestType {message['body']['RequestType']} not supported"
+                    log.debug(log_data)
+                    continue
                 action_type = message["body"]["ResourceProperties"]["ActionType"]
                 if action_type not in [
                     "AWSSpokeAcctRegistration",

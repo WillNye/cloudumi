@@ -11,8 +11,12 @@ from tornado.httpclient import AsyncHTTPClient
 from tornado.httputil import url_concat
 
 from common.config import config
-from common.exceptions.exceptions import UserRoleNotAssumableYet
+from common.exceptions.exceptions import (
+    RoleTrustPolicyModified,
+    UserRoleNotAssumableYet,
+)
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.aws.iam import update_assume_role_policy_trust_noq
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import (
     raise_if_background_check_required_and_no_background_check,
@@ -37,7 +41,10 @@ class Aws:
     @tenacity.retry(
         wait=tenacity.wait_fixed(2),
         stop=tenacity.stop_after_attempt(10),
-        retry=tenacity.retry_if_exception_type(UserRoleNotAssumableYet),
+        retry=(
+            tenacity.retry_if_exception_type(UserRoleNotAssumableYet)
+            | tenacity.retry_if_exception_type(RoleTrustPolicyModified)
+        ),
     )
     async def get_credentials(
         self,
@@ -199,6 +206,20 @@ class Aws:
             # TODO(ccastrapel): Determine if user role was really just created, or if this is an older role.
             if user_role:
                 raise UserRoleNotAssumableYet(e.response["Error"])
+            if (
+                e.response["Error"]["Code"] == "AccessDenied"
+                and "is not authorized to perform: sts:AssumeRole on resource: "
+                in e.response["Error"]["Message"]
+                and config.get_host_specific_key(
+                    "aws.automatically_update_role_trust_policies", host
+                )
+            ):
+                await update_assume_role_policy_trust_noq(
+                    host, role.split("/")[-1], role.split(":")[4]
+                )
+                raise RoleTrustPolicyModified(
+                    "Role trust policy was modified. Please try again in a few seconds."
+                )
             raise
 
     async def generate_url(

@@ -12,7 +12,7 @@ from common.lib.tenants import get_all_hosts
 
 start_time = int(time.time())
 
-parallel = False
+parallel = True
 
 
 def str2bool(v):

@@ -733,6 +733,11 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
         host = self.get_host_name()
+        self.ctx = RequestContext(
+            host=host,
+            request_uuid=self.request_uuid,
+            uri=self.request.uri,
+        )
         if not config.is_host_configured(host):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
@@ -751,7 +756,8 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                     "message": "Invalid host specified",
                 }
             )
-            return
+            await self.finish()
+            raise SilentException(log_data["message"])
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()

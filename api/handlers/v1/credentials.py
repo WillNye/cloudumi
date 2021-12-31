@@ -307,7 +307,9 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 403:
                     description: No matching roles found, or user has failed authn/authz.
         """
-        stats = get_plugin_by_name(config.get("plugins.metrics", "cmsaas_metrics"))()
+        stats = get_plugin_by_name(
+            config.get("_global_.plugins.metrics", "cmsaas_metrics")
+        )()
         log_data = {
             "function": "GetCredentialsHandler.post",
             "user-agent": self.request.headers.get("User-Agent"),
@@ -575,7 +577,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 )
                 error = {
                     "code": "902",
-                    "message": "Unable to get credentials.",
+                    "message": f"Unable to get credentials: {str(e)}",
                     "requested_role": requested_role,
                     "matching_role": matching_roles[0],
                     "exception": str(e),

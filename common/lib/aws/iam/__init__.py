@@ -7,10 +7,17 @@ from asgiref.sync import sync_to_async
 from joblib import Parallel, delayed
 
 from common.config import config
-from common.lib.assume_role import ConsoleMeCloudAux, rate_limited, sts_conn
+from common.lib.assume_role import (
+    ConsoleMeCloudAux,
+    boto3_cached_conn,
+    rate_limited,
+    sts_conn,
+)
 from common.lib.aws.aws_paginate import aws_paginated
+from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import RedisHandler
+from common.lib.tenant_integrations.aws import get_central_role_arn
 
 log = config.get_logger(__name__)
 
@@ -341,3 +348,38 @@ async def get_all_iam_managed_policies_for_account(account_id, host):
             default=[],
             host=host,
         )
+
+
+async def update_assume_role_policy_trust_noq(host, role_name, account_id):
+    client = boto3_cached_conn(
+        "iam",
+        host,
+        account_number=account_id,
+        assume_role=config.get_host_specific_key("policies.role_name", host),
+        region=config.region,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        session_name=sanitize_session_name("noq_update_assume_role_policy_trust"),
+    )
+
+    role = await sync_to_async(client.get_role)(role_name)
+    assume_role_trust_policy = role.get("Role", {}).get("AssumeRolePolicyDocument", {})
+    if not assume_role_trust_policy:
+        return False
+
+    central_role_arn = await get_central_role_arn(host)
+    assume_role_policy = {
+        "Effect": "Allow",
+        "Action": ["sts:AssumeRole", "sts:TagSession"],
+        "Principal": {"AWS": [central_role_arn]},
+    }
+
+    assume_role_trust_policy["Statement"].append(assume_role_policy)
+
+    client.update_assume_role_policy(
+        RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
+    )
+    return True

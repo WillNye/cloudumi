@@ -546,7 +546,12 @@ class Configuration(metaclass=Singleton):
         # pull from Dynamo, update local cache, redis cache, and in-memory variables
         if current_time - last_updated > 60:
             self.copy_tenant_config_dynamo_to_redis(host)
-        value = self.tenant_configs[host].get("config")
+
+        # Convert commented map to dictionary
+        c = self.tenant_configs[host].get("config")
+        if not c:
+            return default
+        value = json.loads(json.dumps(self.tenant_configs[host].get("config")))
         if not value:
             return default
         for k in key.split("."):

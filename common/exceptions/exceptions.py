@@ -231,6 +231,14 @@ class UserRoleNotAssumableYet(BaseException):
         super().__init__(msg)
 
 
+class RoleTrustPolicyModified(BaseException):
+    """Role trust policy was modified to allow request. Retry in a bit."""
+
+    def __init__(self, msg=""):
+        stats.count("RoleTrustPolicyModified")
+        super().__init__(msg)
+
+
 class NoArnException(BaseException):
     """No ARN passed to endpoint."""
 

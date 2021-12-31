@@ -1646,8 +1646,8 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         if current_config_entry:
             old_config = {
                 "host": host,
-                "id": current_config_entry["updated_at"],
-                "updated_by": current_config_entry["updated_by"],
+                "id": current_config_entry.get("updated_at", "0"),
+                "updated_by": current_config_entry.get("updated_by", ""),
                 "config": current_config_entry["config"],
                 "updated_at": str(int(time.time())),
             }

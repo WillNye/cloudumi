@@ -511,6 +511,7 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
         log_data = {
             "message": "Error syncing Account's IAM roles to Redis",
             "account_id": role_entry["account_id"],
+            "host": host,
             "arn": role_entry["arn"],
             "role_entry": role_entry,
         }
@@ -1292,7 +1293,7 @@ def cache_iam_resources_across_accounts(
         },
     }
 
-    log_data = {"function": function}
+    log_data = {"function": function, "host": host}
     if is_task_already_running(function, []):
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
@@ -2040,6 +2041,7 @@ def cache_s3_buckets_for_account(
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "account_id": account_id,
+        "host": host,
         "message": "Successfully cached S3 buckets for account",
         "number_s3_buckets": len(buckets),
     }
@@ -2680,6 +2682,7 @@ def trigger_credential_mapping_refresh_from_role_changes(host=None):
     log_data = {
         "function": function,
         "message": "Successfully checked role changes",
+        "host": host,
         "num_roles_changed": len(roles_changed),
     }
     if roles_changed:
@@ -2779,7 +2782,7 @@ def cache_notifications(host=None) -> Dict[str, Any]:
     if not host:
         raise Exception("`host` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    log_data = {"function": function}
+    log_data = {"function": function, "host": host}
     result = async_to_sync(cache_notifications_to_redis_s3)(host)
     log_data.update({**result, "message": "Successfully cached notifications"})
     log.debug(log_data)

@@ -57,7 +57,7 @@ Resources:
       ServiceToken: !Ref RegistrationSnsQueArnParameter
       IntegrationName: !Ref "AWS::StackName"
       Host: !Ref HostParameter
-      ActionType: "SpokeRegistration"
+      ActionType: "AWSSpokeAcctRegistration"
       TemplateVersion: 1.5
       AWSAccountId: !Ref "AWS::AccountId"
       CentralAccountArn: !Ref CentralAccountArnParameter

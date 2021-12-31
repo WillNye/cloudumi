@@ -623,6 +623,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         tenant_config = f"""
 cloud_credential_authorization_mapping:
   role_tags:
+    enabled: true
     authorized_groups_tags:
       - noq_authorized
     authorized_groups_cli_only_tags:
