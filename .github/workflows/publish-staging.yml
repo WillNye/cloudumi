@@ -1,0 +1,30 @@
+name: Publish to staging using bazelisk/bazel and the `//deploy/staging:deploy` target
+on: workflow_dispatch
+# The  below will trigger build on any push to main branch
+#on:
+#  push:
+#    branches: main
+#    tags:
+#      - "*"
+jobs:
+  bazelisk_deploy_to_staging:
+    runs-on: ubuntu-latest
+    name: Bazelisk deploy action
+    if: github.repository == 'castrapel/cloudumi'
+    steps:
+      - name: Setup Bazelisk
+        uses: bazelbuild/setup-bazelisk@v1.0.1
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        # Ignore the failure of a step and avoid terminating the job.
+        continue-on-error: true
+      - name: Deploy to Staging using Bazelisk
+        env:
+          AWS_DEFAULT_REGION: us-west-2
+          AWS_ACCESS_KEY_ID: ${{ secrets.NOQ_ECR_USER_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.NOQ_ECR_USER_SECRET_ACCESS_KEY }}
+        run: |-
+          bazelisk build //deploy/staging:deploy

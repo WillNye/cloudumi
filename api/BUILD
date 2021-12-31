@@ -125,7 +125,7 @@ py_binary(
     srcs = [
         ":src",
     ],
-    main = "debug.py",
+    main = "__main__.py",
     env = {
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
         # Note: `bazel info --show_make_env` will show all available predefined variables
