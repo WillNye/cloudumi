@@ -203,8 +203,9 @@ def boto3_cached_conn(
         )
     elif pre_assume_roles is None:
         pre_assume_roles = []
-    if not assume_role and consoleme_config.get("_global_.environment") != "test":
-        raise ValueError("Must provide role to assume")
+    # TODO: This breaks when tenant employee attempts to retrieve credentials
+    # if not assume_role and consoleme_config.get("_global_.environment") != "test":
+    #     raise ValueError("Must provide role to assume")
     if not pre_assume_roles and consoleme_config.get("_global_.environment") != "test":
         raise Exception("Customer hasn't configured central role for Noq.")
     key = (
