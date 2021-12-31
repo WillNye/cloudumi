@@ -1,8 +1,8 @@
 genrule(
     name = "deploy",
     srcs = [
-        "//api:container-deploy-production",
-        "//common/celery_tasks:container-deploy-production",
+        "//api:container-deploy-prod",
+        "//common/celery_tasks:container-deploy-prod",
         "//deploy/ecs/production-1:compose_files",
     ],
     executable = True,

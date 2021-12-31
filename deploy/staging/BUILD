@@ -1,0 +1,23 @@
+genrule(
+    name = "deploy",
+    srcs = [
+        "//api:container-deploy-staging",
+        "//common/celery_tasks:container-deploy-staging",
+        "//deploy/ecs/staging-1:compose_files",
+    ],
+    executable = True,
+    outs = ["run_deploy"],
+    cmd = "echo 'ecs-cli configure --cluster noq-staging-1 --default-launch-type FARGATE \
+           --config-name noq-staging-1-web --region us-west-2; \
+           ecs-cli configure --cluster noq-staging-1 --default-launch-type FARGATE \
+           --config-name noq-staging-1-celery --region us-west-2; ecs-cli compose -f deploy/ecs/staging-1/docker-compose-ecs-api.yaml \
+           --cluster-config noq-staging-1-web --ecs-params deploy/ecs/staging-1/ecs-params.yml \
+           -p noq-staging --task-role-arn arn:aws:iam::259868150464:role/NoqClusterRole1 \
+           --region us-west-2 service up --create-log-groups --timeout 15 --target-groups \
+           targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:259868150464:targetgroup/noq-staging-1-tg/ff8c2ec3d5a449f5,containerPort=8092,containerName=noq-staging; \
+           ecs-cli compose -f deploy/ecs/staging-1/docker-compose-ecs-celery.yaml \
+           --cluster-config noq-staging-1-celery --ecs-params deploy/ecs/staging-1/ecs-params.yml \
+           -p noq-staging-1-celery --task-role-arn arn:aws:iam::259868150464:role/NoqClusterRole1 \
+           --region us-west-2 service up --create-log-groups --timeout 15' >$@",
+    tags = ["manual"],
+)

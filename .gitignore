@@ -122,7 +122,6 @@ venv.bak/
 dynamodb-data/
 redis-data/
 node_modules/
-staging/
 **/node_modules/
 tmp/*
 tmp*
@@ -150,3 +149,5 @@ bazel-*
 
 
 .isort.cfg
+
+.env_github_action_secrets

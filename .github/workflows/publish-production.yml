@@ -12,19 +12,48 @@ jobs:
     name: Bazelisk deploy action
     if: github.repository == 'castrapel/cloudumi'
     steps:
-      - name: Setup Bazelisk
-        uses: bazelbuild/setup-bazelisk@v1.0.1
+      - uses: actions/checkout@v1
+
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        # Ignore the failure of a step and avoid terminating the job.
+        continue-on-error: true
+        if: ${{ !env.ACT }}
+
+      - name: Mount bazel cache
+        uses: actions/cache@v1
+        with:
+          path: "/home/runner/.cache/bazel"
+          key: bazel
+
+      - name: Update cache
+        run: sudo apt-get update
+
+      - name: Install xmlsec dependencies
+        run: sudo apt-get install -y libxml2-dev libxmlsec1-dev libxmlsec1-openssl
+
+      - name: Install bazelisk
+        run: |
+          curl -LO "https://github.com/bazelbuild/bazelisk/releases/download/v1.1.0/bazelisk-linux-amd64"
+          mkdir -p "${GITHUB_WORKSPACE}/bin/"
+          mv bazelisk-linux-amd64 "${GITHUB_WORKSPACE}/bin/bazel"
+          chmod +x "${GITHUB_WORKSPACE}/bin/bazel"
+
+      - name: Setup ECS CLI
+        run: |-
+          mkdir -p "$HOME/tools/ecs-cli"
+          curl -Lo "$HOME/tools/ecs-cli/ecs-cli" https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
+          chmod +x "$HOME/tools/ecs-cli/ecs-cli"
+          echo "$HOME/tools/ecs-cli" >> $GITHUB_PATH
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
-      - uses: satackey/action-docker-layer-caching@v0.0.11
-        # Ignore the failure of a step and avoid terminating the job.
-        continue-on-error: true
-      - name: Deploy to Staging using Bazelisk
+
+      - name: Deploy to Production using Bazelisk
         env:
           AWS_DEFAULT_REGION: us-west-2
           AWS_ACCESS_KEY_ID: ${{ secrets.NOQ_ECR_USER_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.NOQ_ECR_USER_SECRET_ACCESS_KEY }}
         run: |-
-          bazelisk build //deploy/production:deploy
+          ${GITHUB_WORKSPACE}/bin/bazel run //deploy/production:deploy
