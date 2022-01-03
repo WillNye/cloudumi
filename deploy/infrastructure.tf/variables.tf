@@ -1,14 +1,3 @@
-variable "bucket_name_prefix" {
-  description = "The prefix to use for the S3 bucket name. This will be used to create the S3 bucket name. The bucket name will be the prefix + cluster ID."
-  type        = string
-  default     = "cloudumi-cache"
-}
-
-variable "cluster_id" {
-  description = "The cluster ID for CloudUmi."
-  type        = string
-}
-
 variable "region" {
   type    = string
   default = "us-west-2"
@@ -19,6 +8,16 @@ variable "region" {
   }
 }
 
+variable "namespace" {
+  type = string
+  default = "noq"
+}
+
+variable "name" {
+  type = string
+  default = "common" 
+}
+
 variable "stage" {
   type    = string
   default = "staging"
@@ -27,4 +26,15 @@ variable "stage" {
     condition     = contains(["staging", "test", "prod"], var.stage)
     error_message = "Allowed values for input_parameter are \"staging\", \"test\", or \"prod\"."
   }
+}
+
+variable "attributes" {
+  type = number
+  default = 1
+}
+
+variable "cluster_id" {
+  type = string
+  description = "The cluster ID for CloudUmi."
+  default = "${namespace}-${name}-${stage}-${attributes}"
 }

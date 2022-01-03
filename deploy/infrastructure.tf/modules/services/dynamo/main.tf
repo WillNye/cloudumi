@@ -9,7 +9,7 @@ resource "aws_dynamodb_table" "cloudumi_identity_groups_multitenant" {
     name = "host"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_identity_groups_multitenant"
+  name           = "${var.cluster_id}_cloudumi_identity_groups_multitenant"
   hash_key       = "host"
   range_key      = "group_id"
   read_capacity  = 1
@@ -46,7 +46,7 @@ resource "aws_dynamodb_table" "cloudumi_cloudtrail_multitenant" {
     name = "request_id"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_cloudtrail_multitenant"
+  name           = "${var.cluster_id}_cloudumi_cloudtrail_multitenant"
   hash_key       = "host"
   range_key      = "request_id"
   read_capacity  = 1
@@ -79,7 +79,7 @@ resource "aws_dynamodb_table" "cloudumi_config_multitenant" {
     name = "id"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_config_multitenant"
+  name           = "${var.cluster_id}_cloudumi_config_multitenant"
   hash_key       = "host"
   range_key      = "id"
   read_capacity  = 1
@@ -111,7 +111,7 @@ resource "aws_dynamodb_table" "cloudumi_identity_requests_multitenant" {
     name = "request_id"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_identity_requests_multitenant"
+  name           = "${var.cluster_id}_cloudumi_identity_requests_multitenant"
   hash_key       = "host"
   range_key      = "request_id"
   read_capacity  = 1
@@ -147,7 +147,7 @@ resource "aws_dynamodb_table" "cloudumi_policy_requests_multitenant" {
     name = "request_id"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_policy_requests_multitenant"
+  name           = "${var.cluster_id}_cloudumi_policy_requests_multitenant"
   hash_key       = "host"
   range_key      = "request_id"
   read_capacity  = 1
@@ -180,7 +180,7 @@ resource "aws_dynamodb_table" "cloudumi_notifications_multitenant" {
     name = "predictable_id"
     type = "S"
   }
-  name             = "${var.cluster_stage}_cloudumi_notifications_multitenant"
+  name             = "${var.cluster_id}_cloudumi_notifications_multitenant"
   hash_key         = "host"
   range_key        = "predictable_id"
   read_capacity    = 1
@@ -205,7 +205,7 @@ resource "aws_dynamodb_table" "cloudumi_users_multitenant" {
     name = "username"
     type = "S"
   }
-  name             = "${var.cluster_stage}_cloudumi_users_multitenant"
+  name             = "${var.cluster_id}_cloudumi_users_multitenant"
   hash_key         = "host"
   range_key        = "username"
   read_capacity    = 1
@@ -230,7 +230,7 @@ resource "aws_dynamodb_table" "cloudumi_tenant_static_configs" {
     name = "id"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_tenant_static_configs"
+  name           = "${var.cluster_id}_cloudumi_tenant_static_configs"
   hash_key       = "host"
   range_key      = "id"
   read_capacity  = 1
@@ -262,7 +262,7 @@ resource "aws_dynamodb_table" "cloudumi_identity_users_multitenant" {
     name = "user_id"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_identity_users_multitenant"
+  name           = "${var.cluster_id}_cloudumi_identity_users_multitenant"
   hash_key       = "host"
   range_key      = "user_id"
   read_capacity  = 1
@@ -298,7 +298,7 @@ resource "aws_dynamodb_table" "noq_api_keys" {
     name = "id"
     type = "S"
   }
-  name           = "${var.cluster_stage}_noq_api_keys"
+  name           = "${var.cluster_id}_noq_api_keys"
   hash_key       = "host"
   range_key      = "api_key"
   read_capacity  = 1
@@ -338,7 +338,7 @@ resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant" {
     name = "host"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_iamroles_multitenant"
+  name           = "${var.cluster_id}_cloudumi_iamroles_multitenant"
   hash_key       = "host"
   range_key      = "entity_id"
   read_capacity  = 1
@@ -371,7 +371,7 @@ resource "aws_dynamodb_table" "noq_aws_accounts" {
     name = "host"
     type = "S"
   }
-  name           = "${var.cluster_stage}_noq_aws_accounts"
+  name           = "${var.cluster_id}_noq_aws_accounts"
   hash_key       = "host"
   range_key      = "aws_account_id"
   read_capacity  = 1
@@ -414,7 +414,7 @@ resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant" {
     name = "host"
     type = "S"
   }
-  name           = "${var.cluster_stage}_cloudumi_resource_cache_multitenant"
+  name           = "${var.cluster_id}_cloudumi_resource_cache_multitenant"
   hash_key       = "host"
   range_key      = "entity_id"
   read_capacity  = 1

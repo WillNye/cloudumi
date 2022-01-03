@@ -16,17 +16,15 @@ provider "aws" {
 
 module "tenant_dynamodb_service" {
   source = "./modules/services/dynamo"
-  cluster_stage = "${var.stage}"
+  cluster_id = "${var.cluster_id}"
 }
 
 module "tenant_elasticache_service" {
   source = "./modules/services/elasticache"
-  cluster_stage = "${var.stage}"
+  cluster_id = "${var.cluster_id}"
 }
 
 module "tenant_s3_service" {
   source = "./modules/services/s3"
-  bucket_name_prefix = "${var.bucket_name_prefix}"
   cluster_id = "${var.cluster_id}"
-  cluster_stage = "${var.stage}"
 }
