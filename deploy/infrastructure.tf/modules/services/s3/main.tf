@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "cloudumi_files_bucket" {
-  bucket = "${lower(var.bucket_name_prefix)}-${var.cluster_stage}-${var.cluster_id}"
+  bucket = "${lower(var.bucket_name_prefix)}-${var.cluster_id}"
   acl    = "private"
 
   server_side_encryption_configuration {

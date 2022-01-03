@@ -32,9 +32,3 @@ variable "attributes" {
   type = number
   default = 1
 }
-
-variable "cluster_id" {
-  type = string
-  description = "The cluster ID for CloudUmi."
-  default = "${namespace}-${name}-${stage}-${attributes}"
-}

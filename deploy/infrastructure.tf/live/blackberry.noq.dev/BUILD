@@ -1,5 +1,5 @@
 filegroup(
-    name = "demo",
+    name = "blackberry.noq.dev",
     data = glob([
         "*.tfvars",
     ]),
