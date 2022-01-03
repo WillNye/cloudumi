@@ -1,6 +1,6 @@
 // TODO: Enable autoscaling for all DDB tables
 
-resource "aws_dynamodb_table" "consoleme_identity_groups_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_identity_groups_multitenant" {
   attribute {
     name = "group_id"
     type = "S"
@@ -9,7 +9,7 @@ resource "aws_dynamodb_table" "consoleme_identity_groups_multitenant" {
     name = "host"
     type = "S"
   }
-  name           = "consoleme_identity_groups_multitenant"
+  name           = "${var.cluster_stage}_cloudumi_identity_groups_multitenant"
   hash_key       = "host"
   range_key      = "group_id"
   read_capacity  = 1
@@ -33,7 +33,7 @@ resource "aws_dynamodb_table" "consoleme_identity_groups_multitenant" {
 
 }
 
-resource "aws_dynamodb_table" "consoleme_cloudtrail_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_cloudtrail_multitenant" {
   attribute {
     name = "arn"
     type = "S"
@@ -46,7 +46,7 @@ resource "aws_dynamodb_table" "consoleme_cloudtrail_multitenant" {
     name = "request_id"
     type = "S"
   }
-  name           = "consoleme_cloudtrail_multitenant"
+  name           = "${var.cluster_stage}_cloudumi_cloudtrail_multitenant"
   hash_key       = "host"
   range_key      = "request_id"
   read_capacity  = 1
@@ -70,7 +70,7 @@ resource "aws_dynamodb_table" "consoleme_cloudtrail_multitenant" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_config_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_config_multitenant" {
   attribute {
     name = "host"
     type = "S"
@@ -79,7 +79,7 @@ resource "aws_dynamodb_table" "consoleme_config_multitenant" {
     name = "id"
     type = "S"
   }
-  name           = "consoleme_config_multitenant"
+  name           = "${var.cluster_stage}_cloudumi_config_multitenant"
   hash_key       = "host"
   range_key      = "id"
   read_capacity  = 1
@@ -102,7 +102,7 @@ resource "aws_dynamodb_table" "consoleme_config_multitenant" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_identity_requests_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_identity_requests_multitenant" {
   attribute {
     name = "host"
     type = "S"
@@ -111,7 +111,7 @@ resource "aws_dynamodb_table" "consoleme_identity_requests_multitenant" {
     name = "request_id"
     type = "S"
   }
-  name           = "consoleme_identity_requests_multitenant"
+  name           = "${var.cluster_stage}_cloudumi_identity_requests_multitenant"
   hash_key       = "host"
   range_key      = "request_id"
   read_capacity  = 1
@@ -134,7 +134,7 @@ resource "aws_dynamodb_table" "consoleme_identity_requests_multitenant" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_policy_requests_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_policy_requests_multitenant" {
   attribute {
     name = "arn"
     type = "S"
@@ -147,7 +147,7 @@ resource "aws_dynamodb_table" "consoleme_policy_requests_multitenant" {
     name = "request_id"
     type = "S"
   }
-  name           = "consoleme_policy_requests_multitenant"
+  name           = "${var.cluster_stage}_cloudumi_policy_requests_multitenant"
   hash_key       = "host"
   range_key      = "request_id"
   read_capacity  = 1
@@ -171,7 +171,7 @@ resource "aws_dynamodb_table" "consoleme_policy_requests_multitenant" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_notifications_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_notifications_multitenant" {
   attribute {
     name = "host"
     type = "S"
@@ -180,7 +180,7 @@ resource "aws_dynamodb_table" "consoleme_notifications_multitenant" {
     name = "predictable_id"
     type = "S"
   }
-  name             = "consoleme_notifications_multitenant"
+  name             = "${var.cluster_stage}_cloudumi_notifications_multitenant"
   hash_key         = "host"
   range_key        = "predictable_id"
   read_capacity    = 1
@@ -196,7 +196,7 @@ resource "aws_dynamodb_table" "consoleme_notifications_multitenant" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_users_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_users_multitenant" {
   attribute {
     name = "host"
     type = "S"
@@ -205,7 +205,7 @@ resource "aws_dynamodb_table" "consoleme_users_multitenant" {
     name = "username"
     type = "S"
   }
-  name             = "consoleme_users_multitenant"
+  name             = "${var.cluster_stage}_cloudumi_users_multitenant"
   hash_key         = "host"
   range_key        = "username"
   read_capacity    = 1
@@ -221,7 +221,7 @@ resource "aws_dynamodb_table" "consoleme_users_multitenant" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_tenant_static_configs" {
+resource "aws_dynamodb_table" "cloudumi_tenant_static_configs" {
   attribute {
     name = "host"
     type = "S"
@@ -230,7 +230,7 @@ resource "aws_dynamodb_table" "consoleme_tenant_static_configs" {
     name = "id"
     type = "S"
   }
-  name           = "consoleme_tenant_static_configs"
+  name           = "${var.cluster_stage}_cloudumi_tenant_static_configs"
   hash_key       = "host"
   range_key      = "id"
   read_capacity  = 1
@@ -253,7 +253,7 @@ resource "aws_dynamodb_table" "consoleme_tenant_static_configs" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_identity_users_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_identity_users_multitenant" {
   attribute {
     name = "host"
     type = "S"
@@ -262,7 +262,7 @@ resource "aws_dynamodb_table" "consoleme_identity_users_multitenant" {
     name = "user_id"
     type = "S"
   }
-  name           = "consoleme_identity_users_multitenant"
+  name           = "${var.cluster_stage}_cloudumi_identity_users_multitenant"
   hash_key       = "host"
   range_key      = "user_id"
   read_capacity  = 1
@@ -298,7 +298,7 @@ resource "aws_dynamodb_table" "noq_api_keys" {
     name = "id"
     type = "S"
   }
-  name           = "noq_api_keys"
+  name           = "${var.cluster_stage}_noq_api_keys"
   hash_key       = "host"
   range_key      = "api_key"
   read_capacity  = 1
@@ -329,7 +329,7 @@ resource "aws_dynamodb_table" "noq_api_keys" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_iamroles_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant" {
   attribute {
     name = "entity_id"
     type = "S"
@@ -338,7 +338,7 @@ resource "aws_dynamodb_table" "consoleme_iamroles_multitenant" {
     name = "host"
     type = "S"
   }
-  name           = "consoleme_iamroles_multitenant"
+  name           = "${var.cluster_stage}_cloudumi_iamroles_multitenant"
   hash_key       = "host"
   range_key      = "entity_id"
   read_capacity  = 1
@@ -371,7 +371,7 @@ resource "aws_dynamodb_table" "noq_aws_accounts" {
     name = "host"
     type = "S"
   }
-  name           = "noq_aws_accounts"
+  name           = "${var.cluster_stage}_noq_aws_accounts"
   hash_key       = "host"
   range_key      = "aws_account_id"
   read_capacity  = 1
@@ -401,7 +401,7 @@ resource "aws_dynamodb_table" "noq_aws_accounts" {
   }
 }
 
-resource "aws_dynamodb_table" "consoleme_resource_cache_multitenant" {
+resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant" {
   attribute {
     name = "arn"
     type = "S"
@@ -414,7 +414,7 @@ resource "aws_dynamodb_table" "consoleme_resource_cache_multitenant" {
     name = "host"
     type = "S"
   }
-  name           = "consoleme_resource_cache_multitenant"
+  name           = "${var.cluster_stage}_cloudumi_resource_cache_multitenant"
   hash_key       = "host"
   range_key      = "entity_id"
   read_capacity  = 1
@@ -450,46 +450,46 @@ resource "aws_dynamodb_table" "consoleme_resource_cache_multitenant" {
 module "table_autoscaling_1" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_identity_groups_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_identity_groups_multitenant.id
 }
 
 module "table_autoscaling_2" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_cloudtrail_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_cloudtrail_multitenant.id
 }
 
 module "table_autoscaling_3" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_config_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_config_multitenant.id
 }
 
 module "table_autoscaling_4" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_identity_requests_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_identity_requests_multitenant.id
 }
 
 module "table_autoscaling_5" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_policy_requests_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_policy_requests_multitenant.id
 }
 module "table_autoscaling_6" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_notifications_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_notifications_multitenant.id
 }
 module "table_autoscaling_7" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_tenant_static_configs.id
+  table_name = aws_dynamodb_table.cloudumi_tenant_static_configs.id
 }
 module "table_autoscaling_8" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_identity_users_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_identity_users_multitenant.id
 }
 
 module "table_autoscaling_9" {
@@ -501,7 +501,7 @@ module "table_autoscaling_9" {
 module "table_autoscaling_10" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_iamroles_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_iamroles_multitenant.id
 }
 
 module "table_autoscaling_11" {
@@ -512,5 +512,5 @@ module "table_autoscaling_11" {
 module "table_autoscaling_12" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.consoleme_resource_cache_multitenant.id
+  table_name = aws_dynamodb_table.cloudumi_resource_cache_multitenant.id
 }
