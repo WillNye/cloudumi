@@ -2,6 +2,8 @@
 Each NOQ infrastructure is setup in it's own tenant and account id. When needed, a new deployment configuration tfvars is added to the `live` directory under the new tenant id. Use this only to setup a new account backend infrastructure and to update the infrastructure when changes are needed.
 
 ## Quick Start
+Ensure the AWS_PROFILE is set to the correct account id
+* `EXPORT AWS_PROFILE=noq_dev` (for instance)
 * Plan: `terraform plan --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
 * Apply: `terraform apply --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
 * Destroy: `terraform destroy --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
