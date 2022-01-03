@@ -57,8 +57,3 @@ output "noq_aws_accounts_id" {
   description = "ID of noq aws accounts"
   value       = aws_dynamodb_table.noq_aws_accounts.id
 }
-
-output "cloudumi_output_cache_multitenant_id" {
-  description = "ID of cloudumi output cache multitenant"
-  value       = aws_dynamodb_table.cloudumi_output_cache_multitenant.id
-}

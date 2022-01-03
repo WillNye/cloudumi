@@ -28,5 +28,5 @@ module "tenant_s3_service" {
   source = "./modules/services/s3"
   bucket_name_prefix = "${var.bucket_name_prefix}"
   cluster_id = "${var.cluster_id}"
-  cluster_Stage = "${var.cluster_stage}"
+  cluster_stage = "${var.stage}"
 }
