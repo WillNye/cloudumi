@@ -4,6 +4,7 @@ Each NOQ infrastructure is setup in it's own tenant and account id. When needed,
 ## Quick Start
 Ensure the AWS_PROFILE is set to the correct account id
 * `EXPORT AWS_PROFILE=noq_dev` (for instance)
+* For the first time, initialize the environment: `terraform init`
 * Plan: `terraform plan --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
 * Apply: `terraform apply --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
 * Destroy: `terraform destroy --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`

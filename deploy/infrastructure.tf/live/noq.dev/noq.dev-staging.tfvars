@@ -1,6 +1,5 @@
 // AWS_PROFILE=noq_dev terraform plan -var-file="staging.tfvars"
 region     = "us-west-2"
-name       = "blackberry"
 stage      = "staging"
 attributes = 1
 subnet_azs = ["us-west-2a", "us-west-2b"]
