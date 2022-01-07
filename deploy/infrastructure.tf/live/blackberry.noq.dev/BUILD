@@ -12,7 +12,7 @@ genrule(
         "blackberry.noq.dev",
     ],
     outs = ["terraform_apply_staging"],
-    cmd  = "echo 'terraform apply --var-file=blackberry.noq.dev-staging.tfvars' &>$@"
+    cmd  = "echo 'terraform apply --var-file=blackberry.noq.dev-staging.tfvars' &>$@",
     executable = True,
     message = "This applies terraform staging configuration",
 )
@@ -22,8 +22,8 @@ genrule(
     srcs = [
         "blackberry.noq.dev",
     ],
-    outs = ["terraform_apply_staging"],
-    cmd  = "echo 'terraform apply --var-file=blackberry.noq.dev-prod.tfvars' &>$@"
+    outs = ["terraform_apply_prod"],
+    cmd  = "echo 'terraform apply --var-file=blackberry.noq.dev-prod.tfvars' &>$@",
     executable = True,
     message = "This applies terraform production configuration",
 )
