@@ -106,7 +106,9 @@ async def authenticate_user_by_oidc(request):
     log_data = {"function": function}
     code = request.get_argument("code", None)
     protocol = request.request.protocol
-    if "https://" in config.get_host_specific_key("url", host):
+    if "https://" in config.get_host_specific_key(
+        "url", host
+    ) or "https://" in request.request.headers.get("Referer", ""):
         # If we're behind a load balancer that terminates tls for us, request.request.protocol will be "http://" and our
         # oidc redirect will be invalid
         protocol = "https"
@@ -349,7 +351,9 @@ async def authenticate_user_by_oidc(request):
 
         if config.get("_global_.auth.set_auth_cookie", True):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                minutes=config.get_host_specific_key("jwt.expiration_minutes", host, 60)
+                minutes=config.get_host_specific_key(
+                    "jwt.expiration_minutes", host, 1440
+                )
             )
             encoded_cookie = await generate_jwt_token(
                 email, groups, host, exp=expiration
