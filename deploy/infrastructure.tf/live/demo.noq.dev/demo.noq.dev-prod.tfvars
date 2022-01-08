@@ -1,4 +1,5 @@
 // AWS_PROFILE=noq_dev terraform plan -var-file="staging.tfvars"
+noq_core   = false
 region     = "us-west-2"
 name       = "demo"
 stage      = "prod"

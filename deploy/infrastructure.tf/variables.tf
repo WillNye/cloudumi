@@ -32,3 +32,20 @@ variable "attributes" {
   type = number
   default = 1
 }
+
+variable "capacity_providers" {
+  description = "List of short names of one or more capacity providers to associate with the cluster. Valid values also include FARGATE and FARGATE_SPOT."
+  type        = list(string)
+  default     = ["FARGATE_SPOT", "FARGATE"]
+}
+
+variable "container_insights" {
+  description = "Controls if ECS Cluster has container insights enabled"
+  type        = bool
+  default     = false
+}
+
+variable "noq_core" {
+  type = bool
+  default = false
+}

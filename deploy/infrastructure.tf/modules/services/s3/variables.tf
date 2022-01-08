@@ -8,3 +8,8 @@ variable "cluster_id" {
   description = "The cluster ID for CloudUmi."
   type        = string
 }
+
+variable "noq_core" {
+  type = bool
+  default = false
+}
