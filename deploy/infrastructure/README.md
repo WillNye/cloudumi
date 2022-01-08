@@ -19,3 +19,23 @@ Ensure the AWS_PROFILE is set to the correct account id
     * `dynamo`: the table configurations
     * `elasticache`: the redis table
     * `s3`: the bucket to be used for configuration
+
+# Deploy to staging automation
+## Quick Start
+* Set AWS_PROFILE: `export AWS_PROFILE=noq_dev`
+* Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`
+* Deploy TF: `bazelisk run //deploy/infrastructure/live/noq.dev:tf-staging`
+* Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev:staging`
+
+## Technical Debt
+* Instead of using the genrule, build a bzl starlark rule
+
+# Deploy to production automation
+## Quick Start
+* Set AWS_PROFILE: `export AWS_PROFILE=noq_dev`
+* Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`
+* Deploy TF: `bazelisk run //deploy/infrastructure/live/noq.dev:tf-production`
+* Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev:production`
+
+## Technical Debt
+* Instead of using the genrule, build a bzl starlark rule

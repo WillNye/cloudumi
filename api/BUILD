@@ -216,10 +216,6 @@ container_image(
     name = "base-api-image",
     base = "//docker/base:base_docker",
     env = {
-        "TZ": "America/Los_Angeles",
-        "PYTHONPATH": "/app/",
-        "PYTHONDONTWRITEBYTECODE": "1",
-        "PYTHONUNBUFFERED": "1",
     },
     layers = [
         ":config_layer",
