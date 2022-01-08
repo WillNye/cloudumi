@@ -246,7 +246,7 @@ py3_image(
 )
 
 py3_image(
-    name = "container-api",
+    name = "container",
     base = ":base-api-image",
     srcs = [
         ":lib",
@@ -264,7 +264,7 @@ container_push(
     name = "container-deploy-staging",
     format = "Docker",
     repository = "cloudumi-api",
-    image = "container-api",
+    image = "container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "staging",
     visibility = ["//visibility:public"],
@@ -274,7 +274,7 @@ container_push(
     name = "container-deploy-prod",
     format = "Docker",
     repository = "cloudumi-api",
-    image = "container-api",
+    image = "container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "prod",
     visibility = ["//visibility:public"],

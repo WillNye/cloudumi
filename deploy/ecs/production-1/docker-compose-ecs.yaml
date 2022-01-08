@@ -24,7 +24,7 @@ services:
     #      - "22:22"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
-      - CONFIG_LOCATION=s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/noq-production-1/noq-staging-1.yaml
+      - CONFIG_LOCATION=s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/noq-production-1/noq-production-1.yaml
     # Run commands to install Consoleme, run the service, and never exit in the event of failure (For dev debugging)
     command: >
       bash -c '

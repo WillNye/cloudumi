@@ -16,10 +16,12 @@ AWS_PROFILE=noq_dev terraform apply -var-file="staging.tfvars"
 
 ## Login to ECR
 
+```bash
 AWS_PROFILE=noq_dev aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com
 docker build -t cloudumi .
 docker tag cloudumi:latest 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:latest
 docker push 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:latest
+```
 
 # ECS Staging instructions
 
@@ -43,11 +45,12 @@ Each target has a name that uniquely identifies a build target. The path disambi
 * Ensure you have a python environment with version 3.9+
 * Type: `bazelisk query //...` to get a list of all targets
 * To build: `bazelisk build //...` - this builds everything locally
-* To run the API container: `bazelisk run //api/local-container-dev` - this will install the container build in your local docker cache; you can run it with volumes mounted using the `docker run` command. The container name will be something like: `api:local-container-dev`.
+* To run the API container: `bazelisk run //api/container` - this will install the container build in your local docker cache and run it
 
 ## Setup your dev environment
 ### Containers
 * Start your local dev environment by running: `bazelisk build //deploy/local:containers-dev` - this starts all the containers to run Cloudumi
+* To run test containers for CloudUmi API, Celery tasks, frontend, etc, use the `--add-host=cloudumi-redis:172.17.0.1` with the `docker run` command to link your container to the running local services (substitute cloudumi-redis as needed)
 * TODO: start all containers and py-binaries for projects
 
 ### Local environment
@@ -76,11 +79,12 @@ TODO
 ### Publish to Staging
 Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
 
-* `bazelisk build //deploy/staging:deploy`
+* `bazelisk run //deploy/staging`
 
 ### Publish to Prod
 > Do you really want this? Do you have access?
-TODO
+
+* `bazelisk run //deploy/prod`
 
 ## Troubleshooting
 * In the event that docker containers fail to run with an error on a symbol not found *.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.

@@ -7,7 +7,7 @@ genrule(
     outs = [
         "running",
     ],
-    srcs = [
+    exec_tools = [
         "//api:container-dev-local",
         "//common/celery_tasks:container-dev-local",
         "//deploy:compose-files",
