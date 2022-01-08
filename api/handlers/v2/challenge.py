@@ -359,7 +359,9 @@ class ChallengePollerHandler(TornadoRequestHandler):
         # Generate a jwt if user authentication was successful
         if challenge.get("status") == "success":
             jwt_expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                minutes=config.get_host_specific_key("jwt.expiration_minutes", host, 60)
+                minutes=config.get_host_specific_key(
+                    "jwt.expiration_minutes", host, 1440
+                )
             )
             encoded_jwt = await generate_jwt_token(
                 challenge.get("user"), challenge.get("groups"), host, exp=jwt_expiration

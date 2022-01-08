@@ -10,7 +10,7 @@ jobs:
   bazelisk_deploy_to_staging:
     runs-on: ubuntu-latest
     name: Bazelisk deploy action
-    if: github.repository == 'castrapel/cloudumi'
+    if: github.repository == 'noqdev/cloudumi'
     steps:
       - uses: actions/checkout@v1
 
@@ -44,7 +44,7 @@ jobs:
           curl -Lo "$HOME/tools/ecs-cli/ecs-cli" https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
           chmod +x "$HOME/tools/ecs-cli/ecs-cli"
           echo "$HOME/tools/ecs-cli" >> $GITHUB_PATH
-          
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:

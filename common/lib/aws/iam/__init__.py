@@ -365,7 +365,7 @@ async def update_assume_role_policy_trust_noq(host, role_name, account_id):
         session_name=sanitize_session_name("noq_update_assume_role_policy_trust"),
     )
 
-    role = await sync_to_async(client.get_role)(role_name)
+    role = await sync_to_async(client.get_role)(RoleName=role_name)
     assume_role_trust_policy = role.get("Role", {}).get("AssumeRolePolicyDocument", {})
     if not assume_role_trust_policy:
         return False

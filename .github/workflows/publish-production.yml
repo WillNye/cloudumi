@@ -10,7 +10,7 @@ jobs:
   bazelisk_deploy_to_production:
     runs-on: ubuntu-latest
     name: Bazelisk deploy action
-    if: github.repository == 'castrapel/cloudumi'
+    if: github.repository == 'noqdev/cloudumi'
     steps:
       - uses: actions/checkout@v1
 

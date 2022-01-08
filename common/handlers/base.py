@@ -653,7 +653,9 @@ class BaseHandler(TornadoRequestHandler):
             config.get("_global_.auth.cookie.name", "consoleme_auth")
         ):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                minutes=config.get_host_specific_key("jwt.expiration_minutes", host, 60)
+                minutes=config.get_host_specific_key(
+                    "jwt.expiration_minutes", host, 1440
+                )
             )
 
             encoded_cookie = await generate_jwt_token(

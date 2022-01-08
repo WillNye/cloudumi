@@ -149,7 +149,9 @@ async def handle_resource_type_ahead_request(cls):
             "account_resource_cache/cache_sns_topics_combined_v1.json.gz",
         )
     elif resource_type == "iam_arn":
-        topic = config.get("aws.iamroles_redis_key ", f"{host}_IAM_ROLE_CACHE")
+        topic = config.get_host_specific_key(
+            "aws.iamroles_redis_key ", host, f"{host}_IAM_ROLE_CACHE"
+        )
         s3_bucket = config.get_host_specific_key(
             "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
             host,
