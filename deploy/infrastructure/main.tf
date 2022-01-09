@@ -23,6 +23,7 @@ provider "aws" {
 
 module "tenant_container_service" {
   source = "./modules/services/containers"
+  stage = var.stage
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
   container_insights = var.container_insights

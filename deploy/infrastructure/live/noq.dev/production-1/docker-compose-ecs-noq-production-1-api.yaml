@@ -17,7 +17,7 @@
 version: "3"
 services:
   noq-production:
-    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi-api:production"
+    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/prod-registry-api:production"
     ports:
       #      # Serve ConsoleMe's backend (Python Tornado) port, which is used to serve the frontend when built
       - "8092:8092"

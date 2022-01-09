@@ -153,7 +153,7 @@ py3_image(
 container_push(
     name = "container-deploy-staging",
     format = "Docker",
-    repository = "cloudumi-celery",
+    repository = "staging-registry-celery",
     image = "container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "staging",
@@ -163,9 +163,9 @@ container_push(
 container_push(
     name = "container-deploy-prod",
     format = "Docker",
-    repository = "cloudumi-celery",
+    repository = "prod-registry-celery",
     image = "container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
+    tag = "production",
     visibility = ["//visibility:public"],
 )

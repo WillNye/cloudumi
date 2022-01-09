@@ -27,8 +27,28 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
   }
 }
 
-resource "aws_ecr_repository" "noq_ecr_repository" {
-  name                 = "${var.stage}-noq-container-registry"
+resource "aws_ecr_repository" "noq_ecr_repository-api" {
+  name                 = "${var.stage}-registry-api"
+  image_tag_mutability = "MUTABLE"
+  count                = var.noq_core ? 1 : 0  
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_repository" "noq_ecr_repository-celery" {
+  name                 = "${var.stage}-registry-celery"
+  image_tag_mutability = "MUTABLE"
+  count                = var.noq_core ? 1 : 0  
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
+  name                 = "${var.stage}-registry-frontend"
   image_tag_mutability = "MUTABLE"
   count                = var.noq_core ? 1 : 0  
 
