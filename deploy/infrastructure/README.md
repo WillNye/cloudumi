@@ -4,12 +4,12 @@ Each NOQ infrastructure is setup in it's own tenant and account id. When needed,
 **NOTE**: it is imperative you enter the correct workspace using `terraform workspace select` before attempting to update staging or production environments!
 
 ## Pre-requisites:
+* AWS keys configured in ~/.aws/credentials
 * terraform
 * ecs-cli
 
 ## Quick Start
-Ensure the AWS_PROFILE is set to the correct account id
-* `EXPORT AWS_PROFILE=noq_dev` (for instance)
+Ensure that your AWS profile is setup correctly in the ~/.aws/credentials file - the expectation is that there is a `noq_dev` entry with AWS keys configured; this is the profile that terraform will look for explicitely.
 * Ensure you have the pre-requisites installed
 * Setup your workspaces: `./setup.sh`
 * Select the appropriate workspace: `terraform workspace select demo.noq.dev-staging-1` (for instance)
@@ -17,6 +17,8 @@ Ensure the AWS_PROFILE is set to the correct account id
 * Plan: `terraform plan --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
 * Apply: `terraform apply --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
 * Destroy: `terraform destroy --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
+* Get outputs: `terraform output`
+* Refresh: `terraform refresh`
 
 ## Structure
 * `live`: has configuration tfvars for each tenant that is instantiated

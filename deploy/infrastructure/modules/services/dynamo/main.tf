@@ -23,10 +23,10 @@ resource "aws_dynamodb_table" "cloudumi_identity_groups_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -61,10 +61,10 @@ resource "aws_dynamodb_table" "cloudumi_cloudtrail_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = true
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = true
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -93,10 +93,10 @@ resource "aws_dynamodb_table" "cloudumi_config_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -125,10 +125,10 @@ resource "aws_dynamodb_table" "cloudumi_identity_requests_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -162,10 +162,10 @@ resource "aws_dynamodb_table" "cloudumi_policy_requests_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -187,10 +187,10 @@ resource "aws_dynamodb_table" "cloudumi_notifications_multitenant" {
   write_capacity   = 1
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -212,10 +212,10 @@ resource "aws_dynamodb_table" "cloudumi_users_multitenant" {
   write_capacity   = 1
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -244,10 +244,10 @@ resource "aws_dynamodb_table" "cloudumi_tenant_static_configs" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -276,10 +276,10 @@ resource "aws_dynamodb_table" "cloudumi_identity_users_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -320,10 +320,10 @@ resource "aws_dynamodb_table" "noq_api_keys" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = true
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = true
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -352,10 +352,10 @@ resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = true
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = true
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -392,10 +392,10 @@ resource "aws_dynamodb_table" "noq_aws_accounts" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -436,10 +436,10 @@ resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = false
-  }
+  # ttl {
+  #   attribute_name = "ttl"
+  #   enabled        = false
+  # }
 
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]

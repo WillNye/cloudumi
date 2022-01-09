@@ -1,3 +1,8 @@
+variable "tf_profile" {
+  type    = string
+  default = "noq_dev"
+}
+
 variable "region" {
   type    = string
   default = "us-west-2"
