@@ -1,38 +1,3 @@
-variable "tf_profile" {
-  type    = string
-  default = "noq_dev"
-}
-
-variable "region" {
-  type    = string
-  default = "us-west-2"
-
-  validation {
-    condition     = contains(["us-west-1", "us-west-2"], var.region)
-    error_message = "Allowed values for input_parameter are \"us-west-1\", \"us-west-2\"."
-  }
-}
-
-variable "namespace" {
-  type = string
-  default = "noq"
-}
-
-variable "name" {
-  type = string
-  default = "common" 
-}
-
-variable "stage" {
-  type    = string
-  default = "staging"
-
-  validation {
-    condition     = contains(["staging", "test", "prod"], var.stage)
-    error_message = "Allowed values for input_parameter are \"staging\", \"test\", or \"prod\"."
-  }
-}
-
 variable "attributes" {
   type = number
   default = 1
@@ -50,6 +15,21 @@ variable "container_insights" {
   default     = false
 }
 
+variable "lb_port" {
+  description = "The port the load balancer will listen on."
+  default     = 443
+}
+
+variable "name" {
+  type = string
+  default = "common" 
+}
+
+variable "namespace" {
+  type = string
+  default = "noq"
+}
+
 variable "noq_core" {
   type = bool
   default = false
@@ -58,4 +38,29 @@ variable "noq_core" {
 variable "redis_node_type" {
   type = string
   default = "cache.t3.small"
+}
+
+variable "region" {
+  type    = string
+  default = "us-west-2"
+
+  validation {
+    condition     = contains(["us-west-1", "us-west-2"], var.region)
+    error_message = "Allowed values for input_parameter are \"us-west-1\", \"us-west-2\"."
+  }
+}
+
+variable "stage" {
+  type    = string
+  default = "staging"
+
+  validation {
+    condition     = contains(["staging", "test", "prod"], var.stage)
+    error_message = "Allowed values for input_parameter are \"staging\", \"test\", or \"prod\"."
+  }
+}
+
+variable "tf_profile" {
+  type    = string
+  default = "noq_dev"
 }
