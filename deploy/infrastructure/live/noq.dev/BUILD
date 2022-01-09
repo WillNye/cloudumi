@@ -2,7 +2,6 @@ filegroup(
     name = "noq.dev",
     data = glob([
         "*.tfvars",
-        "*.yaml",
         "*.yml",
     ]),
     visibility = ["//visibility:public"],
@@ -34,10 +33,11 @@ genrule(
 
 # TODO: create a cloudumi deploy bazel rule taht does this cleanly.
 genrule(
-    name = "staging",
+    name = "staging-1",
     srcs = [
         "//api:container-deploy-staging",
         "//common/celery_tasks:container-deploy-staging",
+        "//deploy/infrastructure/live/noq.dev/staging-1",
         ":tf-staging",
     ],
     executable = True,
@@ -46,7 +46,7 @@ genrule(
         "//common/celery_tasks:container-deploy-staging",
         "tf-staging",
     ],
-    outs = ["run_deploy"],
+    outs = ["run_deploy_staging"],
     message = "Deploying CloudUmi to staging...",
     cmd = "echo 'bazel run //api:container-deploy-staging; \
            \
@@ -62,14 +62,14 @@ genrule(
            \
            ecs-cli up --cluster-config noq-staging-1-celery; \
            \
-           ecs-cli compose -f docker-compose-ecs-staging-api.yaml \
-           --cluster-config noq-staging-1-api --ecs-params ecs-params-staging.yml \
+           ecs-cli compose -f deploy/infrastructure/live/noq.dev/staging-1/docker-compose-ecs-noq-staging-1-api.yaml \
+           --cluster-config noq-staging-1-api --ecs-params deploy/infrastructure/live/noq.dev/staging-1/ecs-params-noq-staging-1.yml \
            -p noq-staging-1-api --task-role-arn arn:aws:iam::259868150464:role/NoqClusterRole1 \
            --region us-west-2 service up --create-log-groups --timeout 15 --target-groups \
            targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:259868150464:targetgroup/noq-staging-1-tg/ff8c2ec3d5a449f5,containerPort=8092,containerName=noq-staging; \
            \
-           ecs-cli compose -f docker-compose-ecs-staging-celery.yaml \
-           --cluster-config noq-staging-1-celery --ecs-params ecs-params-staging.yml \
+           ecs-cli compose -f deploy/infrastructure/live/noq.dev/staging-1/docker-compose-ecs-noq-staging-1-celery.yaml \
+           --cluster-config noq-staging-1-celery --ecs-params deploy/infrastructure/live/noq.dev/staging-1/ecs-params-noq-staging-1.yml \
            -p noq-staging-1-celery --task-role-arn arn:aws:iam::259868150464:role/NoqClusterRole1 \
            --region us-west-2 service up --create-log-groups --timeout 15' >$@",
     tags = ["manual"],
@@ -77,10 +77,11 @@ genrule(
 
 # TODO: create a cloudumi deploy bazel rule that does this cleanly.
 genrule(
-    name = "production",
+    name = "production-1",
     srcs = [
         "//api:container-deploy-prod",
         "//common/celery_tasks:container-deploy-prod",
+        "//deploy/infrastructure/live/noq.dev/production-1",
         ":tf-production",
     ],
     exec_tools = [
@@ -89,7 +90,7 @@ genrule(
         ":tf-production",
     ],
     executable = True,
-    outs = ["run_deploy"],
+    outs = ["run_deploy_production"],
     message = "Deploying CloudUmi to production...",
     cmd = "echo 'bazel run //api:container-deploy-prod; \
                  bazel run //common/celery_tasks:container-deploy-prod; \
@@ -100,14 +101,14 @@ genrule(
                  ecs-cli configure --cluster noq-production-1 --default-launch-type FARGATE \
                  --config-name noq-production-1-celery --region us-west-2; \
                  \
-                 ecs-cli compose -f docker-compose-ecs-production-api.yaml \
-                 --cluster-config noq-production-1-api --ecs-params ecs-params-production.yml \
+                 ecs-cli compose -f deploy/infrastructure/live/noq.dev/production-1/docker-compose-ecs-noq-production-1-api.yaml \
+                 --cluster-config noq-production-1-api --ecs-params deploy/infrastructure/live/noq.dev/production-1/ecs-params-noq-production-1.yml \
                  -p noq-production-1 --task-role-arn arn:aws:iam::259868150464:role/NoqClusterRole1 \
                  --region us-west-2 service up --create-log-groups --timeout 15 --target-groups \
                  targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:259868150464:targetgroup/noq-production-1-tg/ff8c2ec3d5a449f5,containerPort=8092,containerName=noq-production; \
                  \
-                 ecs-cli compose -f docker-compose-ecs-production-celery.yaml \
-                 --cluster-config noq-production-1-celery --ecs-params ecs-params-production.yml \
+                 ecs-cli compose -f deploy/infrastructure/live/noq.dev/production-1/docker-compose-ecs-noq-production-1-celery.yaml \
+                 --cluster-config noq-production-1-celery --ecs-params deploy/infrastructure/live/noq.dev/production-1/ecs-params-noq-production-1.yml \
                  -p noq-production-1 --task-role-arn arn:aws:iam::259868150464:role/NoqClusterRole1 \
                  --region us-west-2 service up --create-log-groups --timeout 15' >$@",
     tags = ["manual"],

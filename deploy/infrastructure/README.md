@@ -1,9 +1,18 @@
 # NOQ Infrastructure
 Each NOQ infrastructure is setup in it's own tenant and account id. When needed, a new deployment configuration tfvars is added to the `live` directory under the new tenant id. Use this only to setup a new account backend infrastructure and to update the infrastructure when changes are needed.
 
+**NOTE**: it is imperative you enter the correct workspace using `terraform workspace select` before attempting to update staging or production environments!
+
+## Pre-requisites:
+* terraform
+* ecs-cli
+
 ## Quick Start
 Ensure the AWS_PROFILE is set to the correct account id
 * `EXPORT AWS_PROFILE=noq_dev` (for instance)
+* Ensure you have the pre-requisites installed
+* Setup your workspaces: `./setup.sh`
+* Select the appropriate workspace: `terraform workspace select demo.noq.dev-staging-1` (for instance)
 * For the first time, initialize the environment: `terraform init`
 * Plan: `terraform plan --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`
 * Apply: `terraform apply --var-file=live/demo.noq.dev/demo.noq.dev.tfvars`

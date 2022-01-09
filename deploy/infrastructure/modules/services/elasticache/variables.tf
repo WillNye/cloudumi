@@ -7,3 +7,8 @@ variable "noq_core" {
   type = bool
   default = false
 }
+
+variable "redis_node_type" {
+  type = string
+  default = "cache.t3.small"
+}

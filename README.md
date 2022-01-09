@@ -79,12 +79,12 @@ TODO
 ### Publish to Staging
 Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
 
-* `bazelisk run //deploy/infrastructure/live/noq.dev:staging`
+* `bazelisk run //deploy/infrastructure/live/noq.dev:staging-1`
 
 ### Publish to Prod
 > Do you really want this? Do you have access?
 
-* `bazelisk run //deploy/infrastructure/live/noq.dev:production`
+* `bazelisk run //deploy/infrastructure/live/noq.dev:production-1`
 
 ## Troubleshooting
 * In the event that docker containers fail to run with an error on a symbol not found *.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.

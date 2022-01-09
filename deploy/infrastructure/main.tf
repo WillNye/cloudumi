@@ -38,6 +38,7 @@ module "tenant_elasticache_service" {
   source = "./modules/services/elasticache"
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
+  redis_node_type = var.redis_node_type
 }
 
 module "tenant_s3_service" {

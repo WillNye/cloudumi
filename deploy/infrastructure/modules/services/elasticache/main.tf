@@ -16,9 +16,9 @@ module "redis" {
   source  = "umotif-public/elasticache-redis/aws"
   version = "2.2.0"
 
-  name_prefix           = "noq-sharded"
+  name_prefix           = var.cluster_id
   number_cache_clusters = 2
-  node_type             = "cache.t3.small"
+  node_type             = var.redis_node_type
 
   cluster_mode_enabled    = true
   replicas_per_node_group = 1

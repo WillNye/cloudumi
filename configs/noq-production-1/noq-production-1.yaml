@@ -1,0 +1,81 @@
+# AWS_PROFILE=noq_dev aws s3 cp noq-production-1.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/noq-production-1/noq-production-1.yaml
+
+_global_:
+  landing_page_domains:
+    - localhost
+    - www.noq.localhost
+    - noq.localhost
+    - noq.dev
+    - www.noq.dev
+    - 127.0.0.1
+    - registration.noq.dev
+  aws:
+    node_role: arn:aws:iam::259868150464:role/NoqClusterRole1
+  # elastic_apn:
+  #   enabled: false # TODO: Maybe change me
+  #   service_name: cloudumi
+  #   server_url: http://apmserver:8200
+  logging:
+    file: ~/logs/cloudumi/cloudumi_tornado.log
+  # sentry:
+  #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
+  config:
+    load_from_dynamo: true
+    automatically_reload_configuration: true
+    load_tenant_configurations_from_dynamo: true
+  s3_cache_bucket: noqcache
+  environment: dev
+  development: true
+  tornado:
+    debug: false
+    port: 8092
+    xsrf: true
+    xsrf_cookie_kwargs:
+      samesite: strict
+  plugins:
+    auth: cmsaas_auth
+    aws: cmsaas_aws
+    group_mapping: cmsaas_group_mapping
+    internal_celery_tasks: cmsaas_celery_tasks
+    metrics: cmsaas_metrics
+    internal_config: cmsaas_config
+    internal_routes: cmsaas_internal_routes
+    internal_policies: cmsaas_policies
+  celery:
+    clear_tasks_for_development: false
+    purge: true
+    broker:
+      us-east-1: redis://noq-production-1-celery-redis.eb1l6j.ng.0001.usw2.cache.amazonaws.com:6379/1
+      us-west-2: redis://noq-production-1-celery-redis.eb1l6j.ng.0001.usw2.cache.amazonaws.com:6379/1
+      global: redis://noq-production-1-celery-redis.eb1l6j.ng.0001.usw2.cache.amazonaws.com:6379/1
+    backend:
+      us-east-1: redis://noq-production-1-celery-redis.eb1l6j.ng.0001.usw2.cache.amazonaws.com:6379/2
+      us-west-2: redis://noq-production-1-celery-redis.eb1l6j.ng.0001.usw2.cache.amazonaws.com:6379/2
+      global: redis://noq-production-1-celery-redis.eb1l6j.ng.0001.usw2.cache.amazonaws.com:6379/2
+    debug: true
+  # Saas Configuration
+  redis:
+    cluster_mode:
+      enabled: true
+      nodes:
+        global:
+          - host: noq-production-1-redis-cluster.eb1l6j.clustercfg.usw2.cache.amazonaws.com
+            port: "6379"
+# Localhost configuration
+#  redis:
+#    cluster_mode:
+#      enabled: true
+#      nodes:
+#        - host: 127.0.0.1
+#          port: "7000"
+#        - host: 127.0.0.1
+#          port: "7001"
+#        - host: 127.0.0.1
+#          port: "7002"
+#        - host: 127.0.0.1
+#          port: "7003"
+#        - host: 127.0.0.1
+#          port: "7004"
+#        - host: 127.0.0.1
+#          port: "7005"
+# TBD: Celery Redis configuration
