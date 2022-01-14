@@ -22,6 +22,11 @@ variable "container_insights" {
   default     = false
 }
 
+variable "convert_case" {
+  description = "Convert fields to lower case"
+  default     = "true"
+}
+
 variable "default_tags" {
   description = "Default billing tags to be applied across all resources"
   type        = map(string)
@@ -97,11 +102,6 @@ variable "subnet_azs" {
   description = "The availability zones to use for the subnets"
   type        = list(string)
   default     = []
-}
-
-variable "system_bucket" {
-  description = "The bucket used for CloudUmi configuration and logs"
-  type = string
 }
 
 variable "tf_profile" {

@@ -32,7 +32,7 @@ resource "aws_security_group" "server" {
 
 # Create a new load balancer
 resource "aws_elb" "noq_api_load_balancer" {
-  name               = "${var.cluster_id}_load_balancer"
+  name               = "${var.cluster_id}-load-balancer"
   availability_zones = var.subnet_azs
 
   access_logs {
@@ -46,7 +46,7 @@ resource "aws_elb" "noq_api_load_balancer" {
     instance_protocol  = "http"
     lb_port            = var.lb_port
     lb_protocol        = "https"
-    ssl_certificate_id = module.aws_acm_certificate_validation.arn
+    ssl_certificate_id = aws_acm_certificate_validation.tenant_certificate_validation.certificate_arn
   }
 
   health_check {
@@ -57,20 +57,14 @@ resource "aws_elb" "noq_api_load_balancer" {
     interval            = 30
   }
 
-  instances                   = [aws_instance.foo.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
 
   tags = {
-    Name = "foobar-terraform-elb"
+    Name = "noq_api_load_balancer"
   }
-}
-
-resource "aws_lb_listener_certificate" "example" {
-  listener_arn    = aws_elb.listener.front_end.arn
-  certificate_arn = aws_acm_certificate.example.arn
 }
 
 # For the public load balancer

@@ -26,11 +26,6 @@ variable "convert_case" {
   default     = "true"
 }
 
-variable "cluster_id" {
-  type = string
-  description = "The cluster ID for CloudUmi."
-}
-
 variable "default_tags" {
   description = "Default billing tags to be applied across all resources"
   type        = map(string)
