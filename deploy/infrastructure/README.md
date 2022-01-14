@@ -24,9 +24,9 @@ Ensure that your AWS profile is setup correctly in the ~/.aws/credentials file -
 - Setup your workspaces: `./setup.sh`
 - Select the appropriate workspace: `terraform workspace select demo.noq.dev-staging-1` (for instance)
 - For the first time, initialize the environment: `terraform init`
-- Plan: `terraform plan --var-file=live/demo.noq.dev/demo.noq.dev-staging.tfvars`
-- Apply: `terraform apply --var-file=live/demo.noq.dev/demo.noq.dev-staging.tfvars`
-- Destroy: `terraform destroy --var-file=live/demo.noq.dev/demo.noq.dev-staging.tfvars`
+- Plan: `terraform plan --var-file=live/demo.noq.dev/staging-1/demo.noq.dev-staging.tfvars`
+- Apply: `terraform apply --var-file=live/demo.noq.dev/staging-1/demo.noq.dev-staging.tfvars`
+- Destroy: `terraform destroy --var-file=live/demo.noq.dev/staging-1/demo.noq.dev-staging.tfvars`
 - Get outputs: `terraform output`
 - Refresh: `terraform refresh`
 

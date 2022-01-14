@@ -29,6 +29,7 @@ module "tenant_container_service" {
   container_insights = var.container_insights
   capacity_providers = var.capacity_providers
 }
+
 module "tenant_dynamodb_service" {
   source = "./modules/services/dynamo"
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
@@ -46,4 +47,20 @@ module "tenant_s3_service" {
   source = "./modules/services/s3"
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
+}
+
+module "tenant_networking" {
+  source = "./modules/services/networking"
+  namespace = var.namespace
+  stage = var.stage
+  delimiter = var.delimiter
+  convert_case = var.convert_case
+  default_tags = var.default_tags
+  vpc_cidr = var.vpc_cidr
+  subnet_azs = var.subnet_azs
+  public_subnet_cidrs = var.public_subnet_cidrs
+  private_subnet_cidrs = var.private_subnet_cidrs
+  cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
+  system_bucket = module.tenant_s3_service.bucket
+  domain_name = var.domain_name
 }
