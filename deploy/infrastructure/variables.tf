@@ -1,13 +1,13 @@
-variable "attributes" {
-  description = "Additional attributes, e.g. `1`"
-  type    = number
-  default = 1
-}
-
 variable "allowed_inbound_cidr_blocks" {
   description = "The CIDR blocks that are allowed to connect to the cluster"
   type        = list(string)
   default     = []
+}
+
+variable "attributes" {
+  description = "Additional attributes, e.g. `1`"
+  type    = number
+  default = 1
 }
 
 variable "capacity_providers" {

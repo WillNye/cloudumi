@@ -4,6 +4,12 @@ variable "allowed_inbound_cidr_blocks" {
   type        = list(string)
 }
 
+variable "attributes" {
+  description = "The attribute (ie. 1)"
+  type = number
+  default = 1
+}
+
 variable "capacity_providers" {
   description = "List of short names of one or more capacity providers to associate with the cluster. Valid values also include FARGATE and FARGATE_SPOT."
   type        = list(string)
@@ -46,6 +52,12 @@ variable "domain_name" {
 variable "lb_port" {
   description = "The port the load balancer will listen on."
   default     = 443
+}
+
+variable "name" {
+  description = "A name to give to the cluster in the namespace; the name could be a department or evaluation or similar"
+  type = string
+  default = "common"
 }
 
 variable "namespace" {

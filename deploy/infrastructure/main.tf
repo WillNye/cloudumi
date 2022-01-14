@@ -63,4 +63,6 @@ module "tenant_networking" {
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   system_bucket = module.tenant_s3_service.cloudumi_bucket_name
   domain_name = var.domain_name
+  attributes = var.attributes
+  main = var.name
 }
