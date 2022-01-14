@@ -1,6 +1,18 @@
 variable "attributes" {
-  type = number
+  type    = number
   default = 1
+}
+
+variable "allowed_inbound_cidr_blocks" {
+  description = "The CIDR blocks that are allowed to connect to the cluster"
+  type        = list(string)
+  default     = []
+}
+
+variable "subnet_azs" {
+  description = "The availability zones to use for the subnets"
+  type        = list(string)
+  default     = []
 }
 
 variable "capacity_providers" {
@@ -21,22 +33,22 @@ variable "lb_port" {
 }
 
 variable "name" {
-  type = string
-  default = "common" 
+  type    = string
+  default = "common"
 }
 
 variable "namespace" {
-  type = string
+  type    = string
   default = "noq"
 }
 
 variable "noq_core" {
-  type = bool
+  type    = bool
   default = false
 }
 
 variable "redis_node_type" {
-  type = string
+  type    = string
   default = "cache.t3.small"
 }
 
