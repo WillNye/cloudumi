@@ -135,6 +135,7 @@ container_image(
     },
     docker_run_flags = "-v ~/.aws:/root/.aws",
 )
+
 py3_image(
     name = "container",
     base = ":base-celery-api",
