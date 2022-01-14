@@ -49,6 +49,12 @@ variable "lb_port" {
   default     = 443
 }
 
+variable "name" {
+  description = "A name to give to the cluster in the namespace; the name could be a department or evaluation or similar"
+  type = string
+  default = "common"
+}
+
 variable "namespace" {
   description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence."
   type    = string
