@@ -88,6 +88,7 @@ from common.lib.self_service.typeahead import cache_self_service_typeahead
 from common.lib.templated_resources import cache_resource_templates
 from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
 from common.lib.tenants import get_all_hosts
+from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
 from identity.lib.groups.groups import (
@@ -2609,6 +2610,22 @@ def cache_resource_templates_task(host=None) -> Dict:
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
+def cache_terraform_resources_task(host=None) -> Dict:
+    if not host:
+        raise Exception("`host` must be passed to this task.")
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    terraform_resource_details = async_to_sync(cache_terraform_resources)(host)
+    log_data = {
+        "function": function,
+        "message": "Successfully cached Terraform resources",
+        "num_terraform_resources": len(terraform_resource_details.terraform_resources),
+        "host": host,
+    }
+    log.debug(log_data)
+    return log_data
+
+
+@app.task(soft_time_limit=1800, **default_retry_kwargs)
 def cache_self_service_typeahead_task_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
@@ -3057,3 +3074,6 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
+
+# cache_terraform_resources_task("localhost")
+cache_self_service_typeahead_task("localhost")

@@ -113,7 +113,7 @@ async def cache_resource_templates_for_repository(
     tempdir = tempfile.mkdtemp()
     repo_url = repository["repo_url"]
     repo = clone_repo(repo_url, tempdir)
-    repo.config_writer().set_value("user", "name", "ConsoleMe").release()
+    repo.config_writer().set_value("user", "name", "Noq").release()
     email = repository["authentication_settings"]["email"]
     resource_formats = repository["resource_formats"]
     discovered_templates = []
