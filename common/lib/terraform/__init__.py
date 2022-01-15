@@ -161,10 +161,8 @@ async def cache_terraform_resources_for_repository(
         for resources_details in tf_definition["resource"]:
             # Only support AWS IAM Role currently
             for resource_type, resources in resources_details.items():
-                if resource_type != "aws_iam_role":
-                    continue
                 for resource_name, resource_details in resources.items():
-                    resource_identifier = resource_name
+                    resource_identifier = f"{resource_type}.{resource_name}"
 
                     all_tf_resources.append(
                         TerraformResourceModel.parse_obj(
@@ -175,7 +173,7 @@ async def cache_terraform_resources_for_repository(
                                 "repository_name": repository["name"],
                                 "repository_url": repository["repo_url"],
                                 "repository_path": filepath,
-                                "resource_type": "AWS::IAM::Role",
+                                "resource_type": resource_type,
                             }
                         )
                     )

@@ -77,7 +77,9 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                     )
                 )
 
-        terraform_resources = await retrieve_cached_terraform_resources(host)
+        terraform_resources = await retrieve_cached_terraform_resources(
+            host, resource_type="aws_iam_role"
+        )
         if terraform_resources:
             for terraform_resource in terraform_resources.terraform_resources:
                 typeahead_entries.append(
@@ -85,8 +87,8 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                         icon="user",
                         number_of_affected_resources=1,
                         display_text=terraform_resource.display_text,
-                        account="N/A",
-                        application_name="N/A",
+                        account="Terraform",
+                        application_name="Terraform",
                         application_url="N/A",
                         principal=TerraformAwsResourcePrincipalModel(
                             principal_type="TerraformAwsResource",
