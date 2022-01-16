@@ -93,11 +93,11 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                         principal=TerraformAwsResourcePrincipalModel(
                             principal_type="TerraformAwsResource",
                             repository_name=terraform_resource.repository_name,
-                            resource_identifier=terraform_resource.resource,
+                            resource_identifier=terraform_resource.name,
                             resource_url=terraform_resource.resource_url,
                         ),
                         details_endpoint=f"/api/v2/terraform_resource/{terraform_resource.repository_name}/"
-                        + f"{terraform_resource.resource}",
+                        + f"{terraform_resource.name}",
                     )
                 )
 

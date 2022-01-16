@@ -4,13 +4,15 @@ from common.lib.pydantic import BaseModel
 
 
 class TerraformResourceModel(BaseModel):
-    resource: str
+    name: str
     resource_type: str
     display_text: str
     resource_url: str
     repository_name: str
     repository_url: str
-    repository_path: str
+    web_path: str
+    file_path: str
+    template_language: str
 
 
 class TerraformResourceModelArray(BaseModel):

@@ -83,7 +83,7 @@ async def retrieve_cached_terraform_resources(
     for tf_resource in terraform_resources.terraform_resources:
         if resource_type and not tf_resource.resource_type == resource_type:
             continue
-        if resource and not tf_resource.resource == resource:
+        if resource and not tf_resource.name == resource:
             continue
         if repository_name and not tf_resource.repository_name == repository_name:
             continue
@@ -167,13 +167,16 @@ async def cache_terraform_resources_for_repository(
                     all_tf_resources.append(
                         TerraformResourceModel.parse_obj(
                             {
-                                "resource": resource_identifier,
+                                "name": resource_identifier,
                                 "display_text": resource_identifier,
                                 "resource_url": repository["repo_url"],
                                 "repository_name": repository["name"],
                                 "repository_url": repository["repo_url"],
                                 "repository_path": filepath,
                                 "resource_type": resource_type,
+                                "web_path": filepath,
+                                "file_path": filepath,
+                                "template_language": "terraform",
                             }
                         )
                     )
