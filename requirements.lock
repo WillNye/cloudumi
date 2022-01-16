@@ -105,6 +105,7 @@ cffi==1.15.0
     #   bcrypt
     #   cryptography
     #   pycares
+    #   pynacl
 charset-normalizer==2.0.10
     # via
     #   aiohttp
@@ -165,7 +166,9 @@ defusedxml==0.7.1
     #   cloudaux
     #   onelogin
 deprecated==1.2.13
-    # via atlassian-python-api
+    # via
+    #   atlassian-python-api
+    #   pygithub
 detect-secrets==1.1.0
     # via checkov
 dnspython==2.1.0
@@ -384,11 +387,16 @@ pydantic==1.9.0
     #   -r ./common/util/requirements.in
 pydash==5.1.0
     # via okta
+pygithub==1.55
+    # via -r ./api/requirements.in
 pyjwt==2.3.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
+    #   pygithub
+pynacl==1.5.0
+    # via pygithub
 pyparsing==3.0.6
     # via
     #   httplib2
@@ -406,6 +414,8 @@ python-jose==3.3.0
     #   okta-jwt
 python-json-logger==2.0.2
     # via logmatic-python
+python-terraform==0.10.1
+    # via -r ./api/requirements.in
 python3-saml==1.12.0
     # via
     #   -r ./api/requirements.in
@@ -453,6 +463,7 @@ requests==2.27.1
     #   onelogin
     #   pdpyras
     #   policy-sentry
+    #   pygithub
     #   requests-oauthlib
     #   update-checker
 requests-oauthlib==1.3.0

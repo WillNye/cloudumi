@@ -54,6 +54,9 @@ from common.lib.policies import (
 from common.lib.templated_resources.requests import (
     generate_honeybee_request_from_change_model_array,
 )
+from common.lib.terraform.requests import (
+    generate_terraform_request_from_change_model_array,
+)
 from common.lib.v2.aws_principals import get_role_details, get_user_details
 from common.models import (
     Action,
@@ -408,6 +411,10 @@ async def generate_request_from_change_model_array(
     elif primary_principal.principal_type == "HoneybeeAwsResourceTemplate":
         # TODO: Generate extended request from HB template
         extended_request = await generate_honeybee_request_from_change_model_array(
+            request_creation, user, extended_request_uuid, host
+        )
+    elif primary_principal.principal_type == "TerraformAwsResource":
+        extended_request = await generate_terraform_request_from_change_model_array(
             request_creation, user, extended_request_uuid, host
         )
     # TODO: Support Terraform!!

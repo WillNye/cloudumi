@@ -1031,6 +1031,9 @@ components:
             resource_url:
               type: string
               example: https://example.com/resource.tf
+            file_path:
+              type: string
+              example: path/to/template.tf
     HoneybeeAwsResourceTemplatePrincipalModel:
       allOf:
         - $ref: "#/components/schemas/PrincipalModel"

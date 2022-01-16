@@ -125,6 +125,7 @@ cffi==1.15.0
     #   bcrypt
     #   cryptography
     #   pycares
+    #   pynacl
 cfgv==3.3.1
     # via pre-commit
 charset-normalizer==2.0.10
@@ -214,6 +215,7 @@ deprecated==1.2.13
     # via
     #   -r requirements.lock
     #   atlassian-python-api
+    #   pygithub
 detect-secrets==1.1.0
     # via
     #   -r requirements.lock
@@ -570,10 +572,18 @@ pydocstyle==6.1.1
     # via flake8-docstrings
 pyflakes==2.4.0
     # via flake8
+pygithub==1.55
+    # via -r requirements.lock
 pygments==2.10.0
     # via readme-renderer
 pyjwt==2.3.0
-    # via -r requirements.lock
+    # via
+    #   -r requirements.lock
+    #   pygithub
+pynacl==1.5.0
+    # via
+    #   -r requirements.lock
+    #   pygithub
 pyparsing==3.0.6
     # via
     #   -r requirements.lock
@@ -644,6 +654,8 @@ python-json-logger==2.0.2
     # via
     #   -r requirements.lock
     #   logmatic-python
+python-terraform==0.10.1
+    # via -r requirements.lock
 python3-saml==1.12.0
     # via -r requirements.lock
 pytz==2021.3
@@ -691,6 +703,7 @@ requests==2.27.1
     #   onelogin
     #   pdpyras
     #   policy-sentry
+    #   pygithub
     #   requests-oauthlib
     #   responses
     #   update-checker

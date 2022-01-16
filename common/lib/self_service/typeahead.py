@@ -95,6 +95,7 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                             repository_name=terraform_resource.repository_name,
                             resource_identifier=terraform_resource.name,
                             resource_url=terraform_resource.resource_url,
+                            file_path=terraform_resource.file_path,
                         ),
                         details_endpoint=f"/api/v2/terraform_resource/{terraform_resource.repository_name}/"
                         + f"{terraform_resource.name}",

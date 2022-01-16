@@ -1,20 +1,15 @@
-import io
 import json
 import time
 
-from ruamel.yaml.comments import CommentedSeq
-
 from common.config import config
-from common.lib.aws.utils import minimize_iam_policy_statements
+from common.lib.change_request import generate_policy_name
 from common.lib.plugins import get_plugin_by_name
 from common.lib.scm.git import Repository
 from common.lib.scm.git.bitbucket import BitBucket
-from common.lib.yaml import yaml
 from common.models import (
     ChangeModelArray,
     ExtendedRequestModel,
     GenericFileChangeModel,
-    PolicyModel,
     RequestCreationModel,
     RequestStatus,
     UserModel,
@@ -23,7 +18,7 @@ from common.models import (
 log = config.get_logger()
 
 
-async def generate_honeybee_request_from_change_model_array(
+async def generate_terraform_request_from_change_model_array(
     request_creation: RequestCreationModel,
     user: str,
     extended_request_uuid: str,
@@ -33,11 +28,7 @@ async def generate_honeybee_request_from_change_model_array(
     primary_principal = None
     t = int(time.time())
     generated_branch_name = f"{user}-{t}"
-    policy_name = config.get_host_specific_key(
-        "generate_honeybee_request_from_change_model_array.policy_name",
-        host,
-        "self_service_generated",
-    )
+    policy_name = await generate_policy_name(None, user)
     repo_config = None
 
     auth = get_plugin_by_name(
@@ -65,7 +56,7 @@ async def generate_honeybee_request_from_change_model_array(
                 git_client.reset()
                 git_client.checkout(b=generated_branch_name)
                 repositories_for_request[change.principal.repository_name] = {
-                    "main_branch_name": r["main_branch_name"],
+                    "main_branch_name": r.get("main_branch_name", "master"),
                     "repo": repo,
                     "git_client": git_client,
                     "config": r,
@@ -75,81 +66,37 @@ async def generate_honeybee_request_from_change_model_array(
         if not discovered_repository_for_change:
             raise Exception("No matching repository found for change in configuration")
     request_changes = ChangeModelArray(changes=[])
-    affected_templates = []
     for change in request_creation.changes.changes:
         git_client = repositories_for_request[change.principal.repository_name][
             "git_client"
         ]
+
+        formatted_policy_doc = json.dumps(change.policy.policy_document, indent=2)
         repo = repositories_for_request[change.principal.repository_name]["repo"].repo
         main_branch_name = repositories_for_request[change.principal.repository_name][
             "main_branch_name"
         ]
-        git_client.checkout(
-            f"origin/{main_branch_name}", change.principal.resource_identifier
-        )
-        change_file_path = f"{repo.working_dir}/{change.principal.resource_identifier}"
+        git_client.checkout(f"origin/{main_branch_name}", change.principal.file_path)
+        change_file_path = f"{repo.working_dir}/{change.principal.file_path}"
         with open(change_file_path, "r") as f:
-            yaml_content = yaml.load(f)
+            original_text = f.read()
+        terraform_formatted_policy_string = f"""<<EOT
+{formatted_policy_doc}
+EOT"""
+        terraform_formatted_policy = """\nresource "aws_iam_role_policy" "{policy_name}" {{
+  name = {policy_name}
+  role = {role_tf_identifier}.id
 
-        # Original
-        buf = io.BytesIO()
-        yaml.dump(yaml_content, buf)
-        original_text = buf.getvalue()
-        successfully_merged_statement = False
-        if not yaml_content.get("Policies"):
-            yaml_content["Policies"] = []
-        if isinstance(yaml_content["Policies"], dict):
-            yaml_content["Policies"] = [yaml_content["Policies"]]
-
-        # The PolicyModel is a representation of a single (usually inline) policy that a user has requested be merged
-        # into a given template. If the policy is provided as a string, it's the contents of the full file (which
-        # should include the user's requested change)
-        if isinstance(change.policy, PolicyModel):
-            if isinstance(change.policy.policy_document["Statement"], str):
-                change.policy.policy_document["Statement"] = [
-                    change.policy.policy_document["Statement"]
-                ]
-            for i in range(len(yaml_content.get("Policies", []))):
-                policy = yaml_content["Policies"][i]
-                if policy.get("PolicyName") != policy_name:
-                    continue
-                if policy.get("IncludeAccounts") or policy.get("ExcludeAccounts"):
-                    raise ValueError(
-                        f"The {policy_name} policy has IncludeAccounts or ExcludeAccounts set"
-                    )
-                successfully_merged_statement = True
-
-                policy["Statement"].extend(
-                    CommentedSeq(change.policy.policy_document["Statement"])
-                )
-                yaml_content["Policies"][i][
-                    "Statement"
-                ] = await minimize_iam_policy_statements(
-                    json.loads(json.dumps(policy["Statement"]))
-                )
-            if not successfully_merged_statement:
-                yaml_content["Policies"].append(
-                    {
-                        "PolicyName": policy_name,
-                        "Statement": change.policy.policy_document["Statement"],
-                    }
-                )
-            with open(change_file_path, "w") as f:
-                yaml.dump(yaml_content, f)
-            # New
-            buf = io.BytesIO()
-            yaml.dump(yaml_content, buf)
-            updated_text = buf.getvalue()
-
-        elif isinstance(change.policy, str):
-            # If the change is provided as a string, it represents the full change
-            updated_text = change.policy
-            with open(change_file_path, "w") as f:
-                f.write(updated_text)
-        else:
-            raise Exception(
-                "Unable to parse change from Honeybee templated role change request"
-            )
+  policy = {policy}
+}}
+        """.format(
+            role_tf_identifier=change.principal.resource_identifier,
+            policy=terraform_formatted_policy_string,
+            policy_name=policy_name,
+        )
+        updated_text = original_text + terraform_formatted_policy
+        with open(change_file_path, "w") as f:
+            f.write(updated_text)
 
         request_changes.changes.append(
             GenericFileChangeModel(
@@ -158,15 +105,14 @@ async def generate_honeybee_request_from_change_model_array(
                 change_type="generic_file",
                 policy=updated_text,
                 old_policy=original_text,
-                encoding="yaml",
+                encoding="hcl",
             )
         )
-        git_client.add(change.principal.resource_identifier)
-        affected_templates.append(change.principal.resource_identifier)
-
+        git_client.add(change_file_path)
+        git_client.commit(m=f"Added {policy_name} to {change.principal.file_path}")
     pull_request_url = ""
     if not request_creation.dry_run:
-        commit_title = f"Generated PR for {', '.join(affected_templates)}"
+        commit_title = f"Generated PR for {user}"
         commit_message = (
             f"This request was made through Self Service\n\nUser: {user}\n\n"
             f"Justification: {request_creation.justification}"
@@ -174,6 +120,8 @@ async def generate_honeybee_request_from_change_model_array(
 
         git_client.commit(m=commit_message)
         git_client.push(u=["origin", generated_branch_name])
+        if repo_config["code_repository_provider"] == "github":
+            pass
         if repo_config["code_repository_provider"] == "bitbucket":
             bitbucket = BitBucket(
                 repo_config["code_repository_config"]["url"],
