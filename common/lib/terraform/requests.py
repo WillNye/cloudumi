@@ -18,6 +18,23 @@ from common.models import (
 log = config.get_logger()
 
 
+# TODO:
+# Generate PR in GitHub for a demo
+# Generate cross-account resource policy in Terraform
+# Show cross-Terraform/Cloud Native policy generation
+# Show sts assume role
+# Generate list of resources for frontend, allow filtering
+# Interpret json from SVG canvas to generate policy
+# How can this be generalized more?
+# Think about repokid removing permissions in the future
+# How should we genericize resources whether they are defined in TF, CF, or cloud native?
+# Can we parse Terraform modules to get all of the arguments for a given resource type?
+# Most important thing: Build a powerful API
+# Generic canvas editor to call or web apis to do stuff. Must not let it talk to internal
+# APIs
+
+
+
 async def generate_terraform_request_from_change_model_array(
     request_creation: RequestCreationModel,
     user: str,
@@ -80,7 +97,7 @@ async def generate_terraform_request_from_change_model_array(
         change_file_path = f"{repo.working_dir}/{change.principal.file_path}"
         with open(change_file_path, "r") as f:
             original_text = f.read()
-        terraform_formatted_policy_string = f"""<<EOT
+        terraform_formatted_policy_string = f"""<<-EOT
 {formatted_policy_doc}
 EOT"""
         terraform_formatted_policy = """\nresource "aws_iam_role_policy" "{policy_name}" {{
