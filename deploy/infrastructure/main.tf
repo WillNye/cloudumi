@@ -64,5 +64,5 @@ module "tenant_networking" {
   system_bucket = module.tenant_s3_service.cloudumi_bucket_name
   domain_name = var.domain_name
   attributes = var.attributes
-  main = var.name
+  name = var.name
 }

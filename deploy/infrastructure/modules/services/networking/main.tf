@@ -32,7 +32,7 @@ resource "aws_security_group" "server" {
 
 # Create a new load balancer
 resource "aws_elb" "noq_api_load_balancer" {
-  name               = "${var.name}-${var.attribute}-lb"
+  name               = "${var.name}-${var.attributes}-lb"
   availability_zones = var.subnet_azs
 
   access_logs {
