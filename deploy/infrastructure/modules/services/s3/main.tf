@@ -16,8 +16,4 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
     var.tags,
     {}
   )
-
-  timeouts {
-    create = var.timeout
-  }
 }

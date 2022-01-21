@@ -22,7 +22,7 @@ variable "noq_core" {
 
 variable "tags" {
   description = "The tag to assign to resources" 
-  type = map(string)
+  type = map(any)
 }
 
 variable "timeout" {

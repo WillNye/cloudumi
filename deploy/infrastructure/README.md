@@ -67,3 +67,8 @@ Ensure that your AWS profile is setup correctly in the ~/.aws/credentials file -
 ## Technical Debt
 
 - Instead of using the genrule, build a bzl starlark rule
+
+# Remove a tenant
+Tenants can be destroyed after all ECS containers have been destroyed. Use either `ecscli` or the AWS UX to accomplish this.
+
+After cleaning up the ECS environment, one can use `terraform destroy` to tear down the tenant, reference the `Quick Start` section on terraform above

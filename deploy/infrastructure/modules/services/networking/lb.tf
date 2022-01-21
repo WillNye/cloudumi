@@ -37,10 +37,6 @@ resource "aws_elb" "noq_api_load_balancer" {
       Name = "noq_api_load_balancer"
     }
   )
-
-  timeouts {
-    create = var.timeout
-  }
 }
 
 # For the public load balancer

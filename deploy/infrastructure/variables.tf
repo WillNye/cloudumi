@@ -93,12 +93,13 @@ variable "subnet_azs" {
 
 variable "tags" {
   description = "Any tags to assign to resources" 
-  type = map(string)
+  type = map(any)
 }
 
 variable "timeout" {
   description = "The timeout for each resource that may get stuck" 
   type = string
+  default = "3m"
 }
 
 variable "tf_profile" {

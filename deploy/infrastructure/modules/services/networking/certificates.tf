@@ -30,11 +30,6 @@ resource "aws_route53_record" "tenant_domain_records" {
   ttl             = 60
   type            = each.value.type
   zone_id         = data.aws_route53_zone.tenant_zone.zone_id
-
-  tags = merge(
-    var.tags,
-    {}
-  )
 }
 
 resource "aws_acm_certificate_validation" "tenant_certificate_validation" {
@@ -43,9 +38,4 @@ resource "aws_acm_certificate_validation" "tenant_certificate_validation" {
   }
   certificate_arn         = aws_acm_certificate.tenant_certificate.arn
   validation_record_fqdns = [for record in aws_route53_record.tenant_domain_records : record.fqdn]
-
-  tags = merge(
-    var.tags,
-    {}
-  )
 }

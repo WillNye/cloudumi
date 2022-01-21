@@ -28,12 +28,22 @@ output "vpc_cidr_range" {
   value = module.tenant_networking.vpc_cidr_range
 }
 
-output "vpc_subnet_public" {
+output "vpc_subnet_public_cidr" {
   description = "The public CIDR range of the subnet assigned to the VPC"
-  value = module.tenant_networking.vpc_subnet_public
+  value = module.tenant_networking.vpc_subnet_public_cidr
 }
 
-output "vpc_subnet_private" {
+output "vpc_subnet_private_cidr" {
   description = "The private CIDR range of the private subnet assign to the VPC"
-  value = module.tenant_networking.vpc_subnet_private
+  value = module.tenant_networking.vpc_subnet_private_cidr
+}
+
+output "vpc_subnet_public_id" {
+  description = "The public CIDR range of the subnet assigned to the VPC"
+  value = module.tenant_networking.vpc_subnet_public_id
+}
+
+output "vpc_subnet_private_id" {
+  description = "The private CIDR range of the private subnet assign to the VPC"
+  value = module.tenant_networking.vpc_subnet_private_id
 }

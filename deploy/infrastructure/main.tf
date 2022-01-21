@@ -51,8 +51,10 @@ module "tenant_elasticache_service" {
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
   redis_node_type = var.redis_node_type
+  subnet_ids = [module.tenant_networking.vpc_subnet_private_id]
   tags = var.tags
   timeout = var.timeout
+  vpc_id = module.tenant_networking.vpc_id
 }
 
 module "tenant_s3_service" {
@@ -71,7 +73,6 @@ module "tenant_networking" {
   attributes = var.attributes
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   convert_case = var.convert_case
-  default_tags = var.default_tags
   delimiter = var.delimiter
   domain_name = var.domain_name
   name = var.name

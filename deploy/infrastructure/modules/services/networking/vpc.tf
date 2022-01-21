@@ -9,10 +9,6 @@ resource "aws_vpc" "main_vpc" {
     {
     }
   )
-
-  timeouts {
-    create = var.timeout
-  }
 }
 
 resource "aws_internet_gateway" "main_igw" {
@@ -23,10 +19,6 @@ resource "aws_internet_gateway" "main_igw" {
     {
     }
   )
-
-  timeouts {
-    create = var.timeout
-  }
 }
 
 resource "aws_subnet" "subnet_public" {
