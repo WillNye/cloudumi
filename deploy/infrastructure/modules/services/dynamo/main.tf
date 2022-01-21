@@ -31,6 +31,10 @@ resource "aws_dynamodb_table" "cloudumi_identity_groups_multitenant" {
     ignore_changes = [write_capacity, read_capacity]
   }
 
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_cloudtrail_multitenant" {
@@ -68,6 +72,11 @@ resource "aws_dynamodb_table" "cloudumi_cloudtrail_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_config_multitenant" {
@@ -100,6 +109,11 @@ resource "aws_dynamodb_table" "cloudumi_config_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_identity_requests_multitenant" {
@@ -132,6 +146,11 @@ resource "aws_dynamodb_table" "cloudumi_identity_requests_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_policy_requests_multitenant" {
@@ -169,6 +188,11 @@ resource "aws_dynamodb_table" "cloudumi_policy_requests_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_notifications_multitenant" {
@@ -194,6 +218,11 @@ resource "aws_dynamodb_table" "cloudumi_notifications_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_users_multitenant" {
@@ -219,6 +248,11 @@ resource "aws_dynamodb_table" "cloudumi_users_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_tenant_static_configs" {
@@ -251,6 +285,11 @@ resource "aws_dynamodb_table" "cloudumi_tenant_static_configs" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_identity_users_multitenant" {
@@ -283,6 +322,11 @@ resource "aws_dynamodb_table" "cloudumi_identity_users_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "noq_api_keys" {
@@ -327,6 +371,11 @@ resource "aws_dynamodb_table" "noq_api_keys" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant" {
@@ -359,6 +408,11 @@ resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 
 }
 
@@ -399,6 +453,11 @@ resource "aws_dynamodb_table" "noq_aws_accounts" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant" {
@@ -444,6 +503,11 @@ resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant" {
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 

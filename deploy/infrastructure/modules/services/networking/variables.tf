@@ -71,18 +71,6 @@ variable "noq_core" {
   default = false
 }
 
-variable "private_subnet_cidrs" {
-  description = "The CIDR block of the subnet the ConsoleMe server will be placed in."
-  type        = list(string)
-  default     = ["10.1.1.0/28"]
-}
-
-variable "public_subnet_cidrs" {
-  description = "The CIDR block of the subnet the load balancer will be placed in."
-  type        = list(string)
-  default     = ["10.1.1.128/28", "10.1.1.144/28"] # LB requires at least two networks
-}
-
 variable "stage" {
   type    = string
   default = "staging"
@@ -103,8 +91,12 @@ variable "system_bucket" {
   type = string
 }
 
-variable "vpc_cidr" {
-  description = "The CIDR block for the VPC."
-  type        = string
-  default     = "10.1.1.0/24"
+variable "tags" {
+  description = "The tag to assign to resources" 
+  type = map(string)
+}
+
+variable "timeout" {
+  description = "The timeout for each resource that may get stuck" 
+  type = string
 }

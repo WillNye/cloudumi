@@ -11,4 +11,13 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
   }
 
   force_destroy = true
+
+  tags = merge(
+    var.tags,
+    {}
+  )
+
+  timeouts {
+    create = var.timeout
+  }
 }

@@ -2,9 +2,13 @@ resource "aws_acm_certificate" "tenant_certificate" {
   domain_name       = var.domain_name
   validation_method = "DNS"
 
-  tags = {
-    Environment = var.cluster_id
-  }
+  tags = merge(
+    var.tags,
+    {
+      "Environment": var.cluster_id
+    }
+  )
+
 
   lifecycle {
     create_before_destroy = true
@@ -26,12 +30,22 @@ resource "aws_route53_record" "tenant_domain_records" {
   ttl             = 60
   type            = each.value.type
   zone_id         = data.aws_route53_zone.tenant_zone.zone_id
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_acm_certificate_validation" "tenant_certificate_validation" {
   timeouts {
-    create = "5m"
+    create = var.timeout
   }
   certificate_arn         = aws_acm_certificate.tenant_certificate.arn
   validation_record_fqdns = [for record in aws_route53_record.tenant_domain_records : record.fqdn]
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }

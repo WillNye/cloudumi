@@ -4,7 +4,7 @@ module "network_label" {
   stage        = var.stage
   delimiter    = var.delimiter
   convert_case = var.convert_case
-  tags         = var.default_tags
+  tags         = var.tags
   enabled      = "true"
 }
 
@@ -15,6 +15,6 @@ module "security_group_label" {
   attributes   = ["sg"]
   delimiter    = var.delimiter
   convert_case = var.convert_case
-  tags         = var.default_tags
+  tags         = var.tags
   enabled      = "true"
 }

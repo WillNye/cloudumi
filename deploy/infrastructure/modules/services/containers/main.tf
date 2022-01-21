@@ -25,6 +25,11 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
     name  = "containerInsights"
     value = var.container_insights ? "enabled" : "disabled"
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-api" {
@@ -35,6 +40,11 @@ resource "aws_ecr_repository" "noq_ecr_repository-api" {
   image_scanning_configuration {
     scan_on_push = true
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-celery" {
@@ -45,6 +55,11 @@ resource "aws_ecr_repository" "noq_ecr_repository-celery" {
   image_scanning_configuration {
     scan_on_push = true
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
@@ -55,4 +70,9 @@ resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
   image_scanning_configuration {
     scan_on_push = true
   }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
 }

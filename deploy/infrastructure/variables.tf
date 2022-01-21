@@ -27,12 +27,6 @@ variable "convert_case" {
   default     = "true"
 }
 
-variable "default_tags" {
-  description = "Default billing tags to be applied across all resources"
-  type        = map(string)
-  default     = {}
-}
-
 variable "delimiter" {
   type        = string
   default     = "-"
@@ -67,18 +61,6 @@ variable "noq_core" {
   default = false
 }
 
-variable "private_subnet_cidrs" {
-  description = "The CIDR block of the subnet the ConsoleMe server will be placed in."
-  type        = list(string)
-  default     = ["10.1.1.0/28"]
-}
-
-variable "public_subnet_cidrs" {
-  description = "The CIDR block of the subnet the load balancer will be placed in."
-  type        = list(string)
-  default     = ["10.1.1.128/28", "10.1.1.144/28"] # LB requires at least two networks
-}
-
 variable "redis_node_type" {
   type    = string
   default = "cache.t3.small"
@@ -107,16 +89,19 @@ variable "stage" {
 variable "subnet_azs" {
   description = "The availability zones to use for the subnets"
   type        = list(string)
-  default     = []
+}
+
+variable "tags" {
+  description = "Any tags to assign to resources" 
+  type = map(string)
+}
+
+variable "timeout" {
+  description = "The timeout for each resource that may get stuck" 
+  type = string
 }
 
 variable "tf_profile" {
   type    = string
   default = "noq_dev"
-}
-
-variable "vpc_cidr" {
-  description = "The CIDR block for the VPC."
-  type        = string
-  default     = "10.1.1.0/24"
 }

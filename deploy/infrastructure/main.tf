@@ -23,46 +23,62 @@ provider "aws" {
 
 module "tenant_container_service" {
   source = "./modules/services/containers"
-  stage = var.stage
-  cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
-  noq_core = var.noq_core
-  container_insights = var.container_insights
+
+  attributes = var.attributes
   capacity_providers = var.capacity_providers
+  cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
+  container_insights = var.container_insights
+  noq_core = var.noq_core
+  stage = var.stage
+  tags = var.tags
+  timeout = var.timeout
 }
 
 module "tenant_dynamodb_service" {
   source = "./modules/services/dynamo"
+
+  attributes = var.attributes
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
+  tags = var.tags
+  timeout = var.timeout
 }
 
 module "tenant_elasticache_service" {
   source = "./modules/services/elasticache"
+
+  attributes = var.attributes
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
   redis_node_type = var.redis_node_type
+  tags = var.tags
+  timeout = var.timeout
 }
 
 module "tenant_s3_service" {
   source = "./modules/services/s3"
+
+  attributes = var.attributes
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
+  tags = var.tags
+  timeout = var.timeout
 }
 
 module "tenant_networking" {
   source = "./modules/services/networking"
-  namespace = var.namespace
-  stage = var.stage
-  delimiter = var.delimiter
+
+  attributes = var.attributes
+  cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   convert_case = var.convert_case
   default_tags = var.default_tags
-  vpc_cidr = var.vpc_cidr
-  subnet_azs = var.subnet_azs
-  public_subnet_cidrs = var.public_subnet_cidrs
-  private_subnet_cidrs = var.private_subnet_cidrs
-  cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
-  system_bucket = module.tenant_s3_service.cloudumi_bucket_name
+  delimiter = var.delimiter
   domain_name = var.domain_name
-  attributes = var.attributes
   name = var.name
+  namespace = var.namespace
+  stage = var.stage
+  subnet_azs = var.subnet_azs
+  system_bucket = module.tenant_s3_service.cloudumi_bucket_name
+  tags = var.tags
+  timeout = var.timeout
 }
