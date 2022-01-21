@@ -1,7 +1,6 @@
 # Create a new load balancer
 resource "aws_elb" "noq_api_load_balancer" {
   name               = "${var.name}-${var.attributes}-lb"
-  availability_zones = var.subnet_azs
 
   access_logs {
     bucket        = var.system_bucket
@@ -25,7 +24,7 @@ resource "aws_elb" "noq_api_load_balancer" {
     interval            = 30
   }
 
-  subnets = [aws_subnet.subnet_public.cidr_block]
+  subnets = [aws_subnet.subnet_public.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
