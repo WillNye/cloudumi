@@ -32,7 +32,7 @@ pyjwt
 python3_saml
 pytz
 PyYAML
-redislite
+# redislite (Doesn't work on M1 Mac and it isn't required for dev)
 requests
 retrying
 ruamel.yaml

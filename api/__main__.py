@@ -52,7 +52,7 @@ def init():
         config.get("_global_.plugins.metrics", "cmsaas_metrics")
     )()
     if __name__ in ["__main__", "api.__main__"]:
-        port = 8092
+        port = config.get("_global_.tornado.port", 9092)
         stats.count("start")
 
         server = tornado.httpserver.HTTPServer(app)
