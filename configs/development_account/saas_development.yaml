@@ -58,7 +58,7 @@ _global_:
   development: true
   tornado:
     debug: false
-    port: 8081
+    port: 8092
     xsrf: false
     xsrf_cookie_kwargs:
       samesite: strict
@@ -86,21 +86,21 @@ _global_:
   # Saas Configuration
   redis:
     cluster_mode:
-      enabled: true
+      enabled: false
       nodes:
         global:
           - host: redis-cluster
-            port: "7000"
+            port: "9000"
           - host: redis-cluster
-            port: "7001"
+            port: "9001"
           - host: redis-cluster
-            port: "7002"
+            port: "9002"
           - host: redis-cluster
-            port: "7003"
+            port: "9003"
           - host: redis-cluster
-            port: "7004"
+            port: "9004"
           - host: redis-cluster
-            port: "7005"
+            port: "9005"
 # Localhost configuration
 #  redis:
 #    cluster_mode:
