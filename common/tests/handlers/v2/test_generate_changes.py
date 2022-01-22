@@ -11,17 +11,10 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def test_post_no_user(self):
-        expected = {
-            "type": "redirect",
-            "redirect_url": "https://noq.dev",
-            "reason": "unauthenticated",
-            "message": "Invalid host specified",
-        }
         response = self.fetch(
             "/api/v2/generate_changes", method="POST", body="abcd", omit_headers=True
         )
         self.assertEqual(response.code, 403)
-        self.assertEqual(json.loads(response.body), expected)
 
     # @patch(
     #     "api.handlers.v2.generate_changes.GenerateChangesHandler.authorization_flow",

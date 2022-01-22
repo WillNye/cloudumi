@@ -528,7 +528,11 @@ class BaseHandler(TornadoRequestHandler):
             try:
                 # Get user. Config options can specify getting username from headers or
                 # OIDC, but custom plugins are also allowed to override this.
-                self.user = await auth.get_user(self)
+                try:
+                    self.user = await auth.get_user(self)
+                except Exception:
+                    sentry_sdk.capture_exception()
+                    self.user = None
                 if not self.user:
                     raise NoUserException(
                         f"User not detected. Headers: {self.request.headers}"
