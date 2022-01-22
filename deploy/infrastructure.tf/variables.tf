@@ -15,7 +15,7 @@ variable "namespace" {
 
 variable "name" {
   type = string
-  default = "common" 
+  default = "common"
 }
 
 variable "stage" {

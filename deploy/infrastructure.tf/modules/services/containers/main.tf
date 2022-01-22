@@ -30,7 +30,7 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
 resource "aws_ecr_repository" "noq_ecr_repository" {
   name                 = "${var.stage}-noq-container-registry"
   image_tag_mutability = "MUTABLE"
-  count                = var.noq_core ? 1 : 0  
+  count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
     scan_on_push = true
