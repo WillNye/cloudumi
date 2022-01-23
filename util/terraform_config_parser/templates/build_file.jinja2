@@ -1,0 +1,52 @@
+filegroup(
+    name = "{{ stage }}-{{ attributes }}-files",
+    data = glob([
+        "*.yaml",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "{{ stage }}-{{ attributes }}",
+    srcs = [
+        "//api:container-deploy-{{ stage }}",
+        "//common/celery_tasks:container-deploy-{{ stage }}",
+        ":{{ stage }}-{{ attributes }}-files",
+    ],
+    executable = True,
+    exec_tools = [
+        "//api:container-deploy-{{ stage }}",
+        "//common/celery_tasks:container-deploy-{{ stage }}",
+    ],
+    outs = ["run_deploy_{{ stage }}"],
+    message = "Deploying CloudUmi to {{ stage }}...",
+    cmd = "echo 'bazel run //api:container-deploy-{{ stage }}; \
+           \
+           bazel run //common/celery_tasks:container-deploy-{{ stage }}; \
+           \
+           ecs-cli configure --cluster {{ namespace }}-{{ name }}-{{ stage }}-{{ attributes }} --default-launch-type FARGATE \
+           --config-name {{ namespace }}-{{ name }}-{{ stage }}-{{ attributes }}-api --region {{ region }}; \
+           \
+           ecs-cli up --cluster-config {{ namespace }}-{{ name }}-{{ stage }}-{{ attributes }}; \
+           \
+           ecs-cli compose -f deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
+           --cluster-config {{ namespace }}-{{ name }}-{{ stage }}-{{ attributes }} \
+           --ecs-params deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
+           -p {{ namespace }}-{{ name }}-{{ stage }}-{{ attributes }} \
+           --task-role-arn {{ task_role_arn }} \
+           --region {{ region }} service up --create-log-groups --timeout 15 \
+           --target-groups targetGroupArn={{ target_group_arn }}' >$@",
+    tags = ["manual"],
+)
+
+genrule(
+    name = "destroy",
+    srcs = [
+        ":{{ stage }}-{{ attributes }}-files",
+    ],
+    executable = True,
+    outs = ["run_destroy_{{ stage }}"],
+    message = "Destroying CloudUmi in {{ stage }}...",
+    cmd = "ecs-cli down --force --cluster-config {{ namespace }}-{{ name }}-{{ stage }}-{{ attributes }}; >$@",
+    tags = ["manual"],
+)

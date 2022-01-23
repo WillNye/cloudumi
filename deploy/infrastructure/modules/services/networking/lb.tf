@@ -4,7 +4,7 @@ resource "aws_lb" "noq_api_load_balancer" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb-sg.id]
-  subnets            = [aws_subnet.subnet_public.id]
+  subnets            = [aws_subnet.subnet_public_az0.id, aws_subnet.subnet_public_az1.id]
 
   enable_deletion_protection = true
 

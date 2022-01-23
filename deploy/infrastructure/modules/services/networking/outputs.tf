@@ -30,20 +30,20 @@ output "vpc_id" {
 
 output "vpc_subnet_public_cidr" {
   description = "The public CIDR range of the subnet assigned to the VPC"
-  value = aws_subnet.subnet_public.cidr_block
+  value = [aws_subnet.subnet_public_az0.cidr_block, aws_subnet.subnet_public_az1.cidr_block]
 }
 
 output "vpc_subnet_private_cidr" {
   description = "The private CIDR range of the private subnet assign to the VPC"
-  value = aws_subnet.subnet_private.cidr_block
+  value = [aws_subnet.subnet_private_az0.cidr_block, aws_subnet.subnet_private_az1.cidr_block]
 }
 
 output "vpc_subnet_public_id" {
   description = "The public CIDR range of the subnet assigned to the VPC"
-  value = aws_subnet.subnet_public.id
+  value = [aws_subnet.subnet_public_az0.id, aws_subnet.subnet_public_az1.id]
 }
 
 output "vpc_subnet_private_id" {
   description = "The private CIDR range of the private subnet assign to the VPC"
-  value = aws_subnet.subnet_private.id
+  value = [aws_subnet.subnet_private_az0.id, aws_subnet.subnet_private_az1.id]
 }

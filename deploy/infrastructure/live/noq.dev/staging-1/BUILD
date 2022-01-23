@@ -46,3 +46,18 @@ genrule(
            --region us-west-2 service up --create-log-groups --timeout 15' >$@",
     tags = ["manual"],
 )
+
+genrule(
+    name = "destroy",
+    srcs = [
+        ":staging-1-files",
+    ],
+    executable = True,
+    outs = ["run_destroy_staging"],
+    message = "Destroying CloudUmi in staging...",
+    cmd = "\
+           ecs-cli down --force --cluster-config noq-common-staging-1-api; \
+           \
+           ecs-cli down --force --cluster-config noq-common-staging-1-celery; >$@",
+    tags = ["manual"],
+)

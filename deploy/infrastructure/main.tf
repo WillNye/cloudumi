@@ -51,7 +51,7 @@ module "tenant_elasticache_service" {
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
   redis_node_type = var.redis_node_type
-  subnet_ids = [module.tenant_networking.vpc_subnet_private_id]
+  subnet_ids = module.tenant_networking.vpc_subnet_private_id
   tags = var.tags
   timeout = var.timeout
   vpc_id = module.tenant_networking.vpc_id

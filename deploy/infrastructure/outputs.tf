@@ -1,6 +1,21 @@
+output "attributes" {
+  description = "The attributes configured (for automation)"
+  value = var.attributes
+}
+
+output "namespace" {
+  description = "The configured namespace (for automation)"
+  value = var.namespace
+}
+
 output "redis_primary_cluster_address" {
   description = "The address of the primary redis cluster endpoint"
   value       = module.tenant_elasticache_service.redis_primary_cluster_address
+}
+
+output "region" {
+  description = "The region configured (for automation)"
+  value       = var.region
 }
 
 output "registry_repository_url_api" {
@@ -16,6 +31,11 @@ output "registry_repository_url_celery" {
 output "registry_repository_url_frontend" {
   description = "The respository URL for the Frontend registry"
   value       = module.tenant_container_service.registry_repository_url_frontend
+}
+
+output "stage" {
+  description = "The configured stage (for automation)"
+  value = var.stage
 }
 
 output "target_group_arn" {
