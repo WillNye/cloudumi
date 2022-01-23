@@ -1,6 +1,5 @@
 variable "allowed_inbound_cidr_blocks" {
   description = "Allowed inbound CIDRs for the security group rules."
-  default     = []
   type        = list(string)
 }
 

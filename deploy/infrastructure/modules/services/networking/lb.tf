@@ -58,7 +58,7 @@ resource "aws_lb_listener" "noq_api_balancer_front_end_443" {
 
 # For the public load balancer
 resource "aws_security_group" "lb-sg" {
-  name        = "allow_access_to_noq"
+  name        = "${var.cluster_id}-lb-access"
   description = "Allows access to the load balancer, which forwards to the CloudUmi server."
   vpc_id      = aws_vpc.main_vpc.id
 

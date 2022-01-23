@@ -33,7 +33,7 @@ genrule(
            --cluster-config {{ namespace }}-{{ name }}-{{ stage }}-{{ attributes }} \
            --ecs-params deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
            -p {{ namespace }}-{{ name }}-{{ stage }}-{{ attributes }} \
-           --task-role-arn {{ task_role_arn }} \
+           --task-role-arn {{ ecs_task_role_arn }} \
            --region {{ region }} service up --create-log-groups --timeout 15 \
            --target-groups targetGroupArn={{ target_group_arn }}' >$@",
     tags = ["manual"],

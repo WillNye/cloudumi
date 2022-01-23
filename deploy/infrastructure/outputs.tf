@@ -3,6 +3,26 @@ output "attributes" {
   value = var.attributes
 }
 
+output "ecs_awslogs_group" {
+  description = "The ecs aws logs group name (for automation)"
+  value = module.tenant_container_service.ecs_awslogs_group
+}
+
+output "ecs_security_group" {
+  description = "The ECS security group ID"
+  value = module.tenant_container_service.ecs_security_group_id
+}
+
+output "ecs_task_execution_role_arn" {
+  description = "The ECS task execution role ARN to be configured"
+  value = module.tenant_container_service.ecs_task_execution_role
+}
+
+output "ecs_task_role_arn" {
+  description = "The ECS task role ARN to be configured"
+  value = module.tenant_container_service.ecs_task_role
+}
+
 output "namespace" {
   description = "The configured namespace (for automation)"
   value = var.namespace
@@ -36,6 +56,16 @@ output "registry_repository_url_frontend" {
 output "stage" {
   description = "The configured stage (for automation)"
   value = var.stage
+}
+
+output "subnet_name_az0" {
+  description = "The configured subnet name for AZ0 (for automation)"
+  value = module.tenant_networking.vpc_subnet_public_id[0]
+}
+
+output "subnet_name_az1" {
+  description = "The configured subnet name for AZ1 (for automation)"
+  value = module.tenant_networking.vpc_subnet_public_id[1]
 }
 
 output "target_group_arn" {

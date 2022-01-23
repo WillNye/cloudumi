@@ -24,14 +24,17 @@ provider "aws" {
 module "tenant_container_service" {
   source = "./modules/services/containers"
 
+  allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
   attributes = var.attributes
   capacity_providers = var.capacity_providers
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   container_insights = var.container_insights
+  lb_port = var.lb_port
   noq_core = var.noq_core
   stage = var.stage
   tags = var.tags
   timeout = var.timeout
+  vpc_id = module.tenant_networking.vpc_id
 }
 
 module "tenant_dynamodb_service" {
@@ -70,11 +73,13 @@ module "tenant_s3_service" {
 module "tenant_networking" {
   source = "./modules/services/networking"
 
+  allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
   attributes = var.attributes
   cluster_id = "${var.namespace}-${var.name}-${var.stage}-${var.attributes}"
   convert_case = var.convert_case
   delimiter = var.delimiter
   domain_name = var.domain_name
+  lb_port = var.lb_port
   name = var.name
   namespace = var.namespace
   stage = var.stage

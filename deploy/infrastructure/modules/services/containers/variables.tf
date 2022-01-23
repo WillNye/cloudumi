@@ -1,3 +1,8 @@
+variable "allowed_inbound_cidr_blocks" {
+  description = "Allowed inbound CIDRs for the security group rules."
+  type        = list(string)
+}
+
 variable "attributes" {
   description = "Additional attributes, e.g. `1`"
   type    = number
@@ -19,6 +24,11 @@ variable "capacity_providers" {
 variable "cluster_id" {
   type = string
   description = "The cluster ID for CloudUmi."
+}
+
+variable "lb_port" {
+  description = "The port the load balancer will listen on."
+  default     = 443
 }
 
 variable "noq_core" {
@@ -43,5 +53,10 @@ variable "tags" {
 
 variable "timeout" {
   description = "The timeout for each resource that may get stuck" 
+  type = string
+}
+
+variable "vpc_id" {
+  description = "VPC ID"
   type = string
 }
