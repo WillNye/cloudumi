@@ -4,7 +4,6 @@ resource "aws_elb" "noq_api_load_balancer" {
 
   access_logs {
     bucket        = var.system_bucket
-    bucket_prefix = "elb_access_logs"
     interval      = 60
   }
 
