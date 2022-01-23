@@ -18,6 +18,11 @@ output "registry_repository_url_frontend" {
   value       = module.tenant_container_service.registry_repository_url_frontend
 }
 
+output "target_group_arn" {
+  description = "The target group ARN, needs to be updated in the BUILD file under the ecs-cli call"
+  value = module.tenant_networking.target_group_arn
+}
+
 output "vpc_arn" {
   description = "The ARN of the VPC configured"
   value = module.tenant_networking.vpc_arn

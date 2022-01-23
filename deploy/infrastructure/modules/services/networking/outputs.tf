@@ -5,7 +5,12 @@ output "igw_arn" {
 
 output "load_balancer_endpoint" {
   description = "The endpoint URI of the load balancer configured to be used in the NOQ configuration files"
-  value = aws_elb.noq_api_load_balancer.dns_name
+  value = aws_lb.noq_api_load_balancer.dns_name
+}
+
+output "target_group_arn" {
+  description = "The target group ARN, needs to be updated in the BUILD file under the ecs-cli call"
+  value = aws_lb_target_group.noq_api_balancer_target_group.arn
 }
 
 output "vpc_arn" {

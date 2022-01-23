@@ -7,5 +7,5 @@ resource "aws_route53_record" "api" {
   name    = var.domain_name
   type    = "CNAME"
   ttl     = "300"
-  records = [aws_elb.noq_api_load_balancer.dns_name]
+  records = [aws_lb.noq_api_load_balancer.dns_name]
 }

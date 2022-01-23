@@ -1,33 +1,16 @@
 # Create a new load balancer
-resource "aws_elb" "noq_api_load_balancer" {
+resource "aws_lb" "noq_api_load_balancer" {
   name               = "${var.name}-${var.attributes}-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.lb-sg.id]
+  subnets            = [aws_subnet.subnet_public.id]
+
+  enable_deletion_protection = true
 
   access_logs {
     bucket        = var.system_bucket
-    interval      = 60
   }
-
-  listener {
-    instance_port      = 8000
-    instance_protocol  = "http"
-    lb_port            = var.lb_port
-    lb_protocol        = "https"
-    ssl_certificate_id = aws_acm_certificate_validation.tenant_certificate_validation.certificate_arn
-  }
-
-  health_check {
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    timeout             = 3
-    target              = "HTTP:8000/"
-    interval            = 30
-  }
-
-  subnets = [aws_subnet.subnet_public.id]
-  cross_zone_load_balancing   = true
-  idle_timeout                = 400
-  connection_draining         = true
-  connection_draining_timeout = 400
 
   tags = merge(
     var.tags,
@@ -35,6 +18,42 @@ resource "aws_elb" "noq_api_load_balancer" {
       Name = "noq_api_load_balancer"
     }
   )
+}
+
+resource "aws_lb_target_group" "noq_api_balancer_target_group" {
+  name     = "${var.name}-${var.attributes}-lb"
+  port     = 8092
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main_vpc.id
+}
+
+resource "aws_lb_listener" "noq_api_balancer_front_end_80_redirect" {
+  load_balancer_arn = aws_lb.noq_api_load_balancer.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+resource "aws_lb_listener" "noq_api_balancer_front_end_443" {
+  load_balancer_arn = aws_lb.noq_api_load_balancer.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate_validation.tenant_certificate_validation.certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.noq_api_balancer_target_group.arn
+  }
 }
 
 # For the public load balancer

@@ -7,6 +7,8 @@ and to update the infrastructure when changes are needed.
 **NOTE**: it is imperative you enter the correct workspace using `terraform workspace select` before attempting to
 update staging or production environments!
 
+**NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`terraform workspace select noq.dev-staging-1` for instance)
+
 ## Pre-requisites:
 
 - AWS keys configured in ~/.aws/credentials
@@ -48,8 +50,8 @@ Ensure that your AWS profile is setup correctly in the ~/.aws/credentials file -
 
 - Set AWS_PROFILE: `export AWS_PROFILE=noq_dev`
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`
-- Deploy TF: `bazelisk run //deploy/infrastructure/live/noq.dev:tf-staging`
-- Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev:staging`
+- Reference Terraform section on how to deploy / update terraform infrastructure (should be seldom)
+- Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev/staging-1`
 
 ## Technical Debt
 
@@ -61,8 +63,7 @@ Ensure that your AWS profile is setup correctly in the ~/.aws/credentials file -
 
 - Set AWS_PROFILE: `export AWS_PROFILE=noq_dev`
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`
-- Deploy TF: `bazelisk run //deploy/infrastructure/live/noq.dev:tf-production`
-- Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev:production`
+- Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev/production-1`
 
 ## Technical Debt
 
