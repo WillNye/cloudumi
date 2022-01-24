@@ -1,12 +1,12 @@
 # Create a new load balancer
 resource "aws_lb" "noq_api_load_balancer" {
-  name               = "${var.name}-${var.attributes}-lb"
+  name               = "${var.cluster_id}-lb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb-sg.id]
   subnets            = [aws_subnet.subnet_public_az0.id, aws_subnet.subnet_public_az1.id]
 
-  enable_deletion_protection = true
+  enable_deletion_protection = false
 
   access_logs {
     bucket        = var.system_bucket
@@ -21,7 +21,6 @@ resource "aws_lb" "noq_api_load_balancer" {
 }
 
 resource "aws_lb_target_group" "noq_api_balancer_target_group" {
-  name     = "${var.name}-${var.attributes}-lb"
   port     = 8092
   protocol = "HTTP"
   vpc_id   = aws_vpc.main_vpc.id
