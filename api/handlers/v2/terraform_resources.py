@@ -1,5 +1,6 @@
 from common.handlers.base import BaseAPIV2Handler
 from common.lib.terraform import retrieve_cached_terraform_resources
+from common.models import Status2, WebResponse
 
 
 class TerraformResourceDetailHandler(BaseAPIV2Handler):
@@ -13,8 +14,10 @@ class TerraformResourceDetailHandler(BaseAPIV2Handler):
             return_first_result=True,
         )
         if not matching_resource:
-            # TODO: Log here
-            # Return 404
-            self.write({})
+            self.write(
+                WebResponse(status=Status2.error, status_code=404).json(
+                    exclude_unset=True
+                )
+            )
             return
         self.write(matching_resource.json())

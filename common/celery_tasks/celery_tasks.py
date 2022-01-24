@@ -3074,6 +3074,3 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
-
-# cache_terraform_resources_task("localhost")
-# cache_self_service_typeahead_task("localhost")
