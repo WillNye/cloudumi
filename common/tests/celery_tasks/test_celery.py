@@ -197,6 +197,7 @@ class TestCelerySync(TestCase):
             res,
             {
                 "function": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes",
+                "host": "example_com",
                 "message": "Successfully checked role changes",
                 "num_roles_changed": 2,
             },

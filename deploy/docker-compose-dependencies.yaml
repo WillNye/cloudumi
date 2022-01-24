@@ -26,14 +26,15 @@ services:
       - "8001:8001"
   redis-cluster:
     image: grokzen/redis-cluster
-    #    environment:
+    environment:
+      INITIAL_PORT: 9000
+      IP: 0.0.0.0
     #      IP: ${REDIS_CLUSTER_IP}
     #      SENTINEL: ${REDIS_USE_SENTINEL}
     #      STANDALONE: ${REDIS_USE_STANDALONE}
-    hostname: server
+    hostname: redis-cluster
     ports:
-      - "7000-7050:7000-7050"
-      - "5000-5010:5000-5010"
+      - "9000-9050:9000-9050"
   # Portainer is only for dev
 #  portainer:
 #    image: portainer/portainer-ce:latest

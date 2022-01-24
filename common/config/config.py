@@ -457,6 +457,7 @@ class Configuration(metaclass=Singleton):
         """
         dynamodb = boto3.resource(
             "dynamodb",
+            region_name=self.get_aws_region(),
             endpoint_url=self.get(
                 "_global_.dynamodb_server",
                 self.get("_global_.boto3.client_kwargs.endpoint_url"),
