@@ -70,6 +70,11 @@ resource "aws_dynamodb_table" "cloudumi_cloudtrail_multitenant" {
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
 
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+
   # dynamic "replica" {
   #   for_each = var.dynamo_table_replica_regions
   #   content {
@@ -231,10 +236,6 @@ resource "aws_dynamodb_table" "cloudumi_notifications_multitenant" {
   write_capacity   = 1
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
-  # }
 
   # dynamic "replica" {
   #   for_each = var.dynamo_table_replica_regions
@@ -269,10 +270,6 @@ resource "aws_dynamodb_table" "cloudumi_users_multitenant" {
   write_capacity   = 1
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
-  # }
 
   # dynamic "replica" {
   #   for_each = var.dynamo_table_replica_regions
@@ -314,10 +311,6 @@ resource "aws_dynamodb_table" "cloudumi_tenant_static_configs" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
-  # }
 
   # dynamic "replica" {
   #   for_each = var.dynamo_table_replica_regions
@@ -359,10 +352,6 @@ resource "aws_dynamodb_table" "cloudumi_identity_users_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
-  # }
 
   # dynamic "replica" {
   #   for_each = var.dynamo_table_replica_regions
@@ -416,10 +405,10 @@ resource "aws_dynamodb_table" "noq_api_keys" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = true
-  # }
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
 
   # dynamic "replica" {
   #   for_each = var.dynamo_table_replica_regions
@@ -461,10 +450,10 @@ resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = true
-  # }
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
 
   # dynamic "replica" {
   #   for_each = var.dynamo_table_replica_regions
