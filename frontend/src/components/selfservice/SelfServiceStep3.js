@@ -88,7 +88,11 @@ class SelfServiceStep3 extends Component {
     }
 
     if (response.extended_request != null) {
-      if (role.principal.principal_type === "HoneybeeAwsResourceTemplate") {
+      if (
+        ["TerraformAwsResource", "HoneybeeAwsResourceTemplate"].includes(
+          role.principal.principal_type
+        )
+      ) {
         this.setState({
           new_policy: response.extended_request.changes.changes[0].policy,
           old_policy: response.extended_request.changes.changes[0].old_policy,

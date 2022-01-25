@@ -156,6 +156,72 @@ function RoleDetails(props) {
     );
   }
 
+  if (role.template_language === "terraform") {
+    return (
+      <>
+        <Segment basic style={{ borderTop: "1px solid rgba(34,36,38,.15)" }}>
+          <Label
+            color="blue"
+            attached="top left"
+            style={{
+              borderTopLeftRadius: "0",
+              paddingLeft: "40px",
+              paddingRight: "40px",
+            }}
+          >
+            Templated Role
+          </Label>
+        </Segment>
+        <div style={{ display: "flex" }}>
+          <Icon
+            name="user"
+            style={{ flexShrink: 0, width: "40px" }}
+            size="large"
+          />
+          <div>
+            <Header as="h3">{role.name}</Header>
+            <Grid relaxed="very">
+              <Grid.Row>
+                <Grid.Column width={16}>
+                  <Header as="h5">
+                    PATH
+                    <Header.Subheader>
+                      <a
+                        href={role.web_path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {role.file_path}
+                      </a>
+                    </Header.Subheader>
+                  </Header>
+                </Grid.Column>
+              </Grid.Row>
+              <Grid.Row>
+                <Grid.Column width={8}>
+                  <Header as="h5">
+                    TEMPLATE LANGUAGE
+                    <Header.Subheader>
+                      {role.template_language}
+                    </Header.Subheader>
+                  </Header>
+                </Grid.Column>
+              </Grid.Row>
+              <Grid.Row>
+                <Grid.Column width={8}>
+                  <Header as="h5">
+                    RESOURCE TYPE
+                    <Header.Subheader>{role.resource_type}</Header.Subheader>
+                  </Header>
+                </Grid.Column>
+              </Grid.Row>
+            </Grid>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div style={{ display: "flex" }}>

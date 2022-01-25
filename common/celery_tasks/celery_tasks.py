@@ -88,6 +88,7 @@ from common.lib.self_service.typeahead import cache_self_service_typeahead
 from common.lib.templated_resources import cache_resource_templates
 from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
 from common.lib.tenants import get_all_hosts
+from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
 from identity.lib.groups.groups import (
@@ -2602,6 +2603,22 @@ def cache_resource_templates_task(host=None) -> Dict:
         "function": function,
         "message": "Successfully cached resource templates",
         "num_templated_files": len(templated_file_array.templated_resources),
+        "host": host,
+    }
+    log.debug(log_data)
+    return log_data
+
+
+@app.task(soft_time_limit=1800, **default_retry_kwargs)
+def cache_terraform_resources_task(host=None) -> Dict:
+    if not host:
+        raise Exception("`host` must be passed to this task.")
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    terraform_resource_details = async_to_sync(cache_terraform_resources)(host)
+    log_data = {
+        "function": function,
+        "message": "Successfully cached Terraform resources",
+        "num_terraform_resources": len(terraform_resource_details.terraform_resources),
         "host": host,
     }
     log.debug(log_data)

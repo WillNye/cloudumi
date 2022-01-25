@@ -28,7 +28,9 @@ pandas
 password_strength
 ptvsd
 pydantic
+PyGithub
 pyjwt
+python-terraform
 python3_saml
 pytz
 PyYAML

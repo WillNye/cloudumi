@@ -1,7 +1,7 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
 # consoleme/models.py:
-# `datamodel-codegen --input swagger.yaml  --output consoleme/models.py \
-#  --base-class consoleme.lib.pydantic.BaseModel ; black consoleme/models.py`
+# `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel ;
+#  black ../models.py`
 openapi: 3.0.0
 info:
   description: ConsoleMe API definition
@@ -596,6 +596,7 @@ components:
           anyOf:
             - $ref: "#/components/schemas/AwsResourcePrincipalModel"
             - $ref: "#/components/schemas/HoneybeeAwsResourceTemplatePrincipalModel"
+            - $ref: "#/components/schemas/TerraformAwsResourcePrincipalModel"
         timestamp:
           type: string
           format: date-time
@@ -670,6 +671,7 @@ components:
           anyOf:
             - $ref: "#/components/schemas/AwsResourcePrincipalModel"
             - $ref: "#/components/schemas/HoneybeeAwsResourceTemplatePrincipalModel"
+            - $ref: "#/components/schemas/TerraformAwsResourcePrincipalModel"
         generator_type:
           type: string
           enum:
@@ -977,11 +979,13 @@ components:
           enum:
             - AwsResource
             - HoneybeeAwsResourceTemplate
+            - TerraformAwsResource
           discriminator:
             propertyName: principal_type
             mapping:
               AwsResource: "#/components/schemas/AwsResourcePrincipalModel"
               HoneybeeAwsResourceTemplate: "#/components/schemas/HoneybeeAwsResourceTemplatePrincipalModel"
+              TerraformAwsResource: "#/components/schemas/TerraformAwsResourcePrincipalModel"
 
     AwsResourcePrincipalModel:
       allOf:
@@ -1003,6 +1007,33 @@ components:
               type: string
               pattern: '(^arn:([^:]*):([^:]*):([^:]*):(|\*|[\d]{12}|cloudfront|aws):(.+)$)|^\*$'
 
+    TerraformAwsResourcePrincipalModel:
+      allOf:
+        - $ref: "#/components/schemas/PrincipalModel"
+        - type: object
+          required:
+            - resource_identifier
+            - repository_name
+            - principal_type
+            - resource_url
+          properties:
+            principal_type:
+              type: string
+              pattern: "TerraformAwsResource"
+            repository_name:
+              description: |-
+                The name of the repository for the template. This is specified in the configuration key
+                `cache_resource_templates.repositories[n].name`
+              type: string
+            resource_identifier:
+              type: string
+              example: path/to/template.tf
+            resource_url:
+              type: string
+              example: https://example.com/resource.tf
+            file_path:
+              type: string
+              example: path/to/template.tf
     HoneybeeAwsResourceTemplatePrincipalModel:
       allOf:
         - $ref: "#/components/schemas/PrincipalModel"
@@ -1037,6 +1068,7 @@ components:
           anyOf:
             - $ref: "#/components/schemas/AwsResourcePrincipalModel"
             - $ref: "#/components/schemas/HoneybeeAwsResourceTemplatePrincipalModel"
+            - $ref: "#/components/schemas/TerraformAwsResourcePrincipalModel"
         change_type:
           type: string
         resources:
@@ -1071,6 +1103,7 @@ components:
               anyOf:
                 - $ref: "#/components/schemas/AwsResourcePrincipalModel"
                 - $ref: "#/components/schemas/HoneybeeAwsResourceTemplatePrincipalModel"
+                - $ref: "#/components/schemas/TerraformAwsResourcePrincipalModel"
             action:
               $ref: "#/components/schemas/Action"
             change_type:
