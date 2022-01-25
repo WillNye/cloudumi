@@ -9,8 +9,8 @@ run_params:
   network_configuration:
     awsvpc_configuration:
       subnets:
-        - subnet-08762a28231c59d36
-        - subnet-0812d20b4152bac8f
+        - subnet-0de2f0753cb52f667
+        - subnet-0b24821491dfefff6
       security_groups:
         - sg-05f33ef672dfcbd83
       assign_public_ip: ENABLED
