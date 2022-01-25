@@ -23,10 +23,14 @@ resource "aws_dynamodb_table" "cloudumi_identity_groups_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
   # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -65,10 +69,14 @@ resource "aws_dynamodb_table" "cloudumi_cloudtrail_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = true
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
   # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -102,10 +110,14 @@ resource "aws_dynamodb_table" "cloudumi_config_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
   # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -139,10 +151,14 @@ resource "aws_dynamodb_table" "cloudumi_identity_requests_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
   # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -181,10 +197,14 @@ resource "aws_dynamodb_table" "cloudumi_policy_requests_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
   # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -215,6 +235,14 @@ resource "aws_dynamodb_table" "cloudumi_notifications_multitenant" {
   #   attribute_name = "ttl"
   #   enabled        = false
   # }
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
+  # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -245,6 +273,14 @@ resource "aws_dynamodb_table" "cloudumi_users_multitenant" {
   #   attribute_name = "ttl"
   #   enabled        = false
   # }
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
+  # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -282,6 +318,14 @@ resource "aws_dynamodb_table" "cloudumi_tenant_static_configs" {
   #   attribute_name = "ttl"
   #   enabled        = false
   # }
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
+  # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -319,6 +363,14 @@ resource "aws_dynamodb_table" "cloudumi_identity_users_multitenant" {
   #   attribute_name = "ttl"
   #   enabled        = false
   # }
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
+  # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -368,6 +420,14 @@ resource "aws_dynamodb_table" "noq_api_keys" {
   #   attribute_name = "ttl"
   #   enabled        = true
   # }
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
+  # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -405,6 +465,14 @@ resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant" {
   #   attribute_name = "ttl"
   #   enabled        = true
   # }
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
+  # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -446,10 +514,14 @@ resource "aws_dynamodb_table" "noq_aws_accounts" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
   # }
+
   lifecycle {
     ignore_changes = [write_capacity, read_capacity]
   }
@@ -495,9 +567,12 @@ resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  # ttl {
-  #   attribute_name = "ttl"
-  #   enabled        = false
+
+  # dynamic "replica" {
+  #   for_each = var.dynamo_table_replica_regions
+  #   content {
+  #     region_name = replica.value
+  #   }
   # }
 
   lifecycle {

@@ -1,12 +1,12 @@
 version: "3"
 services:
-  {{ cluster_id_safed }}-api:
-    image: "259868150464.dkr.ecr.{{ region }}.amazonaws.com/{{ stage }}-registry-api:{{ stage }}"
+  noq-dev-shared-staging-1-api:
+    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/staging-registry-api:staging"
     ports:
       - "8092:8092"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
-      - CONFIG_LOCATION={{ config_path_with_bucket }}
+      - CONFIG_LOCATION=s3://noq.tenant-configuration-store/noq.dev/shared/staging.1.config.yaml
     command: >
       bash -c '
       mkdir ~/.ssh;
@@ -20,15 +20,15 @@ services:
     logging:
       driver: awslogs
       options:
-        awslogs-group: {{ ecs_awslogs_group }}
-        awslogs-region: {{ region }}
+        awslogs-group: noq-dev-shared-staging-1
+        awslogs-region: us-west-2
         awslogs-stream-prefix: web
 
-  {{ cluster_id_safed }}-celery:
-    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/{{ stage }}-registry-celery:{{ stage }}"
+  noq-dev-shared-staging-1-celery:
+    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/staging-registry-celery:staging"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
-      - CONFIG_LOCATION={{ config_path_with_bucket }}
+      - CONFIG_LOCATION=s3://noq.tenant-configuration-store/noq.dev/shared/staging.1.config.yaml
     command: >
       bash -c '
       mkdir ~/.ssh;
@@ -42,6 +42,6 @@ services:
     logging:
       driver: awslogs
       options:
-        awslogs-group: {{ ecs_awslogs_group }}
-        awslogs-region: {{ region }}
+        awslogs-group: noq-dev-shared-staging-1
+        awslogs-region: us-west-2
         awslogs-stream-prefix: celery

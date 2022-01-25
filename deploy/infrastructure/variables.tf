@@ -34,8 +34,13 @@ variable "delimiter" {
 }
 
 variable "domain_name" {
-  description = "The domain name that should be used to create the certificate"
-  type = string
+  type        = string
+  description = "The specific domain name to be registered as the CNAME to the load balancer"
+} 
+
+variable "dynamo_table_replica_regions" {
+  description = "List of regions to replicate all DDB tables into" 
+  type = list
 }
 
 variable "lb_port" {
@@ -43,16 +48,9 @@ variable "lb_port" {
   default     = 443
 }
 
-variable "name" {
-  description = "A name to give to the cluster in the namespace; the name could be a department or evaluation or similar"
-  type = string
-  default = "common"
-}
-
 variable "namespace" {
-  description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence."
+  description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
   type    = string
-  default = "noq"
 }
 
 variable "noq_core" {
@@ -105,4 +103,10 @@ variable "timeout" {
 variable "tf_profile" {
   type    = string
   default = "noq_dev"
+}
+
+variable "zone" {
+  description = "The zone is the base part of the domain name. The {namespace}.{zone} make up the domain name"
+  type = string
+  default = "noq.dev"
 }

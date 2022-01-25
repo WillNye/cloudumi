@@ -79,6 +79,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
 
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "${var.cluster_id}-ecsTaskExecutionRole"
+  description = "This is also known as the ecsTaskExecutionRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -88,7 +89,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
         Effect = "Allow"
         Sid    = ""
         Principal = {
-          Service = "ec2.amazonaws.com"
+          Service = "ecs-tasks.amazonaws.com"
         }
       },
     ]
@@ -122,6 +123,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 
 resource "aws_iam_role" "ecs_task_role" {
   name = "${var.cluster_id}-ecsTaskRole"
+  description = "Referenced previously as NoqClusterRole1; the role is used by the ECS containers running NOQ logic"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -130,7 +132,7 @@ resource "aws_iam_role" "ecs_task_role" {
         Effect = "Allow"
         Sid    = ""
         Principal = {
-          Service = "ec2.amazonaws.com"
+          Service = "ecs-tasks.amazonaws.com"
         }
       },
     ]

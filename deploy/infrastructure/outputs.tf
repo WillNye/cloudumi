@@ -3,9 +3,24 @@ output "attributes" {
   value = var.attributes
 }
 
+output "bucket_name" {
+  description = "The bucket used for cloudumi operation"
+  value = module.tenant_s3_service.cloudumi_bucket_name
+}
+
+output "domain_name" {
+  description = "The configured domain name, which is derived from {namespace}.{zone}" 
+  value = "${var.namespace}.${var.zone}"
+}
+
 output "ecs_awslogs_group" {
   description = "The ecs aws logs group name (for automation)"
   value = module.tenant_container_service.ecs_awslogs_group
+}
+
+output "ecs_cluster_name" {
+  description = "The ECS cluster name"
+  value = module.tenant_container_service.ecs_cluster_name
 }
 
 output "ecs_security_group" {
@@ -14,12 +29,12 @@ output "ecs_security_group" {
 }
 
 output "ecs_task_execution_role_arn" {
-  description = "The ECS task execution role ARN to be configured"
+  description = "The ECS task execution role ARN to be configured, note this has been referenced as ecsTaskExecutionRole in previous configurations"
   value = module.tenant_container_service.ecs_task_execution_role
 }
 
 output "ecs_task_role_arn" {
-  description = "The ECS task role ARN to be configured"
+  description = "The ECS task role ARN to be configured; note this has been referenced as NoqClusterRole1 in previous configurations"
   value = module.tenant_container_service.ecs_task_role
 }
 
@@ -101,4 +116,9 @@ output "vpc_subnet_public_id" {
 output "vpc_subnet_private_id" {
   description = "The private CIDR range of the private subnet assign to the VPC"
   value = module.tenant_networking.vpc_subnet_private_id
+}
+
+output "zone" {
+  description = "The configured zone (for automation)"
+  value = var.zone
 }

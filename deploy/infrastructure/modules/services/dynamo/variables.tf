@@ -9,6 +9,11 @@ variable "cluster_id" {
   description = "The cluster ID for CloudUmi."
 }
 
+variable "dynamo_table_replica_regions" {
+  description = "List of regions to replicate all DDB tables into" 
+  type = list
+}
+
 variable "noq_core" {
   type = bool
   default = false

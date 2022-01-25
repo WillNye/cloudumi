@@ -23,6 +23,7 @@ resource "aws_lb" "noq_api_load_balancer" {
 resource "aws_lb_target_group" "noq_api_balancer_target_group" {
   port     = 8092
   protocol = "HTTP"
+  target_type = "ip"
   vpc_id   = aws_vpc.main_vpc.id
 }
 
