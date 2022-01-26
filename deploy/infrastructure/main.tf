@@ -31,9 +31,12 @@ module "tenant_container_service" {
   container_insights = var.container_insights
   lb_port = var.lb_port
   noq_core = var.noq_core
+  region = var.region
   stage = var.stage
+  subnet_ids = module.tenant_networking.vpc_subnet_private_id
   tags = var.tags
   timeout = var.timeout
+  vpc_cidr_range = module.tenant_networking.vpc_cidr_range
   vpc_id = module.tenant_networking.vpc_id
 }
 

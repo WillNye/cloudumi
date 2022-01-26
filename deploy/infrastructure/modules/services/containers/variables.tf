@@ -36,6 +36,11 @@ variable "noq_core" {
   default = false
 }
 
+variable "region" {
+  type = string
+  description = "The region that all services are deployed into"
+}
+
 variable "stage" {
   type    = string
   default = "staging"
@@ -44,6 +49,11 @@ variable "stage" {
     condition     = contains(["staging", "test", "prod"], var.stage)
     error_message = "Allowed values for input_parameter are \"staging\", \"test\", or \"prod\"."
   }
+}
+
+variable "subnet_ids" {
+  description = "The subnet ids as generated"
+  type = list(string)
 }
 
 variable "tags" {
@@ -56,6 +66,10 @@ variable "timeout" {
   type = string
 }
 
+variable "vpc_cidr_range" {
+  description = "VPC CIDR Range"
+  type = string
+}
 variable "vpc_id" {
   description = "VPC ID"
   type = string

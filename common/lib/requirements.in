@@ -9,5 +9,6 @@ policy_sentry
 pyjwt
 redis
 redis-py-cluster
+redislite
 simplejson
 tenacity
