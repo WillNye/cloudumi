@@ -285,8 +285,6 @@ protobuf==3.18.1
     #   google-api-core
     #   googleapis-common-protos
     #   grpcio-tools
-psutil==5.8.0
-    # via redislite
 ptvsd==4.3.2
     # via
     #   -r ./api/requirements.in
@@ -355,14 +353,9 @@ redis==3.5.3
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   redis-py-cluster
-    #   redislite
 redis-py-cluster==2.1.3
     # via
     #   -r ./common/lib/requirements.in
-    #   -r ./common/util/requirements.in
-redislite==6.0.674960
-    # via
-    #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
 requests==2.26.0
     # via
@@ -496,4 +489,3 @@ setuptools==59.3.0
     #   google-api-core
     #   google-auth
     #   grpcio-tools
-    #   redislite
