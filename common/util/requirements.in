@@ -8,6 +8,7 @@ bleach # For sanitizing json data
 boto
 boto3
 celery
+checkov
 cloudaux
 cryptography
 deepdiff # For getting deep in nested dictionary differences
@@ -15,7 +16,7 @@ ed25519 # For.. more signing
 elastic-apm # For Elastic Application Performance Monitoring
 furl
 gitpython
-grpcio==1.41.0
+grpcio
 grpcio-tools
 joblib  # For some parallelization
 jsonschema
@@ -34,7 +35,7 @@ pytz
 PyYAML
 redis
 redis-py-cluster
-redislite
+# redislite (Doesn't work on M1 Mac and it isn't required for dev)
 retrying
 ruamel.yaml
 sentry_sdk # Send errors and exceptions to Sentry

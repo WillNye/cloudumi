@@ -10,9 +10,11 @@ from common.lib.self_service.models import (
     SelfServiceTypeaheadModel,
     SelfServiceTypeaheadModelArray,
 )
+from common.lib.terraform import retrieve_cached_terraform_resources
 from common.models import (
     AwsResourcePrincipalModel,
     HoneybeeAwsResourceTemplatePrincipalModel,
+    TerraformAwsResourcePrincipalModel,
 )
 
 
@@ -72,6 +74,31 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                             resource_identifier=resource_template.resource,
                             resource_url=resource_template.web_path,
                         ),
+                    )
+                )
+
+        terraform_resources = await retrieve_cached_terraform_resources(
+            host, resource_type="aws_iam_role"
+        )
+        if terraform_resources:
+            for terraform_resource in terraform_resources.terraform_resources:
+                typeahead_entries.append(
+                    SelfServiceTypeaheadModel(
+                        icon="user",
+                        number_of_affected_resources=1,
+                        display_text=terraform_resource.display_text,
+                        account="Terraform",
+                        application_name="Terraform",
+                        application_url="N/A",
+                        principal=TerraformAwsResourcePrincipalModel(
+                            principal_type="TerraformAwsResource",
+                            repository_name=terraform_resource.repository_name,
+                            resource_identifier=terraform_resource.name,
+                            resource_url=terraform_resource.resource_url,
+                            file_path=terraform_resource.file_path,
+                        ),
+                        details_endpoint=f"/api/v2/terraform_resource/{terraform_resource.repository_name}/"
+                        + f"{terraform_resource.name}",
                     )
                 )
 

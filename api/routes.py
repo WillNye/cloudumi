@@ -70,6 +70,7 @@ from api.handlers.v2.self_service import (
 )
 from api.handlers.v2.service_control_policy import ServiceControlPolicyHandler
 from api.handlers.v2.templated_resources import TemplatedResourceDetailHandler
+from api.handlers.v2.terraform_resources import TerraformResourceDetailHandler
 from api.handlers.v2.typeahead import (
     ResourceTypeAheadHandlerV2,
     SelfServiceStep1ResourceTypeahead,
@@ -147,6 +148,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v2/templated_resource/([a-zA-Z0-9_-]+)/(.*)",
             TemplatedResourceDetailHandler,
+        ),
+        (
+            r"/api/v2/terraform_resource/([a-zA-Z0-9_-]+)/(.*)",
+            TerraformResourceDetailHandler,
         ),
         (
             r"/api/v2/managed_policies_on_principal/(.*)",

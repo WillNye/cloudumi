@@ -67,7 +67,7 @@ async def _generate_policy_sid(user: str) -> str:
     return f"cm{user_stripped}{int(time.time())}{random_string}"
 
 
-async def generate_policy_name(policy_name: str, user: str) -> str:
+async def generate_policy_name(policy_name: Optional[str], user: str) -> str:
     """
     Generate a unique policy name identifying the user and time of the change request.
 
@@ -79,7 +79,7 @@ async def generate_policy_name(policy_name: str, user: str) -> str:
         return policy_name
     user_stripped = user.split("@")[0]
     random_string = await generate_random_string()
-    return f"cm_{user_stripped}_{int(time.time())}_{random_string}"
+    return f"noq_{user_stripped}_{int(time.time())}_{random_string}"
 
 
 async def _generate_inline_policy_model_from_statements(

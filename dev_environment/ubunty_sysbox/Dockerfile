@@ -1,7 +1,7 @@
 FROM nestybox/ubuntu-focal-systemd-docker:latest
 
 # TODO: figure out how to pass in the username via an env var; apparently docker run does not support this
-RUN usermod -l matt admin \ 
+RUN usermod -l matt admin \
  && groupmod -n matt admin \
  && mv /home/admin /home/matt \
  && usermod -d /home/matt matt \

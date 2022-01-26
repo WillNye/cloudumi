@@ -4,6 +4,7 @@ from common.lib.pydantic import BaseModel
 from common.models import (
     AwsResourcePrincipalModel,
     HoneybeeAwsResourceTemplatePrincipalModel,
+    TerraformAwsResourcePrincipalModel,
 )
 
 
@@ -15,7 +16,9 @@ class SelfServiceTypeaheadModel(BaseModel):
     details_endpoint: str
     application_name: Optional[str] = None
     principal: Union[
-        AwsResourcePrincipalModel, HoneybeeAwsResourceTemplatePrincipalModel
+        AwsResourcePrincipalModel,
+        HoneybeeAwsResourceTemplatePrincipalModel,
+        TerraformAwsResourcePrincipalModel,
     ]
 
 

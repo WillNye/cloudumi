@@ -1,5 +1,5 @@
 # docker-compose -f dev_environment/docker-compose-ubunty-sysbox.yaml up -d
-# docker attach 
+# docker attach
 version: "3"
 services:
   ubunty-sysbox:
