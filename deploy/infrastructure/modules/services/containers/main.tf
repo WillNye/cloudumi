@@ -21,6 +21,7 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
       }
     }
   }
+
   setting {
     name  = "containerInsights"
     value = var.container_insights ? "enabled" : "disabled"
@@ -376,6 +377,14 @@ resource "aws_security_group" "ecs_ecr_access_sg" {
     cidr_blocks = [var.vpc_cidr_range]
   }
 
+  egress {
+    description = "Access to VPC endpoints"
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = [var.vpc_cidr_range]
+  }
+
   tags = merge(
     var.tags,
     {
@@ -424,9 +433,35 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_id      = var.vpc_id
   service_name = "com.amazonaws.${var.region}.s3"
 
+  # security_group_ids = [aws_security_group.ecs_ecr_access_sg.id]
+  # subnet_ids = var.subnet_ids
+  # vpc_endpoint_type = "Interface"
+  vpc_endpoint_type = "Gateway"
+  policy = jsonencode({
+    "Statement": [
+      {
+        "Action": "*",
+        "Effect": "Allow",
+        "Resource": "*",
+        "Principal": "*",
+      }
+    ],
+  })
+
+  tags = merge(
+    var.tags,
+    {
+    }
+  )
+}
+
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id = var.vpc_id
+  service_name = "com.amazonaws.${var.region}.logs"
+
+  vpc_endpoint_type = "Interface"
   security_group_ids = [aws_security_group.ecs_ecr_access_sg.id]
   subnet_ids = var.subnet_ids
-  vpc_endpoint_type = "Interface"
 
   tags = merge(
     var.tags,
