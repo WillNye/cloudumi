@@ -24,6 +24,9 @@ genrule(
            \
            bazel run //common/celery_tasks:container-deploy-{{ stage }}; \
            \
+           ecs-cli configure --cluster {{ ecs_cluster_name }} --default-launch-type FARGATE \
+           --config-name {{ ecs_cluster_name }} --region {{ region }}; \
+           \
            ecs-cli compose -f deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
            --cluster-config {{ ecs_cluster_name }} \
            --ecs-params deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \

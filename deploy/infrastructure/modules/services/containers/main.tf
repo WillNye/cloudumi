@@ -21,6 +21,7 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
       }
     }
   }
+
   setting {
     name  = "containerInsights"
     value = var.container_insights ? "enabled" : "disabled"

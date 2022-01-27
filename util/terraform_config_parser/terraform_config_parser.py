@@ -93,10 +93,10 @@ if __name__ == "__main__":
     terraform_config = join_strings_in_attribute(terraform_config, "cluster_id", ["zone", "namespace", "stage", "attributes"], "-")
     terraform_config = join_strings_in_attribute(terraform_config, "cluster_id_safed", ["zone_safed", "namespace", "stage", "attributes"], "-")
     terraform_config = join_strings_in_attribute(terraform_config, "cluster_id_safed_no_sep", ["zone_safed", "namespace", "stage", "attributes"])
+    write_file("noq-product-configuration.yaml.jinja2", "configuration.yaml", terraform_config, str(Path(__file__).parent))
     terraform_config = upload_configuration_to_s3(terraform_config)
+    write_file("noq-product-configuration.yaml.jinja2", "configuration.yaml", terraform_config, config_output_path)
     write_file("build_file.jinja2", "BUILD", terraform_config, config_output_path)
     write_file("compose.yaml.jinja2", "compose.yaml", terraform_config, config_output_path)
     write_file("ecs.yaml.jinja2", "ecs.yaml", terraform_config, config_output_path)
-    write_file("noq-product-configuration.yaml.jinja2", "configuration.yaml", terraform_config, config_output_path)
     # Write configuration locally for upload to S3
-    write_file("noq-product-configuration.yaml.jinja2", "configuration.yaml", terraform_config, str(Path(__file__).parent))
