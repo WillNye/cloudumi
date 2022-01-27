@@ -56,4 +56,4 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.NOQ_ECR_USER_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.NOQ_ECR_USER_SECRET_ACCESS_KEY }}
         run: |-
-          ${GITHUB_WORKSPACE}/bin/bazel run //deploy/staging:deploy
+          ${GITHUB_WORKSPACE}/bin/bazel run //deploy/infrastructure/live/noq.dev:staging-1

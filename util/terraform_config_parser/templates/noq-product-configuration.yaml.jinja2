@@ -1,0 +1,57 @@
+_global_:
+  landing_page_domains:
+    - {{ domain_name }}
+  aws:
+    node_role: {{ ecs_task_role_arn }}
+  logging:
+    file: ~/logs/cloudumi/cloudumi_tornado.log
+  config:
+    load_from_dynamo: true
+    automatically_reload_configuration: true
+    load_tenant_configurations_from_dynamo: true
+  s3_cache_bucket: {{ bucket_name }}
+  {% if stage == "staging" %}
+  development: true
+  environment: dev
+  {% else   %}
+  development: false
+  {% endif  %}
+  tornado:
+  {% if stage == "staging" %}
+    debug: false
+  {% else   %}
+    debug: true
+  {% endif  %}
+    port: 8092
+    xsrf: true
+    xsrf_cookie_kwargs:
+      samesite: strict
+  plugins:
+    auth: cmsaas_auth
+    aws: cmsaas_aws
+    group_mapping: cmsaas_group_mapping
+    internal_celery_tasks: cmsaas_celery_tasks
+    metrics: cmsaas_metrics
+    internal_config: cmsaas_config
+    internal_routes: cmsaas_internal_routes
+    internal_policies: cmsaas_policies
+  celery:
+    clear_tasks_for_development: false
+    purge: true
+    broker:
+      us-east-1: redis://{{ redis_primary_cluster_address }}:6379/1
+      us-west-2: redis://{{ redis_primary_cluster_address }}:6379/1
+      global: redis://{{ redis_primary_cluster_address }}:6379/1
+    backend:
+      us-east-1: redis://{{ redis_primary_cluster_address }}:6379/2
+      us-west-2: redis://{{ redis_primary_cluster_address }}:6379/2
+      global: redis://{{ redis_primary_cluster_address }}:6379/2
+    debug: true
+  # Saas Configuration
+  redis:
+    cluster_mode:
+      enabled: true
+      nodes:
+        global:
+          - host: {{ redis_primary_cluster_address }}
+            port: "6379"

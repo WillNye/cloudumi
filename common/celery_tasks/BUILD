@@ -20,6 +20,7 @@ EXT_DEPS = [
     requirement("asgiref"),
     requirement("billiard"),
     requirement("celery"),
+    requirement("checkov"),
     requirement("retrying"),
     requirement("sentry_sdk"),
     requirement("ujson"),
@@ -30,6 +31,7 @@ REQUIRES = [
     "asgiref",
     "billiard",
     "celery",
+    "checkov",
     "retrying",
     "sentry_sdk",
     "ujson",
@@ -122,47 +124,9 @@ container_layer(
 )
 
 container_image(
-    name = "base-celery-dev-local",
-    base = "//docker/base:base_docker",
-    env = {
-        "TZ": "America/Los_Angeles",
-        "PYTHONPATH": "PYTHONPATH:/usr/lib/python3/dist-packages:/usr/local/lib/python3.9:/usr/lib/python3.9",
-        "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
-    },
-    layers = [
-        ":config_layer",
-    ],
-    ports = [],
-    symlinks = {
-        "/usr/bin/python": "/usr/local/bin/python",
-    },
-    docker_run_flags = "-v ~/.aws:/root/.aws",
-)
-
-py3_image(
-    name = "container-dev-local",
-    base = ":base-celery-dev-local",
-    layers = [
-        ":lib_layer",
-        ":pkg_layer",
-    ],
-    srcs = [
-        ":lib",
-    ],
-    deps = EXT_DEPS + INT_DEPS,
-    main = "run.py",
-    visibility = ["//visibility:public"],
-)
-
-container_image(
     name = "base-celery-api",
     base = "//docker/base:base_docker",
     env = {
-        "TZ": "America/Los_Angeles",
-        "PYTHONPATH": "PYTHONPATH:/usr/lib/python3/dist-packages:/usr/local/lib/python3.9:/usr/lib/python3.9",
-        "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
     },
     layers = [
         ":config_layer",
@@ -192,7 +156,7 @@ py3_image(
 container_push(
     name = "container-deploy-staging",
     format = "Docker",
-    repository = "cloudumi-celery",
+    repository = "staging-registry-celery",
     image = "container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "staging",
@@ -202,9 +166,9 @@ container_push(
 container_push(
     name = "container-deploy-prod",
     format = "Docker",
-    repository = "cloudumi-celery",
+    repository = "prod-registry-celery",
     image = "container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
+    tag = "production",
     visibility = ["//visibility:public"],
 )

@@ -88,13 +88,13 @@ TODO
 
 Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
 
-- `bazelisk run //deploy/staging`
+* `bazelisk run //deploy/infrastructure/live/noq.dev:staging-1`
 
 ### Publish to Prod
 
 > Do you really want this? Do you have access?
 
-- `bazelisk run //deploy/prod`
+* `bazelisk run //deploy/infrastructure/live/noq.dev:production-1`
 
 ## Troubleshooting
 

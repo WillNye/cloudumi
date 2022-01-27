@@ -1,0 +1,50 @@
+filegroup(
+    name = "{{ stage }}-{{ attributes }}-files",
+    srcs = glob([
+        "*.yaml",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "{{ stage }}-{{ attributes }}",
+    srcs = [
+        "//api:container-deploy-{{ stage }}",
+        "//common/celery_tasks:container-deploy-{{ stage }}",
+        ":{{ stage }}-{{ attributes }}-files",
+    ],
+    executable = True,
+    exec_tools = [
+        "//api:container-deploy-{{ stage }}",
+        "//common/celery_tasks:container-deploy-{{ stage }}",
+    ],
+    outs = ["run_deploy_{{ stage }}"],
+    message = "Deploying CloudUmi to {{ stage }}...",
+    cmd = "echo 'bazel run //api:container-deploy-{{ stage }}; \
+           \
+           bazel run //common/celery_tasks:container-deploy-{{ stage }}; \
+           \
+           ecs-cli configure --cluster {{ ecs_cluster_name }} --default-launch-type FARGATE \
+           --config-name {{ ecs_cluster_name }} --region {{ region }}; \
+           \
+           ecs-cli compose -f deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
+           --cluster-config {{ ecs_cluster_name }} \
+           --ecs-params deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
+           -p {{ ecs_cluster_name }} \
+           --task-role-arn {{ ecs_task_role_arn }} \
+           --region {{ region }} service up --create-log-groups --timeout 15 \
+           --target-groups targetGroupArn={{ target_group_arn }},containerName={{ cluster_id_safed }}-api,containerPort=8092' >$@",
+    tags = ["manual"],
+)
+
+genrule(
+    name = "destroy",
+    srcs = [
+        ":{{ stage }}-{{ attributes }}-files",
+    ],
+    executable = True,
+    outs = ["run_destroy_{{ stage }}"],
+    message = "Destroying CloudUmi in {{ stage }}...",
+    cmd = "ecs-cli down --force --cluster-config {{ ecs_cluster_name }}; >$@",
+    tags = ["manual"],
+)

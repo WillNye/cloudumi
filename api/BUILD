@@ -196,10 +196,8 @@ container_image(
     base = "//docker/base:base_docker",
     env = {
         "TZ": "America/Los_Angeles",
-        "PYTHONPATH": "/app/",
-        "PYTHONDONTWRITEBYTECODE": "1",
-        "PYTHONUNBUFFERED": "1",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
+        "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "noq_dev",
     },
     layers = [
@@ -216,10 +214,7 @@ container_image(
     name = "base-api-image",
     base = "//docker/base:base_docker",
     env = {
-        "TZ": "America/Los_Angeles",
-        "PYTHONPATH": "/app/",
-        "PYTHONDONTWRITEBYTECODE": "1",
-        "PYTHONUNBUFFERED": "1",
+        "NOQ_CONTAINER": "1",
     },
     layers = [
         ":config_layer",
@@ -263,7 +258,7 @@ py3_image(
 container_push(
     name = "container-deploy-staging",
     format = "Docker",
-    repository = "cloudumi-api",
+    repository = "staging-registry-api",
     image = "container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "staging",
@@ -273,9 +268,9 @@ container_push(
 container_push(
     name = "container-deploy-prod",
     format = "Docker",
-    repository = "cloudumi-api",
+    repository = "prod-registry-api",
     image = "container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
+    tag = "production",
     visibility = ["//visibility:public"],
 )
