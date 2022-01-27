@@ -196,10 +196,8 @@ container_image(
     base = "//docker/base:base_docker",
     env = {
         "TZ": "America/Los_Angeles",
-        "PYTHONPATH": "/app/",
-        "PYTHONDONTWRITEBYTECODE": "1",
-        "PYTHONUNBUFFERED": "1",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
+        "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "noq_dev",
     },
     layers = [
@@ -216,6 +214,7 @@ container_image(
     name = "base-api-image",
     base = "//docker/base:base_docker",
     env = {
+        "NOQ_CONTAINER": "1",
     },
     layers = [
         ":config_layer",

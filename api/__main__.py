@@ -1,6 +1,15 @@
 """Entrypoint for ConsoleMe. To run service, set CONFIG_LOCATION environmental variable and run
 python -m consoleme.__main__"""
 
+# uvloop and xmlsec Hack
+# Essentially we are installing these depedendencies into the build environment using the //docker BUILD file (reference:
+# docker/base/BUILD)
+# Tech Debt ticket: SAAS-95, SAAS-94
+import os
+if os.getenv("NOQ_CONTAINER"):
+    import sys
+    sys.path.insert(0, "/usr/local/lib/python3.9/site-packages")
+#############
 
 import asyncio
 import logging

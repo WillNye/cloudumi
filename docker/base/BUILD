@@ -39,7 +39,8 @@ container_run_and_commit(
     commands = [
         "apt-get update -y",
         # "apt-get install build-essential curl telnet iputils-ping sudo vim systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev nodejs -y",
-        "apt-get install xmlsec1 libxslt1.1 libxmlsec1 libxmlsec1-openssl -y",
+        "apt-get install xmlsec1 libxslt1.1 libxmlsec1 libxmlsec1-dev libxmlsec1-gcrypt libxmlsec1-gnutls libxmlsec1-nss libxmlsec1-openssl -y",
+        "pip install uvloop xmlsec",
         # "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
         # "echo 'deb https://artifacts.elastic.co/packages/7.x/apt stable main' | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list",
         # "sudo apt-get update && sudo apt-get install -y logstash",
