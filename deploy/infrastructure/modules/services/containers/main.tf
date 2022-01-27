@@ -289,8 +289,8 @@ resource "aws_iam_role" "ecs_task_role" {
               "s3:GetObjectVersion"
           ],
           "Resource": [
-              "arn:aws:s3:::noq-tenant-configuration.node.dev1.259868150464.us-west-2",
-              "arn:aws:s3:::noq-tenant-configuration.node.dev1.259868150464.us-west-2/*"
+              "arn:aws:s3:::noq.tenant-configuration-store",
+              "arn:aws:s3:::noq.tenant-configuration-store/*"
           ]
         },
         {
@@ -316,8 +316,8 @@ resource "aws_iam_role" "ecs_task_role" {
               "s3:list*"
           ],
           "Resource": [
-              "arn:aws:s3:::noqcache",
-              "arn:aws:s3:::noqcache/*"
+              "arn:aws:s3:::noq.tenant-configuration-store",
+              "arn:aws:s3:::noq.tenant-configuration-store/*"
           ]
         },
         {
@@ -359,78 +359,6 @@ resource "aws_security_group" "ecs-sg" {
     var.tags,
     {
       Name = "allow_access_to_noq"
-    }
-  )
-}
-
-resource "aws_security_group" "ecs_ecr_access_sg" {
-  name = "${var.cluster_id}-ecs-ecr-access-sg"
-  description = "Allows access to the ECR public service via the vpc endpoint"
-  vpc_id = var.vpc_id
-
-  ingress {
-    description = "Access from VPC only"
-    from_port = 443
-    to_port = 443
-    protocol = "tcp"
-    cidr_blocks = [var.vpc_cidr_range]
-  }
-
-  tags = merge(
-    var.tags,
-    {
-
-    }
-  )
-}
-
-# As of Fargate 1.4.0, ECS tasks only have one interface, which means we have to provide means to access ECR
-# https://stackoverflow.com/questions/61265108/aws-ecs-fargate-resourceinitializationerror-unable-to-pull-secrets-or-registry
-resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id       = var.vpc_id
-  service_name = "com.amazonaws.${var.region}.ecr.dkr"
-
-  # As per https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html, must be true
-  private_dns_enabled = true
-  security_group_ids = [aws_security_group.ecs_ecr_access_sg.id]
-  subnet_ids = var.subnet_ids
-  vpc_endpoint_type = "Interface"
-
-  tags = merge(
-    var.tags,
-    {
-    }
-  )
-}
-
-resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id       = var.vpc_id
-  service_name = "com.amazonaws.${var.region}.ecr.api"
-
-  # As per https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html, must be true
-  private_dns_enabled = true
-  security_group_ids = [aws_security_group.ecs_ecr_access_sg.id]
-  subnet_ids = var.subnet_ids
-  vpc_endpoint_type = "Interface"
-
-  tags = merge(
-    var.tags,
-    {
-    }
-  )
-}
-
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id      = var.vpc_id
-  service_name = "com.amazonaws.${var.region}.s3"
-
-  security_group_ids = [aws_security_group.ecs_ecr_access_sg.id]
-  subnet_ids = var.subnet_ids
-  vpc_endpoint_type = "Interface"
-
-  tags = merge(
-    var.tags,
-    {
     }
   )
 }
