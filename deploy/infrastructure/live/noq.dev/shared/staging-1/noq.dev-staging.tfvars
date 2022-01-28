@@ -16,10 +16,16 @@ tags = {
     "Environment": "staging",
 }
 
-allowed_inbound_cidr_blocks = ["70.187.228.241/32", "75.164.48.220/32"]
+allowed_inbound_cidr_blocks = [
+    "70.187.228.241/32",
+    "75.164.84.226/32",  # Matt
+    "75.164.48.220/32"
+]
 
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
 
 # Redis
 redis_node_type = "cache.t3.small"
+
+profile = "noq_dev"

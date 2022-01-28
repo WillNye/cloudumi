@@ -59,6 +59,15 @@ variable "noq_core" {
   default = false
 }
 
+variable "profile" {
+  description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
+  type    = string
+  validation {
+    condition = contains(["noq_dev", "noq_prod"], var.profile)
+    error_message = "Allowed AWS_PROFILEs are \"noq_dev\" and \"noq_prod\"."
+  }
+}
+
 variable "redis_node_type" {
   type    = string
   default = "cache.t3.small"
@@ -98,11 +107,6 @@ variable "timeout" {
   description = "The timeout for each resource that may get stuck" 
   type = string
   default = "3m"
-}
-
-variable "tf_profile" {
-  type    = string
-  default = "noq_dev"
 }
 
 variable "zone" {

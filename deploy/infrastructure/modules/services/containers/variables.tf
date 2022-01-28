@@ -31,6 +31,11 @@ variable "lb_port" {
   default     = 443
 }
 
+variable "load_balancer_sgs" {
+  description = "Any load balancer that requires access to the services should be added here"
+  type        = list(string)
+}
+
 variable "noq_core" {
   type = bool
   default = false

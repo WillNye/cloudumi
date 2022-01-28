@@ -9,6 +9,11 @@ variable "cluster_id" {
   description = "The cluster ID for CloudUmi."
 }
 
+variable "redis_cluster_access_sg_ids" {
+  type = list(string)
+  description = "Any security group ids that require access to the Redis cluster"
+}
+
 variable "noq_core" {
   type = bool
   default = false

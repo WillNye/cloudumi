@@ -25,6 +25,15 @@ resource "aws_lb_target_group" "noq_api_balancer_target_group" {
   protocol = "HTTP"
   target_type = "ip"
   vpc_id   = aws_vpc.main_vpc.id
+  health_check {
+    enabled = true
+    healthy_threshold = 5
+    unhealthy_threshold = 10
+    timeout = 120
+    interval = 300
+    path = "/healthcheck"
+    port = 8092
+  }
 }
 
 resource "aws_lb_listener" "noq_api_balancer_front_end_80_redirect" {

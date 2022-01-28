@@ -45,6 +45,9 @@ genrule(
     executable = True,
     outs = ["run_destroy_{{ stage }}"],
     message = "Destroying CloudUmi in {{ stage }}...",
-    cmd = "ecs-cli down --force --cluster-config {{ ecs_cluster_name }}; >$@",
+    cmd = "ecs-cli compose -f deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
+           stop --cluster-config {{ ecs_cluster_name }} \
+           \
+           ecs-cli down --force --cluster-config {{ ecs_cluster_name }}; >$@",
     tags = ["manual"],
 )

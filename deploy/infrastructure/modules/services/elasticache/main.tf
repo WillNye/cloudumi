@@ -28,7 +28,7 @@ module "redis" {
 
   subnet_ids         = var.subnet_ids
   vpc_id             = var.vpc_id
-  security_group_ids = []
+  security_group_ids = [aws_security_group.redis-sg.id]
 
   ingress_cidr_blocks = []
 
@@ -43,6 +43,34 @@ module "redis" {
     var.tags,
     {
       "Project": "Test"
+    }
+  )
+}
+
+resource "aws_security_group" "redis-sg" {
+  name        = "${var.cluster_id}-redis-access-sg"
+  description = "Allows access to Redis services, internally to AWS."
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "Access from other security groups to the Redis cluster access port"
+    from_port   = 6379
+    to_port     = 6379
+    protocol    = "tcp"
+    security_groups = var.redis_cluster_access_sg_ids
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "allow_access_to_noq"
     }
   )
 }

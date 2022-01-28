@@ -17,7 +17,7 @@ terraform {
 }
 
 provider "aws" {
-  profile = var.tf_profile
+  profile = var.profile
   region  = var.region
 }
 
@@ -30,6 +30,7 @@ module "tenant_container_service" {
   cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
   container_insights = var.container_insights
   lb_port = var.lb_port
+  load_balancer_sgs = [module.tenant_networking.load_balancer_security_group]
   noq_core = var.noq_core
   region = var.region
   stage = var.stage
@@ -57,6 +58,7 @@ module "tenant_elasticache_service" {
   attributes = var.attributes
   cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
+  redis_cluster_access_sg_ids = [module.tenant_container_service.ecs_security_group_id]
   redis_node_type = var.redis_node_type
   subnet_ids = module.tenant_networking.vpc_subnet_private_id
   tags = var.tags

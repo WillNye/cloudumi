@@ -338,15 +338,15 @@ resource "aws_iam_role" "ecs_task_role" {
 
 resource "aws_security_group" "ecs-sg" {
   name        = "${var.cluster_id}-ecs-access-sg"
-  description = "Allows access to ECS services, which is forwarded via the load balancer."
+  description = "Allows access to ECS services, internally to AWS."
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "HTTPS for accessing Noq"
-    from_port   = var.lb_port
-    to_port     = var.lb_port
+    description = "HTTP for accessing Noq from the load balancer"
+    from_port   = 8092
+    to_port     = 8092
     protocol    = "tcp"
-    cidr_blocks = var.allowed_inbound_cidr_blocks
+    security_groups = var.load_balancer_sgs
   }
 
   egress {

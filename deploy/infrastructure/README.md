@@ -104,6 +104,6 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 
 # Remove a tenant
 - Set AWS_PROFLE: `export AWS_PROFILE=noq_dev` (or noq_prod)
-- For staging: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1:destroy`
-- For production: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1:destroy`
+- For staging: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_dev`
+- For production: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
 - Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)

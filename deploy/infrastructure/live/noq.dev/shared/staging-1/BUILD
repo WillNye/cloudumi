@@ -33,7 +33,7 @@ genrule(
            -p noq-dev-shared-staging-1 \
            --task-role-arn arn:aws:iam::259868150464:role/noq-dev-shared-staging-1-ecsTaskRole \
            --region us-west-2 service up --create-log-groups --timeout 15 \
-           --target-groups targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:259868150464:targetgroup/tf-20220125225929622300000002/d07b266a92b2f1c3,containerName=noq-dev-shared-staging-1-api,containerPort=8092' >$@",
+           --target-groups targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:259868150464:targetgroup/tf-20220128193723710200000002/e84c2219c5ca74a8,containerName=noq-dev-shared-staging-1-api,containerPort=8092' >$@",
     tags = ["manual"],
 )
 
@@ -45,6 +45,9 @@ genrule(
     executable = True,
     outs = ["run_destroy_staging"],
     message = "Destroying CloudUmi in staging...",
-    cmd = "ecs-cli down --force --cluster-config noq-dev-shared-staging-1; >$@",
+    cmd = "ecs-cli compose -f deploy/infrastructure/live/noq.dev/shared/staging-1/compose.yaml \
+           stop --cluster-config noq-dev-shared-staging-1 \
+           \
+           ecs-cli down --force --cluster-config noq-dev-shared-staging-1; >$@",
     tags = ["manual"],
 )
