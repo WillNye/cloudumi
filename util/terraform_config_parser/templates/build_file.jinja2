@@ -27,6 +27,8 @@ genrule(
            ecs-cli configure --cluster {{ ecs_cluster_name }} --default-launch-type FARGATE \
            --config-name {{ ecs_cluster_name }} --region {{ region }}; \
            \
+           ecs-cli up --cluster-config {{ ecs_cluster_name }}; \
+           \
            ecs-cli compose -f deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
            --cluster-config {{ ecs_cluster_name }} \
            --ecs-params deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
@@ -46,8 +48,8 @@ genrule(
     outs = ["run_destroy_{{ stage }}"],
     message = "Destroying CloudUmi in {{ stage }}...",
     cmd = "ecs-cli compose -f deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
-           stop --cluster-config {{ ecs_cluster_name }} \
+           -p {{ ecs_cluster_name }} service rm \
            \
-           ecs-cli down --force --cluster-config {{ ecs_cluster_name }}; >$@",
+           ecs-cli down --cluster-config {{ ecs_cluster_name }}; >$@",
     tags = ["manual"],
 )

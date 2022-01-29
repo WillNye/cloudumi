@@ -27,6 +27,8 @@ genrule(
            ecs-cli configure --cluster noq-dev-shared-staging-1 --default-launch-type FARGATE \
            --config-name noq-dev-shared-staging-1 --region us-west-2; \
            \
+           ecs-cli up --cluster-config noq-dev-shared-staging-1; \
+           \
            ecs-cli compose -f deploy/infrastructure/live/noq.dev/shared/staging-1/compose.yaml \
            --cluster-config noq-dev-shared-staging-1 \
            --ecs-params deploy/infrastructure/live/noq.dev/shared/staging-1/ecs.yaml \
