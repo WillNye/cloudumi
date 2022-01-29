@@ -30,6 +30,7 @@ Terraform is only required when either establishing a new tenant / account or up
 To use terraform, follow the below steps:
 
 - Ensure `AWS_PROFILE` is set to respective environment (`noq_dev` or `noq_prod`)
+- Ensure `AWS_REGION` is set correctly (`us-west-2` for most clusters)
 - Initialize Terraform if you haven't already: `terraform init`
 - Setup your workspaces: `./setup.sh`
 - Select the appropriate workspace: `terraform workspace select demo.noq.dev-staging-1` (for instance)
