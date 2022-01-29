@@ -73,14 +73,24 @@ output "stage" {
   value = var.stage
 }
 
-output "subnet_name_az0" {
+output "subnet_name_private_az0" {
   description = "The configured subnet name for AZ0 (for automation)"
   value = module.tenant_networking.vpc_subnet_private_id[0]
 }
 
-output "subnet_name_az1" {
+output "subnet_name_private_az1" {
   description = "The configured subnet name for AZ1 (for automation)"
   value = module.tenant_networking.vpc_subnet_private_id[1]
+}
+
+output "subnet_name_public_az0" {
+  description = "The configured subnet name for AZ0 (for automation)"
+  value = module.tenant_networking.vpc_subnet_public_id[0]
+}
+
+output "subnet_name_public_az1" {
+  description = "The configured subnet name for AZ1 (for automation)"
+  value = module.tenant_networking.vpc_subnet_public_id[1]
 }
 
 output "target_group_arn" {

@@ -111,6 +111,21 @@ resource "aws_iam_role" "ecs_task_execution_role" {
                 "logs:PutLogEvents"
             ],
             "Resource": "*"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "ssmmessages:CreateControlChannel",
+            "ssmmessages:CreateDataChannel",
+            "ssmmessages:OpenControlChannel",
+            "ssmmessages:OpenDataChannel",
+            "kms:Decrypt",
+            "logs:DescribeLogGroups",
+            "logs:CreateLogStream",
+            "logs:DescribeLogStreams",
+            "logs:PutLogEvents",
+          ],
+          "Resource": "*"
         }
       ]
     })
