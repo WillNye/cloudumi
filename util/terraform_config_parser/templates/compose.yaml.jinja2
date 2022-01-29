@@ -4,6 +4,7 @@ services:
     image: "259868150464.dkr.ecr.{{ region }}.amazonaws.com/{{ stage }}-registry-api:{{ stage }}"
     ports:
       - "8092:8092"
+      - "22:22"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
       - CONFIG_LOCATION={{ config_path_with_bucket }}
