@@ -107,3 +107,26 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 - For staging: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_dev`
 - For production: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
 - Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)
+
+# How to use ecs-cli to circumvent Bazel
+Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/liv/noq.dev/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="noq_dev"` for instance).
+
+* To create a service with containers (and to circumvent the load balancer configuration): `ecs-cli compose -f compose.yaml --cluster-config noq-dev-shared-staging-1 --ecs-params ecs.yaml -p noq-dev-shared-staging-1 --task-role-arn arn:aws:iam::259868150464:role/noq-dev-shared-staging-1-ecsTaskRole --region us-west-2 service up --create-log-groups --timeout 15`
+  * This can be useful when making manual changes to the configuration file (either compose.yaml or ecs.yaml)
+  * See below for the accompanying `ecs-cli compose service rm` call to remove the service
+* To remove a service: `ecs-cli compose -p noq-dev-shared-staging-1 -f compose.yaml service rm`
+* Reference: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_reference.html
+
+# How to manually build and deploy the containers
+- Build/push API container: `bazelisk run //api:container; bazelisk run //api:deploy_to_staging`
+- Build/push Celery container: `bazelisk run //common/celery_tasks:container; bazelisk run //common/celery_tasks:deploy_to_staging` 
+
+# Troubleshooting
+## Error creating service... draining
+```
+ERRO[0001] Error creating service                        error="InvalidParameterException: Unable to Start a service that is still Draining." service=noq-dev-shared-staging-1
+INFO[0001] Created an ECS service                        service=noq-dev-shared-staging-1 taskDefinition="noq-dev-shared-staging-1:18"
+FATA[0001] InvalidParameterException: Unable to Start a service that is still Draining. 
+```
+
+This happens when a service is removed and recreated too quickly. It'll take a few minutes between teardown and setup.
