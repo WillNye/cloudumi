@@ -5,6 +5,9 @@ task_definition:
   task_size:
     cpu_limit: 2048
     mem_limit: 4GB
+    services:
+      noq-dev-shared-staging-1:
+        init_process_enabled: true
 run_params:
   network_configuration:
     awsvpc_configuration:

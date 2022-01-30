@@ -99,4 +99,5 @@ if __name__ == "__main__":
     write_file("build_file.jinja2", "BUILD", terraform_config, config_output_path)
     write_file("compose.yaml.jinja2", "compose.yaml", terraform_config, config_output_path)
     write_file("ecs.yaml.jinja2", "ecs.yaml", terraform_config, config_output_path)
+    write_file("test.tfvars.jinja2", "test.tfvars", terraform_config, config_output_path)
     # Write configuration locally for upload to S3
