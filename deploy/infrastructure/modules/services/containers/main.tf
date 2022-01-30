@@ -36,7 +36,7 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
 resource "aws_ecr_repository" "noq_ecr_repository-api" {
   name                 = "${var.stage}-registry-api"
   image_tag_mutability = "MUTABLE"
-  count                = var.noq_core ? 1 : 0  
+  count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
     scan_on_push = true
@@ -51,7 +51,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-api" {
 resource "aws_ecr_repository" "noq_ecr_repository-celery" {
   name                 = "${var.stage}-registry-celery"
   image_tag_mutability = "MUTABLE"
-  count                = var.noq_core ? 1 : 0  
+  count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
     scan_on_push = true
@@ -66,7 +66,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-celery" {
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
   name                 = "${var.stage}-registry-frontend"
   image_tag_mutability = "MUTABLE"
-  count                = var.noq_core ? 1 : 0  
+  count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
     scan_on_push = true
@@ -362,6 +362,14 @@ resource "aws_security_group" "ecs-sg" {
     to_port     = 8092
     protocol    = "tcp"
     security_groups = var.load_balancer_sgs
+  }
+
+  ingress {
+    description = "SSH for accessing Noq for debugging"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    security_groups = var.allowed_inbound_cidr_blocks
   }
 
   egress {

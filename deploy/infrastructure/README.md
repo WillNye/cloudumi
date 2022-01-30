@@ -24,45 +24,51 @@ Ensure that your AWS profile is setup correctly in the ~/.aws/credentials file -
 - Export your AWS Profile (see the `AWS Credentials` section below): `export AWS_PROFILE=noq_dev`
 
 ## Terraform
+
 Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
 
 To use terraform, follow the below steps:
 
+- Ensure `AWS_PROFILE` is set to respective environment (`noq_dev` or `noq_prod`)
+- Ensure `AWS_REGION` is set correctly (`us-west-2` for most clusters)
 - Initialize Terraform if you haven't already: `terraform init`
 - Setup your workspaces: `./setup.sh`
 - Select the appropriate workspace: `terraform workspace select demo.noq.dev-staging-1` (for instance)
 - For the first time, initialize the environment: `terraform init`
 - Plan: `terraform plan --var-file=live/demo.noq.dev/staging-1/demo.noq.dev-staging.tfvars`
 - Apply: `terraform apply --var-file=live/demo.noq.dev/staging-1/demo.noq.dev-staging.tfvars`
-- Ensure `AWS_PROFILE` is set to respective environment (`noq_dev` or `noq_prod`)
 - Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | bazel run //util/terraform_config_parser ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/staging-1/` -- see the `terraform_config_parser` section below
 - Destroy: `terraform destroy --var-file=live/demo.noq.dev/staging-1/demo.noq.dev-staging.tfvars`
 - Get outputs: `terraform output`
 - Refresh: `terraform refresh`
 
 ### terraform_config_parser
+
 We provide a script that automatically generates (from templates) the product configuration files by parsing the Terraform output files. The script itself lives in the util/terrafom_config_parser directory in the mono repo and performs the following steps:
 
 The way to execute this script is by piping the terraform output in JSON format into the script's STDIN: `terraform output -json | bazel run //util/terraform_config_parser <output_path_to_live_config_folder>`
 
 Examples for the `<output_path_to_live_config_folder>`:
-* ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/staging-1
-* ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/production-1
-* ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/demo/staging-1
+
+- ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/staging-1
+- ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/production-1
+- ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/demo/staging-1
 
 Note: in order for this to work, there are two pre-requisites:
-1. The 
-* Uses the exported AWS_PROFILE to push the configuration.yaml file to S3 to the following location: `s3://noq.tenant-configuration-store/<zone>/<namespace>/<stage>.<attributes>.config.yaml`
-* Parse terraform output and writes the `live/<zone>/<namespace>/<stage/attributes>/BUILD` file
-* Parse terraform output and writes the `live/<zone>/<namespace>/<stage/attributes>/compose.yaml` file
-* Parse terraform output and writes the `live/<zone>/<namespace>/<stage/attributes>/configuration.yaml` file
-* Parse terraform output and writes the `live/<zone>/<namespace>/<stage/attributes>/ecs.yaml` file
+
+1. The
+
+- Uses the exported AWS_PROFILE to push the configuration.yaml file to S3 to the following location: `s3://noq.tenant-configuration-store/<zone>/<namespace>/<stage>.<attributes>.config.yaml`
+- Parse terraform output and writes the `live/<zone>/<namespace>/<stage/attributes>/BUILD` file
+- Parse terraform output and writes the `live/<zone>/<namespace>/<stage/attributes>/compose.yaml` file
+- Parse terraform output and writes the `live/<zone>/<namespace>/<stage/attributes>/configuration.yaml` file
+- Parse terraform output and writes the `live/<zone>/<namespace>/<stage/attributes>/ecs.yaml` file
 
 ## Structure
 
 - `live`: has configuration tfvars for each tenant that is instantiated
   - Each tenant should be stored in it's own directory using the form: `noq.dev/<tenant name>`, if using the noq.dev domain. Otherwise tenant configuration should be stored under `<company_domain>/<tenant_name>`.
-  - This **only** applies to those companies that *require their own separate environment*. This **does not** apply to companies that are using the `noq.dev` shared environment that is managed by CloudUmi.
+  - This **only** applies to those companies that _require their own separate environment_. This **does not** apply to companies that are using the `noq.dev` shared environment that is managed by CloudUmi.
   - Tenants can be destroyed as well; tenant configuration should be retained for historical records
 - `modules`: has all infrastucture as code modules
   - `services`: has services to be configured for deployment
@@ -71,6 +77,7 @@ Note: in order for this to work, there are two pre-requisites:
     - `s3`: the bucket to be used for configuration
 
 ## AWS Credentials
+
 The ~/.aws/credentials file is expected to be in the following format to align with Terraform's deployment scripts:
 
 ```bash
@@ -85,17 +92,20 @@ aws_secret_access_key = <PROD SECRET>
 Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critical to have a successful deployment.
 
 # Deploy to staging automation
+
 - Set AWS_PROFILE: `export AWS_PROFILE=noq_dev`
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com` (this authenticates your AWS PROFILE to ECR for registry upload purposes; hence the authentication via docker login)
 - Reference `Terraform` section above on how to deploy / update terraform infrastructure (should be seldom)
 - Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1`
 
 # Deploy to production automation
+
 - Set AWS_PROFILE: `export AWS_PROFILE=noq_prod`
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`
 - Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1`
 
 ## Technical Debt
+
 - Instead of using the genrule, build a bzl starlark rule
 - SAAS-93: Secure private net
 - SAAS-94: Convert the bazel build system to be entirely hermetic
@@ -103,10 +113,12 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 - SAAS-96: Fix uvloop in Bazel directed API build
 
 # Remove a tenant
+
 - Set AWS_PROFLE: `export AWS_PROFILE=noq_dev` (or noq_prod)
 - For staging: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_dev`
 - For production: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
 - Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)
+<<<<<<< HEAD
 
 # How to use ecs-cli to circumvent Bazel
 Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/liv/noq.dev/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="noq_dev"` for instance).
@@ -130,3 +142,5 @@ FATA[0001] InvalidParameterException: Unable to Start a service that is still Dr
 ```
 
 This happens when a service is removed and recreated too quickly. It'll take a few minutes between teardown and setup.
+=======
+>>>>>>> 484f346580df018996ae7d2d30b4ba40c25ea844
