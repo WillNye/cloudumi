@@ -29,6 +29,7 @@ resource "aws_ecs_service" "test_service" {
   cluster         = var.ecs_cluster_name
   task_definition = aws_ecs_task_definition.test_task_definition.arn
   desired_count   = 1
+  enable_execute_command = true
   iam_role        = var.ecs_task_execution_role
 
   ordered_placement_strategy {
