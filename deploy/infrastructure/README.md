@@ -118,7 +118,6 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 - For staging: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_dev`
 - For production: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
 - Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)
-<<<<<<< HEAD
 
 # How to use ecs-cli to circumvent Bazel
 Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/liv/noq.dev/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="noq_dev"` for instance).
@@ -130,8 +129,8 @@ Sometimes it is necessary to experiment with the ECS compose jobs. In those scen
 * Reference: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_reference.html
 
 # How to manually build and deploy the containers
-- Build/push API container: `bazelisk run //api:container; bazelisk run //api:deploy_to_staging`
-- Build/push Celery container: `bazelisk run //common/celery_tasks:container; bazelisk run //common/celery_tasks:deploy_to_staging` 
+- Build/push API container: `bazelisk run //api:container; bazelisk run //api:container_deploy_staging`
+- Build/push Celery container: `bazelisk run //common/celery_tasks:container; bazelisk run //common/celery_tasks:container_deploy_staging` 
 
 # Troubleshooting
 ## Error creating service... draining
@@ -142,5 +141,3 @@ FATA[0001] InvalidParameterException: Unable to Start a service that is still Dr
 ```
 
 This happens when a service is removed and recreated too quickly. It'll take a few minutes between teardown and setup.
-=======
->>>>>>> 484f346580df018996ae7d2d30b4ba40c25ea844
