@@ -68,7 +68,7 @@ py_binary(
     ],
     main = "run.py",
     env = {
-        "CONFIG_LOCATION": "$(RULEDIR)/configs/development_account:saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account:saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = INT_DEPS + EXT_DEPS,
@@ -96,7 +96,7 @@ py_wheel(
     distribution = "cloudumi_common_celery_tasks",
     python_tag = "py3",
     version = "0.0.1",
-    deps = [":lib_pkg"],
+    deps = [":lib"],
     requires = REQUIRES,
     strip_path_prefixes = [
     ],
@@ -138,6 +138,25 @@ container_image(
     docker_run_flags = "-v ~/.aws:/root/.aws",
 )
 
+container_image(
+    name = "base-celery-dev-local",
+    base = "//docker/base:base_docker",
+    env = {
+        "TZ": "America/Los_Angeles",
+        "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
+        "NOQ_CONTAINER": "1",
+        "AWS_PROFILE": "noq_dev",
+    },
+    layers = [
+        ":config_layer",
+    ],
+    ports = [],
+    symlinks = {
+        "/usr/bin/python": "/usr/local/bin/python",
+    },
+    docker_run_flags = "-v ~/.aws:/root/.aws",
+)
+
 py3_image(
     name = "container",
     base = ":base-celery-api",
@@ -147,6 +166,21 @@ py3_image(
     ],
     srcs = [
         ":lib",
+    ],
+    deps = EXT_DEPS + INT_DEPS,
+    main = "run.py",
+    visibility = ["//visibility:public"],
+)
+
+py3_image(
+    name = "container-dev-local",
+    base = ":base-celery-dev-local",
+    srcs = [
+        ":lib",
+    ],
+    layers = [
+        ":pkg_layer",
+        ":lib_layer",
     ],
     deps = EXT_DEPS + INT_DEPS,
     main = "run.py",

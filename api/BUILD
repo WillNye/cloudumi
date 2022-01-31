@@ -158,7 +158,7 @@ py_wheel(
     distribution = "cloudumi_api",
     python_tag = "py3",
     version = "0.0.1",
-    deps = [":lib_pkg"],
+    deps = [":lib"],
     requires = REQUIRES,
     strip_path_prefixes = [
     ],
