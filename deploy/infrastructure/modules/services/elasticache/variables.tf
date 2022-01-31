@@ -9,14 +9,19 @@ variable "cluster_id" {
   description = "The cluster ID for CloudUmi."
 }
 
-variable "redis_cluster_access_sg_ids" {
-  type = list(string)
-  description = "Any security group ids that require access to the Redis cluster"
-}
-
 variable "noq_core" {
   type = bool
   default = false
+}
+
+variable "private_subnet_cidr_blocks" {
+  description = "The CIDR blocks fo the private subnets to be used to filter ingress_cidr_blocks in the redis config"
+  type = list(string)
+}
+
+variable "redis_cluster_access_sg_ids" {
+  type = list(string)
+  description = "Any security group ids that require access to the Redis cluster"
 }
 
 variable "redis_node_type" {

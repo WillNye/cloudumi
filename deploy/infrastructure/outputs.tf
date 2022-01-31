@@ -38,6 +38,26 @@ output "ecs_task_role_arn" {
   value = module.tenant_container_service.ecs_task_role
 }
 
+# output "elasticache_parameter_group_id" {
+#   description = "The ElastiCache parameter group name."
+#   value       = module.tenant_elasticache_service.elasticache_parameter_group_id
+# }
+
+# output "elasticache_primary_cluster_address" {
+#   description = "The address of the primary redis cluster endpoint"
+#   value       = module.tenant_elasticache_service.elasticache_primary_cluster_address
+# }
+
+# output "elasticache_replication_group_reader_address" {
+#   description = "The address of the endpoint for the reader node in the replication group."
+#   value       = module.tenant_elasticache_service.elasticache_replication_group_reader_address
+# }
+
+output "elasticache_nodes" {
+  description = "List of node objects including id, address, port and availability_zone"
+  value       = module.tenant_elasticache_service.elasticache_nodes
+}
+
 output "namespace" {
   description = "The configured namespace (for automation)"
   value = var.namespace
@@ -51,11 +71,6 @@ output "private_subnets" {
 output "profile" {
   description = "The selected profile"
   value = var.profile
-}
-
-output "redis_primary_cluster_address" {
-  description = "The address of the primary redis cluster endpoint"
-  value       = module.tenant_elasticache_service.redis_primary_cluster_address
 }
 
 output "region" {

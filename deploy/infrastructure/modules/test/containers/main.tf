@@ -27,46 +27,28 @@ resource "aws_ecs_task_definition" "test_task_definition" {
   network_mode             = "awsvpc"
   cpu                      = 1024
   memory                   = 2048
-  container_definitions    = <<DEFINITION
-    [
-      {
-        "name": "${var.ecs_cluster_name}-api",
-        "image": "259868150464.dkr.ecr.${var.region}.amazonaws.com/${var.stage}-registry-api:${var.stage}",
-        "cpu": 1,
-        "memory": 2048,
-        "essential": true,
-        "portMappings": [
-          {
-            "containerPort": 8092,
-            "hostPort": 8092
-          }
-        ],
-        "logConfiguration": {
-          "logDriver": "awslogs",
-          "options": {
-            "awslogs-group": "${var.ecs_cluster_name}",
-            "awslogs-region": "${var.region}",
-            "awslogs-stream-prefix": "api"
-          }
+  container_definitions    = jsonencode([
+    {
+      name      = "${var.ecs_cluster_name}-api"
+      image     = "259868150464.dkr.ecr.${var.region}.amazonaws.com/${var.stage}-registry-api:${var.stage}"
+      cpu       = 1
+      memory    = 2048
+      essential = true
+      portMappings = [
+        {
+          containerPort = 8092
+          hostPort      = 8092
         }
-      },
-      {
-        "name": "${var.ecs_cluster_name}-celery",
-        "image": "259868150464.dkr.ecr.${var.region}.amazonaws.com/${var.stage}-registry-celery:${var.stage}",
-        "cpu": 1,
-        "memory": 2048,
-        "essential": true,
-        "logConfiguration": {                                                                                                                                                                                                                                        
-          "logDriver": "awslogs",
-          "options": {
-            "awslogs-group": "${var.ecs_cluster_name}",
-            "awslogs-region": "${var.region}",
-            "awslogs-stream-prefix": "celery"
-          }
-        }
-      }
-    ]
-    DEFINITION
+      ]
+    },
+    {
+      name      = "${var.ecs_cluster_name}-celery"
+      image     = "259868150464.dkr.ecr.${var.region}.amazonaws.com/${var.stage}-registry-celery:${var.stage}"
+      cpu       = 1
+      memory    = 2048
+      essential = true
+    },
+  ])
 
   runtime_platform {
     operating_system_family = "LINUX"
@@ -79,13 +61,12 @@ resource "aws_ecs_task_definition" "test_task_definition" {
   
 resource "aws_ecs_service" "test_service" {
   name            = "${var.ecs_cluster_name}-test"
-
   cluster         = var.ecs_cluster_name
+  task_definition = aws_ecs_task_definition.test_task_definition.arn
   desired_count   = 1
   enable_execute_command = true
   launch_type = "FARGATE"
   network_configuration {
-    subnets = var.subnets
+    subnets = []
   }
-  task_definition = aws_ecs_task_definition.test_task_definition.arn
 }

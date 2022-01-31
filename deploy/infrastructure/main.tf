@@ -36,6 +36,7 @@ module "tenant_container_service" {
   stage = var.stage
   subnet_ids = module.tenant_networking.vpc_subnet_private_id
   tags = var.tags
+  test_access_sg_id = module.tenant_networking.test_access_security_group_id
   timeout = var.timeout
   vpc_cidr_range = module.tenant_networking.vpc_cidr_range
   vpc_id = module.tenant_networking.vpc_id
@@ -58,6 +59,7 @@ module "tenant_elasticache_service" {
   attributes = var.attributes
   cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
   noq_core = var.noq_core
+  private_subnet_cidr_blocks = module.tenant_networking.vpc_subnet_private_cidr
   redis_cluster_access_sg_ids = [module.tenant_container_service.ecs_security_group_id]
   redis_node_type = var.redis_node_type
   subnet_ids = module.tenant_networking.vpc_subnet_private_id

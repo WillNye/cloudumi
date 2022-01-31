@@ -34,6 +34,10 @@ def parse_terraform_output():
     return parsed_output
 
 
+def parse_elasticache_output(terraform_config: dict, attribute: str) -> list:
+    return [x.get(attribute) for x, y in terraform_config.get("elasticache_nodes", [])]
+
+
 def __get_key_name_from_config(terraform_config: dict) -> str:
     zone = terraform_config.get("zone")
     namespace = terraform_config.get("namespace")
