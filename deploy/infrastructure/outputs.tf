@@ -43,6 +43,16 @@ output "namespace" {
   value = var.namespace
 }
 
+output "private_subnets" {
+  description = "All private subnets used"
+  value = module.tenant_networking.vpc_subnet_private_id
+}
+
+output "profile" {
+  description = "The selected profile"
+  value = var.profile
+}
+
 output "redis_primary_cluster_address" {
   description = "The address of the primary redis cluster endpoint"
   value       = module.tenant_elasticache_service.redis_primary_cluster_address

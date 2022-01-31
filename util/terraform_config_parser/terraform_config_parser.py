@@ -22,7 +22,7 @@ def simple_logger(msg: str):
 
 def parse_terraform_output():
     output_tf_json = json.loads("".join([line for line in sys.stdin]))
-    parsed_output = {x: y.get('value') for x, y in output_tf_json.items() if y.get('type') == "string" or y.get('type') == "number"}
+    parsed_output = {x: y.get('value') for x, y in output_tf_json.items() if y.get('type') == "string" or y.get('type') == "number" or y.get('type') == "list"}
     return parsed_output
 
 

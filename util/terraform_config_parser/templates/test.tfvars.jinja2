@@ -1,2 +1,8 @@
-ecs_cluster_name = {{ ecs_cluster_name }}
-ecs_task_execution_role_arn = {{ ecs_task_execution_role_arn }}
+ecs_cluster_name = "{{ ecs_cluster_name }}"
+ecs_task_execution_role_arn = "{{ ecs_task_execution_role_arn }}"
+ecs_task_role_arn = "{{ ecs_task_role_arn }}"
+profile = "{{ profile }}"
+region = "{{ region }}"
+security_groups = "[{{ ecs_security_group }}]"
+stage = "{{ stage }}"
+subnets = "{{ private_subnets }}"

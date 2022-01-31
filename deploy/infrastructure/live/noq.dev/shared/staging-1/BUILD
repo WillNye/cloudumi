@@ -48,8 +48,8 @@ genrule(
     outs = ["run_destroy_staging"],
     message = "Destroying CloudUmi in staging...",
     cmd = "ecs-cli compose -f deploy/infrastructure/live/noq.dev/shared/staging-1/compose.yaml \
-           stop --cluster-config noq-dev-shared-staging-1 \
+           -p noq-dev-shared-staging-1 service rm \
            \
-           ecs-cli down --force --cluster-config noq-dev-shared-staging-1; >$@",
+           ecs-cli down --cluster-config noq-dev-shared-staging-1; >$@",
     tags = ["manual"],
 )

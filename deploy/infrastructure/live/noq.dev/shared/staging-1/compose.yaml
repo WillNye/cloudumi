@@ -4,7 +4,7 @@ services:
     image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/staging-registry-api:staging"
     ports:
       - "8092:8092"
-      - "22222:22222"
+      - "22:22"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
       - CONFIG_LOCATION=s3://noq.tenant-configuration-store/noq.dev/shared/staging.1.config.yaml
@@ -13,10 +13,8 @@ services:
       bash -c '
       mkdir ~/.ssh;
       echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQClHPc54DoYiOy/0IMoDte+aYKF5vSF6DK1miSUVfbkaUd7MiRIDLPvOyIBEOk9AfHnkah2ka6gyGl7pSkyrMLqcbfnHWb/0q3nWg/InqXl0c/aqgkZoaN4VJi4ejoBj7jnWFbS7EJLaPJlGIWh1HKxHbswjuxiEDImytojAKpwfgD6qK6J8hb6XZyiyS0nv61g8w+4H71WoxjArgTUxzdmAFubyU0SP7EG4GkESCcDzs/JhO74tNAY8cZbmp2XENvbWGXwgOUrfn2RoWMFZE/9a8k/hGkmrujzA1UPk+os8NcjR1oN+/kPUzn1N0xmS+UYUChYAIirnD2NMMppQfKJ" > ~/.ssh/authorized_keys;
-      echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDM0Jj4QdTzpvkPlQKzznpCs0o0ojUkOiEh45Xzn6DzFI6ix2ss0nzjJTzYfeaBnRiuWRQQxCruSvl6Oa9Cw5LTUBOXup4NBs3nUzCBYAa4X4Zf6htE6Wv4aXnbetFenW1x0KhFAcLtlV6haRvifNvzl9SKDnCeGBYyUJpiDFmADnDNZ2GnlYS+nF/APvTdA6z07phNOFj8IZsW6pk2TbYlgp+7r9WNet++oa2bi73ffRyOtuQCa0rymZbzqO/RL4z6jiVKiodcWzgco3gdPE0RaVuWMWLBf5ca7SmN6VhJI9gX8ucXMrhX+mz7L2ldViSciuBlPkm5uPQ/Vm8wjbPB" >> ~/.ssh/authorized_keys;
       apt-get install -y openssh-server cron;
       mkdir -p /var/run/sshd;
-      sed -i 's/#Port 22/Port 22222/g /etc/ssh/sshd_config';
       service ssh restart;
       echo "export $$(strings /proc/1/environ | grep AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)" >> /root/.profile;
       pip install awscli;
@@ -38,7 +36,6 @@ services:
       bash -c '
       mkdir ~/.ssh;
       echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQClHPc54DoYiOy/0IMoDte+aYKF5vSF6DK1miSUVfbkaUd7MiRIDLPvOyIBEOk9AfHnkah2ka6gyGl7pSkyrMLqcbfnHWb/0q3nWg/InqXl0c/aqgkZoaN4VJi4ejoBj7jnWFbS7EJLaPJlGIWh1HKxHbswjuxiEDImytojAKpwfgD6qK6J8hb6XZyiyS0nv61g8w+4H71WoxjArgTUxzdmAFubyU0SP7EG4GkESCcDzs/JhO74tNAY8cZbmp2XENvbWGXwgOUrfn2RoWMFZE/9a8k/hGkmrujzA1UPk+os8NcjR1oN+/kPUzn1N0xmS+UYUChYAIirnD2NMMppQfKJ" > ~/.ssh/authorized_keys;
-      echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDM0Jj4QdTzpvkPlQKzznpCs0o0ojUkOiEh45Xzn6DzFI6ix2ss0nzjJTzYfeaBnRiuWRQQxCruSvl6Oa9Cw5LTUBOXup4NBs3nUzCBYAa4X4Zf6htE6Wv4aXnbetFenW1x0KhFAcLtlV6haRvifNvzl9SKDnCeGBYyUJpiDFmADnDNZ2GnlYS+nF/APvTdA6z07phNOFj8IZsW6pk2TbYlgp+7r9WNet++oa2bi73ffRyOtuQCa0rymZbzqO/RL4z6jiVKiodcWzgco3gdPE0RaVuWMWLBf5ca7SmN6VhJI9gX8ucXMrhX+mz7L2ldViSciuBlPkm5uPQ/Vm8wjbPB" >> ~/.ssh/authorized_keys;
       apt-get install -y openssh-server cron;
       mkdir -p /var/run/sshd;
       service ssh restart;
