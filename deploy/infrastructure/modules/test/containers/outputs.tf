@@ -10,5 +10,5 @@ output "region" {
 
 output "task" {
     description = "In the aws execute-command, this is the --task argument"
-    value = aws_ecs_service.test_service.id
+    value = aws_ecs_service.test_service.name
 }
