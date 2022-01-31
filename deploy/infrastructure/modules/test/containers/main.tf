@@ -41,8 +41,8 @@ resource "aws_ecs_task_definition" "test_task_definition" {
             "hostPort": 8092
           }
         ],
-        "logging": {
-          "driver": "awslogs",
+        "logConfiguration": {
+          "logDriver": "awslogs",
           "options": {
             "awslogs-group": "${var.ecs_cluster_name}",
             "awslogs-region": "${var.region}",
@@ -56,8 +56,8 @@ resource "aws_ecs_task_definition" "test_task_definition" {
         "cpu": 1,
         "memory": 2048,
         "essential": true,
-        "logging": {                                                                                                                                                                                                                                        
-          "driver": "awslogs",
+        "logConfiguration": {                                                                                                                                                                                                                                        
+          "logDriver": "awslogs",
           "options": {
             "awslogs-group": "${var.ecs_cluster_name}",
             "awslogs-region": "${var.region}",
