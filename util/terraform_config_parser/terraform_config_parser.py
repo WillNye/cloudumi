@@ -99,6 +99,14 @@ def join_strings_in_attribute(
     return terraform_config
 
 
+def access_position_in_list_attribute(terraform_config: dict, attribute: str, index: int) -> str:
+    attr_obj = terraform_config.get(attribute, [])
+    if index < len(attr_obj):
+        return attr_obj[index]
+    else:
+        return ""
+
+
 def is_aws_profile_present() -> bool:
     return "AWS_PROFILE" in os.environ
 
