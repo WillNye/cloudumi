@@ -3,6 +3,14 @@ _global_:
     - shared.noq.dev
   aws:
     node_role: arn:aws:iam::259868150464:role/noq-dev-shared-staging-1-ecsTaskRole
+    stage: staging
+    region: us-west-2
+    attributes: 1
+  deployment:
+    domain_name: shared.noq.dev
+    namespace: shared
+    zone: noq.dev
+    cluster_id: noq.dev-shared-staging-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   config:

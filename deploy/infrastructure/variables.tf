@@ -16,11 +16,6 @@ variable "capacity_providers" {
   default     = ["FARGATE_SPOT", "FARGATE"]
 }
 
-variable "cluster_id" {
-  type = string
-  description = "The cluster ID for CloudUmi."
-}
-
 variable "container_insights" {
   description = "Controls if ECS Cluster has container insights enabled"
   type        = bool

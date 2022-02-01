@@ -33,7 +33,7 @@ module "tenant_container_service" {
   allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
   attributes = var.attributes
   capacity_providers = var.capacity_providers
-  cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
+  cluster_id = local.cluster_id
   container_insights = var.container_insights
   lb_port = var.lb_port
   load_balancer_sgs = [module.tenant_networking.load_balancer_security_group]
@@ -52,7 +52,7 @@ module "tenant_dynamodb_service" {
   source = "./modules/services/dynamo"
 
   attributes = var.attributes
-  cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
+  cluster_id = local.cluster_id
   dynamo_table_replica_regions = var.dynamo_table_replica_regions
   noq_core = var.noq_core
   tags = var.tags
@@ -63,7 +63,7 @@ module "tenant_elasticache_service" {
   source = "./modules/services/elasticache"
 
   attributes = var.attributes
-  cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
+  cluster_id = local.cluster_id
   noq_core = var.noq_core
   private_subnet_cidr_blocks = module.tenant_networking.vpc_subnet_private_cidr
   redis_cluster_access_sg_ids = [module.tenant_container_service.ecs_security_group_id]
@@ -78,7 +78,7 @@ module "tenant_s3_service" {
   source = "./modules/services/s3"
 
   attributes = var.attributes
-  cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
+  cluster_id = local.cluster_id
   noq_core = var.noq_core
   tags = var.tags
   timeout = var.timeout
@@ -89,7 +89,7 @@ module "tenant_networking" {
 
   allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
   attributes = var.attributes
-  cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
+  cluster_id = local.cluster_id
   convert_case = var.convert_case
   delimiter = var.delimiter
   domain_name = var.domain_name
