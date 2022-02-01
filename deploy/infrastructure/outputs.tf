@@ -8,6 +8,11 @@ output "bucket_name" {
   value = module.tenant_s3_service.cloudumi_bucket_name
 }
 
+output "cluster_id" {
+  description = "The configured cluster id (for automation)"
+  value = var.cluster_id
+}
+
 output "domain_name" {
   description = "The configured domain name, which is derived from {namespace}.{zone}" 
   value = "${var.namespace}.${var.zone}"

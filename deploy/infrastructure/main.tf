@@ -23,6 +23,10 @@ provider "aws" {
   region  = var.region
 }
 
+locals {
+  cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
+}
+
 module "tenant_container_service" {
   source = "./modules/services/containers"
 
