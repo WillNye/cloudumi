@@ -72,7 +72,11 @@ webpack(
         # "styles.css",
         "webpack.config.js",
         "@npm//:node_modules",
+        ":src",
     ],
+    deps = [
+        ":src",
+    ]
 )
 
 # Note, on Windows you need `--enable_runfiles`
