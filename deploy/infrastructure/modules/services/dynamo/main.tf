@@ -297,7 +297,7 @@ resource "aws_dynamodb_table" "cloudumi_tenant_static_configs" {
     name = "id"
     type = "S"
   }
-  name           = "cloudumi_tenant_static_configs"
+  name           = "${var.cluster_id}_cloudumi_tenant_static_configs"
   hash_key       = "host"
   range_key      = "id"
   read_capacity  = 1
