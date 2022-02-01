@@ -1497,7 +1497,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         self.tenant_static_configs = self._get_dynamo_table_restricted(
             config.get(
                 "_global_.aws.tenant_static_config_dynamo_table",
-                __get_dynamo_table_name("tenant_static_configs",
+                __get_dynamo_table_name("tenant_static_configs"),
             )
         )
 
