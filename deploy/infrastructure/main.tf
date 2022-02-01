@@ -12,6 +12,8 @@ terraform {
     key            = "terraform/terraform.tfstate"
     region         = "us-west-2"
     dynamodb_table = "noq_terraform_state"
+    # All of the profiles are stored in S3 on the dev account
+    profile        = "noq_dev"
   }
 
 }

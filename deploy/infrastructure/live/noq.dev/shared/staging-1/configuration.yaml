@@ -35,19 +35,19 @@ _global_:
     clear_tasks_for_development: false
     purge: true
     broker:
-      us-east-1: redis://clustercfg.noq-dev-shared-staging-1-redis.eb1l6j.usw2.cache.amazonaws.com:6379/1
-      us-west-2: redis://clustercfg.noq-dev-shared-staging-1-redis.eb1l6j.usw2.cache.amazonaws.com:6379/1
-      global: redis://clustercfg.noq-dev-shared-staging-1-redis.eb1l6j.usw2.cache.amazonaws.com:6379/1
+      us-east-1: redis://noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
+      us-west-2: redis://noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
+      global: redis://noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
     backend:
-      us-east-1: redis://clustercfg.noq-dev-shared-staging-1-redis.eb1l6j.usw2.cache.amazonaws.com:6379/2
-      us-west-2: redis://clustercfg.noq-dev-shared-staging-1-redis.eb1l6j.usw2.cache.amazonaws.com:6379/2
-      global: redis://clustercfg.noq-dev-shared-staging-1-redis.eb1l6j.usw2.cache.amazonaws.com:6379/2
+      us-east-1: redis://noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
+      us-west-2: redis://noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
+      global: redis://noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
     debug: true
   # Saas Configuration
   redis:
     cluster_mode:
-      enabled: true
+      enabled: false
       nodes:
         global:
-          - host: clustercfg.noq-dev-shared-staging-1-redis.eb1l6j.usw2.cache.amazonaws.com
-            port: "6379"
+          - host: noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com
+            port: 6379

@@ -22,6 +22,11 @@ def __tf_tuple_strings() -> list:
     return ["tuple", ["string", "string"]]
 
 
+def __tf_is_list_object(config: dict, attribute: str) -> bool:
+    attr_type = config.get(attribute, {}).get('type', [])
+    return type(attr_type) == list and "list" in attr_type
+
+
 def parse_terraform_output():
     output_tf_json = json.loads("".join([line for line in sys.stdin]))
     parsed_output = {
@@ -30,12 +35,13 @@ def parse_terraform_output():
         if y.get("type") == "string"
         or y.get("type") == "number"
         or y.get("type") == __tf_tuple_strings()
+        or __tf_is_list_object(output_tf_json, x)
     }
     return parsed_output
 
 
-def parse_elasticache_output(terraform_config: dict, attribute: str) -> list:
-    return [x.get(attribute) for x, y in terraform_config.get("elasticache_nodes", [])]
+def __get_nested_attr_from_terraform_config_list_of_dicts(terraform_config: dict, from_attr: str, nested_attr: str) -> list:
+    return [x.get(nested_attr) for x in terraform_config.get(from_attr, [])]
 
 
 def __get_key_name_from_config(terraform_config: dict) -> str:
@@ -99,12 +105,28 @@ def join_strings_in_attribute(
     return terraform_config
 
 
-def access_position_in_list_attribute(terraform_config: dict, attribute: str, index: int) -> str:
-    attr_obj = terraform_config.get(attribute, [])
-    if index < len(attr_obj):
-        return attr_obj[index]
+def flatten_attr_from_nested_attribute(terraform_config: dict, from_attr: str, nested_attr: str, to_attr: str, index: int) -> dict:
+    """Extract a nested attribute from a list of dicts.
+    
+    Example: 
+    [
+        {
+            "key": "value",
+        },
+        {
+            "key2": "value2",
+        }
+    ]
+
+    Extract key/value and create a root-level entry in the terraform_config object, essentially flattening the nested struct
+    Obviously pretty locked into the config output from the elasticache_nodes object, but may have other applications
+    """
+    elastic_cache_output = __get_nested_attr_from_terraform_config_list_of_dicts(terraform_config, from_attr, nested_attr)
+    if len(elastic_cache_output) > index:
+        terraform_config[to_attr] = elastic_cache_output[index]
     else:
-        return ""
+        simple_logger(f"Non-existent index {index} in elastic_cache_output: {elastic_cache_output}")
+    return terraform_config
 
 
 def is_aws_profile_present() -> bool:
@@ -150,6 +172,8 @@ if __name__ == "__main__":
         "cluster_id_safed_no_sep",
         ["zone_safed", "namespace", "stage", "attributes"],
     )
+    terraform_config = flatten_attr_from_nested_attribute(terraform_config, "elasticache_nodes", "address", "elasticache_address", 0)
+    terraform_config = flatten_attr_from_nested_attribute(terraform_config, "elasticache_nodes", "port", "elasticache_port", 0)
     write_file(
         "noq-product-configuration.yaml.jinja2",
         "configuration.yaml",
