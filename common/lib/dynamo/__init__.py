@@ -66,6 +66,14 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger("consoleme")
 
 
+def __get_dynamo_table_name(table_name: str, namespace: str = "cloudumi") -> str:
+    cluster_id_key = "_global_.deployment.cluster_id"
+    cluster_id = config.get(cluster_id_key, None)
+    if cluster_id is None:
+        raise RuntimeError(f"Unable to read configuration - cannot get {cluster_id_key}")
+    return f"{cluster_id}_{namespace}_{table_name}"
+
+
 def filter_config_secrets(d):
     if isinstance(d, dict):
         for k, v in d.items():
@@ -360,12 +368,13 @@ class BaseDynamoHandler:
 class UserDynamoHandler(BaseDynamoHandler):
     def __init__(self, host, user: Optional[str] = None) -> None:
         self.host = host
+
         try:
             self.identity_requests_table = self._get_dynamo_table(
                 config.get_host_specific_key(
                     "aws.requests_dynamo_table",
                     host,
-                    "consoleme_identity_requests_multitenant",
+                    __get_dynamo_table_name("identity_requests_multitenant"),
                 ),
                 host,
             )
@@ -373,7 +382,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.users_dynamo_table",
                     host,
-                    "consoleme_users_multitenant",
+                   __get_dynamo_table_name("users_multitenant"),
                 ),
                 host,
             )
@@ -381,7 +390,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.group_log_dynamo_table",
                     host,
-                    "consoleme_audit_global",
+                   __get_dynamo_table_name("audit_global"),
                 ),
                 host,
             )
@@ -389,7 +398,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.dynamic_config_dynamo_table",
                     host,
-                    "consoleme_config_multitenant",
+                   __get_dynamo_table_name("config_multitenant"),
                 ),
                 host,
             )
@@ -397,7 +406,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.policy_requests_dynamo_table",
                     host,
-                    "consoleme_policy_requests_multitenant",
+                   __get_dynamo_table_name("policy_requests_multitenant"),
                 ),
                 host,
             )
@@ -405,7 +414,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.resource_cache_dynamo_table",
                     host,
-                    "consoleme_resource_cache_multitenant",
+                   __get_dynamo_table_name("resource_cache_multitenant"),
                 ),
                 host,
             )
@@ -413,7 +422,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.cloudtrail_table",
                     host,
-                    "consoleme_cloudtrail_multitenant",
+                   __get_dynamo_table_name("cloudtrail_multitenant"),
                 ),
                 host,
             )
@@ -422,7 +431,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.notifications_table",
                     host,
-                    "consoleme_notifications_multitenant",
+                   __get_dynamo_table_name("notifications_multitenant"),
                 ),
                 host,
             )
@@ -431,7 +440,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.identity_groups_table",
                     host,
-                    "consoleme_identity_groups_multitenant",
+                   __get_dynamo_table_name("identity_groups_multitenant"),
                 ),
                 host,
             )
@@ -440,7 +449,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.identity_users_table",
                     host,
-                    "consoleme_identity_users_multitenant",
+                   __get_dynamo_table_name("identity_users_multitenant"),
                 ),
                 host,
             )
@@ -449,7 +458,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.tenant_static_config_table",
                     host,
-                    "consoleme_tenant_static_configs",
+                   __get_dynamo_table_name("tenant_static_configs"),
                 ),
                 host,
             )
@@ -458,7 +467,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.noq_api_keys_table",
                     host,
-                    "noq_api_keys",
+                   __get_dynamo_table_name("api_keys", "noq"),
                 ),
                 host,
             )
@@ -1488,7 +1497,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         self.tenant_static_configs = self._get_dynamo_table_restricted(
             config.get(
                 "_global_.aws.tenant_static_config_dynamo_table",
-                "consoleme_tenant_static_configs",
+                __get_dynamo_table_name("tenant_static_configs",
             )
         )
 
@@ -1679,7 +1688,7 @@ class IAMRoleDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.iamroles_dynamo_table",
                     host,
-                    "consoleme_iamroles_multitenant",
+                    __get_dynamo_table_name("iamroles_multitenant"),
                 ),
                 host,
             )
