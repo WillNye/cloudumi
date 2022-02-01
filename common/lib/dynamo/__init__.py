@@ -1494,16 +1494,17 @@ class UserDynamoHandler(BaseDynamoHandler):
 
 class RestrictedDynamoHandler(BaseDynamoHandler):
     def __init__(self) -> None:
-        self.tenant_static_configs = self._get_dynamo_table_restricted(
-            config.get(
+        self.tenant_static_configs = RestrictedDynamoHandler._get_dynamo_table_restricted(
+            self, config.get(
                 "_global_.aws.tenant_static_config_dynamo_table",
                 __get_dynamo_table_name("tenant_static_configs"),
             )
         )
 
-    def _get_dynamo_table_restricted(self, table_name):
+    @classmethod
+    def _get_dynamo_table_restricted(cls, caller, table_name):
         function: str = (
-            f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
+            f"{__name__}.{caller.__class__.__name__}.{sys._getframe().f_code.co_name}"
         )
         session = restricted_get_session_for_saas()
         try:
