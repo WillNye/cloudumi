@@ -4,60 +4,60 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-    {
-      "name": "Python: Attach",
-      "type": "python",
-      "request": "attach",
-      "port": 9092,
-      "host": "localhost",
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}",
-          "remoteRoot": "/app"
-        }
-      ]
-    },
-    {
-      "name": "Launch Go File",
-      "type": "go",
-      "request": "launch",
-      "mode": "debug",
-      "program": "${file}"
-    },
-    {
-      "name": "Starlark Config: Session Attach",
-      "type": "starlark",
-      "request": "attach"
-    },
-    {
-      "name": "Starlark Config: CloudUmi Celery",
-      "type": "starlark",
-      "request": "launch",
-      "targetLabel": "//common/celery_tasks:lib"
-    },
-    {
-      "name": "S3 Config: CloudUmi Celery",
-      "args": [
-        "-A",
-        "cloudumi_common.celery_tasks.celery_tasks",
-        "worker",
-        "-l",
-        "DEBUG",
-        "-P",
-        "solo",
-        "--concurrency",
-        "8"
-      ],
-      "type": "python",
-      "request": "launch",
-      "console": "integratedTerminal",
-      "module": "celery",
-      "env": {
-        // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev"
-      }
-    },
+    // {
+    //   "name": "Python: Attach",
+    //   "type": "python",
+    //   "request": "attach",
+    //   "port": 9092,
+    //   "host": "localhost",
+    //   "pathMappings": [
+    //     {
+    //       "localRoot": "${workspaceFolder}",
+    //       "remoteRoot": "/app"
+    //     }
+    //   ]
+    // },
+    // {
+    //   "name": "Launch Go File",
+    //   "type": "go",
+    //   "request": "launch",
+    //   "mode": "debug",
+    //   "program": "${file}"
+    // },
+    // {
+    //   "name": "Starlark Config: Session Attach",
+    //   "type": "starlark",
+    //   "request": "attach"
+    // },
+    // {
+    //   "name": "Starlark Config: CloudUmi Celery",
+    //   "type": "starlark",
+    //   "request": "launch",
+    //   "targetLabel": "//common/celery_tasks:lib"
+    // },
+    // {
+    //   "name": "S3 Config: CloudUmi Celery",
+    //   "args": [
+    //     "-A",
+    //     "cloudumi_common.celery_tasks.celery_tasks",
+    //     "worker",
+    //     "-l",
+    //     "DEBUG",
+    //     "-P",
+    //     "solo",
+    //     "--concurrency",
+    //     "8"
+    //   ],
+    //   "type": "python",
+    //   "request": "launch",
+    //   "console": "integratedTerminal",
+    //   "module": "celery",
+    //   "env": {
+    //     // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+    //     "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+    //     "AWS_PROFILE": "noq_dev"
+    //   }
+    // },
     {
       "name": "Local Config: CloudUmi Celery",
       "args": [
@@ -81,19 +81,19 @@
         "AWS_PROFILE": "noq_dev"
       }
     },
-    {
-      "name": "S3 Config: CloudUmi API",
-      "type": "python",
-      "request": "launch",
-      "program": "${workspaceFolder}/cloudumi_api/cloudumi_api/__main__.py",
-      "console": "integratedTerminal",
-      "env": {
-        // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
-        "SSL_CERT_DIR": "/etc/ssl/certs"
-      }
-    },
+    // {
+    //   "name": "S3 Config: CloudUmi API",
+    //   "type": "python",
+    //   "request": "launch",
+    //   "program": "${workspaceFolder}/cloudumi_api/cloudumi_api/__main__.py",
+    //   "console": "integratedTerminal",
+    //   "env": {
+    //     // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+    //     "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+    //     "AWS_PROFILE": "noq_dev",
+    //     "SSL_CERT_DIR": "/etc/ssl/certs"
+    //   }
+    // },
     {
       "name": "Local Config: Initialize DynamoDB",
       "type": "python",
@@ -122,29 +122,41 @@
       }
     },
     {
-      "name": "S3 Config: Initialize Dynamo Tables",
+      "name": "Local Config: Initialize Redis",
       "type": "python",
       "request": "launch",
-      "program": "${workspaceFolder}/cloudumi_common/cloudumi_common/scripts/initialize_dynamodb.py",
+      "program": "${workspaceFolder}/common/scripts/initialize_redis.py",
       "console": "integratedTerminal",
       "env": {
         // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev"
       }
     },
-    {
-      "name": "S3 Config: Initialize Celery",
-      "type": "python",
-      "request": "launch",
-      "program": "${workspaceFolder}/cloudumi_common/cloudumi_common/scripts/initialize_redis.py",
-      "console": "integratedTerminal",
-      "env": {
-        // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev"
-      }
-    },
+    // {
+    //   "name": "S3 Config: Initialize Dynamo Tables",
+    //   "type": "python",
+    //   "request": "launch",
+    //   "program": "${workspaceFolder}/cloudumi_common/cloudumi_common/scripts/initialize_dynamodb.py",
+    //   "console": "integratedTerminal",
+    //   "env": {
+    //     // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+    //     "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+    //     "AWS_PROFILE": "noq_dev"
+    //   }
+    // },
+    // {
+    //   "name": "S3 Config: Initialize Celery",
+    //   "type": "python",
+    //   "request": "launch",
+    //   "program": "${workspaceFolder}/cloudumi_common/cloudumi_common/scripts/initialize_redis.py",
+    //   "console": "integratedTerminal",
+    //   "env": {
+    //     // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
+    //     "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+    //     "AWS_PROFILE": "noq_dev"
+    //   }
+    // },
     {
       "name": "Launch Chrome",
       "request": "launch",
@@ -157,71 +169,71 @@
         "PYTHONUNBUFFERED": "1",
         "PYTHONASYNCIODEBUG": "1"
       }
-    },
-    {
-      "name": "Remote: cloudumi-healthcheck",
-      "type": "python",
-      "request": "attach",
-      "host": "localhost",
-      "port": 9090,
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}/cloudumi_healthcheck",
-          "remoteRoot": "/apps/cloudumi_healthcheck"
-        }
-      ]
-    },
-    {
-      "name": "Remote: cloudumi-saml",
-      "type": "python",
-      "request": "attach",
-      "host": "localhost",
-      "port": 9091,
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}/cloudumi_saml",
-          "remoteRoot": "/apps/cloudumi_saml"
-        },
-        {
-          "localRoot": "${workspaceFolder}/cloudumi_common",
-          "remoteRoot": "/apps/cloudumi_common"
-        }
-      ]
-    },
-    {
-      "name": "Remote: cloudumi-api",
-      "type": "python",
-      "request": "attach",
-      "host": "localhost",
-      "port": 9092,
-      "pathMappings": [
-        { "/proc/self/cwd": "${workspaceFolder}" }
-        // {
-        //   "localRoot": "${workspaceFolder}/common",
-        //   "remoteRoot": "/apps/common"
-        // },
-        // {
-        //   "localRoot": "${workspaceFolder}/saml",
-        //   "remoteRoot": "/apps/saml"
-        // }
-      ]
-    },
-    {
-      "name": "Remote: cloudumi_initialize_redis_dynamo_for_dev",
-      "type": "python",
-      "request": "attach",
-      "host": "localhost",
-      "port": 9099,
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}/cloudumi_api",
-          "remoteRoot": "/apps/cloudumi_api"
-        },
-        {
-          "localRoot": "${workspaceFolder}/cloudumi_common",
-          "remoteRoot": "/apps/cloudumi_common"
-        }
-      ]
     }
+    // {
+    //   "name": "Remote: cloudumi-healthcheck",
+    //   "type": "python",
+    //   "request": "attach",
+    //   "host": "localhost",
+    //   "port": 9090,
+    //   "pathMappings": [
+    //     {
+    //       "localRoot": "${workspaceFolder}/cloudumi_healthcheck",
+    //       "remoteRoot": "/apps/cloudumi_healthcheck"
+    //     }
+    //   ]
+    // },
+    // {
+    //   "name": "Remote: cloudumi-saml",
+    //   "type": "python",
+    //   "request": "attach",
+    //   "host": "localhost",
+    //   "port": 9091,
+    //   "pathMappings": [
+    //     {
+    //       "localRoot": "${workspaceFolder}/cloudumi_saml",
+    //       "remoteRoot": "/apps/cloudumi_saml"
+    //     },
+    //     {
+    //       "localRoot": "${workspaceFolder}/cloudumi_common",
+    //       "remoteRoot": "/apps/cloudumi_common"
+    //     }
+    //   ]
+    // },
+    // {
+    //   "name": "Remote: cloudumi-api",
+    //   "type": "python",
+    //   "request": "attach",
+    //   "host": "localhost",
+    //   "port": 9092,
+    //   "pathMappings": [
+    //     { "/proc/self/cwd": "${workspaceFolder}" }
+    //     // {
+    //     //   "localRoot": "${workspaceFolder}/common",
+    //     //   "remoteRoot": "/apps/common"
+    //     // },
+    //     // {
+    //     //   "localRoot": "${workspaceFolder}/saml",
+    //     //   "remoteRoot": "/apps/saml"
+    //     // }
+    //   ]
+    // },
+    // {
+    //   "name": "Remote: cloudumi_initialize_redis_dynamo_for_dev",
+    //   "type": "python",
+    //   "request": "attach",
+    //   "host": "localhost",
+    //   "port": 9099,
+    //   "pathMappings": [
+    //     {
+    //       "localRoot": "${workspaceFolder}/cloudumi_api",
+    //       "remoteRoot": "/apps/cloudumi_api"
+    //     },
+    //     {
+    //       "localRoot": "${workspaceFolder}/cloudumi_common",
+    //       "remoteRoot": "/apps/cloudumi_common"
+    //     }
+    //   ]
+    // }
   ]
 }
