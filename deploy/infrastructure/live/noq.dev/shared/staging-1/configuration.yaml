@@ -53,6 +53,10 @@ _global_:
     debug: true
   # Saas Configuration
   redis:
+    host:
+      global:
+        - host: noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com
+          port: 6379
     cluster_mode:
       enabled: false
       nodes:

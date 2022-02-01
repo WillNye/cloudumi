@@ -1492,45 +1492,44 @@ class UserDynamoHandler(BaseDynamoHandler):
         return users
 
 
+def _get_dynamo_table_restricted(caller, table_name):
+    function: str = (
+        f"{__name__}.{caller.__class__.__name__}.{sys._getframe().f_code.co_name}"
+    )
+    session = restricted_get_session_for_saas()
+    try:
+        # call sts_conn with my client and pass in forced_client
+        if config.get("_global_.dynamodb_server"):
+
+            resource = session.resource(
+                "dynamodb",
+                region_name=config.region,
+                endpoint_url=config.get(
+                    "_global_.dynamodb_server",
+                    config.get("_global_.boto3.client_kwargs.endpoint_url"),
+                ),
+            )
+        else:
+            resource = session.resource(
+                "dynamodb",
+                region_name=config.region,
+            )
+        table = resource.Table(table_name)
+    except Exception as e:
+        log.error({"function": function, "error": e}, exc_info=True)
+        stats.count(f"{function}.exception")
+        return None
+    else:
+        return table
+
 class RestrictedDynamoHandler(BaseDynamoHandler):
     def __init__(self) -> None:
-        self.tenant_static_configs = RestrictedDynamoHandler._get_dynamo_table_restricted(
+        self.tenant_static_configs = _get_dynamo_table_restricted(
             self, config.get(
                 "_global_.aws.tenant_static_config_dynamo_table",
                 __get_dynamo_table_name("tenant_static_configs"),
             )
         )
-
-    @classmethod
-    def _get_dynamo_table_restricted(cls, caller, table_name):
-        function: str = (
-            f"{__name__}.{caller.__class__.__name__}.{sys._getframe().f_code.co_name}"
-        )
-        session = restricted_get_session_for_saas()
-        try:
-            # call sts_conn with my client and pass in forced_client
-            if config.get("_global_.dynamodb_server"):
-
-                resource = session.resource(
-                    "dynamodb",
-                    region_name=config.region,
-                    endpoint_url=config.get(
-                        "_global_.dynamodb_server",
-                        config.get("_global_.boto3.client_kwargs.endpoint_url"),
-                    ),
-                )
-            else:
-                resource = session.resource(
-                    "dynamodb",
-                    region_name=config.region,
-                )
-            table = resource.Table(table_name)
-        except Exception as e:
-            log.error({"function": function, "error": e}, exc_info=True)
-            stats.count(f"{function}.exception")
-            return None
-        else:
-            return table
 
     async def get_static_config_yaml_for_all_hosts(self) -> Dict[str, str]:
         """Retrieve static configuration yaml."""
