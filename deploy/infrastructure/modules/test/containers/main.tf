@@ -12,6 +12,7 @@ terraform {
     key            = "terraform_test/terraform.tfstate"
     region         = "us-west-2"
     dynamodb_table = "noq_terraform_state"
+    profile        = "noq_dev"
   }
 
 }
