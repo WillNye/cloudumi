@@ -95,6 +95,20 @@
       }
     },
     {
+      "name": "Local Config: Initialize DynamoDB",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/common/scripts/initialize_dynamodb.py",
+      "console": "integratedTerminal",
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev",
+        "AWS_DEFALT_REGION": "us-west-2",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}"
+      }
+    },
+    {
       "name": "Local Config: CloudUmi API",
       "type": "python",
       "request": "launch",
