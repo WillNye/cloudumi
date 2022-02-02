@@ -1659,7 +1659,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             self.tenant_static_configs.put_item(
                 Item=self._data_to_dynamo_replace(old_config)
             )
-        original_config_d = yaml.load(current_config_entry["config"])
+        original_config_d = yaml.load(current_config_entry.get("config", ""))
+        if not original_config_d:
+            original_config_d = {}
         # TODO: Update all of the secrets within the configuration so it's not ****
         if "secrets" in new_config_d:
             decode_config_secrets(original_config_d, new_config_d)
