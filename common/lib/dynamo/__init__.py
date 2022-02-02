@@ -23,6 +23,7 @@ from retrying import retry
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
+from common.config.config import get_dynamo_table_name
 from common.exceptions.exceptions import (
     DataNotRetrievable,
     NoExistingRequest,
@@ -64,16 +65,6 @@ POSSIBLE_STATUSES = [
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger("consoleme")
-
-
-def get_dynamo_table_name(table_name: str, namespace: str = "cloudumi") -> str:
-    cluster_id_key = "_global_.deployment.cluster_id"
-    cluster_id = config.get(cluster_id_key, None)
-    if cluster_id is None:
-        raise RuntimeError(
-            f"Unable to read configuration - cannot get {cluster_id_key}"
-        )
-    return f"{cluster_id}_{namespace}_{table_name}"
 
 
 def filter_config_secrets(d):
