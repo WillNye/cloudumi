@@ -1,1 +1,83 @@
-<mxfile host="Electron" modified="2022-02-02T14:41:36.595Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/16.5.1 Chrome/96.0.4664.110 Electron/16.0.7 Safari/537.36" etag="r_ACRo8tNySOQMbqP3Tg" version="16.5.1" type="device"><diagram id="QCZM56xP6HMVUt8_LhWS" name="Page-1">1Vldc6IwFP01PtYhIKiPfvVjprvbqdtt92knSgrZRcKGUHV//d5AEDDWsRZbfDI5JISce8/JRVrWaLG64jjyvzCXBC3TcFcta9wyTWSgHvxIZJ0hjmNngMepqwYVwJT+I/lMhSbUJXFloGAsEDSqgnMWhmQuKhjmnC2rw55ZUF01wh7RgOkcBzr6SF3hZ2jPNgr8mlDPz1dGhrqywPlgBcQ+dtmyBFmTljXijImstViNSCDJy3nJ5l2+cnXzYJyE4pAJD4+L/g/n+nLIbh6/Da/G6183DxdWdpcXHCRqw+phxTpngLhAiOoyLnzmsRAHkwIdcpaELpHLGNArxtwyFgGIAPxNhFir6OJEMIB8sQjUVX0rancxS/ic7Hn+PCUw94jYM05tS+6ltIAi6oqwBRF8DQM4CbCgL9XgY5VD3mZcQTM0FNNvYL2jsY7aKemw0GAQx8mC3DOg1nQC2NRwxqHlydaSQlKZxmQlCAeCb8Y7o3WLZ6DCCsM4oF4I7TkwTDgAL4QLCmk+UBcW1HWzYJKY/sOz9H4ynBGjoUgJsIcte7wzWntTCxYiq9YOrapFKnKoBEPNujDaRtfsZnMPDpC63Z18/NIQ9vwcQ6ZsR3Cz6vFBRVpQpxhP9QAFAXiXZHrpU0GmEU4TfAn2eaAoNEZfZW5jRsp8zY7qL0tWpiC/5GI5VnviO2duN+aBdmM3ym66GuvmbrtprJfkeVOHl5hduyqKxhuLoUXm3RIgKyqeSu2f6layPV6VO+u8E8IunsqddE7bzrvFtLSXzzu92BCqW21bIVa5Y/eqbor6WzaZPamadYI8MDUdd85Mx3kq11MU9Jx+JSBW45Vs7z3uQhbWcr7tEjc6Qtzo06XdrHMU6eWL005Xz57inIRo1yVEWZx3UEWHF40Xou6k18kMgN1R+8CK3ULHVezdU1Xsvb2OdaICPTcwyC3LKlcobad/qJG1+06vWqkU/Vf8TN7pjnAKzEkZFiO2weONzz7Q+Jr1f0Vfk4slfW8wn5M4hsaYhBTi3Vy769XndmYPbbkdarzb6S8Qpyw71DvB2woP1PqQwuNQ/dX+SvEu/W3OkUKAXSnAeyISHkJjxIkLXFAcxA1WoVlb9Q8p1umemQptLYaDKAqAcUGZjCHjMpAsjNMa5PNLke3X3U8vRdAbP1bU5WvHu01+Upzbe47+fcKWdvMQuVjI3MxecTZJanznSSxFdMcgn9cNdiBU50cJtPVHYqfpDoT0Y+Qr+wvANGJ/Guk5yDyZ50C3+PaaMVx8wbYm/wE=</diagram></mxfile>
+<mxfile host="65bd71144e">
+    <diagram id="QCZM56xP6HMVUt8_LhWS" name="Page-1">
+        <mxGraphModel dx="591" dy="453" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="UWm9V6HFBoIWOBGDy_IU-1" target="UWm9V6HFBoIWOBGDy_IU-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-4" value="1. sts:AssumeRole&lt;br&gt;with ExternalID" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UWm9V6HFBoIWOBGDy_IU-3" vertex="1" connectable="0">
+                    <mxGeometry x="-0.0727" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-1" value="CloudUmi&lt;br&gt;SaaS&lt;br&gt;Role" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="240" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="UWm9V6HFBoIWOBGDy_IU-2" target="UWm9V6HFBoIWOBGDy_IU-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-7" value="2. sts:AssumeRole" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UWm9V6HFBoIWOBGDy_IU-6" vertex="1" connectable="0">
+                    <mxGeometry x="-0.275" y="2" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-10" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="UWm9V6HFBoIWOBGDy_IU-2" target="UWm9V6HFBoIWOBGDy_IU-11" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="580" y="190" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-12" value="4. sts:AssumeRole" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UWm9V6HFBoIWOBGDy_IU-10" vertex="1" connectable="0">
+                    <mxGeometry x="-0.0869" y="3" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-15" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" parent="1" source="UWm9V6HFBoIWOBGDy_IU-2" target="UWm9V6HFBoIWOBGDy_IU-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-16" value="6. retry sts:AssumeRole" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UWm9V6HFBoIWOBGDy_IU-15" vertex="1" connectable="0">
+                    <mxGeometry x="0.0741" y="-3" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-2" value="Tenant Hub Role" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="240" width="80" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.033;exitY=0.691;exitDx=0;exitDy=0;entryX=0.968;entryY=0.68;entryDx=0;entryDy=0;exitPerimeter=0;entryPerimeter=0;" parent="1" source="UWm9V6HFBoIWOBGDy_IU-5" target="UWm9V6HFBoIWOBGDy_IU-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-9" value="3. Access Denied" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UWm9V6HFBoIWOBGDy_IU-8" vertex="1" connectable="0">
+                    <mxGeometry x="0.2811" y="-1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-20" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=0;" parent="1" source="UWm9V6HFBoIWOBGDy_IU-5" target="UWm9V6HFBoIWOBGDy_IU-1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-21" value="7. Return Credentials" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UWm9V6HFBoIWOBGDy_IU-20" vertex="1" connectable="0">
+                    <mxGeometry x="0.547" y="-1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-5" value="Tenant&lt;br&gt;Application or Console Role" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="580" y="240" width="80" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-13" value="" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="UWm9V6HFBoIWOBGDy_IU-11" target="UWm9V6HFBoIWOBGDy_IU-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-14" value="5. Update Assume Role Trust Policy" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UWm9V6HFBoIWOBGDy_IU-13" vertex="1" connectable="0">
+                    <mxGeometry x="-0.175" y="4" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UWm9V6HFBoIWOBGDy_IU-11" value="Tenant Spoke Role" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="580" y="120" width="80" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="This diagram shows how Noq can automatically correct one of our customer's roles to allow Noq to assume in to the role to retrieve credentials for authorized users." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="30" width="420" height="120" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
