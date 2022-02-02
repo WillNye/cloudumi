@@ -45,6 +45,11 @@ _global_:
   #   enabled: false # TODO: Maybe change me
   #   service_name: cloudumi
   #   server_url: http://apmserver:8200
+  deployment:
+    domain_name: shared.noq.dev
+    namespace: shared
+    zone: noq.dev
+    cluster_id: noq.dev-shared-staging-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   # sentry:

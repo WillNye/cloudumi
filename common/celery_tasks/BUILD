@@ -160,12 +160,12 @@ container_image(
 py3_image(
     name = "container",
     base = ":base-celery-api",
+    srcs = [
+        ":lib",
+    ],
     layers = [
         ":lib_layer",
         ":pkg_layer",
-    ],
-    srcs = [
-        ":lib",
     ],
     deps = EXT_DEPS + INT_DEPS,
     main = "run.py",
