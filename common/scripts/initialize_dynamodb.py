@@ -8,6 +8,7 @@ from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait
 
 import util.debug  # noqa
 from common.config import config
+from common.config.config import get_dynamo_table_name
 from common.lib.aws.session import restricted_get_session_for_saas
 
 streams_enabled = config.get("_global_.dynamodb.streams_enabled", True)
@@ -24,7 +25,7 @@ ddb = session.client(
     region_name=config.region,
 )
 
-table_name = "consoleme_iamroles_multitenant"
+table_name = get_dynamo_table_name("iamroles_multitenant")
 try:
     ddb.create_table(
         TableName=table_name,
@@ -101,10 +102,10 @@ if ttl_enabled:
                     )
                     raise
 
-table_name = "consoleme_config_multitenant"
+table_name = get_dynamo_table_name("config_multitenant")
 try:
     ddb.create_table(
-        TableName="consoleme_config_multitenant",
+        TableName=table_name,
         KeySchema=[
             {"AttributeName": "host", "KeyType": "HASH"},
             {"AttributeName": "id", "KeyType": "RANGE"},
@@ -144,7 +145,7 @@ except ClientError as e:
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
 
-table_name = "consoleme_policy_requests_multitenant"
+table_name = get_dynamo_table_name("policy_requests_multitenant")
 try:
     ddb.create_table(
         TableName=table_name,
@@ -184,7 +185,7 @@ except ClientError as e:
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
 
-table_name = "consoleme_resource_cache_multitenant"
+table_name = get_dynamo_table_name("resource_cache_multitenant")
 try:
     ddb.create_table(
         TableName=table_name,
@@ -233,7 +234,7 @@ except ClientError as e:
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
 
-table_name = "consoleme_cloudtrail_multitenant"
+table_name = get_dynamo_table_name("cloudtrail_multitenant")
 try:
     ddb.create_table(
         TableName=table_name,
@@ -308,7 +309,7 @@ if ttl_enabled:
                     raise
 
 try:
-    table_name = "consoleme_users_multitenant"
+    table_name = get_dynamo_table_name("users_multitenant")
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
@@ -333,7 +334,7 @@ except ClientError as e:
         print(f"Unable to create table {table_name}. Error: {e}.")
 
 
-table_name = "consoleme_notifications_multitenant"
+table_name = get_dynamo_table_name("notifications_multitenant")
 try:
     ddb.create_table(
         TableName=table_name,
@@ -360,10 +361,10 @@ except ClientError as e:
         print(f"Unable to create table {table_name}. Error: {e}.")
 
 
-table_name = "consoleme_tenant_static_configs"
+table_name = get_dynamo_table_name("tenant_static_configs")
 try:
     ddb.create_table(
-        TableName="consoleme_tenant_static_configs",
+        TableName=table_name,
         KeySchema=[
             {"AttributeName": "host", "KeyType": "HASH"},
             {"AttributeName": "id", "KeyType": "RANGE"},
@@ -403,7 +404,7 @@ except ClientError as e:
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
 
-table_name = "consoleme_identity_groups_multitenant"
+table_name = get_dynamo_table_name("identity_groups_multitenant")
 try:
     ddb.create_table(
         TableName=table_name,
@@ -446,7 +447,7 @@ except ClientError as e:
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
 
-table_name = "consoleme_identity_users_multitenant"
+table_name = get_dynamo_table_name("identity_users_multitenant")
 try:
     ddb.create_table(
         TableName=table_name,
@@ -489,7 +490,7 @@ except ClientError as e:
     ):
         print(f"Unable to create table {table_name}. Error: {e}.")
 
-table_name = "consoleme_identity_requests_multitenant"
+table_name = get_dynamo_table_name("identity_requests_multitenant")
 try:
     ddb.create_table(
         TableName=table_name,
@@ -628,7 +629,7 @@ if ttl_enabled:
                         f"Unable to update TTL attribute on table {table_name}. Error: {e}."
                     )
 
-table_name = "noq_aws_accounts"
+table_name = get_dynamo_table_name("aws_accounts")
 try:
     ddb.create_table(
         TableName=table_name,

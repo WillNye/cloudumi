@@ -463,7 +463,9 @@ class Configuration(metaclass=Singleton):
                 self.get("_global_.boto3.client_kwargs.endpoint_url"),
             ),
         )
-        config_table = dynamodb.Table("consoleme_tenant_static_configs")
+        config_table = dynamodb.Table(
+            self.get_dynamo_table_name("tenant_static_configs")
+        )
         current_config = {}
         try:
             current_config = config_table.get_item(Key={"host": host, "id": "master"})
@@ -676,6 +678,17 @@ class Configuration(metaclass=Singleton):
             if region:
                 return region
 
+    def get_dynamo_table_name(
+        self, table_name: str, namespace: str = "cloudumi"
+    ) -> str:
+        cluster_id_key = "_global_.deployment.cluster_id"
+        cluster_id = self.get(cluster_id_key, None)
+        if cluster_id is None:
+            raise RuntimeError(
+                f"Unable to read configuration - cannot get {cluster_id_key}"
+            )
+        return f"{cluster_id}_{namespace}_{table_name}"
+
 
 class ContextFilter(logging.Filter):
     """Logging Filter for adding hostname to log entries."""
@@ -697,6 +710,7 @@ get_employee_photo_url = CONFIG.get_employee_photo_url
 get_employee_info_url = CONFIG.get_employee_info_url
 get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dynamo
 is_host_configured = CONFIG.is_host_configured
+get_dynamo_table_name = CONFIG.get_dynamo_table_name
 # Set logging levels
 CONFIG.set_logging_levels()
 
