@@ -59,8 +59,8 @@ _global_:
   redis:
     host:
       global:
-        - host: {{ elasticache_address }}
-          port: {{ elasticache_port }}
+        host: {{ elasticache_address }}
+        port: {{ elasticache_port }}
     cluster_mode:
       enabled: false
       nodes:
