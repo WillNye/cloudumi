@@ -64,3 +64,5 @@ _global_:
         global:
           - host: noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com
             port: 6379
+  sentry:
+    dsn: https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191
