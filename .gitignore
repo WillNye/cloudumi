@@ -151,3 +151,4 @@ bazel-*
 .isort.cfg
 
 .env_github_action_secrets
+api/templates
