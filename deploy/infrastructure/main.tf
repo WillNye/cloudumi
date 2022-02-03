@@ -42,6 +42,7 @@ module "tenant_container_service" {
   timeout                     = var.timeout
   vpc_cidr_range              = module.tenant_networking.vpc_cidr_range
   vpc_id                      = module.tenant_networking.vpc_id
+  cloudumi_files_bucket       = module.tenant_s3_service.cloudumi_bucket_name
 }
 
 module "tenant_dynamodb_service" {
