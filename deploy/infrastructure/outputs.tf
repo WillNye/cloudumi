@@ -10,7 +10,7 @@ output "bucket_name" {
 
 output "cluster_id" {
   description = "The configured cluster id (for automation)"
-  value       = var.cluster_id
+  value       = local.cluster_id
 }
 
 output "domain_name" {

@@ -30,4 +30,4 @@ redis_node_type = "cache.t3.small"
 
 profile = "noq_dev"
 # Sentry
-sentry_dsn = "https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191
+sentry_dsn = "https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191"
