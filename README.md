@@ -101,6 +101,13 @@ Publishing to staging is a build target that utilizes a genrule syntax to deploy
 
 - In the event that docker containers fail to run with an error on a symbol not found \*.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.
 
+### Troubleshooting in Container (SSH Rules)
+
+- It may be useful to retrieve the environment variables used by the process in a Docker container running in Fargate.
+  This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credential environment variables set
+  appropriately without too much of a hassle. Run the following command to source all environment variables from the
+  container's primary process (PID 1): `. <(xargs -0 bash -c 'printf "export %q\n" "$@"' -- < /proc/1/environ)`
+
 ## How to run in sysbox
 
 - Sysbox containers are fully fledged init containers with systemd and docker pre-installed
