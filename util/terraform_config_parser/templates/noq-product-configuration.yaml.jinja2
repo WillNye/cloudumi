@@ -58,9 +58,8 @@ _global_:
   # Saas Configuration
   redis:
     host:
-      global:
-        host: {{ elasticache_address }}
-        port: {{ elasticache_port }}
+      global: {{ elasticache_address }}
+    port: {{ elasticache_port }}
     cluster_mode:
       enabled: false
       nodes:
