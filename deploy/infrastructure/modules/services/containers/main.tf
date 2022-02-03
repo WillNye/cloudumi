@@ -349,6 +349,22 @@ resource "aws_security_group" "ecs-sg" {
     cidr_blocks = var.allowed_inbound_cidr_blocks
   }
 
+  ingress {
+    description = "SSH access to API container"
+    from_port   = 2222
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.vpc_cidr_range
+  }
+
+  ingress {
+    description = "SSH access to Celery container"
+    from_port   = 2223
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.vpc_cidr_range
+  }
+
   egress {
     from_port   = 0
     to_port     = 0

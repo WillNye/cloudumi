@@ -41,7 +41,7 @@ container_run_and_commit(
         "apt-get install build-essential openssh-server cron curl telnet iputils-ping sudo vim systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev nodejs -y",
         "pip install uvloop xmlsec awscli",
         "mkdir -p /var/run/sshd",
-        "echo \"export $$(strings /proc/1/environ | grep AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)\" >> /root/.profile",
+        "echo 'export $$(strings /proc/1/environ | grep AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)' >> /root/.profile",
     ],
     image = "@python_3.9.7_container//image",
     visibility = ["//visibility:public"],

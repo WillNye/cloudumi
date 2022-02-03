@@ -4,6 +4,7 @@ services:
     image: "259868150464.dkr.ecr.{{ region }}.amazonaws.com/{{ stage }}-registry-api:{{ stage }}"
     ports:
       - "8092:8092"
+      - "2222:22"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
       - CONFIG_LOCATION={{ config_path_with_bucket }}
@@ -17,6 +18,8 @@ services:
 
   {{ cluster_id_safed }}-celery:
     image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/{{ stage }}-registry-celery:{{ stage }}"
+    ports:
+      - "2223:22"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
       - CONFIG_LOCATION={{ config_path_with_bucket }}

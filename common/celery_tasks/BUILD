@@ -146,6 +146,7 @@ container_image(
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "noq_dev",
+        "DEBUG": "1",
     },
     layers = [
         ":config_layer",
