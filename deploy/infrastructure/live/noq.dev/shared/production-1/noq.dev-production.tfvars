@@ -13,3 +13,6 @@ allowed_inbound_cidr_blocks = ["70.187.228.241/32", "75.164.48.220/32"]
 
 # Redis
 redis_node_type = "cache.t3.small"
+
+# Sentry
+sentry_dsn = "https://b56872bca2c548cb9200121ae436b87d@o1134078.ingest.sentry.io/6181194"
