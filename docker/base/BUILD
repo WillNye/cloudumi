@@ -39,7 +39,7 @@ container_run_and_commit(
     commands = [
         "apt-get update -y",
         "mkdir ~/.ssh",
-        "bash -c 'echo \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQClHPc54DoYiOy/0IMoDte+aYKF5vSF6DK1miSUVfbkaUd7MiRIDLPvOyIBEOk9AfHnkah2ka6gyGl7pSkyrMLqcbfnHWb/0q3nWg/InqXl0c/aqgkZoaN4VJi4ejoBj7jnWFbS7EJLaPJlGIWh1HKxHbswjuxiEDImytojAKpwfgD6qK6J8hb6XZyiyS0nv61g8w+4H71WoxjArgTUxzdmAFubyU0SP7EG4GkESCcDzs/JhO74tNAY8cZbmp2XENvbWGXwgOUrfn2RoWMFZE/9a8k/hGkmrujzA1UPk+os8NcjR1oN+/kPUzn1N0xmS+UYUChYAIirnD2NMMppQfKJ\" > ~/.ssh/authorized_keys'",
+        "echo \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQClHPc54DoYiOy/0IMoDte+aYKF5vSF6DK1miSUVfbkaUd7MiRIDLPvOyIBEOk9AfHnkah2ka6gyGl7pSkyrMLqcbfnHWb/0q3nWg/InqXl0c/aqgkZoaN4VJi4ejoBj7jnWFbS7EJLaPJlGIWh1HKxHbswjuxiEDImytojAKpwfgD6qK6J8hb6XZyiyS0nv61g8w+4H71WoxjArgTUxzdmAFubyU0SP7EG4GkESCcDzs/JhO74tNAY8cZbmp2XENvbWGXwgOUrfn2RoWMFZE/9a8k/hGkmrujzA1UPk+os8NcjR1oN+/kPUzn1N0xmS+UYUChYAIirnD2NMMppQfKJ\" > ~/.ssh/authorized_keys",
         "mkdir -p /var/run/sshd",
         # "apt-get install build-essential curl telnet iputils-ping sudo vim systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev nodejs -y",
         "apt-get install openssh-server xmlsec1 libxslt1.1 libxmlsec1 libxmlsec1-dev libxmlsec1-gcrypt libxmlsec1-gnutls libxmlsec1-nss libxmlsec1-openssl -y",
