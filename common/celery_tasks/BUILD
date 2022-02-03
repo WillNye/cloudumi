@@ -126,7 +126,7 @@ container_layer(
 container_layer(
     name = "sshd_config_layer",
     files = [
-        "//common/celery_tasks/util:sshd_config",
+        "//api/util:sshd_config",
     ],
     directory = "/etc/ssh",
 )

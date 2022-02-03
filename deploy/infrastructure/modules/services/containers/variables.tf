@@ -5,8 +5,8 @@ variable "allowed_inbound_cidr_blocks" {
 
 variable "attributes" {
   description = "Additional attributes, e.g. `1`"
-  type    = number
-  default = 1
+  type        = number
+  default     = 1
 }
 
 variable "container_insights" {
@@ -22,7 +22,7 @@ variable "capacity_providers" {
 }
 
 variable "cluster_id" {
-  type = string
+  type        = string
   description = "The cluster ID for CloudUmi."
 }
 
@@ -32,12 +32,12 @@ variable "lb_port" {
 }
 
 variable "noq_core" {
-  type = bool
+  type    = bool
   default = false
 }
 
 variable "region" {
-  type = string
+  type        = string
   description = "The region that all services are deployed into"
 }
 
@@ -53,24 +53,29 @@ variable "stage" {
 
 variable "subnet_ids" {
   description = "The subnet ids as generated"
-  type = list(string)
+  type        = list(string)
 }
 
 variable "tags" {
-  description = "The tag to assign to resources" 
-  type = map(any)
+  description = "The tag to assign to resources"
+  type        = map(any)
 }
 
 variable "timeout" {
-  description = "The timeout for each resource that may get stuck" 
-  type = string
+  description = "The timeout for each resource that may get stuck"
+  type        = string
 }
 
 variable "vpc_cidr_range" {
   description = "VPC CIDR Range"
-  type = string
+  type        = string
 }
 variable "vpc_id" {
   description = "VPC ID"
-  type = string
+  type        = string
+}
+
+variable "cloudumi_files_bucket" {
+  description = "The S3 bucket to store cached data for tenants"
+  type        = string
 }

@@ -11,7 +11,7 @@ output "ecs_security_group_id" {
 output "ecs_task_execution_role" {
   description = "The ecsTaskExecutionRole ARN to be configured"
   value       = aws_iam_role.ecs_task_execution_role.arn
-} 
+}
 
 output "ecs_task_role" {
   description = "The ecsTaskRole ARN to be configured"
