@@ -198,6 +198,14 @@ container_layer(
     directory = "/etc/ssh",
 )
 
+container_layer(
+    name = "newrelic_layer",
+    files = [
+        "//api/util:newrelic.ini",
+    ],
+    directory = "/etc/newrelic",
+)
+
 container_image(
     name = "base-api-dev-local",
     base = "//docker/base:base_docker",
@@ -211,6 +219,7 @@ container_image(
     layers = [
         ":config_layer",
         ":sshd_config_layer",
+        ":newrelic_layer"
     ],
     ports = ["8092", "2222"],
     symlinks = {
@@ -229,6 +238,7 @@ container_image(
     layers = [
         ":config_layer",
         ":sshd_config_layer",
+        ":newrelic_layer"
     ],
     ports = ["8092", "2222"],
     symlinks = {
