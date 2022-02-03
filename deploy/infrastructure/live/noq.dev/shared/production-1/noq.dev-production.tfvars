@@ -1,6 +1,6 @@
 namespace  = "shared"
 zone       = "noq.dev"
-stage      = "staging"
+stage      = "prod"
 attributes = 1
 domain_name= "*.noq.dev"
 
@@ -12,12 +12,12 @@ subnet_azs = ["us-west-2a", "us-west-2b"]
 # Name: {namespace}.{zone}
 # Environment: {stage}
 tags = {
-    "Name": "shared.noq.dev",
+    "Name": "noq.dev",
     "Environment": "production",
 }
 
 allowed_inbound_cidr_blocks = [
-    "70.187.228.241/32",
+    "70.187.228.241/32", # Curtis
     "75.164.84.226/32",  # Matt
     "75.164.48.220/32"
 ]
