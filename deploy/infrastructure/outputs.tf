@@ -132,3 +132,13 @@ output "zone" {
   description = "The configured zone (for automation)"
   value       = var.zone
 }
+
+output "celery_log_level" {
+  description = "The configured celery log level"
+  value       = var.celery_log_level
+}
+
+output "celery_concurrency" {
+  description = "The configured celery concurrency"
+  value       = var.celery_concurrency
+}
