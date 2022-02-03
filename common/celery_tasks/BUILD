@@ -123,15 +123,25 @@ container_layer(
     directory = "/",
 )
 
+container_layer(
+    name = "sshd_config_layer",
+    files = [
+        "//common/celery_tasks/util:sshd_config",
+    ],
+    directory = "/etc/ssh",
+)
+
 container_image(
     name = "base-celery-api",
     base = "//docker/base:base_docker",
     env = {
+        "DEBUG": "1",
     },
     layers = [
         ":config_layer",
+        ":sshd_config_layer",
     ],
-    ports = [],
+    ports = ["2223"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
@@ -150,8 +160,9 @@ container_image(
     },
     layers = [
         ":config_layer",
+        ":sshd_config_layer",
     ],
-    ports = [],
+    ports = ["2223"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },

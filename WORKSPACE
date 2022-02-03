@@ -66,7 +66,7 @@ container_pull(
     architecture = "amd64",
     registry = "index.docker.io",
     repository = "library/python",
-    digest = "sha256:743d52e1c66f456f40d1e673fe580d0ebda7b97a926c81678dedfed2d4a3fd31"
+    digest = "sha256:743d52e1c66f456f40d1e673fe580d0ebda7b97a926c81678dedfed2d4a3fd31",
     tag = "3.9.10",
 )
 
