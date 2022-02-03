@@ -62,19 +62,12 @@ container_pull(
 
 # This will be the cloudumi_base_docker container
 container_pull(
-    name = "python_3.9.10_container",
+    name = "python_3.9_container",
     architecture = "amd64",
     registry = "index.docker.io",
     repository = "library/python",
-    # tag = "3.9.7",
-)
-
-container_pull(
-    name = "python_3.9.10_alpine_container",
-    architecture = "amd64",
-    registry = "index.docker.io",
-    repository = "library/python",
-    tag = "3.9.10-alpine",
+    digest = "sha256:743d52e1c66f456f40d1e673fe580d0ebda7b97a926c81678dedfed2d4a3fd31",
+    tag = "3.9.10",
 )
 
 # Setup Python Configuration to include a central pip repo

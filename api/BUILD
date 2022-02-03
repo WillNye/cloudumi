@@ -26,7 +26,6 @@ INT_DEPS = [
     "//plugins/config:lib",
     "//plugins/group_mapping:lib",
     "//plugins/metrics:lib",
-    "//util/debug",
     "//util/log:lib",
 ]
 
@@ -191,6 +190,14 @@ container_layer(
     directory = "/",
 )
 
+container_layer(
+    name = "sshd_config_layer",
+    files = [
+        "//api/util:sshd_config",
+    ],
+    directory = "/etc/ssh",
+)
+
 container_image(
     name = "base-api-dev-local",
     base = "//docker/base:base_docker",
@@ -199,11 +206,13 @@ container_image(
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "noq_dev",
+        "DEBUG": "1",
     },
     layers = [
         ":config_layer",
+        ":sshd_config_layer",
     ],
-    ports = ["8092"],
+    ports = ["8092", "2222"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
@@ -215,11 +224,13 @@ container_image(
     base = "//docker/base:base_docker",
     env = {
         "NOQ_CONTAINER": "1",
+        "DEBUG": "1",
     },
     layers = [
         ":config_layer",
+        ":sshd_config_layer",
     ],
-    ports = ["8092"],
+    ports = ["8092", "2222"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
