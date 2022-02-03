@@ -120,3 +120,15 @@ variable "sentry_dsn" {
   description = "The Sentry DSN to use for logging exceptions"
   type        = string
 }
+
+variable "celery_log_level" {
+  description = "The log level for Celery"
+  type        = string
+  default     = "DEBUG"
+}
+
+variable "celery_concurrency" {
+  description = "The number of processes each celery worker should run to run"
+  type        = number
+  default     = 16
+}
