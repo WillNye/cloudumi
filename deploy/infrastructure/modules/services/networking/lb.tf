@@ -1,6 +1,5 @@
 # Create a new load balancer
 resource "aws_lb" "noq_api_load_balancer" {
-  name               = "${var.cluster_id}-lb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb-sg.id]
