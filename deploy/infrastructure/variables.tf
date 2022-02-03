@@ -6,14 +6,19 @@ variable "allowed_inbound_cidr_blocks" {
 
 variable "attributes" {
   description = "Additional attributes, e.g. `1`"
-  type    = number
-  default = 1
+  type        = number
+  default     = 1
 }
 
 variable "capacity_providers" {
   description = "List of short names of one or more capacity providers to associate with the cluster. Valid values also include FARGATE and FARGATE_SPOT."
   type        = list(string)
   default     = ["FARGATE_SPOT", "FARGATE"]
+}
+
+variable "cluster_id" {
+  type        = string
+  description = "The cluster ID for CloudUmi."
 }
 
 variable "container_insights" {
@@ -36,11 +41,11 @@ variable "delimiter" {
 variable "domain_name" {
   type        = string
   description = "The specific domain name to be registered as the CNAME to the load balancer"
-} 
+}
 
 variable "dynamo_table_replica_regions" {
-  description = "List of regions to replicate all DDB tables into" 
-  type = list
+  description = "List of regions to replicate all DDB tables into"
+  type        = list(any)
 }
 
 variable "lb_port" {
@@ -50,13 +55,13 @@ variable "lb_port" {
 
 variable "namespace" {
   description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
-  type    = string
+  type        = string
 }
 
 variable "noq_core" {
   description = "If set to true, then the module or configuration should only apply to NOQ core infrastructure"
-  type    = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 variable "profile" {
@@ -99,18 +104,23 @@ variable "subnet_azs" {
 }
 
 variable "tags" {
-  description = "Any tags to assign to resources" 
-  type = map(any)
+  description = "Any tags to assign to resources"
+  type        = map(any)
 }
 
 variable "timeout" {
-  description = "The timeout for each resource that may get stuck" 
-  type = string
-  default = "3m"
+  description = "The timeout for each resource that may get stuck"
+  type        = string
+  default     = "3m"
 }
 
 variable "zone" {
   description = "The zone is the base part of the domain name. The {namespace}.{zone} make up the domain name"
-  type = string
-  default = "noq.dev"
+  type        = string
+  default     = "noq.dev"
+}
+
+variable "sentry_dsn" {
+  description = "The Sentry DSN to use for logging exceptions"
+  type        = string
 }

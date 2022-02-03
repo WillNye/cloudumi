@@ -1,46 +1,46 @@
 output "attributes" {
   description = "The attributes configured (for automation)"
-  value = var.attributes
+  value       = var.attributes
 }
 
 output "bucket_name" {
   description = "The bucket used for cloudumi operation"
-  value = module.tenant_s3_service.cloudumi_bucket_name
+  value       = module.tenant_s3_service.cloudumi_bucket_name
 }
 
 output "cluster_id" {
   description = "The configured cluster id (for automation)"
-  value = local.cluster_id
+  value       = var.cluster_id
 }
 
 output "domain_name" {
-  description = "The configured domain name, which is derived from {namespace}.{zone}" 
-  value = "${var.namespace}.${var.zone}"
+  description = "The configured domain name, which is derived from {namespace}.{zone}"
+  value       = "${var.namespace}.${var.zone}"
 }
 
 output "ecs_awslogs_group" {
   description = "The ecs aws logs group name (for automation)"
-  value = module.tenant_container_service.ecs_awslogs_group
+  value       = module.tenant_container_service.ecs_awslogs_group
 }
 
 output "ecs_cluster_name" {
   description = "The ECS cluster name"
-  value = module.tenant_container_service.ecs_cluster_name
+  value       = module.tenant_container_service.ecs_cluster_name
 }
 
 output "ecs_security_group" {
   description = "The ECS security group ID"
-  value = module.tenant_container_service.ecs_security_group_id
+  value       = module.tenant_container_service.ecs_security_group_id
 }
 
 output "ecs_task_execution_role_arn" {
   description = "The ECS task execution role ARN to be configured, note this has been referenced as ecsTaskExecutionRole in previous configurations"
-  value = module.tenant_container_service.ecs_task_execution_role
+  value       = module.tenant_container_service.ecs_task_execution_role
 }
 
 output "ecs_task_role_arn" {
   description = "The ECS task role ARN to be configured; note this has been referenced as NoqClusterRole1 in previous configurations"
-  value = module.tenant_container_service.ecs_task_role
+  value       = module.tenant_container_service.ecs_task_role
 }
 
 # output "elasticache_parameter_group_id" {
@@ -65,7 +65,7 @@ output "elasticache_nodes" {
 
 output "namespace" {
   description = "The configured namespace (for automation)"
-  value = var.namespace
+  value       = var.namespace
 }
 
 output "private_subnets" {
@@ -76,6 +76,11 @@ output "private_subnets" {
 output "profile" {
   description = "The selected profile"
   value = var.profile
+}
+
+output "sentry_dsn" {
+  description = "The configured sentry dsn (for exception tracking)"
+  value       = var.sentry_dsn
 }
 
 output "region" {
@@ -100,17 +105,17 @@ output "registry_repository_url_frontend" {
 
 output "stage" {
   description = "The configured stage (for automation)"
-  value = var.stage
+  value       = var.stage
 }
 
 output "subnet_name_private_az0" {
   description = "The configured subnet name for AZ0 (for automation)"
-  value = module.tenant_networking.vpc_subnet_private_id[0]
+  value       = module.tenant_networking.vpc_subnet_private_id[0]
 }
 
 output "subnet_name_private_az1" {
   description = "The configured subnet name for AZ1 (for automation)"
-  value = module.tenant_networking.vpc_subnet_private_id[1]
+  value       = module.tenant_networking.vpc_subnet_private_id[1]
 }
 
 output "subnet_name_public_az0" {
@@ -125,40 +130,40 @@ output "subnet_name_public_az1" {
 
 output "target_group_arn" {
   description = "The target group ARN, needs to be updated in the BUILD file under the ecs-cli call"
-  value = module.tenant_networking.target_group_arn
+  value       = module.tenant_networking.target_group_arn
 }
 
 output "vpc_arn" {
   description = "The ARN of the VPC configured"
-  value = module.tenant_networking.vpc_arn
+  value       = module.tenant_networking.vpc_arn
 }
 
 output "vpc_cidr_range" {
   description = "The CIDR range of the VPC"
-  value = module.tenant_networking.vpc_cidr_range
+  value       = module.tenant_networking.vpc_cidr_range
 }
 
 output "vpc_subnet_public_cidr" {
   description = "The public CIDR range of the subnet assigned to the VPC"
-  value = module.tenant_networking.vpc_subnet_public_cidr
+  value       = module.tenant_networking.vpc_subnet_public_cidr
 }
 
 output "vpc_subnet_private_cidr" {
   description = "The private CIDR range of the private subnet assign to the VPC"
-  value = module.tenant_networking.vpc_subnet_private_cidr
+  value       = module.tenant_networking.vpc_subnet_private_cidr
 }
 
 output "vpc_subnet_public_id" {
   description = "The public CIDR range of the subnet assigned to the VPC"
-  value = module.tenant_networking.vpc_subnet_public_id
+  value       = module.tenant_networking.vpc_subnet_public_id
 }
 
 output "vpc_subnet_private_id" {
   description = "The private CIDR range of the private subnet assign to the VPC"
-  value = module.tenant_networking.vpc_subnet_private_id
+  value       = module.tenant_networking.vpc_subnet_private_id
 }
 
 output "zone" {
   description = "The configured zone (for automation)"
-  value = var.zone
+  value       = var.zone
 }

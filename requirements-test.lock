@@ -233,11 +233,11 @@ googleapis-common-protos==1.54.0
     # via
     #   -r requirements.lock
     #   google-api-core
-grpcio==1.41.0
+grpcio==1.43.0
     # via
     #   -r requirements.lock
     #   grpcio-tools
-grpcio-tools==1.41.0
+grpcio-tools==1.43.0
     # via -r requirements.lock
 httplib2==0.20.2
     # via

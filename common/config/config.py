@@ -25,7 +25,7 @@ from pytz import timezone
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.aws.split_s3_path import split_s3_path
 from common.lib.singleton import Singleton
-from common.lib.yaml import yaml
+from common.lib.yaml import yaml, yaml_safe
 
 main_exit_flag = threading.Event()
 
@@ -450,7 +450,7 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
-    def get_tenant_static_config_from_dynamo(self, host):
+    def get_tenant_static_config_from_dynamo(self, host, safe=False):
         """
         Get tenant static configuration from DynamoDB. Supports zlib compressed
         configuration.
@@ -463,7 +463,9 @@ class Configuration(metaclass=Singleton):
                 self.get("_global_.boto3.client_kwargs.endpoint_url"),
             ),
         )
-        config_table = dynamodb.Table("consoleme_tenant_static_configs")
+        config_table = dynamodb.Table(
+            self.get_dynamo_table_name("tenant_static_configs")
+        )
         current_config = {}
         try:
             current_config = config_table.get_item(Key={"host": host, "id": "master"})
@@ -480,6 +482,8 @@ class Configuration(metaclass=Singleton):
         except Exception as e:  # noqa
             sentry_sdk.capture_exception()
             c = compressed_config
+        if safe:
+            return yaml_safe.load(c)
         return yaml.load(c)
 
     def is_host_configured(self, host) -> bool:
@@ -501,7 +505,7 @@ class Configuration(metaclass=Singleton):
         return False
 
     def copy_tenant_config_dynamo_to_redis(self, host):
-        config_item = self.get_tenant_static_config_from_dynamo(host)
+        config_item = self.get_tenant_static_config_from_dynamo(host, safe=True)
         if config_item:
             from common.lib.redis import RedisHandler
 
@@ -676,6 +680,17 @@ class Configuration(metaclass=Singleton):
             if region:
                 return region
 
+    def get_dynamo_table_name(
+        self, table_name: str, namespace: str = "cloudumi"
+    ) -> str:
+        cluster_id_key = "_global_.deployment.cluster_id"
+        cluster_id = self.get(cluster_id_key, None)
+        if cluster_id is None:
+            raise RuntimeError(
+                f"Unable to read configuration - cannot get {cluster_id_key}"
+            )
+        return f"{cluster_id}_{namespace}_{table_name}"
+
 
 class ContextFilter(logging.Filter):
     """Logging Filter for adding hostname to log entries."""
@@ -697,6 +712,7 @@ get_employee_photo_url = CONFIG.get_employee_photo_url
 get_employee_info_url = CONFIG.get_employee_info_url
 get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dynamo
 is_host_configured = CONFIG.is_host_configured
+get_dynamo_table_name = CONFIG.get_dynamo_table_name
 # Set logging levels
 CONFIG.set_logging_levels()
 

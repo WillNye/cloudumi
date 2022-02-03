@@ -16,6 +16,7 @@ class CloudUmiYaml(YAML):
 
 typ = "rt"
 yaml = CloudUmiYaml(typ=typ)
+yaml_safe = CloudUmiYaml(typ="safe")
 yaml.preserve_quotes = True
 yaml.indent(mapping=2, sequence=4, offset=2)
 yaml.representer.ignore_aliases = lambda *data: True

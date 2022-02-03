@@ -54,9 +54,9 @@ module "tenant_dynamodb_service" {
   attributes = var.attributes
   cluster_id = local.cluster_id
   dynamo_table_replica_regions = var.dynamo_table_replica_regions
-  noq_core = var.noq_core
-  tags = var.tags
-  timeout = var.timeout
+  noq_core                     = var.noq_core
+  tags                         = var.tags
+  timeout                      = var.timeout
 }
 
 module "tenant_elasticache_service" {
@@ -68,10 +68,10 @@ module "tenant_elasticache_service" {
   private_subnet_cidr_blocks = module.tenant_networking.vpc_subnet_private_cidr
   redis_cluster_access_sg_ids = [module.tenant_container_service.ecs_security_group_id]
   redis_node_type = var.redis_node_type
-  subnet_ids = module.tenant_networking.vpc_subnet_private_id
-  tags = var.tags
-  timeout = var.timeout
-  vpc_id = module.tenant_networking.vpc_id
+  subnet_ids      = module.tenant_networking.vpc_subnet_private_id
+  tags            = var.tags
+  timeout         = var.timeout
+  vpc_id          = module.tenant_networking.vpc_id
 }
 
 module "tenant_s3_service" {

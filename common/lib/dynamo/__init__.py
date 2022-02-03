@@ -23,6 +23,7 @@ from retrying import retry
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
+from common.config.config import get_dynamo_table_name
 from common.exceptions.exceptions import (
     DataNotRetrievable,
     NoExistingRequest,
@@ -382,7 +383,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.users_dynamo_table",
                     host,
-                   get_dynamo_table_name("users_multitenant"),
+                    get_dynamo_table_name("users_multitenant"),
                 ),
                 host,
             )
@@ -390,7 +391,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.group_log_dynamo_table",
                     host,
-                   get_dynamo_table_name("audit_global"),
+                    get_dynamo_table_name("audit_global"),
                 ),
                 host,
             )
@@ -398,7 +399,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.dynamic_config_dynamo_table",
                     host,
-                   get_dynamo_table_name("config_multitenant"),
+                    get_dynamo_table_name("config_multitenant"),
                 ),
                 host,
             )
@@ -406,7 +407,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.policy_requests_dynamo_table",
                     host,
-                   get_dynamo_table_name("policy_requests_multitenant"),
+                    get_dynamo_table_name("policy_requests_multitenant"),
                 ),
                 host,
             )
@@ -414,7 +415,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.resource_cache_dynamo_table",
                     host,
-                   get_dynamo_table_name("resource_cache_multitenant"),
+                    get_dynamo_table_name("resource_cache_multitenant"),
                 ),
                 host,
             )
@@ -422,7 +423,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.cloudtrail_table",
                     host,
-                   get_dynamo_table_name("cloudtrail_multitenant"),
+                    get_dynamo_table_name("cloudtrail_multitenant"),
                 ),
                 host,
             )
@@ -431,7 +432,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.notifications_table",
                     host,
-                   get_dynamo_table_name("notifications_multitenant"),
+                    get_dynamo_table_name("notifications_multitenant"),
                 ),
                 host,
             )
@@ -440,7 +441,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.identity_groups_table",
                     host,
-                   get_dynamo_table_name("identity_groups_multitenant"),
+                    get_dynamo_table_name("identity_groups_multitenant"),
                 ),
                 host,
             )
@@ -449,7 +450,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.identity_users_table",
                     host,
-                   get_dynamo_table_name("identity_users_multitenant"),
+                    get_dynamo_table_name("identity_users_multitenant"),
                 ),
                 host,
             )
@@ -458,7 +459,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.tenant_static_config_table",
                     host,
-                   get_dynamo_table_name("tenant_static_configs"),
+                    get_dynamo_table_name("tenant_static_configs"),
                 ),
                 host,
             )
@@ -467,7 +468,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.noq_api_keys_table",
                     host,
-                   get_dynamo_table_name("api_keys", "noq"),
+                    get_dynamo_table_name("api_keys", "noq"),
                 ),
                 host,
             )
@@ -1491,7 +1492,6 @@ class UserDynamoHandler(BaseDynamoHandler):
         )
         return users
 
-
 def _get_dynamo_table_restricted(caller, table_name):
     function: str = (
         f"{__name__}.{caller.__class__.__name__}.{sys._getframe().f_code.co_name}"
@@ -1661,7 +1661,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             self.tenant_static_configs.put_item(
                 Item=self._data_to_dynamo_replace(old_config)
             )
-        original_config_d = yaml.load(current_config_entry["config"])
+        original_config_d = yaml.load(current_config_entry.get("config", ""))
+        if not original_config_d:
+            original_config_d = {}
         # TODO: Update all of the secrets within the configuration so it's not ****
         if "secrets" in new_config_d:
             decode_config_secrets(original_config_d, new_config_d)
