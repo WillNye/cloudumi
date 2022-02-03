@@ -1,6 +1,5 @@
-load("@npm//@bazel/typescript:index.bzl", "ts_project")
+load("@build_bazel_rules_nodejs//:index.bzl", "copy_to_bin", "nodejs_binary", "npm_package_bin")
 load("@npm//http-server:index.bzl", "http_server")
-load("@npm//sass:index.bzl", "sass")
 load("@npm//webpack-cli:index.bzl", webpack = "webpack_cli")
 
 filegroup(
@@ -18,48 +17,26 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-# Example if we want to sass it up
-# sass(
-#     name = "styles",
-#     outs = ["styles.css"],
-#     args = [
-#         "$(execpath styles.scss)",
-#         "$(execpath styles.css)",
-#     ],
-#     data = ["styles.scss"],
-# )
+exports_files(
+    srcs = [
+        "index.js",
+        "webpack.config.js",
+    ],
+    visibility = ["//visibility:public"],
+)
 
-# Example if we want to use typescript at some point
-# ts_project(
-#     # Experimental: Start a tsc daemon to watch for changes to make recompiles faster.
-#     supports_workers = True,
-#     deps = [
-#         "@npm//@types",
-#         "@npm//csstype",
-#     ],
-# )
-
-# webpack(
-#     name = "bundle",
-#     outs = ["app.bundle.js"],
-#     args = [
-#         "index.js",
-#         "--config",
-#         "webpack.config.js",
-#         "-o",
-#         "$@",
-#     ],
-#     data = [
-#         "index.js",
-#         "webpack.config.js",
-#         "@npm//:node_modules",
-#     ],
-# )
+copy_to_bin(
+    name = "source_files_in_bin",
+    srcs = [
+        ":src",
+    ],
+)
 
 webpack(
     name = "bundle",
     outs = ["app.bundle.js"],
     args = [
+        "bundle",
         "$(execpath index.js)",
         "--config",
         "$(execpath webpack.config.js)",
@@ -72,11 +49,9 @@ webpack(
         # "styles.css",
         "webpack.config.js",
         "@npm//:node_modules",
+        ":source_files_in_bin",
         ":src",
     ],
-    deps = [
-        ":src",
-    ]
 )
 
 # Note, on Windows you need `--enable_runfiles`

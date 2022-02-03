@@ -116,7 +116,7 @@ log = config.get_logger()
 def make_app(jwt_validator=None):
     """make_app."""
 
-    path = pkg_resources.resource_filename("api", "templates")
+    path = config.get("_global_.web.path", pkg_resources.resource_filename("api", "templates"))
 
     routes = [
         (r"/auth", AuthHandler),  # /auth is still used by OIDC callback

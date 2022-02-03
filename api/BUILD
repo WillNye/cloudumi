@@ -14,6 +14,13 @@ filegroup(
     ]
 )
 
+filegroup(
+    name = "web_site_sources",
+    srcs = glob([
+        "templates/**/*",
+    ])
+)
+
 INT_DEPS = [
     "//api/handlers:lib",
     "//common/celery_tasks:lib",
@@ -120,6 +127,7 @@ py_binary(
     name = "bin.local",
     data = [
         "//configs/development_account:configs",
+        ":web_site_sources"
     ],
     srcs_version = "PY3",
     srcs = [
@@ -139,7 +147,9 @@ py_binary(
 
 py_binary(
     name = "bin.s3",
-    data = [],
+    data = [
+        ":web_site_sources"
+    ],
     srcs_version = "PY3",
     srcs = [
         ":src",
@@ -191,6 +201,15 @@ container_layer(
     directory = "/",
 )
 
+container_layer(
+    name = "web_site_layer",
+    files = [
+        ":web_site_sources"
+    ],
+    data_path = ".",
+    directory = "/",
+)
+
 container_image(
     name = "base-api-dev-local",
     base = "//docker/base:base_docker",
@@ -202,6 +221,7 @@ container_image(
     },
     layers = [
         ":config_layer",
+        ":web_site_layer",
     ],
     ports = ["8092"],
     symlinks = {
@@ -218,6 +238,7 @@ container_image(
     },
     layers = [
         ":config_layer",
+        ":web_site_layer",
     ],
     ports = ["8092"],
     symlinks = {

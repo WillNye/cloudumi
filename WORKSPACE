@@ -26,8 +26,23 @@ http_archive(
 
 http_archive(
     name = "build_bazel_rules_nodejs",
-    sha256 = "cfc289523cf1594598215901154a6c2515e8bf3671fd708264a6f6aefe02bf39",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/4.4.6/rules_nodejs-4.4.6.tar.gz"],
+    sha256 = "c077680a307eb88f3e62b0b662c2e9c6315319385bc8c637a861ffdbed8ca247",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.1.0/rules_nodejs-5.1.0.tar.gz"],
+)
+
+load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
+build_bazel_rules_nodejs_dependencies()
+
+# fetches nodejs, npm, and yarn
+load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "yarn_install")
+node_repositories()
+yarn_install(
+    name = "npm",
+    package_json = "//frontend:package.json",
+    yarn_lock = "//frontend:yarn.lock",
+    links = {
+        "target": "//frontend",
+    },
 )
 
 # Setup Docker stuff
@@ -104,14 +119,6 @@ load("@rules_python//python:pip.bzl", "pip_parse")
 pip_parse(
     name = "cloudumi_python_ext",
     requirements_lock = "//:requirements.lock",
-)
-
-load("@build_bazel_rules_nodejs//:index.bzl", "yarn_install")
-yarn_install(
-    # Name this npm so that Bazel Label references look like @npm//package
-    name = "npm",
-    package_json = "//frontend:package.json",
-    yarn_lock = "//frontend:yarn.lock",
 )
 
 # Load the starlark macro which will define your dependencies.

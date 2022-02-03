@@ -58,6 +58,8 @@ _global_:
     load_from_dynamo: true
     automatically_reload_configuration: true
     load_tenant_configurations_from_dynamo: true
+  web:
+    path: "/templates"
   s3_cache_bucket: noqcache
   environment: dev
   development: true

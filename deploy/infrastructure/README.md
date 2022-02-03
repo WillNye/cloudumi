@@ -14,6 +14,7 @@ update staging or production environments!
 - AWS keys configured in ~/.aws/credentials - see the `AWS Credentials` section below
 - terraform
 - ecs-cli
+- `yarn build_template` was run in the `frontend` folder
 
 ## Quick Start
 
