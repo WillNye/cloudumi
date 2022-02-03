@@ -1,7 +1,5 @@
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer")
-#load("@cloudumi_python_ext//:requirements.bzl", "requirement")
-#load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 filegroup(
     name = "etc_files",
@@ -45,35 +43,13 @@ container_run_and_commit(
         "echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDJVXcOw8LrbMzWnrY5qW9anu3qXIR7tRpvpAPxeMXgiP6hA+EW4swe/bzo+sMmrfWgMLWw9IdMaoX4mVisVTZj8b3rhgMyouCF8cTejOY/E7uFPs+t3ZvsQidc5adhdK4XsLPNjNOQoMqtjdcZL1yN5PckQkVpXxZ5p1Ei854hwyOU07iR/kuV9Cx8bx+UAyW53SSrlKzQvf+oW7CknDlouxv33SZmruWY/u3lBR90r6Wa0vk032E0DbERFPeTjz2CP6zX+bxLDHH/12+jGdivSQX9j5O/bUDJLOUJhMGGRnTnTfu8qClYE93bpyIRm9zTHx+sv7ITMqGFHzgMC39CcYFC5rmnPAPgjMlYKDuldVRYU2BI7Jad2TRjBQl+aWeQvIFWt5OgpmJHsApVUs8Uz88LyrHRjim3l3KJlnUdHorZidERmyHDPecnUquriK94xFoUE1VR96DeUYM0x0fAfUS1VaN/FvLxP5s+CTgdj5AVT4mV+MOnA4o3gaQ2sXE=' >> ~/.ssh/authorized_keys",
         "mkdir -p /var/run/sshd",
     ],
-    image = "@python_3.9.7_container//image",
-    visibility = ["//visibility:public"],
-)
-
-# TODO: let's do without this
-container_run_and_commit(
-    name = "base_docker_raw_alpine",
-    commands = [
-        "apk update",
-        "apk add build-base libressl libffi-dev libressl-dev libxslt-dev libxml2-dev xmlsec-dev xmlsec",
-    ],
-    image = "@python_3.9.7_alpine_container//image",
+    image = "@python_3.9_container//image",
     visibility = ["//visibility:public"],
 )
 
 container_image(
     name = "base_docker",
     base = ":base_docker_raw",
-    layers = [
-        ":etc_layer",
-        ":home_layer",
-    ],
-    data_path = "/",
-    visibility = ["//visibility:public"],
-)
-
-container_image(
-    name = "base_docker_alpine",
-    base = ":base_docker_raw_alpine",
     layers = [
         ":etc_layer",
         ":home_layer",
