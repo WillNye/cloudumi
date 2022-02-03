@@ -25,7 +25,7 @@ from pytz import timezone
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.aws.split_s3_path import split_s3_path
 from common.lib.singleton import Singleton
-from common.lib.yaml import yaml
+from common.lib.yaml import yaml, yaml_safe
 
 main_exit_flag = threading.Event()
 
@@ -450,7 +450,7 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
-    def get_tenant_static_config_from_dynamo(self, host):
+    def get_tenant_static_config_from_dynamo(self, host, safe=False):
         """
         Get tenant static configuration from DynamoDB. Supports zlib compressed
         configuration.
@@ -482,6 +482,8 @@ class Configuration(metaclass=Singleton):
         except Exception as e:  # noqa
             sentry_sdk.capture_exception()
             c = compressed_config
+        if safe:
+            return yaml_safe.load(c)
         return yaml.load(c)
 
     def is_host_configured(self, host) -> bool:
@@ -503,7 +505,7 @@ class Configuration(metaclass=Singleton):
         return False
 
     def copy_tenant_config_dynamo_to_redis(self, host):
-        config_item = self.get_tenant_static_config_from_dynamo(host)
+        config_item = self.get_tenant_static_config_from_dynamo(host, safe=True)
         if config_item:
             from common.lib.redis import RedisHandler
 

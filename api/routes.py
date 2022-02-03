@@ -6,7 +6,7 @@ import tornado.web
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
-from tornado.routing import HostMatches, Rule, RuleRouter
+from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
 from api.handlers.auth import AuthHandler
 from api.handlers.v1.credentials import GetCredentialsHandler
@@ -213,11 +213,6 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
-        (
-            r"/(.*)",
-            FrontendHandler,
-            dict(path=path, default_filename="index.html"),
-        ),
     ]
 
     router = RuleRouter(routes)
@@ -234,6 +229,13 @@ def make_app(jwt_validator=None):
                 ],
             )
         )
+    router.rules.append(
+        Rule(
+            PathMatches(r"/(.*)"),
+            FrontendHandler,
+            dict(path=path, default_filename="index.html"),
+        ),
+    )
 
     app = tornado.web.Application(
         router.rules,

@@ -2,7 +2,7 @@ import base64
 import hashlib
 import hmac
 import random
-from datetime import datetime
+import time
 from secrets import token_urlsafe
 from typing import List
 from urllib.parse import urlparse
@@ -533,8 +533,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             )
             return
 
-        # TODO: Make region configurable
-        region = "us-east-1"
+        region = config.region
         # validate tenant
         try:
             tenant = NewTenantRegistration.parse_obj(data)
@@ -634,7 +633,7 @@ environment: prod
 tenant_details:
   external_id: {external_id}
   creator: {tenant.email}
-  creation_time: {datetime.now().isoformat()}
+  creation_time: {int(time.time())}
 site_config:
   landing_url: /settings
 headers:
