@@ -63,7 +63,7 @@ container_run_and_commit(
     #     "//:aarch64": "@python_3.9.7_container//image",
     #     "//conditions:default": "@python_3.9.7_container//image",
     # }),
-    image = "@python_3.9.7_container//image",
+    image = "@python_3.9.10_container//image",
     # image = "@python_3.8.12_container//image",
     visibility = ["//visibility:public"],
 )
@@ -92,7 +92,7 @@ container_run_and_commit(
     #     "//:aarch64": "@python_3.9.7_container//image",
     #     "//conditions:default": "@python_3.9.7_container//image",
     # }),
-    image = "@python_3.9.7_alpine_container//image",
+    image = "@python_3.9.10_alpine_container//image",
     visibility = ["//visibility:public"],
 )
 
