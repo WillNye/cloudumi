@@ -71,7 +71,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 
 ### API
 
-- Activate your local virtualenv first `. env/bin/activate` (Note: We haven't had success working with Pyenv)
+- Activate your local virtualenv first `. env/bin/activate` (Note: We haven't had success working with pyenv)
 - Run a local test of the API service using one of the py_binary targets.
   - To run local-dev: `bazelisk run //api:bin.local`
   - To run S3-dev: `bazelisk run //api:bin.s3` -- note that the only difference here is that the config files are pulled from S3
@@ -89,13 +89,13 @@ TODO
 
 Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
 
-- `bazelisk run //deploy/infrastructure/live/noq.dev:staging-1`
+- `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1:staging-1`
 
 ### Publish to Prod
 
 > Do you really want this? Do you have access?
 
-- `bazelisk run //deploy/infrastructure/live/noq.dev:production-1`
+- `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1:production-1`
 
 ## Troubleshooting
 
