@@ -203,7 +203,7 @@ container_layer(
     files = [
         "//api/util:newrelic.ini",
     ],
-    directory = "/etc/newrelic/newrelic.ini",
+    directory = "/etc/newrelic",
 )
 
 container_image(
