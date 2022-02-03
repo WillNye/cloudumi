@@ -63,3 +63,5 @@ _global_:
         global:
           - host: {{ redis_primary_cluster_address }}
             port: "6379"
+  sentry:
+    dsn: {{ sentry_dsn }}

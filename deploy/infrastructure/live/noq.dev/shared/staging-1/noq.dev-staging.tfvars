@@ -23,3 +23,6 @@ dynamo_table_replica_regions = ["us-west-2"]
 
 # Redis
 redis_node_type = "cache.t3.small"
+
+# Sentry
+sentry_dsn = "https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191
