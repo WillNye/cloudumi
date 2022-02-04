@@ -13,7 +13,7 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
   configuration {
     execute_command_configuration {
       kms_key_id = aws_kms_key.noq_ecs_kms_key.arn
-      logging = "OVERRIDE"
+      logging    = "OVERRIDE"
 
       log_configuration {
         cloud_watch_encryption_enabled = true
@@ -79,7 +79,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${var.cluster_id}-ecsTaskExecutionRole"
+  name        = "${var.cluster_id}-ecsTaskExecutionRole"
   description = "This is also known as the ecsTaskExecutionRole"
 
   assume_role_policy = jsonencode({
@@ -98,8 +98,8 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   inline_policy {
     name = "ecs_task_execution_role_policy"
     policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
+      "Version" : "2012-10-17",
+      "Statement" : [
         {
             "Effect": "Allow",
             "Action": [
@@ -138,7 +138,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name = "${var.cluster_id}-ecsTaskRole"
+  name        = "${var.cluster_id}-ecsTaskRole"
   description = "Referenced previously as NoqClusterRole1; the role is used by the ECS containers running NOQ logic"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -156,42 +156,42 @@ resource "aws_iam_role" "ecs_task_role" {
   inline_policy {
     name = "ecs_task_role_policy"
     policy = jsonencode({
-      "Statement": [
+      "Statement" : [
         {
-          "Action": [
-              "access-analyzer:*",
-              "cloudtrail:*",
-              "cloudwatch:*",
-              "config:SelectResourceConfig",
-              "config:SelectAggregateResourceConfig",
-              "dynamodb:batchgetitem",
-              "dynamodb:batchwriteitem",
-              "dynamodb:deleteitem",
-              "dynamodb:describe*",
-              "dynamodb:getitem",
-              "dynamodb:getrecords",
-              "dynamodb:getsharditerator",
-              "dynamodb:putitem",
-              "dynamodb:query",
-              "dynamodb:scan",
-              "dynamodb:updateitem",
-              "dynamodb:CreateTable",
-              "dynamodb:UpdateTimeToLive",
-              "sns:createplatformapplication",
-              "sns:createplatformendpoint",
-              "sns:deleteendpoint",
-              "sns:deleteplatformapplication",
-              "sns:getendpointattributes",
-              "sns:getplatformapplicationattributes",
-              "sns:listendpointsbyplatformapplication",
-              "sns:publish",
-              "sns:setendpointattributes",
-              "sns:setplatformapplicationattributes",
-              "sts:assumerole"
+          "Action" : [
+            "access-analyzer:*",
+            "cloudtrail:*",
+            "cloudwatch:*",
+            "config:SelectResourceConfig",
+            "config:SelectAggregateResourceConfig",
+            "dynamodb:batchgetitem",
+            "dynamodb:batchwriteitem",
+            "dynamodb:deleteitem",
+            "dynamodb:describe*",
+            "dynamodb:getitem",
+            "dynamodb:getrecords",
+            "dynamodb:getsharditerator",
+            "dynamodb:putitem",
+            "dynamodb:query",
+            "dynamodb:scan",
+            "dynamodb:updateitem",
+            "dynamodb:CreateTable",
+            "dynamodb:UpdateTimeToLive",
+            "sns:createplatformapplication",
+            "sns:createplatformendpoint",
+            "sns:deleteendpoint",
+            "sns:deleteplatformapplication",
+            "sns:getendpointattributes",
+            "sns:getplatformapplicationattributes",
+            "sns:listendpointsbyplatformapplication",
+            "sns:publish",
+            "sns:setendpointattributes",
+            "sns:setplatformapplicationattributes",
+            "sts:assumerole"
           ],
-          "Effect": "Allow",
-          "Resource": [
-              "*"
+          "Effect" : "Allow",
+          "Resource" : [
+            "*"
           ]
         },
         {
@@ -229,8 +229,8 @@ resource "aws_iam_role" "ecs_task_role" {
               "sqs:TagQueue",
               "sqs:UntagQueue"
           ],
-          "Effect": "Allow",
-          "Resource": "*"
+          "Effect" : "Allow",
+          "Resource" : "*"
         },
         {
           "Sid": "VisualEditor0",
@@ -245,19 +245,18 @@ resource "aws_iam_role" "ecs_task_role" {
           ]
         },
         {
-          "Sid": "VisualEditor1",
-          "Effect": "Allow",
-          "Action": [
-              "s3:ListStorageLensConfigurations",
-              "s3:ListAccessPointsForObjectLambda",
-              "s3:GetAccessPoint",
-              "s3:GetAccountPublicAccessBlock",
-              "s3:ListAllMyBuckets",
-              "s3:ListAccessPoints",
-              "s3:ListJobs",
-              "s3:ListMultiRegionAccessPoints"
+          "Effect" : "Allow",
+          "Action" : [
+            "s3:ListStorageLensConfigurations",
+            "s3:ListAccessPointsForObjectLambda",
+            "s3:GetAccessPoint",
+            "s3:GetAccountPublicAccessBlock",
+            "s3:ListAllMyBuckets",
+            "s3:ListAccessPoints",
+            "s3:ListJobs",
+            "s3:ListMultiRegionAccessPoints"
           ],
-          "Resource": "*"
+          "Resource" : "*"
         },
         {
           "Effect": "Allow",
@@ -271,16 +270,20 @@ resource "aws_iam_role" "ecs_task_role" {
           ]
         },
         {
-          "Action": [
-              "sqs:list*",
-              "sqs:receive*",
-              "sqs:delete*"
+          "Action" : [
+            "s3:ListBucket",
+            "s3:GetObject",
+            "s3:PutObject",
+            "s3:DeleteObject"
           ],
-          "Effect": "Allow",
-          "Resource": "arn:aws:sqs:us-east-1:259868150464:noq_registration_queue"
+          "Effect" : "Allow",
+          "Resource" : [
+            "arn:aws:s3:::${var.cloudumi_files_bucket}",
+            "arn:aws:s3:::${var.cloudumi_files_bucket}/*"
+          ]
         }
-     ],
-    "Version": "2012-10-17"
+      ],
+      "Version" : "2012-10-17"
     })
   }
 }
