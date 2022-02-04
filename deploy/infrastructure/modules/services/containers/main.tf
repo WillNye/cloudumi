@@ -196,21 +196,6 @@ resource "aws_iam_role" "ecs_task_role" {
         },
         {
           "Action": [
-              "ses:sendemail",
-              "ses:sendrawemail"
-          ],
-          "Condition": {
-              "StringLike": {
-                  "ses:FromAddress": [
-                      "email_address_here@example.com"
-                  ]
-              }
-          },
-          "Effect": "Allow",
-          "Resource": "arn:aws:ses:*:123456789:identity/your_identity.example.com"
-        },
-        {
-          "Action": [
               "autoscaling:Describe*",
               "cloudwatch:Get*",
               "cloudwatch:List*",
@@ -251,62 +236,12 @@ resource "aws_iam_role" "ecs_task_role" {
           "Sid": "VisualEditor0",
           "Effect": "Allow",
           "Action": [
-              "s3:GetObjectVersionTagging",
-              "s3:GetStorageLensConfigurationTagging",
-              "s3:GetObjectAcl",
-              "s3:GetBucketObjectLockConfiguration",
-              "s3:GetIntelligentTieringConfiguration",
-              "s3:GetObjectVersionAcl",
-              "s3:GetBucketPolicyStatus",
-              "s3:GetObjectRetention",
-              "s3:GetBucketWebsite",
-              "s3:GetJobTagging",
-              "s3:GetMultiRegionAccessPoint",
-              "s3:GetObjectLegalHold",
-              "s3:GetBucketNotification",
-              "s3:DescribeMultiRegionAccessPointOperation",
-              "s3:GetReplicationConfiguration",
-              "s3:ListMultipartUploadParts",
-              "s3:GetObject",
-              "s3:DescribeJob",
-              "s3:GetAnalyticsConfiguration",
-              "s3:GetObjectVersionForReplication",
-              "s3:GetAccessPointForObjectLambda",
-              "s3:GetStorageLensDashboard",
-              "s3:GetLifecycleConfiguration",
-              "s3:GetInventoryConfiguration",
-              "s3:GetBucketTagging",
-              "s3:GetAccessPointPolicyForObjectLambda",
-              "s3:GetBucketLogging",
-              "s3:ListBucketVersions",
-              "s3:ListBucket",
-              "s3:GetAccelerateConfiguration",
-              "s3:GetBucketPolicy",
-              "s3:GetEncryptionConfiguration",
-              "s3:GetObjectVersionTorrent",
-              "s3:GetBucketRequestPayment",
-              "s3:GetAccessPointPolicyStatus",
-              "s3:GetObjectTagging",
-              "s3:GetMetricsConfiguration",
-              "s3:GetBucketOwnershipControls",
-              "s3:GetBucketPublicAccessBlock",
-              "s3:GetMultiRegionAccessPointPolicyStatus",
-              "s3:ListBucketMultipartUploads",
-              "s3:GetMultiRegionAccessPointPolicy",
-              "s3:GetAccessPointPolicyStatusForObjectLambda",
-              "s3:GetBucketVersioning",
-              "s3:GetBucketAcl",
-              "s3:GetAccessPointConfigurationForObjectLambda",
-              "s3:GetObjectTorrent",
-              "s3:GetStorageLensConfiguration",
-              "s3:GetBucketCORS",
-              "s3:GetBucketLocation",
-              "s3:GetAccessPointPolicy",
-              "s3:GetObjectVersion"
+            "s3:ListBucket",
+            "s3:GetObject"
           ],
           "Resource": [
-              "arn:aws:s3:::noq.tenant-configuration-store",
-              "arn:aws:s3:::noq.tenant-configuration-store/*"
+              "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
+              "arn:aws:s3:::${var.tenant_configuration_bucket_name}/*"
           ]
         },
         {
@@ -328,12 +263,11 @@ resource "aws_iam_role" "ecs_task_role" {
           "Effect": "Allow",
           "Action": [
               "s3:get*",
-              "s3:put*",
               "s3:list*"
           ],
           "Resource": [
-              "arn:aws:s3:::noq.tenant-configuration-store",
-              "arn:aws:s3:::noq.tenant-configuration-store/*"
+              "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
+              "arn:aws:s3:::${var.tenant_configuration_bucket_name}/*"
           ]
         },
         {

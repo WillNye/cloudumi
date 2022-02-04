@@ -42,6 +42,7 @@ module "tenant_container_service" {
   stage = var.stage
   subnet_ids = module.tenant_networking.vpc_subnet_private_id
   tags = var.tags
+  tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
   test_access_sg_id = module.tenant_networking.test_access_security_group_id
   timeout = var.timeout
   vpc_cidr_range = module.tenant_networking.vpc_cidr_range

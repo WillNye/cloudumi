@@ -64,13 +64,13 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
     [
       {
         "Action": [
-          "s3:ListObject"
+          "s3:ListBucket",
           "s3:GetObject"
         ],
         "Effect": "Allow",
         "Resource": [
-          "arn:aws:s3:::${lower(var.cluster)}-tenant-configuration-store/*",
-          "arn:aws:s3:::${lower(var.cluster)}-tenant-configuration-store/"
+          "arn:aws:s3:::${var.cluster_id}-tenant-configuration-store/*",
+          "arn:aws:s3:::${var.cluster_id}-tenant-configuration-store"
         ],
         "Principal": {
           "AWS": [
