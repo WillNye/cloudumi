@@ -37,6 +37,9 @@ _global_:
     - 127.0.0.1
     - registration.noq.dev
   deployment:
+    domain_name: shared.noq.dev
+    namespace: shared
+    zone: noq.dev
     cluster_id: dev
   dynamodb_server: http://cloudumi-dynamodb:8005
   aws:
@@ -47,11 +50,6 @@ _global_:
   #   enabled: false # TODO: Maybe change me
   #   service_name: cloudumi
   #   server_url: http://apmserver:8200
-  deployment:
-    domain_name: shared.noq.dev
-    namespace: shared
-    zone: noq.dev
-    cluster_id: noq.dev-shared-staging-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   # sentry:
