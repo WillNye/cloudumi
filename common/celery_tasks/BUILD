@@ -68,7 +68,7 @@ py_binary(
     ],
     main = "run.py",
     env = {
-        "CONFIG_LOCATION": "configs/development_account:saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = INT_DEPS + EXT_DEPS,

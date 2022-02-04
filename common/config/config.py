@@ -9,7 +9,6 @@ import socket
 import sys
 import threading
 import time
-import zlib
 from logging import LoggerAdapter, LogRecord
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
@@ -474,17 +473,13 @@ class Configuration(metaclass=Singleton):
                 return {}
         c = {}
 
-        compressed_config = current_config.get("Item", {}).get("config", "")
-        if not compressed_config:
+        tenant_config = current_config.get("Item", {}).get("config", "")
+        if not tenant_config:
             return c
-        try:
-            c = zlib.decompress(compressed_config.value)
-        except Exception as e:  # noqa
-            sentry_sdk.capture_exception()
-            c = compressed_config
+
         if safe:
-            return yaml_safe.load(c)
-        return yaml.load(c)
+            return yaml_safe.load(tenant_config)
+        return yaml.load(tenant_config)
 
     def is_host_configured(self, host) -> bool:
         """
