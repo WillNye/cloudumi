@@ -20,7 +20,13 @@ genrule(
     ],
     outs = ["run_deploy_{{ stage }}"],
     message = "Deploying CloudUmi to {{ stage }}...",
-    cmd = "echo 'bazel run //api:container-deploy-{{ stage }}; \
+    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have {{ aws_profile }} as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\"; \
+           \
+           export AWS_PROFILE={{ aws_profile }}; \
+           \
+           aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}; \
+           \
+           bazel run //api:container-deploy-{{ stage }}; \
            \
            bazel run //common/celery_tasks:container-deploy-{{ stage }}; \
            \

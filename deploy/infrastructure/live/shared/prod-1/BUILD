@@ -20,7 +20,13 @@ genrule(
     ],
     outs = ["run_deploy_prod"],
     message = "Deploying CloudUmi to prod...",
-    cmd = "echo 'bazel run //api:container-deploy-prod; \
+    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have noq_prod as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\"; \
+           \
+           export AWS_PROFILE=noq_prod; \
+           \
+           aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com; \
+           \
+           bazel run //api:container-deploy-prod; \
            \
            bazel run //common/celery_tasks:container-deploy-prod; \
            \

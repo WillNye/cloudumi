@@ -17,6 +17,18 @@ def simple_logger(msg: str):
     print(f">> {msg}")
 
 
+def __add_ecr_registry_aws_link(terraform_config: dict) -> dict:
+    """Extract the ECR AWS link from the config output by removing the repository name from any registry URL."""
+    terraform_config["registry_repository_url"] = terraform_config["registry_repository_url_api"].split("/")[0]
+    return terraform_config
+
+
+def __set_aws_profile(terraform_config: dict) -> dict:
+    """Set the aws_profile from configuration hints (noq_dev or noq_prod)."""
+    terraform_config["aws_profile"] = "noq_dev" if terraform_config["stage"] == "staging" else "noq_prod"
+    return terraform_config
+
+
 def __tf_tuple_strings() -> list:
     return ["tuple", ["string", "string"]]
 
@@ -50,6 +62,7 @@ def __get_key_name_from_config(terraform_config: dict) -> str:
     if None in [namespace, stage, attributes]:
         raise RuntimeError("Missing required configuration")
     return f"{namespace}/{stage}.{attributes}.config.yaml"
+
 
 
 def upload_configuration_to_s3(terraform_config: dict):
@@ -151,6 +164,8 @@ if __name__ == "__main__":
             "No output from terraform, are you in the deploy/infrastructure directory?"
         )
         sys.exit(1)
+    terraform_config = __add_ecr_registry_aws_link(terraform_config)
+    terraform_config = __set_aws_profile(terraform_config)
     terraform_config = replace_str_in_attribute(
         terraform_config, "zone", "zone_safed", ".", "-"
     )

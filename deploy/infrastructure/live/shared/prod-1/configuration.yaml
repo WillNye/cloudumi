@@ -10,7 +10,7 @@ _global_:
     domain_name: shared.noq.dev
     namespace: shared
     zone: noq.dev
-    cluster_id: noq.dev-shared-prod-1
+    cluster_id: noq-dev-shared-prod-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   config:
