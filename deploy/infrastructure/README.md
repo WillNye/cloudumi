@@ -52,7 +52,7 @@ The way to execute this script is by piping the terraform output in JSON format 
 Examples for the `<output_path_to_live_config_folder>`:
 
 - ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/staging-1
-- ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/production-1
+- ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/prod-1
 - ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/demo/staging-1
 
 Note: in order for this to work, there are two pre-requisites:
@@ -97,13 +97,13 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 - Set AWS_PROFILE: `export AWS_PROFILE=noq_dev`
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com` (this authenticates your AWS PROFILE to ECR for registry upload purposes; hence the authentication via docker login)
 - Reference `Terraform` section above on how to deploy / update terraform infrastructure (should be seldom)
-- Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1`
+- Deploy: `bazelisk run //deploy/infrastructure/live/shared/staging-1`
 
 # Deploy to production automation
 
 - Set AWS_PROFILE: `export AWS_PROFILE=noq_prod`
-- Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`
-- Deploy: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1`
+- Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
+- Deploy: `bazelisk run //deploy/infrastructure/live/shared/prod-1`
 
 ## Technical Debt
 
@@ -117,7 +117,7 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 
 - Set AWS_PROFLE: `export AWS_PROFILE=noq_dev` (or noq_prod)
 - For staging: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_dev`
-- For production: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
+- For production: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/prod-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
 - Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)
 
 # How to use ecs-cli to circumvent Bazel

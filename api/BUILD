@@ -302,7 +302,7 @@ container_push(
     format = "Docker",
     repository = "prod-registry-api",
     image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "production",
+    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
+    tag = "prod",
     visibility = ["//visibility:public"],
 )

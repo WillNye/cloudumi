@@ -90,17 +90,17 @@ output "region" {
 
 output "registry_repository_url_api" {
   description = "The respository URL for the API registry"
-  value       = module.tenant_container_service.registry_repository_url_api
+  value       = module.tenant_container_service.registry_repository_url_api[0].repository_url
 }
 
 output "registry_repository_url_celery" {
   description = "The respository URL for the Celery registry"
-  value       = module.tenant_container_service.registry_repository_url_celery
+  value       = module.tenant_container_service.registry_repository_url_celery[0].repository_url
 }
 
 output "registry_repository_url_frontend" {
   description = "The respository URL for the Frontend registry"
-  value       = module.tenant_container_service.registry_repository_url_frontend
+  value       = module.tenant_container_service.registry_repository_url_frontend[0].repository_url
 }
 
 output "stage" {
@@ -131,6 +131,11 @@ output "subnet_name_public_az1" {
 output "target_group_arn" {
   description = "The target group ARN, needs to be updated in the BUILD file under the ecs-cli call"
   value       = module.tenant_networking.target_group_arn
+}
+
+output "tenant_configuration_bucket_name" {
+  description = "The tenant configuration bucket name to store NOQ configuration"
+  value       = module.tenant_s3_service.tenant_configuration_bucket_name
 }
 
 output "vpc_arn" {

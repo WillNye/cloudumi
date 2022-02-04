@@ -9,7 +9,6 @@ import boto3
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 
-configuration_bucket_name = "noq.tenant-configuration-store"
 env = Environment(loader=PackageLoader(__package__), autoescape=select_autoescape())
 
 
@@ -56,19 +55,20 @@ def __get_key_name_from_config(terraform_config: dict) -> str:
 def upload_configuration_to_s3(terraform_config: dict):
     my_path = Path(__file__).parent
     s3 = boto3.client("s3")
+    bucket_name = terraform_config["tenant_configuration_bucket_name"]
     # avoiding response
     _ = s3.put_object(
         Body=open(my_path.joinpath("configuration.yaml")).read(),
-        Bucket=configuration_bucket_name,
+        Bucket=bucket_name,
         Key=__get_key_name_from_config(terraform_config),
     )
     simple_logger(
-        f"Uploaded configuration.yaml to s3://{configuration_bucket_name}/{__get_key_name_from_config(terraform_config)}"
+        f"Uploaded configuration.yaml to s3://{bucket_name}/{__get_key_name_from_config(terraform_config)}"
     )
-    terraform_config["config_bucket_name"] = configuration_bucket_name
+    terraform_config["config_bucket_name"] = bucket_name
     terraform_config[
         "config_path_with_bucket"
-    ] = f"s3://{configuration_bucket_name}/{__get_key_name_from_config(terraform_config)}"
+    ] = f"s3://{bucket_name}/{__get_key_name_from_config(terraform_config)}"
     return terraform_config
 
 
