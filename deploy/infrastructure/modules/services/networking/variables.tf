@@ -85,12 +85,12 @@ variable "system_bucket" {
 }
 
 variable "tags" {
-  description = "The tag to assign to resources" 
+  description = "The tag to assign to resources"
   type = map(any)
 }
 
 variable "timeout" {
-  description = "The timeout for each resource that may get stuck" 
+  description = "The timeout for each resource that may get stuck"
   type = string
 }
 

@@ -54,12 +54,12 @@ resource "aws_ecs_task_definition" "test_task_definition" {
   runtime_platform {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
-  }  
-  
+  }
+
   execution_role_arn = var.ecs_task_execution_role_arn
   task_role_arn = var.ecs_task_role_arn
 }
-  
+
 resource "aws_ecs_service" "test_service" {
   name            = "${var.ecs_cluster_name}-test"
   cluster         = var.ecs_cluster_name
