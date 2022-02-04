@@ -20,16 +20,24 @@ genrule(
     ],
     outs = ["run_deploy_{{ stage }}"],
     message = "Deploying CloudUmi to {{ stage }}...",
-    cmd = "echo 'bazel run //api:container-deploy-{{ stage }}; \
+    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have {{ aws_profile }} as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\"; \
+           \
+           export AWS_PROFILE={{ aws_profile }}; \
+           \
+           aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}; \
+           \
+           bazel run //api:container-deploy-{{ stage }}; \
            \
            bazel run //common/celery_tasks:container-deploy-{{ stage }}; \
            \
            ecs-cli configure --cluster {{ ecs_cluster_name }} --default-launch-type FARGATE \
            --config-name {{ ecs_cluster_name }} --region {{ region }}; \
            \
-           ecs-cli compose -f deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
+           ecs-cli up --cluster-config {{ ecs_cluster_name }}; \
+           \
+           ecs-cli compose -f deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
            --cluster-config {{ ecs_cluster_name }} \
-           --ecs-params deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
+           --ecs-params deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
            -p {{ ecs_cluster_name }} \
            --task-role-arn {{ ecs_task_role_arn }} \
            --region {{ region }} service up --create-log-groups --timeout 15 \
@@ -45,6 +53,9 @@ genrule(
     executable = True,
     outs = ["run_destroy_{{ stage }}"],
     message = "Destroying CloudUmi in {{ stage }}...",
-    cmd = "ecs-cli down --force --cluster-config {{ ecs_cluster_name }}; >$@",
+    cmd = "ecs-cli compose -f deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
+           -p {{ ecs_cluster_name }} service rm \
+           \
+           ecs-cli down --cluster-config {{ ecs_cluster_name }}; >$@",
     tags = ["manual"],
 )

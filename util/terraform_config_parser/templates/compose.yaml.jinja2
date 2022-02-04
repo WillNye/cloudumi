@@ -1,7 +1,7 @@
 version: "3"
 services:
   {{ cluster_id_safed }}-api:
-    image: "259868150464.dkr.ecr.{{ region }}.amazonaws.com/{{ stage }}-registry-api:{{ stage }}"
+    image: "{{ registry_repository_url_api }}:{{ stage }}"
     ports:
       - "8092:8092"
       - "2222:2222"
@@ -17,14 +17,14 @@ services:
         awslogs-stream-prefix: web
 
   {{ cluster_id_safed }}-celery:
-    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/{{ stage }}-registry-celery:{{ stage }}"
+    image: "{{ registry_repository_url_celery }}:{{ stage }}"
     ports:
       - "2223:2223"
     environment:
       - SETUPTOOLS_USE_DISTUTILS=stdlib
       - CONFIG_LOCATION={{ config_path_with_bucket }}
       - CELERY_LOG_LEVEL={{ celery_log_level }}
-      - CELERY_CONCURRENCY={{ celey_concurrency }}
+      - CELERY_CONCURRENCY={{ celery_concurrency }}
     command: celery -A common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8
     logging:
       driver: awslogs

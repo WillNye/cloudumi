@@ -1,0 +1,32 @@
+version: "3"
+services:
+  staging-noq-dev-shared-staging-1-api:
+    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/staging-registry-api:staging"
+    ports:
+      - "8092:8092"
+      - "2222:2222"
+    environment:
+      - SETUPTOOLS_USE_DISTUTILS=stdlib
+      - CONFIG_LOCATION=s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
+    command: python api/__main__.py
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: staging-noq-dev-shared-staging-1
+        awslogs-region: us-west-2
+        awslogs-stream-prefix: web
+
+  staging-noq-dev-shared-staging-1-celery:
+    image: "259868150464.dkr.ecr.us-west-2.amazonaws.com/staging-registry-celery:staging"
+    ports:
+      - "2223:2223"
+    environment:
+      - SETUPTOOLS_USE_DISTUTILS=stdlib
+      - CONFIG_LOCATION=s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
+    command: celery -A common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: staging-noq-dev-shared-staging-1
+        awslogs-region: us-west-2
+        awslogs-stream-prefix: celery

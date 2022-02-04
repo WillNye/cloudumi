@@ -9,7 +9,7 @@ if os.getenv("DEBUG"):
 if __name__ == "__main__":
     logger.info("Starting up celery tasks")
     log_level = os.getenv("CELERY_LOG_LEVEL", "DEBUG")
-    concurrency = os.getenv("CELERY_CONCURRENCY", "16")
+    concurrency = os.getenv("CELERY_CONCURRENCY", "16") or "16"
     celery_tasks.app.worker_main(
         ["worker", f"--loglevel={log_level}", "-B", f"--concurrency={concurrency}"]
     )

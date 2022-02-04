@@ -43,3 +43,49 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
     {}
   )
 }
+
+resource "aws_s3_bucket" "tenant_configuration_store" {
+  bucket = "${var.cluster_id}-tenant-configuration-store"
+  acl    = "private"
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
+  policy = <<POLICY
+  {
+    "Id": "Policy",
+    "Version": "2012-10-17",
+    "Statement": 
+    [
+      {
+        "Action": [
+          "s3:ListBucket",
+          "s3:GetObject"
+        ],
+        "Effect": "Allow",
+        "Resource": [
+          "arn:aws:s3:::${var.cluster_id}-tenant-configuration-store/*",
+          "arn:aws:s3:::${var.cluster_id}-tenant-configuration-store"
+        ],
+        "Principal": {
+          "AWS": [
+            "arn:aws:iam::940552945933:root"
+          ]
+        }
+      }
+    ]
+  }
+  POLICY
+
+  force_destroy = true
+
+  tags = merge(
+    var.tags,
+    {}
+  )
+}

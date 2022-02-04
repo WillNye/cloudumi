@@ -9,8 +9,8 @@ run_params:
   network_configuration:
     awsvpc_configuration:
       subnets:
-        - {{ subnet_name_az0 }}
-        - {{ subnet_name_az1 }}
+        - {{ subnet_name_private_az0 }}
+        - {{ subnet_name_private_az1 }}
       security_groups:
         - {{ ecs_security_group }}
       assign_public_ip: DISABLED

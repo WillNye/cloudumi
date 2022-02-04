@@ -17,6 +17,8 @@ _global_:
     load_from_dynamo: true
     automatically_reload_configuration: true
     load_tenant_configurations_from_dynamo: true
+  web:
+    path: "/templates"
   s3_cache_bucket: {{ bucket_name }}
   {% if stage == "staging" %}
   development: true
@@ -47,21 +49,24 @@ _global_:
     clear_tasks_for_development: false
     purge: true
     broker:
-      us-east-1: redis://{{ redis_primary_cluster_address }}:6379/1
-      us-west-2: redis://{{ redis_primary_cluster_address }}:6379/1
-      global: redis://{{ redis_primary_cluster_address }}:6379/1
+      us-east-1: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
+      us-west-2: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
+      global: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
     backend:
-      us-east-1: redis://{{ redis_primary_cluster_address }}:6379/2
-      us-west-2: redis://{{ redis_primary_cluster_address }}:6379/2
-      global: redis://{{ redis_primary_cluster_address }}:6379/2
+      us-east-1: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
+      us-west-2: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
+      global: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
     debug: true
   # Saas Configuration
   redis:
+    host:
+      global: {{ elasticache_address }}
+    port: {{ elasticache_port }}
     cluster_mode:
-      enabled: true
+      enabled: false
       nodes:
         global:
-          - host: {{ redis_primary_cluster_address }}
-            port: "6379"
+          - host: {{ elasticache_address }}
+            port: {{ elasticache_port }}
   sentry:
     dsn: {{ sentry_dsn }}
