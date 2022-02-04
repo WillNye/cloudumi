@@ -56,6 +56,32 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
     }
   }
 
+  policy = <<POLICY
+  {
+    "Id": "Policy",
+    "Version": "2012-10-17",
+    "Statement": 
+    [
+      {
+        "Action": [
+          "s3:ListObject"
+          "s3:GetObject"
+        ],
+        "Effect": "Allow",
+        "Resource": [
+          "arn:aws:s3:::${lower(var.cluster)}-tenant-configuration-store/*",
+          "arn:aws:s3:::${lower(var.cluster)}-tenant-configuration-store/"
+        ],
+        "Principal": {
+          "AWS": [
+            "arn:aws:iam::940552945933:root"
+          ]
+        }
+      }
+    ]
+  }
+  POLICY
+
   force_destroy = true
 
   tags = merge(
