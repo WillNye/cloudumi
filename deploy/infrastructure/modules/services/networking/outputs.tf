@@ -8,6 +8,16 @@ output "load_balancer_endpoint" {
   value = aws_lb.noq_api_load_balancer.dns_name
 }
 
+output "load_balancer_security_group" {
+  description = "The load balancer security group"
+  value = aws_security_group.lb-sg.id
+}
+
+output "test_access_security_group_id" {
+  description = "Used for testing purposes, provides ssh access"
+  value = aws_security_group.test_access_sg.id
+}
+
 output "target_group_arn" {
   description = "The target group ARN, needs to be updated in the BUILD file under the ecs-cli call"
   value = aws_lb_target_group.noq_api_balancer_target_group.arn

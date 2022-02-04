@@ -10,7 +10,7 @@ output "bucket_name" {
 
 output "cluster_id" {
   description = "The configured cluster id (for automation)"
-  value       = var.cluster_id
+  value       = local.cluster_id
 }
 
 output "domain_name" {
@@ -43,14 +43,39 @@ output "ecs_task_role_arn" {
   value       = module.tenant_container_service.ecs_task_role
 }
 
+# output "elasticache_parameter_group_id" {
+#   description = "The ElastiCache parameter group name."
+#   value       = module.tenant_elasticache_service.elasticache_parameter_group_id
+# }
+
+# output "elasticache_primary_cluster_address" {
+#   description = "The address of the primary redis cluster endpoint"
+#   value       = module.tenant_elasticache_service.elasticache_primary_cluster_address
+# }
+
+# output "elasticache_replication_group_reader_address" {
+#   description = "The address of the endpoint for the reader node in the replication group."
+#   value       = module.tenant_elasticache_service.elasticache_replication_group_reader_address
+# }
+
+output "elasticache_nodes" {
+  description = "List of node objects including id, address, port and availability_zone"
+  value       = module.tenant_elasticache_service.elasticache_nodes
+}
+
 output "namespace" {
   description = "The configured namespace (for automation)"
   value       = var.namespace
 }
 
-output "redis_primary_cluster_address" {
-  description = "The address of the primary redis cluster endpoint"
-  value       = module.tenant_elasticache_service.redis_primary_cluster_address
+output "private_subnets" {
+  description = "All private subnets used"
+  value = module.tenant_networking.vpc_subnet_private_id
+}
+
+output "profile" {
+  description = "The selected profile"
+  value = var.profile
 }
 
 output "sentry_dsn" {
@@ -65,17 +90,17 @@ output "region" {
 
 output "registry_repository_url_api" {
   description = "The respository URL for the API registry"
-  value       = module.tenant_container_service.registry_repository_url_api
+  value       = module.tenant_container_service.registry_repository_url_api[0].repository_url
 }
 
 output "registry_repository_url_celery" {
   description = "The respository URL for the Celery registry"
-  value       = module.tenant_container_service.registry_repository_url_celery
+  value       = module.tenant_container_service.registry_repository_url_celery[0].repository_url
 }
 
 output "registry_repository_url_frontend" {
   description = "The respository URL for the Frontend registry"
-  value       = module.tenant_container_service.registry_repository_url_frontend
+  value       = module.tenant_container_service.registry_repository_url_frontend[0].repository_url
 }
 
 output "stage" {
@@ -83,19 +108,34 @@ output "stage" {
   value       = var.stage
 }
 
-output "subnet_name_az0" {
+output "subnet_name_private_az0" {
   description = "The configured subnet name for AZ0 (for automation)"
   value       = module.tenant_networking.vpc_subnet_private_id[0]
 }
 
-output "subnet_name_az1" {
+output "subnet_name_private_az1" {
   description = "The configured subnet name for AZ1 (for automation)"
   value       = module.tenant_networking.vpc_subnet_private_id[1]
+}
+
+output "subnet_name_public_az0" {
+  description = "The configured subnet name for AZ0 (for automation)"
+  value = module.tenant_networking.vpc_subnet_public_id[0]
+}
+
+output "subnet_name_public_az1" {
+  description = "The configured subnet name for AZ1 (for automation)"
+  value = module.tenant_networking.vpc_subnet_public_id[1]
 }
 
 output "target_group_arn" {
   description = "The target group ARN, needs to be updated in the BUILD file under the ecs-cli call"
   value       = module.tenant_networking.target_group_arn
+}
+
+output "tenant_configuration_bucket_name" {
+  description = "The tenant configuration bucket name to store NOQ configuration"
+  value       = module.tenant_s3_service.tenant_configuration_bucket_name
 }
 
 output "vpc_arn" {

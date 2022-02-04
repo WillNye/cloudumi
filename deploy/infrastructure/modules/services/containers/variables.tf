@@ -31,6 +31,11 @@ variable "lb_port" {
   default     = 443
 }
 
+variable "load_balancer_sgs" {
+  description = "Any load balancer that requires access to the services should be added here"
+  type        = list(string)
+}
+
 variable "noq_core" {
   type    = bool
   default = false
@@ -59,6 +64,16 @@ variable "subnet_ids" {
 variable "tags" {
   description = "The tag to assign to resources"
   type        = map(any)
+}
+
+variable "tenant_configuration_bucket_name" {
+  description = "The tenant configuration bucket" 
+  type = string
+}
+
+variable "test_access_sg_id" {
+  description = "Test access on port 22" 
+  type = string
 }
 
 variable "timeout" {

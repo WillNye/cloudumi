@@ -19,6 +19,9 @@ services:
     ports:
       - 8092:8092
       - 9092:9092
+    extra_hosts:
+      - "cloudumi-redis:172.17.0.1"
+      - "cloudumi-dynamodb:172.17.0.1"
   celery:
     image: bazel/common/celery_tasks:container-dev-local
     volumes:
@@ -37,3 +40,6 @@ services:
       AWS_PROFILE: noq_dev
       CONFIG_LOCATION: /configs/development_account/saas_development.yaml
       # FAULTHANDLER_ENABLED: "true"
+    extra_hosts:
+      - "cloudumi-redis:172.17.0.1"
+      - "cloudumi-dynamodb:172.17.0.1"

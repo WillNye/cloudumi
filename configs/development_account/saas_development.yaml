@@ -47,6 +47,11 @@ _global_:
   #   enabled: false # TODO: Maybe change me
   #   service_name: cloudumi
   #   server_url: http://apmserver:8200
+  deployment:
+    domain_name: shared.noq.dev
+    namespace: shared
+    zone: noq.dev
+    cluster_id: noq.dev-shared-staging-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   # sentry:
@@ -55,6 +60,8 @@ _global_:
     load_from_dynamo: true
     automatically_reload_configuration: true
     load_tenant_configurations_from_dynamo: true
+  web:
+    path: "/templates"
   s3_cache_bucket: noqcache
   environment: dev
   development: true

@@ -83,3 +83,30 @@ resource "aws_subnet" "subnet_private_az1" {
     create = var.timeout
   }
 }
+
+resource "aws_security_group" "test_access_sg" {
+  name        = "${var.cluster_id}-test-access-to-resources"
+  description = "Allows test access from configured resources via manual configuration of this sg."
+  vpc_id      = aws_vpc.main_vpc.id
+
+  ingress {
+    description = "Access from other security groups to the Redis cluster access port"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Type = "testing only"
+    }
+  )
+}

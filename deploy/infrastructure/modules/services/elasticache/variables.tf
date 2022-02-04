@@ -14,6 +14,16 @@ variable "noq_core" {
   default = false
 }
 
+variable "private_subnet_cidr_blocks" {
+  description = "The CIDR blocks fo the private subnets to be used to filter ingress_cidr_blocks in the redis config"
+  type = list(string)
+}
+
+variable "redis_cluster_access_sg_ids" {
+  type = list(string)
+  description = "Any security group ids that require access to the Redis cluster"
+}
+
 variable "redis_node_type" {
   type = string
   default = "cache.t3.small"

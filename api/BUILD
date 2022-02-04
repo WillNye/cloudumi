@@ -14,6 +14,13 @@ filegroup(
     ]
 )
 
+filegroup(
+    name = "web_site_sources",
+    srcs = glob([
+        "templates/**/*",
+    ])
+)
+
 INT_DEPS = [
     "//api/handlers:lib",
     "//common/celery_tasks:lib",
@@ -119,6 +126,7 @@ py_binary(
     name = "bin.local",
     data = [
         "//configs/development_account:configs",
+        ":web_site_sources"
     ],
     srcs_version = "PY3",
     srcs = [
@@ -138,7 +146,9 @@ py_binary(
 
 py_binary(
     name = "bin.s3",
-    data = [],
+    data = [
+        ":web_site_sources"
+    ],
     srcs_version = "PY3",
     srcs = [
         ":src",
@@ -191,6 +201,15 @@ container_layer(
 )
 
 container_layer(
+    name = "web_site_layer",
+    files = [
+        ":web_site_sources"
+    ],
+    data_path = ".",
+    directory = "/",
+)
+
+container_layer(
     name = "sshd_config_layer",
     files = [
         "//api/util:sshd_config",
@@ -218,6 +237,7 @@ container_image(
     },
     layers = [
         ":config_layer",
+        ":web_site_layer",
         ":sshd_config_layer",
         ":newrelic_layer"
     ],
@@ -237,6 +257,7 @@ container_image(
     },
     layers = [
         ":config_layer",
+        ":web_site_layer",
         ":sshd_config_layer",
         ":newrelic_layer"
     ],
@@ -291,7 +312,7 @@ container_push(
     format = "Docker",
     repository = "prod-registry-api",
     image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "production",
+    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
+    tag = "prod",
     visibility = ["//visibility:public"],
 )
