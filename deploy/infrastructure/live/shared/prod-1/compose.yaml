@@ -1,7 +1,7 @@
 version: "3"
 services:
   noq-dev-shared-prod-1-api:
-    image: "940552945933.dkr.ecr.us-west-2.amazonaws.com/prod-registry-api:prod"
+    image: "940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:prod"
     ports:
       - "8092:8092"
       - "2222:2222"
@@ -17,7 +17,7 @@ services:
         awslogs-stream-prefix: web
 
   noq-dev-shared-prod-1-celery:
-    image: "940552945933.dkr.ecr.us-west-2.amazonaws.com/prod-registry-celery:prod"
+    image: "940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-celery:prod"
     ports:
       - "2223:2223"
     environment:

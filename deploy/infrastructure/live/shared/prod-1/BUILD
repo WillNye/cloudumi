@@ -1,3 +1,5 @@
+load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+
 filegroup(
     name = "prod-1-files",
     srcs = glob([
@@ -6,17 +8,37 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+container_push(
+    name = "api-container-deploy-prod",
+    format = "Docker",
+    repository = "shared-prod-registry-api",
+    image = "//api:container",
+    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
+    tag = "prod",
+    visibility = ["//visibility:public"],
+)
+
+container_push(
+    name = "celery-container-deploy-prod",
+    format = "Docker",
+    repository = "shared-prod-registry-celery",
+    image = "//common/celery_tasks:container",
+    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
+    tag = "prod",
+    visibility = ["//visibility:public"],
+)
+
 genrule(
     name = "prod-1",
     srcs = [
-        "//api:container-deploy-prod",
-        "//common/celery_tasks:container-deploy-prod",
+        ":api-container-deploy-prod",
+        ":celery-container-deploy-prod",
         ":prod-1-files",
     ],
     executable = True,
     exec_tools = [
-        "//api:container-deploy-prod",
-        "//common/celery_tasks:container-deploy-prod",
+        ":api-container-deploy-prod",
+        ":celery-container-deploy-prod",
     ],
     outs = ["run_deploy_prod"],
     message = "Deploying CloudUmi to prod...",
@@ -25,10 +47,6 @@ genrule(
            export AWS_PROFILE=noq_prod; \
            \
            aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com; \
-           \
-           bazel run //api:container-deploy-prod; \
-           \
-           bazel run //common/celery_tasks:container-deploy-prod; \
            \
            ecs-cli configure --cluster noq-dev-shared-prod-1 --default-launch-type FARGATE \
            --config-name noq-dev-shared-prod-1 --region us-west-2; \
