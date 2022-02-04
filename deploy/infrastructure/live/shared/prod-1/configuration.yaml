@@ -20,13 +20,12 @@ _global_:
   web:
     path: "/templates"
   s3_cache_bucket: cloudumi-cache.noq-dev-shared-prod-1
-  
+
   development: false
-  
+
   tornado:
-  
     debug: true
-  
+
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:
