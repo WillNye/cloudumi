@@ -29,9 +29,9 @@ genrule(
            \
            ecs-cli up --cluster-config {{ ecs_cluster_name }}; \
            \
-           ecs-cli compose -f deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
+           ecs-cli compose -f deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
            --cluster-config {{ ecs_cluster_name }} \
-           --ecs-params deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
+           --ecs-params deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
            -p {{ ecs_cluster_name }} \
            --task-role-arn {{ ecs_task_role_arn }} \
            --region {{ region }} service up --create-log-groups --timeout 15 \
@@ -47,7 +47,7 @@ genrule(
     executable = True,
     outs = ["run_destroy_{{ stage }}"],
     message = "Destroying CloudUmi in {{ stage }}...",
-    cmd = "ecs-cli compose -f deploy/infrastructure/live/{{ zone }}/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
+    cmd = "ecs-cli compose -f deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
            -p {{ ecs_cluster_name }} service rm \
            \
            ecs-cli down --cluster-config {{ ecs_cluster_name }}; >$@",

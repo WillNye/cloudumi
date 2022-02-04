@@ -45,13 +45,12 @@ def __get_nested_attr_from_terraform_config_list_of_dicts(terraform_config: dict
 
 
 def __get_key_name_from_config(terraform_config: dict) -> str:
-    zone = terraform_config.get("zone")
     namespace = terraform_config.get("namespace")
     stage = terraform_config.get("stage")
     attributes = terraform_config.get("attributes")
-    if None in [zone, namespace, stage, attributes]:
+    if None in [namespace, stage, attributes]:
         raise RuntimeError("Missing required configuration")
-    return f"{zone}/{namespace}/{stage}.{attributes}.config.yaml"
+    return f"{namespace}/{stage}.{attributes}.config.yaml"
 
 
 def upload_configuration_to_s3(terraform_config: dict):
