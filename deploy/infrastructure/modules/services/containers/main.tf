@@ -34,7 +34,7 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-api" {
-  name                 = "${var.stage}-registry-api"
+  name                 = "${var.namespace}-${var.stage}-registry-api"
   image_tag_mutability = "MUTABLE"
   count                = var.noq_core ? 1 : 0
 
@@ -49,7 +49,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-api" {
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-celery" {
-  name                 = "${var.stage}-registry-celery"
+  name                 = "${var.namespace}-${var.stage}-registry-celery"
   image_tag_mutability = "MUTABLE"
   count                = var.noq_core ? 1 : 0
 
@@ -64,7 +64,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-celery" {
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
-  name                 = "${var.stage}-registry-frontend"
+  name                 = "${var.namespace}-${var.stage}-registry-frontend"
   image_tag_mutability = "MUTABLE"
   count                = var.noq_core ? 1 : 0
 

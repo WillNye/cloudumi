@@ -1,0 +1,16 @@
+version: 1
+task_definition:
+  ecs_network_mode: awsvpc
+  task_execution_role: arn:aws:iam::940552945933:role/noq-dev-cyberdyne-prod-1-ecsTaskExecutionRole
+  task_size:
+    cpu_limit: 2048
+    mem_limit: 4GB
+run_params:
+  network_configuration:
+    awsvpc_configuration:
+      subnets:
+        - subnet-0ee2819711ab5426a
+        - subnet-0f14337b4c786f8dc
+      security_groups:
+        - sg-064d3a62f11c359a7
+      assign_public_ip: DISABLED

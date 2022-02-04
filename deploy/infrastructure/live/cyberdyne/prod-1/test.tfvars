@@ -1,8 +1,8 @@
-ecs_cluster_name = "noq-dev-shared-staging-1"
-ecs_task_execution_role_arn = "arn:aws:iam::259868150464:role/noq-dev-shared-staging-1-ecsTaskExecutionRole"
-ecs_task_role_arn = "arn:aws:iam::259868150464:role/noq-dev-shared-staging-1-ecsTaskRole"
-profile = "noq_dev"
+ecs_cluster_name = "noq-dev-cyberdyne-prod-1"
+ecs_task_execution_role_arn = "arn:aws:iam::940552945933:role/noq-dev-cyberdyne-prod-1-ecsTaskExecutionRole"
+ecs_task_role_arn = "arn:aws:iam::940552945933:role/noq-dev-cyberdyne-prod-1-ecsTaskRole"
+profile = "noq_prod"
 region = "us-west-2"
-security_groups = ["sg-0367f3fb83a611343"]
-stage = "staging"
-subnets = ["subnet-0182953adabfb2e1a", "subnet-0b0a925dfa1d571ae"]
+security_groups = ["sg-064d3a62f11c359a7"]
+stage = "prod"
+subnets = ["subnet-0ee2819711ab5426a", "subnet-0f14337b4c786f8dc"]

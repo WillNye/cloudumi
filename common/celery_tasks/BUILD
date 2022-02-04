@@ -198,23 +198,3 @@ py3_image(
     main = "run.py",
     visibility = ["//visibility:public"],
 )
-
-container_push(
-    name = "container-deploy-staging",
-    format = "Docker",
-    repository = "staging-registry-celery",
-    image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "staging",
-    visibility = ["//visibility:public"],
-)
-
-container_push(
-    name = "container-deploy-prod",
-    format = "Docker",
-    repository = "prod-registry-celery",
-    image = "container",
-    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
-    visibility = ["//visibility:public"],
-)

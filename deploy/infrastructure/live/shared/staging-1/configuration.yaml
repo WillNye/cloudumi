@@ -10,7 +10,7 @@ _global_:
     domain_name: shared.staging.noq.dev
     namespace: shared
     zone: staging.noq.dev
-    cluster_id: staging.noq.dev-shared-staging-1
+    cluster_id: staging-noq-dev-shared-staging-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   config:

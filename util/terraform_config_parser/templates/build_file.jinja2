@@ -1,3 +1,5 @@
+load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+
 filegroup(
     name = "{{ stage }}-{{ attributes }}-files",
     srcs = glob([
@@ -6,17 +8,37 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+container_push(
+    name = "api-container-deploy-{{ stage }}",
+    format = "Docker",
+    repository = "{{ namespace }}-{{ stage }}-registry-api",
+    image = "//api:container",
+    registry = "{{ registry_repository_url }}",
+    tag = "{{ stage }}",
+    visibility = ["//visibility:public"],
+)
+
+container_push(
+    name = "celery-container-deploy-{{ stage }}",
+    format = "Docker",
+    repository = "{{ namespace }}-{{ stage }}-registry-celery",
+    image = "//common/celery_tasks:container",
+    registry = "{{ registry_repository_url }}",
+    tag = "{{ stage }}",
+    visibility = ["//visibility:public"],
+)
+
 genrule(
     name = "{{ stage }}-{{ attributes }}",
     srcs = [
-        "//api:container-deploy-{{ stage }}",
-        "//common/celery_tasks:container-deploy-{{ stage }}",
+        ":api-container-deploy-{{ stage }}",
+        ":celery-container-deploy-{{ stage }}",
         ":{{ stage }}-{{ attributes }}-files",
     ],
     executable = True,
     exec_tools = [
-        "//api:container-deploy-{{ stage }}",
-        "//common/celery_tasks:container-deploy-{{ stage }}",
+        ":api-container-deploy-{{ stage }}",
+        ":celery-container-deploy-{{ stage }}",
     ],
     outs = ["run_deploy_{{ stage }}"],
     message = "Deploying CloudUmi to {{ stage }}...",
@@ -25,10 +47,6 @@ genrule(
            export AWS_PROFILE={{ aws_profile }}; \
            \
            aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}; \
-           \
-           bazel run //api:container-deploy-{{ stage }}; \
-           \
-           bazel run //common/celery_tasks:container-deploy-{{ stage }}; \
            \
            ecs-cli configure --cluster {{ ecs_cluster_name }} --default-launch-type FARGATE \
            --config-name {{ ecs_cluster_name }} --region {{ region }}; \

@@ -36,6 +36,11 @@ variable "load_balancer_sgs" {
   type        = list(string)
 }
 
+variable "namespace" {
+  description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
+  type        = string
+}
+
 variable "noq_core" {
   type    = bool
   default = false

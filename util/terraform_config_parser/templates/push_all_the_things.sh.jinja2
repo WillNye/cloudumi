@@ -1,0 +1,25 @@
+#!/bin/bash
+echo
+echo "Setting AWS_PROFILE={{ aws_profile }}"
+echo
+export AWS_PROFILE={{ aws_profile }}
+
+echo
+echo "Logging in to AWS ECR for {{ registry_repository_url }}"
+echo
+aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}
+
+echo
+echo "Pushing API container"
+echo
+bazelisk run //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:api-container-deploy-{{ stage }}
+
+echo
+echo "Pushing Celery container"
+echo
+bazelisk run //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:celery-container-deploy-{{ stage }}
+
+echo
+echo "Updating infrastructure"
+echo
+bazelisk run //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}
