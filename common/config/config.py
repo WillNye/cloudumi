@@ -683,6 +683,10 @@ class Configuration(metaclass=Singleton):
     def get_dynamo_table_name(
         self, table_name: str, namespace: str = "cloudumi"
     ) -> str:
+        if self.get("_global_.environment") == "test" and self.get(
+            "_global_.development"
+        ):
+            return table_name
         cluster_id_key = "_global_.deployment.cluster_id"
         cluster_id = self.get(cluster_id_key, None)
         if cluster_id is None:

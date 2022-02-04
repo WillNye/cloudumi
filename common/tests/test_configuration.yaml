@@ -3,6 +3,8 @@
 _global_:
   development: true
   environment: test
+  deployment:
+    cluster_id: test
   tornado:
     debug: false
     port: 8081

@@ -67,14 +67,6 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger("consoleme")
 
 
-def get_dynamo_table_name(table_name: str, namespace: str = "cloudumi") -> str:
-    cluster_id_key = "_global_.deployment.cluster_id"
-    cluster_id = config.get(cluster_id_key, None)
-    if cluster_id is None:
-        raise RuntimeError(f"Unable to read configuration - cannot get {cluster_id_key}")
-    return f"{cluster_id}_{namespace}_{table_name}"
-
-
 def filter_config_secrets(d):
     if isinstance(d, dict):
         for k, v in d.items():
@@ -1492,6 +1484,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         )
         return users
 
+
 def _get_dynamo_table_restricted(caller, table_name):
     function: str = (
         f"{__name__}.{caller.__class__.__name__}.{sys._getframe().f_code.co_name}"
@@ -1522,10 +1515,13 @@ def _get_dynamo_table_restricted(caller, table_name):
     else:
         return table
 
+
 class RestrictedDynamoHandler(BaseDynamoHandler):
     def __init__(self) -> None:
         default_table_name = get_dynamo_table_name("tenant_static_configs")
-        table_name = config.get("_global_.aws.tenant_static_config_dynamo_table", default_table_name)
+        table_name = config.get(
+            "_global_.aws.tenant_static_config_dynamo_table", default_table_name
+        )
         self.tenant_static_configs = _get_dynamo_table_restricted(self, table_name)
 
     async def get_static_config_yaml_for_all_hosts(self) -> Dict[str, str]:
