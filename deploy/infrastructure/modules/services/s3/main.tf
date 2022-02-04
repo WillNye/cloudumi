@@ -16,7 +16,7 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
   {
     "Id": "Policy",
     "Version": "2012-10-17",
-    "Statement": 
+    "Statement":
     [
       {
         "Action": [
@@ -60,7 +60,7 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
   {
     "Id": "Policy",
     "Version": "2012-10-17",
-    "Statement": 
+    "Statement":
     [
       {
         "Action": [
