@@ -320,7 +320,7 @@ class Configuration(metaclass=Singleton):
 
     def get_tenant_static_config_from_dynamo(self, host, safe=False):
         """
-        Get tenant static configuration from DynamoDB. Supports zlib compressed
+        Get tenant static configuration from DynamoDB.
         configuration.
         """
         dynamodb = boto3.resource(
