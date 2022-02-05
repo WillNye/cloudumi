@@ -402,3 +402,13 @@ class SilentException(BaseException):
     def __init__(self, msg=""):
         stats.count("SilentException")
         super().__init__(msg)
+
+
+class TenantNoCentralRoleconfigured(BaseException):
+    """
+    Tenant has no central role configured
+    """
+
+    def __init__(self, msg=""):
+        stats.count("TenantNoCentralRoleconfigured")
+        super().__init__(msg)

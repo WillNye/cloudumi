@@ -109,6 +109,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationHandler,
 )
 from common.config import config
+from common.lib.sentry import before_send_event
 
 log = config.get_logger()
 
@@ -251,6 +252,7 @@ def make_app(jwt_validator=None):
     if sentry_dsn:
         sentry_sdk.init(
             dsn=sentry_dsn,
+            before_send=before_send_event,
             traces_sample_rate=config.get("_global_.sentry.traces_sample_rate", 0.2),
             integrations=[
                 TornadoIntegration(),
