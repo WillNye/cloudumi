@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import uuid
-import zlib
 from collections import defaultdict
 from datetime import datetime
 
@@ -13,7 +12,6 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Union
 
 import bcrypt
-import sentry_sdk
 import simplejson as json
 from asgiref.sync import sync_to_async
 from boto3.dynamodb.conditions import Key
@@ -1419,31 +1417,17 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         self, host, return_format="dict", filter_secrets=False
     ) -> bytes:
         """Retrieve dynamic configuration yaml synchronously"""
-        c = compressed_config = b""
-        try:
-            current_config = self.tenant_static_configs.get_item(
-                Key={"host": host, "id": "master"}
-            )
-            if not current_config:
-                return c
-            compressed_config = current_config.get("Item", {}).get("config", "")
-            if not compressed_config:
-                return c
-            try:
-                c = zlib.decompress(compressed_config.value)
-            except Exception:
-                c = compressed_config.value
-        except Exception as e:  # noqa
-            log.error(
-                {
-                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-                    "message": "Error retrieving static configuration",
-                    "error": str(e),
-                    "host": host,
-                }
-            )
-            sentry_sdk.capture_exception()
-            c = compressed_config
+        c = b""
+        current_config = self.tenant_static_configs.get_item(
+            Key={"host": host, "id": "master"}
+        )
+        if not current_config:
+            return c
+        compressed_config = current_config.get("Item", {}).get("config", "")
+        if not compressed_config:
+            return c
+
+        c = compressed_config
         c_dict = yaml.load(c)
         secrets = c_dict.get("secrets", {})
         if secrets and filter_secrets:
