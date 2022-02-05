@@ -27,6 +27,7 @@ from common.exceptions.exceptions import (
     NoExistingRequest,
     NoMatchingRequest,
     PendingRequestAlreadyExists,
+    TenantNoCentralRoleConfigured,
 )
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
@@ -159,6 +160,8 @@ class BaseDynamoHandler:
                 )
             table = resource.Table(table_name)
             return table
+        except TenantNoCentralRoleConfigured:
+            return None
         except Exception as e:
             log.error(
                 {
