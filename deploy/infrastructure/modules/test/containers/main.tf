@@ -28,7 +28,7 @@ resource "aws_ecs_task_definition" "test_task_definition" {
   network_mode             = "awsvpc"
   cpu                      = 1024
   memory                   = 2048
-  container_definitions    = jsonencode([
+  container_definitions = jsonencode([
     {
       name      = "${var.ecs_cluster_name}-api"
       image     = "259868150464.dkr.ecr.${var.region}.amazonaws.com/${var.stage}-registry-api:${var.stage}"
@@ -57,16 +57,16 @@ resource "aws_ecs_task_definition" "test_task_definition" {
   }
 
   execution_role_arn = var.ecs_task_execution_role_arn
-  task_role_arn = var.ecs_task_role_arn
+  task_role_arn      = var.ecs_task_role_arn
 }
 
 resource "aws_ecs_service" "test_service" {
-  name            = "${var.ecs_cluster_name}-test"
-  cluster         = var.ecs_cluster_name
-  task_definition = aws_ecs_task_definition.test_task_definition.arn
-  desired_count   = 1
+  name                   = "${var.ecs_cluster_name}-test"
+  cluster                = var.ecs_cluster_name
+  task_definition        = aws_ecs_task_definition.test_task_definition.arn
+  desired_count          = 1
   enable_execute_command = true
-  launch_type = "FARGATE"
+  launch_type            = "FARGATE"
   network_configuration {
     subnets = []
   }

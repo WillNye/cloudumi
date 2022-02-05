@@ -27,7 +27,7 @@ resource "aws_security_group" "server" {
   vpc_id      = aws_vpc.main_vpc.id
   name        = module.security_group_label.id
   description = "Allow ingress from authorized IPs to self, and egress to everywhere."
-  tags        = merge(
+  tags = merge(
     module.security_group_label.tags,
     var.tags,
     {}

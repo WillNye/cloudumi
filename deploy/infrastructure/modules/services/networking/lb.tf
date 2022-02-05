@@ -8,7 +8,7 @@ resource "aws_lb" "noq_api_load_balancer" {
   enable_deletion_protection = false
 
   access_logs {
-    bucket        = var.system_bucket
+    bucket = var.system_bucket
   }
 
   tags = merge(
@@ -20,18 +20,18 @@ resource "aws_lb" "noq_api_load_balancer" {
 }
 
 resource "aws_lb_target_group" "noq_api_balancer_target_group" {
-  port     = 8092
-  protocol = "HTTP"
+  port        = 8092
+  protocol    = "HTTP"
   target_type = "ip"
-  vpc_id   = aws_vpc.main_vpc.id
+  vpc_id      = aws_vpc.main_vpc.id
   health_check {
-    enabled = true
-    healthy_threshold = 5
+    enabled             = true
+    healthy_threshold   = 5
     unhealthy_threshold = 10
-    timeout = 120
-    interval = 300
-    path = "/healthcheck"
-    port = 8092
+    timeout             = 120
+    interval            = 300
+    path                = "/healthcheck"
+    port                = 8092
   }
 }
 

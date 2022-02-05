@@ -73,12 +73,12 @@ variable "tags" {
 
 variable "tenant_configuration_bucket_name" {
   description = "The tenant configuration bucket"
-  type = string
+  type        = string
 }
 
 variable "test_access_sg_id" {
   description = "Test access on port 22"
-  type = string
+  type        = string
 }
 
 variable "timeout" {

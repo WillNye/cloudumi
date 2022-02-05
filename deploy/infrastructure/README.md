@@ -116,7 +116,7 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 - Understand the environment: does the isolated cluster have staging and prod? Just prod? Select the AWS_PROFILE appropriately
 - Set AWS_PROFILE: `export AWS_PROFILE=noq_prod` - this is assuming we are looking to update their prod-1 part in their cluster
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
-- Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/cyberdyne/...`  - note: using `cyberdyne` for this example, replace cyberdyne with <company name>
+- Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/cyberdyne/...` - note: using `cyberdyne` for this example, replace cyberdyne with <company name>
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:celery-container-deploy-prod`
 - Deploy: `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1`
 - For convenience, run the `deploy/infrastructure/live/cyberdyne/prod-1/push_all_the_things.sh` script
