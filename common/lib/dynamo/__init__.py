@@ -363,12 +363,13 @@ class UserDynamoHandler(BaseDynamoHandler):
         try:
             self.identity_requests_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    "aws.requests_dynamo_table",
+                    "aws.identity_requests_dynamo_table",
                     host,
                     get_dynamo_table_name("identity_requests_multitenant"),
                 ),
                 host,
             )
+
             self.users_table = self._get_dynamo_table(
                 config.get_host_specific_key(
                     "aws.users_dynamo_table",
