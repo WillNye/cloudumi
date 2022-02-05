@@ -70,12 +70,12 @@ output "namespace" {
 
 output "private_subnets" {
   description = "All private subnets used"
-  value = module.tenant_networking.vpc_subnet_private_id
+  value       = module.tenant_networking.vpc_subnet_private_id
 }
 
 output "profile" {
   description = "The selected profile"
-  value = var.profile
+  value       = var.profile
 }
 
 output "sentry_dsn" {
@@ -120,12 +120,12 @@ output "subnet_name_private_az1" {
 
 output "subnet_name_public_az0" {
   description = "The configured subnet name for AZ0 (for automation)"
-  value = module.tenant_networking.vpc_subnet_public_id[0]
+  value       = module.tenant_networking.vpc_subnet_public_id[0]
 }
 
 output "subnet_name_public_az1" {
   description = "The configured subnet name for AZ1 (for automation)"
-  value = module.tenant_networking.vpc_subnet_public_id[1]
+  value       = module.tenant_networking.vpc_subnet_public_id[1]
 }
 
 output "target_group_arn" {

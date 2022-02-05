@@ -101,20 +101,20 @@ resource "aws_iam_role" "ecs_task_execution_role" {
       "Version" : "2012-10-17",
       "Statement" : [
         {
-            "Effect": "Allow",
-            "Action": [
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:BatchGetImage",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-            ],
-            "Resource": "*"
+          "Effect" : "Allow",
+          "Action" : [
+            "ecr:GetAuthorizationToken",
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:GetDownloadUrlForLayer",
+            "ecr:BatchGetImage",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents"
+          ],
+          "Resource" : "*"
         },
         {
-          "Effect": "Allow",
-          "Action": [
+          "Effect" : "Allow",
+          "Action" : [
             "ssmmessages:CreateControlChannel",
             "ssmmessages:CreateDataChannel",
             "ssmmessages:OpenControlChannel",
@@ -125,7 +125,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
             "logs:DescribeLogStreams",
             "logs:PutLogEvents",
           ],
-          "Resource": "*"
+          "Resource" : "*"
         }
       ]
     })
@@ -195,53 +195,53 @@ resource "aws_iam_role" "ecs_task_role" {
           ]
         },
         {
-          "Action": [
-              "autoscaling:Describe*",
-              "cloudwatch:Get*",
-              "cloudwatch:List*",
-              "config:BatchGet*",
-              "config:List*",
-              "config:Select*",
-              "ec2:DescribeSubnets",
-              "ec2:describevpcendpoints",
-              "ec2:DescribeVpcs",
-              "iam:GetAccountAuthorizationDetails",
-              "iam:ListAccountAliases",
-              "iam:ListAttachedRolePolicies",
-              "ec2:describeregions",
-              "s3:GetBucketPolicy",
-              "s3:GetBucketTagging",
-              "s3:ListAllMyBuckets",
-              "s3:ListBucket",
-              "s3:PutBucketPolicy",
-              "s3:PutBucketTagging",
-              "sns:GetTopicAttributes",
-              "sns:ListTagsForResource",
-              "sns:ListTopics",
-              "sns:SetTopicAttributes",
-              "sns:TagResource",
-              "sns:UnTagResource",
-              "sqs:GetQueueAttributes",
-              "sqs:GetQueueUrl",
-              "sqs:ListQueues",
-              "sqs:ListQueueTags",
-              "sqs:SetQueueAttributes",
-              "sqs:TagQueue",
-              "sqs:UntagQueue"
+          "Action" : [
+            "autoscaling:Describe*",
+            "cloudwatch:Get*",
+            "cloudwatch:List*",
+            "config:BatchGet*",
+            "config:List*",
+            "config:Select*",
+            "ec2:DescribeSubnets",
+            "ec2:describevpcendpoints",
+            "ec2:DescribeVpcs",
+            "iam:GetAccountAuthorizationDetails",
+            "iam:ListAccountAliases",
+            "iam:ListAttachedRolePolicies",
+            "ec2:describeregions",
+            "s3:GetBucketPolicy",
+            "s3:GetBucketTagging",
+            "s3:ListAllMyBuckets",
+            "s3:ListBucket",
+            "s3:PutBucketPolicy",
+            "s3:PutBucketTagging",
+            "sns:GetTopicAttributes",
+            "sns:ListTagsForResource",
+            "sns:ListTopics",
+            "sns:SetTopicAttributes",
+            "sns:TagResource",
+            "sns:UnTagResource",
+            "sqs:GetQueueAttributes",
+            "sqs:GetQueueUrl",
+            "sqs:ListQueues",
+            "sqs:ListQueueTags",
+            "sqs:SetQueueAttributes",
+            "sqs:TagQueue",
+            "sqs:UntagQueue"
           ],
           "Effect" : "Allow",
           "Resource" : "*"
         },
         {
-          "Sid": "VisualEditor0",
-          "Effect": "Allow",
-          "Action": [
+          "Sid" : "VisualEditor0",
+          "Effect" : "Allow",
+          "Action" : [
             "s3:ListBucket",
             "s3:GetObject"
           ],
-          "Resource": [
-              "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
-              "arn:aws:s3:::${var.tenant_configuration_bucket_name}/*"
+          "Resource" : [
+            "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
+            "arn:aws:s3:::${var.tenant_configuration_bucket_name}/*"
           ]
         },
         {
@@ -259,14 +259,14 @@ resource "aws_iam_role" "ecs_task_role" {
           "Resource" : "*"
         },
         {
-          "Effect": "Allow",
-          "Action": [
-              "s3:get*",
-              "s3:list*"
+          "Effect" : "Allow",
+          "Action" : [
+            "s3:get*",
+            "s3:list*"
           ],
-          "Resource": [
-              "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
-              "arn:aws:s3:::${var.tenant_configuration_bucket_name}/*"
+          "Resource" : [
+            "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
+            "arn:aws:s3:::${var.tenant_configuration_bucket_name}/*"
           ]
         },
         {
@@ -294,18 +294,18 @@ resource "aws_security_group" "ecs-sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "HTTP for accessing Noq from the load balancer"
-    from_port   = 8092
-    to_port     = 8092
-    protocol    = "tcp"
+    description     = "HTTP for accessing Noq from the load balancer"
+    from_port       = 8092
+    to_port         = 8092
+    protocol        = "tcp"
     security_groups = var.load_balancer_sgs
   }
 
   ingress {
-    description = "SSH for accessing Noq for debugging"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
+    description     = "SSH for accessing Noq for debugging"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
     security_groups = [var.test_access_sg_id]
   }
 

@@ -5,8 +5,8 @@ variable "allowed_inbound_cidr_blocks" {
 
 variable "attributes" {
   description = "The attribute (ie. 1)"
-  type = number
-  default = 1
+  type        = number
+  default     = 1
 }
 
 variable "capacity_providers" {
@@ -17,7 +17,7 @@ variable "capacity_providers" {
 
 variable "cluster_id" {
   description = "The cluster ID for CloudUmi."
-  type = string
+  type        = string
 }
 
 variable "container_insights" {
@@ -45,7 +45,7 @@ variable "delimiter" {
 
 variable "domain_name" {
   description = "The domain name that should be used to create the certificate"
-  type = string
+  type        = string
 }
 
 variable "lb_port" {
@@ -55,12 +55,12 @@ variable "lb_port" {
 
 variable "namespace" {
   description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence."
-  type    = string
-  default = "noq"
+  type        = string
+  default     = "noq"
 }
 
 variable "noq_core" {
-  type = bool
+  type    = bool
   default = false
 }
 
@@ -81,20 +81,20 @@ variable "subnet_azs" {
 
 variable "system_bucket" {
   description = "The bucket used for CloudUmi configuration and logs"
-  type = string
+  type        = string
 }
 
 variable "tags" {
   description = "The tag to assign to resources"
-  type = map(any)
+  type        = map(any)
 }
 
 variable "timeout" {
   description = "The timeout for each resource that may get stuck"
-  type = string
+  type        = string
 }
 
 variable "zone" {
   description = "The zone is the base part of the domain name"
-  type = string
+  type        = string
 }

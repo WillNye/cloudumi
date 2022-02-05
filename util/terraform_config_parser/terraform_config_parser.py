@@ -1,14 +1,13 @@
 import json
 import os
-from pathlib import Path
 import stat
 import sys
-from distutils.command.config import config
 from pathlib import Path
 
-__package__ = "terraform_config_parser"
 import boto3
 from jinja2 import Environment, PackageLoader, select_autoescape
+
+__package__ = "terraform_config_parser"
 
 env = Environment(loader=PackageLoader(__package__), autoescape=select_autoescape())
 
@@ -229,7 +228,14 @@ if __name__ == "__main__":
         "compose.yaml.jinja2", "compose.yaml", terraform_config, config_output_path
     )
     write_file("ecs.yaml.jinja2", "ecs.yaml", terraform_config, config_output_path)
-    write_file("test.tfvars.jinja2", "test.tfvars", terraform_config, config_output_path)
-    write_file("push_all_the_things.sh.jinja2", "push_all_the_things.sh", terraform_config, config_output_path)
+    write_file(
+        "test.tfvars.jinja2", "test.tfvars", terraform_config, config_output_path
+    )
+    write_file(
+        "push_all_the_things.sh.jinja2",
+        "push_all_the_things.sh",
+        terraform_config,
+        config_output_path,
+    )
     make_file_executable(config_output_path, "push_all_the_things.sh")
     # Write configuration locally for upload to S3

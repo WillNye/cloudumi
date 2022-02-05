@@ -67,7 +67,7 @@ resource "aws_elasticache_parameter_group" "redis_parameter_group" {
   family = "redis3.2"
 
   parameter {
-    name = "repl-backlog-size"
+    name  = "repl-backlog-size"
     value = "16384"
   }
 }

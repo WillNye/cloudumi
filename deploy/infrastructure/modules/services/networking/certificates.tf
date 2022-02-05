@@ -5,7 +5,7 @@ resource "aws_acm_certificate" "tenant_certificate" {
   tags = merge(
     var.tags,
     {
-      "Environment": var.cluster_id
+      "Environment" : var.cluster_id
     }
   )
 
