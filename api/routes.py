@@ -251,6 +251,7 @@ def make_app(jwt_validator=None):
     if sentry_dsn:
         sentry_sdk.init(
             dsn=sentry_dsn,
+            traces_sample_rate=config.get("_global_.sentry.traces_sample_rate", 0.2),
             integrations=[
                 TornadoIntegration(),
                 AioHttpIntegration(),

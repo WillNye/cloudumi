@@ -10,6 +10,7 @@ INT_DEPS = [
     "//common/exceptions:lib",
     "//common/lib",
     "//identity:lib",
+    "//plugins/aws:lib",
     "//plugins/celery_tasks:lib",
     "//plugins/metrics:lib",
     "//util/log:lib",
@@ -68,7 +69,7 @@ py_binary(
     ],
     main = "run.py",
     env = {
-        "CONFIG_LOCATION": "configs/development_account:saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = INT_DEPS + EXT_DEPS,
@@ -196,25 +197,5 @@ py3_image(
     ],
     deps = EXT_DEPS + INT_DEPS,
     main = "run.py",
-    visibility = ["//visibility:public"],
-)
-
-container_push(
-    name = "container-deploy-staging",
-    format = "Docker",
-    repository = "staging-registry-celery",
-    image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "staging",
-    visibility = ["//visibility:public"],
-)
-
-container_push(
-    name = "container-deploy-prod",
-    format = "Docker",
-    repository = "prod-registry-celery",
-    image = "container",
-    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
     visibility = ["//visibility:public"],
 )

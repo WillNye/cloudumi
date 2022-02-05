@@ -38,6 +38,7 @@ module "tenant_container_service" {
   container_insights = var.container_insights
   lb_port = var.lb_port
   load_balancer_sgs = [module.tenant_networking.load_balancer_security_group]
+  namespace = var.namespace
   noq_core = var.noq_core
   region = var.region
   stage = var.stage

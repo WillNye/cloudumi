@@ -1,5 +1,7 @@
 import json
 import os
+from pathlib import Path
+import stat
 import sys
 from distutils.command.config import config
 from pathlib import Path
@@ -71,6 +73,7 @@ def __get_key_name_from_config(terraform_config: dict) -> str:
 
 def upload_configuration_to_s3(terraform_config: dict):
     my_path = Path(__file__).parent
+    boto3.setup_default_session(profile_name=terraform_config["aws_profile"])
     s3 = boto3.client("s3")
     bucket_name = terraform_config["tenant_configuration_bucket_name"]
     # avoiding response
@@ -101,6 +104,12 @@ def write_file(
     output = template.render(**terraform_config)
     with open(output_path, "w") as fp:
         fp.write(output)
+
+
+def make_file_executable(config_output_path: str, output_filename: str):
+    file_path = Path(config_output_path).joinpath(output_filename)
+    st = os.stat(file_path)
+    os.chmod(file_path, st.st_mode | stat.S_IEXEC)
 
 
 def replace_str_in_attribute(
@@ -220,7 +229,7 @@ if __name__ == "__main__":
         "compose.yaml.jinja2", "compose.yaml", terraform_config, config_output_path
     )
     write_file("ecs.yaml.jinja2", "ecs.yaml", terraform_config, config_output_path)
-    write_file(
-        "test.tfvars.jinja2", "test.tfvars", terraform_config, config_output_path
-    )
+    write_file("test.tfvars.jinja2", "test.tfvars", terraform_config, config_output_path)
+    write_file("push_all_the_things.sh.jinja2", "push_all_the_things.sh", terraform_config, config_output_path)
+    make_file_executable(config_output_path, "push_all_the_things.sh")
     # Write configuration locally for upload to S3

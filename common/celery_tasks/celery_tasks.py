@@ -115,6 +115,9 @@ class Celery(celery.Celery):
         if sentry_dsn:
             sentry_sdk.init(
                 sentry_dsn,
+                traces_sample_rate=config.get(
+                    "_global_.sentry.traces_sample_rate", 0.2
+                ),
                 integrations=[
                     TornadoIntegration(),
                     CeleryIntegration(),

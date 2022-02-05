@@ -295,24 +295,5 @@ py3_image(
     deps = EXT_DEPS + INT_DEPS,
     main = "__main__.py",
     tags = ["manual"],
-)
-
-container_push(
-    name = "container-deploy-staging",
-    format = "Docker",
-    repository = "staging-registry-api",
-    image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "staging",
-    visibility = ["//visibility:public"],
-)
-
-container_push(
-    name = "container-deploy-prod",
-    format = "Docker",
-    repository = "prod-registry-api",
-    image = "container",
-    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"]
 )

@@ -9,8 +9,6 @@ _global_:
     debug: false
     port: 8081
     xsrf: false
-  config:
-    load_from_dynamo: false
 
 site_configs:
   example_com:
