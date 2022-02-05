@@ -16,17 +16,13 @@ _global_:
   web:
     path: "/templates"
   s3_cache_bucket: {{ bucket_name }}
-  {% if stage == "staging" %}
-  development: true
-  environment: dev
-  {% else   %}
   development: false
-  {% endif  %}
+  environment: {{ stage }}
   tornado:
   {% if stage == "staging" %}
-    debug: false
-  {% else   %}
     debug: true
+  {% else   %}
+    debug: false
   {% endif  %}
     port: 8092
     xsrf: true
@@ -43,7 +39,7 @@ _global_:
     internal_policies: cmsaas_policies
   celery:
     clear_tasks_for_development: false
-    purge: true
+    purge: false
     broker:
       us-east-1: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
       us-west-2: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
