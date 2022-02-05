@@ -622,7 +622,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         tenant_config = f"""
 cloud_credential_authorization_mapping:
   role_tags:
-    enabled: true
+    enabled: false
     authorized_groups_tags:
       - noq_authorized
     authorized_groups_cli_only_tags:
@@ -641,16 +641,6 @@ headers:
     enabled: false
   role_login:
     enabled: true
-identity:
-  cache_groups:
-    enabled: true
-  identity_providers:
-    okta_test:
-      name: okta_test
-      idp_type: okta
-      org_url: https://dev-876967.okta.com/
-      # TODO: No secrets should be in plaintext configuration
-      api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
 url: {dev_domain_url}
 application_admin: {tenant.email}
 secrets:

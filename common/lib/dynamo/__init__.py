@@ -27,7 +27,6 @@ from common.exceptions.exceptions import (
     NoExistingRequest,
     NoMatchingRequest,
     PendingRequestAlreadyExists,
-    TenantNoCentralRoleConfigured,
 )
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
@@ -142,7 +141,9 @@ class BaseDynamoHandler:
                         config.get("_global_.boto3.client_kwargs.endpoint_url"),
                     ),
                 )
-            else:
+            elif config.get_host_specific_key(
+                "aws.dynamodb.tenant_owns_dynamodb_tables", host, False
+            ):
                 resource = boto3_cached_conn(
                     "dynamodb",
                     host,
@@ -158,10 +159,14 @@ class BaseDynamoHandler:
                     # to support data plane in customer env
                     pre_assume_roles=[],
                 )
+            else:
+                session = get_session_for_tenant(host)
+                resource = session.resource(
+                    "dynamodb",
+                    region_name=config.region,
+                )
             table = resource.Table(table_name)
             return table
-        except TenantNoCentralRoleConfigured:
-            return None
         except Exception as e:
             log.error(
                 {
