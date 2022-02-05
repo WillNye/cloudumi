@@ -11,7 +11,7 @@ variable "cluster_id" {
 
 variable "dynamo_table_replica_regions" {
   description = "List of regions to replicate all DDB tables into"
-  type        = list
+  type        = list(any)
 }
 
 variable "noq_core" {

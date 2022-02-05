@@ -1,5 +1,7 @@
 # Terraform instructions
 
+First, run `cd deploy/infrastructure`.
+
 ## Initialize Terraform with backend
 
 AWS_PROFILE=noq_dev terraform init

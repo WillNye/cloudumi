@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "noq_log_group" {
-  name = "${var.cluster_id}"
+  name = var.cluster_id
 }
 
 resource "aws_kms_key" "noq_ecs_kms_key" {
@@ -8,7 +8,7 @@ resource "aws_kms_key" "noq_ecs_kms_key" {
 }
 
 resource "aws_ecs_cluster" "noq_ecs_cluster" {
-  name               = "${var.cluster_id}"
+  name               = var.cluster_id
   capacity_providers = var.capacity_providers
   configuration {
     execute_command_configuration {
