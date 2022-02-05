@@ -404,7 +404,7 @@ class SilentException(BaseException):
         super().__init__(msg)
 
 
-class TenantNoCentralRoleconfigured(BaseException):
+class TenantNoCentralRoleConfigured(BaseException):
     """
     Tenant has no central role configured
     """
