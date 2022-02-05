@@ -11,6 +11,7 @@ from botocore.config import Config
 from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
 from common.config import config as consoleme_config
+from common.exceptions.exceptions import TenantNoCentralRoleConfigured
 from common.lib.aws.session import get_session_for_tenant
 
 CACHE = {}
@@ -207,7 +208,9 @@ def boto3_cached_conn(
     # if not assume_role and consoleme_config.get("_global_.environment") != "test":
     #     raise ValueError("Must provide role to assume")
     if not pre_assume_roles and consoleme_config.get("_global_.environment") != "test":
-        raise Exception("Customer hasn't configured central role for Noq.")
+        raise TenantNoCentralRoleConfigured(
+            "Tenant hasn't configured central role for Noq."
+        )
     key = (
         host,
         account_number,
