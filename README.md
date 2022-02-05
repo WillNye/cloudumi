@@ -91,13 +91,13 @@ TODO
 
 Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
 
-- `bazelisk run //deploy/infrastructure/live/noq.dev/shared/staging-1:staging-1`
+- `bazelisk run //deploy/infrastructure/live/shared/staging-1:staging-1`
 
 ### Publish to Prod
 
 > Do you really want this? Do you have access?
 
-- `bazelisk run //deploy/infrastructure/live/noq.dev/shared/production-1:production-1`
+- `bazelisk run //deploy/infrastructure/live/shared/prod-1:prod-1`
 
 ## Troubleshooting
 
