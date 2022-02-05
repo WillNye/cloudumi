@@ -61,9 +61,9 @@ variable "noq_core" {
 
 variable "profile" {
   description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
-  type    = string
+  type        = string
   validation {
-    condition = contains(["noq_dev", "noq_prod"], var.profile)
+    condition     = contains(["noq_dev", "noq_prod"], var.profile)
     error_message = "Allowed AWS_PROFILEs are \"noq_dev\" and \"noq_prod\"."
   }
 }
@@ -128,6 +128,6 @@ variable "celery_log_level" {
 
 variable "celery_concurrency" {
   description = "The number of processes each celery worker should run to run"
-  type        = number
-  default     = 16
+  type        = string
+  default     = "16"
 }

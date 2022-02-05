@@ -13,20 +13,15 @@ _global_:
     cluster_id: noq-dev-cyberdyne-prod-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
-  config:
-    load_from_dynamo: true
-    automatically_reload_configuration: true
-    load_tenant_configurations_from_dynamo: true
   web:
     path: "/templates"
   s3_cache_bucket: cloudumi-cache.noq-dev-cyberdyne-prod-1
-  
+
   development: false
-  
+
   tornado:
-  
     debug: true
-  
+
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:

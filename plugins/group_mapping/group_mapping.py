@@ -11,7 +11,7 @@ from common.lib.cloud_credential_authorization_mapping import (
 )
 from common.lib.plugins import get_plugin_by_name
 
-log = config.get_logger("consoleme")
+log = config.get_logger("cloudumi")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 credential_authz_mapping = CredentialAuthorizationMapping()
 

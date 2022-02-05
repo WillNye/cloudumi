@@ -27,7 +27,7 @@ from common.lib.cloud_credential_authorization_mapping.role_tags import (
 )
 from common.lib.singleton import Singleton
 
-log = config.get_logger("consoleme")
+log = config.get_logger("cloudumi")
 
 
 class CredentialAuthorizationMapping(metaclass=Singleton):
