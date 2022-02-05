@@ -54,10 +54,6 @@ _global_:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   # sentry:
   #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
-  config:
-    load_from_dynamo: true
-    automatically_reload_configuration: true
-    load_tenant_configurations_from_dynamo: true
   web:
     path: "/templates"
   s3_cache_bucket: noqcache

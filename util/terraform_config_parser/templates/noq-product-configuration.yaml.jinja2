@@ -13,10 +13,6 @@ _global_:
     cluster_id: {{ cluster_id_safed }}
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
-  config:
-    load_from_dynamo: true
-    automatically_reload_configuration: true
-    load_tenant_configurations_from_dynamo: true
   web:
     path: "/templates"
   s3_cache_bucket: {{ bucket_name }}

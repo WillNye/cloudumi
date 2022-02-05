@@ -67,16 +67,6 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger("consoleme")
 
 
-def get_dynamo_table_name(table_name: str, namespace: str = "cloudumi") -> str:
-    cluster_id_key = "_global_.deployment.cluster_id"
-    cluster_id = config.get(cluster_id_key, None)
-    if cluster_id is None:
-        raise RuntimeError(
-            f"Unable to read configuration - cannot get {cluster_id_key}"
-        )
-    return f"{cluster_id}_{namespace}_{table_name}"
-
-
 def filter_config_secrets(d):
     if isinstance(d, dict):
         for k, v in d.items():
@@ -585,76 +575,10 @@ class UserDynamoHandler(BaseDynamoHandler):
                 )
                 return True
 
-    async def get_static_config_for_host(self, host) -> bytes:
-        """Retrieve dynamic configuration yaml asynchronously"""
-        c = b""
-        try:
-            current_config = await sync_to_async(self.tenant_static_configs.get_item)(
-                Key={"host": host, "id": "master"}
-            )
-            if not current_config:
-                return c
-            compressed_config = current_config.get("Item", {}).get("config", "")
-            if not compressed_config:
-                return c
-            c = zlib.decompress(compressed_config.value)
-        except Exception as e:  # noqa
-            log.error(
-                {
-                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-                    "message": "Error retrieving static configuration",
-                    "error": str(e),
-                }
-            )
-            sentry_sdk.capture_exception()
-        return c
-
     def write_resource_cache_data(self, data):
         self.parallel_write_table(
             self.resource_cache_table, data, ["resourceId", "resourceType"]
         )
-
-    async def get_dynamic_config_yaml(self, host) -> bytes:
-        """Retrieve dynamic configuration yaml."""
-        return await sync_to_async(self.get_dynamic_config_yaml_sync)(host)
-
-    def get_dynamic_config_yaml_sync(self, host) -> bytes:
-        """Retrieve dynamic configuration yaml synchronously"""
-        c = b""
-        try:
-            current_config = self.dynamic_config.get_item(
-                Key={"host": host, "id": "master"}
-            )
-            if not current_config:
-                return c
-            compressed_config = current_config.get("Item", {}).get("config", "")
-            if not compressed_config:
-                return c
-            c = zlib.decompress(compressed_config.value)
-        except Exception as e:  # noqa
-            log.error(
-                {
-                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-                    "message": "Error retrieving dynamic configuration",
-                    "host": host,
-                    "error": str(e),
-                }
-            )
-            sentry_sdk.capture_exception()
-        return c
-
-    def get_dynamic_config_dict(self, host) -> dict:
-        """Retrieve dynamic configuration dictionary that can be merged with primary configuration dictionary."""
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # if cleanup: 'RuntimeError: There is no current event loop..'
-            loop = None
-        if loop and loop.is_running():
-            current_config_yaml = self.get_dynamic_config_yaml_sync(host)
-        else:
-            current_config_yaml = asyncio.run(self.get_dynamic_config_yaml(host))
-        config_d = yaml.load(current_config_yaml)
-        return config_d
 
     async def write_policy_request_v2(
         self, extended_request: ExtendedRequestModel, host: str
