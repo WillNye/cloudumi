@@ -332,15 +332,16 @@ async def handle_tenant_integration_queue(
             100,
         )
 
-    # TODO: Put this in configuration: queue_arn = "arn:aws:sqs:us-east-1:259868150464:noq_registration_queue"
+    account_id = config.get("_global_.integrations.aws.account_id")
+    cluster_id = config.get("_global_.deployment.cluster_id")
     queue_arn = config.get(
-        "_global_.noq_registration.queue_arn",
-        "arn:aws:sqs:us-east-1:259868150464:noq_registration_queue",
+        "_global_.integrations.aws.registration_queue_arn",
+        f"arn:aws:sqs:us-east-1:{account_id}:{cluster_id}-registration-queue",
     )
     if not queue_arn:
         raise MissingConfigurationValue(
             "Unable to find required configuration value: "
-            "`_global_.noq_registration.queue_arn`"
+            "`_global_.integrations.aws.registration_queue_arn`"
         )
     queue_name = queue_arn.split(":")[-1]
     queue_region = queue_arn.split(":")[3]

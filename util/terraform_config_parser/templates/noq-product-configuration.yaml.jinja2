@@ -1,11 +1,17 @@
 _global_:
   landing_page_domains:
     - {{ domain_name }}
-  aws:
-    node_role: {{ ecs_task_role_arn }}
-    stage: {{ stage }}
-    region: {{ region }}
-    attributes: {{ attributes }}
+  integrations:
+    aws:
+      account_id: {{ account_id }}
+      central_role_name: "NoqCentralRole"
+      spoke_role_name: "NoqSpokeRole"
+      node_role: {{ ecs_task_role_arn }}
+      stage: {{ stage }}
+      region: {{ region }}
+      attributes: {{ attributes }}
+      registration_topic_arn: {{ sns_registration_topic_arn }}
+      registration_queue_arn: {{ sqs_registration_queue_arn }}
   deployment:
     domain_name: {{ domain_name }}
     namespace: {{ namespace }}

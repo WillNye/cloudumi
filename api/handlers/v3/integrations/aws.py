@@ -25,7 +25,7 @@ class AwsIntegrationHandler(BaseHandler):
             res = WebResponse(status_code=400, message="External ID not found")
             self.write(res.json(exclude_unset=True, exclude_none=True))
             return
-        cluster_role = config.get("_global_.aws.node_role")
+        cluster_role = config.get("_global_.integrations.aws.node_role")
         if not cluster_role:
             self.set_status(400)
             res = WebResponse(status_code=400, message="Cluster role not found")
@@ -42,9 +42,11 @@ class AwsIntegrationHandler(BaseHandler):
                 }
             ],
         }
-        registration_queue_arn = config.get(
-            "_global_.integrations.aws.registration_sqs_queue_arn",
-            "arn:aws:sns:us-east-1:259868150464:noq_registration",
+        account_id = config.get("_global_.integrations.aws.account_id")
+        cluster_id = config.get("_global_.deployment.account_id")
+        registration_topic_arn = config.get(
+            "_global_.integrations.aws.registration_topic_arn",
+            f"arn:aws:sns:us-east-1:{account_id}:{cluster_id}-registration-topic",
         )
         central_role_template_url = config.get(
             "_global_.integrations.aws.registration_central_role_cf_template",
@@ -86,8 +88,8 @@ class AwsIntegrationHandler(BaseHandler):
                 "ParameterValue": spoke_role_name,
             },
             {
-                "ParameterKey": "RegistrationSnsQueArnParameter",
-                "ParameterValue": registration_queue_arn,
+                "ParameterKey": "RegistrationTopicArnParameter",
+                "ParameterValue": registration_topic_arn,
             },
         ]
         res = WebResponse(
@@ -102,14 +104,14 @@ class AwsIntegrationHandler(BaseHandler):
                         + f"&param_ExternalIDParameter={external_id}&param_HostParameter={host}&stackName={stack_name}"
                         + f"&param_ClusterRoleParameter={cluster_role}"
                         + f"&param_CentralRoleNameParameter={central_role_name}"
-                        + f"&param_RegistrationSnsQueArnParameter={registration_queue_arn}"
+                        + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
                         + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                     ),
                     "template_url": central_role_template_url,
                     "stack_name": stack_name,
                     "parameters": central_role_parameters,
                     "external_id": external_id,
-                    "node_role": config.get("_global_.aws.node_role"),
+                    "node_role": config.get("_global_.integrations.aws.node_role"),
                     "role_trust_policy": central_role_trust_policy,
                     "capabilities": capabilities,
                 },
@@ -137,8 +139,8 @@ class AwsIntegrationHandler(BaseHandler):
                     "ParameterValue": spoke_role_name,
                 },
                 {
-                    "ParameterKey": "RegistrationSnsQueArnParameter",
-                    "ParameterValue": registration_queue_arn,
+                    "ParameterKey": "RegistrationTopicArnParameter",
+                    "ParameterValue": registration_topic_arn,
                 },
             ]
 
@@ -162,7 +164,7 @@ class AwsIntegrationHandler(BaseHandler):
                     + f"&param_CentralAccountArnParameter={customer_central_account_role}"
                     + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                     + f"&stackName={spoke_stack_name}"
-                    + f"&param_RegistrationSnsQueArnParameter={registration_queue_arn}"
+                    + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
                 ),
                 "template_url": spoke_role_template_url,
                 "stack_name": spoke_stack_name,
