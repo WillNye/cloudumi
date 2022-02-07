@@ -77,14 +77,11 @@ module "tenant_elasticache_service" {
   vpc_id                      = module.tenant_networking.vpc_id
 }
 
-module "tenant_s3_service" {
-  source = "./modules/services/s3"
+module "tenant_messaging" {
+  source = "./modules/services/messaging"
 
-  attributes = var.attributes
-  cluster_id = local.cluster_id
-  noq_core   = var.noq_core
-  tags       = var.tags
-  timeout    = var.timeout
+  cluster_id                  = local.cluster_id
+  tags                        = var.tags
 }
 
 module "tenant_networking" {
@@ -104,4 +101,14 @@ module "tenant_networking" {
   tags                        = var.tags
   timeout                     = var.timeout
   zone                        = var.zone
+}
+
+module "tenant_s3_service" {
+  source = "./modules/services/s3"
+
+  attributes = var.attributes
+  cluster_id = local.cluster_id
+  noq_core   = var.noq_core
+  tags       = var.tags
+  timeout    = var.timeout
 }

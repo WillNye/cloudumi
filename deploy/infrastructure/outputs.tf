@@ -103,6 +103,35 @@ output "registry_repository_url_frontend" {
   value       = module.tenant_container_service.registry_repository_url_frontend[0].repository_url
 }
 
+output "sns_registration_topic_arn" {
+  description = "The SNS registration topic ARN that is used to trigger customer registration using the NOQ CF templates" 
+  value = module.tenant_messaging.sns_registration_topic_arn
+}
+
+output "sns_registration_topic_name" {
+  description = "The SNS topic name that is used to trigger customer registration using the NOQ CF template"
+  value = module.tenant_messaging.sns_registration_topic_name
+}
+
+output "sqs_registration_queue_arn" {
+  description = "The SQS registration queue ARN that is used to trigger customer registration using the NOQ CF templates" 
+  value = module.tenant_messaging.sqs_registration_queue_arn
+}
+
+output "sqs_registration_queue_name" {
+  description = "The SQS queue name that is used to trigger customer registration using the NOQ CF template"
+  value = module.tenant_messaging.sqs_registration_queue_name
+}
+
+output "sqs_registration_response_queue_arn" {
+  description = "The SQS registration response queue ARN that is used to trigger customer registration using the NOQ CF templates" 
+  value = module.tenant_messaging.sqs_registration_response_queue_arn
+}
+
+output "sqs_registration_response_queue_name" {
+  description = "The SQS response queue name that is used to trigger customer registration using the NOQ CF template"
+  value = module.tenant_messaging.sqs_registration_response_queue_name
+}
 output "stage" {
   description = "The configured stage (for automation)"
   value       = var.stage
