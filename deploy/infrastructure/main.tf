@@ -80,6 +80,7 @@ module "tenant_elasticache_service" {
 module "tenant_messaging" {
   source = "./modules/services/messaging"
 
+  account_id                  = var.account_id
   cluster_id                  = local.cluster_id
   tags                        = var.tags
 }

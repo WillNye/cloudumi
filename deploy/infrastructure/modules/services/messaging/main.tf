@@ -54,7 +54,7 @@ data "aws_iam_policy_document" "registration_topic_policy_document" {
       variable = "AWS:SourceOwner"
 
       values = [
-        var.account-id,
+        var.account_id,
       ]
     }
 
@@ -71,41 +71,12 @@ data "aws_iam_policy_document" "registration_topic_policy_document" {
   }
 }
 
-resource "aws_sqs_queue" "registration_deadletter_queue" {
-  name                      = "${var.cluster_id}-registration-deadletter-queue"
-  delay_seconds             = 90
-  max_message_size          = 2048
-  message_retention_seconds = 86400
-  receive_wait_time_seconds = 10
-  tags = merge(
-    var.tags,
-    {
-      "System": "Registration",
-    }
-  )
-}
-
 resource "aws_sqs_queue" "registration_queue" {
   name                      = "${var.cluster_id}-registration-queue"
   delay_seconds             = 90
   max_message_size          = 2048
   message_retention_seconds = 86400
   receive_wait_time_seconds = 10
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.registration_deadletter_queue.arn
-    maxReceiveCount     = 4
-  })
-  redrive_allow_policy = jsonencode({
-    redrivePermission = "byQueue",
-    sourceQueueArns   = ["${aws_sqs_queue.registration_deadletter_queue.arn}"]
-  })
-
-  tags = merge(
-    var.tags,
-    {
-      "System": "Registration",
-    }
-  )
 }
 
 resource "aws_sqs_queue_policy" "registration_queue_policy" {
@@ -133,26 +104,11 @@ POLICY
 }
 
 resource "aws_sqs_queue" "registration_response_queue" {
-  name                      = "terraform-example-queue"
+  name                      = "${var.cluster_id}-registration-response-queue"
   delay_seconds             = 90
   max_message_size          = 2048
   message_retention_seconds = 86400
   receive_wait_time_seconds = 10
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.registration_deadletter_queue.arn
-    maxReceiveCount     = 4
-  })
-  redrive_allow_policy = jsonencode({
-    redrivePermission = "byQueue",
-    sourceQueueArns   = ["${aws_sqs_queue.registration_deadletter_queue.arn}"]
-  })
-
-  tags = merge(
-    var.tags,
-    {
-      "System": "Registration",
-    }
-  )
 }
 
 resource "aws_sqs_queue_policy" "registration_response_queue_policy" {
