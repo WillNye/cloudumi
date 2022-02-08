@@ -38,6 +38,23 @@ data "aws_iam_policy_document" "registration_topic_policy_document" {
 
   statement {
     actions = [
+      "SNS:Publish", 
+    ]
+
+    principals {
+      type = "AWS"
+      identifiers = ["*"]
+    }
+
+    effect = "Allow"
+
+    resources = [
+      aws_sns_topic.registration_topic.arn,
+    ]
+  }
+
+  statement {
+    actions = [
       "SNS:Subscribe",
       "SNS:SetTopicAttributes",
       "SNS:RemovePermission",
@@ -133,4 +150,16 @@ resource "aws_sqs_queue_policy" "registration_response_queue_policy" {
   ]
 }
 POLICY
+}
+
+resource "aws_sns_topic_subscription" "registration_queue_subscription_to_registration_topic" {
+  topic_arn = aws_sns_topic.registration_topic.arn
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.registration_queue.arn
+}
+
+resource "aws_sns_topic_subscription" "registration_response_queue_subscription_to_registration_topic" {
+  topic_arn = aws_sns_topic.registration_topic.arn
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.registration_response_queue.arn
 }
