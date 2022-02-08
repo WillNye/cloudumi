@@ -77,7 +77,7 @@ async def retrieve_cached_terraform_resources(
             "cache_terraform_resources/cache_terraform_resources_v1.json.gz",
         ),
         host=host,
-        default=[],
+        default={"terraform_resources": []},
     )
 
     terraform_resources = TerraformResourceModelArray.parse_obj(terraform_resources_d)
