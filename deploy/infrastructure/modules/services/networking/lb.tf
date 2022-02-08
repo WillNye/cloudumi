@@ -1,6 +1,6 @@
 # Create a new load balancer
 resource "aws_lb" "noq_api_load_balancer" {
-  internal           = false
+  internal           = false #tfsec:ignore:aws-elb-alb-not-public
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb-sg.id]
   subnets            = [aws_subnet.subnet_public_az0.id, aws_subnet.subnet_public_az1.id]
@@ -17,6 +17,8 @@ resource "aws_lb" "noq_api_load_balancer" {
       Name = "noq_api_load_balancer"
     }
   )
+
+  drop_invalid_header_fields = true
 }
 
 resource "aws_lb_target_group" "noq_api_balancer_target_group" {
@@ -55,7 +57,7 @@ resource "aws_lb_listener" "noq_api_balancer_front_end_443" {
   load_balancer_arn = aws_lb.noq_api_load_balancer.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
   certificate_arn   = aws_acm_certificate_validation.tenant_certificate_validation.certificate_arn
 
   default_action {
@@ -79,10 +81,11 @@ resource "aws_security_group" "lb-sg" {
   }
 
   egress {
+    description = "Full egress access"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:aws-vpc-no-public-egress-sgr
   }
 
   tags = merge(

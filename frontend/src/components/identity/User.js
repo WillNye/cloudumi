@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { DateTime } from "luxon";
 import React, { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -69,14 +70,14 @@ const IdentityUserEdit = () => {
         );
       }
     },
-    [ // eslint-disable-line react-hooks/exhaustive-deps
+    [
       justification,
       groupExpiration,
       bulkGroupEditField,
       idpName,
       sendRequestCommon,
     ]
-  );  
+  );
 
   useEffect(() => {
     async function fetchDetails() {

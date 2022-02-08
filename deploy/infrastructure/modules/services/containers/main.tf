@@ -5,6 +5,7 @@ resource "aws_cloudwatch_log_group" "noq_log_group" {
 resource "aws_kms_key" "noq_ecs_kms_key" {
   description             = "ECS KMS key"
   deletion_window_in_days = 7
+  enable_key_rotation     = true
 }
 
 resource "aws_ecs_cluster" "noq_ecs_cluster" {
@@ -326,10 +327,11 @@ resource "aws_security_group" "ecs-sg" {
   }
 
   egress {
+    description = "Full egress access"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:aws-vpc-no-public-egress-sgr
   }
 
   tags = merge(

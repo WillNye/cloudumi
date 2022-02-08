@@ -1,4 +1,4 @@
-account_id  = "940552945933"
+account_id = "940552945933"
 
 namespace   = "cyberdyne"
 zone        = "noq.dev"
