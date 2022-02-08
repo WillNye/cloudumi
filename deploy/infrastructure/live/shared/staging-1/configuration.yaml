@@ -1,11 +1,17 @@
 _global_:
   landing_page_domains:
     - shared.staging.noq.dev
-  aws:
-    node_role: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
-    stage: staging
-    region: us-west-2
-    attributes: 1
+  integrations:
+    aws:
+      account_id: 259868150464
+      central_role_name: "NoqCentralRole"
+      spoke_role_name: "NoqSpokeRole"
+      node_role: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
+      stage: staging
+      region: us-west-2
+      attributes: 1
+      registration_topic_arn: arn:aws:sns:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-topic
+      registration_queue_arn: arn:aws:sqs:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-queue
   deployment:
     domain_name: shared.staging.noq.dev
     namespace: shared
@@ -19,8 +25,9 @@ _global_:
   development: false
   environment: staging
   tornado:
+  
     debug: true
-
+  
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:

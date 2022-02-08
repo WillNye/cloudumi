@@ -1418,7 +1418,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
     def __init__(self) -> None:
         default_table_name = get_dynamo_table_name("tenant_static_configs")
         table_name = config.get(
-            "_global_.aws.tenant_static_config_dynamo_table", default_table_name
+            "_global_.integrations.aws.tenant_static_config_dynamo_table", default_table_name
         )
         self.tenant_static_configs = _get_dynamo_table_restricted(self, table_name)
 

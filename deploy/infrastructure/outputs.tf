@@ -1,3 +1,8 @@
+output "account_id" {
+  description = "The account id in which this infrastructre is built in"
+  value       = var.account_id
+}
+
 output "attributes" {
   description = "The attributes configured (for automation)"
   value       = var.attributes
@@ -42,21 +47,6 @@ output "ecs_task_role_arn" {
   description = "The ECS task role ARN to be configured; note this has been referenced as NoqClusterRole1 in previous configurations"
   value       = module.tenant_container_service.ecs_task_role
 }
-
-# output "elasticache_parameter_group_id" {
-#   description = "The ElastiCache parameter group name."
-#   value       = module.tenant_elasticache_service.elasticache_parameter_group_id
-# }
-
-# output "elasticache_primary_cluster_address" {
-#   description = "The address of the primary redis cluster endpoint"
-#   value       = module.tenant_elasticache_service.elasticache_primary_cluster_address
-# }
-
-# output "elasticache_replication_group_reader_address" {
-#   description = "The address of the endpoint for the reader node in the replication group."
-#   value       = module.tenant_elasticache_service.elasticache_replication_group_reader_address
-# }
 
 output "elasticache_nodes" {
   description = "List of node objects including id, address, port and availability_zone"
@@ -103,6 +93,35 @@ output "registry_repository_url_frontend" {
   value       = module.tenant_container_service.registry_repository_url_frontend[0].repository_url
 }
 
+output "sns_registration_topic_arn" {
+  description = "The SNS registration topic ARN that is used to trigger customer registration using the NOQ CF templates" 
+  value = module.tenant_messaging.sns_registration_topic_arn
+}
+
+output "sns_registration_topic_name" {
+  description = "The SNS topic name that is used to trigger customer registration using the NOQ CF template"
+  value = module.tenant_messaging.sns_registration_topic_name
+}
+
+output "sqs_registration_queue_arn" {
+  description = "The SQS registration queue ARN that is used to trigger customer registration using the NOQ CF templates" 
+  value = module.tenant_messaging.sqs_registration_queue_arn
+}
+
+output "sqs_registration_queue_name" {
+  description = "The SQS queue name that is used to trigger customer registration using the NOQ CF template"
+  value = module.tenant_messaging.sqs_registration_queue_name
+}
+
+output "sqs_registration_response_queue_arn" {
+  description = "The SQS registration response queue ARN that is used to trigger customer registration using the NOQ CF templates" 
+  value = module.tenant_messaging.sqs_registration_response_queue_arn
+}
+
+output "sqs_registration_response_queue_name" {
+  description = "The SQS response queue name that is used to trigger customer registration using the NOQ CF template"
+  value = module.tenant_messaging.sqs_registration_response_queue_name
+}
 output "stage" {
   description = "The configured stage (for automation)"
   value       = var.stage
