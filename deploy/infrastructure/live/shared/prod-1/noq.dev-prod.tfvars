@@ -1,4 +1,4 @@
-account_id  = "940552945933"
+account_id = "940552945933"
 
 namespace   = "shared"
 zone        = "noq.dev"

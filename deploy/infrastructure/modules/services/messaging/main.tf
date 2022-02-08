@@ -22,7 +22,7 @@ EOF
   tags = merge(
     var.tags,
     {
-      "System": "Registration",
+      "System" : "Registration",
     }
   )
 }
