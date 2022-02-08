@@ -50,13 +50,12 @@ repos:
     rev: v1.62.3
     hooks:
       - id: terraform_fmt
-      - id: terraform_tflint
       - id: terraform_tfsec
       - id: terraform_validate
       - id: terrascan
       - id: checkov
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.8.0
+    rev: v7.32.0
     hooks:
       - id: eslint
         args:
