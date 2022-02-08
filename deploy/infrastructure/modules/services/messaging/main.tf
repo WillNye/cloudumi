@@ -37,6 +37,7 @@ data "aws_iam_policy_document" "registration_topic_policy_document" {
   policy_id = "__registration_topic_policy"
 
   statement {
+    sid = "AllowAccessToPublishFromAllAccounts"
     actions = [
       "SNS:Publish", 
     ]
@@ -54,6 +55,7 @@ data "aws_iam_policy_document" "registration_topic_policy_document" {
   }
 
   statement {
+    sid = "AllowAdditionalAccessInternally"
     actions = [
       "SNS:Subscribe",
       "SNS:SetTopicAttributes",
