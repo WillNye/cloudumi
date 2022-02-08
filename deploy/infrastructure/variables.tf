@@ -1,3 +1,8 @@
+variable "account_id" {
+  description = "The account id that this infrastructure is built in"
+  type        = string
+}
+
 variable "allowed_inbound_cidr_blocks" {
   description = "The CIDR blocks that are allowed to connect to the cluster"
   type        = list(string)

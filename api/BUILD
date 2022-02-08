@@ -123,7 +123,7 @@ py_library(
 
 
 py_binary(
-    name = "bin.local",
+    name = "bin",
     data = [
         "//configs/development_account:configs",
         ":web_site_sources"
@@ -136,27 +136,9 @@ py_binary(
     env = {
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
         # Note: `bazel info --show_make_env` will show all available predefined variables
-        # "CONFIG_LOCATION": "$(GENDIR)/api/bin.local.runfiles/cloudumi/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
+        # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
         "AWS_PROFILE": "noq_dev",
-    },
-    deps = INT_DEPS + EXT_DEPS,
-    visibility = ["//visibility:public"],
-)
-
-py_binary(
-    name = "bin.s3",
-    data = [
-        ":web_site_sources"
-    ],
-    srcs_version = "PY3",
-    srcs = [
-        ":src",
-    ],
-    main = "__main__.py",
-    env = {
-        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev"
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
