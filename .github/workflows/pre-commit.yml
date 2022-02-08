@@ -46,7 +46,6 @@ jobs:
           pip install .
           yarn --cwd frontend install
           yarn --cwd frontend build_template
-          terraform -chdir=deploy/infrastructure/ init
 
           # Checkov for Terraform security vulnerability checking
           pip install checkov
