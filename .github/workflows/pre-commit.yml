@@ -52,7 +52,7 @@ jobs:
           pip install checkov
 
           # tflint
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
           # tfsec - Terraform security scanning
           go install github.com/aquasecurity/tfsec/cmd/tfsec@latest
@@ -62,7 +62,6 @@ jobs:
           tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
           install terrascan /usr/local/bin && rm terrascan
 
-          ./install_linux.sh
           pre-commit install
       - name: Run pre-commit
         run: |

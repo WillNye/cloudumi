@@ -75,7 +75,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 
 - Activate your local virtualenv first `. env/bin/activate` (Note: We haven't had success working with pyenv)
 - Run a local test of the API service using one of the py_binary targets.
-  - To run local-dev: `bazelisk run //api:bin.local`
+  - To run local-dev: `bazelisk run //api:bin`
   - To run S3-dev: `bazelisk run //api:bin.s3` -- note that the only difference here is that the config files are pulled from S3
 - Build the API project library: `bazelisk build //api:lib`
 - Test the API project library: `bazelisk test //api` -- coming SOON
@@ -86,6 +86,39 @@ Each target has a name that uniquely identifies a build target. The path disambi
 ### Build Celery
 
 TODO
+
+### Launch local test env
+
+A local dev environment sets up testing. Test can be setup by running either the `bin` targets or the `container-dev-local` targets in each component's build file.
+
+To setup the test environment, make sure you have `docker-compose` accessible in your environment, then:
+
+- `docker-compose -f deploy/docker-compose-dependencies.yaml up -d`: to setup the requisite containers for local services
+- `bazelisk run //common/scripts:initialize_dynamodb`: to initialize the dynamo tables
+- `bazelisk run //common/scripts:initialize_redis`: to initialize the redis cache
+
+To enable the UX:
+- `cd frontend`
+- `yarn build_template`
+- `cd ..`
+
+* To setup an account in the local dynamo instance, browse to `localhost:8001` and find the table `dev_cloudumi_tenant_static_configs`. In the top right corner, there is a "Create Item" button, click it.
+* In the entry screen, add this: 
+
+```json
+{"host": "localhost", "updated_by": "curtis@noq.dev", "id": "master", "updated_at": "1642358978", "config": "_development_groups_override:\n- noq_admins@noq.dev\n_development_user_override: matt@noq.dev\naccount_ids_to_name:\n  '259868150464': '259868150464'\napplication_admin: noq_admins@noq.dev\nauth:\n  force_redirect_to_identity_provider: false\n  get_groups_from_google: false\n  get_user_by_oidc: false\ncache_resource_templates:\n  repositories:\n  - authentication_settings:\n      email: terraform@noq.dev\n    main_branch_name: master\n    name: consoleme\n    repo_url: https://github.com/Netflix/consoleme\n    resource_formats:\n    - terraform\n    resource_type_parser: null\n    terraform:\n      path_suffix: .tf\n    type: git\n    web_path: https://github.com/Netflix/consoleme\ncache_self_service_typeahead:\n  cache_resource_templates: true\nchallenge_url:\n  enabled: true\ncloud_credential_authorization_mapping:\n  role_tags:\n    authorized_groups_cli_only_tags:\n    - noq-authorized-cli-only\n    authorized_groups_tags:\n    - noq-authorized\n    - consoleme-authorized\ndevelopment: true\nenvironment: test\nget_user_by_oidc_settings:\n  access_token_audience: noq\n  access_token_response_key: access_token\n  client_scopes:\n  - email\n  - openid\n  grant_type: authorization_code\n  id_token_response_key: id_token\n  jwt_email_key: email\n  jwt_groups_key: groups\n  jwt_verify: true\n  metadata_url: https://accounts.google.com/.well-known/openid-configuration\n  resource: noq_tenant\ngoogle:\n  credential_subject:\n    noq.dev: curtis@noq.dev\nheaders:\n  identity:\n    enabled: false\n  role_login:\n    enabled: true\npolicies:\n  pre_role_arns_to_assume:\n  - external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43\n    role_arn: arn:aws:iam::259868150464:role/ConsoleMeCentralRole\n  role_name: ConsoleMeSpokeRole\nsecrets:\n  jwt_secret: 0oti94rDtoGaiTnU4cxhNsylIaVB6EOLC-CVNBFlwYo\nsite_config:\n  landing_url: /\ntenant_details:\n  creation_time: '2021-12-17T15:55:43.960096'\n  creator: curtis@noq.dev\n  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43\nurl: http://localhost:8092\n"}
+```
+
+* Make any adjustments as needed
+* Once you decide which way to run the NOQ services, do either of the following
+
+#### Local environment run
+- `bazelisk run //api:bin`: to run the API in the local environment
+- `bazelisk run //common/celery_tasks:bin`: to run the Celery workers in the local environment
+
+#### Container environment run
+- `bazelisk run //api:container-dev-local`: to run the API in the container environment
+- `bazelisk run //common/celery_tasks:container-dev-local`: to run the Celery workers in the container environment
 
 ### Publish to Staging
 
