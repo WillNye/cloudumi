@@ -43,10 +43,11 @@ class AwsIntegrationHandler(BaseHandler):
             ],
         }
         account_id = config.get("_global_.integrations.aws.account_id")
-        cluster_id = config.get("_global_.deployment.account_id")
+        cluster_id = config.get("_global_.deployment.cluster_id")
+        region = config.get("_global_.integrations.aws.region", "us-west-2")
         registration_topic_arn = config.get(
             "_global_.integrations.aws.registration_topic_arn",
-            f"arn:aws:sns:us-east-1:{account_id}:{cluster_id}-registration-topic",
+            f"arn:aws:sns:{region}:{account_id}:{cluster_id}-registration-topic",
         )
         central_role_template_url = config.get(
             "_global_.integrations.aws.registration_central_role_cf_template",

@@ -59,7 +59,7 @@ py_library(
 )
 
 py_binary(
-    name = "bin.local",
+    name = "bin",
     data = [
         "//configs/development_account:configs",
     ],
@@ -69,24 +69,8 @@ py_binary(
     ],
     main = "run.py",
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
         "AWS_PROFILE": "noq_dev",
-    },
-    deps = INT_DEPS + EXT_DEPS,
-    visibility = ["//visibility:public"],
-)
-
-py_binary(
-    name = "bin.s3",
-    data = [],
-    srcs_version = "PY3",
-    srcs = [
-        ":src_files",
-    ],
-    main = "run.py",
-    env = {
-        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev"
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
