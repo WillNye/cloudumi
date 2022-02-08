@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  Button,
-  Dropdown,
-  Menu,
-  Image,
-  Label,
-  Message,
-} from "semantic-ui-react";
+import { Button, Dropdown, Menu, Label, Message } from "semantic-ui-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../auth/AuthProviderDefault";
 import ReactMarkdown from "react-markdown";
@@ -16,11 +9,8 @@ import { useNotifications } from "./hooks/notifications";
 
 const ConsoleMeHeader = () => {
   const { user } = useAuth();
-  const {
-    notifications,
-    unreadNotificationCount,
-    GetAndSetNotifications,
-  } = useNotifications();
+  const { notifications, unreadNotificationCount, GetAndSetNotifications } =
+    useNotifications();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
