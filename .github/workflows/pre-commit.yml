@@ -1,0 +1,49 @@
+name: Build & Package
+
+on:
+  push:
+    branches: [main]
+    tags: ["*"]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+      - name: Install dependencies
+        run: |
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo bash
+          curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+          echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+          sudo apt-get update
+          sudo apt-get install \
+            libssl-dev \
+            libcurl4-openssl-dev \
+            python3-dev \
+            build-essential \
+            libxml2-dev \
+            libxmlsec1-dev \
+            libxmlsec1-openssl \
+            musl-dev \
+            yarn \
+            nodejs
+          pip install \
+            -r requirements.lock \
+            -r requirements-test.lock \
+          pip install .
+          yarn --cwd frontend install
+          yarn --cwd frontend build_template
+          terraform -chdir=deploy/infrastructure/ init
+          pre-commit install
+      - name: Run pre-commit
+        run: |
+          pre-commit run -a

@@ -8,7 +8,7 @@ on: workflow_dispatch
 #      - "*"
 jobs:
   ecr_and_deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     name: ECR/ECS deploy action
     if: github.repository == 'noqdev/cloudumi'
     steps:
