@@ -69,14 +69,15 @@ const IdentityUserEdit = () => {
         );
       }
     },
-    [ // eslint-disable-line react-hooks/exhaustive-deps
+    [
+      // eslint-disable-line react-hooks/exhaustive-deps
       justification,
       groupExpiration,
       bulkGroupEditField,
       idpName,
       sendRequestCommon,
     ]
-  );  
+  );
 
   useEffect(() => {
     async function fetchDetails() {
