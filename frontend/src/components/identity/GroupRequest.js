@@ -1,4 +1,6 @@
+import { DateTime } from "luxon";
 import React, { useCallback, useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { useParams } from "react-router-dom";
 import SemanticDatepicker from "react-semantic-ui-datepickers";
 import {
@@ -10,8 +12,6 @@ import {
   TextArea,
 } from "semantic-ui-react";
 import { useAuth } from "../../auth/AuthProviderDefault";
-import { DateTime } from "luxon";
-import ReactMarkdown from "react-markdown";
 
 export const IdentityGroupRequest = (props) => {
   const auth = useAuth();
@@ -133,7 +133,7 @@ export const IdentityGroupRequest = (props) => {
       }
     }
     fetchDetails();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>

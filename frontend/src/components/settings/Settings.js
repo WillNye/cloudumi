@@ -2,25 +2,25 @@ import React, { useEffect } from "react";
 import { Button, Grid, Image, Menu, Segment, Header } from "semantic-ui-react";
 import { useAuth } from "./../../auth/AuthProviderDefault";
 
-function modalReducer(state, action) {
-  switch (action.type) {
-    case "close":
-      return { open: false };
-    case "open":
-      return { open: true, size: action.size };
-    default:
-      throw new Error("Unsupported action...");
-  }
-}
+// function modalReducer(state, action) {
+//   switch (action.type) {
+//     case "close":
+//       return { open: false };
+//     case "open":
+//       return { open: true, size: action.size };
+//     default:
+//       throw new Error("Unsupported action...");
+//   }
+// }
 
 export const Settings = () => {
   const state = { activeItem: "integrations" };
   const { sendRequestCommon } = useAuth();
   const [activeItem, setActiveItem] = React.useState(state.activeItem);
-  const [segment, setSegment] = React.useState();
+  // const [segment, setSegment] = React.useState();
   const [config, setConfig] = React.useState();
 
-  const handleItemClick = (e, { name }) => setActiveItem(name);
+  const handleItemClick = (_, { name }) => setActiveItem(name);
 
   useEffect(() => {
     async function fetchPageConfig() {
@@ -37,27 +37,27 @@ export const Settings = () => {
     fetchPageConfig();
   }, [sendRequestCommon]);
 
-  const handleAwsConfigureHubAccount = () => {
-    // TODO - Get a dynamic URL from the backend, duh
-    // Integrations:
-    // AWS Accounts:
-    //    - Run CF Stack, Manually Register, or run script to register through AWS SSO or Manually
-    //    - Prevent registering account under different tenant
-    // Sync with AWS organizations
-    // List existing account integrations
-    // Only one Central Account allowed
-    // Multiple Spoke Accounts
-    // Option to Add Spoke Account
-    // Option to Remove Spoke Account
-    // Option to Sync with AWS Organizations
-    // (v2) - Connection Testing by Assume Role
-    // AWS Config Integration?
-    window.open(config?.cloudformation_url_hub_account, "_blank");
-  };
+  // const handleAwsConfigureHubAccount = () => {
+  //   // TODO - Get a dynamic URL from the backend, duh
+  //   // Integrations:
+  //   // AWS Accounts:
+  //   //    - Run CF Stack, Manually Register, or run script to register through AWS SSO or Manually
+  //   //    - Prevent registering account under different tenant
+  //   // Sync with AWS organizations
+  //   // List existing account integrations
+  //   // Only one Central Account allowed
+  //   // Multiple Spoke Accounts
+  //   // Option to Add Spoke Account
+  //   // Option to Remove Spoke Account
+  //   // Option to Sync with AWS Organizations
+  //   // (v2) - Connection Testing by Assume Role
+  //   // AWS Config Integration?
+  //   window.open(config?.cloudformation_url_hub_account, "_blank");
+  // };
 
-  const handleAwsConfigureSpokeAccount = () => {
-    window.open(config?.cloudformation_url_spoke_account, "_blank");
-  };
+  // const handleAwsConfigureSpokeAccount = () => {
+  //   window.open(config?.cloudformation_url_spoke_account, "_blank");
+  // };
 
   return (
     <Grid>

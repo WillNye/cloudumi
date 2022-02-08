@@ -149,7 +149,7 @@ export const IdentityGroupRequestReview = (props) => {
         {/* <Button negative onClick={(evt) => {handleSubmit(evt, "re-open")}}>Re-Open Request</Button> */}
       </Form>
     );
-  }, [groupRequest]);
+  }, [groupRequest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
