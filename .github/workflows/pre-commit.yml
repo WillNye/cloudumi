@@ -36,9 +36,12 @@ jobs:
             libxmlsec1-openssl \
             musl-dev \
             yarn \
+            unzip \
+            python3-pip \
             nodejs -y
           pip install \
-            -r requirements.lock \
+            -r requirements.lock
+          pip install \
             -r requirements-test.lock \
           pip install .
           yarn --cwd frontend install
