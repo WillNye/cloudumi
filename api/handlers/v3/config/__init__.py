@@ -161,7 +161,7 @@ class ConfigHandler(BaseHandler):
                 "spoke_role_name": config.get_host_specific_key(
                     "policies.role_name", host
                 ),
-                "central_role_name": "NoqCentralRole",
+                "central_role_name": config.get("_global_.integrations.aws.central_role_name", "NoqCentralRole"),
                 "central_role_trust_policy": central_role_trust_policy,
                 "central_role_inline_policy": central_role_inline_policy,
                 "spoke_role_inline_policy": spoke_role_inline_policy,
