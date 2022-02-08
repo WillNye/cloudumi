@@ -899,6 +899,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         inline_policy_change_model.policy.policy_document.get("Statement")[0][
             "Effect"
         ] = "Deny"
+        inline_policy_change_model.status = "not_applied"
         extended_request.changes = ChangeModelArray(
             changes=[inline_policy_change_model]
         )
@@ -926,6 +927,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         response.action_results = []
         response.errors = 0
         inline_policy_change_model.action = Action.detach
+        inline_policy_change_model.status = "not_applied"
         extended_request.changes = ChangeModelArray(
             changes=[inline_policy_change_model]
         )
