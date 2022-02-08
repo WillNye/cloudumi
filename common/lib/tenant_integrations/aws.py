@@ -334,9 +334,10 @@ async def handle_tenant_integration_queue(
 
     account_id = config.get("_global_.integrations.aws.account_id")
     cluster_id = config.get("_global_.deployment.cluster_id")
+    region = config.get("_global_.integrations.aws.region")
     queue_arn = config.get(
         "_global_.integrations.aws.registration_queue_arn",
-        f"arn:aws:sqs:us-east-1:{account_id}:{cluster_id}-registration-queue",
+        f"arn:aws:sqs:{region}:{account_id}:{cluster_id}-registration-queue",
     )
     if not queue_arn:
         raise MissingConfigurationValue(
