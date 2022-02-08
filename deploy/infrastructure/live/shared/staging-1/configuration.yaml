@@ -4,8 +4,8 @@ _global_:
   integrations:
     aws:
       account_id: 259868150464
-      central_role_name: 259868150464stagingnoqdevsharedstagingNoqCentralRole
-      spoke_role_name: 259868150464stagingnoqdevsharedstagingNoqSpokeRole
+      central_role_name: NoqCentralRole-259868150464-stagingnoqdev
+      spoke_role_name: NoqSpokeRole-259868150464-stagingnoqdev
       node_role: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
       stage: staging
       region: us-west-2

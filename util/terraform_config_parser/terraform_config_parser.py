@@ -193,15 +193,15 @@ if __name__ == "__main__":
     terraform_config = join_strings_in_attribute(
         terraform_config,
         "central_role_name_prefix",
-        ["account_id", "zone_no_dot", "namespace", "stage"],
-        "",
+        ["account_id", "zone_no_dot"],
+        "-",
     )
     # Instead of using the above, we'll write out the spoke_role_name_prefix too in case there are changes later
     terraform_config = join_strings_in_attribute(
         terraform_config,
         "spoke_role_name_prefix",
-        ["account_id", "zone_no_dot", "namespace", "stage"],
-        "",
+        ["account_id", "zone_no_dot"],
+        "-",
     )
     terraform_config = join_strings_in_attribute(
         terraform_config,
