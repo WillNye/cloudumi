@@ -7,7 +7,7 @@ and to update the infrastructure when changes are needed.
 **NOTE**: it is imperative you enter the correct workspace using `terraform workspace select` before attempting to
 update prod or production environments!
 
-**NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`terraform workspace select noq.dev-prod-1` for instance)
+**NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`` for instance)
 
 ## Pre-requisites:
 
@@ -25,6 +25,26 @@ Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file
 - Export your AWS Profile (see the `AWS Credentials` section below): `export AWS_PROFILE=noq_dev`
 
 ## Terraform
+
+### Cheat Codes
+
+#### Staging
+
+terraform workspace select shared-staging-1
+terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars
+export AWS_PROFILE=noq_dev
+export AWS_REGION=us-west-2
+terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars
+terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars
+
+#### Prod
+
+terraform workspace select shared-prod-1
+terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
+export AWS_PROFILE=noq_prod
+export AWS_REGION=us-west-2
+terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars
+terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 
 Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
 

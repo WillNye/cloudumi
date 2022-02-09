@@ -39,11 +39,11 @@ data "aws_iam_policy_document" "registration_topic_policy_document" {
   statement {
     sid = "AllowAccessToPublishFromAllAccounts"
     actions = [
-      "SNS:Publish", 
+      "SNS:Publish",
     ]
 
     principals {
-      type = "AWS"
+      type        = "AWS"
       identifiers = ["*"]
     }
 

@@ -52,8 +52,10 @@ repos:
       - id: terraform_fmt
       - id: terraform_tfsec
       - id: terraform_validate
-      - id: terrascan
-      - id: checkov
+      # TODO (ccastrapel): Add additional checks when we're ready for them
+      # - id: terrascan
+      # - id: checkov
+      #   args: ["--skip-path", "env*"]
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v7.32.0
     hooks:

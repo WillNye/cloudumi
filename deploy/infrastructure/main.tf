@@ -107,9 +107,10 @@ module "tenant_networking" {
 module "tenant_s3_service" {
   source = "./modules/services/s3"
 
-  attributes = var.attributes
-  cluster_id = local.cluster_id
-  noq_core   = var.noq_core
-  tags       = var.tags
-  timeout    = var.timeout
+  attributes           = var.attributes
+  cluster_id           = local.cluster_id
+  noq_core             = var.noq_core
+  tags                 = var.tags
+  timeout              = var.timeout
+  s3_access_log_bucket = var.s3_access_log_bucket
 }

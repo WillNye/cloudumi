@@ -29,3 +29,8 @@ variable "timeout" {
   description = "The timeout for each resource that may get stuck"
   type        = string
 }
+
+variable "s3_access_log_bucket" {
+  description = "The S3 bucket to use for S3 access logs"
+  type        = string
+}
