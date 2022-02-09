@@ -39,12 +39,14 @@ jobs:
             unzip \
             python3-pip \
             nodejs -y
+          python3 -m venv env
+          source env/bin/activate
+          pip install pre-commit
           pip install \
             -r requirements.lock
           pip install \
             -r requirements-test.lock \
           pip install .
-          pip install pre-commit
           yarn --cwd frontend install
           yarn --cwd frontend build_template
 
@@ -62,4 +64,5 @@ jobs:
           pre-commit install
       - name: Run pre-commit
         run: |
+          source env/bin/activate
           pre-commit run -a
