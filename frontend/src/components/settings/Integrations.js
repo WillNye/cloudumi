@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import { Grid, Menu, Segment } from "semantic-ui-react";
+import React from "react";
+import { Segment } from "semantic-ui-react";
 
 export const Integrations = () => {
   return (

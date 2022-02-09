@@ -32,7 +32,7 @@ Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file
 
 export AWS_PROFILE=noq_dev
 export AWS_REGION=us-west-2
-terraform workspace select shared-staging-1
+terraform workspace select noq.dev-staging-1
 terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars
 terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars
 terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars
@@ -41,10 +41,8 @@ terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars
 
 export AWS_PROFILE=noq_prod
 export AWS_REGION=us-west-2
-terraform workspace select shared-prod-1
+terraform workspace select noq.dev-production-1
 terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
-export AWS_PROFILE=noq_prod
-export AWS_REGION=us-west-2
 terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 

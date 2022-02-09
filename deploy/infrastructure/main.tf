@@ -2,11 +2,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.27"
+      version = "~> 3.74"
     }
   }
 
-  required_version = ">= 0.14.9"
+  required_version = ">= 1.1.5"
   backend "s3" {
     bucket         = "noq-terraform-state"
     key            = "terraform/terraform.tfstate"
