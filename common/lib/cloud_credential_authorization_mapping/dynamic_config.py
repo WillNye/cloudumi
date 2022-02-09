@@ -1,4 +1,3 @@
-import sys
 from typing import Dict
 
 from common.config import config
@@ -7,7 +6,6 @@ from common.lib.cloud_credential_authorization_mapping.models import (
     RoleAuthorizations,
     user_or_group,
 )
-from common.lib.redis import RedisHandler
 
 
 class DynamicConfigAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
@@ -15,13 +13,6 @@ class DynamicConfigAuthorizationMappingGenerator(CredentialAuthzMappingGenerator
         self, authorization_mapping: Dict[user_or_group, RoleAuthorizations], host: str
     ) -> Dict[user_or_group, RoleAuthorizations]:
         """This will list accounts that meet the account attribute search criteria."""
-        function = f"{__name__}.{sys._getframe().f_code.co_name}"
-        log_data = {
-            "function": function,
-        }
-        red = RedisHandler().redis_sync(host)
-        if config.get("_global_.config.load_from_dynamo", True):
-            config.CONFIG.load_dynamic_config_from_redis(log_data, host, red)
         group_mapping_configuration = config.get_host_specific_key(
             "dynamic_config.group_mapping", host
         )

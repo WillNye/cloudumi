@@ -10,6 +10,7 @@ INT_DEPS = [
     "//common/exceptions:lib",
     "//common/lib",
     "//identity:lib",
+    "//plugins/aws:lib",
     "//plugins/celery_tasks:lib",
     "//plugins/metrics:lib",
     "//util/log:lib",
@@ -58,7 +59,7 @@ py_library(
 )
 
 py_binary(
-    name = "bin.local",
+    name = "bin",
     data = [
         "//configs/development_account:configs",
     ],
@@ -68,24 +69,8 @@ py_binary(
     ],
     main = "run.py",
     env = {
-        "CONFIG_LOCATION": "$(RULEDIR)/configs/development_account:saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
         "AWS_PROFILE": "noq_dev",
-    },
-    deps = INT_DEPS + EXT_DEPS,
-    visibility = ["//visibility:public"],
-)
-
-py_binary(
-    name = "bin.s3",
-    data = [],
-    srcs_version = "PY3",
-    srcs = [
-        ":src_files",
-    ],
-    main = "run.py",
-    env = {
-        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev"
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -96,7 +81,7 @@ py_wheel(
     distribution = "cloudumi_common_celery_tasks",
     python_tag = "py3",
     version = "0.0.1",
-    deps = [":lib_pkg"],
+    deps = [":lib"],
     requires = REQUIRES,
     strip_path_prefixes = [
     ],
@@ -123,15 +108,46 @@ container_layer(
     directory = "/",
 )
 
+container_layer(
+    name = "sshd_config_layer",
+    files = [
+        "//common/celery_tasks/util:sshd_config",
+    ],
+    directory = "/etc/ssh",
+)
+
 container_image(
     name = "base-celery-api",
     base = "//docker/base:base_docker",
     env = {
+        "DEBUG": "1",
     },
     layers = [
         ":config_layer",
+        ":sshd_config_layer",
     ],
-    ports = [],
+    ports = ["2223"],
+    symlinks = {
+        "/usr/bin/python": "/usr/local/bin/python",
+    },
+    docker_run_flags = "-v ~/.aws:/root/.aws",
+)
+
+container_image(
+    name = "base-celery-dev-local",
+    base = "//docker/base:base_docker",
+    env = {
+        "TZ": "America/Los_Angeles",
+        "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
+        "NOQ_CONTAINER": "1",
+        "AWS_PROFILE": "noq_dev",
+        "DEBUG": "1",
+    },
+    layers = [
+        ":config_layer",
+        ":sshd_config_layer",
+    ],
+    ports = ["2223"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
@@ -141,34 +157,29 @@ container_image(
 py3_image(
     name = "container",
     base = ":base-celery-api",
+    srcs = [
+        ":lib",
+    ],
     layers = [
         ":lib_layer",
         ":pkg_layer",
-    ],
-    srcs = [
-        ":lib",
     ],
     deps = EXT_DEPS + INT_DEPS,
     main = "run.py",
     visibility = ["//visibility:public"],
 )
 
-container_push(
-    name = "container-deploy-staging",
-    format = "Docker",
-    repository = "staging-registry-celery",
-    image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "staging",
-    visibility = ["//visibility:public"],
-)
-
-container_push(
-    name = "container-deploy-prod",
-    format = "Docker",
-    repository = "prod-registry-celery",
-    image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "production",
+py3_image(
+    name = "container-dev-local",
+    base = ":base-celery-dev-local",
+    srcs = [
+        ":lib",
+    ],
+    layers = [
+        ":pkg_layer",
+        ":lib_layer",
+    ],
+    deps = EXT_DEPS + INT_DEPS,
+    main = "run.py",
     visibility = ["//visibility:public"],
 )

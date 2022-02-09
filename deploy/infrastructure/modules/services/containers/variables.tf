@@ -5,8 +5,8 @@ variable "allowed_inbound_cidr_blocks" {
 
 variable "attributes" {
   description = "Additional attributes, e.g. `1`"
-  type    = number
-  default = 1
+  type        = number
+  default     = 1
 }
 
 variable "container_insights" {
@@ -22,7 +22,7 @@ variable "capacity_providers" {
 }
 
 variable "cluster_id" {
-  type = string
+  type        = string
   description = "The cluster ID for CloudUmi."
 }
 
@@ -31,13 +31,23 @@ variable "lb_port" {
   default     = 443
 }
 
+variable "load_balancer_sgs" {
+  description = "Any load balancer that requires access to the services should be added here"
+  type        = list(string)
+}
+
+variable "namespace" {
+  description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
+  type        = string
+}
+
 variable "noq_core" {
-  type = bool
+  type    = bool
   default = false
 }
 
 variable "region" {
-  type = string
+  type        = string
   description = "The region that all services are deployed into"
 }
 
@@ -53,24 +63,39 @@ variable "stage" {
 
 variable "subnet_ids" {
   description = "The subnet ids as generated"
-  type = list(string)
+  type        = list(string)
 }
 
 variable "tags" {
-  description = "The tag to assign to resources" 
-  type = map(any)
+  description = "The tag to assign to resources"
+  type        = map(any)
+}
+
+variable "tenant_configuration_bucket_name" {
+  description = "The tenant configuration bucket"
+  type        = string
+}
+
+variable "test_access_sg_id" {
+  description = "Test access on port 22"
+  type        = string
 }
 
 variable "timeout" {
-  description = "The timeout for each resource that may get stuck" 
-  type = string
+  description = "The timeout for each resource that may get stuck"
+  type        = string
 }
 
 variable "vpc_cidr_range" {
   description = "VPC CIDR Range"
-  type = string
+  type        = string
 }
 variable "vpc_id" {
   description = "VPC ID"
-  type = string
+  type        = string
+}
+
+variable "cloudumi_files_bucket" {
+  description = "The S3 bucket to store cached data for tenants"
+  type        = string
 }

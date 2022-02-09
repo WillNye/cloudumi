@@ -54,7 +54,7 @@ Resources:
   SnsCustomResource:
     Type: "Custom::SnsCustomResource"
     Properties:
-      ServiceToken: !Ref RegistrationSnsQueArnParameter
+      ServiceToken: !Ref RegistrationTopicArnParameter
       IntegrationName: !Ref "AWS::StackName"
       Host: !Ref HostParameter
       ActionType: "AWSSpokeAcctRegistration"
@@ -88,14 +88,14 @@ Parameters:
     MaxLength: "100"
     AllowedPattern: '[\w+_-]*'
     ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]*'
-  RegistrationSnsQueArnParameter:
+  RegistrationTopicArnParameter:
     Description: >-
       The SNS queue ARN that will be used to send registration messages to the SaaS
     Type: String
     MinLength: "2"
     MaxLength: "100"
     AllowedPattern: '^arn:aws:sns:[\w-]*:\d{12}:.+'
-    ConstraintDescription: 'Invalid RegistrationSnsQueArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
+    ConstraintDescription: 'Invalid RegistrationTopicArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
 Outputs:
   CentralAccountArn:
     Description: The central role in the customer's environment that will be allowed to assume the created spoke role.
@@ -108,4 +108,4 @@ Outputs:
     Value: !Ref SpokeRoleNameParameter
   RegistrationSnsQueArn:
     Description: SNS Registration queue ARN
-    Value: !Ref RegistrationSnsQueArnParameter
+    Value: !Ref RegistrationTopicArnParameter

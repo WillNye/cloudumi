@@ -34,7 +34,6 @@ log = config.get_logger()
 # APIs
 
 
-
 async def generate_terraform_request_from_change_model_array(
     request_creation: RequestCreationModel,
     user: str,

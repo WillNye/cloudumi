@@ -9,7 +9,6 @@ import socket
 import sys
 import threading
 import time
-import zlib
 from logging import LoggerAdapter, LogRecord
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
@@ -17,7 +16,6 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 import botocore.exceptions
 import logmatic
-import sentry_sdk
 import ujson as json
 from asgiref.sync import async_to_sync
 from pytz import timezone
@@ -25,7 +23,7 @@ from pytz import timezone
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.aws.split_s3_path import split_s3_path
 from common.lib.singleton import Singleton
-from common.lib.yaml import yaml
+from common.lib.yaml import yaml, yaml_safe
 
 main_exit_flag = threading.Event()
 
@@ -62,17 +60,6 @@ def dict_merge(dct: dict, merge_dct: dict):
     return dct
 
 
-def refresh_dynamic_config(host, ddb=None):
-    if not ddb:
-        # This function runs frequently. We provide the option to pass in a UserDynamoHandler
-        # so we don't need to import on every invocation
-        from common.lib.dynamo import UserDynamoHandler
-
-        # TODO: Figure out host
-        ddb = UserDynamoHandler(host)
-    return ddb.get_dynamic_config_dict(host)
-
-
 class Configuration(metaclass=Singleton):
     """Load YAML configuration files. YAML files can be extended to extend each other, to include common configuration
     values."""
@@ -102,40 +89,6 @@ class Configuration(metaclass=Singleton):
                 "https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials"
             )
 
-    def load_config_from_dynamo(self, host, ddb=None, red=None):
-        if not ddb:
-            from common.lib.dynamo import UserDynamoHandler
-
-            ddb = UserDynamoHandler(host=host)
-
-        dynamic_config = refresh_dynamic_config(host, ddb)
-        self.set_config_for_host(host, dynamic_config)
-
-    def set_config_for_host(self, host, dynamic_config, red=None):
-        if not red:
-            from common.lib.redis import RedisHandler
-
-            red = RedisHandler().redis_sync(host)
-        if dynamic_config and dynamic_config != self.get_host_specific_key(
-            "dynamic_config", host
-        ):
-            red.set(
-                f"{host}_DYNAMIC_CONFIG_CACHE",
-                json.dumps(dynamic_config),
-            )
-            self.get_logger("config").debug(
-                {
-                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-                    "message": "Dynamic configuration changes detected and loaded",
-                    "host": host,
-                }
-            )
-            if not self.get("site_configs"):
-                self.config["site_configs"] = {}
-            if not self.get(f"site_configs.{host}"):
-                self.config["site_configs"][host] = {}
-            self.config["site_configs"][host]["dynamic_config"] = dynamic_config
-
     def load_dynamic_config_from_redis(
         self, log_data: Dict[str, Any], host: str, red=None
     ):
@@ -155,23 +108,6 @@ class Configuration(metaclass=Singleton):
                 }
             )
             self.config["site_configs"][host]["dynamic_config"] = dynamic_config_j
-
-    def load_config_from_dynamo_bg_thread(self):
-        """If enabled, we can load a configuration dynamically from Dynamo at a certain time interval. This reduces
-        the need for code redeploys to make configuration changes"""
-        from common.lib.dynamo import UserDynamoHandler
-        from common.lib.redis import RedisHandler
-
-        while threading.main_thread().is_alive():
-            for host, _ in self.get("site_configs", {}).items():
-                ddb = UserDynamoHandler(host=host)
-                red = RedisHandler().redis_sync(host)
-                self.load_config_from_dynamo(host, ddb=ddb, red=red)
-            # Wait till main exit flag is set OR a fixed timeout
-            if main_exit_flag.wait(
-                timeout=self.get("_global_.dynamic_config.dynamo_load_interval", 60)
-            ):
-                break
 
     def load_tenant_configurations_from_redis_or_s3(self):
         """
@@ -203,24 +139,6 @@ class Configuration(metaclass=Singleton):
         :return:
         """
         pass
-
-    def load_tenant_configurations_from_dynamo(self):
-        """
-        Loads tenant static configurations from DynamoDB and sets them in our giant configuration dictionary
-        :return:
-        """
-        from common.lib.dynamo import RestrictedDynamoHandler
-
-        ddb = RestrictedDynamoHandler()
-        try:
-            tenant_configs = ddb.get_static_config_yaml_for_all_hosts_sync()
-            if not self.config.get("site_configs"):
-                self.config["site_configs"] = {}
-            for host, static_config in tenant_configs.items():
-                self.config["site_configs"][host] = static_config
-        except Exception:
-            # No tenant configurations loaded.
-            sentry_sdk.capture_exception()
 
     def __set_flag_on_main_exit(self):
         # while main thread is active, do nothing
@@ -281,30 +199,6 @@ class Configuration(metaclass=Singleton):
             if extend_config.get("extends"):
                 await self.merge_extended_paths(extend_config.get("extends"), dir_path)
         validate_config(self.config)
-
-    def reload_config(self):
-        from common.lib.dynamo import UserDynamoHandler
-        from common.lib.redis import RedisHandler
-
-        # We don't want to start additional background threads when we're reloading static configuration.
-        while threading.main_thread().is_alive():
-            async_to_sync(self.load_config)(
-                allow_automatically_reload_configuration=False,
-                allow_start_background_threads=False,
-                load_tenant_configurations_from_dynamo=False,
-            )
-            # Reload dynamic configuration
-            for host, _ in self.get("site_configs", {}).items():
-                ddb = UserDynamoHandler(host=host)
-                red = RedisHandler().redis_sync(host)
-                self.load_config_from_dynamo(host, ddb=ddb, red=red)
-            if not self.get("_global_.config.automatically_reload_configuration"):
-                break
-            # Wait till main exit flag is set OR a fixed timeout
-            if main_exit_flag.wait(
-                timeout=self.get("_global_.reload_static_config_interval", 60)
-            ):
-                break
 
     def get_employee_photo_url(self, user, host):
         import hashlib
@@ -375,9 +269,7 @@ class Configuration(metaclass=Singleton):
 
     async def load_config(
         self,
-        allow_automatically_reload_configuration=True,
         allow_start_background_threads=True,
-        load_tenant_configurations_from_dynamo=False,
     ):
         """Load configuration"""
         path = self.get_config_location()
@@ -408,30 +300,6 @@ class Configuration(metaclass=Singleton):
         if allow_start_background_threads and self.get("_global_.redis.use_redislite"):
             t = Timer(1, self.purge_redislite_cache, ())
             t.start()
-        #
-        # if allow_start_background_threads and self.get(
-        #     "_global_.config.load_from_dynamo", True
-        # ):
-        #     t = Timer(2, self.load_config_from_dynamo_bg_thread, ())
-        #     t.start()
-
-        # if allow_start_background_threads and self.get(
-        #     "_global_.config.run_recurring_internal_tasks"
-        # ):
-        #     t = Timer(3, config_plugin.internal_functions, kwargs={"cfg": self.config})
-        #     t.start()
-
-        # if allow_automatically_reload_configuration and self.get(
-        #     "_global_.config.automatically_reload_configuration"
-        # ):
-        #     t = Timer(4, self.reload_config, ())
-        #     t.start()
-        #
-        # if load_tenant_configurations_from_dynamo and self.get(
-        #     "_global_.config.load_tenant_configurations_from_dynamo"
-        # ):
-        #     t = Timer(5, self.load_tenant_configurations_from_dynamo, ())
-        #     t.start()
 
     def get(
         self, key: str, default: Optional[Union[List[str], int, bool, str, Dict]] = None
@@ -450,9 +318,9 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
-    def get_tenant_static_config_from_dynamo(self, host):
+    def get_tenant_static_config_from_dynamo(self, host, safe=False):
         """
-        Get tenant static configuration from DynamoDB. Supports zlib compressed
+        Get tenant static configuration from DynamoDB.
         configuration.
         """
         dynamodb = boto3.resource(
@@ -463,7 +331,9 @@ class Configuration(metaclass=Singleton):
                 self.get("_global_.boto3.client_kwargs.endpoint_url"),
             ),
         )
-        config_table = dynamodb.Table("consoleme_tenant_static_configs")
+        config_table = dynamodb.Table(
+            self.get_dynamo_table_name("tenant_static_configs")
+        )
         current_config = {}
         try:
             current_config = config_table.get_item(Key={"host": host, "id": "master"})
@@ -472,15 +342,13 @@ class Configuration(metaclass=Singleton):
                 return {}
         c = {}
 
-        compressed_config = current_config.get("Item", {}).get("config", "")
-        if not compressed_config:
+        tenant_config = current_config.get("Item", {}).get("config", "")
+        if not tenant_config:
             return c
-        try:
-            c = zlib.decompress(compressed_config.value)
-        except Exception as e:  # noqa
-            sentry_sdk.capture_exception()
-            c = compressed_config
-        return yaml.load(c)
+
+        if safe:
+            return yaml_safe.load(tenant_config)
+        return yaml.load(tenant_config)
 
     def is_host_configured(self, host) -> bool:
         """
@@ -501,7 +369,7 @@ class Configuration(metaclass=Singleton):
         return False
 
     def copy_tenant_config_dynamo_to_redis(self, host):
-        config_item = self.get_tenant_static_config_from_dynamo(host)
+        config_item = self.get_tenant_static_config_from_dynamo(host, safe=True)
         if config_item:
             from common.lib.redis import RedisHandler
 
@@ -676,6 +544,21 @@ class Configuration(metaclass=Singleton):
             if region:
                 return region
 
+    def get_dynamo_table_name(
+        self, table_name: str, namespace: str = "cloudumi"
+    ) -> str:
+        if self.get("_global_.environment") == "test" and self.get(
+            "_global_.development"
+        ):
+            return table_name
+        cluster_id_key = "_global_.deployment.cluster_id"
+        cluster_id = self.get(cluster_id_key, None)
+        if cluster_id is None:
+            raise RuntimeError(
+                f"Unable to read configuration - cannot get {cluster_id_key}"
+            )
+        return f"{cluster_id}_{namespace}_{table_name}"
+
 
 class ContextFilter(logging.Filter):
     """Logging Filter for adding hostname to log entries."""
@@ -697,6 +580,7 @@ get_employee_photo_url = CONFIG.get_employee_photo_url
 get_employee_info_url = CONFIG.get_employee_info_url
 get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dynamo
 is_host_configured = CONFIG.is_host_configured
+get_dynamo_table_name = CONFIG.get_dynamo_table_name
 # Set logging levels
 CONFIG.set_logging_levels()
 

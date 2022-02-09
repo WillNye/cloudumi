@@ -18,6 +18,7 @@ class AuthHandler(BaseHandler):
             log_data = {
                 "function": function,
                 "message": "Invalid host specified. Redirecting to main page",
+                "host": host,
             }
             log.debug(log_data)
             self.set_status(403)

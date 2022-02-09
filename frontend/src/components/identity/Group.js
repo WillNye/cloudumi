@@ -2,19 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   Button,
-  Checkbox,
-  Divider,
   Header,
   Popup,
-  Input,
   Table,
   Icon,
   Form,
-  Ref,
   TextArea,
 } from "semantic-ui-react";
 import { useAuth } from "../../auth/AuthProviderDefault";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import SemanticDatepicker from "react-semantic-ui-datepickers";
 import { DateTime } from "luxon";
 
@@ -29,10 +25,9 @@ const IdentityGroupEdit = () => {
   const [groupExpiration, setGroupExpiration] = useState(null);
   const [justification, setJustification] = useState(null);
   const {
-    control,
     register,
     handleSubmit,
-    formState: { errors },
+    // formState: { errors },
   } = useForm();
   const onSubmit = async (data) => {
     const resJson = await sendRequestCommon(
@@ -41,7 +36,7 @@ const IdentityGroupEdit = () => {
     );
     // TODO: Post data and render response message/error in a generic way
     console.log(data);
-    //console.log(resJson)
+    console.log(resJson);
   };
 
   useEffect(() => {
@@ -164,7 +159,7 @@ const IdentityGroupEdit = () => {
       }
     }
     fetchDetails();
-  }, [sendRequestCommon]);
+  }, [sendRequestCommon]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     console.log(groupDetails);
@@ -200,6 +195,7 @@ const IdentityGroupEdit = () => {
             placeholder="Reason for requesting access"
             onChange={(e) => {
               setJustification(e.target.value);
+              console.log(justification);
             }}
           />
         </Form.Field>
@@ -220,6 +216,7 @@ const IdentityGroupEdit = () => {
               const dateObj = DateTime.fromJSDate(data.value);
               const dateString = dateObj.toFormat("yyyyMMdd");
               setGroupExpiration(parseInt(dateString));
+              console.log(groupExpiration);
             }}
             type="basic"
             compact

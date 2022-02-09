@@ -444,7 +444,7 @@ def retry():
 def iamrole_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
-        TableName="consoleme_iamroles_multitenant",
+        TableName="iamroles_multitenant",
         AttributeDefinitions=[
             {"AttributeName": "host", "AttributeType": "S"},
             {"AttributeName": "entity_id", "AttributeType": "S"},
@@ -458,7 +458,7 @@ def iamrole_table(dynamodb):
 
     # Apply a TTL:
     dynamodb.update_time_to_live(
-        TableName="consoleme_iamroles_multitenant",
+        TableName="iamroles_multitenant",
         TimeToLiveSpecification={"Enabled": True, "AttributeName": "ttl"},
     )
 
@@ -469,7 +469,7 @@ def iamrole_table(dynamodb):
 def cloudtrail_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
-        TableName="consoleme_cloudtrail_multitenant",
+        TableName="cloudtrail_multitenant",
         AttributeDefinitions=[
             {"AttributeName": "host", "AttributeType": "S"},
             {"AttributeName": "arn", "AttributeType": "S"},
@@ -487,7 +487,7 @@ def cloudtrail_table(dynamodb):
 
     # Apply a TTL:
     dynamodb.update_time_to_live(
-        TableName="consoleme_cloudtrail_multitenant",
+        TableName="cloudtrail_multitenant",
         TimeToLiveSpecification={"Enabled": True, "AttributeName": "ttl"},
     )
 
@@ -695,7 +695,7 @@ def sqs_queue(sqs):
 def policy_requests_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
-        TableName="consoleme_policy_requests_multitenant",
+        TableName="policy_requests_multitenant",
         KeySchema=[
             {"AttributeName": "host", "KeyType": "HASH"},
             {"AttributeName": "request_id", "KeyType": "RANGE"},
@@ -726,7 +726,7 @@ def policy_requests_table(dynamodb):
 def requests_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
-        TableName="consoleme_requests_global",
+        TableName="requests_global",
         KeySchema=[
             {"AttributeName": "host", "KeyType": "HASH"},
             {"AttributeName": "request_id", "KeyType": "RANGE"},
@@ -745,7 +745,7 @@ def requests_table(dynamodb):
 def users_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
-        TableName="consoleme_users_multitenant",
+        TableName="users_multitenant",
         AttributeDefinitions=[
             {"AttributeName": "host", "AttributeType": "S"},
             {"AttributeName": "username", "AttributeType": "S"},
@@ -780,7 +780,7 @@ def dummy_requests_data(requests_table):
     from common.lib.dynamo import BaseDynamoHandler
 
     requests_table.put_item(
-        TableName="consoleme_requests_global",
+        TableName="requests_global",
         Item=BaseDynamoHandler()._data_to_dynamo_replace(user),
     )
 
@@ -800,7 +800,7 @@ def dummy_users_data(users_table):
     from common.lib.dynamo import BaseDynamoHandler
 
     users_table.put_item(
-        TableName="consoleme_users_multitenant",
+        TableName="users_multitenant",
         Item=BaseDynamoHandler()._data_to_dynamo_replace(user),
     )
 

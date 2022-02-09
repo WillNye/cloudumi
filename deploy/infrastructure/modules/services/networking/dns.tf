@@ -1,5 +1,5 @@
 data "aws_route53_zone" "tenant_zone" {
-  name         = "noq.dev"
+  name = var.zone
 }
 
 resource "aws_route53_record" "api" {

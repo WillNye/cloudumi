@@ -4,7 +4,7 @@ import tornado.web
 from common.config import config
 from common.lib.plugins import get_plugin_by_name
 
-log = config.get_logger("consoleme")
+log = config.get_logger("cloudumi")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
@@ -401,4 +401,14 @@ class SilentException(BaseException):
 
     def __init__(self, msg=""):
         stats.count("SilentException")
+        super().__init__(msg)
+
+
+class TenantNoCentralRoleConfigured(BaseException):
+    """
+    Tenant has no central role configured
+    """
+
+    def __init__(self, msg=""):
+        stats.count("TenantNoCentralRoleconfigured")
         super().__init__(msg)

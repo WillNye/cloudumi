@@ -85,6 +85,7 @@ from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.redis import RedisHandler
 from common.lib.requests import cache_all_policy_requests
 from common.lib.self_service.typeahead import cache_self_service_typeahead
+from common.lib.sentry import before_send_event
 from common.lib.templated_resources import cache_resource_templates
 from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
 from common.lib.tenants import get_all_hosts
@@ -115,6 +116,10 @@ class Celery(celery.Celery):
         if sentry_dsn:
             sentry_sdk.init(
                 sentry_dsn,
+                before_send=before_send_event,
+                traces_sample_rate=config.get(
+                    "_global_.sentry.traces_sample_rate", 0.2
+                ),
                 integrations=[
                     TornadoIntegration(),
                     CeleryIntegration(),

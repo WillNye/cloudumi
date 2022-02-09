@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import uuid
-import zlib
 from collections import defaultdict
 from datetime import datetime
 
@@ -13,7 +12,6 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Union
 
 import bcrypt
-import sentry_sdk
 import simplejson as json
 from asgiref.sync import sync_to_async
 from boto3.dynamodb.conditions import Key
@@ -23,6 +21,7 @@ from retrying import retry
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
+from common.config.config import get_dynamo_table_name
 from common.exceptions.exceptions import (
     DataNotRetrievable,
     NoExistingRequest,
@@ -63,7 +62,7 @@ POSSIBLE_STATUSES = [
 ]
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger("consoleme")
+log = config.get_logger("cloudumi")
 
 
 def filter_config_secrets(d):
@@ -142,7 +141,9 @@ class BaseDynamoHandler:
                         config.get("_global_.boto3.client_kwargs.endpoint_url"),
                     ),
                 )
-            else:
+            elif config.get_host_specific_key(
+                "aws.dynamodb.tenant_owns_dynamodb_tables", host, False
+            ):
                 resource = boto3_cached_conn(
                     "dynamodb",
                     host,
@@ -157,6 +158,12 @@ class BaseDynamoHandler:
                     # TODO: This implies only hosting data in SaaS and not customer env. We will need to change this
                     # to support data plane in customer env
                     pre_assume_roles=[],
+                )
+            else:
+                session = get_session_for_tenant(host)
+                resource = session.resource(
+                    "dynamodb",
+                    region_name=config.region,
                 )
             table = resource.Table(table_name)
             return table
@@ -360,20 +367,22 @@ class BaseDynamoHandler:
 class UserDynamoHandler(BaseDynamoHandler):
     def __init__(self, host, user: Optional[str] = None) -> None:
         self.host = host
+
         try:
             self.identity_requests_table = self._get_dynamo_table(
                 config.get_host_specific_key(
-                    "aws.requests_dynamo_table",
+                    "aws.identity_requests_dynamo_table",
                     host,
-                    "consoleme_identity_requests_multitenant",
+                    get_dynamo_table_name("identity_requests_multitenant"),
                 ),
                 host,
             )
+
             self.users_table = self._get_dynamo_table(
                 config.get_host_specific_key(
                     "aws.users_dynamo_table",
                     host,
-                    "consoleme_users_multitenant",
+                    get_dynamo_table_name("users_multitenant"),
                 ),
                 host,
             )
@@ -381,7 +390,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.group_log_dynamo_table",
                     host,
-                    "consoleme_audit_global",
+                    get_dynamo_table_name("audit_global"),
                 ),
                 host,
             )
@@ -389,7 +398,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.dynamic_config_dynamo_table",
                     host,
-                    "consoleme_config_multitenant",
+                    get_dynamo_table_name("config_multitenant"),
                 ),
                 host,
             )
@@ -397,7 +406,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.policy_requests_dynamo_table",
                     host,
-                    "consoleme_policy_requests_multitenant",
+                    get_dynamo_table_name("policy_requests_multitenant"),
                 ),
                 host,
             )
@@ -405,7 +414,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.resource_cache_dynamo_table",
                     host,
-                    "consoleme_resource_cache_multitenant",
+                    get_dynamo_table_name("resource_cache_multitenant"),
                 ),
                 host,
             )
@@ -413,7 +422,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.cloudtrail_table",
                     host,
-                    "consoleme_cloudtrail_multitenant",
+                    get_dynamo_table_name("cloudtrail_multitenant"),
                 ),
                 host,
             )
@@ -422,7 +431,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.notifications_table",
                     host,
-                    "consoleme_notifications_multitenant",
+                    get_dynamo_table_name("notifications_multitenant"),
                 ),
                 host,
             )
@@ -431,7 +440,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.identity_groups_table",
                     host,
-                    "consoleme_identity_groups_multitenant",
+                    get_dynamo_table_name("identity_groups_multitenant"),
                 ),
                 host,
             )
@@ -440,7 +449,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.identity_users_table",
                     host,
-                    "consoleme_identity_users_multitenant",
+                    get_dynamo_table_name("identity_users_multitenant"),
                 ),
                 host,
             )
@@ -449,7 +458,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.tenant_static_config_table",
                     host,
-                    "consoleme_tenant_static_configs",
+                    get_dynamo_table_name("tenant_static_configs"),
                 ),
                 host,
             )
@@ -458,7 +467,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.noq_api_keys_table",
                     host,
-                    "noq_api_keys",
+                    get_dynamo_table_name("api_keys", "noq"),
                 ),
                 host,
             )
@@ -573,76 +582,10 @@ class UserDynamoHandler(BaseDynamoHandler):
                 )
                 return True
 
-    async def get_static_config_for_host(self, host) -> bytes:
-        """Retrieve dynamic configuration yaml asynchronously"""
-        c = b""
-        try:
-            current_config = await sync_to_async(self.tenant_static_configs.get_item)(
-                Key={"host": host, "id": "master"}
-            )
-            if not current_config:
-                return c
-            compressed_config = current_config.get("Item", {}).get("config", "")
-            if not compressed_config:
-                return c
-            c = zlib.decompress(compressed_config.value)
-        except Exception as e:  # noqa
-            log.error(
-                {
-                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-                    "message": "Error retrieving static configuration",
-                    "error": str(e),
-                }
-            )
-            sentry_sdk.capture_exception()
-        return c
-
     def write_resource_cache_data(self, data):
         self.parallel_write_table(
             self.resource_cache_table, data, ["resourceId", "resourceType"]
         )
-
-    async def get_dynamic_config_yaml(self, host) -> bytes:
-        """Retrieve dynamic configuration yaml."""
-        return await sync_to_async(self.get_dynamic_config_yaml_sync)(host)
-
-    def get_dynamic_config_yaml_sync(self, host) -> bytes:
-        """Retrieve dynamic configuration yaml synchronously"""
-        c = b""
-        try:
-            current_config = self.dynamic_config.get_item(
-                Key={"host": host, "id": "master"}
-            )
-            if not current_config:
-                return c
-            compressed_config = current_config.get("Item", {}).get("config", "")
-            if not compressed_config:
-                return c
-            c = zlib.decompress(compressed_config.value)
-        except Exception as e:  # noqa
-            log.error(
-                {
-                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-                    "message": "Error retrieving dynamic configuration",
-                    "host": host,
-                    "error": str(e),
-                }
-            )
-            sentry_sdk.capture_exception()
-        return c
-
-    def get_dynamic_config_dict(self, host) -> dict:
-        """Retrieve dynamic configuration dictionary that can be merged with primary configuration dictionary."""
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # if cleanup: 'RuntimeError: There is no current event loop..'
-            loop = None
-        if loop and loop.is_running():
-            current_config_yaml = self.get_dynamic_config_yaml_sync(host)
-        else:
-            current_config_yaml = asyncio.run(self.get_dynamic_config_yaml(host))
-        config_d = yaml.load(current_config_yaml)
-        return config_d
 
     async def write_policy_request_v2(
         self, extended_request: ExtendedRequestModel, host: str
@@ -740,49 +683,6 @@ class UserDynamoHandler(BaseDynamoHandler):
                 continue
             return_value.append(item)
         return return_value
-
-    async def update_dynamic_config(
-        self,
-        new_config: str,
-        updated_by: str,
-        host: str,
-    ) -> None:
-        """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
-        # Validate that config loads as yaml, raises exception if not
-        yaml.load(new_config)
-        stats.count("update_dynamic_config", tags={"updated_by": updated_by})
-        current_config_entry = self.dynamic_config.get_item(
-            Key={"host": host, "id": "master"}
-        )
-        if current_config_entry.get("Item"):
-            old_config = {
-                "host": host,
-                "id": current_config_entry["Item"]["updated_at"],
-                "updated_by": current_config_entry["Item"]["updated_by"],
-                "config": current_config_entry["Item"]["config"],
-                "updated_at": str(int(time.time())),
-            }
-
-            self.dynamic_config.put_item(Item=self._data_to_dynamo_replace(old_config))
-
-        new_config_writable = {
-            "host": host,
-            "id": "master",
-            "config": zlib.compress(new_config.encode()),
-            "updated_by": updated_by,
-            "updated_at": str(int(time.time())),
-        }
-        self.dynamic_config.put_item(
-            Item=self._data_to_dynamo_replace(new_config_writable)
-        )
-
-    # def validate_signature(self, items):
-    #     signature = items.pop("signature")
-    #     if isinstance(signature, Binary):
-    #         signature = signature.value
-    #     json_request = json.dumps(items, sort_keys=True)
-    #     if not crypto.verify(json_request, signature):
-    #         raise Exception(f"Invalid signature for request: {json_request}")
 
     def sign_request(
         self, user_entry: Dict[str, Union[Decimal, List[str], Binary, str]], host: str
@@ -1483,122 +1383,61 @@ class UserDynamoHandler(BaseDynamoHandler):
         return users
 
 
+def _get_dynamo_table_restricted(caller, table_name):
+    function: str = (
+        f"{__name__}.{caller.__class__.__name__}.{sys._getframe().f_code.co_name}"
+    )
+    session = restricted_get_session_for_saas()
+    try:
+        # call sts_conn with my client and pass in forced_client
+        if config.get("_global_.dynamodb_server"):
+
+            resource = session.resource(
+                "dynamodb",
+                region_name=config.region,
+                endpoint_url=config.get(
+                    "_global_.dynamodb_server",
+                    config.get("_global_.boto3.client_kwargs.endpoint_url"),
+                ),
+            )
+        else:
+            resource = session.resource(
+                "dynamodb",
+                region_name=config.region,
+            )
+        table = resource.Table(table_name)
+    except Exception as e:
+        log.error({"function": function, "error": e}, exc_info=True)
+        stats.count(f"{function}.exception")
+        return None
+    else:
+        return table
+
+
 class RestrictedDynamoHandler(BaseDynamoHandler):
     def __init__(self) -> None:
-        self.tenant_static_configs = self._get_dynamo_table_restricted(
-            config.get(
-                "_global_.aws.tenant_static_config_dynamo_table",
-                "consoleme_tenant_static_configs",
-            )
+        default_table_name = get_dynamo_table_name("tenant_static_configs")
+        table_name = config.get(
+            "_global_.integrations.aws.tenant_static_config_dynamo_table",
+            default_table_name,
         )
-
-    def _get_dynamo_table_restricted(self, table_name):
-        function: str = (
-            f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
-        )
-        session = restricted_get_session_for_saas()
-        try:
-            # call sts_conn with my client and pass in forced_client
-            if config.get("_global_.dynamodb_server"):
-
-                resource = session.resource(
-                    "dynamodb",
-                    region_name=config.region,
-                    endpoint_url=config.get(
-                        "_global_.dynamodb_server",
-                        config.get("_global_.boto3.client_kwargs.endpoint_url"),
-                    ),
-                )
-            else:
-                resource = session.resource(
-                    "dynamodb",
-                    region_name=config.region,
-                )
-            table = resource.Table(table_name)
-        except Exception as e:
-            log.error({"function": function, "error": e}, exc_info=True)
-            stats.count(f"{function}.exception")
-            return None
-        else:
-            return table
-
-    async def get_static_config_yaml_for_all_hosts(self) -> Dict[str, str]:
-        """Retrieve static configuration yaml."""
-        tenant_configs_l = await self.parallel_scan_table_async(
-            self.tenant_static_configs,
-            dynamodb_kwargs={"FilterExpression": Key("id").eq("master")},
-        )
-        return self.validate_and_return_tenant_configurations(tenant_configs_l)
-
-    def validate_and_return_tenant_configurations(
-        self, tenant_configs_l: List[Dict[str, Union[str, bytes]]]
-    ):
-        log_data = {
-            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-            "message": "Validating tenant configurations",
-        }
-        tenant_configs = {}
-        for c in tenant_configs_l:
-            if not c["id"] == "master":
-                # This should never  be the case, but as a safety check, let's ensure we're only loading the "master"
-                # (ie latest) version of a tenant's configuration
-                continue
-            try:
-                config_uncompressed = zlib.decompress(c["config"].value)
-                config_d = yaml.load(config_uncompressed)
-                # TODO: Validate Pydantic Model of tenant configuration here
-            except Exception as e:
-                log.error(
-                    {
-                        **log_data,
-                        "message": "Unable to parse configuration for tenant",
-                        "host": c["host"],
-                        "error": str(e),
-                    }
-                )
-                sentry_sdk.capture_exception()
-                continue
-            tenant_configs[c["host"]] = config_d
-        # TODO: Merge dynamic configuration for tenant into this model
-        return tenant_configs
-
-    def get_static_config_yaml_for_all_hosts_sync(self) -> Dict[str, str]:
-        """Retrieve static configuration yaml."""
-        tenant_configs_l = self.parallel_scan_table(
-            self.tenant_static_configs,
-            dynamodb_kwargs={"FilterExpression": Key("id").eq("master")},
-        )
-        return self.validate_and_return_tenant_configurations(tenant_configs_l)
+        self.tenant_static_configs = _get_dynamo_table_restricted(self, table_name)
 
     def get_static_config_for_host_sync(
         self, host, return_format="dict", filter_secrets=False
     ) -> bytes:
         """Retrieve dynamic configuration yaml synchronously"""
-        c = compressed_config = b""
-        try:
-            current_config = self.tenant_static_configs.get_item(
-                Key={"host": host, "id": "master"}
-            )
-            if not current_config:
-                return c
-            compressed_config = current_config.get("Item", {}).get("config", "")
-            if not compressed_config:
-                return c
-            try:
-                c = zlib.decompress(compressed_config.value)
-            except Exception:
-                c = compressed_config.value
-        except Exception as e:  # noqa
-            log.error(
-                {
-                    "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-                    "message": "Error retrieving static configuration",
-                    "error": str(e),
-                    "host": host,
-                }
-            )
-            sentry_sdk.capture_exception()
-            c = compressed_config
+        c = b""
+        current_config = self.tenant_static_configs.get_item(
+            Key={"host": host, "id": "master"}
+        )
+        if not current_config:
+            return c
+        compressed_config = current_config.get("Item", {}).get("config", "")
+        if not compressed_config:
+            return c
+
+        c = compressed_config
         c_dict = yaml.load(c)
         secrets = c_dict.get("secrets", {})
         if secrets and filter_secrets:
@@ -1638,7 +1477,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
         # Validate that config loads as yaml, raises exception if not
         new_config_d = yaml.load(new_config)
-        stats.count("update_dynamic_config", tags={"updated_by": updated_by})
+        stats.count(
+            "update_static_config", tags={"updated_by": updated_by, "host": host}
+        )
         current_config_entry = await sync_to_async(self.tenant_static_configs.get_item)(
             Key={"host": host, "id": "master"}
         )
@@ -1655,7 +1496,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             self.tenant_static_configs.put_item(
                 Item=self._data_to_dynamo_replace(old_config)
             )
-        original_config_d = yaml.load(current_config_entry["config"])
+        original_config_d = yaml.load(current_config_entry.get("config", ""))
+        if not original_config_d:
+            original_config_d = {}
         # TODO: Update all of the secrets within the configuration so it's not ****
         if "secrets" in new_config_d:
             decode_config_secrets(original_config_d, new_config_d)
@@ -1663,7 +1506,6 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             "host": host,
             "id": "master",
             "config": yaml.dump(new_config_d),
-            # "config": zlib.compress(new_config.encode()),
             "updated_by": updated_by,
             "updated_at": str(int(time.time())),
         }
@@ -1679,7 +1521,7 @@ class IAMRoleDynamoHandler(BaseDynamoHandler):
                 config.get_host_specific_key(
                     "aws.iamroles_dynamo_table",
                     host,
-                    "consoleme_iamroles_multitenant",
+                    get_dynamo_table_name("iamroles_multitenant"),
                 ),
                 host,
             )

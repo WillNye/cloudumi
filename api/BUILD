@@ -14,6 +14,13 @@ filegroup(
     ]
 )
 
+filegroup(
+    name = "web_site_sources",
+    srcs = glob([
+        "templates/**/*",
+    ])
+)
+
 INT_DEPS = [
     "//api/handlers:lib",
     "//common/celery_tasks:lib",
@@ -26,7 +33,6 @@ INT_DEPS = [
     "//plugins/config:lib",
     "//plugins/group_mapping:lib",
     "//plugins/metrics:lib",
-    "//util/debug",
     "//util/log:lib",
 ]
 
@@ -117,9 +123,10 @@ py_library(
 
 
 py_binary(
-    name = "bin.local",
+    name = "bin",
     data = [
         "//configs/development_account:configs",
+        ":web_site_sources"
     ],
     srcs_version = "PY3",
     srcs = [
@@ -129,25 +136,9 @@ py_binary(
     env = {
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
         # Note: `bazel info --show_make_env` will show all available predefined variables
-        # "CONFIG_LOCATION": "$(GENDIR)/api/bin.local.runfiles/cloudumi/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
+        # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
         "AWS_PROFILE": "noq_dev",
-    },
-    deps = INT_DEPS + EXT_DEPS,
-    visibility = ["//visibility:public"],
-)
-
-py_binary(
-    name = "bin.s3",
-    data = [],
-    srcs_version = "PY3",
-    srcs = [
-        ":src",
-    ],
-    main = "__main__.py",
-    env = {
-        "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev"
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -158,7 +149,7 @@ py_wheel(
     distribution = "cloudumi_api",
     python_tag = "py3",
     version = "0.0.1",
-    deps = [":lib_pkg"],
+    deps = [":lib"],
     requires = REQUIRES,
     strip_path_prefixes = [
     ],
@@ -191,6 +182,31 @@ container_layer(
     directory = "/",
 )
 
+container_layer(
+    name = "web_site_layer",
+    files = [
+        ":web_site_sources"
+    ],
+    data_path = ".",
+    directory = "/",
+)
+
+container_layer(
+    name = "sshd_config_layer",
+    files = [
+        "//api/util:sshd_config",
+    ],
+    directory = "/etc/ssh",
+)
+
+container_layer(
+    name = "newrelic_layer",
+    files = [
+        "//api/util:newrelic.ini",
+    ],
+    directory = "/etc/newrelic",
+)
+
 container_image(
     name = "base-api-dev-local",
     base = "//docker/base:base_docker",
@@ -199,11 +215,15 @@ container_image(
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "noq_dev",
+        "DEBUG": "1",
     },
     layers = [
         ":config_layer",
+        ":web_site_layer",
+        ":sshd_config_layer",
+        ":newrelic_layer"
     ],
-    ports = ["8092"],
+    ports = ["8092", "2222"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
@@ -215,11 +235,15 @@ container_image(
     base = "//docker/base:base_docker",
     env = {
         "NOQ_CONTAINER": "1",
+        "DEBUG": "1",
     },
     layers = [
         ":config_layer",
+        ":web_site_layer",
+        ":sshd_config_layer",
+        ":newrelic_layer"
     ],
-    ports = ["8092"],
+    ports = ["8092", "2222"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
@@ -253,24 +277,5 @@ py3_image(
     deps = EXT_DEPS + INT_DEPS,
     main = "__main__.py",
     tags = ["manual"],
-)
-
-container_push(
-    name = "container-deploy-staging",
-    format = "Docker",
-    repository = "staging-registry-api",
-    image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "staging",
-    visibility = ["//visibility:public"],
-)
-
-container_push(
-    name = "container-deploy-prod",
-    format = "Docker",
-    repository = "prod-registry-api",
-    image = "container",
-    registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "production",
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"]
 )

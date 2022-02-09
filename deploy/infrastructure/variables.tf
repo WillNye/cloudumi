@@ -1,3 +1,8 @@
+variable "account_id" {
+  description = "The account id that this infrastructure is built in"
+  type        = string
+}
+
 variable "allowed_inbound_cidr_blocks" {
   description = "The CIDR blocks that are allowed to connect to the cluster"
   type        = list(string)
@@ -6,8 +11,8 @@ variable "allowed_inbound_cidr_blocks" {
 
 variable "attributes" {
   description = "Additional attributes, e.g. `1`"
-  type    = number
-  default = 1
+  type        = number
+  default     = 1
 }
 
 variable "capacity_providers" {
@@ -36,11 +41,11 @@ variable "delimiter" {
 variable "domain_name" {
   type        = string
   description = "The specific domain name to be registered as the CNAME to the load balancer"
-} 
+}
 
 variable "dynamo_table_replica_regions" {
-  description = "List of regions to replicate all DDB tables into" 
-  type = list
+  description = "List of regions to replicate all DDB tables into"
+  type        = list(any)
 }
 
 variable "lb_port" {
@@ -50,13 +55,22 @@ variable "lb_port" {
 
 variable "namespace" {
   description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
-  type    = string
+  type        = string
 }
 
 variable "noq_core" {
   description = "If set to true, then the module or configuration should only apply to NOQ core infrastructure"
-  type    = bool
-  default = false
+  type        = bool
+  default     = false
+}
+
+variable "profile" {
+  description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
+  type        = string
+  validation {
+    condition     = contains(["noq_dev", "noq_prod"], var.profile)
+    error_message = "Allowed AWS_PROFILEs are \"noq_dev\" and \"noq_prod\"."
+  }
 }
 
 variable "redis_node_type" {
@@ -90,23 +104,35 @@ variable "subnet_azs" {
 }
 
 variable "tags" {
-  description = "Any tags to assign to resources" 
-  type = map(any)
+  description = "Any tags to assign to resources"
+  type        = map(any)
 }
 
 variable "timeout" {
-  description = "The timeout for each resource that may get stuck" 
-  type = string
-  default = "3m"
-}
-
-variable "tf_profile" {
-  type    = string
-  default = "noq_dev"
+  description = "The timeout for each resource that may get stuck"
+  type        = string
+  default     = "3m"
 }
 
 variable "zone" {
   description = "The zone is the base part of the domain name. The {namespace}.{zone} make up the domain name"
-  type = string
-  default = "noq.dev"
+  type        = string
+  default     = "noq.dev"
+}
+
+variable "sentry_dsn" {
+  description = "The Sentry DSN to use for logging exceptions"
+  type        = string
+}
+
+variable "celery_log_level" {
+  description = "The log level for Celery"
+  type        = string
+  default     = "DEBUG"
+}
+
+variable "celery_concurrency" {
+  description = "The number of processes each celery worker should run to run"
+  type        = string
+  default     = "16"
 }

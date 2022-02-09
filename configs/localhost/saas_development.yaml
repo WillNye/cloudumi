@@ -22,10 +22,6 @@ _global_:
       endpoint_url: http://localstack3:4566
     session_kwargs:
       profile_name: personal
-  config:
-    load_from_dynamo: true
-    automatically_reload_configuration: false # TODO: This setting breaks loading of tenant configuration
-    load_tenant_configurations_from_dynamo: true
   s3_cache_bucket: noqcache
   consoleme_tenant_configurations:
     s3:

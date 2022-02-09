@@ -6,9 +6,13 @@ python -m consoleme.__main__"""
 # docker/base/BUILD)
 # Tech Debt ticket: SAAS-95, SAAS-94
 import os
+
 if os.getenv("NOQ_CONTAINER"):
     import sys
+
     sys.path.insert(0, "/usr/local/lib/python3.9/site-packages")
+if os.getenv("DEBUG"):
+    os.system("systemctl start ssh")
 #############
 
 import asyncio
@@ -22,7 +26,6 @@ import tornado.ioloop
 import uvloop
 from tornado.platform.asyncio import AsyncIOMainLoop
 
-import util.debug  # noqa
 from api.routes import make_app
 from common.config import config
 from common.lib.plugins import get_plugin_by_name
@@ -82,4 +85,4 @@ def init():
         asyncio.get_event_loop().run_forever()
 
 
-init()
+init()  #

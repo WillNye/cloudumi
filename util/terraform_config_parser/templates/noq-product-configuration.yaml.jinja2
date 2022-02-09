@@ -1,26 +1,34 @@
 _global_:
   landing_page_domains:
     - {{ domain_name }}
-  aws:
-    node_role: {{ ecs_task_role_arn }}
+  integrations:
+    aws:
+      account_id: {{ account_id }}
+      central_role_name: NoqCentralRole-{{ central_role_name_prefix }}
+      spoke_role_name: NoqSpokeRole-{{ spoke_role_name_prefix }}
+      node_role: {{ ecs_task_role_arn }}
+      stage: {{ stage }}
+      region: {{ region }}
+      attributes: {{ attributes }}
+      registration_topic_arn: {{ sns_registration_topic_arn }}
+      registration_queue_arn: {{ sqs_registration_queue_arn }}
+  deployment:
+    domain_name: {{ domain_name }}
+    namespace: {{ namespace }}
+    zone: {{ zone }}
+    cluster_id: {{ cluster_id_safed }}
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
-  config:
-    load_from_dynamo: true
-    automatically_reload_configuration: true
-    load_tenant_configurations_from_dynamo: true
+  web:
+    path: "/templates"
   s3_cache_bucket: {{ bucket_name }}
-  {% if stage == "staging" %}
-  development: true
-  environment: dev
-  {% else   %}
   development: false
-  {% endif  %}
+  environment: {{ stage }}
   tornado:
   {% if stage == "staging" %}
-    debug: false
-  {% else   %}
     debug: true
+  {% else   %}
+    debug: false
   {% endif  %}
     port: 8092
     xsrf: true
@@ -37,21 +45,26 @@ _global_:
     internal_policies: cmsaas_policies
   celery:
     clear_tasks_for_development: false
-    purge: true
+    purge: false
     broker:
-      us-east-1: redis://{{ redis_primary_cluster_address }}:6379/1
-      us-west-2: redis://{{ redis_primary_cluster_address }}:6379/1
-      global: redis://{{ redis_primary_cluster_address }}:6379/1
+      us-east-1: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
+      us-west-2: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
+      global: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
     backend:
-      us-east-1: redis://{{ redis_primary_cluster_address }}:6379/2
-      us-west-2: redis://{{ redis_primary_cluster_address }}:6379/2
-      global: redis://{{ redis_primary_cluster_address }}:6379/2
+      us-east-1: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
+      us-west-2: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
+      global: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
     debug: true
   # Saas Configuration
   redis:
+    host:
+      global: {{ elasticache_address }}
+    port: {{ elasticache_port }}
     cluster_mode:
-      enabled: true
+      enabled: false
       nodes:
         global:
-          - host: {{ redis_primary_cluster_address }}
-            port: "6379"
+          - host: {{ elasticache_address }}
+            port: {{ elasticache_port }}
+  sentry:
+    dsn: {{ sentry_dsn }}

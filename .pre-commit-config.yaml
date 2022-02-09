@@ -1,7 +1,7 @@
 exclude: "^docs/gitbook/"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.3.0 # Use the ref you want to point at
+    rev: v4.1.0 # Use the ref you want to point at
     hooks:
       - id: trailing-whitespace
       - id: check-ast
@@ -11,7 +11,7 @@ repos:
         args: [--allow-multiple-documents]
         exclude: "^docs/gitbook/|^helm/cloudumi|cdk/resources/create_config_lambda/config.yaml|^deploy"
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.4
+    rev: 3.9.2
     hooks:
       - id: flake8
         args: ["--exclude", "common/models.py,identity/lib/groups/models.py"]
@@ -22,33 +22,40 @@ repos:
       - id: seed-isort-config
 
   - repo: https://github.com/timothycrosley/isort
-    rev: "5.6.4" # Use the revision sha / tag you want to point at
+    rev: "5.10.1" # Use the revision sha / tag you want to point at
     hooks:
       - id: isort # Run `isort -rc <filepath>` to autofix
         pass_filenames: true
         args: ["--profile", "black"]
 
   - repo: https://github.com/ambv/black
-    rev: 20.8b1
+    rev: 22.1.0
     hooks:
       - id: black
         language_version: python3.8
 
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.7.0
+    rev: v1.9.0
     hooks:
       - id: python-use-type-annotations
       - id: python-no-eval
       - id: python-no-log-warn
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.2.1
+    rev: v2.5.1
     hooks:
       - id: prettier
         exclude: "^helm/consoleme"
-
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.62.3
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_tfsec
+      - id: terraform_validate
+      - id: terrascan
+      - id: checkov
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v7.24.0
+    rev: v7.32.0
     hooks:
       - id: eslint
         args:
@@ -63,26 +70,15 @@ repos:
             "--ignore-path",
             "./frontend/.eslintignore",
           ]
-  - repo: https://github.com/gruntwork-io/pre-commit
-    rev: v0.1.12
-    hooks:
-      - id: terraform-fmt
-      - id: terraform-validate
   - repo: local
     hooks:
-      #      - id: pytest
-      #        name: pytest_cloudumi_common
-      #        entry: env CONFIG_LOCATION=cloudumi_common/tests/test_configuration.yaml pytest cloudumi_common/tests
-      #        language: system
-      #        pass_filenames: false
-      #        # alternatively you could `types: [python]` so it only runs when python files change
-      #        # though tests might be invalidated if you were to say change a data file
-      #        always_run: true
       - id: pytest
         name: pytest
-        entry: pytest
+        entry: env CONFIG_LOCATION=common/tests/test_configuration.yaml pytest
+        args: ["common/tests"]
         language: system
         pass_filenames: false
+        always_run: true
 
       - id: python-bandit-vulnerability-check
         name: bandit

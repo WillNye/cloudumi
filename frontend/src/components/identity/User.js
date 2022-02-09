@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { DateTime } from "luxon";
 import React, { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -31,20 +32,20 @@ const IdentityUserEdit = () => {
   const [statusMessage, setStatusMessage] = useState(null);
 
   const {
-    control,
+    // control,
     register,
-    handleSubmit,
-    formState: { errors },
+    // handleSubmit,
+    // formState: { errors },
   } = useForm();
-  const onSubmit = async (data) => {
-    const resJson = await sendRequestCommon(
-      data,
-      "/api/v3/identities/user/" + idpName + "/" + userName
-    );
-    // TODO: Post data and render response message/error in a generic way
-    console.log(data);
-    //console.log(resJson)
-  };
+  // const onSubmit = async (data) => {
+  //   const resJson = await sendRequestCommon(
+  //     data,
+  //     "/api/v3/identities/user/" + idpName + "/" + userName
+  //   );
+  //   // TODO: Post data and render response message/error in a generic way
+  //   console.log(data);
+  //   //console.log(resJson)
+  // };
 
   const handleAddGroups = useCallback(
     async (evt, action) => {
@@ -187,10 +188,11 @@ const IdentityUserEdit = () => {
             }
           })
         );
+        console.log(attributes);
       }
     }
     fetchDetails();
-  }, [sendRequestCommon]);
+  }, [sendRequestCommon]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     console.log(userDetails);

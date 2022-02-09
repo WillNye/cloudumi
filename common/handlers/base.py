@@ -61,6 +61,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         log_data = {
             "function": function,
             "message": "Invalid host specified. Redirecting to main page",
+            "host": host,
         }
         log.debug(log_data)
         self.set_status(403)
@@ -129,6 +130,7 @@ class BaseJSONHandler(TornadoRequestHandler):
             log_data = {
                 "function": function,
                 "message": "Invalid host specified. Redirecting to main page",
+                "host": host,
             }
             log.debug(log_data)
             self.set_status(403)
@@ -238,6 +240,7 @@ class BaseHandler(TornadoRequestHandler):
             log_data = {
                 "function": function,
                 "message": "Invalid host specified. Redirecting to main page",
+                "host": host,
             }
             log.debug(log_data)
             self.set_status(403)
@@ -751,6 +754,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
             log_data = {
                 "function": function,
                 "message": "Invalid host specified. Redirecting to main page",
+                "host": host,
             }
             log.debug(log_data)
             self.set_status(403)

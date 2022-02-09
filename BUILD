@@ -1,7 +1,4 @@
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
-#load("@io_bazel_rules_docker//container:container.bzl", "container_layer")
-#load("@cloudumi_python_ext//:requirements.bzl", "requirement")
-#load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 container_run_and_commit(
     name = "cloudumi_base_docker",
@@ -25,13 +22,6 @@ container_run_and_commit(
         "mkdir -p /home/appuser/.aws",
         "chown -R appuser /home/appuser",
     ],
-    # Example of using select
-    # image = select({
-    #     "//:amd64": "@python_3.9.7_container//image",
-    #     "//:arm64": "@python_3.9.7_container//image",
-    #     "//:aarch64": "@python_3.9.7_container//image",
-    #     "//conditions:default": "@python_3.9.7_container//image",
-    # }),
-    image = "@python_3.9.7_container//image",
+    image = "@python_3.9_container//image",
     visibility = ["//visibility:public"],
 )

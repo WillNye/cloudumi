@@ -6,7 +6,7 @@ import tornado.web
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
-from tornado.routing import HostMatches, Rule, RuleRouter
+from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
 from api.handlers.auth import AuthHandler
 from api.handlers.v1.credentials import GetCredentialsHandler
@@ -109,6 +109,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationHandler,
 )
 from common.config import config
+from common.lib.sentry import before_send_event
 
 log = config.get_logger()
 
@@ -116,7 +117,9 @@ log = config.get_logger()
 def make_app(jwt_validator=None):
     """make_app."""
 
-    path = pkg_resources.resource_filename("api", "templates")
+    path = config.get(
+        "_global_.web.path", pkg_resources.resource_filename("api", "templates")
+    )
 
     routes = [
         (r"/auth", AuthHandler),  # /auth is still used by OIDC callback
@@ -213,11 +216,6 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
-        (
-            r"/(.*)",
-            FrontendHandler,
-            dict(path=path, default_filename="index.html"),
-        ),
     ]
 
     router = RuleRouter(routes)
@@ -234,6 +232,13 @@ def make_app(jwt_validator=None):
                 ],
             )
         )
+    router.rules.append(
+        Rule(
+            PathMatches(r"/(.*)"),
+            FrontendHandler,
+            dict(path=path, default_filename="index.html"),
+        ),
+    )
 
     app = tornado.web.Application(
         router.rules,
@@ -247,6 +252,8 @@ def make_app(jwt_validator=None):
     if sentry_dsn:
         sentry_sdk.init(
             dsn=sentry_dsn,
+            before_send=before_send_event,
+            traces_sample_rate=config.get("_global_.sentry.traces_sample_rate", 0.2),
             integrations=[
                 TornadoIntegration(),
                 AioHttpIntegration(),

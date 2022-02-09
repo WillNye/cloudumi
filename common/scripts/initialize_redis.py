@@ -35,9 +35,6 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# Force dynamic configuration update synchronously
-# config.CONFIG.load_config_from_dynamo()
-
 if args.use_celery:
     # Initialize Redis locally. If use_celery is set to `True`, you must be running a celery beat and worker. You can
     # run this locally with the following command:
@@ -48,7 +45,6 @@ if args.use_celery:
     celery.cache_sns_topics_across_accounts_for_all_hosts()
     celery.cache_sqs_queues_across_accounts_for_all_hosts()
     celery.cache_managed_policies_across_accounts_for_all_hosts()
-    # default_celery_tasks.cache_application_information()
     celery.cache_resources_from_aws_config_across_accounts_for_all_hosts()
     celery.cache_policies_table_details_for_all_hosts.apply_async(countdown=180)
     celery.cache_policy_requests_for_all_hosts()
@@ -63,7 +59,6 @@ else:
         accounts_d = async_to_sync(get_account_id_to_name_mapping)(
             host, force_sync=True
         )
-        # default_celery_tasks.cache_application_information(host)
         if parallel:
             executor = ThreadPoolExecutor(max_workers=os.cpu_count())
             futures = []

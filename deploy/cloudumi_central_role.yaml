@@ -160,7 +160,7 @@ Resources:
     Type: "Custom::SnsCustomResource"
     DeletionPolicy: Retain
     Properties:
-      ServiceToken: !Ref RegistrationSnsQueArnParameter
+      ServiceToken: !Ref RegistrationTopicArnParameter
       IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
       ClusterRole: !Ref ClusterRoleParameter
@@ -213,14 +213,14 @@ Parameters:
     MaxLength: "100"
     AllowedPattern: '[\w+_-]*'
     ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]*'
-  RegistrationSnsQueArnParameter:
+  RegistrationTopicArnParameter:
     Description: >-
       The SNS queue ARN that will be used to send registration messages to the SaaS
     Type: String
     MinLength: "2"
     MaxLength: "100"
     AllowedPattern: '^arn:aws:sns:[\w-]*:\d{12}:.+'
-    ConstraintDescription: 'Invalid RegistrationSnsQueArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
+    ConstraintDescription: 'Invalid RegistrationTopicArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
 Outputs:
   ExternalID:
     Description: ExternalID to share with the SaaS for assume-role deployments
@@ -246,6 +246,6 @@ Outputs:
   SpokeRoleName:
     Description: The name of the spoke role in each customer account.
     Value: !Ref SpokeRoleNameParameter
-  RegistrationSnsQueArn:
-    Description: SNS Registration queue ARN
-    Value: !Ref RegistrationSnsQueArnParameter
+  RegistrationTopicArn:
+    Description: SNS Registration topic ARN
+    Value: !Ref RegistrationTopicArnParameter

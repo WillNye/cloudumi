@@ -21,7 +21,7 @@ class TestChangeRequestLib(AsyncTestCase):
         from common.lib.change_request import generate_policy_name
 
         random_sid = await generate_policy_name(None, "username@example.com")
-        self.assertRegex(random_sid, "^cm_username_\d{10}_[a-z]{4}$")  # noqa
+        self.assertRegex(random_sid, "^noq_username_\d{10}_[a-z]{4}$")  # noqa
         explicit = await generate_policy_name("blah", "username@example.com")
         self.assertRegex(explicit, "blah")
 

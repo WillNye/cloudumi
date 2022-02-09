@@ -1,0 +1,65 @@
+name: pre-commit
+
+on:
+  push:
+    branches: [main]
+    tags: ["*"]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      # setup-python won't work with self-hosted runners. Python3.9 should be pre-installed
+      #      - name: Set up Python 3.9
+      #        uses: actions/setup-python@v1
+      #        with:
+      #          python-version: 3.9
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+      - name: Install dependencies
+        run: |
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo bash
+          curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+          echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+          sudo apt-get update
+          sudo apt-get install \
+            libssl-dev \
+            libcurl4-openssl-dev \
+            python3-dev \
+            build-essential \
+            libxml2-dev \
+            libxmlsec1-dev \
+            libxmlsec1-openssl \
+            musl-dev \
+            yarn \
+            unzip \
+            python3-pip \
+            nodejs -y
+          pip install \
+            -r requirements.lock
+          pip install \
+            -r requirements-test.lock \
+          pip install .
+          pip install pre-commit
+          yarn --cwd frontend install
+          yarn --cwd frontend build_template
+
+          # Checkov for Terraform security vulnerability checking
+          pip install checkov
+
+          # tfsec - Terraform security scanning
+          go install github.com/aquasecurity/tfsec/cmd/tfsec@latest
+
+          # terrascan - Moar Terraform security scanning
+          curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
+          tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
+          sudo install terrascan /usr/local/bin && rm terrascan
+
+          pre-commit install
+      - name: Run pre-commit
+        run: |
+          pre-commit run -a

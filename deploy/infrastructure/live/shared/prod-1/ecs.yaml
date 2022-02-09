@@ -1,0 +1,16 @@
+version: 1
+task_definition:
+  ecs_network_mode: awsvpc
+  task_execution_role: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskExecutionRole
+  task_size:
+    cpu_limit: 2048
+    mem_limit: 4GB
+run_params:
+  network_configuration:
+    awsvpc_configuration:
+      subnets:
+        - subnet-0939065d2f05feb9f
+        - subnet-0207ba8d477d4bf39
+      security_groups:
+        - sg-0d954fd5388c9c4e3
+      assign_public_ip: DISABLED

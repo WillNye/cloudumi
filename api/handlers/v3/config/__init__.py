@@ -19,7 +19,7 @@ class ConfigHandler(BaseHandler):
             res = WebResponse(status_code=400, message="External ID not found")
             self.write(res.json(exclude_unset=True, exclude_none=True))
             return
-        noq_cluster_role = config.get("_global_.aws.node_role", host)
+        noq_cluster_role = config.get("_global_.integrations.aws.node_role", host)
         central_role_trust_policy = {
             "Version": "2012-10-17",
             "Statement": [
@@ -161,7 +161,7 @@ class ConfigHandler(BaseHandler):
                 "spoke_role_name": config.get_host_specific_key(
                     "policies.role_name", host
                 ),
-                "central_role_name": "NoqCentralRole",
+                "central_role_name": config.get("_global_.integrations.aws.central_role_name", "NoqCentralRole"),
                 "central_role_trust_policy": central_role_trust_policy,
                 "central_role_inline_policy": central_role_inline_policy,
                 "spoke_role_inline_policy": spoke_role_inline_policy,

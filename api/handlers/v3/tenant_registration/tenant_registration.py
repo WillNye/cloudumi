@@ -2,7 +2,7 @@ import base64
 import hashlib
 import hmac
 import random
-from datetime import datetime
+import time
 from secrets import token_urlsafe
 from typing import List
 from urllib.parse import urlparse
@@ -533,8 +533,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             )
             return
 
-        # TODO: Make region configurable
-        region = "us-east-1"
+        region = config.region
         # validate tenant
         try:
             tenant = NewTenantRegistration.parse_obj(data)
@@ -623,7 +622,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         tenant_config = f"""
 cloud_credential_authorization_mapping:
   role_tags:
-    enabled: true
+    enabled: false
     authorized_groups_tags:
       - noq_authorized
     authorized_groups_cli_only_tags:
@@ -634,7 +633,7 @@ environment: prod
 tenant_details:
   external_id: {external_id}
   creator: {tenant.email}
-  creation_time: {datetime.now().isoformat()}
+  creation_time: {int(time.time())}
 site_config:
   landing_url: /settings
 headers:
@@ -642,16 +641,6 @@ headers:
     enabled: false
   role_login:
     enabled: true
-identity:
-  cache_groups:
-    enabled: true
-  identity_providers:
-    okta_test:
-      name: okta_test
-      idp_type: okta
-      org_url: https://dev-876967.okta.com/
-      # TODO: No secrets should be in plaintext configuration
-      api_token: 00T8xmegwdOppNEJxE33AyGg7EG3nIQAeHcUmmPb2u
 url: {dev_domain_url}
 application_admin: {tenant.email}
 secrets:
