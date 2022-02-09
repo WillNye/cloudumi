@@ -7,7 +7,7 @@ and to update the infrastructure when changes are needed.
 **NOTE**: it is imperative you enter the correct workspace using `terraform workspace select` before attempting to
 update prod or production environments!
 
-**NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`` for instance)
+**NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`terraform workspace select noq.dev-prod-1` for instance)
 
 ## Pre-requisites:
 
@@ -30,15 +30,17 @@ Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file
 
 #### Staging
 
-terraform workspace select shared-staging-1
-terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars
 export AWS_PROFILE=noq_dev
 export AWS_REGION=us-west-2
+terraform workspace select shared-staging-1
+terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars
 terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars
 terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars
 
 #### Prod
 
+export AWS_PROFILE=noq_prod
+export AWS_REGION=us-west-2
 terraform workspace select shared-prod-1
 terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 export AWS_PROFILE=noq_prod
