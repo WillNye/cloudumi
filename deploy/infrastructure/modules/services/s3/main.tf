@@ -55,6 +55,10 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
     var.tags,
     {}
   )
+
+  logging {
+    target_bucket = var.s3_access_log_bucket
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "tenant_configuration_store" {
@@ -114,4 +118,8 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
     var.tags,
     {}
   )
+
+  logging {
+    target_bucket = var.s3_access_log_bucket
+  }
 }
