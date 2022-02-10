@@ -51,12 +51,12 @@ class AwsIntegrationHandler(BaseHandler):
         )
         central_role_template_url = config.get(
             "_global_.integrations.aws.registration_central_role_cf_template",
-            "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml",
+            f"https://s3.{region}.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml",
         )
 
         spoke_role_template_url = config.get(
             "_global_.integrations.aws.registration_spoke_role_cf_template",
-            "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
+            f"https://s3.{region}.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
         )
 
         capabilities = ["CAPABILITY_NAMED_IAM"]
@@ -99,7 +99,7 @@ class AwsIntegrationHandler(BaseHandler):
             data={
                 "central_account_role": {
                     "cloudformation_url": (
-                        "https://console.aws.amazon.com/cloudformation/home?region=us-east-1"
+                        f"https://console.aws.amazon.com/cloudformation/home?region={region}"
                         + "#/stacks/quickcreate?templateURL="
                         + urllib.parse.quote(central_role_template_url)
                         + f"&param_ExternalIDParameter={external_id}&param_HostParameter={host}&stackName={stack_name}"
@@ -158,7 +158,7 @@ class AwsIntegrationHandler(BaseHandler):
             res.data["spoke_account_role"] = {
                 "status": "eligible",
                 "cloudformation_url": (
-                    "https://console.aws.amazon.com/cloudformation/home?region=us-east-1"
+                    f"https://console.aws.amazon.com/cloudformation/home?region={region}"
                     + "#/stacks/quickcreate?templateURL="
                     + urllib.parse.quote(spoke_role_template_url)
                     + f"&param_HostParameter={host}"
