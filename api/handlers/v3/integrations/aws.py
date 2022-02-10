@@ -51,12 +51,12 @@ class AwsIntegrationHandler(BaseHandler):
         )
         central_role_template_url = config.get(
             "_global_.integrations.aws.registration_central_role_cf_template",
-            f"https://s3.{region}.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml",
+            f"https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml",
         )
 
         spoke_role_template_url = config.get(
             "_global_.integrations.aws.registration_spoke_role_cf_template",
-            f"https://s3.{region}.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
+            f"https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
         )
 
         capabilities = ["CAPABILITY_NAMED_IAM"]
