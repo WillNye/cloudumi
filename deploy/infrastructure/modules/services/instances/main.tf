@@ -59,6 +59,7 @@ resource "aws_instance" "jumpbox" {
   }
 
   metadata_options {
-    http_tokens = "required"
+    http_tokens   = "required"
+    http_endpoint = "enabled"
   }
 }

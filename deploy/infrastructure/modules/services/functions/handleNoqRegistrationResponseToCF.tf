@@ -105,6 +105,11 @@ resource "null_resource" "install_python_dependencies" {
       path_cwd      = path.cwd
     }
   }
+
+  triggers = {
+    zip     = "${filemd5(local.zip_path)}"
+    handler = "${filemd5("${local.source_path}/handler.py")}"
+  }
 }
 
 data "archive_file" "create_dist_pkg" {
