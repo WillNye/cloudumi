@@ -4,8 +4,8 @@ _global_:
   integrations:
     aws:
       account_id: {{ account_id }}
-      central_role_name: NoqCentralRole-{{ central_role_name_prefix }}
-      spoke_role_name: NoqSpokeRole-{{ spoke_role_name_prefix }}
+      central_role_name: NoqCentralRole
+      spoke_role_name: NoqSpokeRole
       node_role: {{ ecs_task_role_arn }}
       stage: {{ stage }}
       region: {{ region }}
