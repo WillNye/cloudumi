@@ -1,52 +1,5 @@
 // TODO: Enable autoscaling for all DDB tables
 
-resource "aws_dynamodb_table" "cloudumi_central_role_arns" {
-  attribute {
-    name = "stack_id"
-    type = "S"
-  }
-  attribute {
-    name = "role_arn"
-    type = "S"
-  }
-
-  name           = "${var.cluster_id}_cloudumi_central_role_arns"
-  hash_key       = "stack_id"
-  range_key      = "role_arn"
-  read_capacity  = 1
-  write_capacity = 1
-  global_secondary_index {
-    name            = "host_index"
-    hash_key        = "host"
-    projection_type = "ALL"
-    read_capacity   = 1
-    write_capacity  = 1
-  }
-  stream_enabled   = true
-  stream_view_type = "NEW_AND_OLD_IMAGES"
-
-  # dynamic "replica" {
-  #   for_each = var.dynamo_table_replica_regions
-  #   content {
-  #     region_name = replica.value
-  #   }
-  # }
-
-  lifecycle {
-    ignore_changes = [write_capacity, read_capacity]
-  }
-
-  tags = merge(
-    var.tags,
-    {}
-  )
-
-  point_in_time_recovery {
-    enabled = true
-  }
-
-}
-
 resource "aws_dynamodb_table" "cloudumi_identity_groups_multitenant" {
   attribute {
     name = "group_id"
