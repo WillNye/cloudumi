@@ -77,6 +77,12 @@ module "tenant_elasticache_service" {
   vpc_id                      = module.tenant_networking.vpc_id
 }
 
+module "tenant_functions_service" {
+  source = "./modules/services/functions"
+
+  registration_response_queue = module.tenant_messaging.sqs_registration_response_queue_arn
+}
+
 module "tenant_instance_service" {
   source = "./modules/services/instances"
 
