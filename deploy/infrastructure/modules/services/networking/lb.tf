@@ -31,7 +31,7 @@ resource "aws_lb_target_group" "noq_api_balancer_target_group" {
     healthy_threshold   = 2
     unhealthy_threshold = 10
     timeout             = 5
-    interval            = 10
+    interval            = 60
     path                = "/healthcheck"
     port                = 8092
   }

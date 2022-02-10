@@ -58,8 +58,8 @@ genrule(
            --ecs-params deploy/infrastructure/live/shared/staging-1/ecs.yaml \
            -p staging-noq-dev-shared-staging-1 \
            --task-role-arn arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole \
-           --region us-west-2 service up --create-log-groups --timeout 15 \
-           --target-groups targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:259868150464:targetgroup/tf-20220128193723710200000002/e84c2219c5ca74a8,containerName=staging-noq-dev-shared-staging-1-api,containerPort=8092' >$@",
+           --region us-west-2 service up --deployment-max-percent 200 --deployment-min-healthy-percent 50 --create-log-groups --timeout 15 \
+           --target-groups targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:259868150464:targetgroup/tf-20220210002026526700000001/72dfc466694ddd66,containerName=staging-noq-dev-shared-staging-1-api,containerPort=8092' >$@",
     tags = ["manual"],
 )
 
