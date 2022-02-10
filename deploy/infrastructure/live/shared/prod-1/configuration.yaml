@@ -1,11 +1,17 @@
 _global_:
   landing_page_domains:
     - shared.noq.dev
-  aws:
-    node_role: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
-    stage: prod
-    region: us-west-2
-    attributes: 1
+  integrations:
+    aws:
+      account_id: 940552945933
+      central_role_name: NoqCentralRole-940552945933-noqdev
+      spoke_role_name: NoqSpokeRole-940552945933-noqdev
+      node_role: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
+      stage: prod
+      region: us-west-2
+      attributes: 1
+      registration_topic_arn: arn:aws:sns:us-west-2:940552945933:noq-dev-shared-prod-1-registration-topic
+      registration_queue_arn: arn:aws:sqs:us-west-2:940552945933:noq-dev-shared-prod-1-registration-queue
   deployment:
     domain_name: shared.noq.dev
     namespace: shared
@@ -19,8 +25,9 @@ _global_:
   development: false
   environment: prod
   tornado:
+  
     debug: false
-
+  
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:
