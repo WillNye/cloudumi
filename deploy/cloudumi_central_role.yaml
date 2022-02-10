@@ -215,7 +215,7 @@ Parameters:
     ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]*'
   RegistrationTopicArnParameter:
     Description: >-
-      The SNS queue ARN that will be used to send registration messages to the SaaS
+      The SNS queue ARN that will be used to send registration messages to the SaaS. Do not change this value!
     Type: String
     MinLength: "2"
     MaxLength: "100"
@@ -231,8 +231,8 @@ Outputs:
   ClusterRole:
     Description: ClusterRole to share with the SaaS for deployment
     Value: !Ref ClusterRoleParameter
-  ClustRoleArn:
-    Description: ClusterRoleArn to share with the SaaS for deployment
+  CentralRoleArn:
+    Description: CentralRoleArn to share with the SaaS for deployment
     Value: !GetAtt CentralRole.Arn
   SpokeRole:
     Description: SpokeRole to share with the SaaS for deployment

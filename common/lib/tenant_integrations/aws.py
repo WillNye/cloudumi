@@ -94,9 +94,7 @@ async def handle_spoke_account_registration(body):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
-    spoke_role_name = config.get(
-        "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
-    )
+    spoke_role_name = body["ResourceProperties"]["SpokeRole"]
     account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
     spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
     host = body["ResourceProperties"]["Host"]
@@ -202,14 +200,9 @@ async def handle_central_account_registration(body):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
-    central_role_name = config.get(
-        "_global_.integrations.aws.central_role_name", "NoqCentralRole"
-    )
-    spoke_role_name = config.get(
-        "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
-    )
+    spoke_role_name = body["ResourceProperties"]["SpokeRole"]
     account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
-    role_arn = f"arn:aws:iam::{account_id_for_role}:role/{central_role_name}"
+    role_arn = body["ResourceProperties"]["CentralRoleArn"]
     external_id = body["ResourceProperties"]["ExternalId"]
     host = body["ResourceProperties"]["Host"]
 

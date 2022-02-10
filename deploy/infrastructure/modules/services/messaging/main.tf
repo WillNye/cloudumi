@@ -39,11 +39,11 @@ data "aws_iam_policy_document" "registration_topic_policy_document" {
   statement {
     sid = "AllowAccessToPublishFromAllAccounts"
     actions = [
-      "SNS:Publish", 
+      "SNS:Publish",
     ]
 
     principals {
-      type = "AWS"
+      type        = "AWS"
       identifiers = ["*"]
     }
 
@@ -128,6 +128,7 @@ resource "aws_sqs_queue" "registration_response_queue" {
   max_message_size          = 2048
   message_retention_seconds = 86400
   receive_wait_time_seconds = 10
+  visibility_timeout_seconds = 300
 }
 
 resource "aws_sqs_queue_policy" "registration_response_queue_policy" {

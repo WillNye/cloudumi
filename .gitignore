@@ -152,3 +152,5 @@ bazel-*
 
 .env_github_action_secrets
 api/templates
+
+**/.terraform.lock.hcl

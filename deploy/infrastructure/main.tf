@@ -2,11 +2,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.27"
+      version = "~> 3.74"
     }
   }
 
-  required_version = ">= 0.14.9"
+  required_version = ">= 1.1.5"
   backend "s3" {
     bucket         = "noq-terraform-state"
     key            = "terraform/terraform.tfstate"
@@ -77,6 +77,24 @@ module "tenant_elasticache_service" {
   vpc_id                      = module.tenant_networking.vpc_id
 }
 
+module "tenant_functions_service" {
+  source = "./modules/services/functions"
+
+  account_id                  = var.account_id
+  region                      = var.region
+  registration_response_queue = module.tenant_messaging.sqs_registration_response_queue_arn
+}
+
+module "tenant_instance_service" {
+  source = "./modules/services/instances"
+
+  allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
+  cluster_id                  = local.cluster_id
+  public_subnet_ids           = module.tenant_networking.vpc_subnet_public_id
+  tags                        = var.tags
+  vpc_id                      = module.tenant_networking.vpc_id
+}
+
 module "tenant_messaging" {
   source = "./modules/services/messaging"
 
@@ -107,9 +125,10 @@ module "tenant_networking" {
 module "tenant_s3_service" {
   source = "./modules/services/s3"
 
-  attributes = var.attributes
-  cluster_id = local.cluster_id
-  noq_core   = var.noq_core
-  tags       = var.tags
-  timeout    = var.timeout
+  attributes           = var.attributes
+  cluster_id           = local.cluster_id
+  noq_core             = var.noq_core
+  tags                 = var.tags
+  timeout              = var.timeout
+  s3_access_log_bucket = var.s3_access_log_bucket
 }
