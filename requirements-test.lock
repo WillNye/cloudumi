@@ -4,24 +4,41 @@
 #
 #    pip-compile --allow-unsafe --output-file=requirements-test.lock ./api/util/requirements-test.in ./common/util/requirements-test.in requirements.lock
 #
-aenum==3.1.5
+aenum==3.1.8
     # via
     #   -r requirements.lock
     #   okta
-aiohttp==3.7.4.post0
+aiodns==3.0.0
+    # via
+    #   -r requirements.lock
+    #   checkov
+aiohttp==3.8.1
     # via
     #   -r requirements.lock
     #   aiozipkin
+    #   checkov
     #   okta
-aiozipkin==1.1.0
+aiomultiprocess==0.9.0
+    # via
+    #   -r requirements.lock
+    #   checkov
+aiosignal==1.2.0
+    # via
+    #   -r requirements.lock
+    #   aiohttp
+aiozipkin==1.1.1
     # via -r requirements.lock
-amqp==5.0.6
+amqp==5.0.9
     # via
     #   -r requirements.lock
     #   kombu
+argcomplete==2.0.0
+    # via
+    #   -r requirements.lock
+    #   checkov
 asgiref==3.3.4
     # via -r requirements.lock
-async-timeout==3.0.1
+async-timeout==4.0.2
     # via
     #   -r requirements.lock
     #   aiohttp
@@ -29,20 +46,24 @@ asynctest==0.13.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-atlassian-python-api==3.14.1
+atlassian-python-api==3.19.0
     # via -r requirements.lock
-attrs==21.2.0
+attrs==21.4.0
     # via
     #   -r requirements.lock
     #   aiohttp
     #   jsonschema
     #   pytest
-backports.entry-points-selectable==1.1.1
+backports-entry-points-selectable==1.1.1
     # via virtualenv
 bandit==1.7.1
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
+bc-python-hcl2==0.3.28
+    # via
+    #   -r requirements.lock
+    #   checkov
 bcrypt==3.2.0
     # via -r requirements.lock
 beautifulsoup4==4.10.0
@@ -65,24 +86,32 @@ boto==2.49.0
     # via
     #   -r requirements.lock
     #   cloudaux
-boto3==1.18.63
+boto3==1.20.52
     # via
     #   -r requirements.lock
+    #   checkov
     #   cloudaux
+    #   cloudsplaining
     #   moto
     #   parliament
-botocore==1.21.63
+botocore==1.23.52
     # via
     #   -r requirements.lock
     #   boto3
     #   cloudaux
+    #   cloudsplaining
     #   moto
     #   s3transfer
-cachetools==4.2.4
+cached-property==1.5.2
     # via
     #   -r requirements.lock
+    #   cloudsplaining
+cachetools==5.0.0
+    # via
+    #   -r requirements.lock
+    #   checkov
     #   google-auth
-celery==5.1.2
+celery==5.2.3
     # via -r requirements.lock
 certifi==2021.10.8
     # via
@@ -95,29 +124,37 @@ cffi==1.15.0
     #   -r requirements.lock
     #   bcrypt
     #   cryptography
+    #   pycares
+    #   pynacl
 cfgv==3.3.1
     # via pre-commit
-chardet==4.0.0
+charset-normalizer==2.0.11
     # via
     #   -r requirements.lock
     #   aiohttp
-charset-normalizer==2.0.7
-    # via
-    #   -r requirements.lock
     #   requests
-click==7.1.2
+checkov==2.0.817
+    # via -r requirements.lock
+click==8.0.3
     # via
     #   -r requirements.lock
     #   black
     #   celery
+    #   checkov
     #   click-didyoumean
+    #   click-option-group
     #   click-plugins
     #   click-repl
+    #   cloudsplaining
     #   policy-sentry
 click-didyoumean==0.3.0
     # via
     #   -r requirements.lock
     #   celery
+click-option-group==0.5.3
+    # via
+    #   -r requirements.lock
+    #   cloudsplaining
 click-plugins==1.1.1
     # via
     #   -r requirements.lock
@@ -128,6 +165,18 @@ click-repl==0.2.0
     #   celery
 cloudaux==1.9.6
     # via -r requirements.lock
+cloudsplaining==0.5.0
+    # via
+    #   -r requirements.lock
+    #   checkov
+colorama==0.4.4
+    # via
+    #   -r requirements.lock
+    #   checkov
+configargparse==1.5.3
+    # via
+    #   -r requirements.lock
+    #   checkov
 contextlib2==21.6.0
     # via
     #   -r requirements.lock
@@ -137,13 +186,25 @@ coverage[toml]==6.2
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
     #   pytest-cov
-cryptography==35.0.0
+cryptography==36.0.1
     # via
     #   -r requirements.lock
     #   moto
+cyclonedx-python-lib==0.12.3
+    # via
+    #   -r requirements.lock
+    #   checkov
 debugpy==1.5.1
     # via -r requirements.lock
-deepdiff==5.6.0
+decorator==5.1.1
+    # via
+    #   -r requirements.lock
+    #   jsonpath-ng
+deep-merge==0.0.4
+    # via
+    #   -r requirements.lock
+    #   checkov
+deepdiff==5.7.0
     # via -r requirements.lock
 defusedxml==0.7.1
     # via
@@ -154,9 +215,14 @@ deprecated==1.2.13
     # via
     #   -r requirements.lock
     #   atlassian-python-api
+    #   pygithub
+detect-secrets==1.1.0
+    # via
+    #   -r requirements.lock
+    #   checkov
 distlib==0.3.4
     # via virtualenv
-dnspython==2.1.0
+dnspython==2.2.0
     # via
     #   -r requirements.lock
     #   email-validator
@@ -164,15 +230,25 @@ docker==5.0.3
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
+    #   -r requirements.lock
+    #   checkov
+dockerfile-parse==1.2.0
+    # via
+    #   -r requirements.lock
+    #   checkov
 docutils==0.18.1
     # via readme-renderer
+dpath==1.5.0
+    # via
+    #   -r requirements.lock
+    #   checkov
 ecdsa==0.17.0
     # via
     #   -r requirements.lock
     #   python-jose
 ed25519==1.5
     # via -r requirements.lock
-elastic-apm==6.5.0
+elastic-apm==6.7.2
     # via -r requirements.lock
 email-validator==1.1.3
     # via -r requirements.lock
@@ -203,23 +279,29 @@ flatdict==4.0.1
     # via
     #   -r requirements.lock
     #   okta
+frozenlist==1.3.0
+    # via
+    #   -r requirements.lock
+    #   aiohttp
+    #   aiosignal
 furl==2.1.3
     # via -r requirements.lock
-gitdb==4.0.7
+gitdb==4.0.9
     # via
     #   -r requirements.lock
     #   gitpython
-gitpython==3.1.24
+gitpython==3.1.26
     # via
     #   -r requirements.lock
     #   bandit
-google-api-core==2.3.2
+    #   checkov
+google-api-core==2.5.0
     # via
     #   -r requirements.lock
     #   google-api-python-client
-google-api-python-client==2.33.0
+google-api-python-client==2.37.0
     # via -r requirements.lock
-google-auth==2.3.3
+google-auth==2.6.0
     # via
     #   -r requirements.lock
     #   google-api-core
@@ -239,7 +321,7 @@ grpcio==1.43.0
     #   grpcio-tools
 grpcio-tools==1.43.0
     # via -r requirements.lock
-httplib2==0.20.2
+httplib2==0.20.4
     # via
     #   -r requirements.lock
     #   google-api-python-client
@@ -252,23 +334,31 @@ idna==3.3
     #   email-validator
     #   requests
     #   yarl
+importlib-metadata==4.10.1
+    # via
+    #   -r requirements.lock
+    #   markdown
 inflection==0.5.1
     # via
     #   -r requirements.lock
     #   cloudaux
 iniconfig==1.1.1
     # via pytest
-isodate==0.6.0
+isodate==0.6.1
     # via
     #   -r requirements.lock
     #   python3-saml
 jinja2==3.0.3
-    # via moto
+    # via
+    #   -r requirements.lock
+    #   cloudsplaining
+    #   moto
 jmespath==0.10.0
     # via
     #   -r requirements.lock
     #   boto3
     #   botocore
+    #   checkov
     #   parliament
 joblib==1.1.0
     # via
@@ -278,9 +368,19 @@ json-cfg==0.4.2
     # via
     #   -r requirements.lock
     #   parliament
-jsonschema==4.1.0
-    # via -r requirements.lock
-kombu==5.1.0
+jsonpath-ng==1.5.3
+    # via
+    #   -r requirements.lock
+    #   checkov
+jsonschema==3.2.0
+    # via
+    #   -r requirements.lock
+    #   checkov
+junit-xml==1.9
+    # via
+    #   -r requirements.lock
+    #   checkov
+kombu==5.2.3
     # via
     #   -r requirements.lock
     #   celery
@@ -288,18 +388,27 @@ kwonly-args==1.0.10
     # via
     #   -r requirements.lock
     #   json-cfg
+lark-parser==0.10.1
+    # via
+    #   -r requirements.lock
+    #   bc-python-hcl2
 logmatic-python==0.1.7
     # via -r requirements.lock
-lxml==4.6.3
+lxml==4.7.0
     # via
     #   -r requirements.lock
     #   python3-saml
     #   xmlsec
+markdown==3.3.6
+    # via
+    #   -r requirements.lock
+    #   cloudsplaining
 markupsafe==2.0.1
     # via
+    #   -r requirements.lock
     #   jinja2
     #   moto
-marshmallow==3.14.0
+marshmallow==3.14.1
     # via -r requirements.lock
 mccabe==0.6.1
     # via flake8
@@ -315,7 +424,7 @@ moto==2.2.19
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-multidict==5.2.0
+multidict==6.0.2
     # via
     #   -r requirements.lock
     #   aiohttp
@@ -328,24 +437,28 @@ mypy-extensions==0.4.3
     # via
     #   black
     #   mypy
-newrelic==7.2.4.171
+networkx==2.6.3
+    # via
+    #   -r requirements.lock
+    #   checkov
+newrelic==7.4.0.172
     # via -r requirements.lock
 nodeenv==1.6.0
     # via pre-commit
-numpy==1.21.2
+numpy==1.22.2
     # via
     #   -r requirements.lock
     #   pandas
-oauthlib==3.1.1
+oauthlib==3.2.0
     # via
     #   -r requirements.lock
     #   atlassian-python-api
     #   requests-oauthlib
-okta==2.3.1
+okta==2.4.0
     # via -r requirements.lock
 okta-jwt==1.3.5
     # via -r requirements.lock
-onelogin==2.0.2
+onelogin==2.0.3
     # via -r requirements.lock
 ordered-set==4.0.2
     # via
@@ -355,15 +468,20 @@ orderedmultidict==1.0.1
     # via
     #   -r requirements.lock
     #   furl
-packaging==21.0
+packageurl-python==0.9.7
+    # via
+    #   -r requirements.lock
+    #   cyclonedx-python-lib
+packaging==21.3
     # via
     #   -r requirements.lock
     #   bleach
+    #   checkov
     #   pytest
     #   tox
-pandas==1.3.4
+pandas==1.4.0
     # via -r requirements.lock
-parliament==1.4.1
+parliament==1.5.2
     # via -r requirements.lock
 password-strength==0.0.3.post2
     # via -r requirements.lock
@@ -371,7 +489,7 @@ pathspec==0.9.0
     # via black
 pbr==5.8.0
     # via stevedore
-pdpyras==4.3.0
+pdpyras==4.4.0
     # via -r requirements.lock
 platformdirs==2.4.0
     # via
@@ -381,24 +499,40 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-policy-sentry==0.11.18
-    # via -r requirements.lock
-policyuniverse==1.4.0.20210819
-    # via -r requirements.lock
+ply==3.11
+    # via
+    #   -r requirements.lock
+    #   jsonpath-ng
+policy-sentry==0.12.2
+    # via
+    #   -r requirements.lock
+    #   cloudsplaining
+policyuniverse==1.4.0.20220110
+    # via
+    #   -r requirements.lock
+    #   checkov
 pre-commit==2.16.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-prompt-toolkit==3.0.20
+prettytable==3.0.0
+    # via
+    #   -r requirements.lock
+    #   checkov
+prompt-toolkit==3.0.27
     # via
     #   -r requirements.lock
     #   click-repl
-protobuf==3.18.1
+protobuf==3.19.4
     # via
     #   -r requirements.lock
     #   google-api-core
     #   googleapis-common-protos
     #   grpcio-tools
+psutil==5.9.0
+    # via
+    #   -r requirements.lock
+    #   redislite
 ptvsd==4.3.2
     # via -r requirements.lock
 py==1.11.0
@@ -416,19 +550,23 @@ pyasn1-modules==0.2.8
     # via
     #   -r requirements.lock
     #   google-auth
+pycares==4.1.2
+    # via
+    #   -r requirements.lock
+    #   aiodns
 pycodestyle==2.8.0
     # via
     #   flake8
     #   flake8-import-order
-pycparser==2.20
+pycparser==2.21
     # via
     #   -r requirements.lock
     #   cffi
-pycryptodome==3.11.0
+pycryptodome==3.14.1
     # via
     #   -r requirements.lock
     #   okta
-pydantic==1.8.2
+pydantic==1.9.0
     # via -r requirements.lock
 pydash==5.1.0
     # via
@@ -438,16 +576,24 @@ pydocstyle==6.1.1
     # via flake8-docstrings
 pyflakes==2.4.0
     # via flake8
+pygithub==1.55
+    # via -r requirements.lock
 pygments==2.10.0
     # via readme-renderer
 pyjwt==2.3.0
-    # via -r requirements.lock
-pyparsing==2.4.7
+    # via
+    #   -r requirements.lock
+    #   pygithub
+pynacl==1.5.0
+    # via
+    #   -r requirements.lock
+    #   pygithub
+pyparsing==3.0.7
     # via
     #   -r requirements.lock
     #   httplib2
     #   packaging
-pyrsistent==0.18.0
+pyrsistent==0.18.1
     # via
     #   -r requirements.lock
     #   jsonschema
@@ -512,7 +658,9 @@ python-json-logger==2.0.2
     # via
     #   -r requirements.lock
     #   logmatic-python
-python3-saml==1.12.0
+python-terraform==0.10.1
+    # via -r requirements.lock
+python3-saml==1.13.0
     # via -r requirements.lock
 pytz==2021.3
     # via
@@ -524,6 +672,9 @@ pyyaml==6.0
     # via
     #   -r requirements.lock
     #   bandit
+    #   checkov
+    #   cloudsplaining
+    #   detect-secrets
     #   okta
     #   parliament
     #   policy-sentry
@@ -536,12 +687,16 @@ redis==3.5.3
     # via
     #   -r requirements.lock
     #   redis-py-cluster
+    #   redislite
 redis-py-cluster==2.1.3
     # via -r requirements.lock
-requests==2.26.0
+redislite==6.0.674960
+    # via -r requirements.lock
+requests==2.27.1
     # via
     #   -r requirements.lock
     #   atlassian-python-api
+    #   detect-secrets
     #   docker
     #   google-api-core
     #   moto
@@ -549,9 +704,11 @@ requests==2.26.0
     #   onelogin
     #   pdpyras
     #   policy-sentry
+    #   pygithub
     #   requests-oauthlib
     #   responses
-requests-oauthlib==1.3.0
+    #   update-checker
+requests-oauthlib==1.3.1
     # via
     #   -r requirements.lock
     #   atlassian-python-api
@@ -559,30 +716,35 @@ responses==0.16.0
     # via moto
 retrying==1.3.3
     # via -r requirements.lock
-rsa==4.7.2
+rsa==4.8
     # via
     #   -r requirements.lock
     #   google-auth
     #   python-jose
-ruamel.yaml==0.17.16
+ruamel-yaml==0.17.20
     # via -r requirements.lock
-ruamel.yaml.clib==0.2.6
+ruamel-yaml-clib==0.2.6
     # via
     #   -r requirements.lock
-    #   ruamel.yaml
-s3transfer==0.5.0
+    #   ruamel-yaml
+s3transfer==0.5.1
     # via
     #   -r requirements.lock
     #   boto3
-schema==0.7.4
+schema==0.7.5
     # via
     #   -r requirements.lock
+    #   cloudsplaining
     #   policy-sentry
-sentry-sdk==1.4.3
+semantic-version==2.9.0
+    # via
+    #   -r requirements.lock
+    #   checkov
+sentry-sdk==1.5.4
     # via -r requirements.lock
 setupmeta==3.3.0
     # via -r requirements.lock
-simplejson==3.17.5
+simplejson==3.17.6
     # via -r requirements.lock
 six==1.16.0
     # via
@@ -592,12 +754,16 @@ six==1.16.0
     #   bleach
     #   click-repl
     #   cloudaux
+    #   dockerfile-parse
     #   ecdsa
     #   furl
     #   google-auth
     #   google-auth-httplib2
     #   grpcio
     #   isodate
+    #   jsonpath-ng
+    #   jsonschema
+    #   junit-xml
     #   mock
     #   okta-jwt
     #   orderedmultidict
@@ -607,22 +773,32 @@ six==1.16.0
     #   retrying
     #   tox
     #   virtualenv
-smmap==4.0.0
+smmap==5.0.0
     # via
     #   -r requirements.lock
     #   gitdb
 snowballstemmer==2.2.0
     # via pydocstyle
-soupsieve==2.2.1
+soupsieve==2.3.1
     # via
     #   -r requirements.lock
     #   beautifulsoup4
 stevedore==3.5.0
     # via bandit
+tabulate==0.8.9
+    # via
+    #   -r requirements.lock
+    #   checkov
 tenacity==8.0.1
     # via -r requirements.lock
+termcolor==1.1.0
+    # via
+    #   -r requirements.lock
+    #   checkov
 toml==0.10.2
     # via
+    #   -r requirements.lock
+    #   cyclonedx-python-lib
     #   mypy
     #   pre-commit
     #   pytest
@@ -641,21 +817,36 @@ tox==3.24.4
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-typing-extensions==3.10.0.2
+tqdm==4.62.3
     # via
     #   -r requirements.lock
-    #   aiohttp
+    #   checkov
+types-setuptools==57.4.9
+    # via
+    #   -r requirements.lock
+    #   cyclonedx-python-lib
+types-toml==0.10.3
+    # via
+    #   -r requirements.lock
+    #   cyclonedx-python-lib
+typing-extensions==4.0.1
+    # via
+    #   -r requirements.lock
     #   black
-    #   gitpython
+    #   checkov
     #   mypy
     #   pydantic
-ujson==4.2.0
+ujson==5.1.0
     # via -r requirements.lock
+update-checker==0.18.0
+    # via
+    #   -r requirements.lock
+    #   checkov
 uritemplate==4.1.1
     # via
     #   -r requirements.lock
     #   google-api-python-client
-urllib3==1.26.7
+urllib3==1.26.8
     # via
     #   -r requirements.lock
     #   botocore
@@ -681,16 +872,19 @@ virtualenv==20.10.0
 wcwidth==0.2.5
     # via
     #   -r requirements.lock
+    #   prettytable
     #   prompt-toolkit
 webencodings==0.5.1
     # via
     #   -r requirements.lock
     #   bleach
 websocket-client==1.2.3
-    # via docker
+    # via
+    #   -r requirements.lock
+    #   docker
 werkzeug==2.0.2
     # via moto
-wrapt==1.13.2
+wrapt==1.13.3
     # via
     #   -r requirements.lock
     #   deprecated
@@ -703,19 +897,24 @@ xmltodict==0.12.0
     #   -r requirements.lock
     #   moto
     #   okta
-yarl==1.7.0
+yarl==1.7.2
     # via
     #   -r requirements.lock
     #   aiohttp
     #   okta
+zipp==3.7.0
+    # via
+    #   -r requirements.lock
+    #   importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==59.3.0
+setuptools==59.6.0
     # via
     #   -r requirements.lock
     #   celery
+    #   cyclonedx-python-lib
     #   flake8-import-order
-    #   google-api-core
-    #   google-auth
     #   grpcio-tools
+    #   jsonschema
     #   pytest-tornado
+    #   redislite

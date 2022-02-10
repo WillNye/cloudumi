@@ -3,6 +3,7 @@ import json
 import os
 import random
 import unittest
+import uuid
 from datetime import datetime, timedelta
 
 import boto3
@@ -103,11 +104,7 @@ MOCK_ROLE = {
     "templated": "fake/file.json",
 }
 
-MOCK_REDIS_DB_PATH = "/tmp/consoleme_unit_test.rdb"
-if os.path.exists(MOCK_REDIS_DB_PATH):
-    os.remove(MOCK_REDIS_DB_PATH)
-if os.path.exists(f"{MOCK_REDIS_DB_PATH}.settings"):
-    os.remove(f"{MOCK_REDIS_DB_PATH}.settings")
+MOCK_REDIS_DB_PATH = f"/tmp/cloudumi_unit_test_{str(uuid.uuid4())}.rdb"
 
 all_roles = None
 
