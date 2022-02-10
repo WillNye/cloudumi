@@ -80,7 +80,7 @@ module "tenant_elasticache_service" {
 module "tenant_instance_service" {
   source = "./modules/services/instances"
 
-  allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks  
+  allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
   cluster_id                  = local.cluster_id
   public_subnet_ids           = module.tenant_networking.vpc_subnet_public_id
   tags                        = var.tags

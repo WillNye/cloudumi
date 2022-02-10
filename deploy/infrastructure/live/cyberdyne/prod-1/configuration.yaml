@@ -25,9 +25,8 @@ _global_:
   development: false
   environment: prod
   tornado:
-  
     debug: false
-  
+
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:
