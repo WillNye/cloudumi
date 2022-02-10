@@ -14,14 +14,6 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-resource "aws_network_interface" "jumpbox_network_interface" {
-  subnet_id   = var.public_subnet_ids[0]
-
-  tags = {
-    Name = "jumpbox_primary_network_interface"
-  }
-}
-
 resource "aws_security_group" "jumpbox-sg" {
   name        = "${var.cluster_id}-ec2-jumpbox-sg"
   description = "Allows access to the EC2 jumpbox VM."
@@ -55,11 +47,6 @@ resource "aws_instance" "jumpbox" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
   associate_public_ip_address = true
-
-  network_interface {
-    network_interface_id = aws_network_interface.jumpbox_network_interface.id
-    device_index         = 0
-  }
 
   credit_specification {
     cpu_credits = "unlimited"
