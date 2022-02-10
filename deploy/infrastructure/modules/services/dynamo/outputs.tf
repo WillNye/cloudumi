@@ -1,3 +1,8 @@
+output "cloudumi_central_role_arns" {
+  description = "ID of the cloudumi central role arns"
+  value       = aws_dynamodb_table.cloudumi_central_role_arns.id
+}
+
 output "cloudumi_identity_groups_multitenant_id" {
   description = "ID of the cloudumi identity groups multitenant table"
   value       = aws_dynamodb_table.cloudumi_identity_groups_multitenant.id

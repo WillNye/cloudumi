@@ -215,7 +215,7 @@ Parameters:
     ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]*'
   RegistrationTopicArnParameter:
     Description: >-
-      The SNS queue ARN that will be used to send registration messages to the SaaS
+      The SNS queue ARN that will be used to send registration messages to the SaaS. Do not change this value!
     Type: String
     MinLength: "2"
     MaxLength: "100"

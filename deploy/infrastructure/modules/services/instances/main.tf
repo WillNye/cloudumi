@@ -49,6 +49,17 @@ resource "aws_instance" "jumpbox" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.jumpbox_sg.id]
   subnet_id                   = var.public_subnet_ids[0]
+<<<<<<< HEAD
+
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  root_block_device {
+    encrypted = true
+  }
+=======
+>>>>>>> main
 
   credit_specification {
     cpu_credits = "unlimited"

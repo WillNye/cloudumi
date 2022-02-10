@@ -106,6 +106,6 @@ Outputs:
   SpokeRoleName:
     Description: The name of the spoke role in each customer account.
     Value: !Ref SpokeRoleNameParameter
-  RegistrationSnsQueArn:
+  RegistrationTopicArnParameter:
     Description: SNS Registration queue ARN
     Value: !Ref RegistrationTopicArnParameter

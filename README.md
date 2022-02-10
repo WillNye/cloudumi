@@ -44,6 +44,8 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - Install docker-compose: https://docs.docker.com/compose/install/
 - Install bazelisk: https://github.com/bazelbuild/bazelisk/releases
 - Optionally install pyenv: https://github.com/pyenv/pyenv#basic-github-checkout
+- Install python 3.8.x & dependencies (requirements-test.lock)
+- Install tfsec: https://github.com/aquasecurity/tfsec#installation
 
 ## Quick Start
 
