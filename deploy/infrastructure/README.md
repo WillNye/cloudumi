@@ -7,7 +7,7 @@ and to update the infrastructure when changes are needed.
 **NOTE**: it is imperative you enter the correct workspace using `terraform workspace select` before attempting to
 update prod or production environments!
 
-**NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`terraform workspace select noq.dev-prod-1` for instance)
+**NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`terraform workspace select shared-prod-1` for instance)
 
 ## Pre-requisites:
 
@@ -26,6 +26,26 @@ Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file
 
 ## Terraform
 
+### Cheat Codes
+
+#### Staging
+
+export AWS_PROFILE=noq_dev
+export AWS_REGION=us-west-2
+terraform workspace select noq.dev-staging-1
+terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars
+terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars
+terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars
+
+#### Prod
+
+export AWS_PROFILE=noq_prod
+export AWS_REGION=us-west-2
+terraform workspace select noq.dev-production-1
+terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
+terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars
+terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars
+
 Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
 
 To use terraform, follow the below steps:
@@ -34,12 +54,12 @@ To use terraform, follow the below steps:
 - Ensure `AWS_REGION` is set correctly (`us-west-2` for most clusters)
 - Initialize Terraform if you haven't already: `terraform init`
 - Setup your workspaces: `./setup.sh`
-- Select the appropriate workspace: `terraform workspace select demo.noq.dev-prod-1` (for instance)
+- Select the appropriate workspace: `terraform workspace select shared-staging-1` (for instance)
 - For the first time, initialize the environment: `terraform init`
-- Plan: `terraform plan --var-file=live/demo.noq.dev/prod-1/demo.noq.dev-prod.tfvars`
-- Apply: `terraform apply --var-file=live/demo.noq.dev/prod-1/demo.noq.dev-prod.tfvars`
-- Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | bazel run //util/terraform_config_parser ~/dev/noq/cloudumi/deploy/infrastructure/live/noq.dev/shared/prod-1/` -- see the `terraform_config_parser` section below
-- Destroy: `terraform destroy --var-file=live/demo.noq.dev/prod-1/demo.noq.dev-prod.tfvars`
+- Plan: `terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
+- Apply: `terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
+- Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | bazel run //util/terraform_config_parser ~/dev/noq/cloudumi/deploy/infrastructure/live/shared/staging-1/` -- see the `terraform_config_parser` section below
+- Destroy: `terraform destroy --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
 - Get outputs: `terraform output`
 - Refresh: `terraform refresh`
 
@@ -138,13 +158,13 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 # Remove a cluster
 
 - Set AWS_PROFLE: `export AWS_PROFILE=noq_dev` (or noq_prod)
-- For prod: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/prod-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_dev`
-- For production: `bazelisk run //deploy/infrastructure/live/noq.dev/shared/prod-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
+- For prod: `bazelisk run //deploy/infrastructure/live/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_dev`
+- For production: `bazelisk run //deploy/infrastructure/live/shared/prod-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
 - Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)
 
 # How to use ecs-cli to circumvent Bazel
 
-Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/liv/noq.dev/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="noq_dev"` for instance).
+Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/live/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="noq_dev"` for instance).
 
 - To create a service with containers (and to circumvent the load balancer configuration): `ecs-cli compose -f compose.yaml --cluster-config noq-dev-shared-staging-1 --ecs-params ecs.yaml -p noq-dev-shared-staging-1 --task-role-arn arn:aws:iam::259868150464:role/noq-dev-shared-staging-1-ecsTaskRole --region us-west-2 service up --create-log-groups --timeout 15`
   - This can be useful when making manual changes to the configuration file (either compose.yaml or ecs.yaml)

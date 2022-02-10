@@ -136,3 +136,8 @@ variable "celery_concurrency" {
   type        = string
   default     = "16"
 }
+
+variable "s3_access_log_bucket" {
+  description = "The S3 bucket to store S3 access logs in"
+  type        = string
+}

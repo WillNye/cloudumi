@@ -231,8 +231,8 @@ Outputs:
   ClusterRole:
     Description: ClusterRole to share with the SaaS for deployment
     Value: !Ref ClusterRoleParameter
-  ClustRoleArn:
-    Description: ClusterRoleArn to share with the SaaS for deployment
+  CentralRoleArn:
+    Description: CentralRoleArn to share with the SaaS for deployment
     Value: !GetAtt CentralRole.Arn
   SpokeRole:
     Description: SpokeRole to share with the SaaS for deployment

@@ -80,17 +80,17 @@ output "region" {
 
 output "registry_repository_url_api" {
   description = "The respository URL for the API registry"
-  value       = module.tenant_container_service.registry_repository_url_api[0].repository_url
+  value       = length(module.tenant_container_service.registry_repository_url_api) > 0 ? module.tenant_container_service.registry_repository_url_api[0].repository_url : ""
 }
 
 output "registry_repository_url_celery" {
   description = "The respository URL for the Celery registry"
-  value       = module.tenant_container_service.registry_repository_url_celery[0].repository_url
+  value       = length(module.tenant_container_service.registry_repository_url_celery) > 0 ? module.tenant_container_service.registry_repository_url_celery[0].repository_url : ""
 }
 
 output "registry_repository_url_frontend" {
   description = "The respository URL for the Frontend registry"
-  value       = module.tenant_container_service.registry_repository_url_frontend[0].repository_url
+  value       = length(module.tenant_container_service.registry_repository_url_frontend) > 0 ? module.tenant_container_service.registry_repository_url_frontend[0].repository_url : ""
 }
 
 output "sns_registration_topic_arn" {
