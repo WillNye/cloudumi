@@ -1,16 +1,21 @@
 import json
 import logging
-from typing import Dict
+import os
+from typing import Any, Dict
 
 import boto3
 import requests
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-PHYSICAL_RESOURCE_ID = "f4b52b3d-0056-4ec0-aca4-ac61ed2efd1d"
+PHYSICAL_RESOURCE_ID = os.getenv("PHYSICAL_RESOURCE_ID", "")
+REGION = os.getenv("REGION", "us-west-2")
+ACCOUNT_ID = os.getenv("ACCOUNT_ID", "259868150464")
 
 
-def __return(status: int, failure_message: str, message: Dict[str, str]):
+def __return(
+    status: int, failure_message: str, message: Dict[str, str]
+) -> Dict[str, Any]:
     logger.info(f"Returning status {status} with msg {failure_message}")
     response_url = message.get("ResponseURL")
     response_data = {
@@ -28,7 +33,7 @@ def __return(status: int, failure_message: str, message: Dict[str, str]):
         "Content-Length": str(len(response_data_json)),
     }
     msg = requests.put(
-        response_url, data=json.dumps(response_data), headers=response_header
+        response_url or "", data=json.dumps(response_data), headers=response_header
     )
     return {"statusCode": status, "body": json.dumps(msg)}
 
@@ -48,9 +53,9 @@ def emit_s3_response(event, context):
     """
     sqs = boto3.client("sqs")
     if not isinstance(event, dict):
-        return __return(400, "Not processing non-dict event message")
+        return __return(400, "Not processing non-dict event message", {})
     if "Records" not in event:
-        return __return(500, "Unexpected event - looking for Record key")
+        return __return(500, "Unexpected event - looking for Record key", {})
     records = event.get("Records", [])
     bodies = [json.loads(x.get("body", "")) for x in records]
     message_ids = [x.get("messageId") for x in records]
@@ -58,17 +63,17 @@ def emit_s3_response(event, context):
     if not bodies:
         if receipt_handlers:
             sqs.delete_message(
-                QueueUrl="https://sqs.us-east-1.amazonaws.com/259868150464/noq_registration_response_queue",
+                QueueUrl=f"https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/noq_registration_response_queue",
                 ReceiptHandle=receipt_handlers[0],
             )
-        return __return(500, "No body sent with message")
+        return __return(500, "No body sent with message", {})
     for idx, body in enumerate(bodies):
         # receipt_handles align with bodies
         logger.info(f"Handling response for SNS notification: {message_ids[idx]}")
         message = json.loads(body.get("Message"))
         response_url = message.get("ResponseURL")
         if not response_url:
-            return __return(500, "Invalid response message sent from SNS")
+            return __return(500, "Invalid response message sent from SNS", message)
         response_data = {
             "Status": "SUCCESS",
             "Reason": "OK",
@@ -91,25 +96,12 @@ def emit_s3_response(event, context):
         account_id_for_role = message.get("ResourceProperties", {}).get("AWSAccountId")
         if not account_id_for_role:
             return __return(500, "Invalid AWSAccountId sent from SNS", message)
-        role_arn = f"arn:aws:iam::{account_id_for_role}:role/cloudumi-central-role-{partial_stack_id_for_role}"
-        # TODO: Validate External ID
-        # TODO: Try to assume IAM role from cluster role ARN
-        # TODO: Put Role ARN in DynamoDB Table
-        ddb = boto3.client("dynamodb")
-        ddb.put_item(
-            TableName="cloudumi-central-role-arn-table",
-            Item={
-                "StackId": {"S": message.get("StackId")},
-                "RoleArn": {"S": role_arn},
-                "PhysicalResourceId": {"S": PHYSICAL_RESOURCE_ID},
-            },
-        )
 
         logger.info(f"Sending SUCCESS to {response_url}")
         requests.put(response_url, data=response_data_json, headers=response_header)
         logger.info("Deleting sqs message from queue")
         sqs.delete_message(
-            QueueUrl="https://sqs.us-east-1.amazonaws.com/259868150464/noq_registration_response_queue",
+            QueueUrl="https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/noq_registration_response_queue",
             ReceiptHandle=receipt_handlers[idx],
         )
-    return __return(200, "OK")
+    return __return(200, "OK", {})

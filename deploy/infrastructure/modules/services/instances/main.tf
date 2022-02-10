@@ -20,11 +20,11 @@ resource "aws_security_group" "jumpbox_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "Access to jumpbox"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    cidr_blocks     = var.allowed_inbound_cidr_blocks
+    description = "Access to jumpbox"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_inbound_cidr_blocks
   }
 
   egress {
@@ -44,11 +44,19 @@ resource "aws_security_group" "jumpbox_sg" {
 }
 
 resource "aws_instance" "jumpbox" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t2.micro"
   associate_public_ip_address = true
-  vpc_security_group_ids = [aws_security_group.jumpbox_sg.id]
-  subnet_id = var.public_subnet_ids[0]
+  vpc_security_group_ids      = [aws_security_group.jumpbox_sg.id]
+  subnet_id                   = var.public_subnet_ids[0]
+
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  root_block_device {
+    encrypted = true
+  }
 
   credit_specification {
     cpu_credits = "unlimited"

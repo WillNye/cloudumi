@@ -80,13 +80,15 @@ module "tenant_elasticache_service" {
 module "tenant_functions_service" {
   source = "./modules/services/functions"
 
+  account_id                  = var.account_id
+  region                      = var.region
   registration_response_queue = module.tenant_messaging.sqs_registration_response_queue_arn
 }
 
 module "tenant_instance_service" {
   source = "./modules/services/instances"
 
-  allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks  
+  allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
   cluster_id                  = local.cluster_id
   public_subnet_ids           = module.tenant_networking.vpc_subnet_public_id
   tags                        = var.tags
