@@ -93,6 +93,7 @@ module "tenant_instance_service" {
   public_subnet_ids           = module.tenant_networking.vpc_subnet_public_id
   tags                        = var.tags
   vpc_id                      = module.tenant_networking.vpc_id
+  ssh_keypair_name            = var.ssh_keypair_name
 }
 
 module "tenant_messaging" {

@@ -55,7 +55,7 @@ To use terraform, follow the below steps:
 - Initialize Terraform if you haven't already: `terraform init`
 - Setup your workspaces: `./setup.sh`
 - Select the appropriate workspace: `terraform workspace select shared-staging-1` (for instance)
-- For the first time, initialize the environment: `terraform init`
+- For the first time, initialize the environment: `terraform init --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
 - Plan: `terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
 - Apply: `terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
 - Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | bazel run //util/terraform_config_parser ~/dev/noq/cloudumi/deploy/infrastructure/live/shared/staging-1/` -- see the `terraform_config_parser` section below
