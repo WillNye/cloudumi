@@ -49,7 +49,8 @@ resource "aws_instance" "jumpbox" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.jumpbox_sg.id]
   subnet_id                   = var.public_subnet_ids[0]
-  iam_instance_profile = "${aws_iam_instance_profile.jumpbox_instance_profile.id}"
+  iam_instance_profile        = aws_iam_instance_profile.jumpbox_instance_profile.id
+  key_name = var.ssh_keypair_name
   credit_specification {
     cpu_credits = "unlimited"
   }
@@ -66,7 +67,7 @@ resource "aws_instance" "jumpbox" {
 
 #Instance Role
 resource "aws_iam_role" "jumpbox_role" {
-  name = "${var.cluster_id}-jumpboxInstanceRole"
+  name               = "${var.cluster_id}-jumpboxInstanceRole"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -87,7 +88,7 @@ EOF
 #Instance Profile
 resource "aws_iam_instance_profile" "jumpbox_instance_profile" {
   name = "${var.cluster_id}-jumpboxInstanceRole"
-  role = "${aws_iam_role.jumpbox_role.id}"
+  role = aws_iam_role.jumpbox_role.id
 }
 
 #Attach Policies to Instance Role
