@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Screen } from '../../../lib/Screen';
-import ServiceAWS from './components/ServiceAWS';
-import Sidebar from './components/Sidebar';
+import { ServiceAWS } from './components/ServiceAWS';
+import { Sidebar } from './components/Sidebar';
 
 export const Settings = () => {
 
