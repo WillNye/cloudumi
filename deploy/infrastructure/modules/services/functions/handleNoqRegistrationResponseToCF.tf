@@ -122,7 +122,7 @@ data "archive_file" "create_dist_pkg" {
 resource "aws_lambda_function" "handle_noq_registration_response" {
   function_name = local.function_name
   description   = "Process registration responses"
-  handler       = "${local.function_name}.handler.emit_s3_response"
+  handler       = "handler.emit_s3_response"
   runtime       = var.runtime
 
   environment {
