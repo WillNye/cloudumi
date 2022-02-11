@@ -282,6 +282,18 @@ resource "aws_iam_role" "ecs_task_role" {
             "arn:aws:s3:::${var.cloudumi_files_bucket}",
             "arn:aws:s3:::${var.cloudumi_files_bucket}/*"
           ]
+        },
+        {
+          "Action": [
+            "sqs:ReceiveMessage",
+            "sqs:DeleteMessage",
+            "sqs:GetQueueUrl",
+            "sqs:GetQueueAttributes",
+          ],
+          "Effect": "Allow",
+          "Resource": [
+            "${var.registration_queue_arn}",
+          ]
         }
       ],
       "Version" : "2012-10-17"

@@ -41,6 +41,7 @@ module "tenant_container_service" {
   namespace                        = var.namespace
   noq_core                         = var.noq_core
   region                           = var.region
+  registration_queue_arn           = module.tenant_messaging.sqs_registration_queue_arn
   stage                            = var.stage
   subnet_ids                       = module.tenant_networking.vpc_subnet_private_id
   tags                             = var.tags
