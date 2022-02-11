@@ -3,6 +3,11 @@ variable "account_id" {
   type        = string
 }
 
+variable "cluster_id" {
+  description = "The cluster id"
+  type = string
+}
+
 variable "region" {
   type    = string
   default = "us-west-2"

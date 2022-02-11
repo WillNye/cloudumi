@@ -77,6 +77,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     actions = [
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl",
       "sqs:ReceiveMessage"
     ]
   }
@@ -130,6 +131,7 @@ resource "aws_lambda_function" "handle_noq_registration_response" {
       PHYSICAL_RESOURCE_ID = "f4b52b3d-0056-4ec0-aca4-ac61ed2efd1d"
       REGION               = var.region
       ACCOUNT_ID           = var.account_id
+      CLUSTER_ID           = var.cluster_id
     }
   }
 

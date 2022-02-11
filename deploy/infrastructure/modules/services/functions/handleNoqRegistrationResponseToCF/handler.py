@@ -11,6 +11,7 @@ logger.setLevel(logging.INFO)
 PHYSICAL_RESOURCE_ID = os.getenv("PHYSICAL_RESOURCE_ID", "")
 REGION = os.getenv("REGION", "us-west-2")
 ACCOUNT_ID = os.getenv("ACCOUNT_ID", "259868150464")
+CLUSTER_ID = os.getenv("CLUSTER_ID")
 
 
 def __return(
@@ -51,11 +52,22 @@ def emit_s3_response(event, context):
     Ref: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/crpg-ref-responses.html
 
     """
+    logger.info(f"ACCOUNT_ID: {ACCOUNT_ID}")
+    logger.info(f"PHYSICAL_RESOURCE_ID: {PHYSICAL_RESOURCE_ID}")
+    logger.info(f"REGION: {REGION}")
+    logger.info(f"CLUSTER_ID: {CLUSTER_ID}")
     sqs = boto3.client("sqs")
     if not isinstance(event, dict):
         return __return(400, "Not processing non-dict event message", {})
     if "Records" not in event:
         return __return(500, "Unexpected event - looking for Record key", {})
+    if not CLUSTER_ID:
+        return __return(500, "CLUSTER_ID is not defined", {})
+    queue_url = sqs.get_queue_url(QueueName=f"{CLUSTER_ID}-registration-response-queue")
+    if queue_url:
+        queue_url = queue_url.get("QueueUrl")
+    else:
+        raise RuntimeError(f"Did not get a valid queue using {CLUSTER_ID}-registration-response-queue for the name")
     records = event.get("Records", [])
     bodies = [json.loads(x.get("body", "")) for x in records]
     message_ids = [x.get("messageId") for x in records]
@@ -63,7 +75,7 @@ def emit_s3_response(event, context):
     if not bodies:
         if receipt_handlers:
             sqs.delete_message(
-                QueueUrl=f"https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/noq_registration_response_queue",
+                QueueUrl=queue_url,
                 ReceiptHandle=receipt_handlers[0],
             )
         return __return(500, "No body sent with message", {})
@@ -101,7 +113,7 @@ def emit_s3_response(event, context):
         requests.put(response_url, data=response_data_json, headers=response_header)
         logger.info("Deleting sqs message from queue")
         sqs.delete_message(
-            QueueUrl=f"https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/noq_registration_response_queue",
+            QueueUrl=queue_url,
             ReceiptHandle=receipt_handlers[idx],
         )
     return __return(200, "OK", {})

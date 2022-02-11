@@ -82,6 +82,7 @@ module "tenant_functions_service" {
   source = "./modules/services/functions"
 
   account_id                  = var.account_id
+  cluster_id                  = local.cluster_id
   region                      = var.region
   registration_response_queue = module.tenant_messaging.sqs_registration_response_queue_arn
 }

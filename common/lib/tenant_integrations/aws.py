@@ -202,7 +202,7 @@ async def handle_central_account_registration(body):
     }
     spoke_role_name = body["ResourceProperties"]["SpokeRole"]
     account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
-    role_arn = body["ResourceProperties"]["CentralRoleArn"]
+    role_arn = body["ResourceProperties"]["ClusterRoleArn"]
     external_id = body["ResourceProperties"]["ExternalId"]
     host = body["ResourceProperties"]["Host"]
 
