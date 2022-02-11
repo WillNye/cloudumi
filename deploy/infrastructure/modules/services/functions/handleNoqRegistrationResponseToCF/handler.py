@@ -101,7 +101,7 @@ def emit_s3_response(event, context):
         requests.put(response_url, data=response_data_json, headers=response_header)
         logger.info("Deleting sqs message from queue")
         sqs.delete_message(
-            QueueUrl="https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/noq_registration_response_queue",
+            QueueUrl=f"https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/noq_registration_response_queue",
             ReceiptHandle=receipt_handlers[idx],
         )
     return __return(200, "OK", {})

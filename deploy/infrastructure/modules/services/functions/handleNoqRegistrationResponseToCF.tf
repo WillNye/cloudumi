@@ -107,7 +107,7 @@ resource "null_resource" "install_python_dependencies" {
   }
 
   triggers = {
-    zip     = "${filemd5(local.zip_path)}"
+    zip     = "${fileexists(local.zip_path)}"
     handler = "${filemd5("${local.source_path}/handler.py")}"
   }
 }
