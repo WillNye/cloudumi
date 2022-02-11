@@ -1,32 +1,33 @@
 _global_:
   landing_page_domains:
-    - cyberdyne.noq.dev
+    - shared.staging.noq.dev
   integrations:
     aws:
-      account_id: 940552945933
+      account_id: 259868150464
       central_role_name: NoqCentralRole
       spoke_role_name: NoqSpokeRole
-      node_role: arn:aws:iam::940552945933:role/noq-dev-cyberdyne-prod-1-ecsTaskRole
-      stage: prod
+      node_role: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
+      stage: staging
       region: us-west-2
       attributes: 1
-      registration_topic_arn: arn:aws:sns:us-west-2:940552945933:noq-dev-cyberdyne-prod-1-registration-topic
-      registration_queue_arn: arn:aws:sqs:us-west-2:940552945933:noq-dev-cyberdyne-prod-1-registration-queue
+      registration_topic_arn: arn:aws:sns:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-topic
+      registration_queue_arn: arn:aws:sqs:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-queue
   deployment:
-    domain_name: cyberdyne.noq.dev
-    namespace: cyberdyne
-    zone: noq.dev
-    cluster_id: noq-dev-cyberdyne-prod-1
+    domain_name: shared.staging.noq.dev
+    namespace: shared
+    zone: staging.noq.dev
+    cluster_id: staging-noq-dev-shared-staging-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   web:
     path: "/templates"
-  s3_cache_bucket: cloudumi-cache.noq-dev-cyberdyne-prod-1
+  s3_cache_bucket: cloudumi-cache.staging-noq-dev-shared-staging-1
   development: false
-  environment: prod
+  environment: staging
   tornado:
-    debug: false
-
+  
+    debug: true
+  
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:
@@ -44,24 +45,24 @@ _global_:
     clear_tasks_for_development: false
     purge: false
     broker:
-      us-east-1: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
-      us-west-2: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
-      global: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
+      us-east-1: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
+      us-west-2: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
+      global: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
     backend:
-      us-east-1: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
-      us-west-2: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
-      global: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
+      us-east-1: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
+      us-west-2: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
+      global: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
     debug: true
   # Saas Configuration
   redis:
     host:
-      global: noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com
+      global: staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com
     port: 6379
     cluster_mode:
       enabled: false
       nodes:
         global:
-          - host: noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com
+          - host: staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com
             port: 6379
   sentry:
-    dsn: https://f446f0f25a74440db6e211ebe73c05f9@o1134078.ingest.sentry.io/6188334
+    dsn: https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191
