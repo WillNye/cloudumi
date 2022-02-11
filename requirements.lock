@@ -486,7 +486,7 @@ ruamel-yaml==0.17.20
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
 ruamel-yaml-clib==0.2.6
-    # via ruamel-yaml
+    # via ruamel.yaml
 s3transfer==0.5.1
     # via boto3
 schema==0.7.5
