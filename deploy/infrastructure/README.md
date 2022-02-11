@@ -58,7 +58,7 @@ To use terraform, follow the below steps:
 - For the first time, initialize the environment: `terraform init --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
 - Plan: `terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
 - Apply: `terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
-- Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | bazel run //util/terraform_config_parser ~/dev/noq/cloudumi/deploy/infrastructure/live/shared/staging-1/` -- see the `terraform_config_parser` section below
+- Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | bazel run //util/terraform_config_parser ~/dev/noq/cloudumi` -- see the `terraform_config_parser` section below
 - Destroy: `terraform destroy --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
 - Get outputs: `terraform output`
 - Refresh: `terraform refresh`
@@ -67,13 +67,7 @@ To use terraform, follow the below steps:
 
 We provide a script that automatically generates (from templates) the product configuration files by parsing the Terraform output files. The script itself lives in the util/terrafom_config_parser directory in the mono repo and performs the following steps:
 
-The way to execute this script is by piping the terraform output in JSON format into the script's STDIN: `terraform output -json | bazel run //util/terraform_config_parser <output_path_to_live_config_folder>`
-
-Examples for the `<output_path_to_live_config_folder>`:
-
-- ~/dev/noq/cloudumi/deploy/infrastructure/live/shared/prod-1
-- ~/dev/noq/cloudumi/deploy/infrastructure/live/shared/prod-1
-- ~/dev/noq/cloudumi/deploy/infrastructure/live/demo/prod-1
+The way to execute this script is by piping the terraform output in JSON format into the script's STDIN: `terraform output -json | bazel run //util/terraform_config_parser <root path of mono repo>`
 
 Note: in order for this to work, there are two pre-requisites:
 
