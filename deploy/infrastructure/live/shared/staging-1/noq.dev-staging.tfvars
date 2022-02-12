@@ -35,5 +35,3 @@ profile = "noq_dev"
 sentry_dsn = "https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191"
 
 s3_access_log_bucket = "s3-access-logs.259868150464.us-west-2"
-
-ssh_keypair_name = "noq_key"

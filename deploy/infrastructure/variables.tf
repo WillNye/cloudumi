@@ -141,8 +141,3 @@ variable "s3_access_log_bucket" {
   description = "The S3 bucket to store S3 access logs in"
   type        = string
 }
-
-variable "ssh_keypair_name" {
-  description = "The name of the SSH keypair to use for SSH access to the cluster"
-  type        = string
-}

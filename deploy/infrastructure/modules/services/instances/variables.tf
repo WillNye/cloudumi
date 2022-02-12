@@ -22,8 +22,3 @@ variable "vpc_id" {
   description = "The VPC ID"
   type        = string
 }
-
-variable "ssh_keypair_name" {
-  description = "The SSH keypair name"
-  type        = string
-}

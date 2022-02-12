@@ -43,6 +43,11 @@ resource "aws_security_group" "jumpbox_sg" {
   )
 }
 
+resource "aws_key_pair" "noq_key" {
+  key_name   = "${var.cluster_id}_noq_key"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCgmXD4cJXjJEdJo0xLqJVRtB6K5Aw84G2MMXdlKVcoDrBsRRAvYZkJ7fuNJYFe5eEKnoctu6THH86TBdqnA+EOqynmvqCGRDc/xdhPcyP1jBxPXM0EWaXWSipYJUhtIXEevBlrWQDHC2LV2iv3Veqk1vOSgDjrN8zFFHmqbo/9UTYkO1h4BpfIr/1O3PPmEOiLP4hop4lr4/hGES42vuilYRewuHUQXWIu/X7hy/DWTJnd+U+v3PlaVPV/cU3tePwo4wU3t+516F3oUJkXS9Kg7W9LSgLbUW+57mnvuJOSwr8/Dp6xiTMYT81bfr4S4W4S/LxLJ4GYXpmtzmHMXR/H"
+}
+
 resource "aws_instance" "jumpbox" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = "t2.micro"
@@ -50,7 +55,8 @@ resource "aws_instance" "jumpbox" {
   vpc_security_group_ids      = [aws_security_group.jumpbox_sg.id]
   subnet_id                   = var.public_subnet_ids[0]
   iam_instance_profile        = aws_iam_instance_profile.jumpbox_instance_profile.id
-  key_name = var.ssh_keypair_name
+  key_name                    = aws_key_pair.noq_key.id
+
   credit_specification {
     cpu_credits = "unlimited"
   }
