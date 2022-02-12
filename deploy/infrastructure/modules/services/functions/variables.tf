@@ -3,9 +3,19 @@ variable "account_id" {
   type        = string
 }
 
+variable "attributes" {
+  description = "The attributes defining this lambda instance"
+  type        = string
+}
+
 variable "cluster_id" {
   description = "The cluster id"
-  type = string
+  type        = string
+}
+
+variable "namespace" {
+  description = "The namespace the Lambda belongs to"
+  type        = string
 }
 
 variable "region" {

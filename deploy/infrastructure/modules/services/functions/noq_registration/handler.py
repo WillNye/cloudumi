@@ -70,7 +70,9 @@ def emit_s3_response(event, context):
     if queue_url:
         queue_url = queue_url.get("QueueUrl")
     else:
-        raise RuntimeError(f"Did not get a valid queue using {CLUSTER_ID}-registration-response-queue for the name")
+        raise RuntimeError(
+            f"Did not get a valid queue using {CLUSTER_ID}-registration-response-queue for the name"
+        )
     records = event.get("Records", [])
     bodies = [json.loads(x.get("body", "")) for x in records]
     message_ids = [x.get("messageId") for x in records]

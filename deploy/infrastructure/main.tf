@@ -81,8 +81,10 @@ module "tenant_elasticache_service" {
 module "tenant_functions_service" {
   source = "./modules/services/functions"
 
+  attributes                  = var.attributes
   account_id                  = var.account_id
   cluster_id                  = local.cluster_id
+  namespace                   = var.namespace
   region                      = var.region
   registration_response_queue = module.tenant_messaging.sqs_registration_response_queue_arn
 }

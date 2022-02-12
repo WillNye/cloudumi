@@ -1,6 +1,6 @@
 locals {
-  function_name = "handleNoqRegistrationResponseToCF"
-  function_ns   = "${var.cluster_id}_${local.function_name}"
+  function_name = "noq_registration"
+  function_ns   = "${var.namespace}-${var.attributes}-${local.function_name}"
   source_path   = "${path.module}/${local.function_name}"
   output_path   = "${path.module}/${local.function_name}/dist"
   zip_path      = "${path.module}/${local.function_name}/dist/lambda.zip"
