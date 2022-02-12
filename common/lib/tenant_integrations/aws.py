@@ -200,6 +200,7 @@ async def handle_central_account_registration(body):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
+    log.info(f"ResourceProperties: {body['ResourceProperties']}")
     spoke_role_name = body["ResourceProperties"]["SpokeRole"]
     account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
     role_arn = body["ResourceProperties"]["ClusterRoleArn"]

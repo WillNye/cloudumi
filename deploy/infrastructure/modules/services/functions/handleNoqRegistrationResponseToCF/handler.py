@@ -33,9 +33,12 @@ def __return(
         "Content-Type": "application/json",
         "Content-Length": str(len(response_data_json)),
     }
-    msg = requests.put(
-        response_url or "", data=json.dumps(response_data), headers=response_header
-    )
+    if response_url:
+        msg = requests.put(
+            response_url or "", data=json.dumps(response_data), headers=response_header
+        )
+    else:
+        msg = {}
     return {"statusCode": status, "body": json.dumps(msg)}
 
 
