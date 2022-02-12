@@ -1,12 +1,13 @@
 locals {
   function_name = "handleNoqRegistrationResponseToCF"
+  function_ns   = "${var.cluster_id}_${local.function_name}"
   source_path   = "${path.module}/${local.function_name}"
   output_path   = "${path.module}/${local.function_name}/dist"
   zip_path      = "${path.module}/${local.function_name}/dist/lambda.zip"
 }
 
 resource "aws_iam_role" "lambda_exec_role" {
-  name               = "lambda_exec_role"
+  name               = "${var.cluster_id}_lambda_exec_role"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -84,7 +85,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
 }
 
 resource "aws_iam_policy" "lambda_iam_policy" {
-  name   = "lambda_iam_policy"
+  name   = "${var.cluster_id}_lambda_iam_policy"
   policy = data.aws_iam_policy_document.lambda_policy_doc.json
 }
 
@@ -121,7 +122,7 @@ data "archive_file" "create_dist_pkg" {
 }
 
 resource "aws_lambda_function" "handle_noq_registration_response" {
-  function_name = local.function_name
+  function_name = local.function_ns
   description   = "Process registration responses"
   handler       = "handler.emit_s3_response"
   runtime       = var.runtime
