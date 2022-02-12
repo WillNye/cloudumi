@@ -51,12 +51,12 @@ class AwsIntegrationHandler(BaseHandler):
         )
         central_role_template_url = config.get(
             "_global_.integrations.aws.registration_central_role_cf_template",
-            f"https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml",
+            "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml",
         )
 
         spoke_role_template_url = config.get(
             "_global_.integrations.aws.registration_spoke_role_cf_template",
-            f"https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
+            "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
         )
 
         capabilities = ["CAPABILITY_NAMED_IAM"]
@@ -130,6 +130,7 @@ class AwsIntegrationHandler(BaseHandler):
         if pre_role_arns_to_assume:
             customer_central_account_role = pre_role_arns_to_assume[-1]["role_arn"]
             spoke_role_parameters = [
+                {"ParameterKey": "ExternalIDParameter", "ParameterValue": external_id},
                 {
                     "ParameterKey": "CentralAccountArnParameter",
                     "ParameterValue": customer_central_account_role,
@@ -161,6 +162,7 @@ class AwsIntegrationHandler(BaseHandler):
                     f"https://console.aws.amazon.com/cloudformation/home?region={region}"
                     + "#/stacks/quickcreate?templateURL="
                     + urllib.parse.quote(spoke_role_template_url)
+                    + f"&param_ExternalIDParameter={external_id}"
                     + f"&param_HostParameter={host}"
                     + f"&param_CentralAccountArnParameter={customer_central_account_role}"
                     + f"&param_SpokeRoleNameParameter={spoke_role_name}"
@@ -172,6 +174,7 @@ class AwsIntegrationHandler(BaseHandler):
                 "parameters": spoke_role_parameters,
                 "role_trust_policy": spoke_role_trust_policy,
                 "capabilities": capabilities,
+                "external_id": external_id,
             }
         self.write(res.json(exclude_unset=True, exclude_none=True))
 

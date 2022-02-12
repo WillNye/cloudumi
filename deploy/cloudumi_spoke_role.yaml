@@ -62,6 +62,7 @@ Resources:
       AWSAccountId: !Ref "AWS::AccountId"
       CentralAccountArn: !Ref CentralAccountArnParameter
       SpokeRoleName: !Ref SpokeRoleNameParameter
+      ExternalId: !Ref ExternalIDParameter
 
 Parameters:
   CentralAccountArnParameter:
@@ -72,6 +73,14 @@ Parameters:
     MaxLength: "100"
     AllowedPattern: '^arn:aws:iam::\d{12}:role/.+'
     ConstraintDescription: 'Invalid CentralAccountArn value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+'
+  ExternalIDParameter:
+    Description: >-
+      ExternalId is used for verification.
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '[\w+=,.@:\/-]*'
+    ConstraintDescription: 'Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]*'
   HostParameter:
     Description: >-
       The host parameter. Do not change this value!
@@ -100,6 +109,9 @@ Outputs:
   CentralAccountArn:
     Description: The central role in the customer's environment that will be allowed to assume the created spoke role.
     Value: !Ref CentralAccountArnParameter
+  ExternalID:
+    Description: ExternalID to share with the SaaS for verification
+    Value: !Ref ExternalIDParameter
   Host:
     Description: Host to share with the SaaS provider for deployment
     Value: !Ref HostParameter
