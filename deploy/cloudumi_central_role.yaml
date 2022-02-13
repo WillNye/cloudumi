@@ -164,7 +164,7 @@ Resources:
       IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
       ClusterRole: !Ref ClusterRoleParameter
-      ClusterRoleArn: !GetAtt CentralRole.Arn
+      CenterRoleArn: !GetAtt CentralRole.Arn
       SpokeRole: !Ref SpokeRoleNameParameter
       SpokeRoleArn: !GetAtt SpokeRole.Arn
       Host: !Ref HostParameter
@@ -231,7 +231,7 @@ Outputs:
   ClusterRole:
     Description: ClusterRole to share with the SaaS for deployment
     Value: !Ref ClusterRoleParameter
-  ClusterRoleArn:
+  CenterRoleArn:
     Description: CentralRoleArn to share with the SaaS for deployment
     Value: !GetAtt CentralRole.Arn
   SpokeRole:
@@ -240,7 +240,7 @@ Outputs:
   SpokeRoleArn:
     Description: SpokeRoleArn to share with the SaaS for deployment
     Value: !GetAtt SpokeRole.Arn
-  ClusterRoleName:
+  CenterRoleName:
     Description: The name of the Central (hub) role in customer's environment
     Value: !Ref CentralRoleNameParameter
   SpokeRoleName:

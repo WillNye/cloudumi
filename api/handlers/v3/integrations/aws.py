@@ -132,7 +132,7 @@ class AwsIntegrationHandler(BaseHandler):
             spoke_role_parameters = [
                 {"ParameterKey": "ExternalIDParameter", "ParameterValue": external_id},
                 {
-                    "ParameterKey": "CentralAccountArnParameter",
+                    "ParameterKey": "CentralRoleArnParameter",
                     "ParameterValue": customer_central_account_role,
                 },
                 {"ParameterKey": "HostParameter", "ParameterValue": host},
@@ -164,7 +164,7 @@ class AwsIntegrationHandler(BaseHandler):
                     + urllib.parse.quote(spoke_role_template_url)
                     + f"&param_ExternalIDParameter={external_id}"
                     + f"&param_HostParameter={host}"
-                    + f"&param_CentralAccountArnParameter={customer_central_account_role}"
+                    + f"&param_CentralRoleArnParameter={customer_central_account_role}"
                     + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                     + f"&stackName={spoke_stack_name}"
                     + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
