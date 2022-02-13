@@ -102,7 +102,7 @@ async def handle_spoke_account_registration(body):
         log.error(
             {
                 **log_data,
-                "error": "SNS Message Body does not have `ResourceProperties",
+                "error": "SNS Message Body does not have `ResourceProperties`",
                 "cf_message": body,
             }
         )
@@ -120,7 +120,7 @@ async def handle_spoke_account_registration(body):
         log.error(
             {
                 **log_data,
-                "error": "SNS Message Body does not have `ResourceProperties",
+                "error": "SNS Message Body is missing expected parameters",
                 "cf_message": body,
                 "spoke_role_name": spoke_role_name,
                 "account_id_for_role": account_id_for_role,
@@ -264,7 +264,7 @@ async def handle_central_account_registration(body):
         log.error(
             {
                 **log_data,
-                "error": "SNS Message Body does not have `ResourceProperties",
+                "error": "SNS Message Body does not have `ResourceProperties`",
                 "cf_message": body,
             }
         )
@@ -292,7 +292,7 @@ async def handle_central_account_registration(body):
         log.error(
             {
                 **log_data,
-                "error": "SNS Message Body does not have `ResourceProperties",
+                "error": "SNS Message Body is missing expected parameters",
                 "cf_message": body,
                 "spoke_role_name": spoke_role_name,
                 "account_id_for_role": account_id_for_role,

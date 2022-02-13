@@ -2899,7 +2899,9 @@ def handle_tenant_aws_integration_queue() -> Dict:
         "message": "Handling AWS Integration Queue",
     }
     log.debug(log_data)
-    async_to_sync(handle_tenant_integration_queue)(app)
+    res = async_to_sync(handle_tenant_integration_queue)(app)
+
+    log.debug({**log_data, "num_events": res.get("num_events")})
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)

@@ -164,7 +164,7 @@ Resources:
       IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
       ClusterRole: !Ref ClusterRoleParameter
-      CenterRoleArn: !GetAtt CentralRole.Arn
+      CentralRoleArn: !GetAtt CentralRole.Arn
       SpokeRole: !Ref SpokeRoleNameParameter
       SpokeRoleArn: !GetAtt SpokeRole.Arn
       Host: !Ref HostParameter
@@ -187,7 +187,7 @@ Parameters:
     Type: String
     MinLength: "10"
     MaxLength: "100"
-    AllowedPattern: '^arn:aws:iam::\d{12}:role/.+'
+    AllowedPattern: '^arn:aws:iam::\d{12}:(role|user)/.+'
     ConstraintDescription: 'Invalid ClusterRole value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+'
   HostParameter:
     Description: >-
@@ -231,7 +231,7 @@ Outputs:
   ClusterRole:
     Description: ClusterRole to share with the SaaS for deployment
     Value: !Ref ClusterRoleParameter
-  CenterRoleArn:
+  CentralRoleArn:
     Description: CentralRoleArn to share with the SaaS for deployment
     Value: !GetAtt CentralRole.Arn
   SpokeRole:
@@ -240,7 +240,7 @@ Outputs:
   SpokeRoleArn:
     Description: SpokeRoleArn to share with the SaaS for deployment
     Value: !GetAtt SpokeRole.Arn
-  CenterRoleName:
+  CentralRoleName:
     Description: The name of the Central (hub) role in customer's environment
     Value: !Ref CentralRoleNameParameter
   SpokeRoleName:
