@@ -157,9 +157,9 @@ class RequestHandler(BaseAPIV2Handler):
                         "Action": "sts:AssumeRole",
                         "Effect": "Allow",
                         "Principal": {
-                          "AWS": "arn:aws:iam::123456789012:role/consolemeInstanceProfile"
+                          "AWS": "arn:aws:iam::123456789012:role/testInstanceProfile"
                         },
-                        "Sid": "AllowConsoleMeProdAssumeRolses"
+                        "Sid": "AllowConsoleMeProdAssumeRoles"
                       }
                     ],
                     "Version": "2012-10-17"

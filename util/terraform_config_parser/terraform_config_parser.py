@@ -3,7 +3,6 @@ import os
 import stat
 import sys
 from pathlib import Path
-import subprocess
 
 import boto3
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -174,7 +173,9 @@ def get_terraform_workspace_name() -> str:
     infra_path = get_infrastructure_path()
     terraform_env_path = infra_path.joinpath(".terraform").joinpath("environment")
     if not terraform_env_path.exists():
-        raise RuntimeError(f"No terraform environment file found under {terraform_env_path}; was terraform workspace configured?")
+        raise RuntimeError(
+            f"No terraform environment file found under {terraform_env_path}; was terraform workspace configured?"
+        )
     with open(terraform_env_path) as fp:
         terraform_workspace_name = fp.read()
     return terraform_workspace_name
@@ -185,14 +186,21 @@ def get_infrastructure_path() -> Path:
     if infra_path.exists():
         return infra_path
     else:
-        raise RuntimeError(f"The `deploy/infrastructure` folder does not exist under {str(root_path)}")
+        raise RuntimeError(
+            f"The `deploy/infrastructure` folder does not exist under {str(root_path)}"
+        )
 
 
 def get_output_path(terraform_workspace_name: str) -> Path:
     """Checks the current Terraform workspace and derives the path to the designated live folder based on a map."""
     workspace_parts = terraform_workspace_name.split("-")
-    return get_infrastructure_path().joinpath("live").joinpath(workspace_parts[0]).joinpath("-".join(workspace_parts[1:]))
-    
+    return (
+        get_infrastructure_path()
+        .joinpath("live")
+        .joinpath(workspace_parts[0])
+        .joinpath("-".join(workspace_parts[1:]))
+    )
+
 
 if __name__ == "__main__":
     terraform_config = parse_terraform_output()

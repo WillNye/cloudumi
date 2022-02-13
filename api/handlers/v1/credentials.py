@@ -68,7 +68,7 @@ credentials_schema = CredentialsSchema()
 
 
 class GetCredentialsHandler(BaseMtlsHandler):
-    """Main consoleme api handler."""
+    """Main credentials api handler."""
 
     def check_xsrf_cookie(self):
         pass

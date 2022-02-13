@@ -284,14 +284,14 @@ resource "aws_iam_role" "ecs_task_role" {
           ]
         },
         {
-          "Action": [
+          "Action" : [
             "sqs:ReceiveMessage",
             "sqs:DeleteMessage",
             "sqs:GetQueueUrl",
             "sqs:GetQueueAttributes",
           ],
-          "Effect": "Allow",
-          "Resource": [
+          "Effect" : "Allow",
+          "Resource" : [
             "${var.registration_queue_arn}",
           ]
         }
