@@ -108,7 +108,7 @@ async def handle_spoke_account_registration(body):
         )
         return False
 
-    spoke_role_name = body["ResourceProperties"].get("SpokeRole")
+    spoke_role_name = body["ResourceProperties"].get("SpokeRoleName")
     account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
     host = body["ResourceProperties"].get("Host")
     external_id = body["ResourceProperties"].get("ExternalId")
@@ -233,6 +233,29 @@ async def handle_spoke_account_registration(body):
         account_name = account_aliases[0]
     else:
         account_name = account_id_for_role
+        # Try Organizations
+        customer_spoke_role_org_client = await sync_to_async(boto3.client)(
+            "organizations",
+            aws_access_key_id=customer_spoke_role_credentials["Credentials"][
+                "AccessKeyId"
+            ],
+            aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
+                "SecretAccessKey"
+            ],
+            aws_session_token=customer_spoke_role_credentials["Credentials"][
+                "SessionToken"
+            ],
+        )
+        try:
+            account_details_call = await sync_to_async(
+                customer_spoke_role_org_client.describe_account
+            )(AccountId=account_id_for_role)
+            account_details = account_details_call.get("Account")
+            if account_details and account_details.get("Name"):
+                account_name = account_details["Name"]
+        except ClientError:
+            # Most likely this isn't an organizations master account and we can ignore
+            pass
 
     # Write tenant configuration to DynamoDB
     ddb = RestrictedDynamoHandler()
