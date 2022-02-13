@@ -12,9 +12,9 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.redis import RedisHandler, redis_get
 from common.models import (
+    AppDetailsArray,
     AwsPrincipalModel,
     CloudTrailDetailsModel,
-    CloudTrailError,
     CloudTrailErrorArray,
     EligibleRolesModel,
     EligibleRolesModelArray,
@@ -43,38 +43,41 @@ async def get_cloudtrail_details_for_role(arn: str, host: str):
     :param arn:
     :return:
     """
-    internal_policies = get_plugin_by_name(
-        config.get_host_specific_key(
-            "plugins.internal_policies", host, "cmsaas_policies"
-        )
-    )()
-    error_url = config.get_host_specific_key(
-        "cloudtrail_errors.error_messages_by_role_uri", host, ""
-    ).format(arn=arn)
-
-    errors_unformatted = await internal_policies.get_errors_by_role(
-        arn,
-        host,
-        config.get_host_specific_key(
-            "policies.number_cloudtrail_errors_to_display", host, 5
-        ),
-    )
-
-    ct_errors = []
-
-    for event_string, value in errors_unformatted.items():
-        event_call, resource = event_string.split("|||")
-        ct_errors.append(
-            CloudTrailError(
-                event_call=event_call,
-                resource=resource,
-                generated_policy=value.get("generated_policy"),
-                count=value.get("count", 0),
-            )
-        )
-
+    # internal_policies = get_plugin_by_name(
+    #     config.get_host_specific_key(
+    #         "plugins.internal_policies", host, "cmsaas_policies"
+    #     )
+    # )()
+    # error_url = config.get_host_specific_key(
+    #     "cloudtrail_errors.error_messages_by_role_uri", host, ""
+    # ).format(arn=arn)
+    #
+    # errors_unformatted = await internal_policies.get_errors_by_role(
+    #     arn,
+    #     host,
+    #     config.get_host_specific_key(
+    #         "policies.number_cloudtrail_errors_to_display", host, 5
+    #     ),
+    # )
+    #
+    # ct_errors = []
+    #
+    # for event_string, value in errors_unformatted.items():
+    #     event_call, resource = event_string.split("|||")
+    #     ct_errors.append(
+    #         CloudTrailError(
+    #             event_call=event_call,
+    #             resource=resource,
+    #             generated_policy=value.get("generated_policy"),
+    #             count=value.get("count", 0),
+    #         )
+    #     )
+    #
+    # return CloudTrailDetailsModel(
+    #     error_url=error_url, errors=CloudTrailErrorArray(cloudtrail_errors=ct_errors)
+    # )
     return CloudTrailDetailsModel(
-        error_url=error_url, errors=CloudTrailErrorArray(cloudtrail_errors=ct_errors)
+        error_url="", errors=CloudTrailErrorArray(cloudtrail_errors=[])
     )
 
 
@@ -128,12 +131,13 @@ async def get_app_details_for_role(arn: str, host: str):
     :param arn:
     :return:
     """
-    internal_policies = get_plugin_by_name(
-        config.get_host_specific_key(
-            "plugins.internal_policies", host, "cmsaas_policies"
-        )
-    )()
-    return await internal_policies.get_applications_associated_with_role(arn, host)
+    return AppDetailsArray(app_details=[])
+    # internal_policies = get_plugin_by_name(
+    #     config.get_host_specific_key(
+    #         "plugins.internal_policies", host, "cmsaas_policies"
+    #     )
+    # )()
+    # return await internal_policies.get_applications_associated_with_role(arn, host)
 
 
 async def get_role_template(arn: str, host: str):
