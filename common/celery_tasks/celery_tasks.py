@@ -2229,6 +2229,7 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
         for result in results:
             result["ttl"] = ttl
             result["host"] = host
+            result["entity_id"] = result["arn"]
             if result.get("arn"):
                 if redis_result_set.get(result["arn"]):
                     continue

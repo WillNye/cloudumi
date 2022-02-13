@@ -33,6 +33,7 @@ INT_DEPS = [
     "//plugins/config:lib",
     "//plugins/group_mapping:lib",
     "//plugins/metrics:lib",
+    "//plugins/policies:lib",
     "//util/log:lib",
 ]
 

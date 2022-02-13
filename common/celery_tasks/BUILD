@@ -10,9 +10,13 @@ INT_DEPS = [
     "//common/exceptions:lib",
     "//common/lib",
     "//identity:lib",
+    "//plugins/auth:lib",
     "//plugins/aws:lib",
     "//plugins/celery_tasks:lib",
+    "//plugins/config:lib",
+    "//plugins/group_mapping:lib",
     "//plugins/metrics:lib",
+    "//plugins/policies:lib",
     "//util/log:lib",
 ]
 
