@@ -389,7 +389,7 @@ class RequestHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception", tags={"user": self.user}
             )
             self.write_error(400, message="Error validating input: " + str(e))
-            if config.get_host_specific_key("development", host):
+            if config.get("_global_.development"):
                 raise
             return
         except Exception as e:
@@ -398,7 +398,7 @@ class RequestHandler(BaseAPIV2Handler):
             stats.count(f"{log_data['function']}.exception", tags={"user": self.user})
             sentry_sdk.capture_exception(tags={"user": self.user})
             self.write_error(500, message="Error parsing request: " + str(e))
-            if config.get_host_specific_key("development", host):
+            if config.get("_global_.development"):
                 raise
             return
 
@@ -806,7 +806,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception", tags={"user": self.user}
             )
             self.write_error(400, message="Error validating input: " + str(e))
-            if config.get_host_specific_key("development", host):
+            if config.get("_global_.development"):
                 raise
             return
         except Unauthorized as e:
@@ -817,7 +817,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.unauthorized", tags={"user": self.user}
             )
             self.write_error(403, message=str(e))
-            if config.get_host_specific_key("development", host):
+            if config.get("_global_.development"):
                 raise
             return
         self.write(response.json())

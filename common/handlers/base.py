@@ -175,9 +175,9 @@ class BaseJSONHandler(TornadoRequestHandler):
     def get_current_user(self):
         host = self.get_host_name()
         try:
-            if config.get_host_specific_key(
-                "development", host
-            ) and config.get_host_specific_key("json_authentication_override", host):
+            if config.get("_global_.development") and config.get_host_specific_key(
+                "json_authentication_override", host
+            ):
                 return config.get_host_specific_key(
                     "json_authentication_override", host
                 )
@@ -437,13 +437,13 @@ class BaseHandler(TornadoRequestHandler):
 
         # if host in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
-        if config.get_host_specific_key(
-            "development", host
-        ) and config.get_host_specific_key("_development_user_override", host):
+        if config.get("_global_.development") and config.get_host_specific_key(
+            "_development_user_override", host
+        ):
             self.user = config.get_host_specific_key("_development_user_override", host)
-        if config.get_host_specific_key(
-            "development", host
-        ) and config.get_host_specific_key("_development_groups_override", host):
+        if config.get("_global_.development") and config.get_host_specific_key(
+            "_development_groups_override", host
+        ):
             self.groups = config.get_host_specific_key(
                 "_development_groups_override", host
             )
