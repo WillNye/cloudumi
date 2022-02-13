@@ -58,8 +58,8 @@ genrule(
            --ecs-params deploy/infrastructure/live/cyberdyne/prod-1/ecs.yaml \
            -p noq-dev-cyberdyne-prod-1 \
            --task-role-arn arn:aws:iam::940552945933:role/noq-dev-cyberdyne-prod-1-ecsTaskRole \
-           --region us-west-2 service up --create-log-groups --timeout 15 \
-           --target-groups targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:940552945933:targetgroup/tf-20220204195848333600000002/7a9134b845eae90e,containerName=noq-dev-cyberdyne-prod-1-api,containerPort=8092' >$@",
+           --region us-west-2 service up --deployment-max-percent 200 --deployment-min-healthy-percent 50 --create-log-groups --timeout 15 \
+           --target-groups targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:940552945933:targetgroup/tf-20220210010140147300000002/e74f50b2105b3ff5,containerName=noq-dev-cyberdyne-prod-1-api,containerPort=8092' >$@",
     tags = ["manual"],
 )
 

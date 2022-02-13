@@ -1,5 +1,5 @@
-"""Entrypoint for ConsoleMe. To run service, set CONFIG_LOCATION environmental variable and run
-python -m consoleme.__main__"""
+"""Entrypoint. To run service, set CONFIG_LOCATION environmental variable and run
+python -m api.__main__"""
 
 # uvloop and xmlsec Hack
 # Essentially we are installing these depedendencies into the build environment using the //docker BUILD file (reference:

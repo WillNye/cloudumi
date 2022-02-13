@@ -9,7 +9,7 @@ log = config.get_logger()
 
 
 class GetRolesHandler(BaseMtlsHandler):
-    """consoleme CLI role handler. Pass ?all=true to URL query to return all roles."""
+    """CLI role handler. Pass ?all=true to URL query to return all roles."""
 
     def check_xsrf_cookie(self):
         pass

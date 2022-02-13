@@ -94,12 +94,65 @@ async def handle_spoke_account_registration(body):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
-    spoke_role_name = config.get(
-        "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
+    if not body.get("ResourceProperties"):
+        sentry_sdk.capture_message(
+            "SNS Message Body does not have `ResourceProperties`",
+            "error",
+        )
+        log.error(
+            {
+                **log_data,
+                "error": "SNS Message Body does not have `ResourceProperties`",
+                "cf_message": body,
+            }
+        )
+        return False
+
+    spoke_role_name = body["ResourceProperties"].get("SpokeRoleName")
+    account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
+    host = body["ResourceProperties"].get("Host")
+    external_id = body["ResourceProperties"].get("ExternalId")
+    if not spoke_role_name or not account_id_for_role or not external_id or not host:
+        sentry_sdk.capture_message(
+            "Missing spoke_role_name, account_id_for_role, or host in message body",
+            "error",
+        )
+        log.error(
+            {
+                **log_data,
+                "error": "SNS Message Body is missing expected parameters",
+                "cf_message": body,
+                "spoke_role_name": spoke_role_name,
+                "account_id_for_role": account_id_for_role,
+                "host": host,
+                "external_id": external_id,
+            }
+        )
+        return False
+
+    # Verify External ID
+    external_id_in_config = config.get_host_specific_key(
+        "tenant_details.external_id", host
     )
-    account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
+
+    if external_id != external_id_in_config:
+        sentry_sdk.capture_message(
+            "External ID from CF doesn't match host's external ID configuration",
+            "error",
+        )
+        log.error(
+            {
+                **log_data,
+                "error": "External ID Mismatch",
+                "cf_message": body,
+                "external_id_from_cf": external_id,
+                "external_id_in_config": external_id_in_config,
+                "host": host,
+            }
+        )
+        return False
+
     spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
-    host = body["ResourceProperties"]["Host"]
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
@@ -180,6 +233,29 @@ async def handle_spoke_account_registration(body):
         account_name = account_aliases[0]
     else:
         account_name = account_id_for_role
+        # Try Organizations
+        customer_spoke_role_org_client = await sync_to_async(boto3.client)(
+            "organizations",
+            aws_access_key_id=customer_spoke_role_credentials["Credentials"][
+                "AccessKeyId"
+            ],
+            aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
+                "SecretAccessKey"
+            ],
+            aws_session_token=customer_spoke_role_credentials["Credentials"][
+                "SessionToken"
+            ],
+        )
+        try:
+            account_details_call = await sync_to_async(
+                customer_spoke_role_org_client.describe_account
+            )(AccountId=account_id_for_role)
+            account_details = account_details_call.get("Account")
+            if account_details and account_details.get("Name"):
+                account_name = account_details["Name"]
+        except ClientError:
+            # Most likely this isn't an organizations master account and we can ignore
+            pass
 
     # Write tenant configuration to DynamoDB
     ddb = RestrictedDynamoHandler()
@@ -202,16 +278,53 @@ async def handle_central_account_registration(body):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
-    central_role_name = config.get(
-        "_global_.integrations.aws.central_role_name", "NoqCentralRole"
-    )
-    spoke_role_name = config.get(
-        "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
-    )
-    account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
-    role_arn = f"arn:aws:iam::{account_id_for_role}:role/{central_role_name}"
-    external_id = body["ResourceProperties"]["ExternalId"]
-    host = body["ResourceProperties"]["Host"]
+
+    if not body.get("ResourceProperties"):
+        sentry_sdk.capture_message(
+            "SNS Message Body does not have `ResourceProperties`",
+            "error",
+        )
+        log.error(
+            {
+                **log_data,
+                "error": "SNS Message Body does not have `ResourceProperties`",
+                "cf_message": body,
+            }
+        )
+        return False
+
+    log.info(f"ResourceProperties: {body['ResourceProperties']}")
+
+    spoke_role_name = body["ResourceProperties"].get("SpokeRole")
+    account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
+    role_arn = body["ResourceProperties"].get("CentralRoleArn")
+    external_id = body["ResourceProperties"].get("ExternalId")
+    host = body["ResourceProperties"].get("Host")
+
+    if (
+        not spoke_role_name
+        or not account_id_for_role
+        or not role_arn
+        or not external_id
+        or not host
+    ):
+        sentry_sdk.capture_message(
+            "Missing spoke_role_name, account_id_for_role, role_arn, external_id, or host in message body",
+            "error",
+        )
+        log.error(
+            {
+                **log_data,
+                "error": "SNS Message Body is missing expected parameters",
+                "cf_message": body,
+                "spoke_role_name": spoke_role_name,
+                "account_id_for_role": account_id_for_role,
+                "role_arn": role_arn,
+                "external_id": external_id,
+                "host": host,
+            }
+        )
+        return False
 
     # Verify External ID
     external_id_in_config = config.get_host_specific_key(

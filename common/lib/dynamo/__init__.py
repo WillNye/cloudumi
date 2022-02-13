@@ -1130,7 +1130,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             Item=self._data_to_dynamo_replace(request_dict)
         )
         celery_app.send_task(
-            "cloudumi_common.celery_tasks.celery_tasks.cache_identity_group_requests_for_host_t",
+            "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_host_t",
             kwargs={"host": host},
         )
 

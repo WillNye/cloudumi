@@ -28,10 +28,10 @@ resource "aws_lb_target_group" "noq_api_balancer_target_group" {
   vpc_id      = aws_vpc.main_vpc.id
   health_check {
     enabled             = true
-    healthy_threshold   = 5
+    healthy_threshold   = 2
     unhealthy_threshold = 10
-    timeout             = 120
-    interval            = 300
+    timeout             = 5
+    interval            = 60
     path                = "/healthcheck"
     port                = 8092
   }
