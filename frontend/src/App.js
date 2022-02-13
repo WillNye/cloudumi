@@ -85,7 +85,7 @@ function App() {
         <ProtectedRoute
           key="group_requests"
           exact
-          path="/requests"
+          path="/group_requests"
           component={IdentityRequestsTable}
         />
         <ProtectedRoute
