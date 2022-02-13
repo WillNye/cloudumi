@@ -1,31 +1,15 @@
 import React from 'react';
 import { SidebarMenu } from '../../../../../lib/SidebarMenu';
-import ServiceAWS from './../ServiceAWS';
+import { general, services } from './content';
 
-const Sidebar = ({ setActiveItem, activeItem, handleItemChange }) => {
+export const Sidebar = ({ setActiveItem, activeItem, handleItemChange }) => {
 
   return (
     <>
 
       <SidebarMenu
         headerTitle="Services"
-        menuItems={[{
-          name: 'aws',
-          label: 'AWS',
-          Component: ServiceAWS
-        }, {
-          name: 'jira',
-          label: 'Jira'
-        }, {
-          name: 'service-now',
-          label: 'Service Now'
-        }, {
-          name: 'pagerduty',
-          label: 'Pagerduty'
-        }, {
-          name: 'git',
-          label: 'Git'
-        }]}
+        menuItems={services}
         onClickItem={setActiveItem}
         activeItem={activeItem}
         onChangeActive={handleItemChange}
@@ -33,16 +17,7 @@ const Sidebar = ({ setActiveItem, activeItem, handleItemChange }) => {
 
       <SidebarMenu
         headerTitle="General"
-        menuItems={[{
-          name: 'sso',
-          label: 'Single Sign-On'
-        }, {
-          name: 'users',
-          label: 'Users and Groups'
-        }, {
-          name: 'integrations',
-          label: 'Integrations'
-        }]}
+        menuItems={general}
         onClickItem={setActiveItem}
         activeItem={activeItem}
         onChangeActive={handleItemChange}
@@ -52,5 +27,3 @@ const Sidebar = ({ setActiveItem, activeItem, handleItemChange }) => {
   );
 
 };
-
-export default Sidebar;

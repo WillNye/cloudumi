@@ -1,11 +1,19 @@
 import styled from 'styled-components';
 
-export const Sidebar = styled.div`
+export const ScreenSidebar = styled.div`
   max-width: 220px;
 `;
 
-export const Content = styled.div``;
+export const ScreenContent = styled.div`
+  padding: 20px;
+  flex: 1;
+  width: 100%;
+`;
 
-export const Container = styled.div`
+export const ScreenContainer = styled.div`
+  flex: 1;
+  width: 100%;
   display: flex;
 `;
+
+export const ScreenHeading = styled.h1``;

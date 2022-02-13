@@ -1,17 +1,17 @@
 import React from 'react';
 
-import { Container, Content, Sidebar } from './styles';
+import { ScreenContainer, ScreenContent, ScreenSidebar } from './styles';
 
 export const Screen = ({ children, renderSidebar }) => {
 
-  const sidebar = renderSidebar && <Sidebar>{renderSidebar}</Sidebar>;
+  const sidebar = renderSidebar && <ScreenSidebar>{renderSidebar}</ScreenSidebar>;
 
   return (
-    <Container>
+    <ScreenContainer>
       {sidebar}
-      <Content>
+      <ScreenContent>
         {children}
-      </Content>
-    </Container>
+      </ScreenContent>
+    </ScreenContainer>
   );
 };
