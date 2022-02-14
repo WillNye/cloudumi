@@ -53,7 +53,7 @@ async def cache_cloud_accounts(host) -> CloudAccountModelArray:
     s3_key = None
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment", host) in [
         "dev",
         "test",
     ]:

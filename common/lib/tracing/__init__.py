@@ -112,7 +112,7 @@ class ConsoleMeTracer:
             "http://127.0.0.1:9411/api/v2/spans",
         ).format(
             region=config.region,
-            environment=config.get_host_specific_key("environment", host),
+            environment=config.get("_global_.environment"),
         )
         endpoint = az.create_endpoint(
             config.get_host_specific_key("tracing.application_name", host, "consoleme")

@@ -140,7 +140,7 @@ async def cache_all_policy_requests(
     if not s3_bucket and not s3_key:
         if config.region == config.get_host_specific_key(
             "celery.active_region", host, config.region
-        ) or config.get_host_specific_key("environment", host) in [
+        ) or config.get("_global_.environment") in [
             "dev",
             "test",
         ]:
