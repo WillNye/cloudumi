@@ -8,6 +8,7 @@ export const SectionHeader = styled.header`
     padding-top: 20px;
     border-top: 1px solid;
   ` : ''}
+  ${({ isActive }) => !isActive ? `opacity: .5;` : ''}
 `;
 
 export const SectionTitle = styled.h3`

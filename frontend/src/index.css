@@ -3,7 +3,7 @@
 }
 
 .ui.basic.segment {
-  width: auto;
+  width: auto !important;
 }
 
 body {

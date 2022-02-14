@@ -17,7 +17,7 @@ export const CollapsibleSection = ({ defaultActive, title, children, hideTopBord
       <Accordion.Title
         active={isActive}
         onClick={handleClick}>
-        <SectionHeader hideTopBorder={hideTopBorder}>
+        <SectionHeader hideTopBorder={hideTopBorder} isActive={isActive}>
           <SectionTitle>{title}</SectionTitle>
           <Icon name='dropdown' />
         </SectionHeader>
