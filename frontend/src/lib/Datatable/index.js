@@ -1,115 +1,55 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import {
   useTable,
-  usePagination,
   useResizeColumns,
   useFlexLayout,
   useRowSelect,
 } from 'react-table';
+import { DatatableHeader, DatatableRow } from './ui/styles';
 
+const headerProps = (props, { column }) => getStyles(props, column.align);
 
+const cellProps = (props, { cell }) => getStyles(props, cell.column.align);
 
+const getAlign = (align) => align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start';
 
-const headerProps = (props, { column }) => getStyles(props, column.align)
-
-const cellProps = (props, { cell }) => getStyles(props, cell.column.align)
-
-const getStyles = (props, align = 'left') => [
-  props,
-  {
-    style: {
-      justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-      alignItems: 'flex-start',
-      display: 'flex',
-    },
-  },
-]
-
-const IndeterminateCheckbox = React.forwardRef(
-  ({ indeterminate, ...rest }, ref) => {
-    const defaultRef = React.useRef()
-    const resolvedRef = ref || defaultRef
-
-    React.useEffect(() => {
-      resolvedRef.current.indeterminate = indeterminate
-    }, [resolvedRef, indeterminate])
-
-    return (
-      <>
-        <input type="checkbox" ref={resolvedRef} {...rest} />
-      </>
-    )
+const getStyles = (props, align = 'left') => [props, {
+  style: {
+    justifyContent: getAlign(align),
+    alignItems: 'flex-start',
+    display: 'flex',
+    flexWrap: 'nowrap'
   }
-)
-
+}];
 
 function Table({ columns, data }) {
-  const defaultColumn = React.useMemo(
-    () => ({
-      // When using the useFlexLayout:
-      minWidth: 30, // minWidth is only used as a limit for resizing
-      width: 150, // width is used for both the flex-basis and flex-grow
-      maxWidth: 200, // maxWidth is only used as a limit for resizing
-    }),
-    []
-  )
 
-  const { getTableProps, headerGroups, rows, prepareRow } = useTable(
-    {
-      columns,
-      data,
-      defaultColumn,
-    },
-    useResizeColumns,
-    useFlexLayout,
-    useRowSelect,
-    hooks => {
-      hooks.allColumns.push(columns => [
-        // Let's make a column for selection
-        {
-          id: 'selection',
-          disableResizing: true,
-          minWidth: 35,
-          width: 35,
-          maxWidth: 35,
-          // The header can use the table's getToggleAllRowsSelectedProps method
-          // to render a checkbox
-          Header: ({ getToggleAllRowsSelectedProps }) => (
-            <div>
-              <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
-            </div>
-          ),
-          // The cell can use the individual row's getToggleRowSelectedProps method
-          // to the render a checkbox
-          Cell: ({ row }) => (
-            <div>
-              <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
-            </div>
-          ),
-        },
-        ...columns,
-      ])
-      hooks.useInstanceBeforeDimensions.push(({ headerGroups }) => {
-        // fix the parent group of the selection button to not be resizable
-        const selectionGroupHeader = headerGroups[0].headers[0]
-        selectionGroupHeader.canResize = false
-      })
-    }
-  )
+  const defaultColumn = React.useMemo(() => ({
+    // When using the useFlexLayout:
+    minWidth: 30, // minWidth is only used as a limit for resizing
+    width: 150, // width is used for both the flex-basis and flex-grow
+    maxWidth: 200, // maxWidth is only used as a limit for resizing
+  }), []);
+
+  const { getTableProps, headerGroups, rows, prepareRow } = useTable({
+    columns,
+    data,
+    defaultColumn,
+  },
+  useResizeColumns,
+  useFlexLayout,
+  useRowSelect);
 
   return (
     <div {...getTableProps()} className="table">
       <div>
         {headerGroups.map(headerGroup => (
           <div
-            {...headerGroup.getHeaderGroupProps({
-              // style: { paddingRight: '15px' },
-            })}
-            className="tr"
-          >
+            {...headerGroup.getHeaderGroupProps()}
+            className="tr">
             {headerGroup.headers.map(column => (
-              <div {...column.getHeaderProps(headerProps)} className="th">
+              <DatatableHeader {...column.getHeaderProps(headerProps)} className="th">
                 {column.render('Header')}
                 {/* Use column.getResizerProps to hook up the events correctly */}
                 {column.canResize && (
@@ -120,7 +60,7 @@ function Table({ columns, data }) {
                     }`}
                   />
                 )}
-              </div>
+              </DatatableHeader>
             ))}
           </div>
         ))}
@@ -129,7 +69,7 @@ function Table({ columns, data }) {
         {rows.map(row => {
           prepareRow(row)
           return (
-            <div {...row.getRowProps()} className="tr">
+            <DatatableRow {...row.getRowProps()} className="tr">
               {row.cells.map(cell => {
                 return (
                   <div {...cell.getCellProps(cellProps)} className="td">
@@ -137,16 +77,18 @@ function Table({ columns, data }) {
                   </div>
                 )
               })}
-            </div>
+            </DatatableRow>
           )
         })}
       </div>
     </div>
-  )
-}
+  );
+};
 
-const Datatable = () => {
-  return <div></div>;
+const Datatable = ({ data, columns }) => {
+  const memoizedData = useMemo(() => data, [data]);
+  const memoizedColumns = useMemo(() => columns, [columns]);
+  return <Table data={memoizedData} columns={memoizedColumns} />;
 };
 
 export default Datatable;
