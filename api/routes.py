@@ -197,6 +197,7 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
+        (r"/api/v3/downloads/weep", WeepDownloadHandler),
         (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
         (r"/api/v3/identities/users_page_config", IdentityUsersPageConfigHandler),
