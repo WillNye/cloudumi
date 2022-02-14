@@ -21,7 +21,9 @@ tags = {
 allowed_inbound_cidr_blocks = [
   "70.187.228.241/32", # Curtis
   "75.164.6.16/32",    # Matt
-  "141.239.104.37/32"  # Kris
+  "141.239.104.37/32", # Kris
+  "41.190.131.30/32",  # Kayizzi
+  "189.4.79.228/32",   # Christian
 ]
 
 # Can be extended by adding regions to the list below
