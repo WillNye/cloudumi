@@ -31,7 +31,7 @@ export const General = () => {
     accessor: 'allowWebConsole',
     align: 'right',
     Cell: ({ row }) => (
-      <Checkbox toggle onChange={handleChange} checked={row?.values?.allowWebConsole} />
+      <Checkbox toggle onChange={handleChange} defaultChecked={row?.values?.allowWebConsole} />
     )
   }];
   

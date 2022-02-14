@@ -7,7 +7,27 @@ import { HubAccount } from './components/HubAccount';
 import { Legacy } from './components/Legacy';
 import { SpokeAccounts } from './components/SpokeAccounts';
 
+import { Button } from 'semantic-ui-react';
+
 export const ServiceAWS = () => {
+
+  const generateTitle = (title, helpHandler) => {
+
+    const handleHelpModal = (handler) => {};
+
+    return (
+      <>
+        <span>{title}</span>&nbsp;
+        <Button
+          size='mini'
+          circular
+          icon='question'
+          basic
+          onClick={() => handleHelpModal(helpHandler)}
+        />
+      </>
+    );
+  };
 
   return (
     <>
@@ -16,19 +36,27 @@ export const ServiceAWS = () => {
         Connect Noq to your AWS accounts
       </ScreenHeading>
 
-      <CollapsibleSection title="Hub Account" defaultActive={true}>
+      <CollapsibleSection
+        title={generateTitle('Hub Account', 'hub-account')}
+        defaultActive={true}>
         <HubAccount />
       </CollapsibleSection>
 
-      <CollapsibleSection title="Spoke Accounts" defaultActive={true}>
+      <CollapsibleSection
+        title={generateTitle('Spoke Accounts', 'spoke-accounts')}
+        defaultActive={true}>
         <SpokeAccounts />
       </CollapsibleSection>
 
-      <CollapsibleSection title="AWS Organization" defaultActive={true}>
+      <CollapsibleSection
+        title={generateTitle('AWS Organization', 'aws-organization')}
+        defaultActive={true}>
         <AWSOrganization />
       </CollapsibleSection>
 
-      <CollapsibleSection title="General" defaultActive={true}>
+      <CollapsibleSection
+        title={generateTitle('General', 'general')}
+        defaultActive={true}>
         <General />
       </CollapsibleSection>
 

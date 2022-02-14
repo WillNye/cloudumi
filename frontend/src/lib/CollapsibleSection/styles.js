@@ -12,6 +12,8 @@ export const SectionHeader = styled.header`
 `;
 
 export const SectionTitle = styled.h3`
+  align-items: center;
+  display: flex;
   flex: 1;
   margin: 0;
 `;

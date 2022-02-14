@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Accordion, Icon } from 'semantic-ui-react';
+import { Accordion, Button, Icon } from 'semantic-ui-react';
 import { SectionContent, SectionHeader, SectionTitle } from './styles';
 
 export const CollapsibleSection = ({ defaultActive, title, children, hideTopBorder, forceRenderContent }) => {
@@ -15,11 +15,10 @@ export const CollapsibleSection = ({ defaultActive, title, children, hideTopBord
   return (
     <Accordion fluid>
       <Accordion.Title
-        active={isActive}
-        onClick={handleClick}>
+        active={isActive}>
         <SectionHeader hideTopBorder={hideTopBorder} isActive={isActive}>
           <SectionTitle>{title}</SectionTitle>
-          <Icon name='dropdown' />
+          <Button onClick={handleClick} icon="dropdown" />
         </SectionHeader>
       </Accordion.Title>
       <Accordion.Content active={isActive}>

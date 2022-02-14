@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Datatable from '../../../../../../lib/Datatable';
 import { RowStatusIndicator } from '../../../../../../lib/Misc';
 import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
+
+import { Button, Modal } from 'semantic-ui-react';
 
 const data = [{
   accountName: 'noq_entrypoint',
@@ -14,13 +16,17 @@ const data = [{
   accountId: 3234671289,
   role: 'NoqCentralRole',
   accountAdmin: 'team_a@noq.com',
-  active: true
+  active: false
 }];
 
 export const SpokeAccounts = () => {
 
+  const [modalIsOpen, setModal] = useState(false);
+
   const handleClick = () => {};
-  const handleClickToAdd = () => {};
+  const handleClickToAdd = () => {
+    setModal(true);
+  };
   
   const columns = [{
     Header: 'Account Name',
@@ -54,8 +60,26 @@ export const SpokeAccounts = () => {
   }];
   
   return (
-    <DatatableWrapper renderAction={<button onClick={handleClickToAdd}>Add</button>}>
-      <Datatable data={data} columns={columns} />
-    </DatatableWrapper>
+    <>
+
+      <DatatableWrapper renderAction={<button onClick={handleClickToAdd}>Add</button>}>
+        <Datatable data={data} columns={columns} />
+      </DatatableWrapper>
+
+      <Modal header='New Spoke Account' open={modalIsOpen}>
+        <Modal.Content>
+          Spoke Account Form
+        </Modal.Content>
+        <Modal.Actions>
+          <Button onClick={() => setModal(!modalIsOpen)}>
+            Cancel
+          </Button>
+          <Button onClick={() => setModal(!modalIsOpen)} positive>
+            Save
+          </Button>
+        </Modal.Actions>          
+      </Modal>
+
+    </>
   );
 };
