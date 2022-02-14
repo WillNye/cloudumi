@@ -36,8 +36,30 @@ export const Downloads = () => {
             follow the guidance below to configure it.
             <Table>
               <Table.Row>
+                + - os: macos_installer
+                {/* +      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/macos_installer/weep-installer-macos-v0.3.24.pkg
++    - os: darwin_arm64
++      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/darwin_arm64/weep
++    - os: darwin_x86_64
++      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/darwin_x86_64/weep
++    - os: linux_arm64
++      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_arm64/weep
++    - os: linux_i386
++      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_i386/weep
++    - os: linux_x86_64
++      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/weep
++    - os: windows_arm64
++      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/windows_arm64/weep.exe
++    - os: windows_i386
++      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/windows_i386/weep.exe
++    - os: windows_x86_64
++      url: https://public-weep-binaries.s3.us-west-2.amazonaws.com/windows_x86_64/weep.exe */}
                 <Table.Cell>
-                  <a href="f" />
+                  <a
+                    href="https://public-weep-binaries.s3.us-west-2.amazonaws.com/macos_installer/weep-installer-macos-v0.3.24.pkg"
+                    Mac
+                    Installer
+                  />
                 </Table.Cell>
               </Table.Row>
             </Table>
