@@ -8,7 +8,7 @@ Resources:
           - Effect: Allow
             Principal:
               AWS:
-                - !Ref CentralAccountArnParameter
+                - !Ref CentralRoleArnParameter
             Action:
               - "sts:AssumeRole"
               - "sts:TagSession"
@@ -60,18 +60,27 @@ Resources:
       ActionType: "AWSSpokeAcctRegistration"
       TemplateVersion: 1.5
       AWSAccountId: !Ref "AWS::AccountId"
-      CentralAccountArn: !Ref CentralAccountArnParameter
+      CentralRoleArn: !Ref CentralRoleArnParameter
       SpokeRoleName: !Ref SpokeRoleNameParameter
+      ExternalId: !Ref ExternalIDParameter
 
 Parameters:
-  CentralAccountArnParameter:
+  CentralRoleArnParameter:
     Description: >-
       The cross account role in customer's environment that will be allowed to assume this spoke role account.
     Type: String
     MinLength: "2"
     MaxLength: "100"
     AllowedPattern: '^arn:aws:iam::\d{12}:role/.+'
-    ConstraintDescription: 'Invalid CentralAccountArn value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+'
+    ConstraintDescription: 'Invalid CentralRoleArn value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+'
+  ExternalIDParameter:
+    Description: >-
+      ExternalId is used for verification.
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '[\w+=,.@:\/-]*'
+    ConstraintDescription: 'Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]*'
   HostParameter:
     Description: >-
       The host parameter. Do not change this value!
@@ -97,15 +106,18 @@ Parameters:
     AllowedPattern: '^arn:aws:sns:[\w-]*:\d{12}:.+'
     ConstraintDescription: 'Invalid RegistrationTopicArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
 Outputs:
-  CentralAccountArn:
+  CentralRoleArn:
     Description: The central role in the customer's environment that will be allowed to assume the created spoke role.
-    Value: !Ref CentralAccountArnParameter
+    Value: !Ref CentralRoleArnParameter
+  ExternalID:
+    Description: ExternalID to share with the SaaS for verification
+    Value: !Ref ExternalIDParameter
   Host:
     Description: Host to share with the SaaS provider for deployment
     Value: !Ref HostParameter
   SpokeRoleName:
     Description: The name of the spoke role in each customer account.
     Value: !Ref SpokeRoleNameParameter
-  RegistrationSnsQueArn:
+  RegistrationTopicArnParameter:
     Description: SNS Registration queue ARN
     Value: !Ref RegistrationTopicArnParameter

@@ -9,6 +9,12 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 __package__ = "terraform_config_parser"
 
+if len(sys.argv) >= 2:
+    root_path_arg = sys.argv[1]
+else:
+    root_path_arg = "UNDEFINED ROOT PATH"
+
+root_path = Path(os.getenv("CLOUDUMI_ROOT_PATH", root_path_arg))
 env = Environment(loader=PackageLoader(__package__), autoescape=select_autoescape())
 
 
@@ -163,14 +169,44 @@ def is_aws_profile_present() -> bool:
     return "AWS_PROFILE" in os.environ
 
 
+def get_terraform_workspace_name() -> str:
+    infra_path = get_infrastructure_path()
+    terraform_env_path = infra_path.joinpath(".terraform").joinpath("environment")
+    if not terraform_env_path.exists():
+        raise RuntimeError(
+            f"No terraform environment file found under {terraform_env_path}; was terraform workspace configured?"
+        )
+    with open(terraform_env_path) as fp:
+        terraform_workspace_name = fp.read()
+    return terraform_workspace_name
+
+
+def get_infrastructure_path() -> Path:
+    infra_path = root_path.joinpath("deploy").joinpath("infrastructure")
+    if infra_path.exists():
+        return infra_path
+    else:
+        raise RuntimeError(
+            f"The `deploy/infrastructure` folder does not exist under {str(root_path)}"
+        )
+
+
+def get_output_path(terraform_workspace_name: str) -> Path:
+    """Checks the current Terraform workspace and derives the path to the designated live folder based on a map."""
+    workspace_parts = terraform_workspace_name.split("-")
+    return (
+        get_infrastructure_path()
+        .joinpath("live")
+        .joinpath(workspace_parts[0])
+        .joinpath("-".join(workspace_parts[1:]))
+    )
+
+
 if __name__ == "__main__":
     terraform_config = parse_terraform_output()
-    if not len(sys.argv) == 2:
-        simple_logger(
-            "Run as follows: terraform output -json | bazel run //util/terraform_config_parser <config output folder>"
-        )
-        sys.exit(1)
-    config_output_path = sys.argv[1].rstrip("/")
+    config_output_path = get_output_path(get_terraform_workspace_name())
+    simple_logger(f"Using config output: {config_output_path}")
+
     if not Path(config_output_path).is_absolute():
         simple_logger("Require an absolute output path")
         sys.exit(1)
@@ -182,6 +218,7 @@ if __name__ == "__main__":
             "No output from terraform, are you in the deploy/infrastructure directory?"
         )
         sys.exit(1)
+
     terraform_config = __add_ecr_registry_aws_link(terraform_config)
     terraform_config = __set_aws_profile(terraform_config)
     terraform_config = replace_str_in_attribute(

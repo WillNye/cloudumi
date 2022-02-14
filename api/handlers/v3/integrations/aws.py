@@ -99,7 +99,7 @@ class AwsIntegrationHandler(BaseHandler):
             data={
                 "central_account_role": {
                     "cloudformation_url": (
-                        "https://console.aws.amazon.com/cloudformation/home?region=us-east-1"
+                        f"https://console.aws.amazon.com/cloudformation/home?region={region}"
                         + "#/stacks/quickcreate?templateURL="
                         + urllib.parse.quote(central_role_template_url)
                         + f"&param_ExternalIDParameter={external_id}&param_HostParameter={host}&stackName={stack_name}"
@@ -130,8 +130,9 @@ class AwsIntegrationHandler(BaseHandler):
         if pre_role_arns_to_assume:
             customer_central_account_role = pre_role_arns_to_assume[-1]["role_arn"]
             spoke_role_parameters = [
+                {"ParameterKey": "ExternalIDParameter", "ParameterValue": external_id},
                 {
-                    "ParameterKey": "CentralAccountArnParameter",
+                    "ParameterKey": "CentralRoleArnParameter",
                     "ParameterValue": customer_central_account_role,
                 },
                 {"ParameterKey": "HostParameter", "ParameterValue": host},
@@ -158,11 +159,12 @@ class AwsIntegrationHandler(BaseHandler):
             res.data["spoke_account_role"] = {
                 "status": "eligible",
                 "cloudformation_url": (
-                    "https://console.aws.amazon.com/cloudformation/home?region=us-east-1"
+                    f"https://console.aws.amazon.com/cloudformation/home?region={region}"
                     + "#/stacks/quickcreate?templateURL="
                     + urllib.parse.quote(spoke_role_template_url)
+                    + f"&param_ExternalIDParameter={external_id}"
                     + f"&param_HostParameter={host}"
-                    + f"&param_CentralAccountArnParameter={customer_central_account_role}"
+                    + f"&param_CentralRoleArnParameter={customer_central_account_role}"
                     + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                     + f"&stackName={spoke_stack_name}"
                     + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
@@ -172,6 +174,7 @@ class AwsIntegrationHandler(BaseHandler):
                 "parameters": spoke_role_parameters,
                 "role_trust_policy": spoke_role_trust_policy,
                 "capabilities": capabilities,
+                "external_id": external_id,
             }
         self.write(res.json(exclude_unset=True, exclude_none=True))
 

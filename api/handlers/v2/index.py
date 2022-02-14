@@ -60,7 +60,7 @@ class EligibleRoleRefreshHandler(BaseHandler):
         from common.celery_tasks.celery_tasks import app as celery_app
 
         res = celery_app.send_task(
-            "cloudumi_common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
+            "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
             args=[host],
         )
         self.write(

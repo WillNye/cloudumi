@@ -164,7 +164,7 @@ Resources:
       IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
       ClusterRole: !Ref ClusterRoleParameter
-      ClustRoleArn: !GetAtt CentralRole.Arn
+      CentralRoleArn: !GetAtt CentralRole.Arn
       SpokeRole: !Ref SpokeRoleNameParameter
       SpokeRoleArn: !GetAtt SpokeRole.Arn
       Host: !Ref HostParameter
@@ -187,7 +187,7 @@ Parameters:
     Type: String
     MinLength: "10"
     MaxLength: "100"
-    AllowedPattern: '^arn:aws:iam::\d{12}:role/.+'
+    AllowedPattern: '^arn:aws:iam::\d{12}:(role|user)/.+'
     ConstraintDescription: 'Invalid ClusterRole value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+'
   HostParameter:
     Description: >-
@@ -215,7 +215,7 @@ Parameters:
     ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]*'
   RegistrationTopicArnParameter:
     Description: >-
-      The SNS queue ARN that will be used to send registration messages to the SaaS
+      The SNS queue ARN that will be used to send registration messages to the SaaS. Do not change this value!
     Type: String
     MinLength: "2"
     MaxLength: "100"
@@ -231,8 +231,8 @@ Outputs:
   ClusterRole:
     Description: ClusterRole to share with the SaaS for deployment
     Value: !Ref ClusterRoleParameter
-  ClustRoleArn:
-    Description: ClusterRoleArn to share with the SaaS for deployment
+  CentralRoleArn:
+    Description: CentralRoleArn to share with the SaaS for deployment
     Value: !GetAtt CentralRole.Arn
   SpokeRole:
     Description: SpokeRole to share with the SaaS for deployment

@@ -25,7 +25,7 @@ class LogOutHandler(BaseHandler):
                 [
                     (
                         "Configuration value `_global_.auth.set_auth_cookie` is not enabled. "
-                        "ConsoleMe isn't able to delete an auth cookie if setting auth "
+                        "We aren't able to delete an auth cookie if setting auth "
                         "cookies is not enabled."
                     )
                 ],
@@ -42,7 +42,7 @@ class LogOutHandler(BaseHandler):
                 [
                     (
                         "Configuration value `auth_cookie_name` is not set. "
-                        "ConsoleMe isn't able to delete an auth cookie if the auth cookie name "
+                        "We aren't able to delete an auth cookie if the auth cookie name "
                         "is not known."
                     )
                 ],

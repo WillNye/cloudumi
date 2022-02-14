@@ -154,6 +154,7 @@ resource "aws_iam_role" "ecs_task_role" {
       },
     ]
   })
+  tags = { "noq-authorized" : lower("${var.cluster_id}-ecsTaskRole@noq.dev") }
   inline_policy {
     name = "ecs_task_role_policy"
     policy = jsonencode({
@@ -281,6 +282,18 @@ resource "aws_iam_role" "ecs_task_role" {
           "Resource" : [
             "arn:aws:s3:::${var.cloudumi_files_bucket}",
             "arn:aws:s3:::${var.cloudumi_files_bucket}/*"
+          ]
+        },
+        {
+          "Action" : [
+            "sqs:ReceiveMessage",
+            "sqs:DeleteMessage",
+            "sqs:GetQueueUrl",
+            "sqs:GetQueueAttributes",
+          ],
+          "Effect" : "Allow",
+          "Resource" : [
+            "${var.registration_queue_arn}",
           ]
         }
       ],

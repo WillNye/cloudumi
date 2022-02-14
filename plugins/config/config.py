@@ -45,16 +45,16 @@ class Config:
                 return config_location
         config_locations: List[str] = [
             default_save_location,
-            os.path.expanduser("~/.config/consoleme/config.yaml"),
-            "/etc/consoleme/config/config.yaml",
+            os.path.expanduser("~/.config/noq/config.yaml"),
+            "/etc/noq/config/config.yaml",
             "example_config/example_config_development.yaml",
         ]
         for loc in config_locations:
             if os.path.exists(loc):
                 return loc
         raise Exception(
-            "Unable to find ConsoleMe's configuration. It either doesn't exist, or "
-            "ConsoleMe doesn't have permission to access it. Please set the CONFIG_LOCATION environment variable "
+            "Unable to find app configuration. It either doesn't exist, or "
+            "We don't have permission to access it. Please set the CONFIG_LOCATION environment variable "
             "to the path of the configuration, or to an s3 location with your configuration"
             "(i.e: s3://YOUR_BUCKET/path/to/config.yaml). Otherwise, ConsoleMe will automatically search for the"
             f"configuration in these locations: {', '.join(config_locations)}"

@@ -36,7 +36,7 @@ asgiref==3.3.4
     #   -r ./common/util/requirements.in
 async-timeout==4.0.2
     # via aiohttp
-atlassian-python-api==3.18.1
+atlassian-python-api==3.19.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
@@ -66,7 +66,7 @@ boto==2.49.0
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   cloudaux
-boto3==1.20.43
+boto3==1.20.52
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -76,7 +76,7 @@ boto3==1.20.43
     #   cloudaux
     #   cloudsplaining
     #   parliament
-botocore==1.23.43
+botocore==1.23.52
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -107,11 +107,11 @@ cffi==1.15.0
     #   cryptography
     #   pycares
     #   pynacl
-charset-normalizer==2.0.10
+charset-normalizer==2.0.11
     # via
     #   aiohttp
     #   requests
-checkov==2.0.764
+checkov==2.0.817
     # via -r ./common/util/requirements.in
 click==8.0.3
     # via
@@ -136,7 +136,7 @@ cloudaux==1.9.6
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
-cloudsplaining==0.4.10
+cloudsplaining==0.5.0
     # via checkov
 colorama==0.4.4
     # via checkov
@@ -209,11 +209,11 @@ gitpython==3.1.26
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
     #   checkov
-google-api-core==2.4.0
+google-api-core==2.5.0
     # via google-api-python-client
-google-api-python-client==2.36.0
+google-api-python-client==2.37.0
     # via -r ./api/requirements.in
-google-auth==2.5.0
+google-auth==2.6.0
     # via
     #   google-api-core
     #   google-api-python-client
@@ -228,7 +228,7 @@ grpcio==1.43.0
     #   grpcio-tools
 grpcio-tools==1.43.0
     # via -r ./common/util/requirements.in
-httplib2==0.20.2
+httplib2==0.20.4
     # via
     #   google-api-python-client
     #   google-auth-httplib2
@@ -282,7 +282,7 @@ logmatic-python==0.1.7
     #   -r ./common/celery_tasks/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
-lxml==4.7.1
+lxml==4.7.0
     # via
     #   python3-saml
     #   xmlsec
@@ -305,13 +305,13 @@ newrelic==7.4.0.172
     # via
     #   -r ./api/requirements.in
     #   -r ./api/util/requirements.in
-numpy==1.22.1
+numpy==1.22.2
     # via pandas
-oauthlib==3.1.1
+oauthlib==3.2.0
     # via
     #   atlassian-python-api
     #   requests-oauthlib
-okta==2.3.1
+okta==2.4.0
     # via
     #   -r ./api/requirements.in
     #   -r ./identity/requirements.in
@@ -325,9 +325,9 @@ ordered-set==4.0.2
     # via deepdiff
 orderedmultidict==1.0.1
     # via furl
-packageurl-python==0.9.6
+packageurl-python==0.9.7
     # via cyclonedx-python-lib
-packaging==21.0
+packaging==21.3
     # via
     #   -r ./requirements.in
     #   bleach
@@ -348,7 +348,7 @@ pdpyras==4.4.0
     # via -r ./common/util/requirements.in
 ply==3.11
     # via jsonpath-ng
-policy-sentry==0.11.19
+policy-sentry==0.12.2
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
@@ -359,9 +359,9 @@ policyuniverse==1.4.0.20220110
     #   checkov
 prettytable==3.0.0
     # via checkov
-prompt-toolkit==3.0.24
+prompt-toolkit==3.0.27
     # via click-repl
-protobuf==3.19.3
+protobuf==3.19.4
     # via
     #   google-api-core
     #   googleapis-common-protos
@@ -383,7 +383,7 @@ pycares==4.1.2
     # via aiodns
 pycparser==2.21
     # via cffi
-pycryptodome==3.13.0
+pycryptodome==3.14.1
     # via okta
 pydantic==1.9.0
     # via
@@ -402,7 +402,7 @@ pyjwt==2.3.0
     #   pygithub
 pynacl==1.5.0
     # via pygithub
-pyparsing==2.4.7
+pyparsing==3.0.7
     # via
     #   httplib2
     #   packaging
@@ -421,7 +421,7 @@ python-json-logger==2.0.2
     # via logmatic-python
 python-terraform==0.10.1
     # via -r ./api/requirements.in
-python3-saml==1.12.0
+python3-saml==1.13.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
@@ -469,7 +469,7 @@ requests==2.27.1
     #   pygithub
     #   requests-oauthlib
     #   update-checker
-requests-oauthlib==1.3.0
+requests-oauthlib==1.3.1
     # via atlassian-python-api
 retrying==1.3.3
     # via
@@ -480,20 +480,20 @@ rsa==4.8
     # via
     #   google-auth
     #   python-jose
-ruamel.yaml==0.17.20
+ruamel-yaml==0.17.20
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
-ruamel.yaml.clib==0.2.6
+ruamel-yaml-clib==0.2.6
     # via ruamel.yaml
-s3transfer==0.5.0
+s3transfer==0.5.1
     # via boto3
 schema==0.7.5
     # via
     #   cloudsplaining
     #   policy-sentry
-semantic-version==2.8.5
+semantic-version==2.9.0
     # via checkov
 sentry-sdk==1.5.4
     # via
@@ -550,7 +550,7 @@ tornado==6.1
     #   -r ./common/util/requirements.in
 tqdm==4.62.3
     # via checkov
-types-setuptools==57.4.7
+types-setuptools==57.4.9
     # via cyclonedx-python-lib
 types-toml==0.10.3
     # via cyclonedx-python-lib
@@ -616,7 +616,6 @@ setuptools==59.6.0
     # via
     #   celery
     #   cyclonedx-python-lib
-    #   google-api-core
     #   grpcio-tools
     #   jsonschema
     #   redislite

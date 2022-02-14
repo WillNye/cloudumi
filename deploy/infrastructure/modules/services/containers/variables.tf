@@ -51,6 +51,11 @@ variable "region" {
   description = "The region that all services are deployed into"
 }
 
+variable "registration_queue_arn" {
+  description = "The registration queue ARN for the registration workflow"
+  type        = string
+}
+
 variable "stage" {
   type    = string
   default = "staging"
