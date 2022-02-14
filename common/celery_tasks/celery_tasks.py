@@ -902,7 +902,7 @@ def cache_policies_table_details(host=None) -> bool:
     s3_key = None
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -987,7 +987,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
     # Only query IAM and put data in Dynamo if we're in the active region
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -1317,11 +1317,11 @@ def cache_iam_resources_across_accounts(
     tasks = []
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in ["dev"]:
+    ) or config.get("_global_.environment") in ["dev"]:
         # First, get list of accounts
         # Second, call tasks to enumerate all the roles across all accounts
         for account_id in accounts_d.keys():
-            if config.get_host_specific_key("environment", host) in ["prod", "dev"]:
+            if config.get("_global_.environment") in ["prod", "dev"]:
                 tasks.append(cache_iam_resources_for_account.s(account_id, host))
             else:
                 log.debug(
@@ -1505,7 +1505,7 @@ def cache_managed_policies_for_account(
 
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -1550,7 +1550,7 @@ def cache_managed_policies_across_accounts(host=None) -> bool:
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
     # Second, call tasks to enumerate all the roles across all accounts
     for account_id in accounts_d.keys():
-        if config.get_host_specific_key("environment", host) == "prod":
+        if config.get("_global_.environment") == "prod":
             cache_managed_policies_for_account.delay(account_id, host=host)
         else:
             if account_id in config.get_host_specific_key(
@@ -1609,10 +1609,10 @@ def cache_s3_buckets_across_accounts(
     tasks = []
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in ["dev"]:
+    ) or config.get("_global_.environment") in ["dev"]:
         # Call tasks to enumerate all S3 buckets across all accounts
         for account_id in accounts_d.keys():
-            if config.get_host_specific_key("environment", host) in ["prod", "dev"]:
+            if config.get("_global_.environment") in ["prod", "dev"]:
                 tasks.append(cache_s3_buckets_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
@@ -1627,7 +1627,7 @@ def cache_s3_buckets_across_accounts(
             results.join(disable_sync_subtasks=False)
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -1705,9 +1705,9 @@ def cache_sqs_queues_across_accounts(
     tasks = []
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in ["dev"]:
+    ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get_host_specific_key("environment", host) in ["prod", "dev"]:
+            if config.get("_global_.environment") in ["prod", "dev"]:
                 tasks.append(cache_sqs_queues_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
@@ -1722,7 +1722,7 @@ def cache_sqs_queues_across_accounts(
             results.join(disable_sync_subtasks=False)
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -1796,9 +1796,9 @@ def cache_sns_topics_across_accounts(
     tasks = []
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in ["dev"]:
+    ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get_host_specific_key("environment", host) in ["prod", "dev"]:
+            if config.get("_global_.environment") in ["prod", "dev"]:
                 tasks.append(cache_sns_topics_for_account.s(account_id, host))
             else:
                 if account_id in config.get_host_specific_key(
@@ -1813,7 +1813,7 @@ def cache_sns_topics_across_accounts(
             results.join(disable_sync_subtasks=False)
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -1912,7 +1912,7 @@ def cache_sqs_queues_for_account(
 
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -2000,7 +2000,7 @@ def cache_sns_topics_for_account(
 
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -2059,7 +2059,7 @@ def cache_s3_buckets_for_account(
 
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -2209,7 +2209,7 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
     # Only query in active region, otherwise get data from DDB
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -2324,7 +2324,7 @@ def cache_resources_from_aws_config_across_accounts(
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
     # Second, call tasks to enumerate all the roles across all tenant accounts
     for account_id in accounts_d.keys():
-        if config.get_host_specific_key("environment", host) in [
+        if config.get("_global_.environment", host) in [
             "prod",
             "dev",
         ]:
@@ -2371,7 +2371,7 @@ def cache_resources_from_aws_config_across_accounts(
         # this task, we're always going to be caching the results from the previous task.
         if config.region == config.get_host_specific_key(
             "celery.active_region", host, config.region
-        ) or config.get_host_specific_key("environment", host) in ["dev"]:
+        ) or config.get("_global_.environment") in ["dev"]:
             # Refresh all resources after deletion of expired entries
             all_resources = red.hgetall(resource_redis_cache_key)
             s3_bucket = config.get_host_specific_key(
@@ -2745,7 +2745,7 @@ def cache_cloudtrail_denies(host=None):
     if not (
         config.region
         == config.get_host_specific_key("celery.active_region", host, config.region)
-        or config.get_host_specific_key("environment", host) in ["dev", "test"]
+        or config.get("_global_.environment") in ["dev", "test"]
     ):
         return {
             "function": function,

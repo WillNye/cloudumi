@@ -319,7 +319,7 @@ async def generate_and_store_credential_authorization_mapping(
     s3_key = None
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:

@@ -1409,7 +1409,7 @@ async def cache_all_scps(host) -> Dict[str, Any]:
     s3_key = None
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
@@ -1492,7 +1492,7 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
     s3_key = None
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
-    ) or config.get_host_specific_key("environment", host) in [
+    ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
