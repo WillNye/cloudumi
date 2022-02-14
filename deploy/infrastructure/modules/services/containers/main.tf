@@ -154,6 +154,7 @@ resource "aws_iam_role" "ecs_task_role" {
       },
     ]
   })
+  tags = { "noq-authorized" : lower("${var.cluster_id}-ecsTaskRole@noq.dev") }
   inline_policy {
     name = "ecs_task_role_policy"
     policy = jsonencode({
