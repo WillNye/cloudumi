@@ -17,16 +17,16 @@ export const AWSOrganization = () => {
 
   const columns = [{
     Header: 'Organization ID',
-    accessor: 'organizationId',
+    accessor: 'organizationId'
   }, {
     Header: 'Account ID',
-    accessor: 'accountId',
+    accessor: 'accountId'
   }, {
     Header: 'Account Name',
-    accessor: 'accountName',
+    accessor: 'accountName'
   }, {
     Header: 'Owner',
-    accessor: 'owner',
+    accessor: 'owner'
   }, {
     Header: 'Status',
     accessor: 'active',

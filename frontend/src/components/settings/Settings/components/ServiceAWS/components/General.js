@@ -20,7 +20,7 @@ export const General = () => {
 
   const columns = [{
     Header: 'Tag Name',
-    accessor: 'tagName',
+    accessor: 'tagName'
   }, {
     Header: 'Authorizations',
     accessor: 'authorizations',

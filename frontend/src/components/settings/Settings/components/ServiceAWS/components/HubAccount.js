@@ -28,7 +28,7 @@ export const HubAccount = () => {
     width: 80
   }, {
     Header: 'External ID',
-    accessor: 'externalId',
+    accessor: 'externalId'
   }, {
     Header: 'Status',
     accessor: 'active',

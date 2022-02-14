@@ -24,16 +24,16 @@ export const SpokeAccounts = () => {
   
   const columns = [{
     Header: 'Account Name',
-    accessor: 'accountName',
+    accessor: 'accountName'
   }, {
     Header: 'Account ID',
-    accessor: 'accountId',
+    accessor: 'accountId'
   }, {
     Header: 'Role',
-    accessor: 'role',
+    accessor: 'role'
   }, {
     Header: 'Account Admin',
-    accessor: 'accountAdmin',
+    accessor: 'accountAdmin'
   }, {
     Header: 'Status',
     accessor: 'active',
