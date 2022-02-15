@@ -31,7 +31,7 @@ async def generate_dev_domain(dev_mode):
 
 
 async def create_user_pool(noq_subdomain):
-    cognito = boto3.client("cognito-idp")
+    cognito = boto3.client("cognito-idp", region_name=config.region)
     # a = cognito.describe_user_pool(UserPoolId="us-east-1_nvTFqJY2L")
     # print(a)
     # b = cognito.describe_user_pool_client(UserPoolId="us-east-1_nvTFqJY2L", ClientId="1fpq9om50b4bm1225o8it875jj")
@@ -275,7 +275,7 @@ async def get_external_id(host, username):
 async def create_user_pool_user(
     user_pool_client_id, client_secret, email, password, noq_subdomain
 ):
-    cognito = boto3.client("cognito-idp")
+    cognito = boto3.client("cognito-idp", region_name=config.region)
 
     user = cognito.sign_up(
         ClientId=user_pool_client_id,
@@ -308,7 +308,7 @@ async def create_user_pool_user(
 
 
 async def create_user_pool_client(user_pool_id, dev_domain_url):
-    cognito = boto3.client("cognito-idp")
+    cognito = boto3.client("cognito-idp", region_name=config.region)
     res = cognito.create_user_pool_client(
         UserPoolId=user_pool_id,
         ClientName="noq_tenant",
@@ -388,7 +388,7 @@ async def create_user_pool_client(user_pool_id, dev_domain_url):
 
 
 async def create_user_pool_domain(user_pool_id, user_pool_domain_name):
-    cognito = boto3.client("cognito-idp")
+    cognito = boto3.client("cognito-idp", region_name=config.region)
     user_pool_domain = cognito.create_user_pool_domain(
         UserPoolId=user_pool_id, Domain=user_pool_domain_name
     )
