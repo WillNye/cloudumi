@@ -83,6 +83,7 @@ from api.handlers.v2.user import (
 )
 from api.handlers.v2.user_profile import UserProfileHandler
 from api.handlers.v3.config import ConfigHandler
+from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.identity.group import IdentityGroupHandler
 from api.handlers.v3.identity.groups import (
     IdentityGroupPageConfigHandler,

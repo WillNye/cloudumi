@@ -23,9 +23,9 @@ _global_:
     path: "/templates"
   s3_cache_bucket: {{ bucket_name }}
   development: false
-  environment: {{ stage }}
+  environment: {{ stage }}Ø
   tornado:
-  {% if stage == "staging" %}
+  {% if stage == "staging" Ø%}
     debug: true
   {% else   %}
     debug: false
