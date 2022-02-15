@@ -7,6 +7,7 @@ import {
   useRowSelect,
 } from 'react-table';
 import { DatatableHeader, DatatableRow } from './ui/styles';
+import { EmptyState } from './ui/utils';
 
 const headerProps = (props, { column }) => getStyles(props, column.align);
 
@@ -17,7 +18,7 @@ const getAlign = (align) => align === 'right' ? 'flex-end' : align === 'center' 
 const getStyles = (props, align = 'left') => [props, {
   style: {
     justifyContent: getAlign(align),
-    alignItems: 'flex-start',
+    alignItems: 'center',
     display: 'flex',
     flexWrap: 'nowrap'
   }
@@ -85,10 +86,18 @@ function Table({ columns, data }) {
   );
 };
 
-const Datatable = ({ data, columns }) => {
+const Datatable = ({ data, columns, emptyState }) => {
+  
   const memoizedData = useMemo(() => data, [data]);
   const memoizedColumns = useMemo(() => columns, [columns]);
-  return <Table data={memoizedData} columns={memoizedColumns} />;
+
+  const renderTable = <Table data={memoizedData} columns={memoizedColumns} />;
+
+  const renderEmptyState = <EmptyState {...emptyState} />;
+
+  const hasData = data?.length > 0;
+
+  return hasData ? renderTable : renderEmptyState;
 };
 
 export default Datatable;

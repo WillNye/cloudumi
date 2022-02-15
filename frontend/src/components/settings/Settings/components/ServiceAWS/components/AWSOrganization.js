@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Datatable from '../../../../../../lib/Datatable';
-import { RowStatusIndicator } from '../../../../../../lib/Misc';
 import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
+import { awsOrganizationColumns } from './columns';
 
 const data = [{
   organizationId: 'noq_entrypoint',
@@ -13,42 +13,22 @@ const data = [{
 
 export const AWSOrganization = () => {
 
-  const handleClick = () => {};
+  const [fakeData, setData] = useState([]);
 
-  const columns = [{
-    Header: 'Organization ID',
-    accessor: 'organizationId'
-  }, {
-    Header: 'Account ID',
-    accessor: 'accountId'
-  }, {
-    Header: 'Account Name',
-    accessor: 'accountName'
-  }, {
-    Header: 'Owner',
-    accessor: 'owner'
-  }, {
-    Header: 'Status',
-    accessor: 'active',
-    width: 60,
-    align: 'center',
-    Cell: ({ row }) => (
-      <RowStatusIndicator isActive={row?.values?.active} />
-    )
-  }, {
-    Header: 'Actions',
-    width: 80,
-    align: 'right',
-    Cell: ({ row }) => (
-      <button onClick={() => handleClick(row?.values)}>
-        Remove
-      </button>
-    )
-  }];
+  const handleClick = (action, rowValues) => {};
+
+  const columns = awsOrganizationColumns({ handleClick });
   
   return (
     <DatatableWrapper>
-      <Datatable data={data} columns={columns} />
+      <Datatable
+        data={fakeData}
+        columns={columns}
+        emptyState={{
+          label: 'Create AWS Organization',
+          onClick: () => setData(data)
+        }}
+      />
     </DatatableWrapper>
   );
 };

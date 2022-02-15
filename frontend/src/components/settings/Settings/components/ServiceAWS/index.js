@@ -6,6 +6,7 @@ import { General } from './components/General';
 import { HubAccount } from './components/HubAccount';
 import { Legacy } from './components/Legacy';
 import { SpokeAccounts } from './components/SpokeAccounts';
+import { RoleAccessAuth } from './components/RoleAccessAuth';
 
 import { Button } from 'semantic-ui-react';
 
@@ -18,13 +19,15 @@ export const ServiceAWS = () => {
     return (
       <>
         <span>{title}</span>&nbsp;
-        <Button
-          size='mini'
-          circular
-          icon='question'
-          basic
-          onClick={() => handleHelpModal(helpHandler)}
-        />
+        {helpHandler && (
+          <Button
+            size='mini'
+            circular
+            icon='question'
+            basic
+            onClick={() => handleHelpModal(helpHandler)}
+          />
+        )}
       </>
     );
   };
@@ -55,7 +58,13 @@ export const ServiceAWS = () => {
       </CollapsibleSection>
 
       <CollapsibleSection
-        title={generateTitle('General', 'general')}
+        title={generateTitle('Role Access Authorization', 'role-access-authorization')}
+        defaultActive={true}>
+        <RoleAccessAuth />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title={generateTitle('General')}
         defaultActive={true}>
         <General />
       </CollapsibleSection>

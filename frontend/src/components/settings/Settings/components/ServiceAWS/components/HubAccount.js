@@ -1,7 +1,7 @@
 import React from 'react';
 import Datatable from '../../../../../../lib/Datatable';
-import { RowStatusIndicator } from '../../../../../../lib/Misc';
 import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
+import { hubAccountColumns } from './columns';
 
 const data = [{
   accountName: 'noq_entrypoint',
@@ -13,44 +13,13 @@ const data = [{
 
 export const HubAccount = () => {
 
-  const handleClick = () => {};
+  const handleClick = (action, rowValues) => {};
 
-  const columns = [{
-    Header: 'Account Name',
-    accessor: 'accountName'
-  }, {
-    Header: 'Account ID',
-    accessor: 'accountId',
-    width: 80
-  }, {
-    Header: 'Role',
-    accessor: 'role',
-    width: 80
-  }, {
-    Header: 'External ID',
-    accessor: 'externalId'
-  }, {
-    Header: 'Status',
-    accessor: 'active',
-    width: 60,
-    align: 'center',
-    Cell: ({ row }) => (
-      <RowStatusIndicator isActive={row?.values?.active} />
-    )
-  }, {
-    Header: 'Actions',
-    width: 80,
-    align: 'right',
-    Cell: ({ row }) => (
-      <button onClick={() => handleClick(row?.values)}>
-        Remove
-      </button>
-    )
-  }];
+  const columns = hubAccountColumns({ handleClick });
   
   return (
     <DatatableWrapper>
-      <Datatable data={data} columns={columns} />
+      <Datatable data={data} columns={columns} emptyState={{ label: 'Create Hub Account', onClick: () => {} }} />
     </DatatableWrapper>
   );
 };

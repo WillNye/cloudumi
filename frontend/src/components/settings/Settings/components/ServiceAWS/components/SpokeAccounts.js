@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Datatable from '../../../../../../lib/Datatable';
-import { RowStatusIndicator } from '../../../../../../lib/Misc';
 import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
 
 import { Button, Modal } from 'semantic-ui-react';
+import { spokeAccountsColumns } from './columns';
+import { NewSpokeAccountForm } from './NewSpokeAccountForm';
 
 const data = [{
   accountName: 'noq_entrypoint',
@@ -23,52 +24,35 @@ export const SpokeAccounts = () => {
 
   const [modalIsOpen, setModal] = useState(false);
 
-  const handleClick = () => {};
+  const handleClick = (action, rowValues) => {};
+
   const handleClickToAdd = () => {
     setModal(true);
   };
-  
-  const columns = [{
-    Header: 'Account Name',
-    accessor: 'accountName'
-  }, {
-    Header: 'Account ID',
-    accessor: 'accountId'
-  }, {
-    Header: 'Role',
-    accessor: 'role'
-  }, {
-    Header: 'Account Admin',
-    accessor: 'accountAdmin'
-  }, {
-    Header: 'Status',
-    accessor: 'active',
-    width: 60,
-    align: 'center',
-    Cell: ({ row }) => (
-      <RowStatusIndicator isActive={row?.values?.active} />
-    )
-  }, {
-    Header: 'Actions',
-    width: 80,
-    align: 'right',
-    Cell: ({ row }) => (
-      <button onClick={() => handleClick(row?.values)}>
-        Remove
-      </button>
-    )
-  }];
-  
+
+  const columns = spokeAccountsColumns({ handleClick });
+
   return (
     <>
 
-      <DatatableWrapper renderAction={<button onClick={handleClickToAdd}>Add</button>}>
-        <Datatable data={data} columns={columns} />
+      <DatatableWrapper
+        renderAction={(
+          <Button
+            compact
+            color="blue"
+            onClick={handleClickToAdd}>
+            Add
+          </Button>        
+        )}>
+        <Datatable data={data} columns={columns} emptyState={{ label: 'Create Spoke Account', onClick: () => {} }} />
       </DatatableWrapper>
 
-      <Modal header='New Spoke Account' open={modalIsOpen}>
+      <Modal open={modalIsOpen}>
+        <Modal.Header>
+          New Spoke Account
+        </Modal.Header>
         <Modal.Content>
-          Spoke Account Form
+          <NewSpokeAccountForm />
         </Modal.Content>
         <Modal.Actions>
           <Button onClick={() => setModal(!modalIsOpen)}>

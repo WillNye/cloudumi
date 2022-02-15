@@ -1,5 +1,5 @@
 import React from 'react';
-import { Segment } from 'semantic-ui-react';
+import { Button, Message, Segment } from 'semantic-ui-react';
 
 export const DatatableWrapper = ({ renderAction, children }) => {
 
@@ -17,6 +17,14 @@ export const DatatableWrapper = ({ renderAction, children }) => {
       <Segment>
         {children}
       </Segment>
+    </Segment>
+  );
+};
+
+export const EmptyState = ({ label, onClick }) => {
+  return (
+    <Segment inverted color='grey' textAlign="center">
+      <Button onClick={onClick}>{label}</Button>
     </Segment>
   );
 };
