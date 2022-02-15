@@ -60,8 +60,6 @@ _global_:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   # sentry:
   #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
-  web:
-    path: "/templates"
   s3_cache_bucket: noqcache
   environment: dev
   development: true
