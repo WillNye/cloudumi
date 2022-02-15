@@ -184,6 +184,15 @@ class EligibleRolePageConfigHandler(BaseHandler):
 
 
 class FrontendHandler(tornado.web.StaticFileHandler):
+    def set_extra_headers(self, path):
+        # Disable cache for index.html
+        if self.request.path in ["/", "/index.html"]:
+            self.set_header(
+                "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"
+            )
+            self.set_header("Expires", "0")
+            self.set_header("Pragma", "no-cache")
+
     def validate_absolute_path(self, root, absolute_path):
         try:
             return super().validate_absolute_path(root, absolute_path)
