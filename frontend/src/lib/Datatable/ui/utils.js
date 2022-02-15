@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Message, Segment } from 'semantic-ui-react';
+import { Button, Segment } from 'semantic-ui-react';
 
 export const DatatableWrapper = ({ renderAction, children }) => {
 

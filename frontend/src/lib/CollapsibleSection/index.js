@@ -2,7 +2,13 @@ import React, { useState } from 'react';
 import { Accordion, Button } from 'semantic-ui-react';
 import { SectionContent, SectionHeader, SectionTitle } from './styles';
 
-export const CollapsibleSection = ({ defaultActive, title, children, hideTopBorder, forceRenderContent }) => {
+export const CollapsibleSection = ({
+  defaultActive,
+  title,
+  children,
+  hideTopBorder,
+  forceRenderContent
+}) => {
 
   // forceRenderContent: Render content without wait to active status
 

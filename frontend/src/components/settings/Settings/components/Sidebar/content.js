@@ -1,3 +1,5 @@
+import { GeneralSSO } from '../GeneralSSO';
+import { GeneralUsers } from '../GeneralUsers';
 import { ServiceAWS } from '../ServiceAWS';
 
 export const services = [{
@@ -20,10 +22,12 @@ export const services = [{
 
 export const general = [{
   name: 'sso',
-  label: 'Single Sign-On'
+  label: 'Single Sign-On',
+  Component: GeneralSSO
 }, {
   name: 'users',
-  label: 'Users and Groups'
+  label: 'Users and Groups',
+  Component: GeneralUsers
 }, {
   name: 'integrations',
   label: 'Integrations'
