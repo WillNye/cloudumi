@@ -18,13 +18,16 @@ from common.lib.yaml import yaml
 log = config.get_logger()
 
 
-async def return_error_response_for_noq_registration(
-    host: str,
-    status: int,
-    failure_message: str,
-    message: Dict[str, str],
+async def return_cf_response(
+    status: str,
+    status_message: str,
+    response_url: str,
     physical_resource_id: str,
-) -> None:
+    stack_id: str,
+    request_id: str,
+    logical_resource_id: str,
+    host: Optional[str] = None,
+) -> Dict[str, Any]:
     """
     Emit an S3 error event to CloudFormation.
     """
@@ -32,23 +35,21 @@ async def return_error_response_for_noq_registration(
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "status": status,
-        "failure_message": failure_message,
+        "status_message": status_message,
         "host": host,
-        "event_message": message,
         "physical_resource_id": physical_resource_id,
-        "message": "Responding to CF NOQ Registration with error",
+        "message": "Responding to CloudFormation",
     }
 
     http_client = AsyncHTTPClient(force_instance=True)
 
-    response_url = message.get("ResponseURL")
     response_data = {
         "Status": "FAILED",
-        "Reason": failure_message,
+        "Reason": status_message,
         "PhysicalResourceId": physical_resource_id,
-        "StackId": message.get("StackId"),
-        "RequestId": message.get("RequestId"),
-        "LogicalResourceId": message.get("LogicalResourceId"),
+        "StackId": stack_id,
+        "RequestId": request_id,
+        "LogicalResourceId": logical_resource_id,
     }
 
     response_data_json = json.dumps(response_data)
@@ -65,7 +66,7 @@ async def return_error_response_for_noq_registration(
     )
     try:
         resp = await http_client.fetch(request=http_req)
-        log_data["message"] = "Slack notification sent"
+        log_data["message"] = "Notification sent"
         log.debug(log_data)
     except (ConnectionError, HTTPClientError) as e:
         log_data["message"] = "Error occurred sending notification to CF"
@@ -90,37 +91,27 @@ async def get_central_role_arn(host):
     return None
 
 
-async def handle_spoke_account_registration(body):
+async def handle_spoke_account_registration(body) -> Dict[str, Any]:
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
-    if not body.get("ResourceProperties"):
-        sentry_sdk.capture_message(
-            "SNS Message Body does not have `ResourceProperties`",
-            "error",
-        )
-        log.error(
-            {
-                **log_data,
-                "error": "SNS Message Body does not have `ResourceProperties`",
-                "cf_message": body,
-            }
-        )
-        return False
 
     spoke_role_name = body["ResourceProperties"].get("SpokeRoleName")
     account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
     host = body["ResourceProperties"].get("Host")
     external_id = body["ResourceProperties"].get("ExternalId")
     if not spoke_role_name or not account_id_for_role or not external_id or not host:
+        error_message = (
+            "Message is missing spoke_role_name, account_id_for_role, or host"
+        )
         sentry_sdk.capture_message(
-            "Missing spoke_role_name, account_id_for_role, or host in message body",
+            error_message,
             "error",
         )
         log.error(
             {
                 **log_data,
-                "error": "SNS Message Body is missing expected parameters",
+                "error": error_message,
                 "cf_message": body,
                 "spoke_role_name": spoke_role_name,
                 "account_id_for_role": account_id_for_role,
@@ -128,7 +119,12 @@ async def handle_spoke_account_registration(body):
                 "external_id": external_id,
             }
         )
-        return False
+        return (
+            {
+                "success": False,
+                "message": error_message,
+            },
+        )
 
     # Verify External ID
     external_id_in_config = config.get_host_specific_key(
@@ -136,21 +132,29 @@ async def handle_spoke_account_registration(body):
     )
 
     if external_id != external_id_in_config:
+        error_message = (
+            "External ID from CF doesn't match host's external ID configuration"
+        )
         sentry_sdk.capture_message(
-            "External ID from CF doesn't match host's external ID configuration",
+            error_message,
             "error",
         )
         log.error(
             {
                 **log_data,
-                "error": "External ID Mismatch",
+                "error": error_message,
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
                 "host": host,
             }
         )
-        return False
+        return (
+            {
+                "success": False,
+                "message": error_message,
+            },
+        )
 
     spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
 
@@ -158,7 +162,27 @@ async def handle_spoke_account_registration(body):
     # Get central role arn
     central_role_arn = await get_central_role_arn(host)
     if not central_role_arn:
-        raise Exception("No Central Role ARN detected in configuration.")
+        error_message = "No Central Role ARN detected in configuration."
+        sentry_sdk.capture_message(
+            error_message,
+            "error",
+        )
+        log.error(
+            {
+                **log_data,
+                "error": error_message,
+                "cf_message": body,
+                "external_id_from_cf": external_id,
+                "external_id_in_config": external_id_in_config,
+                "host": host,
+            }
+        )
+        return (
+            {
+                "success": False,
+                "message": error_message,
+            },
+        )
 
     # Assume role from noq_dev_central_role
     try:
@@ -169,20 +193,24 @@ async def handle_spoke_account_registration(body):
             ExternalId=external_id,
         )
     except ClientError as e:
-        sentry_sdk.capture_message(
-            "Unable to assume customer's central account role", "error"
-        )
+        error_message = "Unable to assume customer's central account role"
+        sentry_sdk.capture_exception()
         log.error(
             {
                 **log_data,
-                "message": "Unable to assume customer's hub account role",
+                "message": error_message,
                 "cf_message": body,
                 "external_id": external_id,
                 "host": host,
                 "error": str(e),
             }
         )
-        return False
+        return (
+            {
+                "success": False,
+                "message": error_message,
+            },
+        )
 
     customer_central_role_sts_client = await sync_to_async(boto3.client)(
         "sts",
@@ -201,18 +229,24 @@ async def handle_spoke_account_registration(body):
             RoleSessionName="noq_registration_verification",
         )
     except ClientError as e:
+        error_message = "Unable to assume customer's spoke account role"
         sentry_sdk.capture_exception()
         log.error(
             {
                 **log_data,
-                "message": "Unable to assume customer's spoke account role",
+                "message": error_message,
                 "cf_message": body,
                 "external_id": external_id,
                 "host": host,
                 "error": str(e),
             }
         )
-        return False
+        return (
+            {
+                "success": False,
+                "message": error_message,
+            },
+        )
 
     customer_spoke_role_iam_client = await sync_to_async(boto3.client)(
         "iam",
@@ -255,6 +289,8 @@ async def handle_spoke_account_registration(body):
                 account_name = account_details["Name"]
         except ClientError:
             # Most likely this isn't an organizations master account and we can ignore
+            # TODO: If this is the org master, we should populate tenant's org information
+            # automatically
             pass
 
     # Write tenant configuration to DynamoDB
@@ -271,27 +307,16 @@ async def handle_spoke_account_registration(body):
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), "aws_integration", host
     )
-    return True
+    return {
+        "success": True,
+        "message": "Successfully registered spoke account",
+    }
 
 
-async def handle_central_account_registration(body):
+async def handle_central_account_registration(body) -> Dict[str, Any]:
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
-
-    if not body.get("ResourceProperties"):
-        sentry_sdk.capture_message(
-            "SNS Message Body does not have `ResourceProperties`",
-            "error",
-        )
-        log.error(
-            {
-                **log_data,
-                "error": "SNS Message Body does not have `ResourceProperties`",
-                "cf_message": body,
-            }
-        )
-        return False
 
     log.info(f"ResourceProperties: {body['ResourceProperties']}")
 
@@ -308,14 +333,15 @@ async def handle_central_account_registration(body):
         or not external_id
         or not host
     ):
+        error_message = "Missing spoke_role_name, account_id_for_role, role_arn, external_id, or host in message body"
         sentry_sdk.capture_message(
-            "Missing spoke_role_name, account_id_for_role, role_arn, external_id, or host in message body",
+            error_message,
             "error",
         )
         log.error(
             {
                 **log_data,
-                "error": "SNS Message Body is missing expected parameters",
+                "error": error_message,
                 "cf_message": body,
                 "spoke_role_name": spoke_role_name,
                 "account_id_for_role": account_id_for_role,
@@ -324,7 +350,10 @@ async def handle_central_account_registration(body):
                 "host": host,
             }
         )
-        return False
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     # Verify External ID
     external_id_in_config = config.get_host_specific_key(
@@ -332,21 +361,27 @@ async def handle_central_account_registration(body):
     )
 
     if external_id != external_id_in_config:
+        error_message = (
+            "External ID from CF doesn't match host's external ID configuration"
+        )
         sentry_sdk.capture_message(
-            "External ID from CF doesn't match host's external ID configuration",
+            error_message,
             "error",
         )
         log.error(
             {
                 **log_data,
-                "error": "External ID Mismatch",
+                "error": error_message,
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
                 "host": host,
             }
         )
-        return False
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     # Assume role from noq_dev_central_role
     try:
@@ -357,13 +392,12 @@ async def handle_central_account_registration(body):
             ExternalId=external_id,
         )
     except ClientError as e:
-        sentry_sdk.capture_message(
-            "Unable to assume customer's central account role", "error"
-        )
+        error_message = "Unable to assume customer's central account role"
+        sentry_sdk.capture_exception()
         log.error(
             {
                 **log_data,
-                "message": "Unable to assume customer's hub account role",
+                "message": error_message,
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
@@ -371,7 +405,10 @@ async def handle_central_account_registration(body):
                 "error": str(e),
             }
         )
-        return False
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     try:
         central_account_sts_client = await sync_to_async(boto3.client)(
@@ -391,13 +428,12 @@ async def handle_central_account_registration(body):
             RoleSessionName="noq_registration_verification",
         )
     except ClientError as e:
-        sentry_sdk.capture_message(
-            "Unable to assume customer's spoke account role", "error"
-        )
+        error_message = "Unable to assume customer's spoke account role"
+        sentry_sdk.capture_message(error_message, "error")
         log.error(
             {
                 **log_data,
-                "message": "Unable to assume customer's spoke account role",
+                "message": error_message,
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
@@ -405,7 +441,10 @@ async def handle_central_account_registration(body):
                 "error": str(e),
             }
         )
-        return False
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     # Write tenant configuration to DynamoDB
     ddb = RestrictedDynamoHandler()
@@ -428,7 +467,10 @@ async def handle_central_account_registration(body):
         yaml.dump(host_config), "aws_integration", host
     )
     config.CONFIG.copy_tenant_config_dynamo_to_redis(host)
-    return True
+    return {
+        "success": True,
+        "message": "Successfully registered central account",
+    }
 
 
 async def handle_tenant_integration_queue(
@@ -489,12 +531,6 @@ async def handle_tenant_integration_queue(
                     }
                 )
 
-                if message["body"]["RequestType"] != "Create":
-                    log_data[
-                        "message"
-                    ] = f"RequestType {message['body']['RequestType']} not supported"
-                    log.debug(log_data)
-                    continue
                 action_type = message["body"]["ResourceProperties"]["ActionType"]
                 if action_type not in [
                     "AWSSpokeAcctRegistration",
@@ -503,38 +539,174 @@ async def handle_tenant_integration_queue(
                     log_data["message"] = f"ActionType {action_type} not supported"
                     log.debug(log_data)
                     continue
-                body = message.get("body")
-                # TODO: Handle all request types. Valid request types: Create, Update, Delete
-                if body.get("RequestType") != "Create":
+
+                body = message.get("body", {})
+                request_type = body.get("RequestType")
+                physical_resource_id = body.get("PhysicalResourceId")
+                response_url = body.get("ResponseURL")
+                resource_properties = body.get("ResourceProperties", {})
+                host = resource_properties.get("Host")
+                external_id = resource_properties.get("ExternalId")
+                stack_id = body.get("StackId")
+                request_id = body.get("RequestId")
+                logical_resource_id = body.get("LogicalResourceId")
+
+                if not (
+                    body
+                    or physical_resource_id
+                    or response_url
+                    or host
+                    or external_id
+                    or resource_properties
+                    or stack_id
+                    or request_id
+                    or logical_resource_id
+                ):
+                    # We don't have a CFN Physical Resource ID, so we can't respond to the request
+                    # but we can make some noise in our logs
+                    error_mesage = "SQS message doesn't have expected parameters"
+                    sentry_sdk.capture_message(error_mesage, "error")
+                    log.error(
+                        {
+                            **log_data,
+                            "error": error_mesage,
+                            "cf_message": body,
+                            "physical_resource_id": physical_resource_id,
+                            "response_url": response_url,
+                            "host": host,
+                            "external_id": external_id,
+                            "resource_properties": resource_properties,
+                            "stack_id": stack_id,
+                            "request_id": request_id,
+                        }
+                    )
+                    # There's no way to respond without some parameters
+                    if (
+                        response_url
+                        and physical_resource_id
+                        and stack_id
+                        and request_id
+                        and logical_resource_id
+                        and host
+                    ):
+                        await return_cf_response(
+                            "SUCCESS",
+                            "OK",
+                            response_url,
+                            physical_resource_id,
+                            stack_id,
+                            request_id,
+                            logical_resource_id,
+                            host,
+                        )
+                    continue
+
+                if request_type != ["Create", "Delete"]:
                     log.error(
                         {
                             **log_data,
                             "error": "Unknown RequestType",
                             "cf_message": body,
+                            "request_type": request_type,
                         }
                     )
+                    if request_type == "Update":
+                        await return_cf_response(
+                            "SUCCESS",
+                            "OK",
+                            response_url,
+                            physical_resource_id,
+                            stack_id,
+                            request_id,
+                            logical_resource_id,
+                            host,
+                        )
+                    else:
+                        await return_cf_response(
+                            "FAILED",
+                            "Unknown Request Type",
+                            response_url,
+                            physical_resource_id,
+                            stack_id,
+                            request_id,
+                            logical_resource_id,
+                            host,
+                        )
                     continue
 
-                response_url = body.get("ResponseURL")
-                if not response_url:
-                    # We don't have a CFN response URL, so we can't respond to the request
-                    # but we can make some noise in our logs
-                    sentry_sdk.capture_message(
-                        "Message doesn't have a response URL", "error"
+                if request_type == ["Delete"]:
+                    # Send success message to CloudFormation
+                    await return_cf_response(
+                        "SUCCESS",
+                        "OK",
+                        response_url,
+                        physical_resource_id,
+                        stack_id,
+                        request_id,
+                        logical_resource_id,
+                        host,
                     )
-                    log.error(
-                        {
-                            **log_data,
-                            "error": "Unable to find ResponseUrl",
-                            "cf_message": body,
-                        }
-                    )
+                    # TODO: Handle deletion in Noq. It's okay if this is manual for now.
                     continue
 
                 if action_type == "AWSSpokeAcctRegistration":
-                    await handle_spoke_account_registration(body)
+                    res = await handle_spoke_account_registration(body)
                 elif action_type == "AWSCentralAcctRegistration":
-                    await handle_central_account_registration(body)
+                    res = await handle_central_account_registration(body)
+                else:
+                    error_message = "ActionType not supported"
+                    log.error(
+                        {
+                            **log_data,
+                            "error": error_message,
+                            "cf_message": body,
+                            "request_type": request_type,
+                            "action_type": action_type,
+                            "physical_resource_id": physical_resource_id,
+                            "response_url": response_url,
+                            "host": host,
+                            "external_id": external_id,
+                            "resource_properties": resource_properties,
+                            "stack_id": stack_id,
+                            "request_id": request_id,
+                        }
+                    )
+                    sentry_sdk.capture_message(error_message, "error")
+                    await return_cf_response(
+                        "FAILED",
+                        error_message,
+                        response_url,
+                        physical_resource_id,
+                        stack_id,
+                        request_id,
+                        logical_resource_id,
+                        host,
+                    )
+                    continue
+
+                if res["success"]:
+                    await return_cf_response(
+                        "SUCCESS",
+                        "OK",
+                        response_url,
+                        physical_resource_id,
+                        stack_id,
+                        request_id,
+                        logical_resource_id,
+                        host,
+                    )
+                else:
+                    await return_cf_response(
+                        "FAILED",
+                        res["message"],
+                        response_url,
+                        physical_resource_id,
+                        stack_id,
+                        request_id,
+                        logical_resource_id,
+                        host,
+                    )
+                    continue
                 # TODO: Refresh configuration
                 # Ensure it is written to Redis. trigger refresh job in worker
 
