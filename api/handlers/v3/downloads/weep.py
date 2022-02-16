@@ -21,7 +21,7 @@ class WeepDownloadHandler(BaseHandler):
 
         install_script = (
             "mkdir -p ~/.weep ; cat <<EOF > ~/.weep/weep.yaml\n"
-            f"{yaml.dump(generated_config)}\n"
+            f"{yaml.dump(generated_config)}"
             "EOF\n"
         )
 

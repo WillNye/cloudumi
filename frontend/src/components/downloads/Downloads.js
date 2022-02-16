@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
-import { Grid, Table, Segment, Header, Container } from "semantic-ui-react";
+import { Grid, Table, Segment, Header } from "semantic-ui-react";
 import { useAuth } from "./../../auth/AuthProviderDefault";
-import { CodeBlock, monokai } from "react-code-blocks";
+import { CopyBlock, dracula } from "react-code-blocks";
 
 export const Downloads = () => {
   const { sendRequestCommon } = useAuth();
@@ -36,32 +36,30 @@ export const Downloads = () => {
   }, [sendRequestCommon]);
 
   return (
-    <Container>
-      <Grid>
-        <Grid.Column width={16}>
-          <Header as="h1">Downloads</Header>
-        </Grid.Column>
-        <Grid.Column width={16}>
-          <Segment>
-            Weep is a CLI tool that makes it easy to retrieve and use AWS
-            credentials securely. Download weep for your operating system below,
-            then run the following command to configure it:
-            <br />
-            <br />
-            {weepInstallScript ? (
-              <CodeBlock
-                text={weepInstallScript}
-                language={"shell"}
-                showLineNumbers={false}
-                theme={monokai}
-              />
-            ) : null}
-            <br />
-            <br />
-            {weepDownloadTable ? <Table>{weepDownloadTable}</Table> : null}
-          </Segment>
-        </Grid.Column>
-      </Grid>
-    </Container>
+    <Grid>
+      <Grid.Column width={16}>
+        <Header as="h1">Downloads</Header>
+      </Grid.Column>
+      <Grid.Column width={8}>
+        <Segment>
+          Weep is a CLI tool that makes it easy to retrieve and use AWS
+          credentials securely. Download weep for your operating system below,
+          then run the following command to configure it:
+          <br />
+          <br />
+          {weepInstallScript ? (
+            <CopyBlock
+              text={weepInstallScript}
+              language={"shell"}
+              showLineNumbers={false}
+              theme={dracula}
+            />
+          ) : null}
+          <br />
+          <br />
+          {weepDownloadTable ? <Table>{weepDownloadTable}</Table> : null}
+        </Segment>
+      </Grid.Column>
+    </Grid>
   );
 };
