@@ -25,6 +25,7 @@ allowed_inbound_cidr_blocks = [
   "141.239.104.37/32", # Kris
   "41.190.131.30/32",  # Kayizzi
   "189.4.79.228/32",   # Christian
+  "186.209.21.192/32", # Christian 2
 ]
 
 # Can be extended by adding regions to the list below
