@@ -19,7 +19,14 @@ export const HubAccount = () => {
   
   return (
     <DatatableWrapper>
-      <Datatable data={data} columns={columns} emptyState={{ label: 'Create Hub Account', onClick: () => {} }} />
+      <Datatable
+        data={data}
+        columns={columns}
+        emptyState={{
+          label: 'Create Hub Account',
+          onClick: () => {}
+        }}
+      />
     </DatatableWrapper>
   );
 };

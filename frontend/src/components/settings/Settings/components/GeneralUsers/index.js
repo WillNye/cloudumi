@@ -1,7 +1,9 @@
 import React from 'react';
 import { CollapsibleSection } from '../../../../../lib/CollapsibleSection';
 import { ScreenHeading } from '../../../../../lib/Screen/styles';
-import { generateTitle } from '../utils';
+import { CollapsibleTitle } from '../utils';
+import { Groups } from './components/Groups';
+import { Users } from './components/Users';
 
 export const GeneralUsers = () => {
 
@@ -13,15 +15,15 @@ export const GeneralUsers = () => {
       </ScreenHeading>
 
       <CollapsibleSection
-        title={generateTitle('Users')}
+        title={<CollapsibleTitle title="Users" />}
         defaultActive>
-        Users
+        <Users />
       </CollapsibleSection>
 
       <CollapsibleSection
-        title={generateTitle('Groups')}
+        title={<CollapsibleTitle title="Groups" />}
         defaultActive>
-        Groups
+        <Groups />
       </CollapsibleSection>
 
     </>

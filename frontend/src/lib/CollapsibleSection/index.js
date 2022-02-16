@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Accordion, Button } from 'semantic-ui-react';
-import { SectionContent, SectionHeader, SectionTitle } from './styles';
+import { CollapsibleWrapper, CollapsibleContent, CollapsibleHeader, CollapsibleTitle } from './styles';
 
 export const CollapsibleSection = ({
   defaultActive,
@@ -19,19 +19,21 @@ export const CollapsibleSection = ({
   };
 
   return (
-    <Accordion fluid>
-      <Accordion.Title
-        active={isActive}>
-        <SectionHeader hideTopBorder={hideTopBorder} isActive={isActive}>
-          <SectionTitle>{title}</SectionTitle>
-          <Button onClick={handleClick} icon="dropdown" />
-        </SectionHeader>
-      </Accordion.Title>
-      <Accordion.Content active={isActive}>
-        <SectionContent>
-          {forceRenderContent ? children : (isActive && children)}
-        </SectionContent>
-      </Accordion.Content>
-    </Accordion>
+    <CollapsibleWrapper>
+      <Accordion fluid>
+        <Accordion.Title
+          active={isActive}>
+          <CollapsibleHeader hideTopBorder={hideTopBorder} isActive={isActive}>
+            <CollapsibleTitle>{title}</CollapsibleTitle>
+            <Button onClick={handleClick} icon="dropdown" />
+          </CollapsibleHeader>
+        </Accordion.Title>
+        <Accordion.Content active={isActive}>
+          <CollapsibleContent>
+            {forceRenderContent ? children : (isActive && children)}
+          </CollapsibleContent>
+        </Accordion.Content>
+      </Accordion>
+    </CollapsibleWrapper>
   );
 };

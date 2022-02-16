@@ -7,7 +7,7 @@ import { HubAccount } from './components/HubAccount';
 import { Legacy } from './components/Legacy';
 import { SpokeAccounts } from './components/SpokeAccounts';
 import { RoleAccessAuth } from './components/RoleAccessAuth';
-import { generateTitle } from '../utils';
+import { CollapsibleTitle } from '../utils';
 
 export const ServiceAWS = () => {
 
@@ -19,31 +19,31 @@ export const ServiceAWS = () => {
       </ScreenHeading>
 
       <CollapsibleSection
-        title={generateTitle('Hub Account', 'hub-account')}
+        title={<CollapsibleTitle title="Hub Account" helpHandler="hub-account"/>}
         defaultActive>
         <HubAccount />
       </CollapsibleSection>
 
       <CollapsibleSection
-        title={generateTitle('Spoke Accounts', 'spoke-accounts')}
+        title={<CollapsibleTitle title="Spoke Accounts" helpHandler="spoke-accounts"/>}
         defaultActive>
         <SpokeAccounts />
       </CollapsibleSection>
 
       <CollapsibleSection
-        title={generateTitle('AWS Organization', 'aws-organization')}
+        title={<CollapsibleTitle title="AWS Organization" helpHandler="aws-organization"/>}
         defaultActive>
         <AWSOrganization />
       </CollapsibleSection>
 
       <CollapsibleSection
-        title={generateTitle('Role Access Authorization', 'role-access-authorization')}
+        title={<CollapsibleTitle title="Role Access Authorization" helpHandler="role-access-authorization"/>}
         defaultActive>
         <RoleAccessAuth />
       </CollapsibleSection>
 
       <CollapsibleSection
-        title={generateTitle('General')}
+        title={<CollapsibleTitle title="General"/>}
         defaultActive>
         <General />
       </CollapsibleSection>
