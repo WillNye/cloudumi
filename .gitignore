@@ -154,3 +154,4 @@ frontend/.certs
 api/templates
 
 **/.terraform.lock.hcl
+**/*.dtmp
