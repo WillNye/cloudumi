@@ -92,11 +92,9 @@ const ConsoleMeSidebar = () => {
             <Menu.Header>Help</Menu.Header>
             <Menu.Menu>
               <Menu.Item
-                as="a"
+                as={NavLink}
                 name="Download CLI"
-                href={"/downloads"}
-                rel="noopener noreferrer"
-                target="_blank"
+                to={"/downloads"}
                 style={{
                   fontSize: "14px",
                 }}

@@ -8,6 +8,7 @@ import ConsoleMePolicyTable from "./components/policy/PolicyTable";
 import ConsoleMeIdentityGroupsTable from "./components/identity/IdentityGroupsTable";
 import IdentityGroupEdit from "./components/identity/Group";
 import ConsoleMeRequestTable from "./components/request/RequestTable";
+import { Downloads } from "./components/downloads/Downloads";
 import ConsoleMeSelfService from "./components/selfservice/SelfService";
 import ConsoleMeDynamicConfig from "./components/DynamicConfig";
 import PolicyRequestReview from "./components/request/PolicyRequestsReview";
@@ -145,6 +146,12 @@ function App() {
           exact
           path="/settings"
           component={Settings}
+        />
+        <ProtectedRoute
+          key="downloads"
+          exact
+          path="/downloads"
+          component={Downloads}
         />
         <ProtectedRoute key="logout" exact path="/logout" component={Logout} />
         <Route key="login" exact path="/login" component={Login} />

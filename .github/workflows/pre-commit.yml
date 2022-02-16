@@ -61,7 +61,10 @@ jobs:
           curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
           tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
           sudo install terrascan /usr/local/bin && rm terrascan
-
+          # Set up terraform workspace in a subshell
+          (cd deploy/infrastructure/ ; ./setup.sh)
+          terraform -chdir=deploy/infrastructure/ workspace select shared-staging-1
+          terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/shared/staging-1/noq.dev-staging.tfvars
           pre-commit install
       - name: Run pre-commit
         run: |
