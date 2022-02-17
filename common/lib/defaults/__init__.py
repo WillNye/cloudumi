@@ -179,6 +179,10 @@ permissions_map:
         text: Assume Role
         permissions:
           - sts:AssumeRole
+      - name: tag_session
+        text: Tag Session
+        permissions:
+          - sts:TagSession
   ses:
     text: SES - Send Email
     inputs:
