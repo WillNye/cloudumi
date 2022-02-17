@@ -6,6 +6,7 @@ filegroup(
     name = "src_files",
     srcs = (
         "__init__.py",
+        "account.py",
         "config.py",
         "models.py",
     ),
