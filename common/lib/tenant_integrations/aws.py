@@ -20,7 +20,7 @@ log = config.get_logger()
 
 async def return_cf_response(
     status: str,
-    status_message: str,
+    status_message: Optional[str],
     response_url: str,
     physical_resource_id: str,
     stack_id: str,
@@ -44,7 +44,7 @@ async def return_cf_response(
     http_client = AsyncHTTPClient(force_instance=True)
 
     response_data = {
-        "Status": "FAILED",
+        "Status": status,
         "Reason": status_message,
         "PhysicalResourceId": physical_resource_id,
         "StackId": stack_id,
@@ -67,6 +67,7 @@ async def return_cf_response(
     try:
         resp = await http_client.fetch(request=http_req)
         log_data["message"] = "Notification sent"
+        log_data["response_body"] = resp.body
         log.debug(log_data)
     except (ConnectionError, HTTPClientError) as e:
         log_data["message"] = "Error occurred sending notification to CF"
@@ -542,11 +543,11 @@ async def handle_tenant_integration_queue(
 
                 body = message.get("body", {})
                 request_type = body.get("RequestType")
-                physical_resource_id = body.get("PhysicalResourceId")
                 response_url = body.get("ResponseURL")
                 resource_properties = body.get("ResourceProperties", {})
                 host = resource_properties.get("Host")
                 external_id = resource_properties.get("ExternalId")
+                physical_resource_id = external_id
                 stack_id = body.get("StackId")
                 request_id = body.get("RequestId")
                 logical_resource_id = body.get("LogicalResourceId")
@@ -634,7 +635,7 @@ async def handle_tenant_integration_queue(
                         )
                     continue
 
-                if request_type == ["Delete"]:
+                if request_type == "Delete":
                     # Send success message to CloudFormation
                     await return_cf_response(
                         "SUCCESS",
@@ -710,7 +711,6 @@ async def handle_tenant_integration_queue(
                 # TODO: Refresh configuration
                 # Ensure it is written to Redis. trigger refresh job in worker
 
-                host = body["ResourceProperties"]["Host"]
                 account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
