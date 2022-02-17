@@ -24,7 +24,9 @@ jobs:
         run: |
           curl -sL https://deb.nodesource.com/setup_16.x | sudo bash
           curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
           echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+          sudo apt-add-repository "deb [arch=$(dpkg --print-architecture)] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           sudo apt-get update
           sudo apt-get install \
             libssl-dev \
@@ -39,6 +41,7 @@ jobs:
             yarn \
             unzip \
             python3-pip \
+            terraform \
             nodejs -y
           python3 -m venv env
           source env/bin/activate
