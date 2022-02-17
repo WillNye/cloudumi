@@ -601,7 +601,7 @@ async def handle_tenant_integration_queue(
                         )
                     continue
 
-                if request_type != ["Create", "Delete"]:
+                if request_type not in ["Create", "Delete"]:
                     log.error(
                         {
                             **log_data,
