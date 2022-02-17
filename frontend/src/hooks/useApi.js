@@ -81,7 +81,7 @@ export const usePost = (commonPathName) => {
     reset
   } = useInnerUtils();
 
-  const post = async (pathName, body) => {
+  const post = async (body, pathName) => {
     handleWorking();
     const res = await sendRequestCommon(body || {}, buildPath(commonPathName, pathName), 'post');
     return handleResponse(res);
@@ -96,9 +96,37 @@ export const usePost = (commonPathName) => {
 
 };
 
+export const useRemove = (commonPathName) => {
+
+  const { sendRequestCommon } = useAuth();
+
+  const {
+    state,
+    buildPath,
+    handleWorking,
+    handleResponse,
+    reset
+  } = useInnerUtils();
+
+  const remove = async (body, pathName) => {
+    handleWorking();
+    const res = await sendRequestCommon(body || {}, buildPath(commonPathName, pathName), 'delete');
+    return handleResponse(res);
+  };
+
+  return {
+    ...state,
+    empty: !state?.data,
+    reset,
+    do: remove
+  };
+
+};
+
 export const useApi = (commonPathName) => {
   return {
-    get: { ...useGet(commonPathName) },
-    post: { ...usePost(commonPathName) }
+    get: useGet(commonPathName),
+    post: usePost(commonPathName),
+    remove: useRemove(commonPathName)
   };
 };

@@ -15,13 +15,13 @@ const data = [{
 
 export const HubAccount = () => {
 
-  const { get, post } = useApi('api/v3/services/aws/account/hub'); // data/status/empty/error/do
+  const { get, post, remove } = useApi('api/v3/services/aws/account/hub'); // data/status/empty/error/do
 
   const { openModal, ModalComponent } = useModal('Add Hub Account', post.reset, post.reset);
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
-      // Do something
+      remove.do(rowValues.id); // Assuming should we gonna use an Id to delete
     }
   };
 
