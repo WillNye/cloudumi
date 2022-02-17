@@ -1,6 +1,8 @@
 import React from 'react';
+import { useApi } from '../../../../../../hooks/useApi';
 import Datatable from '../../../../../../lib/Datatable';
 import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
+import { useModal } from '../../../../../../lib/hooks/useModal';
 import { hubAccountColumns } from './columns';
 
 const data = [{
@@ -13,20 +15,46 @@ const data = [{
 
 export const HubAccount = () => {
 
-  const handleClick = (action, rowValues) => {};
+  const { get, post } = useApi('api/v3/services/aws/account/hub'); // data/status/empty/error/do
+
+  const { openModal, ModalComponent } = useModal('Add Hub Account', post.reset, post.reset);
+
+  const handleClick = (action, rowValues) => {
+    if (action === 'remove') {
+      // Do something
+    }
+  };
 
   const columns = hubAccountColumns({ handleClick });
-  
+
+  const handleConfirm = () => post.do().then(get.do);
+
   return (
-    <DatatableWrapper>
-      <Datatable
-        data={data}
-        columns={columns}
-        emptyState={{
-          label: 'Create Hub Account',
-          onClick: () => {}
-        }}
-      />
-    </DatatableWrapper>
+    <>
+
+      <DatatableWrapper>
+        <Datatable
+          data={get.data || data}
+          columns={columns}
+          emptyState={{
+            label: 'Create Hub Account',
+            onClick: openModal
+          }}
+          isLoading={get.status === 'working' || get.status === 'done'}
+          loadingState={{
+            label: `TABLE STATUS: ${get.status}${get.error ? ` / Error: ${get.error}` : null}`
+          }}
+        />
+      </DatatableWrapper>
+
+      <ModalComponent
+        onClickToConfirm={handleConfirm}>
+
+        Image/Diagram/Etc<br/>
+        STATUS: {post.status}{post.error ? ` / Error: ${post.error}` : null}
+
+      </ModalComponent>
+
+    </>
   );
 };

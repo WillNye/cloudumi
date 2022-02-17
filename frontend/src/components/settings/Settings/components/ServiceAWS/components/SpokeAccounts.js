@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useApi } from '../../../../../../hooks/useApi';
 import Datatable from '../../../../../../lib/Datatable';
 import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
-
-import { Button, Modal } from 'semantic-ui-react';
 import { spokeAccountsColumns } from './columns';
-import { NewSpokeAccountForm } from './NewSpokeAccountForm';
+import { useModal } from '../../../../../../lib/hooks/useModal';
+import { TableTopBar } from '../../utils';
 
 const data = [{
   accountName: 'noq_entrypoint',
@@ -22,47 +22,45 @@ const data = [{
 
 export const SpokeAccounts = () => {
 
-  const [modalIsOpen, setModal] = useState(false);
+  const { get, post } = useApi('api/v3/services/aws/account/spoke'); // data/status/empty/error/do
 
-  const handleClick = (action, rowValues) => {};
+  const { openModal, ModalComponent } = useModal('Add Spoke Account', post.reset, post.reset);
 
-  const handleClickToAdd = () => {
-    setModal(true);
+  const handleClick = (action, rowValues) => {
+    if (action === 'remove') {
+      // Do something
+    }
   };
 
   const columns = spokeAccountsColumns({ handleClick });
 
+  const handleConfirm = () => post.do().then(get.do);
+
   return (
     <>
 
-      <DatatableWrapper
-        renderAction={(
-          <Button
-            compact
-            color="blue"
-            onClick={handleClickToAdd}>
-            Add
-          </Button>        
-        )}>
-        <Datatable data={data} columns={columns} emptyState={{ label: 'Create Spoke Account', onClick: () => {} }} />
+      <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
+        <Datatable
+          data={get.data}
+          columns={columns}
+          emptyState={{
+            label: 'Create Spoke Account',
+            onClick: openModal
+          }}
+          isLoading={get.status === 'working' || get.status === 'done'}
+          loadingState={{
+            label: `TABLE STATUS: ${get.status}${get.error ? ` / Error: ${get.error}` : null}`
+          }}
+        />
       </DatatableWrapper>
 
-      <Modal open={modalIsOpen}>
-        <Modal.Header>
-          New Spoke Account
-        </Modal.Header>
-        <Modal.Content>
-          <NewSpokeAccountForm />
-        </Modal.Content>
-        <Modal.Actions>
-          <Button onClick={() => setModal(!modalIsOpen)}>
-            Cancel
-          </Button>
-          <Button onClick={() => setModal(!modalIsOpen)} positive>
-            Save
-          </Button>
-        </Modal.Actions>          
-      </Modal>
+      <ModalComponent
+        onClickToConfirm={handleConfirm}>
+
+        Image/Diagram/Etc<br/>
+        STATUS: {post.status}{post.error ? ` / Error: ${post.error}` : null}
+
+      </ModalComponent>
 
     </>
   );

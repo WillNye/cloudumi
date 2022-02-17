@@ -25,7 +25,7 @@ export const Groups = () => {
     <>
 
       <DatatableWrapper
-        renderAction={<TableTopBar onClickToAdd={openModal} />}>
+        renderAction={<TableTopBar onClick={openModal} />}>
         <Datatable
           data={data}
           columns={columns}
@@ -36,7 +36,7 @@ export const Groups = () => {
         />
       </DatatableWrapper>
 
-      <ModalComponent onClickToSave={() => {}}>
+      <ModalComponent onClickToConfirm={() => {}}>
         Foo
       </ModalComponent>
 

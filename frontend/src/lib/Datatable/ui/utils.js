@@ -28,3 +28,11 @@ export const EmptyState = ({ label, onClick }) => {
     </Segment>
   );
 };
+
+export const LoadingState = ({ label }) => {
+  return (
+    <Segment inverted color='grey' textAlign="center">
+      <Button disabled>{label}</Button>
+    </Segment>
+  );
+};

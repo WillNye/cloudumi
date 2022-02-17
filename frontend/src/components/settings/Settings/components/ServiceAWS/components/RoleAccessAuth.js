@@ -64,7 +64,7 @@ export const RoleAccessAuth = () => {
               compact
               color="blue"
               onClick={handleClickToAdd}>
-              Add
+              New
             </Button>
           )}>
           <Datatable data={data} columns={columns} emptyState={{ label: 'Create Tag', onClick: () => {} }} />

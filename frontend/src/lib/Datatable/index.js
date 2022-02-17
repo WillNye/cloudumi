@@ -7,7 +7,7 @@ import {
   useRowSelect,
 } from 'react-table';
 import { DatatableHeader, DatatableRow } from './ui/styles';
-import { EmptyState } from './ui/utils';
+import { EmptyState, LoadingState } from './ui/utils';
 
 const headerProps = (props, { column }) => getStyles(props, column.align);
 
@@ -86,7 +86,7 @@ function Table({ columns, data }) {
   );
 };
 
-const Datatable = ({ data, columns, emptyState }) => {
+const Datatable = ({ data, columns, isLoading, loadingState, emptyState }) => {
   
   const memoizedData = useMemo(() => data, [data]);
   const memoizedColumns = useMemo(() => columns, [columns]);
@@ -96,6 +96,8 @@ const Datatable = ({ data, columns, emptyState }) => {
   const renderEmptyState = <EmptyState {...emptyState} />;
 
   const hasData = data?.length > 0;
+
+  if (isLoading) return <LoadingState {...loadingState} />;
 
   return hasData ? renderTable : renderEmptyState;
 };

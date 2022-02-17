@@ -22,7 +22,7 @@ export const CollapsibleTitle = ({ title, helpHandler }) => {
   );
 };
 
-export const TableTopBar = ({ onSearch, onClickToAdd }) => {
+export const TableTopBar = ({ onSearch, onClick }) => {
   return (
     <Bar>
       {onSearch && (
@@ -37,8 +37,8 @@ export const TableTopBar = ({ onSearch, onClickToAdd }) => {
       <Button
         compact
         color="blue"
-        onClick={onClickToAdd}>
-        Add
+        onClick={onClick}>
+        New
       </Button>
     </Bar>
   );

@@ -44,7 +44,7 @@ export const IntegrationSSO = () => {
         defaultActive>
 
         <DatatableWrapper
-          renderAction={<TableTopBar onClickToAdd={openModal} />}>
+          renderAction={<TableTopBar onClick={openModal} />}>
           <Datatable
             data={data}
             columns={columns}
@@ -55,7 +55,7 @@ export const IntegrationSSO = () => {
           />
         </DatatableWrapper>
 
-        <ModalComponent onClickToSave={() => {}}>
+        <ModalComponent onClickToConfirm={() => {}}>
           Foo
         </ModalComponent>
 
