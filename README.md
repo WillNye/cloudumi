@@ -123,11 +123,18 @@ To enable the UX:
 
 #### Local environment run
 
+- Launch dependency services: `bazelisk run //deploy/local/deps-only`
 - `bazelisk run //api:bin`: to run the API in the local environment
 - `bazelisk run //common/celery_tasks:bin`: to run the Celery workers in the local environment
 
 #### Container environment run
 
+- Launch all services: `bazelisk run //deploy/local/containers-dev`
+
+##### OR:
+
+- Just run the services:
+- `docker-compose -f deploy/docker-compose-dependencies.yaml up -d`
 - `bazelisk run //api:container-dev-local`: to run the API in the container environment
 - `bazelisk run //common/celery_tasks:container-dev-local`: to run the Celery workers in the container environment
 
@@ -144,18 +151,22 @@ Publishing to staging is a build target that utilizes a genrule syntax to deploy
 - `bazelisk run //deploy/infrastructure/live/shared/prod-1:prod-1`
 
 ## Testing
+
 You can use the `bazel test` command to run unit tests. A few pre-requisites:
-* Ensure you have the ~/.weep/weep.yaml file also in /etc/weep in order for Weep to find it's configuration in the Bazel sandbox
-* Then pre-auth in the browser: `AWS_PROFILE=noq_dev aws sts get-caller-identity`
-* Run unit test as usual, for instance:
-  * `bazel test //...` to run all unit tests configured using the `py_test` bazel target (see example in common/lib/tests/BUILD)
-  * `bazel test //common/config/...` to run all unit tests in the config module
+
+- Ensure you have the ~/.weep/weep.yaml file also in /etc/weep in order for Weep to find it's configuration in the Bazel sandbox
+- Then pre-auth in the browser: `AWS_PROFILE=noq_dev aws sts get-caller-identity`
+- Run unit test as usual, for instance:
+  - `bazel test //...` to run all unit tests configured using the `py_test` bazel target (see example in common/lib/tests/BUILD)
+  - `bazel test //common/config/...` to run all unit tests in the config module
 
 ### Tech Debt
-* We need to isolate all unit tests to stay with their components (we started on common/config)
+
+- We need to isolate all unit tests to stay with their components (we started on common/config)
 
 ### Hermetic Weep
-* We are also looking at running hermetic Weep by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
+
+- We are also looking at running hermetic Weep by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
 
 ## Troubleshooting
 

@@ -40,7 +40,7 @@ class HubHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        hub_account_data = account.get_hub_account(host)
+        hub_account_data = await account.get_hub_account(host)
 
         hub_account = [
             {
@@ -74,7 +74,7 @@ class HubHandler(BaseHandler):
         ]
         self.write(
             {
-                "headers": self.request.headers,
+                "headers": {},
                 "hub_account": hub_account,
                 "attributes": {},
             }
@@ -179,7 +179,7 @@ class SpokeHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        spoke_account_data = account.get_spoke_accounts(host)
+        spoke_account_data = await account.get_spoke_accounts(host)
 
         spoke_accounts = [
             [
@@ -217,7 +217,7 @@ class SpokeHandler(BaseHandler):
 
         self.write(
             {
-                "headers": self.request.headers,
+                "headers": {},
                 "spoke_accounts": spoke_accounts,
                 "attributes": {},
             }
@@ -325,7 +325,7 @@ class OrgHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        org_account_data = account.get_org_account(host)
+        org_account_data = await account.get_org_account(host)
 
         org_account = [
             {
@@ -360,7 +360,7 @@ class OrgHandler(BaseHandler):
 
         self.write(
             {
-                "headers": self.request.headers,
+                "headers": {},
                 "org_account": org_account,
                 "attributes": {},
             }
