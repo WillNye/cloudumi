@@ -77,3 +77,49 @@ class TestAccount(ConsoleMeAsyncHTTPTestCase):
         with patch(RestrictedDynamoHandler) as ddb_patch:
             assert async_to_sync(account.delete_spoke_accounts("host"))
             ddb_patch.assert_called()
+
+    def test_upsert_org_account(self):
+        """Docstring in public method."""
+        with patch(RestrictedDynamoHandler) as ddb_patch:
+            async_to_sync(
+                account.upsert_org_account(
+                    "host",
+                    "org_id",
+                    "account_id",
+                    "account_name",
+                    "owner",
+                )
+            )
+            ddb_patch.assert_called()
+
+    def test_get_org_accounts(self):
+        with patch(
+            RestrictedDynamoHandler,
+            return_value=[
+                {
+                    "org_id": "test",
+                    "account_id": "12345",
+                    "account_name": "name",
+                    "owner": "curtis",
+                }
+            ],
+        ) as ddb_patch:
+            assert async_to_sync(account.get_org_accounts("host")) == [
+                {
+                    "org_id": "test",
+                    "account_id": "12345",
+                    "account_name": "name",
+                    "owner": "curtis",
+                }
+            ]
+            ddb_patch.assert_called()
+
+    def test_delete_org_account(self):
+        with patch(RestrictedDynamoHandler) as ddb_patch:
+            assert async_to_sync(account.delete_spoke_account("host", "org_id"))
+            ddb_patch.assert_called()
+
+    def test_delete_org_accounts(self):
+        with patch(RestrictedDynamoHandler) as ddb_patch:
+            assert async_to_sync(account.delete_org_accounts("host"))
+            ddb_patch.assert_called()
