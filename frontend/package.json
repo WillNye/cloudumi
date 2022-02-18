@@ -28,6 +28,7 @@
     "react-scripts": "4.0.3",
     "react-semantic-ui-datepickers": "^2.13.2",
     "react-table": "^7.7.0",
+    "react-toastify": "^8.2.0",
     "sass": "^1.44.0",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^2.0.4",
