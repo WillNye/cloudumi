@@ -18,21 +18,62 @@ class TestAccount(ConsoleMeAsyncHTTPTestCase):
     def test_set_hub_account(self):
         """Docstring in public method."""
         with patch(RestrictedDynamoHandler) as ddb_patch:
-            async_to_sync(account.set_hub_account("host", "name", "account_id", "role_name", "external_id"))
+            async_to_sync(
+                account.set_hub_account(
+                    "host", "name", "account_id", "role_name", "external_id"
+                )
+            )
             ddb_patch.assert_called()
 
-    def test_add_spoke_account(self):
+    def test_upsert_spoke_account(self):
         """Docstring in public method."""
         with patch(RestrictedDynamoHandler) as ddb_patch:
-            async_to_sync(account.add_spoke_account("host", "name", "account_id", "role_name", "external_id", "hub_account"))
+            async_to_sync(
+                account.upsert_spoke_account(
+                    "host",
+                    "name",
+                    "account_id",
+                    "role_name",
+                    "external_id",
+                    "hub_account",
+                )
+            )
             ddb_patch.assert_called()
 
     def test_get_hub_account(self):
-        with patch(RestrictedDynamoHandler, return_value={"name": "test", "account_id": "12345"}) as ddb_patch:
-            assert async_to_sync(account.get_hub_account("host", "name")) == {"name": "test", "account_id": "12345"}
-            assert ddb_patch.assert_called()
+        with patch(
+            RestrictedDynamoHandler,
+            return_value={"name": "test", "account_id": "12345"},
+        ) as ddb_patch:
+            assert async_to_sync(account.get_hub_account("host")) == {
+                "name": "test",
+                "account_id": "12345",
+            }
+            ddb_patch.assert_called()
 
     def test_get_spoke_accounts(self):
-        with patch(RestrictedDynamoHandler, return_value=[{"name": "test", "account_id": "12345"}]) as ddb_patch:
-            assert async_to_sync(account.get_spoke_accounts("host")) == [{"name": "test", "account_id": "12345"}]
-            assert ddb_patch.assert_called()
+        with patch(
+            RestrictedDynamoHandler,
+            return_value=[{"name": "test", "account_id": "12345"}],
+        ) as ddb_patch:
+            assert async_to_sync(account.get_spoke_accounts("host")) == [
+                {"name": "test", "account_id": "12345"}
+            ]
+            ddb_patch.assert_called()
+
+    def test_delete_hub_account(self):
+        with patch(RestrictedDynamoHandler) as ddb_patch:
+            assert async_to_sync(account.delete_hub_account("host"))
+            ddb_patch.assert_called()
+
+    def test_delete_spoke_account(self):
+        with patch(RestrictedDynamoHandler) as ddb_patch:
+            assert async_to_sync(
+                account.delete_spoke_account("host", "name", "account_id")
+            )
+            ddb_patch.assert_called()
+
+    def test_delete_spoke_accounts(self):
+        with patch(RestrictedDynamoHandler) as ddb_patch:
+            assert async_to_sync(account.delete_spoke_accounts("host"))
+            ddb_patch.assert_called()
