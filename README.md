@@ -143,6 +143,20 @@ Publishing to staging is a build target that utilizes a genrule syntax to deploy
 
 - `bazelisk run //deploy/infrastructure/live/shared/prod-1:prod-1`
 
+## Testing
+You can use the `bazel test` command to run unit tests. A few pre-requisites:
+* Ensure you have the ~/.weep/weep.yaml file also in /etc/weep in order for Weep to find it's configuration in the Bazel sandbox
+* Then pre-auth in the browser: `AWS_PROFILE=noq_dev aws sts get-caller-identity`
+* Run unit test as usual, for instance:
+  * `bazel test //...` to run all unit tests configured using the `py_test` bazel target (see example in common/lib/tests/BUILD)
+  * `bazel test //common/config/...` to run all unit tests in the config module
+
+### Tech Debt
+* We need to isolate all unit tests to stay with their components (we started on common/config)
+
+### Hermetic Weep
+* We are also looking at running hermetic Weep by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
+
 ## Troubleshooting
 
 - In the event that docker containers fail to run with an error on a symbol not found \*.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.

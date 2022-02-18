@@ -13,9 +13,19 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "weep_config",
+    data = [
+        "weep.yaml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 py_library(
     name = "lib",
-    data = [],
+    data = [
+        ":weep_config",
+    ],
     srcs_version = "PY3",
     srcs = [
         ":src_files",

@@ -1,22 +1,12 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
-py_library(
-    name = "lib",
-    srcs = [
-        "conftest.py",
-        "globals.py",
-        "util.py",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 py_test(
-    name = "test_main",
+    name = "test_cloud_credential_authorization_mapping",
     data = [
         "//configs/development_account:configs",
     ],
     srcs = [
-        "test_main.py",
+        "test_cloud_credential_authorization_mapping.py",
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",

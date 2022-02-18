@@ -1,0 +1,8 @@
+authentication_method: challenge
+challenge_settings:
+  user: matt@noq.dev
+consoleme_url: https://corp.noq.dev
+server:
+  http_timeout: 20
+  port: 9091
+

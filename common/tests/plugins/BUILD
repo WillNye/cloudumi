@@ -1,12 +1,12 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 py_test(
-    name = "test_config",
+    name = "test_auth",
     data = [
         "//configs/development_account:configs",
     ],
     srcs = [
-        "test_config.py",
+        "test_auth.py",
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
@@ -25,13 +25,12 @@ py_test(
 )
 
 py_test(
-    name = "test_account",
+    name = "test_celery_tasks",
     data = [
         "//configs/development_account:configs",
-        "//common/config:weep_config",
     ],
     srcs = [
-        "test_account.py",
+        "test_celery_tasks.py",
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",

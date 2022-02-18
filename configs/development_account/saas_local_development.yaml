@@ -56,7 +56,7 @@ _global_:
     #   service_name: cloudumi
     #   server_url: http://apmserver:8200
   logging:
-    file: ~/logs/cloudumi/cloudumi_tornado.log
+    file: ./cloudumi_tornado.log
   # sentry:
   #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
   web:
