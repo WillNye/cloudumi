@@ -229,8 +229,10 @@ async def handle_spoke_account_registration(body):
         customer_spoke_role_iam_client.list_account_aliases
     )()
     account_aliases = account_aliases_co["AccountAliases"]
+    master_account = True
     if account_aliases:
         account_name = account_aliases[0]
+        master_account = False
     else:
         account_name = account_id_for_role
         # Try Organizations
@@ -255,7 +257,7 @@ async def handle_spoke_account_registration(body):
                 account_name = account_details["Name"]
         except ClientError:
             # Most likely this isn't an organizations master account and we can ignore
-            pass
+            master_account = False
 
     # Write tenant configuration to DynamoDB
     ddb = RestrictedDynamoHandler()

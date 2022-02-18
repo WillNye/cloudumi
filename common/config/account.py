@@ -1,9 +1,10 @@
 from asgiref.sync import sync_to_async
 from collections import defaultdict
-from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
 
+hub_account_key_name = "hub_account"
+spoke_account_key_name = "hub_account"
 updated_by_name = "noq_automated_account_management"
 
 def __get_hub_account_mapping(name: str, account_id: str, role_name: str, external_id: str) -> dict:
@@ -14,9 +15,16 @@ def __get_hub_account_mapping(name: str, account_id: str, role_name: str, extern
         "external_id": external_id,
     }
 
+
+async def get_hub_account(host: str, name: str) -> dict:
+    ddb = RestrictedDynamoHandler()
+    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
+    hub_account = host_config.get(hub_account_key_name, {})
+    return hub_account
+
+
 async def set_hub_account(host: str, name: str, account_id: str, role_name: str, external_id: str):
     ddb = RestrictedDynamoHandler()
-    hub_account_key_name = "hub_account"
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
         host_config = defaultdict(dict)
@@ -43,7 +51,6 @@ def __get_unique_spoke_account_key_name(name: str, account_id: str) -> str:
 
 async def add_spoke_account(host: str, name: str, account_id: str, role_name: str, external_id: str, hub_account_name: str):
     ddb = RestrictedDynamoHandler()
-    spoke_account_key_name = "hub_account"
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
         host_config = defaultdict(dict)
@@ -56,3 +63,10 @@ async def add_spoke_account(host: str, name: str, account_id: str, role_name: st
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), updated_by_name, host  # type: ignore
     )
+
+
+async def get_spoke_accounts(host: str) -> list:
+    ddb = RestrictedDynamoHandler()
+    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
+    spoke_accounts = [x for x in host_config.get(spoke_account_key_name, {}).values()]
+    return spoke_accounts
