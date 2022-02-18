@@ -160,7 +160,7 @@ async def upsert_org_account(
     if not host_config.get(org_account_key_name):
         host_config[org_account_key_name] = defaultdict(dict)
     org_key_name = __get_unique_org_account_key_name(org_id)
-    host_config[org_account_key_name][org_key_name] = __get_spoke_account_mapping(
+    host_config[org_account_key_name][org_key_name] = __get_org_account_mapping(
         org_id, account_id, account_name, owner
     )
 

@@ -308,7 +308,7 @@ class OrgHandler(BaseHandler):
         log_data = {
             "function": "OrgHandler.get",
             "user": self.user,
-            "message": "Retrieving hub information",
+            "message": "Retrieving org information",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "host": host,
@@ -316,7 +316,7 @@ class OrgHandler(BaseHandler):
         log.debug(log_data)
 
         # Checks authz levels of current user
-        generic_error_message = "Cannot access hub account information"
+        generic_error_message = "Cannot access org account information"
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
@@ -325,42 +325,43 @@ class OrgHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        hub_account_data = account.get_hub_account(host)
+        org_account_data = account.get_org_account(host)
 
-        hub_account = [
+        org_account = [
             {
-                "name": "account_name",
-                "friendly_name": "Account Name",
+                "name": "org_id",
+                "friendly_name": "Organization's ID",
                 "type": "string",
-                "description": "Hub account name",
-                "value": hub_account_data.get("name", UNDEFINED),
+                "description": "Organization identifier - uniquely identifies the org",
+                "value": org_account_data.get("org_id", UNDEFINED),
             },
             {
                 "name": "account_id",
-                "friendly_name": "Hub Role Account ID",
+                "friendly_name": "Org Account ID",
                 "type": "string",
-                "description": "Servicing account ID for this hub role",
-                "value": hub_account_data.get("account_id", UNDEFINED),
+                "description": "Servicing account ID for this organization",
+                "value": org_account_data.get("account_id", UNDEFINED),
             },
             {
-                "name": "role_name",
-                "friendly_name": "Hub Role Name",
+                "name": "account_name",
+                "friendly_name": "Organization Account Name",
                 "type": "string",
-                "description": "Servicing hub account name",
-                "value": hub_account_data.get("role_name", UNDEFINED),
+                "description": "Servicing org account name",
+                "value": org_account_data.get("account_name", UNDEFINED),
             },
             {
-                "name": "external_id",
-                "friendly_name": "External ID",
+                "name": "owner",
+                "friendly_name": "Organization Owner",
                 "type": "array",
-                "description": "The External ID used to validate this hub account during authentication",
-                "value": hub_account_data.get("external_id", UNDEFINED),
+                "description": "The Owner of this Organization",
+                "value": org_account_data.get("owner", UNDEFINED),
             },
         ]
+
         self.write(
             {
                 "headers": self.request.headers,
-                "hub_account": hub_account,
+                "org_account": org_account,
                 "attributes": {},
             }
         )
@@ -369,16 +370,16 @@ class OrgHandler(BaseHandler):
         host = self.ctx.host
 
         log_data = {
-            "function": "HubHandler.post",
+            "function": "OrgHandler.post",
             "user": self.user,
-            "message": "Updating hub account role",
+            "message": "Updating org account",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "host": host,
         }
 
         # Checks authz levels of current user
-        generic_error_message = "Unable to update hub account"
+        generic_error_message = "Unable to update org for account"
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
@@ -388,35 +389,35 @@ class OrgHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        name = data.get("name", "")
+        org_id = data.get("org_id", "")
         account_id = data.get("account_id", "")
-        role_name = data.get("role_name", "")
-        external_id = data.get("external_id", "")
+        account_name = data.get("account_name", "")
+        owner = data.get("owner", "")
 
-        await account.set_hub_account(host, name, account_id, role_name, external_id)
+        await account.upsert_org_account(host, org_id, account_id, account_name, owner)
 
         res = WebResponse(
             status="success",
             status_code=200,
-            message="Successfully updated hub.",
+            message="Successfully updated org.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
-    async def delete(self):
+    async def delete(self, _org_id):
         host = self.ctx.host
 
         log_data = {
-            "function": "HubHandler.delete",
+            "function": "OrgHandler.delete",
             "user": self.user,
-            "message": "Deleting hub account role",
+            "message": "Deleting org account role",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "host": host,
         }
 
         # Checks authz levels of current user
-        generic_error_message = "Unable to delete hub account"
+        generic_error_message = "Unable to delete org account"
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
@@ -425,12 +426,12 @@ class OrgHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        await account.delete_hub_account(host)
+        await account.delete_org_account(host, _org_id)
 
         res = WebResponse(
             status="success",
             status_code=200,
-            message="Successfully deleted hub.",
+            message="Successfully deleted org.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

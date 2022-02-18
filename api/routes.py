@@ -82,6 +82,7 @@ from api.handlers.v2.user import (
     UserRegistrationHandler,
 )
 from api.handlers.v2.user_profile import UserProfileHandler
+from api.handlers.v3.aws.services.account import HubHandler, OrgHandler, SpokeHandler
 from api.handlers.v3.config import ConfigHandler
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.identity.group import IdentityGroupHandler
@@ -198,6 +199,12 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
+        (r"/api/v3/aws/services/account/hub", HubHandler),
+        (
+            r"/api/v3/aws/services/account/spoke/(a-zA-Z0-9_-]*)/(a-zA-Z0-9_-]*)",
+            SpokeHandler,
+        ),
+        (r"/api/v3/aws/services/account/org/(a-zA-Z0-9_-]*)", OrgHandler),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
