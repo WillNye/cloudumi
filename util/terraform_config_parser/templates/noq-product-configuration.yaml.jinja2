@@ -1,6 +1,10 @@
 _global_:
   landing_page_domains:
     - {{ domain_name }}
+  auth:
+    remote_ip:
+      # trusted_remote_ip_header should only be configured when behind an ALB, otherwise the header can be forged.
+      trusted_remote_ip_header: X-Forwarded-For
   integrations:
     aws:
       account_id: {{ account_id }}

@@ -91,6 +91,10 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         trusted_remote_ip_header = config.get_host_specific_key(
             "auth.remote_ip.trusted_remote_ip_header", host
         )
+        if not trusted_remote_ip_header:
+            trusted_remote_ip_header = config.get(
+                "_global_.auth.remote_ip.trusted_remote_ip_header"
+            )
         if trusted_remote_ip_header:
             return self.request.headers[trusted_remote_ip_header].split(",")[0]
         return self.request.remote_ip
