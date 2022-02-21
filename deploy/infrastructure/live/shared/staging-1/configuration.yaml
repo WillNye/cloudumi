@@ -2,6 +2,8 @@ _global_:
   landing_page_domains:
     - shared.staging.noq.dev
   auth:
+    challenge_url:
+      request_ip_must_match_challenge_creation_ip: false
     remote_ip:
       # trusted_remote_ip_header should only be configured when behind an ALB, otherwise the header can be forged.
       trusted_remote_ip_header: X-Forwarded-For

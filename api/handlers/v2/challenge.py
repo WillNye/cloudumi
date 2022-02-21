@@ -38,7 +38,7 @@ class ChallengeGeneratorHandler(TornadoRequestHandler):
 
     async def get(self, user):
         host = self.get_host_name()
-        if not config.get_host_specific_key("challenge_url.enabled", host, False):
+        if not config.get_host_specific_key("auth.challenge_url.enabled", host, False):
             raise MissingConfigurationValue(
                 "Challenge URL Authentication is not enabled in ConsoleMe's configuration"
             )
@@ -57,9 +57,8 @@ class ChallengeGeneratorHandler(TornadoRequestHandler):
             "user": user,
         }
         red.hset(
-            config.get_host_specific_key(
-                "challenge_url.redis_key",
-                host,
+            config.get(
+                "_global_.auth.challenge_url.redis_key",
                 f"{host}_TOKEN_CHALLENGES_TEMP",
             ),
             token,
@@ -98,7 +97,7 @@ class ChallengeValidatorHandler(BaseHandler):
 
     async def get(self, requested_challenge_token):
         host = self.ctx.host
-        if not config.get_host_specific_key("challenge_url.enabled", host, False):
+        if not config.get_host_specific_key("auth.challenge_url.enabled", host, False):
             raise MissingConfigurationValue(
                 "Challenge URL Authentication is not enabled in ConsoleMe's configuration"
             )
@@ -113,9 +112,8 @@ class ChallengeValidatorHandler(BaseHandler):
         log.debug(log_data)
 
         all_challenges = red.hgetall(
-            config.get_host_specific_key(
-                "challenge_url.redis_key",
-                host,
+            config.get(
+                "_global_.auth.challenge_url.redis_key",
                 f"{host}_TOKEN_CHALLENGES_TEMP",
             )
         )
@@ -149,9 +147,8 @@ class ChallengeValidatorHandler(BaseHandler):
         # (i.e. IPv4 vs IPv6), the challenge may have been created with an IPv4 address, and the authenticated browser
         # verification request may originate from an IPv6 one, or visa versa, in which case this configuration may
         # need to be explicitly set to False.
-        if config.get_host_specific_key(
-            "challenge_url.request_ip_must_match_challenge_creation_ip",
-            host,
+        if config.get(
+            "_global_.auth.challenge_url.request_ip_must_match_challenge_creation_ip",
             True,
         ):
             if request_ip != valid_user_challenge.get("ip"):
@@ -171,7 +168,7 @@ class ChallengeValidatorHandler(BaseHandler):
                             "If you are developing locally, this is probably because your CLI (Weep) made an IPv6 "
                             "request, and your web browser made an IPv4 request. Or visa-versa. If this is the case, "
                             "set the local configuration for "
-                            "**challenge_url.request_ip_must_match_challenge_creation_ip** to **false**."
+                            "**auth.challenge_url.request_ip_must_match_challenge_creation_ip** to **false**."
                         )
                     }
                 )
@@ -180,9 +177,8 @@ class ChallengeValidatorHandler(BaseHandler):
         valid_user_challenge["visited"] = True
         valid_user_challenge["nonce"] = str(uuid.uuid4())
         red.hset(
-            config.get_host_specific_key(
-                "challenge_url.redis_key",
-                host,
+            config.get(
+                "_global_.auth.challenge_url.redis_key",
                 f"{host}_TOKEN_CHALLENGES_TEMP",
             ),
             requested_challenge_token,
@@ -208,7 +204,7 @@ class ChallengeValidatorHandler(BaseHandler):
 
     async def post(self, requested_challenge_token):
         host = self.ctx.host
-        if not config.get_host_specific_key("challenge_url.enabled", host, False):
+        if not config.get_host_specific_key("auth.challenge_url.enabled", host, False):
             raise MissingConfigurationValue(
                 "Challenge URL Authentication is not enabled in ConsoleMe's configuration"
             )
@@ -226,9 +222,8 @@ class ChallengeValidatorHandler(BaseHandler):
         log.debug(log_data)
 
         all_challenges = red.hgetall(
-            config.get_host_specific_key(
-                "challenge_url.redis_key",
-                host,
+            config.get(
+                "_global_.auth.challenge_url.redis_key",
                 f"{host}_TOKEN_CHALLENGES_TEMP",
             )
         )
@@ -265,9 +260,8 @@ class ChallengeValidatorHandler(BaseHandler):
         # (i.e. IPv4 vs IPv6), the challenge may have been created with an IPv4 address, and the authenticated browser
         # verification request may originate from an IPv6 one, or visa versa, in which case this configuration may
         # need to be explicitly set to False.
-        if config.get_host_specific_key(
-            "challenge_url.request_ip_must_match_challenge_creation_ip",
-            host,
+        if config.get(
+            "_global_.auth.challenge_url.request_ip_must_match_challenge_creation_ip",
             True,
         ):
             if request_ip != valid_user_challenge.get("ip"):
@@ -291,9 +285,8 @@ class ChallengeValidatorHandler(BaseHandler):
         valid_user_challenge["user"] = self.user
         valid_user_challenge["groups"] = self.groups
         red.hset(
-            config.get_host_specific_key(
-                "challenge_url.redis_key",
-                host,
+            config.get(
+                "_global_.auth.challenge_url.redis_key",
                 f"{host}_TOKEN_CHALLENGES_TEMP",
             ),
             requested_challenge_token,
@@ -313,15 +306,14 @@ class ChallengePollerHandler(TornadoRequestHandler):
 
     async def get(self, requested_challenge_token):
         host = self.get_host_name()
-        if not config.get_host_specific_key("challenge_url.enabled", host, False):
+        if not config.get_host_specific_key("auth.challenge_url.enabled", host, False):
             raise MissingConfigurationValue(
                 "Challenge URL Authentication is not enabled in ConsoleMe's configuration"
             )
         red = await RedisHandler().redis(host)
         challenge_j = red.hget(
-            config.get_host_specific_key(
-                "challenge_url.redis_key",
-                host,
+            config.get(
+                "_global_.auth.challenge_url.redis_key",
                 f"{host}_TOKEN_CHALLENGES_TEMP",
             ),
             requested_challenge_token,
@@ -336,8 +328,7 @@ class ChallengePollerHandler(TornadoRequestHandler):
         if challenge.get("ttl", 0) < current_time:
             red.hdel(
                 config.get_host_specific_key(
-                    "challenge_url.redis_key",
-                    host,
+                    "_global_.auth.challenge_url.redis_key",
                     f"{host}_TOKEN_CHALLENGES_TEMP",
                 ),
                 requested_challenge_token,
@@ -347,9 +338,8 @@ class ChallengePollerHandler(TornadoRequestHandler):
 
         ip = self.get_request_ip()
 
-        if config.get_host_specific_key(
-            "challenge_url.request_ip_must_match_challenge_creation_ip",
-            host,
+        if config.get(
+            "_global_.auth.challenge_url.request_ip_must_match_challenge_creation_ip",
             True,
         ):
             if ip != challenge.get("ip"):
@@ -380,9 +370,8 @@ class ChallengePollerHandler(TornadoRequestHandler):
             )
             # Delete the token so that it cannot be re-used
             red.hdel(
-                config.get_host_specific_key(
-                    "challenge_url.redis_key",
-                    host,
+                config.get(
+                    "_global_.auth.challenge_url.redis_key",
                     f"{host}_TOKEN_CHALLENGES_TEMP",
                 ),
                 requested_challenge_token,
