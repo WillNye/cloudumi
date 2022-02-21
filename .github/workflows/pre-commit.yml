@@ -67,13 +67,14 @@ jobs:
           tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
           sudo install terrascan /usr/local/bin && rm terrascan
           # Set up terraform workspace in a subshell
+          terraform init
           (cd deploy/infrastructure/ ; ./setup.sh)
-          terraform -chdir=deploy/infrastructure/ workspace select shared-staging-1
-          terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/shared/staging-1/noq.dev-staging.tfvars
-          terraform -chdir=deploy/infrastructure/ workspace select shared-prod-1
-          terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/shared/prod-1/noq.dev-prod.tfvars
-          terraform -chdir=deploy/infrastructure/ workspace select cyberdyne-prod-1
-          terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+          # terraform -chdir=deploy/infrastructure/ workspace select shared-staging-1
+          # terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/shared/staging-1/noq.dev-staging.tfvars
+          # terraform -chdir=deploy/infrastructure/ workspace select shared-prod-1
+          # terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/shared/prod-1/noq.dev-prod.tfvars
+          # terraform -chdir=deploy/infrastructure/ workspace select cyberdyne-prod-1
+          # terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
           pre-commit install
           set +x
       - name: Run pre-commit
