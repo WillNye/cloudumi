@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { Button, Modal } from 'semantic-ui-react';
 
-export const useModal = (title, onOpen, onClose) => {
+export const useModal = (title, onOpen) => {
   
   const [isOpen, setOpen] = useState(false);
 
@@ -10,22 +10,30 @@ export const useModal = (title, onOpen, onClose) => {
     if (onOpen) onOpen();
     setOpen(true);
   };
-  const closeModal = () => {
+  const closeModal = (onClose) => {
     if (onClose) onClose();
     setOpen(false);
   };
 
-  const ModalComponent = ({ children, onClickToConfirm, confirmButtonLabel }) => (
+  const ModalComponent = ({
+    children,
+    onClickToConfirm,
+    confirmButtonLabel,
+    onClose
+  }) => (
     <Modal open={isOpen}>
       <Modal.Header>{title}</Modal.Header>
       <Modal.Content>
         {children}
       </Modal.Content>
       <Modal.Actions>
-        <Button onClick={() => setOpen(false)}>
+        <Button
+          onClick={() => closeModal(onClose)}>
           Cancel
         </Button>
-        <Button onClick={onClickToConfirm} positive>
+        <Button
+          onClick={onClickToConfirm}
+          positive>
           {confirmButtonLabel || 'Confirm'}
         </Button>
       </Modal.Actions>          

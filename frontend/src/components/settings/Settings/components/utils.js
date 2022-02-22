@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Input } from 'semantic-ui-react';
-import { Fill, Bar } from '../../../../lib/Misc';
+import { Fill, Bar } from 'lib/Misc';
 
 export const SectionTitle = ({ title, helpHandler }) => {
 

@@ -6,7 +6,7 @@ const ToastContext = createContext();
 
 export const ToastProvider = ({ children }) => {
   return (
-    <ToastContext.Provider>
+    <ToastContext.Provider value={{}}>
       {children}
       <ToastContainer />
     </ToastContext.Provider>
@@ -20,10 +20,9 @@ export const useToast = () => {
     onClose: () => {},
     autoClose: 6000,
     type: 'default',
-    hideProgressBar: true,
+    hideProgressBar: false,
     position: 'top-right',
-    pauseOnHover: true,
-    progress: 0.2
+    pauseOnHover: false
   };
   
   const customToast = (message, options) => {
@@ -44,6 +43,8 @@ export const useToast = () => {
 
   return {
     toast: customToast,
+    success: (message, options) => customToast(message, { ...options, type: 'success' }),
+    error: (message, options) => customToast(message, { ...options, type: 'error' }),
     dismiss: toast.dismiss
   };
 };

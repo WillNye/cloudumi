@@ -8,13 +8,15 @@ const initialState = {
   empty: true
 };
 
+export const url = 'https://669d-75-164-6-16.ngrok.io/api/v3';
+
 const useInnerUtils = () => {
 
   const [state, setState] = useState({
     ...initialState
   });
 
-  const buildPath = (commonPathName, pathName) => commonPathName + (pathName ? '/' : '') + pathName;
+  const buildPath = (pathName = '') => url + (pathName ? '/' : '') + pathName;
 
   const handleWorking = () => {
     setState({ data: null, status: 'working', error: null });
@@ -56,7 +58,7 @@ const useGet = (commonPathName) => {
 
   const get = async (pathName) => {
     handleWorking();
-    const res = await sendRequestCommon(null, buildPath(commonPathName, pathName), 'get');
+    const res = await sendRequestCommon(null, buildPath(commonPathName || pathName), 'get');
     return handleResponse(res);
   };
 
@@ -69,7 +71,7 @@ const useGet = (commonPathName) => {
 
 };
 
-export const usePost = (commonPathName) => {
+const usePost = (commonPathName) => {
 
   const { sendRequestCommon } = useAuth();
 
@@ -83,7 +85,7 @@ export const usePost = (commonPathName) => {
 
   const post = async (body, pathName) => {
     handleWorking();
-    const res = await sendRequestCommon(body || {}, buildPath(commonPathName, pathName), 'post');
+    const res = await sendRequestCommon(body || {}, buildPath(commonPathName || pathName), 'post');
     return handleResponse(res);
   };
 
@@ -96,7 +98,7 @@ export const usePost = (commonPathName) => {
 
 };
 
-export const useRemove = (commonPathName) => {
+const useRemove = (commonPathName) => {
 
   const { sendRequestCommon } = useAuth();
 
@@ -110,7 +112,7 @@ export const useRemove = (commonPathName) => {
 
   const remove = async (body, pathName) => {
     handleWorking();
-    const res = await sendRequestCommon(body || {}, buildPath(commonPathName, pathName), 'delete');
+    const res = await sendRequestCommon(body || {}, buildPath(commonPathName || pathName), 'delete');
     return handleResponse(res);
   };
 
