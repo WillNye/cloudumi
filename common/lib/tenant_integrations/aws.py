@@ -142,7 +142,7 @@ async def handle_spoke_account_registration(body):
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
-    hub_account = get_hub_account(host)
+    hub_account = await get_hub_account(host)
     central_role_arn = hub_account.get("role_arn")
     if not central_role_arn:
         raise Exception("No Central Role ARN detected in configuration.")
