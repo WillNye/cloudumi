@@ -1,10 +1,10 @@
 import React from 'react';
-import Datatable from '../../../../../../lib/Datatable';
-import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
+import Datatable from 'lib/Datatable';
+import { DatatableWrapper } from 'lib/Datatable/ui/utils';
 
 import { groupColumns } from './columns';
 import { TableTopBar } from '../../utils';
-import { useModal } from '../../../../../../lib/hooks/useModal';
+import { useModal } from 'lib/hooks/useModal';
 
 const data = [{
   name: 'admins',

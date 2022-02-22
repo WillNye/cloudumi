@@ -3,17 +3,20 @@ import { Button, Segment } from 'semantic-ui-react';
 import styled from 'styled-components';
 import { Bar } from '../../Misc';
 
+const CustomTopBar = styled(Bar)`
+  margin: 0 0 25px;
+`;
+
 const CustomBar = styled(Bar)`
-  margin: 25px 0 0;
   display: block;
-`
+`;
 
 export const DatatableWrapper = ({ renderAction, children }) => {
 
   const renderTopBar = renderAction && (
-    <Bar>
+    <CustomTopBar>
       {renderAction}
-    </Bar>
+    </CustomTopBar>
   );
 
   return (

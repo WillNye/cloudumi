@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Datatable from '../../../../../../lib/Datatable';
-import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
+import Datatable from 'lib/Datatable';
+import { DatatableWrapper } from 'lib/Datatable/ui/utils';
 import { awsOrganizationColumns } from './columns';
 
 const data = [{
