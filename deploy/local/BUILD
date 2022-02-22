@@ -1,3 +1,30 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+
+py_binary(
+    name = "populate_services",
+    data = [
+        "//configs/development_account:configs",
+    ],
+    srcs_version = "PY3",
+    srcs = [
+        "populate_services.py",
+    ],
+    env = {
+        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "AWS_PROFILE": "noq_dev",
+    },
+    deps = [
+        "//common:lib",
+        "//common/config:lib",
+        "//common/exceptions:lib",
+        "//identity:lib",
+        "//plugins/metrics:lib",
+        requirement("asgiref"),
+    ],
+    visibility = ["//visibility:public"],
+)
+
 genrule(
     name = "containers-dev",
     cmd = "echo 'docker-compose -f deploy/docker-compose-dependencies.yaml \
@@ -38,7 +65,7 @@ genrule(
            up -d' &>$@",
     executable = True,
     outs = [
-        "running-deps-only",
+        "_running-deps-only_",
     ],
     exec_tools = [
         "//deploy:compose-files",
@@ -52,7 +79,7 @@ genrule(
            down -v' &>$@",
     executable = True,
     outs = [
-        "kill-deps-only",
+        "_kill-deps-only_",
     ],
     exec_tools = [
         "//deploy:compose-files",
