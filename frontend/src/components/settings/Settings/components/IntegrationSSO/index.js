@@ -1,13 +1,13 @@
 import React from 'react';
-import Datatable from '../../../../../lib/Datatable';
-import { DatatableWrapper } from '../../../../../lib/Datatable/ui/utils';
-import { Section } from '../../../../../lib/Section';
-import { ScreenHeading } from '../../../../../lib/Screen/styles';
+import Datatable from 'lib/Datatable';
+import { DatatableWrapper } from 'lib/Datatable/ui/utils';
+import { Section } from 'lib/Section';
+import { ScreenHeading } from 'lib/Screen/styles';
 import { SectionTitle } from '../utils';
 
 import { userColumns } from '../GeneralUsers/components/columns';
 import { TableTopBar } from '../utils';
-import { useModal } from '../../../../../lib/hooks/useModal';
+import { useModal } from 'lib/hooks/useModal';
 
 const data = [{
   user: 'curtis',

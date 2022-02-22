@@ -1,6 +1,6 @@
 import React from 'react';
-import { Section } from '../../../../../lib/Section';
-import { ScreenHeading } from '../../../../../lib/Screen/styles';
+import { Section } from 'lib/Section';
+import { ScreenHeading } from 'lib/Screen/styles';
 import { SectionTitle } from '../utils';
 import { Groups } from './components/Groups';
 import { Users } from './components/Users';
