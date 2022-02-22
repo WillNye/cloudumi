@@ -2027,3 +2027,55 @@ components:
           items:
             anyOf:
               - $ref: "#/components/schemas/EligibleRolesModel"
+    HubAccount:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Customer-specified or default hub account name (NoqCentralRole)
+        account_id:
+          type: string
+          description: AWS account id
+        role_arn:
+          type: string
+          description: ARN of the role
+        external_id:
+          type: string
+          description: Designated external identifier to provide a safeguard against brute force attempts
+    SpokeAccount:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Customer-specified or default spoke account name (NoqSpokeRole); note this must be unique for each account
+        account_id:
+          type: string
+          description: AWS account id
+        role_arn:
+          type: string
+          description: ARN of the spoke role
+        external_id:
+          type: string
+          description: Designated external identifier to provide a safeguard against brute force attempts
+        hub_account_arn:
+          type: string
+          description: Links to the designated hub role ARN
+        master_for_account:
+          type: boolean
+          description: Optional value (defaults to false) to indicate whether this spoke role has master access rights on the account
+          default: false
+    OrgAccount:
+      type: object
+      properties:
+        org_id:
+          type: string
+          description: A unique identifier designating the identity of the organization
+        account_id:
+          type: string
+          description: AWS account id
+        account_name:
+          type: string
+          description: AWS account name
+        owner:
+          type: string
+          description: AWS account owner

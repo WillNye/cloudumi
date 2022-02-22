@@ -5,7 +5,7 @@ from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
 from common.lib.plugins import get_plugin_by_name
 from common.lib.web import handle_generic_error_response
-from common.models import WebResponse
+from common.models import HubAccount, OrgAccount, SpokeAccount, WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -41,12 +41,11 @@ class HubHandler(BaseHandler):
 
         hub_account_data = await account.get_hub_account(host)
         # hub_account_data is a special structure, so we unroll it
-        hub_accounts = [{x: y for x, y in hub_account_data.items()}]
         self.write(
             {
                 "headers": {},
                 "count": 1,
-                "data": hub_accounts,
+                "data": dict(hub_account_data),
                 "attributes": {},
             }
         )
@@ -74,17 +73,15 @@ class HubHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        name = data.get("name", "")
-        account_id = data.get("account_id", "")
-        role_arn = data.get("role_arn", "")
-        external_id = data.get("external_id", "")
+        external_id = config.get_host_specific_key("tenant_details.external_id", host)
+        data["external_id"] = external_id
 
-        await account.set_hub_account(host, name, account_id, role_arn, external_id)
+        await account.set_hub_account(host, HubAccount(**data))
 
         res = WebResponse(
             status="success",
             status_code=200,
-            message="Successfully updated hub.",
+            message="Successfully updated hub account.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -154,7 +151,7 @@ class SpokeHandler(BaseHandler):
         # spoke_account_data is a special structure, so we unroll it
         spoke_accounts = [
             [
-                {x: y for x, y in spoke_account.items()},
+                dict(spoke_account),
             ]
             for spoke_account in spoke_account_data
         ]
@@ -191,27 +188,16 @@ class SpokeHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        name = data.get("name", "")
-        account_id = data.get("account_id", "")
-        role_arn = data.get("role_arn", "")
-        external_id = data.get("external_id", "")
-        hub_account_arn = data.get("hub_account_arn", "")
-        master_for_account = data.get("master_for_account", False)
+        external_id = config.get_host_specific_key("tenant_details.external_id", host)
+        data["external_id"] = external_id
 
-        await account.upsert_spoke_account(
-            host,
-            name,
-            account_id,
-            role_arn,
-            external_id,
-            hub_account_arn,
-            master_for_account,
-        )
+        spoke_account = SpokeAccount(**data)
+        await account.upsert_spoke_account(host, spoke_account)
 
         res = WebResponse(
             status="success",
             status_code=200,
-            message=f"Successfully updated spoke {name}.",
+            message=f"Successfully updated spoke {spoke_account.name}.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -287,9 +273,7 @@ class OrgHandler(BaseHandler):
 
         org_account_data = await account.get_org_accounts(host)
         # org_account_data is a special structure, so we unroll it
-        org_accounts = [
-            [{x: y for x, y in org_account.items()}] for org_account in org_account_data
-        ]
+        org_accounts = [dict(org_account) for org_account in org_account_data]
 
         self.write(
             {
@@ -323,17 +307,14 @@ class OrgHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        org_id = data.get("org_id", "")
-        account_id = data.get("account_id", "")
-        account_name = data.get("account_name", "")
-        owner = data.get("owner", "")
+        org_account = OrgAccount(**data)
 
-        await account.upsert_org_account(host, org_id, account_id, account_name, owner)
+        await account.upsert_org_account(host, org_account)
 
         res = WebResponse(
             status="success",
             status_code=200,
-            message="Successfully updated org.",
+            message=f"Successfully updated org {org_account.org_id}.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

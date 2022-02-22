@@ -28,7 +28,8 @@ spoke_accounts:
     account_id: 1234567890
     role_arn: arn:aws:iam::123456789:role/aesenieg
     external_id: test_id
-    hub_account_name: test_localhost
+    hub_account_arn: arn:aws:iam::123456789:role/boss
+    master_for_account: false
 org_accounts:
   test_org:
     org_id: test_org
@@ -46,7 +47,7 @@ headers:
     enabled: false
   role_login:
     enabled: true
-url: https://669d-75-164-6-16.ngrok.io
+url: https://localhost
 application_admin: user@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
@@ -57,5 +58,5 @@ secrets:
 ddb = RestrictedDynamoHandler()
 
 async_to_sync(ddb.update_static_config_for_host)(
-    tenant_config, "user@noq.dev", "669d-75-164-6-16_ngrok_io"
+    tenant_config, "user@noq.dev", "localhost"
 )
