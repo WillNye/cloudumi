@@ -42,6 +42,23 @@ log = config.get_logger()
 
 
 class TornadoRequestHandler(tornado.web.RequestHandler):
+    allowed_methods = ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"]
+
+    def set_default_headers(self, *args, **kwargs):
+        if config.get("_global_.development") and config.get(
+            "_global_._development_disable_cors"
+        ):
+            self.set_header("Access-Control-Allow-Origin", "*")
+            self.set_header(
+                "Access-Control-Allow-Methods", ",".join(self.allowed_methods)
+            )
+            self.set_header(
+                "Access-Control-Allow-Headers",
+                "x-requested-with,access-control-allow-origin,authorization,content-type",
+            )
+            self.set_header("Access-Control-Allow-Credentials", "true")
+            self.set_header("Content-Type", "application/json")
+
     def prepare(self):
         unprotected_routes = ["/healthcheck", "/api/v3/tenant_registration"]
         host = self.get_host_name()

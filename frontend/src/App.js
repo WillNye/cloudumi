@@ -1,7 +1,5 @@
 import React from "react";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
-import { AuthProvider } from "./auth/AuthProviderDefault";
-import { NotificationProvider } from "./components/hooks/notifications";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import ConsoleMeSelectRoles from "./components/roles/SelectRoles";
 import ConsoleMePolicyTable from "./components/policy/PolicyTable";
@@ -27,6 +25,7 @@ import IdentityRequestsTable from "./components/identity/IdentityRequestsTable";
 import IdentityUsersTable from "./components/identity/IdentityUsersTable";
 import IdentityUserEdit from "./components/identity/User";
 import { Settings } from "./components/settings/Settings";
+import { MainProvider } from "./MainProvider";
 
 function App() {
   return (
@@ -164,11 +163,9 @@ function App() {
 
 const AuthWrapper = () => {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <App />
-      </NotificationProvider>
-    </AuthProvider>
+    <MainProvider>
+      <App />
+    </MainProvider>
   );
 };
 
