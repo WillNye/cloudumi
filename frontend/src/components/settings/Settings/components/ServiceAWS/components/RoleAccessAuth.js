@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button, Checkbox, Message, Segment } from 'semantic-ui-react';
 import Datatable from '../../../../../../lib/Datatable';
 import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
+import { TableTopBar } from '../../utils';
 import { roleAccessAuthColumns } from './columns';
 
 const data = [{
@@ -23,7 +24,7 @@ export const RoleAccessAuth = () => {
   };
   const handleClickToAdd = () => {};
 
-  const columns = roleAccessAuthColumns({ handleChange });
+  const columns = roleAccessAuthColumns({ disabled: !allowTags });
 
   const handleHelpModal = (handler) => {};
   
@@ -58,15 +59,7 @@ export const RoleAccessAuth = () => {
       </Message>
 
       <Segment basic vertical disabled={!allowTags}>
-        <DatatableWrapper
-          renderAction={(
-            <Button
-              compact
-              color="blue"
-              onClick={handleClickToAdd}>
-              New
-            </Button>
-          )}>
+        <DatatableWrapper renderAction={<TableTopBar disabled={!allowTags} onClick={handleClickToAdd} />}>
           <Datatable data={data} columns={columns} emptyState={{ label: 'Create Tag', onClick: () => {} }} />
         </DatatableWrapper>
       </Segment>

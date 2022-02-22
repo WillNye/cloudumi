@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Accordion, Button } from 'semantic-ui-react';
-import { CollapsibleWrapper, CollapsibleContent, CollapsibleHeader, CollapsibleTitle } from './styles';
+import { SectionWrapper, SectionContent, SectionHeader, SectionTitle } from './styles';
 
-export const CollapsibleSection = ({
-  defaultActive,
+export const Section = ({
+  defaultActive = true,
   title,
   children,
   hideTopBorder,
-  forceRenderContent
+  forceRenderContent,
+  isCollapsible
 }) => {
 
   // forceRenderContent: Render content without wait to active status
@@ -19,21 +20,20 @@ export const CollapsibleSection = ({
   };
 
   return (
-    <CollapsibleWrapper>
+    <SectionWrapper>
       <Accordion fluid>
-        <Accordion.Title
-          active={isActive}>
-          <CollapsibleHeader hideTopBorder={hideTopBorder} isActive={isActive}>
-            <CollapsibleTitle>{title}</CollapsibleTitle>
-            <Button onClick={handleClick} icon="dropdown" />
-          </CollapsibleHeader>
+        <Accordion.Title active={isActive}>
+          <SectionHeader hideTopBorder={hideTopBorder} isActive={isActive}>
+            <SectionTitle>{title}</SectionTitle>            
+            {isCollapsible && <Button onClick={handleClick} icon="dropdown" />}
+          </SectionHeader>
         </Accordion.Title>
         <Accordion.Content active={isActive}>
-          <CollapsibleContent>
+          <SectionContent>
             {forceRenderContent ? children : (isActive && children)}
-          </CollapsibleContent>
+          </SectionContent>
         </Accordion.Content>
       </Accordion>
-    </CollapsibleWrapper>
+    </SectionWrapper>
   );
 };

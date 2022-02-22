@@ -98,7 +98,7 @@ export const hubAccountColumns = ({ handleClick }) => [{
   )
 }];
 
-export const roleAccessAuthColumns = ({ handleClick, handleChange }) => [{
+export const roleAccessAuthColumns = ({ handleClick = null, handleChange = null, disabled }) => [{
   Header: 'Tag Name',
   accessor: 'tagName'
 }, {
@@ -111,14 +111,14 @@ export const roleAccessAuthColumns = ({ handleClick, handleChange }) => [{
   accessor: 'allowWebConsole',
   align: 'right',
   Cell: ({ row }) => (
-    <Checkbox toggle onChange={handleChange} defaultChecked={row?.values?.allowWebConsole} />
+    <Checkbox toggle onChange={handleChange} disabled={disabled} defaultChecked={row?.values?.allowWebConsole} />
   )
 }, {
   Header: 'Actions',
   width: 80,
   align: 'right',
   Cell: ({ row }) => (
-    <Button size="mini" onClick={() => handleClick('remove', row?.values)}>
+    <Button size="mini" onClick={() => handleClick('remove', row?.values)} disabled={disabled}>
       Remove
     </Button>
   )

@@ -1,9 +1,9 @@
 import React from 'react';
 import Datatable from '../../../../../lib/Datatable';
 import { DatatableWrapper } from '../../../../../lib/Datatable/ui/utils';
-import { CollapsibleSection } from '../../../../../lib/CollapsibleSection';
+import { Section } from '../../../../../lib/Section';
 import { ScreenHeading } from '../../../../../lib/Screen/styles';
-import { CollapsibleTitle } from '../utils';
+import { SectionTitle } from '../utils';
 
 import { userColumns } from '../GeneralUsers/components/columns';
 import { TableTopBar } from '../utils';
@@ -39,9 +39,7 @@ export const IntegrationSSO = () => {
         Single Sign-On
       </ScreenHeading>
 
-      <CollapsibleSection
-        title={<CollapsibleTitle title="SSO Providers" />}
-        defaultActive>
+      <Section title={<SectionTitle title="SSO Providers" />}>
 
         <DatatableWrapper
           renderAction={<TableTopBar onClick={openModal} />}>
@@ -59,7 +57,7 @@ export const IntegrationSSO = () => {
           Foo
         </ModalComponent>
 
-      </CollapsibleSection>
+      </Section>
 
     </>
   );

@@ -41,7 +41,7 @@ export const HubAccount = () => {
           data={get.data || data}
           columns={columns}
           emptyState={{
-            label: 'Create Hub Account',
+            label: 'Connect Hub Account',
             onClick: openModal
           }}
           isLoading={get.status === 'working' || get.status === 'done'}

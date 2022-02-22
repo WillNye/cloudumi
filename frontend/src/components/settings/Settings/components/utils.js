@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, Input } from 'semantic-ui-react';
 import { Fill, Bar } from '../../../../lib/Misc';
 
-export const CollapsibleTitle = ({ title, helpHandler }) => {
+export const SectionTitle = ({ title, helpHandler }) => {
 
   const handleHelpModal = (handler) => {};
 
@@ -22,7 +22,7 @@ export const CollapsibleTitle = ({ title, helpHandler }) => {
   );
 };
 
-export const TableTopBar = ({ onSearch, onClick }) => {
+export const TableTopBar = ({ onSearch, onClick, disabled }) => {
   return (
     <Bar>
       {onSearch && (
@@ -30,6 +30,7 @@ export const TableTopBar = ({ onSearch, onClick }) => {
           size='small'
           label="Search"
           icon='search'
+          disabled={disabled}
           onChange={onSearch}
         />
       )}
@@ -37,7 +38,9 @@ export const TableTopBar = ({ onSearch, onClick }) => {
       <Button
         compact
         color="blue"
-        onClick={onClick}>
+        onClick={onClick}
+        disabled={disabled}
+        style={{ marginRight: 0 }}>
         New
       </Button>
     </Bar>

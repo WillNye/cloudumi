@@ -1,29 +1,34 @@
 import React from 'react';
 import { Button, Segment } from 'semantic-ui-react';
+import styled from 'styled-components';
+import { Bar } from '../../Misc';
+
+const CustomBar = styled(Bar)`
+  margin: 25px 0 0;
+  display: block;
+`
 
 export const DatatableWrapper = ({ renderAction, children }) => {
 
   const renderTopBar = renderAction && (
-    <Segment.Group horizontal>
-      <Segment textAlign='right'>
-        {renderAction}
-      </Segment>
-    </Segment.Group>
+    <Bar>
+      {renderAction}
+    </Bar>
   );
 
   return (
     <Segment>
       {renderTopBar}
-      <Segment>
+      <CustomBar basic>
         {children}
-      </Segment>
+      </CustomBar>
     </Segment>
   );
 };
 
 export const EmptyState = ({ label, onClick }) => {
   return (
-    <Segment inverted color='grey' textAlign="center">
+    <Segment basic inverted color='grey' textAlign="center">
       <Button onClick={onClick}>{label}</Button>
     </Segment>
   );
@@ -31,7 +36,7 @@ export const EmptyState = ({ label, onClick }) => {
 
 export const LoadingState = ({ label }) => {
   return (
-    <Segment inverted color='grey' textAlign="center">
+    <Segment basic inverted color='grey' textAlign="center">
       <Button disabled>{label}</Button>
     </Segment>
   );

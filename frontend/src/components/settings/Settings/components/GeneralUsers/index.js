@@ -1,7 +1,7 @@
 import React from 'react';
-import { CollapsibleSection } from '../../../../../lib/CollapsibleSection';
+import { Section } from '../../../../../lib/Section';
 import { ScreenHeading } from '../../../../../lib/Screen/styles';
-import { CollapsibleTitle } from '../utils';
+import { SectionTitle } from '../utils';
 import { Groups } from './components/Groups';
 import { Users } from './components/Users';
 
@@ -14,17 +14,13 @@ export const GeneralUsers = () => {
         Users and Groups
       </ScreenHeading>
 
-      <CollapsibleSection
-        title={<CollapsibleTitle title="Users" />}
-        defaultActive>
+      <Section title={<SectionTitle title="Users" />}>
         <Users />
-      </CollapsibleSection>
+      </Section>
 
-      <CollapsibleSection
-        title={<CollapsibleTitle title="Groups" />}
-        defaultActive>
+      <Section title={<SectionTitle title="Groups" />}>
         <Groups />
-      </CollapsibleSection>
+      </Section>
 
     </>
   );

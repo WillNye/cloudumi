@@ -6,19 +6,19 @@ import { spokeAccountsColumns } from './columns';
 import { useModal } from '../../../../../../lib/hooks/useModal';
 import { TableTopBar } from '../../utils';
 
-const data = [{
-  accountName: 'noq_entrypoint',
-  accountId: 3234671289,
-  role: 'NoqCentralRole',
-  accountAdmin: 'team_a@noq.com',
-  active: true
-}, {
-  accountName: 'noq_entrypoint',
-  accountId: 3234671289,
-  role: 'NoqCentralRole',
-  accountAdmin: 'team_a@noq.com',
-  active: false
-}];
+// const data = [{
+//   accountName: 'noq_entrypoint',
+//   accountId: 3234671289,
+//   role: 'NoqCentralRole',
+//   accountAdmin: 'team_a@noq.com',
+//   active: true
+// }, {
+//   accountName: 'noq_entrypoint',
+//   accountId: 3234671289,
+//   role: 'NoqCentralRole',
+//   accountAdmin: 'team_a@noq.com',
+//   active: false
+// }];
 
 export const SpokeAccounts = () => {
 
@@ -44,7 +44,7 @@ export const SpokeAccounts = () => {
           data={get.data}
           columns={columns}
           emptyState={{
-            label: 'Create Spoke Account',
+            label: 'Connect a Spoke Account',
             onClick: openModal
           }}
           isLoading={get.status === 'working' || get.status === 'done'}

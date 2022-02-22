@@ -1,27 +1,24 @@
 import styled from 'styled-components';
 
-export const CollapsibleWrapper = styled.div`
+export const SectionWrapper = styled.div`
   .ui.accordion .accordion .title, .ui.accordion .title {
     cursor: initial;
   }
 `;
 
-export const CollapsibleHeader = styled.header`
+export const SectionHeader = styled.header`
   width: 100%;
   display: flex;
   align-items: center;
-  ${({ hideTopBorder }) => !hideTopBorder ? `
-    padding-top: 20px;
-    ${'' /* border-top: 1px solid; */}
-  ` : ''}
+  ${({ hideTopBorder }) => !hideTopBorder ? `padding-top: 20px;` : ''}
   ${({ isActive }) => !isActive ? `opacity: .5;` : ''}
 `;
 
-export const CollapsibleTitle = styled.h3`
+export const SectionTitle = styled.h3`
   align-items: center;
   display: flex;
   flex: 1;
   margin: 0;
 `;
 
-export const CollapsibleContent = styled.div``;
+export const SectionContent = styled.div``;

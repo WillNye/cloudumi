@@ -25,7 +25,7 @@ export const AWSOrganization = () => {
         data={fakeData}
         columns={columns}
         emptyState={{
-          label: 'Create AWS Organization',
+          label: 'Connect an AWS Organization',
           onClick: () => setData(data)
         }}
       />
