@@ -113,7 +113,9 @@ class HubHandler(BaseHandler):
         res = WebResponse(
             status="success" if deleted else "error",
             status_code=200 if deleted else 400,
-            message="Successfully deleted hub." if deleted else "Unable to delete hub.",
+            message="Successfully deleted hub account."
+            if deleted
+            else "Unable to delete hub account.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -221,7 +223,7 @@ class SpokeDeleteHandler(BaseHandler):
         }
 
         # Checks authz levels of current user
-        generic_error_message = "Unable to delete hub account"
+        generic_error_message = "Unable to delete spoke account"
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
