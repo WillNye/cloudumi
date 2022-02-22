@@ -42,7 +42,7 @@ class HubHandler(BaseHandler):
 
         hub_account_data = await account.get_hub_account(host)
 
-        hub_account = [
+        hub_accounts = [
             {
                 "name": "account_name",
                 "friendly_name": "Account Name",
@@ -75,7 +75,8 @@ class HubHandler(BaseHandler):
         self.write(
             {
                 "headers": {},
-                "hub_account": hub_account,
+                "count": 1,
+                "hub_account": hub_accounts,
                 "attributes": {},
             }
         )
@@ -140,12 +141,12 @@ class HubHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        await account.delete_hub_account(host)
+        deleted = await account.delete_hub_account(host)
 
         res = WebResponse(
-            status="success",
-            status_code=200,
-            message="Successfully deleted hub.",
+            status="success" if deleted else "error",
+            status_code=200 if deleted else 400,
+            message="Successfully deleted hub." if deleted else "Unable to delete hub.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -212,12 +213,13 @@ class SpokeHandler(BaseHandler):
                     "value": spoke_account.get("external_id", UNDEFINED),
                 },
             ]
-            for spoke_account in spoke_account_data.values()
+            for spoke_account in spoke_account_data
         ]
 
         self.write(
             {
                 "headers": {},
+                "count": len(spoke_accounts),
                 "spoke_accounts": spoke_accounts,
                 "attributes": {},
             }
@@ -264,6 +266,12 @@ class SpokeHandler(BaseHandler):
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
+
+class SpokeDeleteHandler(BaseHandler):
+    """
+    Provides CRUD capabilities for a specific spoke accounts
+    """
+
     async def delete(self, _name, _account_id):
         host = self.ctx.host
 
@@ -286,12 +294,14 @@ class SpokeHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        await account.delete_spoke_account(host, _name, _account_id)
+        deleted = await account.delete_spoke_account(host, _name, _account_id)
 
         res = WebResponse(
-            status="success",
-            status_code=200,
-            message=f"Successfully deleted spoke account {_name}.",
+            status="success" if deleted else "error",
+            status_code=200 if deleted else 400,
+            message=f"Successfully deleted spoke account {_name}."
+            if deleted
+            else f"Unable to delete spoke account {_name}.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -325,43 +335,47 @@ class OrgHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        org_account_data = await account.get_org_account(host)
+        org_account_data = await account.get_org_accounts(host)
 
-        org_account = [
-            {
-                "name": "org_id",
-                "friendly_name": "Organization's ID",
-                "type": "string",
-                "description": "Organization identifier - uniquely identifies the org",
-                "value": org_account_data.get("org_id", UNDEFINED),
-            },
-            {
-                "name": "account_id",
-                "friendly_name": "Org Account ID",
-                "type": "string",
-                "description": "Servicing account ID for this organization",
-                "value": org_account_data.get("account_id", UNDEFINED),
-            },
-            {
-                "name": "account_name",
-                "friendly_name": "Organization Account Name",
-                "type": "string",
-                "description": "Servicing org account name",
-                "value": org_account_data.get("account_name", UNDEFINED),
-            },
-            {
-                "name": "owner",
-                "friendly_name": "Organization Owner",
-                "type": "array",
-                "description": "The Owner of this Organization",
-                "value": org_account_data.get("owner", UNDEFINED),
-            },
+        org_accounts = [
+            [
+                {
+                    "name": "org_id",
+                    "friendly_name": "Organization's ID",
+                    "type": "string",
+                    "description": "Organization identifier - uniquely identifies the org",
+                    "value": org_account.get("org_id", UNDEFINED),
+                },
+                {
+                    "name": "account_id",
+                    "friendly_name": "Org Account ID",
+                    "type": "string",
+                    "description": "Servicing account ID for this organization",
+                    "value": org_account.get("account_id", UNDEFINED),
+                },
+                {
+                    "name": "account_name",
+                    "friendly_name": "Organization Account Name",
+                    "type": "string",
+                    "description": "Servicing org account name",
+                    "value": org_account.get("account_name", UNDEFINED),
+                },
+                {
+                    "name": "owner",
+                    "friendly_name": "Organization Owner",
+                    "type": "array",
+                    "description": "The Owner of this Organization",
+                    "value": org_account.get("owner", UNDEFINED),
+                },
+            ]
+            for org_account in org_account_data
         ]
 
         self.write(
             {
                 "headers": {},
-                "org_account": org_account,
+                "count": len(org_accounts),
+                "org_account": org_accounts,
                 "attributes": {},
             }
         )
@@ -404,6 +418,12 @@ class OrgHandler(BaseHandler):
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
+
+class OrgDeleteHandler(BaseHandler):
+    """
+    Provides CRUD capabilities for a specific hub account
+    """
+
     async def delete(self, _org_id):
         host = self.ctx.host
 
@@ -426,12 +446,14 @@ class OrgHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        await account.delete_org_account(host, _org_id)
+        deleted = await account.delete_org_account(host, _org_id)
 
         res = WebResponse(
-            status="success",
-            status_code=200,
-            message="Successfully deleted org.",
+            status="success" if deleted else "error",
+            status_code=200 if deleted else 400,
+            message=f"Successfully deleted org {_org_id}."
+            if deleted
+            else f"Unable to delete org {_org_id}",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

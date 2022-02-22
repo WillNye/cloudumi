@@ -127,12 +127,3 @@ _global_:
 #        - host: 127.0.0.1
 #          port: "7005"
 # TBD: Celery Redis configuration
-site_configs:
-  localhost:
-    environment: dev
-    development: true
-    hub_account:
-      name: localhost_hub_account
-      account_id: 123456789
-      role_name: arn:aws:iam::123456789:role/NoqTestRoleHubAccount
-      external_id: NoqTestExternalId

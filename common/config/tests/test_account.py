@@ -54,11 +54,12 @@ class TestAccount(ConsoleMeAsyncHTTPTestCase):
     def test_get_spoke_accounts(self):
         with patch(
             RestrictedDynamoHandler,
-            return_value=[{"name": "test", "account_id": "12345"}],
+            return_value={"name": "test", "account_id": "12345"},
         ) as ddb_patch:
-            assert async_to_sync(account.get_spoke_accounts("host")) == [
-                {"name": "test", "account_id": "12345"}
-            ]
+            assert async_to_sync(account.get_spoke_accounts("host")) == {
+                "name": "test",
+                "account_id": "12345",
+            }
             ddb_patch.assert_called()
 
     def test_delete_hub_account(self):

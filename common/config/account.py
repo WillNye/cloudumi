@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from asgiref.sync import sync_to_async
 
 from common.lib.dynamo import RestrictedDynamoHandler
@@ -22,13 +20,17 @@ def __get_hub_account_mapping(
     }
 
 
-async def delete_hub_account(host: str):
+async def delete_hub_account(host: str) -> bool:
+    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)
-    del host_config[hub_account_key_name]
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), updated_by_name, host
-    )
+    if hub_account_key_name in host_config:
+        del host_config[hub_account_key_name]
+        deleted = True
+        await ddb.update_static_config_for_host(
+            yaml.dump(host_config), updated_by_name, host
+        )
+    return deleted
 
 
 async def get_hub_account(host: str) -> dict:
@@ -44,7 +46,7 @@ async def set_hub_account(
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = defaultdict(dict)
+        host_config = dict()
     host_config[hub_account_key_name] = __get_hub_account_mapping(
         name, account_id, role_name, external_id
     )
@@ -67,7 +69,7 @@ def __get_spoke_account_mapping(
 
 
 def __get_unique_spoke_account_key_name(name: str, account_id: str) -> str:
-    return f"{name}:{account_id}"
+    return f"{name}__{account_id}"
 
 
 async def upsert_spoke_account(
@@ -81,9 +83,9 @@ async def upsert_spoke_account(
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = defaultdict(dict)
+        host_config = dict()
     if not host_config.get(spoke_account_key_name):
-        host_config[spoke_account_key_name] = defaultdict(dict)
+        host_config[spoke_account_key_name] = dict()
     spoke_key_name = __get_unique_spoke_account_key_name(name, account_id)
     host_config[spoke_account_key_name][spoke_key_name] = __get_spoke_account_mapping(
         name, account_id, role_name, external_id, hub_account_name
@@ -94,34 +96,40 @@ async def upsert_spoke_account(
     )
 
 
-async def delete_spoke_account(host: str, name: str, account_id: str):
+async def delete_spoke_account(host: str, name: str, account_id: str) -> bool:
+    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = defaultdict(dict)
+        host_config = dict()
     spoke_key_name = __get_unique_spoke_account_key_name(name, account_id)
     if (
         spoke_account_key_name in host_config
         and spoke_key_name in host_config[spoke_account_key_name]
     ):
         del host_config[spoke_account_key_name][spoke_key_name]
+        deleted = True
 
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), updated_by_name, host  # type: ignore
-    )
+        await ddb.update_static_config_for_host(
+            yaml.dump(host_config), updated_by_name, host  # type: ignore
+        )
+
+    return deleted
 
 
-async def delete_spoke_accounts(host: str):
+async def delete_spoke_accounts(host: str) -> bool:
+    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = defaultdict(dict)
+        host_config = dict()
     if spoke_account_key_name in host_config:
         del host_config[spoke_account_key_name]
-
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), updated_by_name, host  # type: ignore
-    )
+        deleted = True
+        await ddb.update_static_config_for_host(
+            yaml.dump(host_config), updated_by_name, host  # type: ignore
+        )
+    return deleted
 
 
 async def get_spoke_accounts(host: str) -> list:
@@ -156,9 +164,9 @@ async def upsert_org_account(
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = defaultdict(dict)
+        host_config = dict()
     if not host_config.get(org_account_key_name):
-        host_config[org_account_key_name] = defaultdict(dict)
+        host_config[org_account_key_name] = dict()
     org_key_name = __get_unique_org_account_key_name(org_id)
     host_config[org_account_key_name][org_key_name] = __get_org_account_mapping(
         org_id, account_id, account_name, owner
@@ -169,34 +177,38 @@ async def upsert_org_account(
     )
 
 
-async def delete_org_account(host: str, org_id: str):
+async def delete_org_account(host: str, org_id: str) -> bool:
+    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = defaultdict(dict)
+        host_config = dict()
     org_key_name = __get_unique_org_account_key_name(org_id)
     if (
         org_account_key_name in host_config
         and org_key_name in host_config[org_account_key_name]
     ):
         del host_config[org_account_key_name][org_key_name]
+        deleted = True
+        await ddb.update_static_config_for_host(
+            yaml.dump(host_config), updated_by_name, host  # type: ignore
+        )
+    return deleted
 
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), updated_by_name, host  # type: ignore
-    )
 
-
-async def delete_org_accounts(host: str):
+async def delete_org_accounts(host: str) -> bool:
+    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = defaultdict(dict)
+        host_config = dict()
     if org_account_key_name in host_config:
         del host_config[org_account_key_name]
-
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), updated_by_name, host  # type: ignore
-    )
+        deleted = True
+        await ddb.update_static_config_for_host(
+            yaml.dump(host_config), updated_by_name, host  # type: ignore
+        )
+    return deleted
 
 
 async def get_org_accounts(host: str) -> list:
