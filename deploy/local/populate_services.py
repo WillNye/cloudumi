@@ -20,13 +20,13 @@ environment: dev
 hub_account:
   name: test_localhost
   account_id: 123456789
-  role_name: arn:aws:iam::123456789:role/aesenieg
+  role_arn: arn:aws:iam::123456789:role/aesenieg
   external_id: test_id
 spoke_accounts:
   test_localhost_spoke__123456789:
     name: test_localhost_spoke
     account_id: 1234567890
-    role_name: arn:aws:iam::123456789:role/aesenieg
+    role_arn: arn:aws:iam::123456789:role/aesenieg
     external_id: test_id
     hub_account_name: test_localhost
 org_accounts:
