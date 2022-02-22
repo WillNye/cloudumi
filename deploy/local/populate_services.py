@@ -46,7 +46,7 @@ headers:
     enabled: false
   role_login:
     enabled: true
-url: https://localhost
+url: https://669d-75-164-6-16.ngrok.io
 application_admin: user@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
@@ -57,5 +57,5 @@ secrets:
 ddb = RestrictedDynamoHandler()
 
 async_to_sync(ddb.update_static_config_for_host)(
-    tenant_config, "user@noq.dev", "localhost"
+    tenant_config, "user@noq.dev", "669d-75-164-6-16_ngrok_io"
 )

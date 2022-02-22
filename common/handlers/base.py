@@ -116,11 +116,18 @@ class BaseJSONHandler(TornadoRequestHandler):
         # CSRF token is not needed since this is protected by raw OIDC tokens
         pass
 
+    def set_default_headers(self, *args, **kwargs):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Methods", ",".join(self.allowed_methods))
+        self.set_header("Access-Control-Allow-Credentials", "true")
+        self.set_header("Content-Type", "application/json")
+
     def options(self, *args):
         self.set_header(
             "Access-Control-Allow-Headers",
             self.request.headers["Access-Control-Request-Headers"],
         )
+        self.set_default_headers()
         self.set_header("Content-Length", "0")
         self.set_status(204)
         self.finish()
