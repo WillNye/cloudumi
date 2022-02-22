@@ -1,3 +1,5 @@
+from doctest import master
+
 from asgiref.sync import sync_to_async
 
 from common.lib.dynamo import RestrictedDynamoHandler
@@ -10,12 +12,12 @@ updated_by_name = "noq_automated_account_management"
 
 
 def __get_hub_account_mapping(
-    name: str, account_id: str, role_name: str, external_id: str
+    name: str, account_id: str, role_arn: str, external_id: str
 ) -> dict:
     return {
         "name": name,
         "account_id": account_id,
-        "role_name": role_name,
+        "role_arn": role_arn,
         "external_id": external_id,
     }
 
@@ -57,14 +59,20 @@ async def set_hub_account(
 
 
 def __get_spoke_account_mapping(
-    name: str, account_id: str, role_name: str, external_id: str, hub_account_name: str
+    name: str,
+    account_id: str,
+    role_arn: str,
+    external_id: str,
+    hub_account_arn: str,
+    master_for_account: bool = False,
 ) -> dict:
     return {
         "name": name,
         "account_id": account_id,
-        "role_name": role_name,
+        "role_arn": role_arn,
         "external_id": external_id,
-        "hub_account_name": hub_account_name,
+        "hub_account_arn": hub_account_arn,
+        "master_for_account": master_for_account,
     }
 
 
@@ -76,9 +84,10 @@ async def upsert_spoke_account(
     host: str,
     name: str,
     account_id: str,
-    role_name: str,
+    role_arn: str,
     external_id: str,
-    hub_account_name: str,
+    hub_account_arn: str,
+    master_for_account: bool = False,
 ):
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
@@ -88,7 +97,7 @@ async def upsert_spoke_account(
         host_config[spoke_account_key_name] = dict()
     spoke_key_name = __get_unique_spoke_account_key_name(name, account_id)
     host_config[spoke_account_key_name][spoke_key_name] = __get_spoke_account_mapping(
-        name, account_id, role_name, external_id, hub_account_name
+        name, account_id, role_arn, external_id, hub_account_arn, master_for_account
     )
 
     await ddb.update_static_config_for_host(

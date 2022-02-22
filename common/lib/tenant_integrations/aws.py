@@ -9,11 +9,10 @@ from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 
 from common.config import config
+from common.config.account import get_hub_account, set_hub_account, upsert_spoke_account
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
-from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.messaging import iterate_event_messages
-from common.lib.yaml import yaml
 
 log = config.get_logger()
 
@@ -75,19 +74,6 @@ async def return_error_response_for_noq_registration(
         return {"statusCode": status, "body": None}
 
     return {"statusCode": status, "body": resp.body}
-
-
-async def get_central_role_arn(host):
-    """
-    Get the ARN of the central role for the given host.
-    """
-    # Get the central role ARN
-    pre_role_arns_to_assume = config.get_host_specific_key(
-        "policies.pre_role_arns_to_assume", host, []
-    )
-    if pre_role_arns_to_assume:
-        return pre_role_arns_to_assume[-1]["role_arn"]
-    return None
 
 
 async def handle_spoke_account_registration(body):
@@ -156,7 +142,8 @@ async def handle_spoke_account_registration(body):
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
-    central_role_arn = await get_central_role_arn(host)
+    hub_account = get_hub_account(host)
+    central_role_arn = hub_account.get("role_arn")
     if not central_role_arn:
         raise Exception("No Central Role ARN detected in configuration.")
 
@@ -259,19 +246,14 @@ async def handle_spoke_account_registration(body):
             # Most likely this isn't an organizations master account and we can ignore
             master_account = False
 
-    # Write tenant configuration to DynamoDB
-    ddb = RestrictedDynamoHandler()
-    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)
-    if not host_config.get("account_ids_to_name"):
-        host_config["account_ids_to_name"] = {}
-    host_config["account_ids_to_name"][account_id_for_role] = account_name
-    if not host_config.get("policies"):
-        host_config["policies"] = {}
-    if not host_config["policies"].get("role_name"):
-        host_config["policies"]["role_name"] = spoke_role_name
-
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), "aws_integration", host
+    await upsert_spoke_account(
+        host,
+        account_name,
+        account_id_for_role,
+        spoke_role_name,
+        external_id,
+        central_role_arn,
+        master_account,
     )
     return True
 
@@ -409,27 +391,17 @@ async def handle_central_account_registration(body):
         )
         return False
 
-    # Write tenant configuration to DynamoDB
-    ddb = RestrictedDynamoHandler()
-    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)
-    if not host_config.get("account_ids_to_name"):
-        host_config["account_ids_to_name"] = {}
-    host_config["account_ids_to_name"][account_id_for_role] = account_id_for_role
-    if not host_config.get("policies"):
-        host_config["policies"] = {}
-    if not host_config["policies"].get("pre_role_arns_to_assume"):
-        host_config["policies"]["pre_role_arns_to_assume"] = []
-    host_config["policies"]["pre_role_arns_to_assume"] = [
-        {
-            "role_arn": role_arn,
-            "external_id": external_id,
-        }
-    ]
-    host_config["policies"]["role_name"] = spoke_role_name
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), "aws_integration", host
+    await set_hub_account(
+        host, "_hub_account_", account_id_for_role, role_arn, external_id
     )
-    config.CONFIG.copy_tenant_config_dynamo_to_redis(host)
+    await upsert_spoke_account(
+        host,
+        spoke_role_name,
+        account_id_for_role,
+        spoke_role_name,
+        external_id,
+        role_arn,
+    )
     return True
 
 
@@ -491,6 +463,7 @@ async def handle_tenant_integration_queue(
                     }
                 )
 
+                # TODO: handle deletion / updates
                 if message["body"]["RequestType"] != "Create":
                     log_data[
                         "message"
