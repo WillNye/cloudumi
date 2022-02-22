@@ -13,16 +13,15 @@ updated_by_name = "noq_automated_account_management"
 
 
 async def delete_hub_account(host: str) -> bool:
-    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)
-    if hub_account_key_name in host_config:
-        del host_config[hub_account_key_name]
-        deleted = True
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), updated_by_name, host
-        )
-    return deleted
+    if hub_account_key_name not in host_config:
+        return False
+    del host_config[hub_account_key_name]
+    await ddb.update_static_config_for_host(
+        yaml.dump(host_config), updated_by_name, host
+    )
+    return True
 
 
 async def get_hub_account(host: str) -> Optional[HubAccount]:
@@ -36,7 +35,7 @@ async def set_hub_account(host: str, hub_account: HubAccount):
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = dict()
+        raise RuntimeError("No host config! This is bad - something went really wrong")
     host_config[hub_account_key_name] = dict(hub_account)
 
     await ddb.update_static_config_for_host(
@@ -52,7 +51,7 @@ async def upsert_spoke_account(host: str, spoke_account: SpokeAccount):
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = dict()
+        raise RuntimeError("No host config! This is bad - something went really wrong")
     if not host_config.get(spoke_account_key_name):
         host_config[spoke_account_key_name] = dict()
     spoke_key_name = __get_unique_spoke_account_key_name(
@@ -66,39 +65,36 @@ async def upsert_spoke_account(host: str, spoke_account: SpokeAccount):
 
 
 async def delete_spoke_account(host: str, name: str, account_id: str) -> bool:
-    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = dict()
+        raise RuntimeError("No host config! This is bad - something went really wrong")
     spoke_key_name = __get_unique_spoke_account_key_name(name, account_id)
     if (
-        spoke_account_key_name in host_config
-        and spoke_key_name in host_config[spoke_account_key_name]
+        spoke_account_key_name not in host_config
+        or spoke_key_name not in host_config[spoke_account_key_name]
     ):
-        del host_config[spoke_account_key_name][spoke_key_name]
-        deleted = True
+        return False
+    del host_config[spoke_account_key_name][spoke_key_name]
+    await ddb.update_static_config_for_host(
+        yaml.dump(host_config), updated_by_name, host  # type: ignore
+    )
 
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), updated_by_name, host  # type: ignore
-        )
-
-    return deleted
+    return True
 
 
 async def delete_spoke_accounts(host: str) -> bool:
-    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = dict()
-    if spoke_account_key_name in host_config:
-        del host_config[spoke_account_key_name]
-        deleted = True
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), updated_by_name, host  # type: ignore
-        )
-    return deleted
+        raise RuntimeError("No host config! This is bad - something went really wrong")
+    if spoke_account_key_name not in host_config:
+        return False
+    del host_config[spoke_account_key_name]
+    await ddb.update_static_config_for_host(
+        yaml.dump(host_config), updated_by_name, host  # type: ignore
+    )
+    return True
 
 
 async def get_spoke_accounts(host: str) -> List[SpokeAccount]:
@@ -118,7 +114,7 @@ async def upsert_org_account(host: str, org_account: OrgAccount):
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = dict()
+        raise RuntimeError("No host config! This is bad - something went really wrong")
     if not host_config.get(org_account_key_name):
         host_config[org_account_key_name] = dict()
     org_key_name = __get_unique_org_account_key_name(org_account.org_id)
@@ -130,37 +126,35 @@ async def upsert_org_account(host: str, org_account: OrgAccount):
 
 
 async def delete_org_account(host: str, org_id: str) -> bool:
-    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = dict()
+        raise RuntimeError("No host config! This is bad - something went really wrong")
     org_key_name = __get_unique_org_account_key_name(org_id)
     if (
-        org_account_key_name in host_config
-        and org_key_name in host_config[org_account_key_name]
+        org_account_key_name not in host_config
+        or org_key_name not in host_config[org_account_key_name]
     ):
-        del host_config[org_account_key_name][org_key_name]
-        deleted = True
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), updated_by_name, host  # type: ignore
-        )
-    return deleted
+        return False
+    del host_config[org_account_key_name][org_key_name]
+    await ddb.update_static_config_for_host(
+        yaml.dump(host_config), updated_by_name, host  # type: ignore
+    )
+    return True
 
 
 async def delete_org_accounts(host: str) -> bool:
-    deleted = False
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
     if not host_config:
-        host_config = dict()
-    if org_account_key_name in host_config:
-        del host_config[org_account_key_name]
-        deleted = True
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), updated_by_name, host  # type: ignore
-        )
-    return deleted
+        raise RuntimeError("No host config! This is bad - something went really wrong")
+    if org_account_key_name not in host_config:
+        return False
+    del host_config[org_account_key_name]
+    await ddb.update_static_config_for_host(
+        yaml.dump(host_config), updated_by_name, host  # type: ignore
+    )
+    return True
 
 
 async def get_org_accounts(host: str) -> List[OrgAccount]:

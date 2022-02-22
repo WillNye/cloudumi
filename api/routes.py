@@ -212,11 +212,11 @@ def make_app(jwt_validator=None):
             SpokeDeleteHandler,
         ),
         (r"/api/v3/services/aws/account/spoke", SpokeHandler),
-        (r"/api/v3/services/aws/account/org", OrgHandler),
         (
             r"/api/v3/services/aws/account/org/(?P<_org_id>[a-zA-Z0-9_-]+)/?",
             OrgDeleteHandler,
         ),
+        (r"/api/v3/services/aws/account/org", OrgHandler),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
