@@ -9,7 +9,6 @@ from common.models import WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
-UNDEFINED = "UNDEFINED"
 
 
 class HubHandler(BaseHandler):
@@ -41,42 +40,13 @@ class HubHandler(BaseHandler):
         log.debug(log_data)
 
         hub_account_data = await account.get_hub_account(host)
-
-        hub_accounts = [
-            {
-                "name": "account_name",
-                "friendly_name": "Account Name",
-                "type": "string",
-                "description": "Hub account name",
-                "value": hub_account_data.get("name", UNDEFINED),
-            },
-            {
-                "name": "account_id",
-                "friendly_name": "Hub Role Account ID",
-                "type": "string",
-                "description": "Servicing account ID for this hub role",
-                "value": hub_account_data.get("account_id", UNDEFINED),
-            },
-            {
-                "name": "role_arn",
-                "friendly_name": "Hub Role ARN",
-                "type": "string",
-                "description": "Servicing hub account arn",
-                "value": hub_account_data.get("role_arn", UNDEFINED),
-            },
-            {
-                "name": "external_id",
-                "friendly_name": "External ID",
-                "type": "array",
-                "description": "The External ID used to validate this hub account during authentication",
-                "value": hub_account_data.get("external_id", UNDEFINED),
-            },
-        ]
+        # hub_account_data is a special structure, so we unroll it
+        hub_accounts = [{x: y for x, y in hub_account_data.items()}]
         self.write(
             {
                 "headers": {},
                 "count": 1,
-                "hub_account": hub_accounts,
+                "data": hub_accounts,
                 "attributes": {},
             }
         )
@@ -106,10 +76,10 @@ class HubHandler(BaseHandler):
         data = tornado.escape.json_decode(self.request.body)
         name = data.get("name", "")
         account_id = data.get("account_id", "")
-        role_name = data.get("role_name", "")
+        role_arn = data.get("role_arn", "")
         external_id = data.get("external_id", "")
 
-        await account.set_hub_account(host, name, account_id, role_name, external_id)
+        await account.set_hub_account(host, name, account_id, role_arn, external_id)
 
         res = WebResponse(
             status="success",
@@ -181,37 +151,10 @@ class SpokeHandler(BaseHandler):
         log.debug(log_data)
 
         spoke_account_data = await account.get_spoke_accounts(host)
-
+        # spoke_account_data is a special structure, so we unroll it
         spoke_accounts = [
             [
-                {
-                    "name": "account_name",
-                    "friendly_name": "Account Name",
-                    "type": "string",
-                    "description": "Hub account name",
-                    "value": spoke_account.get("name", UNDEFINED),
-                },
-                {
-                    "name": "account_id",
-                    "friendly_name": "Spoke Role Account ID",
-                    "type": "string",
-                    "description": "Servicing account ID for this spoke role",
-                    "value": spoke_account.get("account_id", UNDEFINED),
-                },
-                {
-                    "name": "role_arn",
-                    "friendly_name": "Spoke Role ARN",
-                    "type": "string",
-                    "description": "Servicing spoke account arn",
-                    "value": spoke_account.get("role_arn", UNDEFINED),
-                },
-                {
-                    "name": "external_id",
-                    "friendly_name": "External ID",
-                    "type": "array",
-                    "description": "The External ID used to validate this hub account during authentication",
-                    "value": spoke_account.get("external_id", UNDEFINED),
-                },
+                {x: y for x, y in spoke_account.items()},
             ]
             for spoke_account in spoke_account_data
         ]
@@ -220,7 +163,7 @@ class SpokeHandler(BaseHandler):
             {
                 "headers": {},
                 "count": len(spoke_accounts),
-                "spoke_accounts": spoke_accounts,
+                "data": spoke_accounts,
                 "attributes": {},
             }
         )
@@ -250,12 +193,19 @@ class SpokeHandler(BaseHandler):
         data = tornado.escape.json_decode(self.request.body)
         name = data.get("name", "")
         account_id = data.get("account_id", "")
-        role_name = data.get("role_name", "")
+        role_arn = data.get("role_arn", "")
         external_id = data.get("external_id", "")
-        hub_account_name = data.get("hub_account_name", "")
+        hub_account_arn = data.get("hub_account_arn", "")
+        master_for_account = data.get("master_for_account", False)
 
         await account.upsert_spoke_account(
-            host, name, account_id, role_name, external_id, hub_account_name
+            host,
+            name,
+            account_id,
+            role_arn,
+            external_id,
+            hub_account_arn,
+            master_for_account,
         )
 
         res = WebResponse(
@@ -336,46 +286,16 @@ class OrgHandler(BaseHandler):
         log.debug(log_data)
 
         org_account_data = await account.get_org_accounts(host)
-
+        # org_account_data is a special structure, so we unroll it
         org_accounts = [
-            [
-                {
-                    "name": "org_id",
-                    "friendly_name": "Organization's ID",
-                    "type": "string",
-                    "description": "Organization identifier - uniquely identifies the org",
-                    "value": org_account.get("org_id", UNDEFINED),
-                },
-                {
-                    "name": "account_id",
-                    "friendly_name": "Org Account ID",
-                    "type": "string",
-                    "description": "Servicing account ID for this organization",
-                    "value": org_account.get("account_id", UNDEFINED),
-                },
-                {
-                    "name": "account_name",
-                    "friendly_name": "Organization Account Name",
-                    "type": "string",
-                    "description": "Servicing org account name",
-                    "value": org_account.get("account_name", UNDEFINED),
-                },
-                {
-                    "name": "owner",
-                    "friendly_name": "Organization Owner",
-                    "type": "array",
-                    "description": "The Owner of this Organization",
-                    "value": org_account.get("owner", UNDEFINED),
-                },
-            ]
-            for org_account in org_account_data
+            [{x: y for x, y in org_account.items()}] for org_account in org_account_data
         ]
 
         self.write(
             {
                 "headers": {},
                 "count": len(org_accounts),
-                "org_account": org_accounts,
+                "data": org_accounts,
                 "attributes": {},
             }
         )

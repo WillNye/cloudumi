@@ -49,6 +49,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "_global_._development_disable_cors"
         ):
             self.set_header("Access-Control-Allow-Origin", "*")
+            self.set_header("Vary", "Origin")
             self.set_header(
                 "Access-Control-Allow-Methods", ",".join(self.allowed_methods)
             )
