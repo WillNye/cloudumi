@@ -27,6 +27,9 @@ async def delete_hub_account(host: str) -> bool:
 async def get_hub_account(host: str) -> Optional[HubAccount]:
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
+    hub_account_config = host_config.get(hub_account_key_name, {})
+    if not hub_account_config:
+        return None
     hub_account = HubAccount(**host_config.get(hub_account_key_name, {}))
     return hub_account
 

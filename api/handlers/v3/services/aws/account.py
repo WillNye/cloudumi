@@ -39,13 +39,13 @@ class HubAccountHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        hub_account_data = await account.get_hub_account(host) or HubAccount()
+        hub_account_data = await account.get_hub_account(host)
         # hub_account_data is a special structure, so we unroll it
         self.write(
             {
                 "headers": {},
-                "count": 1,
-                "data": hub_account_data.dict(),
+                "count": 1 if hub_account_data else 0,
+                "data": dict(hub_account_data),
                 "attributes": {},
             }
         )
@@ -80,7 +80,11 @@ class HubAccountHandler(BaseHandler):
             await account.set_hub_account(host, HubAccount(**data))
         except Exception as exc:
             log.error(exc)
-            res = WebResponse(success="error", status_code=400, message="Invalid hub account body data received")
+            res = WebResponse(
+                success="error",
+                status_code=400,
+                message="Invalid hub account body data received",
+            )
         else:
             res = WebResponse(
                 status="success",

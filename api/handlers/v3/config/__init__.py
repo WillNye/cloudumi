@@ -3,7 +3,7 @@ import tornado.escape
 from common.config import account, config
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
-from common.models import HubAccount, WebResponse
+from common.models import WebResponse
 
 
 class ConfigHandler(BaseHandler):
@@ -170,7 +170,7 @@ class ConfigHandler(BaseHandler):
             },
         }
 
-        hub_account = await account.get_hub_account(host) or HubAccount()
+        hub_account = await account.get_hub_account(host)
         if hub_account:
             config_to_return["aws"]["central_role_arn"] = hub_account.role_arn
             config_to_return["aws"]["spoke_role_trust_policy"] = {
@@ -178,9 +178,7 @@ class ConfigHandler(BaseHandler):
                 "Statement": [
                     {
                         "Effect": "Allow",
-                        "Principal": {
-                            "AWS": hub_account.role_arn
-                        },
+                        "Principal": {"AWS": hub_account.role_arn},
                         "Action": ["sts:AssumeRole", "sts:TagSession"],
                     }
                 ],
