@@ -1,6 +1,6 @@
 import React from 'react';
-import { Section } from '../../../../../lib/Section';
-import { ScreenHeading } from '../../../../../lib/Screen/styles';
+import { Section } from 'lib/Section';
+import { ScreenHeading } from 'lib/Screen/styles';
 import { AWSOrganization } from './components/AWSOrganization';
 import { General } from './components/General';
 import { HubAccount } from './components/HubAccount';

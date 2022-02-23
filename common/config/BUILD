@@ -6,15 +6,26 @@ filegroup(
     name = "src_files",
     srcs = (
         "__init__.py",
+        "account.py",
         "config.py",
         "models.py",
     ),
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "weep_config",
+    data = [
+        "weep.yaml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 py_library(
     name = "lib",
-    data = [],
+    data = [
+        ":weep_config",
+    ],
     srcs_version = "PY3",
     srcs = [
         ":src_files",

@@ -28,6 +28,7 @@ extends:
 #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_dm_noq_dev.yaml
 #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_stark_noq_dev.yaml
 _global_:
+  _development_disable_cors: true
   landing_page_domains:
     - localhost
     - www.noq.localhost
@@ -56,7 +57,7 @@ _global_:
     #   service_name: cloudumi
     #   server_url: http://apmserver:8200
   logging:
-    file: ~/logs/cloudumi/cloudumi_tornado.log
+    file: ./cloudumi_tornado.log
   # sentry:
   #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
   web:
