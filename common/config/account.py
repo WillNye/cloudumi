@@ -70,10 +70,7 @@ async def delete_spoke_account(host: str, name: str, account_id: str) -> bool:
     if not host_config:
         raise RuntimeError("No host config! This is bad - something went really wrong")
     spoke_key_name = __get_unique_spoke_account_key_name(name, account_id)
-    if (
-        spoke_account_key_name not in host_config
-        or spoke_key_name not in host_config[spoke_account_key_name]
-    ):
+    if not host_config.get(spoke_account_key_name, {}).get(spoke_key_name):
         return False
     del host_config[spoke_account_key_name][spoke_key_name]
     await ddb.update_static_config_for_host(
@@ -131,10 +128,7 @@ async def delete_org_account(host: str, org_id: str) -> bool:
     if not host_config:
         raise RuntimeError("No host config! This is bad - something went really wrong")
     org_key_name = __get_unique_org_account_key_name(org_id)
-    if (
-        org_account_key_name not in host_config
-        or org_key_name not in host_config[org_account_key_name]
-    ):
+    if host_config.get(org_account_key_name, {}).get(org_key_name):
         return False
     del host_config[org_account_key_name][org_key_name]
     await ddb.update_static_config_for_host(

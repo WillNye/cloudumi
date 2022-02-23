@@ -11,7 +11,7 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger()
 
 
-class HubHandler(BaseHandler):
+class HubAccountHandler(BaseHandler):
     """
     Provides CRUD capabilities for a specific hub account
     """
@@ -22,7 +22,7 @@ class HubHandler(BaseHandler):
         log_data = {
             "function": "HubHandler.get",
             "user": self.user,
-            "message": "Retrieving hub information",
+            "message": "Retrieving hub account information",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "host": host,
@@ -39,13 +39,13 @@ class HubHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        hub_account_data = await account.get_hub_account(host)
+        hub_account_data = await account.get_hub_account(host) or HubAccount()
         # hub_account_data is a special structure, so we unroll it
         self.write(
             {
                 "headers": {},
                 "count": 1,
-                "data": dict(hub_account_data),
+                "data": hub_account_data.dict(),
                 "attributes": {},
             }
         )
@@ -76,13 +76,17 @@ class HubHandler(BaseHandler):
         external_id = config.get_host_specific_key("tenant_details.external_id", host)
         data["external_id"] = external_id
 
-        await account.set_hub_account(host, HubAccount(**data))
-
-        res = WebResponse(
-            status="success",
-            status_code=200,
-            message="Successfully updated hub account.",
-        )
+        try:
+            await account.set_hub_account(host, HubAccount(**data))
+        except Exception as exc:
+            log.error(exc)
+            res = WebResponse(success="error", status_code=400, message="Invalid hub account body data received")
+        else:
+            res = WebResponse(
+                status="success",
+                status_code=200,
+                message="Successfully updated hub account.",
+            )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
@@ -153,7 +157,7 @@ class SpokeHandler(BaseHandler):
         # spoke_account_data is a special structure, so we unroll it
         spoke_accounts = [
             [
-                dict(spoke_account),
+                spoke_account.dict(),
             ]
             for spoke_account in spoke_account_data
         ]

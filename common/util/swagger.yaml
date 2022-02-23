@@ -2029,6 +2029,11 @@ components:
               - $ref: "#/components/schemas/EligibleRolesModel"
     HubAccount:
       type: object
+      required:
+        - name
+        - account_id
+        - role_arn
+        - external_id
       properties:
         name:
           type: string
@@ -2044,6 +2049,12 @@ components:
           description: Designated external identifier to provide a safeguard against brute force attempts
     SpokeAccount:
       type: object
+      required:
+        - name
+        - account_id
+        - role_arn
+        - external_id
+        - hub_account_arn
       properties:
         name:
           type: string
@@ -2066,6 +2077,11 @@ components:
           default: false
     OrgAccount:
       type: object
+      required:
+        - org_id
+        - account_id  
+        - account_name
+        - owner
       properties:
         org_id:
           type: string
