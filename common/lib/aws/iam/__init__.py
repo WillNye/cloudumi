@@ -371,11 +371,13 @@ async def update_assume_role_policy_trust_noq(host, role_name, account_id):
         return False
 
     hub_account = await get_hub_account(host)
-    central_role_arn = await hub_account.get('role_arn')
+    if not hub_account:
+        return False
+
     assume_role_policy = {
         "Effect": "Allow",
         "Action": ["sts:AssumeRole", "sts:TagSession"],
-        "Principal": {"AWS": [central_role_arn]},
+        "Principal": {"AWS": [hub_account.role_arn]},
     }
 
     assume_role_trust_policy["Statement"].append(assume_role_policy)

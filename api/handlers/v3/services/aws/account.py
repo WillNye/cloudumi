@@ -45,7 +45,7 @@ class HubAccountHandler(BaseHandler):
             {
                 "headers": {},
                 "count": 1 if hub_account_data else 0,
-                "data": dict(hub_account_data),
+                "data": hub_account_data.dict() if hub_account_data else {},
                 "attributes": {},
             }
         )
@@ -283,7 +283,7 @@ class OrgHandler(BaseHandler):
 
         org_account_data = await account.get_org_accounts(host)
         # org_account_data is a special structure, so we unroll it
-        org_accounts = [dict(org_account) for org_account in org_account_data]
+        org_accounts = [org_account.dict() for org_account in org_account_data]
 
         self.write(
             {
