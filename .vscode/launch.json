@@ -161,8 +161,8 @@
       "name": "Launch Chrome",
       "request": "launch",
       "type": "pwa-chrome",
-      "url": "http://localhost",
-      "webRoot": "${workspaceFolder}/cloudumi_frontend/frontend/",
+      "url": "https://localhost",
+      "webRoot": "${workspaceFolder}/frontend/",
       "env": {
         "INTERPRETER_OPTIONS": "",
         "PARENT_ENVS": true,
