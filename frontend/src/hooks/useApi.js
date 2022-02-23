@@ -8,7 +8,7 @@ const initialState = {
   empty: true
 };
 
-export const url = 'https://669d-75-164-6-16.ngrok.io/api/v3';
+export const url = 'api/v3';
 
 const useInnerUtils = () => {
 
