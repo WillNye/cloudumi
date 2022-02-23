@@ -1,9 +1,9 @@
 import tornado.escape
 
-from common.config import config
+from common.config import account, config
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
-from common.models import WebResponse
+from common.models import HubAccount, WebResponse
 
 
 class ConfigHandler(BaseHandler):
@@ -170,21 +170,16 @@ class ConfigHandler(BaseHandler):
             },
         }
 
-        pre_role_arns_to_assume = config.get_host_specific_key(
-            "policies.pre_role_arns_to_assume", host, []
-        )
-        if pre_role_arns_to_assume:
-            config_to_return["aws"]["central_role_arn"] = pre_role_arns_to_assume[-1][
-                "role_arn"
-            ]
-
+        hub_account = await account.get_hub_account(host) or HubAccount()
+        if hub_account:
+            config_to_return["aws"]["central_role_arn"] = hub_account.role_arn
             config_to_return["aws"]["spoke_role_trust_policy"] = {
                 "Version": "2012-10-17",
                 "Statement": [
                     {
                         "Effect": "Allow",
                         "Principal": {
-                            "AWS": config_to_return["aws"]["central_role_arn"]
+                            "AWS": hub_account.role_arn
                         },
                         "Action": ["sts:AssumeRole", "sts:TagSession"],
                     }

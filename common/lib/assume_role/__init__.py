@@ -194,12 +194,10 @@ def boto3_cached_conn(
     :return: boto3 client or resource connection
     """
     if host and pre_assume_roles is None:
-        pre_assume_roles = consoleme_config.get(
-            "_global_.integrations.aws.pre_role_arns_to_assume", []
-        )
+        pre_assume_roles = []
         pre_assume_roles.extend(
             consoleme_config.get_host_specific_key(
-                "policies.pre_role_arns_to_assume", host, []
+                "hub_account.role_arn", host, []
             )
         )
     elif pre_assume_roles is None:
