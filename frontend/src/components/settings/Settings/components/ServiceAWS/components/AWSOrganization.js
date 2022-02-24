@@ -42,13 +42,7 @@ export const AWSOrganization = () => {
 
   const label = `Status: ${get.status}${get.error ? ` / Error: ${get.error}` : ''}`;
 
-  const object = {};
-
-  get.data?.[0]?.forEach((el) => {
-    object[el.name] = el.value;
-  });
-
-  const data = [object];
+  const data = get.data;
 
   return (
     <>

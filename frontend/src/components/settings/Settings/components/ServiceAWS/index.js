@@ -13,7 +13,7 @@ import { ApiGetProvider } from 'hooks/useApi';
 export const ServiceAWS = () => {
 
   return (
-    <ApiGetProvider pathName="integrations/aws">
+    <ApiGetProvider pathname="integrations/aws">
 
       <ScreenHeading>
         Connect Noq to your AWS accounts

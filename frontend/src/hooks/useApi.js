@@ -16,7 +16,7 @@ const useInnerUtils = () => {
     ...initialState,
   })
 
-  const buildPath = (pathName = '') => url + (pathName ? '/' : '') + pathName
+  const buildPath = (pathname = '') => url + (pathname ? '/' : '') + pathname
 
   const handleWorking = () => {
     setState({ data: null, status: 'working', error: null })
@@ -28,7 +28,7 @@ const useInnerUtils = () => {
       return 'Error!'
     }
 
-    const response = res?.data || res?.hub_account || res?.spoke_accounts || res?.org_account;
+    const response = res?.data;
 
     setState({ data: response, status: 'done' })
   }
@@ -46,17 +46,17 @@ const useInnerUtils = () => {
   }
 }
 
-const useGet = (commonPathName) => {
+const useGet = (commonPathname) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
     useInnerUtils()
 
-  const get = async (pathName) => {
+  const get = async (pathname) => {
     handleWorking()
     const res = await sendRequestCommon(
       null,
-      buildPath(commonPathName || pathName),
+      buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
       'get'
     )
     return handleResponse(res)
@@ -70,17 +70,17 @@ const useGet = (commonPathName) => {
   }
 }
 
-const usePost = (commonPathName) => {
+const usePost = (commonPathname) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
     useInnerUtils()
 
-  const post = async (body, pathName) => {
+  const post = async (body, pathname) => {
     handleWorking()
     const res = await sendRequestCommon(
       body || {},
-      buildPath(commonPathName || pathName),
+      buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
       'post'
     )
     return handleResponse(res)
@@ -94,17 +94,17 @@ const usePost = (commonPathName) => {
   }
 }
 
-const useRemove = (commonPathName) => {
+const useRemove = (commonPathname) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
     useInnerUtils()
 
-  const remove = async (body, pathName) => {
+  const remove = async (body, pathname) => {
     handleWorking()
     const res = await sendRequestCommon(
       body || {},
-      buildPath(commonPathName || pathName),
+      buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
       'delete'
     )
     return handleResponse(res)
@@ -118,11 +118,11 @@ const useRemove = (commonPathName) => {
   }
 }
 
-export const useApi = (commonPathName) => {
+export const useApi = (commonPathname) => {
   return {
-    get: useGet(commonPathName),
-    post: usePost(commonPathName),
-    remove: useRemove(commonPathName),
+    get: useGet(commonPathname),
+    post: usePost(commonPathname),
+    remove: useRemove(commonPathname),
   }
 }
 
@@ -130,17 +130,15 @@ export const ApiContext = createContext();
 
 export const ApiGetProvider = ({
   children,
-  pathName
+  pathname
 }) => {
 
-  const { get } = useApi(pathName);
+  const { get } = useApi(pathname);
 
-  useEffect(() => {
-    get.do();
-  }, []);  
+  useEffect(() => get.do(), []);  
 
   return (
-    <ApiContext.Provider value={{ getResponse: get }}>
+    <ApiContext.Provider value={{ data: get?.data }}>
       {children}
     </ApiContext.Provider>
   );

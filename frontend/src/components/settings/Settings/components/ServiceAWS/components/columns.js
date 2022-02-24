@@ -36,7 +36,7 @@ export const awsOrganizationColumns = ({ handleClick }) => [{
 
 export const spokeAccountsColumns = ({ handleClick }) => [{
   Header: 'Account Name',
-  accessor: 'account_name',
+  accessor: 'name',
   width: 80
 }, {
   Header: 'Account ID',

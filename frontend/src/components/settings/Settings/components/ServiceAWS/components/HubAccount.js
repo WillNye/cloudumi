@@ -44,13 +44,7 @@ export const HubAccount = () => {
 
   const label = `Status: ${get.status}${get.error ? ` / Error: ${get.error}` : ''}`;
 
-  const object = {};
-
-  get.data?.forEach((el) => {
-    object[el.name] = el.value;
-  });
-
-  const data = [object];
+  const data = get.data;
 
   console.log('getResponse', getResponse);
 

@@ -22,7 +22,7 @@ export const SpokeAccounts = () => {
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
-      remove.do({ account_id: rowValues?.account_id })
+      remove.do({}, `${ rowValues?.name }/${ rowValues?.account_id }`)
       .then(() => {
         success('Hub Account REMOVED');
         get.do();
@@ -44,13 +44,7 @@ export const SpokeAccounts = () => {
 
   const label = `Status: ${get.status}${get.error ? ` / Error: ${get.error}` : ''}`;
 
-  const object = {};
-
-  get.data?.[0]?.forEach((el) => {
-    object[el.name] = el.value;
-  });
-  
-  const data = [object];
+  const data = get.data?.[0];
 
   return (
     <>
