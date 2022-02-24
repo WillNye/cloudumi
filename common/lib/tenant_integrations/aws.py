@@ -2,7 +2,6 @@ import sys
 from typing import Any, Dict, Optional
 
 import boto3
-from common.models import SpokeAccount
 import sentry_sdk
 import ujson as json
 from asgiref.sync import sync_to_async
@@ -149,9 +148,8 @@ async def handle_spoke_account_registration(body):
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
-    hub_account = await get_hub_account(host) or HubAccount()
-    central_role_arn = hub_account.role_arn
-    if not central_role_arn:
+    hub_account = await get_hub_account(host)
+    if not hub_account:
         error_message = "No Central Role ARN detected in configuration."
         sentry_sdk.capture_message(
             error_message,
@@ -178,7 +176,7 @@ async def handle_spoke_account_registration(body):
     try:
         sts_client = await sync_to_async(boto3_cached_conn)("sts", host)
         central_role_credentials = await sync_to_async(sts_client.assume_role)(
-            RoleArn=central_role_arn,
+            RoleArn=hub_account.role_arn,
             RoleSessionName="noq_registration_verification",
             ExternalId=external_id,
         )
@@ -283,7 +281,14 @@ async def handle_spoke_account_registration(body):
             # Most likely this isn't an organizations master account and we can ignore
             master_account = False
 
-    spoke_account = SpokeAccount(account_name, account_id_for_role, spoke_role_arn, external_id, central_role_arn, master_account)
+    spoke_account = SpokeAccount(
+        account_name,
+        account_id_for_role,
+        spoke_role_arn,
+        external_id,
+        hub_account.role_arn,
+        master_account,
+    )
     await upsert_spoke_account(host, spoke_account)
     return {
         "success": True,
@@ -424,9 +429,17 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "message": error_message,
         }
 
-    hub_account = HubAccount("_hub_account_", account_id_for_role, role_arn, external_id)
+    hub_account = HubAccount(
+        "_hub_account_", account_id_for_role, role_arn, external_id
+    )
     await set_hub_account(host, hub_account)
-    spoke_account = SpokeAccount(spoke_role_name, account_id_for_role, spoke_role_arn, external_id)
+    spoke_account = SpokeAccount(
+        spoke_role_name,
+        account_id_for_role,
+        spoke_role_arn,
+        external_id,
+        hub_account.role_arn,
+    )
     await upsert_spoke_account(host, spoke_account)
     return {"success": True}
 

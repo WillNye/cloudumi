@@ -66,7 +66,6 @@ _global_:
   environment: dev
   development: true
   tornado:
-    address: 0.0.0.0
     debug: false
     port: 8092
     xsrf: false

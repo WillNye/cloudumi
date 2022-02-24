@@ -89,7 +89,7 @@ class TestAccount(ConsoleMeAsyncHTTPTestCase):
 
     def test_delete_hub_account(self):
         with patch(RestrictedDynamoHandler) as ddb_patch:
-            assert async_to_sync(account.delete_hub_account)("host")
+            self.assertTrue(async_to_sync(account.delete_hub_account)("host"))
             ddb_patch.assert_called()
 
     def test_delete_spoke_account(self):
@@ -129,21 +129,25 @@ class TestAccount(ConsoleMeAsyncHTTPTestCase):
             ],
         ) as ddb_patch:
             assert async_to_sync(account.get_org_accounts("host")) == [
-                {
-                    "org_id": "test",
-                    "account_id": "12345",
-                    "account_name": "name",
-                    "owner": "curtis",
-                }
+                OrgAccount(
+                    **{
+                        "org_id": "test",
+                        "account_id": "12345",
+                        "account_name": "name",
+                        "owner": "curtis",
+                    }
+                )
             ]
             ddb_patch.assert_called()
 
     def test_delete_org_account(self):
         with patch(RestrictedDynamoHandler) as ddb_patch:
-            assert async_to_sync(account.delete_spoke_account("host", "org_id"))
+            self.assertTrue(
+                async_to_sync(account.delete_spoke_account("host", "org_id"))
+            )
             ddb_patch.assert_called()
 
     def test_delete_org_accounts(self):
         with patch(RestrictedDynamoHandler) as ddb_patch:
-            assert async_to_sync(account.delete_org_accounts("host"))
+            self.assertTrue(async_to_sync(account.delete_org_accounts("host")))
             ddb_patch.assert_called()
