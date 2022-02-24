@@ -7,6 +7,7 @@ from asgiref.sync import sync_to_async
 from joblib import Parallel, delayed
 
 from common.config import config
+from common.config.account import get_hub_account
 from common.lib.assume_role import (
     ConsoleMeCloudAux,
     boto3_cached_conn,
@@ -17,7 +18,6 @@ from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import RedisHandler
-from common.lib.tenant_integrations.aws import get_central_role_arn
 
 log = config.get_logger(__name__)
 
@@ -370,11 +370,14 @@ async def update_assume_role_policy_trust_noq(host, role_name, account_id):
     if not assume_role_trust_policy:
         return False
 
-    central_role_arn = await get_central_role_arn(host)
+    hub_account = await get_hub_account(host)
+    if not hub_account:
+        return False
+
     assume_role_policy = {
         "Effect": "Allow",
         "Action": ["sts:AssumeRole", "sts:TagSession"],
-        "Principal": {"AWS": [central_role_arn]},
+        "Principal": {"AWS": [hub_account.role_arn]},
     }
 
     assume_role_trust_policy["Statement"].append(assume_role_policy)

@@ -1,6 +1,6 @@
 import urllib.parse
 
-from common.config import config
+from common.config import account, config
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
 from common.models import WebResponse
@@ -124,11 +124,9 @@ class AwsIntegrationHandler(BaseHandler):
             },
         )
 
-        pre_role_arns_to_assume = config.get_host_specific_key(
-            "policies.pre_role_arns_to_assume", host, []
-        )
-        if pre_role_arns_to_assume:
-            customer_central_account_role = pre_role_arns_to_assume[-1]["role_arn"]
+        hub_account = await account.get_hub_account(host)
+        if hub_account:
+            customer_central_account_role = hub_account.role_arn
             spoke_role_parameters = [
                 {"ParameterKey": "ExternalIDParameter", "ParameterValue": external_id},
                 {

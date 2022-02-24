@@ -1,9 +1,9 @@
 import React from 'react';
-import { useApi } from '../../../../../../hooks/useApi';
-import Datatable from '../../../../../../lib/Datatable';
-import { DatatableWrapper } from '../../../../../../lib/Datatable/ui/utils';
+import { useApi } from 'hooks/useApi';
+import Datatable from 'lib/Datatable';
+import { DatatableWrapper } from 'lib/Datatable/ui/utils';
 import { spokeAccountsColumns } from './columns';
-import { useModal } from '../../../../../../lib/hooks/useModal';
+import { useModal } from 'lib/hooks/useModal';
 import { TableTopBar } from '../../utils';
 
 // const data = [{

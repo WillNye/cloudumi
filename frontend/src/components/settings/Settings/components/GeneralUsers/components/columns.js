@@ -1,5 +1,5 @@
 import React from 'react';
-import { RowStatusIndicator } from '../../../../../../lib/Misc';
+import { RowStatusIndicator } from 'lib/Misc';
 
 import { Button } from 'semantic-ui-react';
 
