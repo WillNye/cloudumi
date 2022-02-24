@@ -159,12 +159,7 @@ class SpokeHandler(BaseHandler):
 
         spoke_account_data = await account.get_spoke_accounts(host)
         # spoke_account_data is a special structure, so we unroll it
-        spoke_accounts = [
-            [
-                spoke_account.dict(),
-            ]
-            for spoke_account in spoke_account_data
-        ]
+        spoke_accounts = [spoke_account.dict() for spoke_account in spoke_account_data]
 
         self.write(
             {
