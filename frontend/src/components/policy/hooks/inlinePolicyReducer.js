@@ -1,33 +1,33 @@
 export const initialState = {
   isNewPolicy: false,
   newPolicy: {
-    PolicyName: "",
+    PolicyName: '',
     PolicyDocument: {},
   },
   inlinePolicies: [],
-};
+}
 
 export const reducer = (state, action) => {
   switch (action.type) {
-    case "SET_POLICIES":
+    case 'SET_POLICIES':
       if (action.policies) {
         return {
           ...state,
           inlinePolicies: action.policies,
           isNewPolicy: false,
-        };
+        }
       }
       return {
         ...state,
         isNewPolicy: false,
-      };
-    case "ADD_POLICY":
+      }
+    case 'ADD_POLICY':
       return {
         ...state,
         isNewPolicy: false,
         newPolicy: action.policy,
-      };
-    case "UPDATE_POLICY":
+      }
+    case 'UPDATE_POLICY':
       return {
         ...state,
         isNewPolicy: false,
@@ -35,26 +35,26 @@ export const reducer = (state, action) => {
           ...action.policy,
           new: false,
         },
-      };
-    case "DELETE_POLICY":
+      }
+    case 'DELETE_POLICY':
       return {
         ...state,
         isNewPolicy: false,
         newPolicy: {
           ...action.policy,
-          action: "detach",
+          action: 'detach',
           new: false,
           PolicyDocument: {
             deleted: true,
           },
         },
-      };
-    case "SET_IS_NEW_POLICY":
+      }
+    case 'SET_IS_NEW_POLICY':
       return {
         ...state,
         isNewPolicy: action.isNewPolicy,
-      };
+      }
     default:
-      throw new Error(`No such action type ${action.type} exist`);
+      throw new Error(`No such action type ${action.type} exist`)
   }
-};
+}

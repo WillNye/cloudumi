@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react'
 import {
   Button,
   Dimmer,
@@ -7,10 +7,10 @@ import {
   Message,
   Modal,
   TextArea,
-} from "semantic-ui-react";
-import ReactMarkdown from "react-markdown";
-import { usePolicyContext } from "./hooks/PolicyProvider";
-import { useHistory } from "react-router-dom";
+} from 'semantic-ui-react'
+import ReactMarkdown from 'react-markdown'
+import { usePolicyContext } from './hooks/PolicyProvider'
+import { useHistory } from 'react-router-dom'
 
 const StatusMessage = ({ message, isSuccess }) => {
   if (message && isSuccess) {
@@ -18,28 +18,28 @@ const StatusMessage = ({ message, isSuccess }) => {
       <Message positive>
         <Message.Header>Success</Message.Header>
         <Message.Content>
-          <ReactMarkdown linkTarget="_blank" children={message} />
+          <ReactMarkdown linkTarget='_blank' children={message} />
         </Message.Content>
       </Message>
-    );
+    )
   }
   if (message && !isSuccess) {
     return (
       <Message negative>
         <Message.Header>Oops! There was a problem.</Message.Header>
         <Message.Content>
-          <ReactMarkdown linkTarget="_blank" children={message} />
+          <ReactMarkdown linkTarget='_blank' children={message} />
         </Message.Content>
       </Message>
-    );
+    )
   }
-  return null;
-};
+  return null
+}
 
 export const JustificationModal = ({ handleSubmit }) => {
   const {
     adminAutoApprove = false,
-    context = "inline_policy",
+    context = 'inline_policy',
     isSuccess = false,
     resource = {},
     togglePolicyModal = false,
@@ -47,50 +47,50 @@ export const JustificationModal = ({ handleSubmit }) => {
     isPolicyEditorLoading,
     setIsPolicyEditorLoading,
     setIsSuccess,
-  } = usePolicyContext();
+  } = usePolicyContext()
 
-  const [message, setMessage] = useState("");
-  const [justification, setJustification] = useState("");
+  const [message, setMessage] = useState('')
+  const [justification, setJustification] = useState('')
 
   const handleJustificationUpdate = (e) => {
-    setJustification(e.target.value);
-  };
+    setJustification(e.target.value)
+  }
 
   // TODO, there are too many state updates happening here. try do more in the reducer.
   const handleJustificationSubmit = async () => {
     if (!justification) {
-      setMessage("No empty justification is allowed.");
-      setIsSuccess(false);
-      return;
+      setMessage('No empty justification is allowed.')
+      setIsSuccess(false)
+      return
     }
-    setIsPolicyEditorLoading(true);
+    setIsPolicyEditorLoading(true)
 
     const response = await handleSubmit({
       arn: resource.arn,
       adminAutoApprove,
       context,
       justification,
-    });
+    })
 
-    setMessage(response.message);
-    setIsPolicyEditorLoading(false);
-    setIsSuccess(response.request_created);
-    setJustification("");
-  };
+    setMessage(response.message)
+    setIsPolicyEditorLoading(false)
+    setIsSuccess(response.request_created)
+    setJustification('')
+  }
 
   const handleOk = () => {
-    setMessage("");
-    setJustification("");
-    setIsSuccess(false);
-    setTogglePolicyModal(false);
-  };
+    setMessage('')
+    setJustification('')
+    setIsSuccess(false)
+    setTogglePolicyModal(false)
+  }
 
   const handleCancel = () => {
-    setMessage("");
-    setJustification("");
-    setIsSuccess(false);
-    setTogglePolicyModal(false);
-  };
+    setMessage('')
+    setJustification('')
+    setIsSuccess(false)
+    setTogglePolicyModal(false)
+  }
 
   return (
     <Modal
@@ -106,9 +106,9 @@ export const JustificationModal = ({ handleSubmit }) => {
           {!isSuccess && (
             <Form>
               <TextArea
-                placeholder="Tell us why you need this change"
+                placeholder='Tell us why you need this change'
                 onChange={handleJustificationUpdate}
-                style={{ width: "fluid" }}
+                style={{ width: 'fluid' }}
                 defaultValue={justification}
               />
             </Form>
@@ -122,9 +122,9 @@ export const JustificationModal = ({ handleSubmit }) => {
       <Modal.Actions>
         {isSuccess ? (
           <Button
-            content="Done"
-            labelPosition="left"
-            icon="arrow right"
+            content='Done'
+            labelPosition='left'
+            icon='arrow right'
             onClick={handleOk}
             positive
             disabled={isPolicyEditorLoading}
@@ -132,17 +132,17 @@ export const JustificationModal = ({ handleSubmit }) => {
         ) : (
           <>
             <Button
-              content="Submit"
-              labelPosition="left"
-              icon="arrow right"
+              content='Submit'
+              labelPosition='left'
+              icon='arrow right'
               onClick={handleJustificationSubmit}
               positive
               disabled={isPolicyEditorLoading}
             />
             <Button
-              content="Cancel"
+              content='Cancel'
               onClick={handleCancel}
-              icon="cancel"
+              icon='cancel'
               negative
               disabled={isPolicyEditorLoading}
             />
@@ -150,8 +150,8 @@ export const JustificationModal = ({ handleSubmit }) => {
         )}
       </Modal.Actions>
     </Modal>
-  );
-};
+  )
+}
 
 export const DeleteResourceModal = () => {
   const {
@@ -163,25 +163,25 @@ export const DeleteResourceModal = () => {
     handleDeleteRole,
     isPolicyEditorLoading,
     setIsPolicyEditorLoading,
-  } = usePolicyContext();
-  const history = useHistory();
+  } = usePolicyContext()
+  const history = useHistory()
 
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('')
 
   const handleDeleteSubmit = async () => {
-    setIsPolicyEditorLoading(true);
-    const response = await handleDeleteRole();
-    setMessage(response.message);
-    setIsSuccess(response.status === "success");
-    setIsPolicyEditorLoading(false);
-  };
+    setIsPolicyEditorLoading(true)
+    const response = await handleDeleteRole()
+    setMessage(response.message)
+    setIsSuccess(response.status === 'success')
+    setIsPolicyEditorLoading(false)
+  }
 
   const handleOk = () => {
-    setMessage("");
-    setIsSuccess(false);
-    setToggleDeleteRole(false);
-    history.push("/policies");
-  };
+    setMessage('')
+    setIsSuccess(false)
+    setToggleDeleteRole(false)
+    history.push('/policies')
+  }
 
   return (
     <Modal
@@ -206,9 +206,9 @@ export const DeleteResourceModal = () => {
       <Modal.Actions>
         {isSuccess ? (
           <Button
-            content="Done"
-            labelPosition="left"
-            icon="arrow right"
+            content='Done'
+            labelPosition='left'
+            icon='arrow right'
             onClick={handleOk}
             positive
             disabled={isPolicyEditorLoading}
@@ -216,9 +216,9 @@ export const DeleteResourceModal = () => {
         ) : (
           <>
             <Button
-              content="Delete"
-              labelPosition="left"
-              icon="remove"
+              content='Delete'
+              labelPosition='left'
+              icon='remove'
               onClick={handleDeleteSubmit}
               negative
             />
@@ -227,5 +227,5 @@ export const DeleteResourceModal = () => {
         )}
       </Modal.Actions>
     </Modal>
-  );
-};
+  )
+}

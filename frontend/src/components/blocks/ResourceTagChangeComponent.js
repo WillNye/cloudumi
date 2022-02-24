@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react'
 import {
   Button,
   Grid,
@@ -8,101 +8,101 @@ import {
   Segment,
   Loader,
   Dimmer,
-} from "semantic-ui-react";
-import { useAuth } from "../../auth/AuthProviderDefault";
+} from 'semantic-ui-react'
+import { useAuth } from '../../auth/AuthProviderDefault'
 
 const ResourceTagChangeComponent = (props) => {
-  const change = props.change;
-  const [isLoading, setIsLoading] = useState(false);
-  const [buttonResponseMessage, setButtonResponseMessage] = useState([]);
-  const { sendProposedPolicyWithHooks } = useAuth();
+  const change = props.change
+  const [isLoading, setIsLoading] = useState(false)
+  const [buttonResponseMessage, setButtonResponseMessage] = useState([])
+  const { sendProposedPolicyWithHooks } = useAuth()
 
   const getTagActionSpan = () => {
-    if (change.tag_action === "create") {
-      return <span style={{ color: "green" }}>Create</span>;
+    if (change.tag_action === 'create') {
+      return <span style={{ color: 'green' }}>Create</span>
     }
-    if (change.tag_action === "update") {
-      return <span style={{ color: "green" }}>Update</span>;
+    if (change.tag_action === 'update') {
+      return <span style={{ color: 'green' }}>Update</span>
     }
-    if (change.tag_action === "delete") {
-      return <span style={{ color: "red" }}>Delete</span>;
+    if (change.tag_action === 'delete') {
+      return <span style={{ color: 'red' }}>Delete</span>
     }
-  };
-  const action = getTagActionSpan(change);
+  }
+  const action = getTagActionSpan(change)
 
   const handleTaggingApprove = async () => {
     await sendProposedPolicyWithHooks(
-      "apply_change",
+      'apply_change',
       change,
       null,
       props.requestID,
       setIsLoading,
       setButtonResponseMessage,
       props.reloadDataFromBackend
-    );
-  };
+    )
+  }
 
   const handleTaggingCancel = async () => {
     await sendProposedPolicyWithHooks(
-      "cancel_change",
+      'cancel_change',
       change,
       null,
       props.requestID,
       setIsLoading,
       setButtonResponseMessage,
       props.reloadDataFromBackend
-    );
-  };
+    )
+  }
 
   const headerContent = (
-    <Header size="large">
+    <Header size='large'>
       Tag Change - {action} {change.key}
     </Header>
-  );
+  )
 
   const applyChangesButton =
     props.config.can_approve_reject &&
-    change.status === "not_applied" &&
+    change.status === 'not_applied' &&
     !props.requestReadOnly ? (
       <Grid.Column>
         <Button
-          content="Apply Change"
+          content='Apply Change'
           onClick={handleTaggingApprove}
           positive
           fluid
         />
       </Grid.Column>
-    ) : null;
+    ) : null
 
   const cancelChangesButton =
     props.config.can_approve_reject &&
-    change.status === "not_applied" &&
+    change.status === 'not_applied' &&
     !props.requestReadOnly ? (
       <Grid.Column>
         <Button
-          content="Cancel Change"
+          content='Cancel Change'
           onClick={handleTaggingCancel}
           negative
           fluid
         />
       </Grid.Column>
-    ) : null;
+    ) : null
 
   const viewOnlyInfo =
-    props.requestReadOnly && change.status === "not_applied" ? (
+    props.requestReadOnly && change.status === 'not_applied' ? (
       <Grid.Column>
         <Message info>
           <Message.Header>View only</Message.Header>
           <p>This change is view only and can no longer be modified.</p>
         </Message>
       </Grid.Column>
-    ) : null;
+    ) : null
 
   const responseMessagesToShow =
     buttonResponseMessage.length > 0 ? (
       <Grid.Column>
         {buttonResponseMessage.map((message) =>
-          message.status === "error" ? (
+          message.status === 'error' ? (
             <Message negative>
               <Message.Header>An error occurred</Message.Header>
               <Message.Content>{message.message}</Message.Content>
@@ -115,27 +115,27 @@ const ResourceTagChangeComponent = (props) => {
           )
         )}
       </Grid.Column>
-    ) : null;
+    ) : null
 
   const changesAlreadyAppliedContent =
-    change.status === "applied" ? (
+    change.status === 'applied' ? (
       <Grid.Column>
         <Message info>
           <Message.Header>Change already applied</Message.Header>
           <p>This change has already been applied and cannot be modified.</p>
         </Message>
       </Grid.Column>
-    ) : null;
+    ) : null
 
   const changesAlreadyCancelledContent =
-    change.status === "cancelled" ? (
+    change.status === 'cancelled' ? (
       <Grid.Column>
         <Message negative>
           <Message.Header>Change cancelled</Message.Header>
           <p>This change has been cancelled and cannot be modified.</p>
         </Message>
       </Grid.Column>
-    ) : null;
+    ) : null
 
   const originalTagKey =
     change.original_key && change.original_key !== change.key ? (
@@ -145,14 +145,14 @@ const ResourceTagChangeComponent = (props) => {
         </Table.Cell>
         <Table.Cell>{change.original_key}</Table.Cell>
       </Table.Row>
-    ) : null;
+    ) : null
 
   const desiredTagKey = change.key ? (
     <Table.Row>
       <Table.Cell>Key</Table.Cell>
       <Table.Cell positive>{change.key}</Table.Cell>
     </Table.Row>
-  ) : null;
+  ) : null
 
   const originalTagValue =
     change.value &&
@@ -164,14 +164,14 @@ const ResourceTagChangeComponent = (props) => {
         </Table.Cell>
         <Table.Cell>{change.original_value}</Table.Cell>
       </Table.Row>
-    ) : null;
+    ) : null
 
   const desiredTagValue = change.value ? (
     <Table.Row>
       <Table.Cell>Value</Table.Cell>
       <Table.Cell positive>{change.value}</Table.Cell>
     </Table.Row>
-  ) : null;
+  ) : null
 
   const requestDetailsContent = change ? (
     <Table celled definition striped>
@@ -182,13 +182,13 @@ const ResourceTagChangeComponent = (props) => {
         {desiredTagValue}
         <Table.Row>
           <Table.Cell>Action</Table.Cell>
-          {change.tag_action === "create" ? (
+          {change.tag_action === 'create' ? (
             <Table.Cell positive>Create</Table.Cell>
           ) : null}
-          {change.tag_action === "update" ? (
+          {change.tag_action === 'update' ? (
             <Table.Cell positive>Update</Table.Cell>
           ) : null}
-          {change.tag_action === "delete" ? (
+          {change.tag_action === 'delete' ? (
             <Table.Cell negative>Delete</Table.Cell>
           ) : null}
         </Table.Row>
@@ -198,17 +198,17 @@ const ResourceTagChangeComponent = (props) => {
         </Table.Row>
       </Table.Body>
     </Table>
-  ) : null;
+  ) : null
 
   const policyChangeContent = change ? (
     <Grid fluid>
-      <Grid.Row columns="equal">
+      <Grid.Row columns='equal'>
         <Grid.Column>{requestDetailsContent}</Grid.Column>
       </Grid.Row>
-      <Grid.Row columns="equal">
+      <Grid.Row columns='equal'>
         <Grid.Column>{responseMessagesToShow}</Grid.Column>
       </Grid.Row>
-      <Grid.Row columns="equal">
+      <Grid.Row columns='equal'>
         {applyChangesButton}
         {cancelChangesButton}
         {viewOnlyInfo}
@@ -216,7 +216,7 @@ const ResourceTagChangeComponent = (props) => {
         {changesAlreadyCancelledContent}
       </Grid.Row>
     </Grid>
-  ) : null;
+  ) : null
 
   return (
     <Segment>
@@ -226,7 +226,7 @@ const ResourceTagChangeComponent = (props) => {
       {headerContent}
       {policyChangeContent}
     </Segment>
-  );
-};
+  )
+}
 
-export default ResourceTagChangeComponent;
+export default ResourceTagChangeComponent

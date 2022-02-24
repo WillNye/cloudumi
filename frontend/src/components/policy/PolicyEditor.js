@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react'
 import {
   Dimmer,
   Divider,
@@ -10,35 +10,35 @@ import {
   Message,
   Popup,
   Segment,
-} from "semantic-ui-react";
-import { PolicyProvider, usePolicyContext } from "./hooks/PolicyProvider";
-import IAMRolePolicy from "./IAMRolePolicy";
-import ResourcePolicy from "./ResourcePolicy";
-import ResourceDetail from "./ResourceDetail";
-import { DeleteResourceModal } from "./PolicyModals";
-import { useAuth } from "../../auth/AuthProviderDefault";
+} from 'semantic-ui-react'
+import { PolicyProvider, usePolicyContext } from './hooks/PolicyProvider'
+import IAMRolePolicy from './IAMRolePolicy'
+import ResourcePolicy from './ResourcePolicy'
+import ResourceDetail from './ResourceDetail'
+import { DeleteResourceModal } from './PolicyModals'
+import { useAuth } from '../../auth/AuthProviderDefault'
 
 const PolicyEditor = () => {
-  const { user } = useAuth();
+  const { user } = useAuth()
   const {
     isPolicyEditorLoading = true,
     params = {},
     resource = {},
     setToggleDeleteRole,
     setToggleRefreshRole,
-  } = usePolicyContext();
-  const { serviceType = "iamrole" } = params;
+  } = usePolicyContext()
+  const { serviceType = 'iamrole' } = params
 
-  const onDeleteClick = () => setToggleDeleteRole(true);
-  const onRefreshClick = () => setToggleRefreshRole(true);
+  const onDeleteClick = () => setToggleDeleteRole(true)
+  const onRefreshClick = () => setToggleRefreshRole(true)
 
   const resourceError = () => {
     if (resource.status) {
-      let errorMessage = "";
+      let errorMessage = ''
       try {
-        errorMessage = JSON.stringify(resource);
+        errorMessage = JSON.stringify(resource)
       } catch {
-        errorMessage = resource;
+        errorMessage = resource
       }
 
       return (
@@ -50,32 +50,32 @@ const PolicyEditor = () => {
             </Message>
           </Grid.Column>
         </Grid>
-      );
+      )
     }
-  };
+  }
 
-  const EditPolicy = ["iamrole", "iamuser"].includes(serviceType)
+  const EditPolicy = ['iamrole', 'iamuser'].includes(serviceType)
     ? IAMRolePolicy
-    : ResourcePolicy;
+    : ResourcePolicy
 
   return (
     <Dimmer.Dimmable as={Segment} dimmed={isPolicyEditorLoading}>
       <>
         {resourceError()}
-        <Header as="h1" floated="left">
+        <Header as='h1' floated='left'>
           <Popup
-            content="Refresh this resource directly from the cloud"
-            trigger={<Icon name="refresh" onClick={onRefreshClick} />}
-            position="bottom left"
+            content='Refresh this resource directly from the cloud'
+            trigger={<Icon name='refresh' onClick={onRefreshClick} />}
+            position='bottom left'
           />
-          Edit Policy for {`${resource.arn || ""}`}
+          Edit Policy for {`${resource.arn || ''}`}
         </Header>
-        {["iamrole", "iamuser"].includes(serviceType) &&
+        {['iamrole', 'iamuser'].includes(serviceType) &&
         user?.authorization?.can_delete_iam_principals ? (
           <Label
-            as="a"
-            attached="top right"
-            color="red"
+            as='a'
+            attached='top right'
+            color='red'
             onClick={onDeleteClick}
           >
             Delete
@@ -90,15 +90,15 @@ const PolicyEditor = () => {
         <Loader />
       </Dimmer>
     </Dimmer.Dimmable>
-  );
-};
+  )
+}
 
 const PolicyEditorWrapper = () => {
   return (
     <PolicyProvider>
       <PolicyEditor />
     </PolicyProvider>
-  );
-};
+  )
+}
 
-export default PolicyEditorWrapper;
+export default PolicyEditorWrapper

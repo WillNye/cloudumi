@@ -12,7 +12,7 @@
 
 .warningIcon {
   display: block;
-  background-image: url("../../assets/icons/warning.png");
+  background-image: url('../../assets/icons/warning.png');
   background-size: contain;
   background-repeat: no-repeat;
   padding: 2px;

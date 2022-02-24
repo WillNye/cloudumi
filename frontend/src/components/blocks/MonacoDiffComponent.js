@@ -1,72 +1,72 @@
-import React, { useEffect, useRef, useState } from "react";
-import { DiffEditor, useMonaco } from "@monaco-editor/react";
-import PropTypes from "prop-types";
+import React, { useEffect, useRef, useState } from 'react'
+import { DiffEditor, useMonaco } from '@monaco-editor/react'
+import PropTypes from 'prop-types'
 import {
   getMonacoTriggerCharacters,
   getMonacoCompletions,
   getStringFormat,
   getLocalStorageSettings,
-} from "../../helpers/utils";
+} from '../../helpers/utils'
 
 const MonacoDiffComponent = (props) => {
-  const monaco = useMonaco();
-  const onLintError = props.onLintError;
-  const onValueChange = props.onValueChange;
-  const modifiedEditorRef = useRef();
-  const [language, setLanguage] = useState("json");
-  const [languageDetected, setLanguageDetected] = useState(false);
+  const monaco = useMonaco()
+  const onLintError = props.onLintError
+  const onValueChange = props.onValueChange
+  const modifiedEditorRef = useRef()
+  const [language, setLanguage] = useState('json')
+  const [languageDetected, setLanguageDetected] = useState(false)
 
   const onChange = (newValue) => {
-    onValueChange(newValue);
-  };
+    onValueChange(newValue)
+  }
 
   useEffect(() => {
-    if (!monaco) return;
-    monaco.languages.registerCompletionItemProvider("json", {
+    if (!monaco) return
+    monaco.languages.registerCompletionItemProvider('json', {
       triggerCharacters: getMonacoTriggerCharacters(),
       async provideCompletionItems(model, position) {
-        return await getMonacoCompletions(model, position, monaco);
+        return await getMonacoCompletions(model, position, monaco)
       },
-    });
-  }, [monaco]);
+    })
+  }, [monaco])
 
   useEffect(
     () => {
-      const { newValue } = props;
-      if (!newValue || languageDetected) return;
-      setLanguage(getStringFormat(newValue));
-      setLanguageDetected(true);
+      const { newValue } = props
+      if (!newValue || languageDetected) return
+      setLanguage(getStringFormat(newValue))
+      setLanguageDetected(true)
     },
     [props.newValue] // eslint-disable-line
-  );
+  )
 
   const editorDidMount = (editor, monaco) => {
     editor._modifiedEditor.onDidChangeModelContent((_) => {
-      onChange(editor._modifiedEditor.getValue());
-    });
+      onChange(editor._modifiedEditor.getValue())
+    })
     editor._modifiedEditor.onDidChangeModelDecorations(() => {
       if (modifiedEditorRef.current) {
-        const model = modifiedEditorRef.current.getModel();
-        if (model === null || model.getModeId() !== "json") {
-          return;
+        const model = modifiedEditorRef.current.getModel()
+        if (model === null || model.getModeId() !== 'json') {
+          return
         }
 
-        const owner = model.getModeId();
-        const uri = model.uri;
-        const markers = monaco.editor.getModelMarkers({ owner, resource: uri });
+        const owner = model.getModeId()
+        const uri = model.uri
+        const markers = monaco.editor.getModelMarkers({ owner, resource: uri })
         onLintError(
           markers.map(
             (marker) =>
               `Lint error on line ${marker.startLineNumber} columns
               ${marker.startColumn}-${marker.endColumn}: ${marker.message}`
           )
-        );
+        )
       }
-    });
-    modifiedEditorRef.current = editor._modifiedEditor;
-  };
+    })
+    modifiedEditorRef.current = editor._modifiedEditor
+  }
 
-  const { oldValue, newValue, readOnly } = props;
+  const { oldValue, newValue, readOnly } = props
   const options = {
     selectOnLineNumbers: true,
     renderSideBySide: true,
@@ -78,13 +78,13 @@ const MonacoDiffComponent = (props) => {
     scrollBeyondLastLine: false,
     automaticLayout: true,
     readOnly,
-  };
-  const editorTheme = getLocalStorageSettings("editorTheme");
+  }
+  const editorTheme = getLocalStorageSettings('editorTheme')
   return (
     <DiffEditor
       language={language}
-      width="100%"
-      height="500px"
+      width='100%'
+      height='500px'
       original={oldValue}
       modified={newValue}
       onMount={editorDidMount}
@@ -93,8 +93,8 @@ const MonacoDiffComponent = (props) => {
       theme={editorTheme}
       alwaysConsumeMouseWheel={false}
     />
-  );
-};
+  )
+}
 
 // This component requires four props:
 // 1. oldValue = old value for the diff
@@ -109,5 +109,5 @@ MonacoDiffComponent.propTypes = {
   readOnly: PropTypes.bool.isRequired,
   onLintError: PropTypes.func.isRequired,
   onValueChange: PropTypes.func.isRequired,
-};
-export default MonacoDiffComponent;
+}
+export default MonacoDiffComponent

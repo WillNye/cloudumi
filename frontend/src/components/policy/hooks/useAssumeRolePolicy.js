@@ -1,17 +1,17 @@
-import { useEffect, useReducer } from "react";
-import { initialState, reducer } from "./assumeRolePolicyReducer";
-import { usePolicyContext } from "./PolicyProvider";
+import { useEffect, useReducer } from 'react'
+import { initialState, reducer } from './assumeRolePolicyReducer'
+import { usePolicyContext } from './PolicyProvider'
 
 const useAssumeRolePolicy = () => {
-  const { resource, sendRequestV2 } = usePolicyContext();
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const { resource, sendRequestV2 } = usePolicyContext()
+  const [state, dispatch] = useReducer(reducer, initialState)
 
   useEffect(() => {
     dispatch({
-      type: "SET_ASSUMEROLE_POLICY",
+      type: 'SET_ASSUMEROLE_POLICY',
       policy: resource.assume_role_policy_document,
-    });
-  }, [resource.assume_role_policy_document]);
+    })
+  }, [resource.assume_role_policy_document])
 
   const handleAssumeRolePolicySubmit = async ({
     arn,
@@ -26,9 +26,9 @@ const useAssumeRolePolicy = () => {
           {
             principal: {
               principal_arn: arn,
-              principal_type: "AwsResource",
+              principal_type: 'AwsResource',
             },
-            change_type: "assume_role_policy",
+            change_type: 'assume_role_policy',
             policy_name: state.assumeRolePolicy.PolicyName,
             policy: {
               policy_document:
@@ -37,15 +37,15 @@ const useAssumeRolePolicy = () => {
           },
         ],
       },
-    });
-  };
+    })
+  }
 
   return {
     ...state,
     setAssumeRolePolicy: (policy) =>
-      dispatch({ type: "SET_ASSUMEROLE_POLICY", policy }),
+      dispatch({ type: 'SET_ASSUMEROLE_POLICY', policy }),
     handleAssumeRolePolicySubmit,
-  };
-};
+  }
+}
 
-export default useAssumeRolePolicy;
+export default useAssumeRolePolicy

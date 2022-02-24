@@ -1,29 +1,29 @@
 export const initialState = {
-  actionType: "attach",
+  actionType: 'attach',
   managedPolicies: [],
-  managedPolicyArn: "",
-};
+  managedPolicyArn: '',
+}
 
 export const reducer = (state, action) => {
   switch (action.type) {
-    case "SET_MANAGED_POLICIES":
+    case 'SET_MANAGED_POLICIES':
       return {
         ...state,
         managedPolicies: action.policies,
-      };
-    case "ADD_MANAGED_POLICY":
+      }
+    case 'ADD_MANAGED_POLICY':
       return {
         ...state,
-        actionType: "attach",
+        actionType: 'attach',
         managedPolicyArn: action.arn,
-      };
-    case "DELETE_MANAGED_POLICY":
+      }
+    case 'DELETE_MANAGED_POLICY':
       return {
         ...state,
-        actionType: "detach",
+        actionType: 'detach',
         managedPolicyArn: action.arn,
-      };
+      }
     default:
-      throw new Error(`No such action type ${action.type} exist`);
+      throw new Error(`No such action type ${action.type} exist`)
   }
-};
+}

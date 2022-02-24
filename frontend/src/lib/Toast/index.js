@@ -1,8 +1,8 @@
 import React, { createContext } from 'react'
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
-const ToastContext = createContext();
+const ToastContext = createContext()
 
 export const ToastProvider = ({ children }) => {
   return (
@@ -10,11 +10,10 @@ export const ToastProvider = ({ children }) => {
       {children}
       <ToastContainer />
     </ToastContext.Provider>
-  );
-};
+  )
+}
 
-export const useToast = () => {  
-
+export const useToast = () => {
   const defaultOptions = {
     onOpen: () => {},
     onClose: () => {},
@@ -22,29 +21,30 @@ export const useToast = () => {
     type: 'default',
     hideProgressBar: false,
     position: 'top-right',
-    pauseOnHover: false
-  };
-  
+    pauseOnHover: false,
+  }
+
   const customToast = (message, options) => {
-    
     const {
       onOpen = () => {},
       onClose = () => {},
       type, // info/success/warning/error/default
-    } = options || {};
-    
+    } = options || {}
+
     toast(message, {
       ...defaultOptions,
       onOpen,
       onClose,
-      type
-    });
-  };
+      type,
+    })
+  }
 
   return {
     toast: customToast,
-    success: (message, options) => customToast(message, { ...options, type: 'success' }),
-    error: (message, options) => customToast(message, { ...options, type: 'error' }),
-    dismiss: toast.dismiss
-  };
-};
+    success: (message, options) =>
+      customToast(message, { ...options, type: 'success' }),
+    error: (message, options) =>
+      customToast(message, { ...options, type: 'error' }),
+    dismiss: toast.dismiss,
+  }
+}

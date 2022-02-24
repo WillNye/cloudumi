@@ -3,7 +3,7 @@ export const initialState = {
   column: null,
   data: [],
   debounceWait: 500,
-  direction: "descending",
+  direction: 'descending',
   expandedRow: null,
   filteredData: [],
   filters: {},
@@ -11,27 +11,27 @@ export const initialState = {
   redirect: false,
   tableConfig: {
     columns: [],
-    dataEndpoint: "",
+    dataEndpoint: '',
     expandableRows: true,
     rowsPerPage: 50,
     serverSideFiltering: true,
     sortable: true,
-    tableName: "",
-    tableDescription: "",
+    tableName: '',
+    tableDescription: '',
     totalRows: 1000,
   },
-  warningMessage: "",
-};
+  warningMessage: '',
+}
 
 export const reducer = (state, action) => {
   switch (action.type) {
-    case "SET_TABLE_CONFIG": {
+    case 'SET_TABLE_CONFIG': {
       return {
         ...state,
         tableConfig: action.tableConfig,
-      };
+      }
     }
-    case "SET_DATA": {
+    case 'SET_DATA': {
       return {
         ...state,
         data: action.data.data,
@@ -39,21 +39,21 @@ export const reducer = (state, action) => {
         totalCount: action.data.totalCount,
         filteredCount: action.data.filteredCount,
         isLoading: false,
-      };
+      }
     }
-    case "SET_FILTERS": {
+    case 'SET_FILTERS': {
       return {
         ...state,
         filters: action.filters,
-      };
+      }
     }
-    case "SET_WARNINGS": {
+    case 'SET_WARNINGS': {
       return {
         ...state,
         warningMessage: action.warningMessage,
-      };
+      }
     }
-    case "SET_FILTERED_DATA": {
+    case 'SET_FILTERED_DATA': {
       return {
         ...state,
         expandedRow: null,
@@ -61,32 +61,32 @@ export const reducer = (state, action) => {
         filteredCount: action.filteredData.filteredCount,
         totalCount: action.filteredData.totalCount,
         activePage: 1,
-        direction: action.direction || "descending",
+        direction: action.direction || 'descending',
         column: action.clickedColumn || null,
         isLoading: false,
-      };
+      }
     }
-    case "SET_REDIRECT": {
+    case 'SET_REDIRECT': {
       return {
         ...state,
         redirect: action.redirect,
-      };
+      }
     }
-    case "SET_EXPANDED_ROW": {
+    case 'SET_EXPANDED_ROW': {
       return {
         ...state,
         expandedRow: action.expandedRow,
-      };
+      }
     }
-    case "SET_ACTIVE_PAGE": {
+    case 'SET_ACTIVE_PAGE': {
       return {
         ...state,
         activePage: action.activePage,
         expandedRow: null,
-      };
+      }
     }
     default: {
-      return state;
+      return state
     }
   }
-};
+}

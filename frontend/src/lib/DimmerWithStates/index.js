@@ -1,20 +1,19 @@
-import React from 'react';
+import React from 'react'
 
-import { Message, Dimmer, Loader } from 'semantic-ui-react';
+import { Message, Dimmer, Loader } from 'semantic-ui-react'
 
 export const DimmerWithStates = ({
   loading,
   showMessage,
   messageType,
-  message
+  message,
 }) => {
-
   const types = {
     error: messageType === 'error',
     info: messageType === 'info',
     success: messageType === 'success',
-    warning: messageType === 'warning'
-  };
+    warning: messageType === 'warning',
+  }
 
   return (
     <>
@@ -31,4 +30,4 @@ export const DimmerWithStates = ({
       </Dimmer>
     </>
   )
-};
+}

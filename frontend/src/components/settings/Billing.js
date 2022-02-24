@@ -1,5 +1,5 @@
-import React from "react";
-import { Segment } from "semantic-ui-react";
+import React from 'react'
+import { Segment } from 'semantic-ui-react'
 
 export const Billing = () => {
   return (
@@ -7,5 +7,5 @@ export const Billing = () => {
       Lists all the tiers, features, and costs. Highlights the user's current
       tier. Initially, we will ask them to reach out to us to change their tier
     </Segment>
-  );
-};
+  )
+}

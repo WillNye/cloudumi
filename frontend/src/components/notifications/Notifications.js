@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react'
 import {
   Accordion,
   Button,
@@ -7,59 +7,55 @@ import {
   Icon,
   Loader,
   Dimmer,
-} from "semantic-ui-react";
-import ReactMarkdown from "react-markdown";
-import Editor from "@monaco-editor/react";
-import { getLocalStorageSettings } from "../../helpers/utils";
-import { useAuth } from "../../auth/AuthProviderDefault";
-import { useNotifications } from "../hooks/notifications";
+} from 'semantic-ui-react'
+import ReactMarkdown from 'react-markdown'
+import Editor from '@monaco-editor/react'
+import { getLocalStorageSettings } from '../../helpers/utils'
+import { useAuth } from '../../auth/AuthProviderDefault'
+import { useNotifications } from '../hooks/notifications'
 
 export const NotificationsModal = (props) => {
-  const { notifications, GetAndSetNotifications } = useNotifications();
-  const { user, sendRequestCommon } = useAuth();
-  const [activeTargets, setActiveTargets] = useState({});
-  const editorTheme = getLocalStorageSettings("editorTheme");
+  const { notifications, GetAndSetNotifications } = useNotifications()
+  const { user, sendRequestCommon } = useAuth()
+  const [activeTargets, setActiveTargets] = useState({})
+  const editorTheme = getLocalStorageSettings('editorTheme')
 
   const closeNotifications = () => {
     // We mark notifications read after user has closed the notifications modal
-    markAllNotificationsAsReadForUser(notifications);
-    props.closeNotifications();
-  };
+    markAllNotificationsAsReadForUser(notifications)
+    props.closeNotifications()
+  }
 
-  const [notificationList, setNotificationList] = useState([]);
-  const [loadingNotifications, setLoadingNotifications] = useState([]);
+  const [notificationList, setNotificationList] = useState([])
+  const [loadingNotifications, setLoadingNotifications] = useState([])
 
   const markAllNotificationsAsReadForUser = async (notifications) => {
-    if (notifications.length <= 0) return;
+    if (notifications.length <= 0) return
     const unreadNotifications = notifications.filter(
       (item) => item?.read_for_current_user !== true
-    );
-    if (unreadNotifications.length <= 0) return;
+    )
+    if (unreadNotifications.length <= 0) return
     const request = {
-      action: "toggle_read_for_current_user",
+      action: 'toggle_read_for_current_user',
       notifications: unreadNotifications,
-    };
+    }
 
-    await sendRequestCommon(request, "/api/v2/notifications", "put");
-  };
+    await sendRequestCommon(request, '/api/v2/notifications', 'put')
+  }
 
   const toggleHideFromUser = async (notification) => {
     const request = {
-      action: "toggle_hidden_for_current_user",
+      action: 'toggle_hidden_for_current_user',
       notifications: [notification],
-    };
-    const predictable_id = notification.predictable_id;
-    setLoadingNotifications([...loadingNotifications, predictable_id]);
-    const res = await sendRequestCommon(
-      request,
-      "/api/v2/notifications",
-      "put"
-    );
-    GetAndSetNotifications(user, res);
+    }
+    const predictable_id = notification.predictable_id
+    setLoadingNotifications([...loadingNotifications, predictable_id])
+    const res = await sendRequestCommon(request, '/api/v2/notifications', 'put')
+    GetAndSetNotifications(user, res)
     setLoadingNotifications(
       loadingNotifications.filter((item) => item !== predictable_id)
-    );
-  };
+    )
+  }
 
   const monacoOptions = {
     selectOnLineNumbers: true,
@@ -71,7 +67,7 @@ export const NotificationsModal = (props) => {
     automaticLayout: true,
     wordWrap: true,
     readOnly: true,
-  };
+  }
   useEffect(() => {
     async function generateRenderedData() {
       setNotificationList(
@@ -81,19 +77,19 @@ export const NotificationsModal = (props) => {
               notification.message_actions.map(async function (message_action) {
                 return (
                   <Button
-                    color="green"
-                    onClick={() => window.open(message_action.uri, "_blank")}
+                    color='green'
+                    onClick={() => window.open(message_action.uri, '_blank')}
                   >
                     {message_action.text}
                   </Button>
-                );
+                )
               })
-            );
+            )
             const notificationColor = notification?.read_for_current_user
               ? null
-              : "blue";
+              : 'blue'
 
-            const predictable_id = notification?.predictable_id;
+            const predictable_id = notification?.predictable_id
             return (
               <>
                 <Segment color={notificationColor}>
@@ -102,20 +98,20 @@ export const NotificationsModal = (props) => {
                   >
                     <Loader>Submitting Request</Loader>
                   </Dimmer>
-                  <Button.Group basic size="small" floated="right">
+                  <Button.Group basic size='small' floated='right'>
                     <Button
-                      icon="close"
+                      icon='close'
                       onClick={() => {
                         async function execute() {
-                          await toggleHideFromUser(notification);
+                          await toggleHideFromUser(notification)
                         }
 
-                        execute();
+                        execute()
                       }}
                     />
                   </Button.Group>
                   <ReactMarkdown
-                    linkTarget="_blank"
+                    linkTarget='_blank'
                     children={notification?.message}
                   />
                   <Accordion exclusive={false} fluid>
@@ -125,16 +121,16 @@ export const NotificationsModal = (props) => {
                       }
                       index={true}
                       onClick={() => {
-                        let newState = activeTargets;
+                        let newState = activeTargets
                         newState[notification.predictable_id] =
-                          !newState[notification.predictable_id];
+                          !newState[notification.predictable_id]
                         setActiveTargets({
                           ...activeTargets,
                           ...newState,
-                        });
+                        })
                       }}
                     >
-                      <Icon name="dropdown" />
+                      <Icon name='dropdown' />
                       More Details
                     </Accordion.Title>
                     <Accordion.Content
@@ -143,30 +139,30 @@ export const NotificationsModal = (props) => {
                       }
                     >
                       <Editor
-                        height="500px"
-                        defaultLanguage="json"
+                        height='500px'
+                        defaultLanguage='json'
                         theme={editorTheme}
                         value={JSON.stringify(notification?.details, null, 2)}
                         options={monacoOptions}
-                        textAlign="center"
+                        textAlign='center'
                       />
                     </Accordion.Content>
                   </Accordion>
                   <Button.Group>{messageActions}</Button.Group>
                 </Segment>
               </>
-            );
+            )
           })
         )
-      );
+      )
     }
-    generateRenderedData();
-  }, [notifications, activeTargets, loadingNotifications]); // eslint-disable-line
+    generateRenderedData()
+  }, [notifications, activeTargets, loadingNotifications]) // eslint-disable-line
 
   useEffect(() => {
-    if (!props.isOpen) return;
-    GetAndSetNotifications(user);
-  }, [props.isOpen, user]); // eslint-disable-line
+    if (!props.isOpen) return
+    GetAndSetNotifications(user)
+  }, [props.isOpen, user]) // eslint-disable-line
 
   const notificationDisplay = (
     <>
@@ -176,15 +172,15 @@ export const NotificationsModal = (props) => {
         <p>You do not have any notifications.</p>
       )}
     </>
-  );
+  )
 
   return (
     <Modal open={props.isOpen} onClose={closeNotifications}>
       <Modal.Header>Notifications</Modal.Header>
       <Modal.Content>{notificationDisplay}</Modal.Content>
       <Modal.Actions>
-        <Button content="Close" onClick={closeNotifications} icon="cancel" />
+        <Button content='Close' onClick={closeNotifications} icon='cancel' />
       </Modal.Actions>
     </Modal>
-  );
-};
+  )
+}

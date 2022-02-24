@@ -1,7 +1,7 @@
-import React from "react";
-import { Dropdown, Header, Input, Label, Table } from "semantic-ui-react";
-import SemanticDatepicker from "react-semantic-ui-datepickers";
-import _ from "lodash";
+import React from 'react'
+import { Dropdown, Header, Input, Label, Table } from 'semantic-ui-react'
+import SemanticDatepicker from 'react-semantic-ui-datepickers'
+import _ from 'lodash'
 
 const DataTableColumnsComponent = ({
   column,
@@ -17,32 +17,32 @@ const DataTableColumnsComponent = ({
   tableConfig,
 }) => {
   const generateColumnOptions = (data) => {
-    const columnOptionSet = {};
+    const columnOptionSet = {}
 
     // Iterate through our data
     data.forEach((item) => {
       Object.keys(item).forEach((key) => {
         if (!(key in columnOptionSet)) {
-          columnOptionSet[key] = new Set();
+          columnOptionSet[key] = new Set()
         }
-        columnOptionSet[key].add(item[key]);
-      });
-    });
+        columnOptionSet[key].add(item[key])
+      })
+    })
 
-    const columnOptions = {};
+    const columnOptions = {}
     for (const [key, value] of Object.entries(columnOptionSet)) {
       value.forEach((item) => {
-        !(key in columnOptions) && (columnOptions[key] = []);
+        !(key in columnOptions) && (columnOptions[key] = [])
         columnOptions[key].push({
           key: item,
           value: item,
           text: item,
-        });
-      });
+        })
+      })
     }
 
-    return columnOptions;
-  };
+    return columnOptions
+  }
 
   const handleSort = (clickedColumn, column, filteredData, direction) => {
     // Things that happening in this sorting event handler are following:
@@ -52,30 +52,30 @@ const DataTableColumnsComponent = ({
     let sortedData = {
       totalCount: totalCount,
       filteredCount: filteredCount,
-    };
+    }
     if (column !== clickedColumn) {
-      sortedData.data = _.sortBy(filteredData, [clickedColumn]);
-      setFilteredData(sortedData, "ascending", clickedColumn);
+      sortedData.data = _.sortBy(filteredData, [clickedColumn])
+      setFilteredData(sortedData, 'ascending', clickedColumn)
     } else {
-      sortedData.data = filteredData.reverse();
+      sortedData.data = filteredData.reverse()
       setFilteredData(
         sortedData,
-        direction === "ascending" ? "descending" : "ascending",
+        direction === 'ascending' ? 'descending' : 'ascending',
         clickedColumn
-      );
+      )
     }
-  };
+  }
 
-  const columns = [];
-  const columnOptions = generateColumnOptions(data);
+  const columns = []
+  const columnOptions = generateColumnOptions(data)
 
-  (tableConfig.columns || []).forEach((item) => {
-    const { key } = item;
-    const options = columnOptions[item.key] || [];
-    let columnCell = null;
+  ;(tableConfig.columns || []).forEach((item) => {
+    const { key } = item
+    const options = columnOptions[item.key] || []
+    let columnCell = null
 
     switch (item.type) {
-      case "dropdown": {
+      case 'dropdown': {
         columnCell = (
           <Dropdown
             name={item.key}
@@ -88,93 +88,93 @@ const DataTableColumnsComponent = ({
             options={options}
             onChange={filterColumn}
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation()
             }}
-            value={filters[item.key] != null ? filters[item.key] : ""}
+            value={filters[item.key] != null ? filters[item.key] : ''}
           />
-        );
-        break;
+        )
+        break
       }
-      case "input": {
+      case 'input': {
         columnCell = (
           <Input
             name={item.key}
-            autoComplete="off"
+            autoComplete='off'
             style={item.style}
             placeholder={item.placeholder}
             onChange={filterColumn}
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation()
             }}
-            value={filters[item.key] != null ? filters[item.key] : ""}
+            value={filters[item.key] != null ? filters[item.key] : ''}
           />
-        );
-        break;
+        )
+        break
       }
-      case "link": {
+      case 'link': {
         columnCell = (
           <Input
             name={item.key}
-            autoComplete="off"
+            autoComplete='off'
             style={item.style}
             placeholder={item.placeholder}
             onChange={filterColumn}
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation()
             }}
-            value={filters[item.key] != null ? filters[item.key] : ""}
+            value={filters[item.key] != null ? filters[item.key] : ''}
           />
-        );
-        break;
+        )
+        break
       }
-      case "daterange": {
+      case 'daterange': {
         columnCell = (
           <div
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation()
             }}
             style={{
-              display: "inline",
+              display: 'inline',
             }}
           >
             <SemanticDatepicker
               name={item.key}
               style={item.style}
               onChange={filterDateRangeTime}
-              type="range"
+              type='range'
               compact
             />
           </div>
-        );
-        break;
+        )
+        break
       }
-      case "button": {
+      case 'button': {
         columnCell = (
           <Header
-            as="h4"
+            as='h4'
             style={item.style}
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation()
             }}
           >
             {item.placeholder}
           </Header>
-        );
-        break;
+        )
+        break
       }
-      case "icon": {
+      case 'icon': {
         columnCell = (
           <Header
-            as="h4"
+            as='h4'
             style={item.style}
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation()
             }}
           >
             {item.placeholder}
           </Header>
-        );
-        break;
+        )
+        break
       }
       default: {
         columnCell = (
@@ -182,14 +182,14 @@ const DataTableColumnsComponent = ({
             style={item.style}
             color={item.color}
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation()
             }}
             basic
           >
             {item.placeholder}
           </Label>
-        );
-        break;
+        )
+        break
       }
     }
 
@@ -199,19 +199,19 @@ const DataTableColumnsComponent = ({
         style={item.style}
         width={item.width}
         onClick={() => {
-          handleSort(key, column, filteredData, direction);
+          handleSort(key, column, filteredData, direction)
         }}
         sorted={
-          column === item.key && !["button"].includes(item.type)
+          column === item.key && !['button'].includes(item.type)
             ? direction
             : null
         }
-        textAlign={item.type === "button" ? "center" : null}
+        textAlign={item.type === 'button' ? 'center' : null}
       >
         {columnCell}
       </Table.HeaderCell>
-    );
-  });
+    )
+  })
 
   return (
     <Table.Header>
@@ -220,7 +220,7 @@ const DataTableColumnsComponent = ({
         {columns}
       </Table.Row>
     </Table.Header>
-  );
-};
+  )
+}
 
-export default DataTableColumnsComponent;
+export default DataTableColumnsComponent
