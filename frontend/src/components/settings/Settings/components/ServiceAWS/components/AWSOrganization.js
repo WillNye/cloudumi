@@ -20,7 +20,7 @@ export const AWSOrganization = () => {
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
-      remove.do({ account_id: rowValues?.account_id })
+      remove.do({}, `${ rowValues?.account_name }/${ rowValues?.account_id }`)
       .then(() => {
         success('Hub Account REMOVED');
         get.do();

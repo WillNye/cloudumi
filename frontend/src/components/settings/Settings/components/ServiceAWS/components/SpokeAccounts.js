@@ -44,7 +44,7 @@ export const SpokeAccounts = () => {
 
   const label = `Status: ${get.status}${get.error ? ` / Error: ${get.error}` : ''}`;
 
-  const data = get.data?.[0];
+  const data = get?.data;
 
   return (
     <>
