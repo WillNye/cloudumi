@@ -8,11 +8,12 @@ import { Legacy } from './components/Legacy';
 import { SpokeAccounts } from './components/SpokeAccounts';
 import { RoleAccessAuth } from './components/RoleAccessAuth';
 import { SectionTitle } from '../utils';
+import { ApiGetProvider } from 'hooks/useApi';
 
 export const ServiceAWS = () => {
 
   return (
-    <>
+    <ApiGetProvider pathName="integrations/aws">
 
       <ScreenHeading>
         Connect Noq to your AWS accounts
@@ -42,6 +43,6 @@ export const ServiceAWS = () => {
         <Legacy />
       </Section>
 
-    </>
+    </ApiGetProvider>
   );
 };

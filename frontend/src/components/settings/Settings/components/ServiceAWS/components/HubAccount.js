@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useApi } from 'hooks/useApi';
+import React, { useContext, useEffect } from 'react';
+import { ApiContext, useApi } from 'hooks/useApi';
 import Datatable from 'lib/Datatable';
 import { DatatableWrapper } from 'lib/Datatable/ui/utils';
 import { useModal } from 'lib/hooks/useModal';
@@ -16,13 +16,13 @@ export const HubAccount = () => {
 
   const { openModal, ModalComponent } = useModal('Add Hub Account');
 
-  useEffect(() => {
-    get.do();
-  }, []);
+  const { getResponse } = useContext(ApiContext);
+
+  useEffect(() => get.do(), []);
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
-      remove.do(rowValues.id) // Assuming should we gonna use an Id to delete
+      remove.do({ account_id: rowValues?.account_id })
       .then(() => {
         success('Hub Account REMOVED');
         get.do();
@@ -38,26 +38,34 @@ export const HubAccount = () => {
     });
   };
 
-  const handleClose = () => {
-    post.reset();
-  };
+  const handleClose = post.reset;
 
   const columns = hubAccountColumns({ handleClick });
 
   const label = `Status: ${get.status}${get.error ? ` / Error: ${get.error}` : ''}`;
+
+  const object = {};
+
+  get.data?.forEach((el) => {
+    object[el.name] = el.value;
+  });
+
+  const data = [object];
+
+  console.log('getResponse', getResponse);
 
   return (
     <>
 
       <DatatableWrapper>
         <Datatable
-          data={get.data}
+          data={data}
           columns={columns}
           emptyState={{
             label: 'Connect Hub Account',
             onClick: openModal
           }}
-          isLoading={get.status === 'working' || get.status === 'done'}
+          isLoading={get.status === 'working'}
           loadingState={{ label }}
         />
       </DatatableWrapper>

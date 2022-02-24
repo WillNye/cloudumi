@@ -1,65 +1,77 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApi } from 'hooks/useApi';
 import Datatable from 'lib/Datatable';
 import { DatatableWrapper } from 'lib/Datatable/ui/utils';
-import { spokeAccountsColumns } from './columns';
 import { useModal } from 'lib/hooks/useModal';
-import { TableTopBar } from '../../utils';
+import { useToast } from 'lib/Toast';
+import { NewSpokeAccount } from './forms/NewSpokeAccount';
+import { str } from 'components/settings/Settings/strings';
 
-// const data = [{
-//   accountName: 'noq_entrypoint',
-//   accountId: 3234671289,
-//   role: 'NoqCentralRole',
-//   accountAdmin: 'team_a@noq.com',
-//   active: true
-// }, {
-//   accountName: 'noq_entrypoint',
-//   accountId: 3234671289,
-//   role: 'NoqCentralRole',
-//   accountAdmin: 'team_a@noq.com',
-//   active: false
-// }];
+import { spokeAccountsColumns } from './columns';
+import { TableTopBar } from '../../utils';
 
 export const SpokeAccounts = () => {
 
-  const { get, post } = useApi('api/v3/services/aws/account/spoke'); // data/status/empty/error/do
+  const { get, post, remove } = useApi('services/aws/account/spoke'); // data/status/empty/error/do
+  
+  const { error, success } = useToast();
 
-  const { openModal, ModalComponent } = useModal('Add Spoke Account', post.reset, post.reset);
+  const { openModal, ModalComponent } = useModal('Add Hub Account');
+
+  useEffect(() => get.do(), []);
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
-      // Do something
+      remove.do({ account_id: rowValues?.account_id })
+      .then(() => {
+        success('Hub Account REMOVED');
+        get.do();
+      })
+      .catch(() => error(str.toastErrorMsg));
     }
   };
 
+  const handleConfirm = () => {
+    post.do().then(() => {
+      success('Hub Account CONNECTED');
+      get.do();
+    });
+  };
+
+  const handleClose = post.reset;
+
   const columns = spokeAccountsColumns({ handleClick });
 
-  const handleConfirm = () => post.do().then(get.do);
+  const label = `Status: ${get.status}${get.error ? ` / Error: ${get.error}` : ''}`;
+
+  const object = {};
+
+  get.data?.[0]?.forEach((el) => {
+    object[el.name] = el.value;
+  });
+  
+  const data = [object];
 
   return (
     <>
 
       <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
         <Datatable
-          data={get.data}
+          data={data}
           columns={columns}
           emptyState={{
             label: 'Connect a Spoke Account',
             onClick: openModal
           }}
-          isLoading={get.status === 'working' || get.status === 'done'}
-          loadingState={{
-            label: `TABLE STATUS: ${get.status}${get.error ? ` / Error: ${get.error}` : null}`
-          }}
+          isLoading={get.status === 'working'}
+          loadingState={{ label }}
         />
       </DatatableWrapper>
 
       <ModalComponent
-        onClickToConfirm={handleConfirm}>
-
-        Image/Diagram/Etc<br/>
-        STATUS: {post.status}{post.error ? ` / Error: ${post.error}` : null}
-
+        onClickToConfirm={handleConfirm}
+        onClose={handleClose}>
+        <NewSpokeAccount status={post.status} error={post.error} />
       </ModalComponent>
 
     </>

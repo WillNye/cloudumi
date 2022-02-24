@@ -5,14 +5,13 @@ from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
 from common.lib.plugins import get_plugin_by_name
 from common.lib.web import handle_generic_error_response
-from common.models import WebResponse
+from common.models import HubAccount, OrgAccount, SpokeAccount, WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
-UNDEFINED = "UNDEFINED"
 
 
-class HubHandler(BaseHandler):
+class HubAccountHandler(BaseHandler):
     """
     Provides CRUD capabilities for a specific hub account
     """
@@ -23,7 +22,7 @@ class HubHandler(BaseHandler):
         log_data = {
             "function": "HubHandler.get",
             "user": self.user,
-            "message": "Retrieving hub information",
+            "message": "Retrieving hub account information",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "host": host,
@@ -41,42 +40,12 @@ class HubHandler(BaseHandler):
         log.debug(log_data)
 
         hub_account_data = await account.get_hub_account(host)
-
-        hub_accounts = [
-            {
-                "name": "account_name",
-                "friendly_name": "Account Name",
-                "type": "string",
-                "description": "Hub account name",
-                "value": hub_account_data.get("name", UNDEFINED),
-            },
-            {
-                "name": "account_id",
-                "friendly_name": "Hub Role Account ID",
-                "type": "string",
-                "description": "Servicing account ID for this hub role",
-                "value": hub_account_data.get("account_id", UNDEFINED),
-            },
-            {
-                "name": "role_arn",
-                "friendly_name": "Hub Role ARN",
-                "type": "string",
-                "description": "Servicing hub account arn",
-                "value": hub_account_data.get("role_arn", UNDEFINED),
-            },
-            {
-                "name": "external_id",
-                "friendly_name": "External ID",
-                "type": "array",
-                "description": "The External ID used to validate this hub account during authentication",
-                "value": hub_account_data.get("external_id", UNDEFINED),
-            },
-        ]
+        # hub_account_data is a special structure, so we unroll it
         self.write(
             {
                 "headers": {},
-                "count": 1,
-                "hub_account": hub_accounts,
+                "count": 1 if hub_account_data else 0,
+                "data": dict(hub_account_data),
                 "attributes": {},
             }
         )
@@ -104,18 +73,24 @@ class HubHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        name = data.get("name", "")
-        account_id = data.get("account_id", "")
-        role_name = data.get("role_name", "")
-        external_id = data.get("external_id", "")
+        external_id = config.get_host_specific_key("tenant_details.external_id", host)
+        data["external_id"] = external_id
 
-        await account.set_hub_account(host, name, account_id, role_name, external_id)
-
-        res = WebResponse(
-            status="success",
-            status_code=200,
-            message="Successfully updated hub.",
-        )
+        try:
+            await account.set_hub_account(host, HubAccount(**data))
+        except Exception as exc:
+            log.error(exc)
+            res = WebResponse(
+                success="error",
+                status_code=400,
+                message="Invalid hub account body data received",
+            )
+        else:
+            res = WebResponse(
+                status="success",
+                status_code=200,
+                message="Successfully updated hub account.",
+            )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
@@ -146,7 +121,9 @@ class HubHandler(BaseHandler):
         res = WebResponse(
             status="success" if deleted else "error",
             status_code=200 if deleted else 400,
-            message="Successfully deleted hub." if deleted else "Unable to delete hub.",
+            message="Successfully deleted hub account."
+            if deleted
+            else "Unable to delete hub account.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -181,37 +158,10 @@ class SpokeHandler(BaseHandler):
         log.debug(log_data)
 
         spoke_account_data = await account.get_spoke_accounts(host)
-
+        # spoke_account_data is a special structure, so we unroll it
         spoke_accounts = [
             [
-                {
-                    "name": "account_name",
-                    "friendly_name": "Account Name",
-                    "type": "string",
-                    "description": "Hub account name",
-                    "value": spoke_account.get("name", UNDEFINED),
-                },
-                {
-                    "name": "account_id",
-                    "friendly_name": "Spoke Role Account ID",
-                    "type": "string",
-                    "description": "Servicing account ID for this spoke role",
-                    "value": spoke_account.get("account_id", UNDEFINED),
-                },
-                {
-                    "name": "role_arn",
-                    "friendly_name": "Spoke Role ARN",
-                    "type": "string",
-                    "description": "Servicing spoke account arn",
-                    "value": spoke_account.get("role_arn", UNDEFINED),
-                },
-                {
-                    "name": "external_id",
-                    "friendly_name": "External ID",
-                    "type": "array",
-                    "description": "The External ID used to validate this hub account during authentication",
-                    "value": spoke_account.get("external_id", UNDEFINED),
-                },
+                spoke_account.dict(),
             ]
             for spoke_account in spoke_account_data
         ]
@@ -220,7 +170,7 @@ class SpokeHandler(BaseHandler):
             {
                 "headers": {},
                 "count": len(spoke_accounts),
-                "spoke_accounts": spoke_accounts,
+                "data": spoke_accounts,
                 "attributes": {},
             }
         )
@@ -248,20 +198,16 @@ class SpokeHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        name = data.get("name", "")
-        account_id = data.get("account_id", "")
-        role_name = data.get("role_name", "")
-        external_id = data.get("external_id", "")
-        hub_account_name = data.get("hub_account_name", "")
+        external_id = config.get_host_specific_key("tenant_details.external_id", host)
+        data["external_id"] = external_id
 
-        await account.upsert_spoke_account(
-            host, name, account_id, role_name, external_id, hub_account_name
-        )
+        spoke_account = SpokeAccount(**data)
+        await account.upsert_spoke_account(host, spoke_account)
 
         res = WebResponse(
             status="success",
             status_code=200,
-            message=f"Successfully updated spoke {name}.",
+            message=f"Successfully updated spoke {spoke_account.name}.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -285,7 +231,7 @@ class SpokeDeleteHandler(BaseHandler):
         }
 
         # Checks authz levels of current user
-        generic_error_message = "Unable to delete hub account"
+        generic_error_message = "Unable to delete spoke account"
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
@@ -336,46 +282,14 @@ class OrgHandler(BaseHandler):
         log.debug(log_data)
 
         org_account_data = await account.get_org_accounts(host)
-
-        org_accounts = [
-            [
-                {
-                    "name": "org_id",
-                    "friendly_name": "Organization's ID",
-                    "type": "string",
-                    "description": "Organization identifier - uniquely identifies the org",
-                    "value": org_account.get("org_id", UNDEFINED),
-                },
-                {
-                    "name": "account_id",
-                    "friendly_name": "Org Account ID",
-                    "type": "string",
-                    "description": "Servicing account ID for this organization",
-                    "value": org_account.get("account_id", UNDEFINED),
-                },
-                {
-                    "name": "account_name",
-                    "friendly_name": "Organization Account Name",
-                    "type": "string",
-                    "description": "Servicing org account name",
-                    "value": org_account.get("account_name", UNDEFINED),
-                },
-                {
-                    "name": "owner",
-                    "friendly_name": "Organization Owner",
-                    "type": "array",
-                    "description": "The Owner of this Organization",
-                    "value": org_account.get("owner", UNDEFINED),
-                },
-            ]
-            for org_account in org_account_data
-        ]
+        # org_account_data is a special structure, so we unroll it
+        org_accounts = [dict(org_account) for org_account in org_account_data]
 
         self.write(
             {
                 "headers": {},
                 "count": len(org_accounts),
-                "org_account": org_accounts,
+                "data": org_accounts,
                 "attributes": {},
             }
         )
@@ -403,17 +317,14 @@ class OrgHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        org_id = data.get("org_id", "")
-        account_id = data.get("account_id", "")
-        account_name = data.get("account_name", "")
-        owner = data.get("owner", "")
+        org_account = OrgAccount(**data)
 
-        await account.upsert_org_account(host, org_id, account_id, account_name, owner)
+        await account.upsert_org_account(host, org_account)
 
         res = WebResponse(
             status="success",
             status_code=200,
-            message="Successfully updated org.",
+            message=f"Successfully updated org {org_account.org_id}.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

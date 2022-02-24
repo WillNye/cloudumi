@@ -2,6 +2,7 @@ import sys
 from typing import Any, Dict, Optional
 
 import boto3
+from common.models import SpokeAccount
 import sentry_sdk
 import ujson as json
 from asgiref.sync import sync_to_async
@@ -13,6 +14,7 @@ from common.config.account import get_hub_account, set_hub_account, upsert_spoke
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.messaging import iterate_event_messages
+from common.models import HubAccount, SpokeAccount
 
 log = config.get_logger()
 
@@ -147,8 +149,8 @@ async def handle_spoke_account_registration(body):
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
-    hub_account = await get_hub_account(host)
-    central_role_arn = hub_account.get("role_arn")
+    hub_account = await get_hub_account(host) or HubAccount()
+    central_role_arn = hub_account.role_arn
     if not central_role_arn:
         error_message = "No Central Role ARN detected in configuration."
         sentry_sdk.capture_message(
@@ -281,15 +283,8 @@ async def handle_spoke_account_registration(body):
             # Most likely this isn't an organizations master account and we can ignore
             master_account = False
 
-    await upsert_spoke_account(
-        host,
-        account_name,
-        account_id_for_role,
-        spoke_role_name,
-        external_id,
-        central_role_arn,
-        master_account,
-    )
+    spoke_account = SpokeAccount(account_name, account_id_for_role, spoke_role_arn, external_id, central_role_arn, master_account)
+    await upsert_spoke_account(host, spoke_account)
     return {
         "success": True,
         "message": "Successfully registered spoke account",
@@ -392,7 +387,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "success": False,
             "message": error_message,
         }
-
+    spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
     try:
         central_account_sts_client = await sync_to_async(boto3.client)(
             "sts",
@@ -407,7 +402,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             ],
         )
         central_account_sts_client.assume_role(
-            RoleArn=f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}",
+            RoleArn=spoke_role_arn,
             RoleSessionName="noq_registration_verification",
         )
     except ClientError as e:
@@ -429,18 +424,11 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "message": error_message,
         }
 
-    await set_hub_account(
-        host, "_hub_account_", account_id_for_role, role_arn, external_id
-    )
-    await upsert_spoke_account(
-        host,
-        spoke_role_name,
-        account_id_for_role,
-        spoke_role_name,
-        external_id,
-        role_arn,
-    )
-    return True
+    hub_account = HubAccount("_hub_account_", account_id_for_role, role_arn, external_id)
+    await set_hub_account(host, hub_account)
+    spoke_account = SpokeAccount(spoke_role_name, account_id_for_role, spoke_role_arn, external_id)
+    await upsert_spoke_account(host, spoke_account)
+    return {"success": True}
 
 
 async def handle_tenant_integration_queue(

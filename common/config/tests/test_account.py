@@ -5,6 +5,7 @@ from tornado.httpclient import AsyncHTTPClient
 
 from common.config import account
 from common.lib.dynamo import RestrictedDynamoHandler
+from common.models import HubAccount, OrgAccount, SpokeAccount
 from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 
@@ -43,40 +44,66 @@ class TestAccount(ConsoleMeAsyncHTTPTestCase):
     def test_get_hub_account(self):
         with patch(
             RestrictedDynamoHandler,
-            return_value={"name": "test", "account_id": "12345"},
-        ) as ddb_patch:
-            assert async_to_sync(account.get_hub_account("host")) == {
+            return_value={
                 "name": "test",
                 "account_id": "12345",
-            }
+                "role_arn": "arn:aws:iam::12345:role/test",
+                "external_id": "12345",
+            },
+        ) as ddb_patch:
+            assert async_to_sync(account.get_hub_account("host")) == HubAccount(
+                **{
+                    "name": "test",
+                    "account_id": "12345",
+                    "role_arn": "arn:aws:iam::12345:role/test",
+                    "external_id": "12345",
+                }
+            )
             ddb_patch.assert_called()
 
     def test_get_spoke_accounts(self):
         with patch(
             RestrictedDynamoHandler,
-            return_value={"name": "test", "account_id": "12345"},
-        ) as ddb_patch:
-            assert async_to_sync(account.get_spoke_accounts("host")) == {
+            return_value={
                 "name": "test",
                 "account_id": "12345",
-            }
+                "role_arn": "arn:aws:iam::12345:role/test",
+                "external_id": "12345",
+                "hub_account_arn": "arn:aws:iam::12345:role/test",
+                "master_for_account": False,
+            },
+        ) as ddb_patch:
+            assert async_to_sync(account.get_spoke_accounts("host")) == [
+                SpokeAccount(
+                    **{
+                        "name": "test",
+                        "account_id": "12345",
+                        "role_arn": "arn:aws:iam::12345:role/test",
+                        "external_id": "12345",
+                        "hub_account_arn": "arn:aws:iam::12345:role/test",
+                        "master_for_account": False,
+                    }
+                )
+            ]
             ddb_patch.assert_called()
 
     def test_delete_hub_account(self):
         with patch(RestrictedDynamoHandler) as ddb_patch:
-            assert async_to_sync(account.delete_hub_account("host"))
+            assert async_to_sync(account.delete_hub_account)("host")
             ddb_patch.assert_called()
 
     def test_delete_spoke_account(self):
         with patch(RestrictedDynamoHandler) as ddb_patch:
-            assert async_to_sync(
-                account.delete_spoke_account("host", "name", "account_id")
+            self.assertTrue(
+                async_to_sync(account.delete_spoke_account)(
+                    "host", "name", "account_id"
+                )
             )
             ddb_patch.assert_called()
 
     def test_delete_spoke_accounts(self):
         with patch(RestrictedDynamoHandler) as ddb_patch:
-            assert async_to_sync(account.delete_spoke_accounts("host"))
+            self.assertTrue(async_to_sync(account.delete_spoke_accounts)("host"))
             ddb_patch.assert_called()
 
     def test_upsert_org_account(self):
@@ -84,11 +111,7 @@ class TestAccount(ConsoleMeAsyncHTTPTestCase):
         with patch(RestrictedDynamoHandler) as ddb_patch:
             async_to_sync(
                 account.upsert_org_account(
-                    "host",
-                    "org_id",
-                    "account_id",
-                    "account_name",
-                    "owner",
+                    "host", OrgAccount(**{})  # THIS IS MESSED UP!!!! HELP ME!!!111111
                 )
             )
             ddb_patch.assert_called()

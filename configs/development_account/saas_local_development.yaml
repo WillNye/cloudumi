@@ -28,6 +28,7 @@ extends:
 #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_dm_noq_dev.yaml
 #  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_stark_noq_dev.yaml
 _global_:
+  _development_disable_cors: true
   landing_page_domains:
     - localhost
     - www.noq.localhost
@@ -65,6 +66,7 @@ _global_:
   environment: dev
   development: true
   tornado:
+    address: 0.0.0.0
     debug: false
     port: 8092
     xsrf: false

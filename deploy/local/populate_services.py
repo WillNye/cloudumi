@@ -28,7 +28,8 @@ spoke_accounts:
     account_id: 1234567890
     role_arn: arn:aws:iam::123456789:role/aesenieg
     external_id: test_id
-    hub_account_name: test_localhost
+    hub_account_arn: arn:aws:iam::123456789:role/boss
+    master_for_account: false
 org_accounts:
   test_org:
     org_id: test_org

@@ -105,7 +105,7 @@ from api.handlers.v3.identity.users import (
 )
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
 from api.handlers.v3.services.aws.account import (
-    HubHandler,
+    HubAccountHandler,
     OrgDeleteHandler,
     OrgHandler,
     SpokeDeleteHandler,
@@ -205,18 +205,18 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
-        (r"/api/v3/services/aws/account/hub", HubHandler),
+        (r"/api/v3/services/aws/account/hub", HubAccountHandler),
         (
             # (?P<param1>[^\/]+)/?(?P<param2>[^\/]+)?/?(?P<param3>[^\/]+)?
             r"/api/v3/services/aws/account/spoke/(?P<_name>[^\/]+)/(?P<_account_id>[^\/]+)/?",
             SpokeDeleteHandler,
         ),
         (r"/api/v3/services/aws/account/spoke", SpokeHandler),
-        (r"/api/v3/services/aws/account/org", OrgHandler),
         (
             r"/api/v3/services/aws/account/org/(?P<_org_id>[a-zA-Z0-9_-]+)/?",
             OrgDeleteHandler,
         ),
+        (r"/api/v3/services/aws/account/org", OrgHandler),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         (r"/api/v3/identities/groups", IdentityGroupsTableHandler),

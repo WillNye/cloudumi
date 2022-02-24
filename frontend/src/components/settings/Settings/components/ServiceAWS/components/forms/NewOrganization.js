@@ -3,7 +3,7 @@ import React from 'react';
 import { Segment } from 'semantic-ui-react';
 import { DimmerWithStates } from 'lib/DimmerWithStates';
 
-export const NewSpokeAccount = ({ status = 'working', error }) => {
+export const NewOrganization = ({ status = 'working', error }) => {
 
   // waiting/working/done
 
