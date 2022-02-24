@@ -6,6 +6,10 @@ includePrerelease:
   description: Include pre-release versions when matching a version.
   required: false
   default: false
+on:
+  pull_request_target:
+    types:
+      - closed
 steps:
   - name: Install GitVersion
     uses: gittools/actions/gitversion/setup@v0.9.7
