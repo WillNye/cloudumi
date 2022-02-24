@@ -1,5 +1,6 @@
 import fnmatch
 import os
+import shutil
 import sys
 import tempfile
 from typing import Optional, Union
@@ -112,111 +113,114 @@ async def cache_resource_templates_for_repository(
         raise Exception("Unsupported repository type")
     tempdir = tempfile.mkdtemp()
     repo_url = repository["repo_url"]
-    repo = clone_repo(repo_url, tempdir)
-    repo.config_writer().set_value("user", "name", "Noq").release()
-    email = repository["authentication_settings"]["email"]
-    resource_formats = repository["resource_formats"]
-    discovered_templates = []
-    accounts_d = await get_account_id_to_name_mapping(host)
-    accounts_set = set(accounts_d.values())
-    if email:
-        repo.config_writer().set_value("user", "email", email).release()
-    for subdir, dirs, files in os.walk(repo.working_dir):
-        for filename in files:
-            template_matched = False
-            subdir = subdir.replace(tempdir + os.sep, "")
-            filepath = subdir + os.sep + filename
-            relative_path = "/".join(subdir.split("/")[1:]) + os.sep + filename
-            web_path = repository.get("web_path", "").format(
-                relative_path=relative_path
-            )
-            full_temporary_file_path = tempdir + "/" + filepath
-            if "honeybee" in resource_formats:
-                for resource_type, conditions in repository["resource_type_parser"][
-                    "honeybee"
-                ].items():
-                    if template_matched:
-                        continue
-                    for condition in conditions:
-                        if condition.get("path_prefix") and not filepath.startswith(
-                            condition["path_prefix"]
-                        ):
+    try:
+        repo = clone_repo(repo_url, tempdir)
+        repo.config_writer().set_value("user", "name", "Noq").release()
+        email = repository["authentication_settings"]["email"]
+        resource_formats = repository["resource_formats"]
+        discovered_templates = []
+        accounts_d = await get_account_id_to_name_mapping(host)
+        accounts_set = set(accounts_d.values())
+        if email:
+            repo.config_writer().set_value("user", "email", email).release()
+        for subdir, dirs, files in os.walk(repo.working_dir):
+            for filename in files:
+                template_matched = False
+                subdir = subdir.replace(tempdir + os.sep, "")
+                filepath = subdir + os.sep + filename
+                relative_path = "/".join(subdir.split("/")[1:]) + os.sep + filename
+                web_path = repository.get("web_path", "").format(
+                    relative_path=relative_path
+                )
+                full_temporary_file_path = tempdir + "/" + filepath
+                if "honeybee" in resource_formats:
+                    for resource_type, conditions in repository["resource_type_parser"][
+                        "honeybee"
+                    ].items():
+                        if template_matched:
                             continue
-                        if condition.get("path_suffix") and not filepath.endswith(
-                            condition["path_suffix"]
-                        ):
-                            continue
-                        with open(full_temporary_file_path, "r") as f:
-                            try:
-                                file_content = yaml.load(f)
-                            except Exception as e:
-                                sentry_sdk.capture_exception()
-                                log.error(
-                                    {
-                                        **log_data,
-                                        "Message": "Error trying to parse template",
-                                        "file_path": full_temporary_file_path,
-                                        "error": str(e),
-                                    },
-                                    exc_info=True,
+                        for condition in conditions:
+                            if condition.get("path_prefix") and not filepath.startswith(
+                                condition["path_prefix"]
+                            ):
+                                continue
+                            if condition.get("path_suffix") and not filepath.endswith(
+                                condition["path_suffix"]
+                            ):
+                                continue
+                            with open(full_temporary_file_path, "r") as f:
+                                try:
+                                    file_content = yaml.load(f)
+                                except Exception as e:
+                                    sentry_sdk.capture_exception()
+                                    log.error(
+                                        {
+                                            **log_data,
+                                            "Message": "Error trying to parse template",
+                                            "file_path": full_temporary_file_path,
+                                            "error": str(e),
+                                        },
+                                        exc_info=True,
+                                    )
+                                    continue
+                            name = file_content.get(
+                                "TemplateName", file_content.get("Name", filename)
+                            )
+                            owner = file_content.get("Owner")
+
+                            # Generate a set of accounts the template applies to. This is used to get the number of accounts
+                            # affected by a resource template.
+                            included_accounts_set = set()
+                            include_accounts = file_content.get("IncludeAccounts", [])
+                            if include_accounts:
+                                for include_account in include_accounts:
+                                    for account in accounts_set:
+                                        if fnmatch.fnmatch(account, include_account):
+                                            included_accounts_set.add(account)
+                            exclude_accounts = file_content.get("ExcludeAccounts", [])
+                            if exclude_accounts:
+                                for exclude_account in exclude_accounts:
+                                    for account in accounts_set:
+                                        if fnmatch.fnmatch(account, exclude_account):
+                                            if account not in included_accounts_set:
+                                                continue
+                                            included_accounts_set.remove(account)
+
+                            if condition.get("file_content"):
+                                should_ignore_file = False
+                                body_should_include = condition["file_content"].get(
+                                    "includes", []
                                 )
-                                continue
-                        name = file_content.get(
-                            "TemplateName", file_content.get("Name", filename)
-                        )
-                        owner = file_content.get("Owner")
+                                body_should_exclude = condition["file_content"].get(
+                                    "excludes", []
+                                )
+                                for include in body_should_include:
+                                    if include not in file_content:
+                                        should_ignore_file = True
+                                        break
+                                for exclude in body_should_exclude:
+                                    if exclude in file_content:
+                                        should_ignore_file = True
+                                if should_ignore_file:
+                                    continue
 
-                        # Generate a set of accounts the template applies to. This is used to get the number of accounts
-                        # affected by a resource template.
-                        included_accounts_set = set()
-                        include_accounts = file_content.get("IncludeAccounts", [])
-                        if include_accounts:
-                            for include_account in include_accounts:
-                                for account in accounts_set:
-                                    if fnmatch.fnmatch(account, include_account):
-                                        included_accounts_set.add(account)
-                        exclude_accounts = file_content.get("ExcludeAccounts", [])
-                        if exclude_accounts:
-                            for exclude_account in exclude_accounts:
-                                for account in accounts_set:
-                                    if fnmatch.fnmatch(account, exclude_account):
-                                        if account not in included_accounts_set:
-                                            continue
-                                        included_accounts_set.remove(account)
-
-                        if condition.get("file_content"):
-                            should_ignore_file = False
-                            body_should_include = condition["file_content"].get(
-                                "includes", []
+                            discovered_templates.append(
+                                TemplateFile(
+                                    name=name,
+                                    repository_name=repository["name"],
+                                    owner=owner,
+                                    include_accounts=include_accounts,
+                                    exclude_accounts=exclude_accounts,
+                                    number_of_accounts=len(included_accounts_set),
+                                    resource=relative_path,
+                                    file_path=filepath,
+                                    web_path=web_path,
+                                    resource_type=resource_type,
+                                    template_language="honeybee",
+                                )
                             )
-                            body_should_exclude = condition["file_content"].get(
-                                "excludes", []
-                            )
-                            for include in body_should_include:
-                                if include not in file_content:
-                                    should_ignore_file = True
-                                    break
-                            for exclude in body_should_exclude:
-                                if exclude in file_content:
-                                    should_ignore_file = True
-                            if should_ignore_file:
-                                continue
-
-                        discovered_templates.append(
-                            TemplateFile(
-                                name=name,
-                                repository_name=repository["name"],
-                                owner=owner,
-                                include_accounts=include_accounts,
-                                exclude_accounts=exclude_accounts,
-                                number_of_accounts=len(included_accounts_set),
-                                resource=relative_path,
-                                file_path=filepath,
-                                web_path=web_path,
-                                resource_type=resource_type,
-                                template_language="honeybee",
-                            )
-                        )
-                        template_matched = True
-                        break
+                            template_matched = True
+                            break
+    finally:
+        shutil.rmtree(tempdir)
     return TemplatedFileModelArray(templated_resources=discovered_templates)

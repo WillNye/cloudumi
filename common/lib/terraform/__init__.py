@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import tempfile
 from typing import Optional, Union
@@ -135,52 +136,57 @@ async def cache_terraform_resources_for_repository(
         return TerraformResourceModelArray(terraform_resources=[])
     tempdir = tempfile.mkdtemp()
     repo_url = repository["repo_url"]
-    repo = clone_repo(repo_url, tempdir)
-    repo.config_writer().set_value("user", "name", "Noq").release()
-    email = repository["authentication_settings"].get("email")
-    if email:
-        repo.config_writer().set_value("user", "email", email).release()
+    try:
+        repo = clone_repo(repo_url, tempdir)
+        repo.config_writer().set_value("user", "name", "Noq").release()
+        email = repository["authentication_settings"].get("email")
+        if email:
+            repo.config_writer().set_value("user", "email", email).release()
 
-    db_connector = NetworkxConnector()
-    graph_manager = TerraformGraphManager(source="Terraform", db_connector=db_connector)
-    graph_class = TerraformLocalGraph
-    parsing_errors = {}
-    _, tf_definitions = graph_manager.build_graph_from_source_directory(
-        source_dir=repo.working_dir,
-        local_graph_class=graph_class,
-        download_external_modules=False,
-        external_modules_download_path=".external_modules",
-        parsing_errors=parsing_errors,
-        excluded_paths=[],
-        vars_files=None,
-    )
-    all_tf_resources = []
-    for file, tf_definition in tf_definitions.items():
-        filepath = file.replace(repo.working_dir + os.sep, "")
-        if not tf_definition.get("resource"):
-            continue
-        for resources_details in tf_definition["resource"]:
-            # Only support AWS IAM Role currently
-            for resource_type, resources in resources_details.items():
-                for resource_name, resource_details in resources.items():
-                    resource_identifier = f"{resource_type}.{resource_name}"
+        db_connector = NetworkxConnector()
+        graph_manager = TerraformGraphManager(
+            source="Terraform", db_connector=db_connector
+        )
+        graph_class = TerraformLocalGraph
+        parsing_errors = {}
+        _, tf_definitions = graph_manager.build_graph_from_source_directory(
+            source_dir=repo.working_dir,
+            local_graph_class=graph_class,
+            download_external_modules=False,
+            external_modules_download_path=".external_modules",
+            parsing_errors=parsing_errors,
+            excluded_paths=[],
+            vars_files=None,
+        )
+        all_tf_resources = []
+        for file, tf_definition in tf_definitions.items():
+            filepath = file.replace(repo.working_dir + os.sep, "")
+            if not tf_definition.get("resource"):
+                continue
+            for resources_details in tf_definition["resource"]:
+                # Only support AWS IAM Role currently
+                for resource_type, resources in resources_details.items():
+                    for resource_name, resource_details in resources.items():
+                        resource_identifier = f"{resource_type}.{resource_name}"
 
-                    all_tf_resources.append(
-                        TerraformResourceModel.parse_obj(
-                            {
-                                "name": resource_identifier,
-                                "display_text": resource_identifier,
-                                "resource_url": repository["repo_url"],
-                                "repository_name": repository["name"],
-                                "repository_url": repository["repo_url"],
-                                "repository_path": filepath,
-                                "resource_type": resource_type,
-                                "web_path": filepath,
-                                "file_path": filepath,
-                                "template_language": "terraform",
-                            }
+                        all_tf_resources.append(
+                            TerraformResourceModel.parse_obj(
+                                {
+                                    "name": resource_identifier,
+                                    "display_text": resource_identifier,
+                                    "resource_url": repository["repo_url"],
+                                    "repository_name": repository["name"],
+                                    "repository_url": repository["repo_url"],
+                                    "repository_path": filepath,
+                                    "resource_type": resource_type,
+                                    "web_path": filepath,
+                                    "file_path": filepath,
+                                    "template_language": "terraform",
+                                }
+                            )
                         )
-                    )
+    finally:
+        shutil.rmtree(tempdir)
 
     log.debug({**log_data, "message": "Finished caching Terraform resources"})
 

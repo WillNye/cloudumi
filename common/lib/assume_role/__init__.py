@@ -195,11 +195,9 @@ def boto3_cached_conn(
     """
     if host and pre_assume_roles is None:
         pre_assume_roles = []
-        pre_assume_roles.extend(
-            consoleme_config.get_host_specific_key(
-                "hub_account.role_arn", host, []
-            )
-        )
+        hub_role = consoleme_config.get_host_specific_key("hub_account", host)
+        if hub_role:
+            pre_assume_roles.append(hub_role)
     elif pre_assume_roles is None:
         pre_assume_roles = []
     # TODO: This breaks when tenant employee attempts to retrieve credentials

@@ -58,7 +58,7 @@ permissions_map:
         type: typeahead_input
         text: Queue ARN
         required: true
-        typeahead_endpoint: /api/v2/policies//typeahead?resource=sqs&search={query}
+        typeahead_endpoint: /api/v2/policies/typeahead?resource=sqs&search={query}
     action_map:
       - name: send_messages
         text: Send Message (Queue Producer)
