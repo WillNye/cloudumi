@@ -1,27 +1,27 @@
-import { useEffect, useReducer } from "react";
-import { initialState, reducer } from "./resourcePolicyReducer";
-import { usePolicyContext } from "./PolicyProvider";
+import { useEffect, useReducer } from 'react'
+import { initialState, reducer } from './resourcePolicyReducer'
+import { usePolicyContext } from './PolicyProvider'
 
 const useResourcePolicy = () => {
-  const { resource = {}, sendRequestV2 } = usePolicyContext();
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const { resource = {}, sendRequestV2 } = usePolicyContext()
+  const [state, dispatch] = useReducer(reducer, initialState)
 
   useEffect(() => {
     if (!resource.resource_details) {
-      return;
+      return
     }
     dispatch({
-      type: "SET_RESOURCE_POLICY",
+      type: 'SET_RESOURCE_POLICY',
       policy: resource.resource_details.Policy,
-    });
-  }, [resource.resource_details]);
+    })
+  }, [resource.resource_details])
 
   const handleResourcePolicySubmit = async ({
     arn,
     adminAutoApprove,
     justification,
   }) => {
-    const isManagedPolicy = arn.includes(":policy/");
+    const isManagedPolicy = arn.includes(':policy/')
     const requestV2 = {
       justification,
       admin_auto_approve: adminAutoApprove,
@@ -30,12 +30,12 @@ const useResourcePolicy = () => {
           {
             principal: {
               principal_arn: arn,
-              principal_type: "AwsResource",
+              principal_type: 'AwsResource',
             },
             arn,
             change_type: isManagedPolicy
-              ? "managed_policy_resource"
-              : "resource_policy",
+              ? 'managed_policy_resource'
+              : 'resource_policy',
             policy: {
               policy_document:
                 state.resourcePolicy.PolicyDocument.PolicyDocument,
@@ -44,19 +44,19 @@ const useResourcePolicy = () => {
           },
         ],
       },
-    };
-    return sendRequestV2(requestV2);
-  };
+    }
+    return sendRequestV2(requestV2)
+  }
 
   return {
     ...state,
     setResourcePolicy: (policy) =>
       dispatch({
-        type: "SET_RESOURCE_POLICY",
+        type: 'SET_RESOURCE_POLICY',
         policy,
       }),
     handleResourcePolicySubmit,
-  };
-};
+  }
+}
 
-export default useResourcePolicy;
+export default useResourcePolicy

@@ -1,5 +1,5 @@
-import React from "react";
-import { Segment } from "semantic-ui-react";
+import React from 'react'
+import { Segment } from 'semantic-ui-react'
 
 export const Integrations = () => {
   return (
@@ -15,5 +15,5 @@ export const Integrations = () => {
       DynamoDB (Enterprise feature) On-Prem S3 (Enterprise feature) On-Prem
       Redis (Enterprise feature) Need Auth settings Need network access
     </Segment>
-  );
-};
+  )
+}

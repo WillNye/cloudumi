@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 export const CombinedProviders = (providers) => {
   const Providers = providers.reduce(
@@ -8,10 +8,10 @@ export const CombinedProviders = (providers) => {
           <AccumulatedProvider>
             <Current>{children}</Current>
           </AccumulatedProvider>
-        );
-      };
+        )
+      }
     },
     ({ children }) => children
-  );
-  return Providers;
-};
+  )
+  return Providers
+}

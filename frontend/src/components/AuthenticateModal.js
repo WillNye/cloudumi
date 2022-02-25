@@ -1,13 +1,13 @@
-import React from "react";
-import { Button, Modal } from "semantic-ui-react";
-import { useAuth } from "../auth/AuthProviderDefault";
+import React from 'react'
+import { Button, Modal } from 'semantic-ui-react'
+import { useAuth } from '../auth/AuthProviderDefault'
 
 const AuthenticateModal = () => {
-  const { isSessionExpired, setIsSessionExpired } = useAuth();
+  const { isSessionExpired, setIsSessionExpired } = useAuth()
 
   const reloadPage = () => {
-    window.location.reload(true);
-  };
+    window.location.reload(true)
+  }
 
   return (
     <Modal
@@ -23,10 +23,10 @@ const AuthenticateModal = () => {
         </Modal.Description>
       </Modal.Content>
       <Modal.Actions>
-        <Button content="Re-Authenticate" onClick={reloadPage} negative />
+        <Button content='Re-Authenticate' onClick={reloadPage} negative />
       </Modal.Actions>
     </Modal>
-  );
-};
+  )
+}
 
-export default AuthenticateModal;
+export default AuthenticateModal

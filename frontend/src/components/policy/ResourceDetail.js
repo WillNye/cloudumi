@@ -1,11 +1,11 @@
 /* eslint-disable camelcase */
-import React from "react";
-import { Message, Table } from "semantic-ui-react";
-import { usePolicyContext } from "./hooks/PolicyProvider";
+import React from 'react'
+import { Message, Table } from 'semantic-ui-react'
+import { usePolicyContext } from './hooks/PolicyProvider'
 
 const ResourceDetail = () => {
-  const { params = {}, resource = {} } = usePolicyContext();
-  const { serviceType = "iamrole" } = params;
+  const { params = {}, resource = {} } = usePolicyContext()
+  const { serviceType = 'iamrole' } = params
   const {
     account_id,
     account_name,
@@ -18,9 +18,9 @@ const ResourceDetail = () => {
     resource_details,
     last_used_time,
     description,
-  } = resource;
+  } = resource
 
-  const created_time = resource.created_time || resource_details?.created_time;
+  const created_time = resource.created_time || resource_details?.created_time
 
   return (
     <>
@@ -55,9 +55,9 @@ const ResourceDetail = () => {
               <Table.Cell>S3 Access Log</Table.Cell>
               <Table.Cell>
                 <a
-                  href={(s3_details && s3_details.error_url) || ""}
-                  rel="noopener noreferrer"
-                  target="_blank"
+                  href={(s3_details && s3_details.error_url) || ''}
+                  rel='noopener noreferrer'
+                  target='_blank'
                 >
                   Link
                 </a>
@@ -76,8 +76,8 @@ const ResourceDetail = () => {
               <Table.Cell>
                 <a
                   href={config_timeline_url}
-                  rel="noopener noreferrer"
-                  target="_blank"
+                  rel='noopener noreferrer'
+                  target='_blank'
                 >
                   Link
                 </a>
@@ -106,15 +106,15 @@ const ResourceDetail = () => {
             <Table.Cell>Templated</Table.Cell>
             <Table.Cell>
               <span>
-                {`${templated ? "True" : "False"}`}
+                {`${templated ? 'True' : 'False'}`}
                 {templated ? (
                   <>
-                    {" "}
+                    {' '}
                     (
                     <a
                       href={template_link}
-                      rel="noopener noreferrer"
-                      target="_blank"
+                      rel='noopener noreferrer'
+                      target='_blank'
                     >
                       Link
                     </a>
@@ -135,9 +135,9 @@ const ResourceDetail = () => {
           </>
           {template_link ? (
             <>
-              {" "}
-              You may view the template{" "}
-              <a href={template_link} rel="noopener noreferrer" target="_blank">
+              {' '}
+              You may view the template{' '}
+              <a href={template_link} rel='noopener noreferrer' target='_blank'>
                 here
               </a>
               .
@@ -146,7 +146,7 @@ const ResourceDetail = () => {
         </Message>
       ) : null}
     </>
-  );
-};
+  )
+}
 
-export default ResourceDetail;
+export default ResourceDetail

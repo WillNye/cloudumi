@@ -1,164 +1,164 @@
-import React from "react";
-import { BrowserRouter, Route, Switch } from "react-router-dom";
-import ProtectedRoute from "./auth/ProtectedRoute";
-import ConsoleMeSelectRoles from "./components/roles/SelectRoles";
-import ConsoleMePolicyTable from "./components/policy/PolicyTable";
-import ConsoleMeIdentityGroupsTable from "./components/identity/IdentityGroupsTable";
-import IdentityGroupEdit from "./components/identity/Group";
-import ConsoleMeRequestTable from "./components/request/RequestTable";
-import { Downloads } from "./components/downloads/Downloads";
-import ConsoleMeSelfService from "./components/selfservice/SelfService";
-import ConsoleMeDynamicConfig from "./components/DynamicConfig";
-import PolicyRequestReview from "./components/request/PolicyRequestsReview";
-import PolicyEditor from "./components/policy/PolicyEditor";
-import ConsoleLogin from "./components/ConsoleLogin";
-import ConsoleMeChallengeValidator from "./components/challenge/ConsoleMeChallengeValidator";
-import CreateCloneFeature from "./components/roles/CreateCloneFeature";
-import Login from "./components/Login";
-import Logout from "./components/Logout";
-import NoMatch from "./components/NoMatch";
-import AuthenticateModal from "./components/AuthenticateModal";
-import GenerateConfig from "./components/generate_config/GenerateConfig";
-import { IdentityGroupRequest } from "./components/identity/GroupRequest";
-import { IdentityGroupRequestReview } from "./components/identity/GroupRequestReview";
-import IdentityRequestsTable from "./components/identity/IdentityRequestsTable";
-import IdentityUsersTable from "./components/identity/IdentityUsersTable";
-import IdentityUserEdit from "./components/identity/User";
-import { Settings } from "./components/settings/Settings";
-import { MainProvider } from "./MainProvider";
+import React from 'react'
+import { BrowserRouter, Route, Switch } from 'react-router-dom'
+import ProtectedRoute from './auth/ProtectedRoute'
+import ConsoleMeSelectRoles from './components/roles/SelectRoles'
+import ConsoleMePolicyTable from './components/policy/PolicyTable'
+import ConsoleMeIdentityGroupsTable from './components/identity/IdentityGroupsTable'
+import IdentityGroupEdit from './components/identity/Group'
+import ConsoleMeRequestTable from './components/request/RequestTable'
+import { Downloads } from './components/downloads/Downloads'
+import ConsoleMeSelfService from './components/selfservice/SelfService'
+import ConsoleMeDynamicConfig from './components/DynamicConfig'
+import PolicyRequestReview from './components/request/PolicyRequestsReview'
+import PolicyEditor from './components/policy/PolicyEditor'
+import ConsoleLogin from './components/ConsoleLogin'
+import ConsoleMeChallengeValidator from './components/challenge/ConsoleMeChallengeValidator'
+import CreateCloneFeature from './components/roles/CreateCloneFeature'
+import Login from './components/Login'
+import Logout from './components/Logout'
+import NoMatch from './components/NoMatch'
+import AuthenticateModal from './components/AuthenticateModal'
+import GenerateConfig from './components/generate_config/GenerateConfig'
+import { IdentityGroupRequest } from './components/identity/GroupRequest'
+import { IdentityGroupRequestReview } from './components/identity/GroupRequestReview'
+import IdentityRequestsTable from './components/identity/IdentityRequestsTable'
+import IdentityUsersTable from './components/identity/IdentityUsersTable'
+import IdentityUserEdit from './components/identity/User'
+import { Settings } from './components/settings/Settings'
+import { MainProvider } from './MainProvider'
 
 function App() {
   return (
     <BrowserRouter>
       <Switch>
         <ProtectedRoute
-          key="roles"
+          key='roles'
           exact
-          path="/"
+          path='/'
           component={ConsoleMeSelectRoles}
         />
         <ProtectedRoute
-          key="selfservice"
+          key='selfservice'
           exact
-          path="/selfservice"
+          path='/selfservice'
           component={ConsoleMeSelfService}
         />
         <ProtectedRoute
-          key="policies"
+          key='policies'
           exact
-          path="/policies"
+          path='/policies'
           component={ConsoleMePolicyTable}
         />
         <ProtectedRoute
-          key="groups"
+          key='groups'
           exact
-          path="/groups"
+          path='/groups'
           component={ConsoleMeIdentityGroupsTable}
         />
         <ProtectedRoute
-          key="users"
+          key='users'
           exact
-          path="/users"
+          path='/users'
           component={IdentityUsersTable}
         />
         <ProtectedRoute
-          key="group"
-          path="/group/:idpName/:groupName"
+          key='group'
+          path='/group/:idpName/:groupName'
           component={IdentityGroupEdit}
         />
         <ProtectedRoute
-          key="user"
-          path="/user/:idpName/:userName"
+          key='user'
+          path='/user/:idpName/:userName'
           component={IdentityUserEdit}
         />
         <ProtectedRoute
-          key="group_request"
-          path="/group_request/:idpName/:groupName"
+          key='group_request'
+          path='/group_request/:idpName/:groupName'
           component={IdentityGroupRequest}
         />
         <ProtectedRoute
-          key="group_request_review"
+          key='group_request_review'
           exact
-          path="/group_request/:requestId"
+          path='/group_request/:requestId'
           component={IdentityGroupRequestReview}
         />
         <ProtectedRoute
-          key="group_requests"
+          key='group_requests'
           exact
-          path="/group_requests"
+          path='/group_requests'
           component={IdentityRequestsTable}
         />
         <ProtectedRoute
-          key="review"
+          key='review'
           exact
-          path="/policies/request/:requestID"
+          path='/policies/request/:requestID'
           component={PolicyRequestReview}
         />
         <ProtectedRoute
-          key="requests"
+          key='requests'
           exact
-          path="/requests"
+          path='/requests'
           component={ConsoleMeRequestTable}
         />
         <ProtectedRoute
-          key="resource_policy"
-          path="/policies/edit/:accountID/:serviceType/*/:resourceName"
+          key='resource_policy'
+          path='/policies/edit/:accountID/:serviceType/*/:resourceName'
           component={PolicyEditor}
         />
         <ProtectedRoute
-          key="iamrole_policy"
-          path="/policies/edit/:accountID/:serviceType/:resourceName"
+          key='iamrole_policy'
+          path='/policies/edit/:accountID/:serviceType/:resourceName'
           component={PolicyEditor}
         />
         <ProtectedRoute
-          key="config"
+          key='config'
           exact
-          path="/config"
+          path='/config'
           component={ConsoleMeDynamicConfig}
         />
         <ProtectedRoute
-          key="generate_config"
+          key='generate_config'
           exact
-          path="/generate_config"
+          path='/generate_config'
           component={GenerateConfig}
         />
         <ProtectedRoute
-          key="role_query"
+          key='role_query'
           exact
-          path="/role/:roleQuery+"
+          path='/role/:roleQuery+'
           component={ConsoleLogin}
         />
         <ProtectedRoute
-          key="challenge_validator"
+          key='challenge_validator'
           exact
-          path="/challenge_validator/:challengeToken"
+          path='/challenge_validator/:challengeToken'
           component={ConsoleMeChallengeValidator}
         />
         <ProtectedRoute
-          key="create_role"
+          key='create_role'
           exact
-          path="/create_role"
+          path='/create_role'
           component={CreateCloneFeature}
         />
         <ProtectedRoute
-          key="settings"
+          key='settings'
           exact
-          path="/settings"
+          path='/settings'
           component={Settings}
         />
         <ProtectedRoute
-          key="downloads"
+          key='downloads'
           exact
-          path="/downloads"
+          path='/downloads'
           component={Downloads}
         />
-        <ProtectedRoute key="logout" exact path="/logout" component={Logout} />
-        <Route key="login" exact path="/login" component={Login} />
+        <ProtectedRoute key='logout' exact path='/logout' component={Logout} />
+        <Route key='login' exact path='/login' component={Login} />
         <Route component={NoMatch} />
       </Switch>
       <AuthenticateModal />
     </BrowserRouter>
-  );
+  )
 }
 
 const AuthWrapper = () => {
@@ -166,7 +166,7 @@ const AuthWrapper = () => {
     <MainProvider>
       <App />
     </MainProvider>
-  );
-};
+  )
+}
 
-export default AuthWrapper;
+export default AuthWrapper

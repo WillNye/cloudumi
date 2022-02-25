@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import {
   Button,
   Header,
@@ -8,48 +8,48 @@ import {
   Icon,
   Form,
   TextArea,
-} from "semantic-ui-react";
-import { useAuth } from "../../auth/AuthProviderDefault";
-import { useForm } from "react-hook-form";
-import SemanticDatepicker from "react-semantic-ui-datepickers";
-import { DateTime } from "luxon";
+} from 'semantic-ui-react'
+import { useAuth } from '../../auth/AuthProviderDefault'
+import { useForm } from 'react-hook-form'
+import SemanticDatepicker from 'react-semantic-ui-datepickers'
+import { DateTime } from 'luxon'
 
 const IdentityGroupEdit = () => {
-  const auth = useAuth();
-  const { sendRequestCommon } = auth;
-  const { idpName, groupName } = useParams();
+  const auth = useAuth()
+  const { sendRequestCommon } = auth
+  const { idpName, groupName } = useParams()
 
-  const [header, setHeader] = useState(null);
-  const [attributes, setAttributes] = useState(null);
-  const [groupDetails, setGroupDetails] = useState(null);
-  const [groupExpiration, setGroupExpiration] = useState(null);
-  const [justification, setJustification] = useState(null);
+  const [header, setHeader] = useState(null)
+  const [attributes, setAttributes] = useState(null)
+  const [groupDetails, setGroupDetails] = useState(null)
+  const [groupExpiration, setGroupExpiration] = useState(null)
+  const [justification, setJustification] = useState(null)
   const {
     register,
     handleSubmit,
     // formState: { errors },
-  } = useForm();
+  } = useForm()
   const onSubmit = async (data) => {
     const resJson = await sendRequestCommon(
       data,
-      "/api/v3/identities/group/" + idpName + "/" + groupName
-    );
+      '/api/v3/identities/group/' + idpName + '/' + groupName
+    )
     // TODO: Post data and render response message/error in a generic way
-    console.log(data);
-    console.log(resJson);
-  };
+    console.log(data)
+    console.log(resJson)
+  }
 
   useEffect(() => {
     async function fetchDetails() {
       const resJson = await sendRequestCommon(
         null,
-        "/api/v3/identities/group/" + idpName + "/" + groupName,
-        "get"
-      );
+        '/api/v3/identities/group/' + idpName + '/' + groupName,
+        'get'
+      )
       if (!resJson) {
-        return;
+        return
       }
-      setGroupDetails(resJson);
+      setGroupDetails(resJson)
 
       // Set headers
       if (resJson?.headers) {
@@ -60,9 +60,9 @@ const IdentityGroupEdit = () => {
                 <Table.Cell width={4}>{header.key}</Table.Cell>
                 <Table.Cell>{header.value}</Table.Cell>
               </Table.Row>
-            );
+            )
           })
-        );
+        )
       }
 
       // Show attributes
@@ -70,26 +70,26 @@ const IdentityGroupEdit = () => {
       if (resJson?.attributes) {
         setAttributes(
           resJson.attributes.map(function (attribute) {
-            if (attribute.type === "bool") {
+            if (attribute.type === 'bool') {
               return (
                 <Form.Field>
-                  <div style={{ display: "block", width: "50px;" }}>
+                  <div style={{ display: 'block', width: '50px;' }}>
                     <input
-                      type="checkbox"
-                      style={{ display: "inline" }}
+                      type='checkbox'
+                      style={{ display: 'inline' }}
                       defaultChecked={attribute.value}
                       {...register(attribute.name)}
                     />
-                    {"    "}
+                    {'    '}
                     <Popup
                       trigger={
-                        <label style={{ display: "inline" }}>
+                        <label style={{ display: 'inline' }}>
                           {attribute.friendly_name}
                         </label>
                       }
                       content={attribute.description}
-                      position="right center"
-                      size="mini"
+                      position='right center'
+                      size='mini'
                     />
                     {/* <div className={"ui fitted toggle checkbox"}> */}
                     {/* <Input toggle type="checkbox" {...register(attribute.name)} /> */}
@@ -134,15 +134,15 @@ const IdentityGroupEdit = () => {
                     {/* Experience to devs is the most important */}
                   </div>
                 </Form.Field>
-              );
-            } else if (attribute.type === "array") {
+              )
+            } else if (attribute.type === 'array') {
               return (
                 <p>
                   <Popup
                     trigger={<label>{attribute.friendly_name}</label>}
                     content={attribute.description}
-                    position="top center"
-                    size="mini"
+                    position='top center'
+                    size='mini'
                   />
 
                   <input
@@ -150,75 +150,75 @@ const IdentityGroupEdit = () => {
                     {...register(attribute.name)}
                   />
                 </p>
-              );
+              )
             } else {
-              return null;
+              return null
             }
           })
-        );
+        )
       }
     }
-    fetchDetails();
-  }, [sendRequestCommon]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchDetails()
+  }, [sendRequestCommon]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    console.log(groupDetails);
-  }, [groupDetails]);
+    console.log(groupDetails)
+  }, [groupDetails])
 
   return (
     <>
-      <Header as="h3">Group Details</Header>
+      <Header as='h3'>Group Details</Header>
       <Table celled striped definition>
         {header}
       </Table>
-      <Header as="h3">Group Attributes</Header>
+      <Header as='h3'>Group Attributes</Header>
 
       <Form onSubmit={handleSubmit(onSubmit)}>
         {attributes}
-        <Button primary ype="submit">
+        <Button primary ype='submit'>
           Save
         </Button>
       </Form>
       <br />
-      <Header as="h3">Add Users to Group</Header>
+      <Header as='h3'>Add Users to Group</Header>
       {/* Bulk Add / Bulk Remove groups */}
       {/* TODO: Implement multi-select table  to allow deleting multiple groups at once */}
       <Form>
-        <TextArea placeholder="Comma or Newline-Separated List of Users" />
+        <TextArea placeholder='Comma or Newline-Separated List of Users' />
         <br />
         <br />
         <Form.Field>
-          <Header as="h1">
+          <Header as='h1'>
             <Header.Subheader>Justification</Header.Subheader>
           </Header>
           <TextArea
-            placeholder="Reason for requesting access"
+            placeholder='Reason for requesting access'
             onChange={(e) => {
-              setJustification(e.target.value);
-              console.log(justification);
+              setJustification(e.target.value)
+              console.log(justification)
             }}
           />
         </Form.Field>
         <Form.Field>
-          <Header as="h1">
+          <Header as='h1'>
             <Header.Subheader>(Optional) Expiration</Header.Subheader>
           </Header>
           <SemanticDatepicker
             filterDate={(date) => {
-              const now = new Date();
-              return date >= now;
+              const now = new Date()
+              return date >= now
             }}
             onChange={(e, data) => {
               if (!data?.value) {
-                setGroupExpiration(null);
-                return;
+                setGroupExpiration(null)
+                return
               }
-              const dateObj = DateTime.fromJSDate(data.value);
-              const dateString = dateObj.toFormat("yyyyMMdd");
-              setGroupExpiration(parseInt(dateString));
-              console.log(groupExpiration);
+              const dateObj = DateTime.fromJSDate(data.value)
+              const dateString = dateObj.toFormat('yyyyMMdd')
+              setGroupExpiration(parseInt(dateString))
+              console.log(groupExpiration)
             }}
-            type="basic"
+            type='basic'
             compact
           />
         </Form.Field>
@@ -234,7 +234,7 @@ const IdentityGroupEdit = () => {
         // attached="right"
         /> */}
         <Button
-          content={"Add Users"}
+          content={'Add Users'}
           // onClick={handleAdminAddGroups}
           // style={{
           //   width: "50%",
@@ -243,10 +243,10 @@ const IdentityGroupEdit = () => {
           //   maxWidth: "20em",
           // }}
           // floated={"right"}
-          color={"green"}
+          color={'green'}
         />
         <br />
-        <Header as="h3">Members</Header>
+        <Header as='h3'>Members</Header>
       </Form>
       <Table celled striped>
         <Table.Header>
@@ -260,22 +260,22 @@ const IdentityGroupEdit = () => {
             <Table.Row>
               <Table.Cell>{member.username}</Table.Cell>
               <Table.Cell>
-                <Button negative icon labelPosition="right">
+                <Button negative icon labelPosition='right'>
                   Request Removal
-                  <Icon name="delete" />
+                  <Icon name='delete' />
                 </Button>
-                <Button color={"orange"} icon labelPosition="right">
+                <Button color={'orange'} icon labelPosition='right'>
                   Remove
-                  <Icon name="delete" />
+                  <Icon name='delete' />
                 </Button>
               </Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>
       </Table>
-      <Header as="h3">Requests</Header>
+      <Header as='h3'>Requests</Header>
     </>
-  );
-};
+  )
+}
 
-export default IdentityGroupEdit;
+export default IdentityGroupEdit

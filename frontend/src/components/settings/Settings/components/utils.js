@@ -1,10 +1,9 @@
-import React from 'react';
-import { Button, Input } from 'semantic-ui-react';
-import { Fill, Bar } from 'lib/Misc';
+import React from 'react'
+import { Button, Input } from 'semantic-ui-react'
+import { Fill, Bar } from 'lib/Misc'
 
 export const SectionTitle = ({ title, helpHandler }) => {
-
-  const handleHelpModal = (handler) => {};
+  const handleHelpModal = (handler) => {}
 
   return (
     <>
@@ -19,8 +18,8 @@ export const SectionTitle = ({ title, helpHandler }) => {
         />
       )}
     </>
-  );
-};
+  )
+}
 
 export const TableTopBar = ({ onSearch, onClick, disabled }) => {
   return (
@@ -28,7 +27,7 @@ export const TableTopBar = ({ onSearch, onClick, disabled }) => {
       {onSearch && (
         <Input
           size='small'
-          label="Search"
+          label='Search'
           icon='search'
           disabled={disabled}
           onChange={onSearch}
@@ -37,12 +36,13 @@ export const TableTopBar = ({ onSearch, onClick, disabled }) => {
       <Fill />
       <Button
         compact
-        color="blue"
+        color='blue'
         onClick={onClick}
         disabled={disabled}
-        style={{ marginRight: 0 }}>
+        style={{ marginRight: 0 }}
+      >
         New
       </Button>
     </Bar>
-  );
-};
+  )
+}

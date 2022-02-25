@@ -1,6 +1,6 @@
-import React from "react";
-import { Redirect, BrowserRouter } from "react-router-dom";
-import useDataTable from "./useDataTable";
+import React from 'react'
+import { Redirect, BrowserRouter } from 'react-router-dom'
+import useDataTable from './useDataTable'
 import {
   Dimmer,
   Loader,
@@ -8,21 +8,21 @@ import {
   Pagination,
   Segment,
   Table,
-} from "semantic-ui-react";
-import DataTableActionsComponent from "./DataTableActionsComponent";
-import DataTableColumnsComponent from "./DataTableColumnsComponent";
-import DataTableRowsComponent from "./DataTableRowsComponent";
+} from 'semantic-ui-react'
+import DataTableActionsComponent from './DataTableActionsComponent'
+import DataTableColumnsComponent from './DataTableColumnsComponent'
+import DataTableRowsComponent from './DataTableRowsComponent'
 
-import "react-semantic-ui-datepickers/dist/react-semantic-ui-datepickers.css";
+import 'react-semantic-ui-datepickers/dist/react-semantic-ui-datepickers.css'
 
-const DEFAULT_ROWS_PER_PAGE = 50;
+const DEFAULT_ROWS_PER_PAGE = 50
 
 const DataTableComponent = ({ config }) => {
   const {
     activePage = 1,
     column = null,
     data = [],
-    direction = "descending",
+    direction = 'descending',
     expandedRow = null,
     filteredData = [],
     filters = {},
@@ -31,32 +31,32 @@ const DataTableComponent = ({ config }) => {
     isLoading = true,
     redirect = false,
     tableConfig = {},
-    warningMessage = "",
+    warningMessage = '',
     filterColumn,
     filterDateRangeTime,
     setActivePage,
     setExpandedRow,
     setFilteredData,
     setRedirect,
-  } = useDataTable(config);
+  } = useDataTable(config)
 
   const calculateColumnSize = (tableConfig) => {
     return (
       (tableConfig.columns || []).length + (tableConfig.expandableRows ? 1 : 0)
-    );
-  };
+    )
+  }
 
-  const rowsPerPage = tableConfig.rowsPerPage || DEFAULT_ROWS_PER_PAGE;
-  const totalPages = parseInt(filteredData.length / rowsPerPage, 10);
+  const rowsPerPage = tableConfig.rowsPerPage || DEFAULT_ROWS_PER_PAGE
+  const totalPages = parseInt(filteredData.length / rowsPerPage, 10)
 
   if (isLoading) {
     return (
       <Segment basic>
-        <Dimmer active inverted size="large">
-          <Loader inverted content="Loading" />
+        <Dimmer active inverted size='large'>
+          <Loader inverted content='Loading' />
         </Dimmer>
       </Segment>
-    );
+    )
   }
 
   // TODO, if redirection is happening within ConsoleMe namespace then use useHistory
@@ -65,7 +65,7 @@ const DataTableComponent = ({ config }) => {
       <BrowserRouter forceRefresh>
         <Redirect to={redirect} />
       </BrowserRouter>
-    );
+    )
   }
 
   return (
@@ -109,16 +109,16 @@ const DataTableComponent = ({ config }) => {
             <Table.HeaderCell colSpan={calculateColumnSize(tableConfig)}>
               <div
                 style={{
-                  alignItems: "center",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginRight: "1em",
+                  alignItems: 'center',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginRight: '1em',
                 }}
               >
                 <div>
                   {filteredCount !== totalCount ? (
                     <>
-                      {filteredCount.toLocaleString()} Results (Filtered from{" "}
+                      {filteredCount.toLocaleString()} Results (Filtered from{' '}
                       {totalCount.toLocaleString()})
                     </>
                   ) : (
@@ -130,11 +130,11 @@ const DataTableComponent = ({ config }) => {
                     activePage={activePage}
                     totalPages={totalPages}
                     onPageChange={(event, data) => {
-                      setActivePage(data.activePage);
+                      setActivePage(data.activePage)
                     }}
                   />
                 ) : (
-                  ""
+                  ''
                 )}
               </div>
             </Table.HeaderCell>
@@ -142,7 +142,7 @@ const DataTableComponent = ({ config }) => {
         </Table.Footer>
       </Table>
     </>
-  );
-};
+  )
+}
 
-export default DataTableComponent;
+export default DataTableComponent

@@ -1,19 +1,21 @@
-import React from 'react';
-import { Button, Checkbox } from 'semantic-ui-react';
+import React from 'react'
+import { Button, Checkbox } from 'semantic-ui-react'
 
 export const General = () => {
-  
-  const handleHelpModal = (handler) => {};
-  
+  const handleHelpModal = (handler) => {}
+
   return (
     <>
       <Checkbox
-        label={{ children: (
-          <>
-            Automatically update role trust policies when an authorized user requests credentials,
-            but Noq isn't authorized to perform the role assumption.
-          </>
-        )}}
+        label={{
+          children: (
+            <>
+              Automatically update role trust policies when an authorized user
+              requests credentials, but Noq isn't authorized to perform the role
+              assumption.
+            </>
+          ),
+        }}
       />
       &nbsp;
       <Button
@@ -24,5 +26,5 @@ export const General = () => {
         onClick={() => handleHelpModal('noq-auth')}
       />
     </>
-  );
-};
+  )
+}

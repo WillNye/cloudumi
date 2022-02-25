@@ -1,19 +1,19 @@
-import React from "react";
-import { Header, Segment } from "semantic-ui-react";
-import useAssumeRolePolicy from "./hooks/useAssumeRolePolicy";
-import { PolicyMonacoEditor } from "./PolicyMonacoEditor";
-import { JustificationModal } from "./PolicyModals";
+import React from 'react'
+import { Header, Segment } from 'semantic-ui-react'
+import useAssumeRolePolicy from './hooks/useAssumeRolePolicy'
+import { PolicyMonacoEditor } from './PolicyMonacoEditor'
+import { JustificationModal } from './PolicyModals'
 
 const AssumeRolePolicy = () => {
   const {
     assumeRolePolicy = {},
     setAssumeRolePolicy,
     handleAssumeRolePolicySubmit,
-  } = useAssumeRolePolicy();
+  } = useAssumeRolePolicy()
 
   return (
     <>
-      <Header as="h2">
+      <Header as='h2'>
         Assume Role Policy Document
         <Header.Subheader>
           You can modify this role&apos;s assume role policy here.
@@ -27,7 +27,7 @@ const AssumeRolePolicy = () => {
         }}
       >
         <PolicyMonacoEditor
-          context="assume_role_policy"
+          context='assume_role_policy'
           policy={assumeRolePolicy}
           updatePolicy={setAssumeRolePolicy}
           enableLinting={false}
@@ -35,7 +35,7 @@ const AssumeRolePolicy = () => {
       </Segment>
       <JustificationModal handleSubmit={handleAssumeRolePolicySubmit} />
     </>
-  );
-};
+  )
+}
 
-export default AssumeRolePolicy;
+export default AssumeRolePolicy

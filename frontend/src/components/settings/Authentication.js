@@ -1,5 +1,5 @@
-import React from "react";
-import { Segment } from "semantic-ui-react";
+import React from 'react'
+import { Segment } from 'semantic-ui-react'
 
 export const Authentication = () => {
   return (
@@ -8,5 +8,5 @@ export const Authentication = () => {
       give them cognito management UI. Make them upgrade to premium for
       OIDC/SAML providers Role Authorization Mapping
     </Segment>
-  );
-};
+  )
+}

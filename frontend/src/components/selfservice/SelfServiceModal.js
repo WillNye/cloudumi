@@ -1,8 +1,8 @@
-import "./SelfService.css";
-import { Button, Divider, Header, Message, Modal } from "semantic-ui-react";
-import React, { Component } from "react";
-import Editor from "@monaco-editor/react";
-import { getLocalStorageSettings } from "../../helpers/utils";
+import './SelfService.css'
+import { Button, Divider, Header, Message, Modal } from 'semantic-ui-react'
+import React, { Component } from 'react'
+import Editor from '@monaco-editor/react'
+import { getLocalStorageSettings } from '../../helpers/utils'
 
 const editor_options = {
   selectOnLineNumbers: true,
@@ -13,7 +13,7 @@ const editor_options = {
   },
   scrollBeyondLastLine: false,
   automaticLayout: true,
-};
+}
 
 const blank_statement = `{
     "Version": "2012-10-17",
@@ -24,11 +24,11 @@ const blank_statement = `{
           "Resource": []
         }
       ]
-  }`;
+  }`
 
 class SelfServiceModal extends Component {
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       activeIndex: 0,
       isError: false,
@@ -42,64 +42,64 @@ class SelfServiceModal extends Component {
       payloadPermissions: [],
       modal_statement: this.props.updated_policy,
       open: false,
-      editorTheme: getLocalStorageSettings("editorTheme"),
-    };
-    this.onChange = this.onChange.bind(this);
-    this.editorDidMount = this.editorDidMount.bind(this);
+      editorTheme: getLocalStorageSettings('editorTheme'),
+    }
+    this.onChange = this.onChange.bind(this)
+    this.editorDidMount = this.editorDidMount.bind(this)
   }
 
   addToPolicy() {
-    const value = this.state.modal_statement;
-    this.props.updateStatement(value);
-    this.setState({ open: false });
-    this.props.updatePolicyMessage(true);
+    const value = this.state.modal_statement
+    this.props.updateStatement(value)
+    this.setState({ open: false })
+    this.props.updatePolicyMessage(true)
   }
 
   editorDidMount(editor, monaco) {
     editor.onDidChangeModelDecorations(() => {
-      const model = editor.getModel();
+      const model = editor.getModel()
 
-      if (model === null || model.getModeId() !== "json") {
-        return;
+      if (model === null || model.getModeId() !== 'json') {
+        return
       }
 
-      const owner = model.getModeId();
-      const uri = model.uri;
-      const markers = monaco.editor.getModelMarkers({ owner, resource: uri });
+      const owner = model.getModeId()
+      const uri = model.uri
+      const markers = monaco.editor.getModelMarkers({ owner, resource: uri })
       this.onLintError(
         markers.map(
           (marker) =>
             `Lint error on line ${marker.startLineNumber} columns ${marker.startColumn}-${marker.endColumn}:
                ${marker.message}`
         )
-      );
-    });
+      )
+    })
   }
 
   buildMonacoEditor(modal_statement) {
-    if (modal_statement === "") {
-      modal_statement = blank_statement;
+    if (modal_statement === '') {
+      modal_statement = blank_statement
     }
 
     return (
       <Editor
-        height="500px"
-        defaultLanguage="json"
-        width="100%"
+        height='500px'
+        defaultLanguage='json'
+        width='100%'
         theme={this.state.editorTheme}
         value={modal_statement}
         onChange={this.onChange}
         options={editor_options}
         onMount={this.editorDidMount}
-        textAlign="center"
+        textAlign='center'
       />
-    );
+    )
   }
 
   onChange(newValue, e) {
     this.setState({
       modal_statement: newValue,
-    });
+    })
   }
 
   onLintError = (lintErrors) => {
@@ -107,14 +107,14 @@ class SelfServiceModal extends Component {
       this.setState({
         messages: lintErrors,
         isError: true,
-      });
+      })
     } else {
       this.setState({
         messages: [],
         isError: false,
-      });
+      })
     }
-  };
+  }
 
   render() {
     const {
@@ -122,7 +122,7 @@ class SelfServiceModal extends Component {
       isError,
       messages,
       modal_statement,
-    } = this.state;
+    } = this.state
 
     const messagesToShow =
       messages.length > 0 ? (
@@ -136,19 +136,19 @@ class SelfServiceModal extends Component {
             ))}
           </Message.List>
         </Message>
-      ) : null;
+      ) : null
 
     const submission_buttons = admin_bypass_approval_enabled ? (
       <Modal.Actions>
         <Button
-          content="Submit and apply without approval"
+          content='Submit and apply without approval'
           disabled={isError}
           onClick={this.handleAdminSubmit}
           positive
           fluid
         />
         <Button
-          content="Submit"
+          content='Submit'
           disabled={isError}
           onClick={this.handleSubmit}
           primary
@@ -156,20 +156,20 @@ class SelfServiceModal extends Component {
         />
       </Modal.Actions>
     ) : (
-      <Modal.Actions style={{ float: "right", marginBottom: "1em" }}>
+      <Modal.Actions style={{ float: 'right', marginBottom: '1em' }}>
         <Button onClick={() => this.setState({ open: false })}>Cancel</Button>
         <Button
-          content="Add to Policy"
-          labelPosition="right"
-          icon="checkmark"
+          content='Add to Policy'
+          labelPosition='right'
+          icon='checkmark'
           primary
           onClick={this.addToPolicy.bind(this)}
           disabled={isError}
         />
       </Modal.Actions>
-    );
+    )
 
-    const jsonEditor = this.buildMonacoEditor(modal_statement);
+    const jsonEditor = this.buildMonacoEditor(modal_statement)
 
     return (
       // TODO: Resolve lint error with the following line
@@ -178,10 +178,10 @@ class SelfServiceModal extends Component {
         onOpen={() => this.setState({ open: true })}
         onClose={() => this.setState({ open: false })}
         open={this.state.open}
-        trigger={<button className="button-link">Advanced Editor</button>}
+        trigger={<button className='button-link'>Advanced Editor</button>}
       >
         <Header>Advanced Editor</Header>
-        <Message info color="blue">
+        <Message info color='blue'>
           <Message.Header>Edit your permissions in JSON format.</Message.Header>
           <p>
             Helpful text about how to use the Advanced Editor, JSON syntax, etc.
@@ -194,8 +194,8 @@ class SelfServiceModal extends Component {
           {submission_buttons}
         </Modal.Content>
       </Modal>
-    );
+    )
   }
 }
 
-export default SelfServiceModal;
+export default SelfServiceModal
