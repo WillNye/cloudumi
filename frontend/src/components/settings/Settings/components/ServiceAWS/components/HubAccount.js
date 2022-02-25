@@ -46,7 +46,7 @@ export const HubAccount = () => {
 
   const data = get.data;
 
-  console.log('getResponse', getResponse);
+  // console.log('getResponse', getResponse);
 
   return (
     <>

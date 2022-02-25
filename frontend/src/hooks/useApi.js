@@ -10,9 +10,6 @@ const initialState = {
 
 export const url = 'api/v3';
 
-// export const url = 'http://localhost:8092/api/v3';
-
-
 const useInnerUtils = () => {
 
   const [state, setState] = useState({
