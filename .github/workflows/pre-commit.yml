@@ -70,7 +70,6 @@ jobs:
           sudo install terrascan /usr/local/bin && rm terrascan
           # Set up terraform workspace in a subshell
           (cd deploy/infrastructure/ ; terraform init)
-          (cd deploy/infrastructure/ ; ./setup.sh)
           # terraform -chdir=deploy/infrastructure/ workspace select shared-staging-1
           # terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/shared/staging-1/noq.dev-staging.tfvars
           # terraform -chdir=deploy/infrastructure/ workspace select shared-prod-1
