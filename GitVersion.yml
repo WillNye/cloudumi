@@ -3,7 +3,6 @@ next-version: 1.0.0
 branches:
   main:
     regex: main
-    mode: Mainline
   pull-request:
     tag: pr
 ignore:
