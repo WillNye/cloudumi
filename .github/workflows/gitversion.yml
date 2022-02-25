@@ -1,0 +1,22 @@
+name: GitVersion
+on:
+  pull_request_target:
+    types:
+      - closed
+jobs:
+  auto_version:
+    runs-on: self-hosted
+    steps:
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.7
+        with:
+          versionSpec: '5.x'
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Determine Version
+        uses: gittools/actions/gitversion/execute@v0.9.7
+      - name: Display SemVer
+        run: |
+          echo "SemVer: $GITVERSION_SEMVER"

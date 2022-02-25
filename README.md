@@ -168,6 +168,9 @@ You can use the `bazel test` command to run unit tests. A few pre-requisites:
 
 - We are also looking at running hermetic Weep by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
 
+## Versioning
+We use GitVersion to automatically version our mono repo by providing modifier nouns in the commit message header: semver:+minor, semver:+minor, semver:+patch.
+
 ## Troubleshooting
 
 - In the event that docker containers fail to run with an error on a symbol not found \*.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.
