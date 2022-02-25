@@ -88,10 +88,10 @@ jobs:
           set +x
       - name: Run pre-commit
         run: |
-          source env/bin/activate
+          source /tmp/env/bin/activate
           pre-commit run -a
 
       - name: Run tests
         run: |
-          source env/bin/activate
+          source /tmp/env/bin/activate
           env CONFIG_LOCATION=common/tests/test_configuration.yaml pytest common/tests
