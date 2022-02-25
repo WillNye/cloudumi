@@ -50,6 +50,8 @@ _global_:
     aws:
       account_id: "259868150464"
       node_role: arn:aws:iam::259868150464:role/NoqClusterRole1
+      registration_topic_arn: arn:aws:sns:us-west-2:259868150464:curtis-staging-noq-dev-shared-staging-1-registration-topic
+      registration_queue_arn: arn:aws:sqs:us-west-2:259868150464:curtis-staging-noq-dev-shared-staging-1-registration-queue
     #    pre_role_arns_to_assume:
     #      - role_arn: arn:aws:iam::259868150464:role/NoqClusterRole1
     # elastic_apn:
