@@ -5,6 +5,7 @@ on:
       - closed
 jobs:
   auto_version:
+    name: Git Version Automation and Tagging Release
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -27,3 +28,22 @@ jobs:
       - name: Display SemVer
         run: |
           echo "SemVer: $GITVERSION_SEMVER"
+      - name: Get commit message
+        id: get_commit_message
+        run: |
+          if   [[ '${{ github.event_name }}' == 'push' ]]; then
+            echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD)
+          elif [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+            echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD^2)
+          fi
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: $GITVERSION_SEMVER
+          release_name: Release $GITVERSION_SEMVER
+          body: ${{ name }}
+          draft: false
+          prerelease: false
