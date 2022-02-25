@@ -169,6 +169,7 @@ You can use the `bazel test` command to run unit tests. A few pre-requisites:
 - We are also looking at running hermetic Weep by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
 
 ## Versioning
+
 We use GitVersion to automatically version our mono repo by providing modifier nouns in the commit message header: semver:+minor, semver:+minor, semver:+patch.
 
 ## Troubleshooting
