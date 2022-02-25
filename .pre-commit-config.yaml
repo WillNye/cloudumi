@@ -54,8 +54,8 @@ repos:
         args:
           - >
             --args=-e aws-dynamodb-table-customer-key,aws-dynamodb-enable-at-rest-encryption,aws-iam-no-policy-wildcards,aws-vpc-no-public-ingress-sgr,aws-ecs-enable-container-insight,aws-cloudwatch-log-group-customer-key,aws-s3-encryption-customer-key,aws-sqs-enable-queue-encryption,aws-sns-enable-topic-encryption
-      - id: terraform_validate
       # TODO (ccastrapel): Add additional checks when we're ready for them
+      # - id: terraform_validate
       # - id: terrascan
       # - id: checkov
       #   args: ["--skip-path", "env*"]
