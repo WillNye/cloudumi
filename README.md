@@ -179,4 +179,4 @@ We use GitVersion to automatically version our mono repo by providing modifier n
 - Then run the container: `docker run -v /home/matt/.aws:/home/matt/.aws -v /home/matt/.cache/bazel:/home/matt/.cache/bazel -v $(pwd):/cloudumi --runtime=sysbox-runc -it --rm -P --hostname=syscont local/ubuntu-focal-systemd-docker:latest`
 - OR! run the container using the `docker-compose` orchestration script, from the project root: `docker-compose -f dev_environment/docker-compose-ubunty-sysbox.yml up -d`
   - And attach: `docker attach dev_environment_ubunty-sysbox_1`
-- Once in the container, install python: `pyenv install 3.9.7`
+- Once in the container, install python: `pyenv install 3.9.7`.
