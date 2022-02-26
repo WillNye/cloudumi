@@ -610,8 +610,10 @@ class BaseHandler(TornadoRequestHandler):
 
         except NoGroupsException:
             stats.count("Basehandler.authorization_flow.no_groups_detected")
-            log_data["message"] = "No groups detected. Check configuration."
-            log.error(log_data)
+            log_data[
+                "message"
+            ] = "No groups detected for user. Check configuration. Letting user continue."
+            log.warning(log_data)
 
         # Set Per-User Role Name (This logic is not used in OSS deployment)
         if (
