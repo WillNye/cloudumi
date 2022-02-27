@@ -13,7 +13,7 @@ terraform {
     region         = "us-west-2"
     dynamodb_table = "noq_terraform_state"
     # All of the profiles are stored in S3 on the dev account
-    profile = "noq_dev"
+    #profile = "noq_dev"
   }
 
 }
@@ -61,6 +61,16 @@ module "tenant_dynamodb_service" {
   noq_core                     = var.noq_core
   tags                         = var.tags
   timeout                      = var.timeout
+}
+
+module "tenant_ecs_task_role" {
+  source = "./modules/services/ecs_task_role"
+
+  cloudumi_files_bucket            = module.tenant_s3_service.cloudumi_bucket_name
+  cluster_id                       = local.cluster_id
+  create_ecs_task_role             = var.create_ecs_task_role
+  registration_queue_arn           = module.tenant_messaging.sqs_registration_queue_arn
+  tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
 }
 
 module "tenant_elasticache_service" {
