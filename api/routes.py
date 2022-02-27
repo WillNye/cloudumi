@@ -10,7 +10,7 @@ from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
 from api.handlers.auth import AuthHandler
 from api.handlers.v1.credentials import GetCredentialsHandler
-from api.handlers.v1.headers import ApiHeaderHandler, HeaderHandler
+from api.handlers.v1.headers import ApiHeaderHandler
 from api.handlers.v1.health import HealthHandler
 from api.handlers.v1.policies import (
     ApiResourceTypeAheadHandler,
@@ -195,7 +195,7 @@ def make_app(jwt_validator=None):
         (r"/api/v2/generate_changes/?", GenerateChangesHandler),
         (r"/api/v2/typeahead/resources", ResourceTypeAheadHandlerV2),
         (r"/api/v2/role_login/(.*)", RoleConsoleLoginHandler),
-        (r"/myheaders/?", HeaderHandler),
+        # (r"/myheaders/?", HeaderHandler),
         (r"/api/v2/policies/typeahead/?", ResourceTypeAheadHandler),
         (
             r"/api/v2/challenge_validator/([a-zA-Z0-9_-]+)",
