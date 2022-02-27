@@ -52,6 +52,7 @@ from common.lib.account_indexers import (
 )
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws import aws_config
+from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cloudtrail import CloudTrail
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import get_all_managed_policies
@@ -1122,10 +1123,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 host=host,
             )
             log_data["num_iam_policies"] = len(iam_policies)
-
+        arns = []
         ttl: int = int((datetime.utcnow() + timedelta(hours=36)).timestamp())
         # Save them:
         for role in iam_roles:
+            arns.append(role["Arn"])
             role_entry = {
                 "arn": role.get("Arn"),
                 "host": host,
@@ -1155,6 +1157,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             aws.handle_detected_role(role)
 
         for user in iam_users:
+            arns.append(user["Arn"])
             user_entry = {
                 "arn": user.get("Arn"),
                 "host": host,
@@ -1173,6 +1176,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             )
 
         for g in iam_groups:
+            arns.append(g["Arn"])
             group_entry = {
                 "arn": g.get("Arn"),
                 "host": host,
@@ -1190,6 +1194,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             )
 
         for policy in iam_policies:
+            arns.append(policy["Arn"])
             group_entry = {
                 "arn": policy.get("Arn"),
                 "host": host,
@@ -1212,6 +1217,28 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             host,
         ):
             store_iam_resources_in_git(all_iam_resources, account_id, host)
+
+        if config.get_host_specific_key(
+            "cache_iam_resources_for_account.check_unused_permissions.enabled",
+            host,
+            True,
+        ):
+            aa = AccessAdvisor(host)
+            aa_data = aa.generate_access_advisor_data(client, arns)
+            if aa_data:
+                async_to_sync(store_json_results_in_redis_and_s3)(
+                    aa_data,
+                    s3_bucket=config.get_host_specific_key(
+                        "cache_iam_resources_for_account.iam_policies.s3.bucket",
+                        host,
+                    ),
+                    s3_key=config.get_host_specific_key(
+                        "cache_iam_resources_for_account.iam_policies.s3.file",
+                        host,
+                        "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
+                    ).format(resource_type="access_advisor", account_id=account_id),
+                    host=host,
+                )
 
     stats.count(
         "cache_iam_resources_for_account.success", tags={"account_id": account_id}
