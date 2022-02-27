@@ -39,42 +39,26 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - To build: `bazelisk build //...` - this builds everything locally
 - To run the API container: `bazelisk run //api/container` - this will install the container build in your local docker cache and run it
 
-## Setup your dev environment
+# Setup your dev environment
 
-### Containers
+## Containers
 
 - Start your local dev environment by running: `bazelisk build //deploy/local:containers-dev` - this starts all the containers to run Cloudumi
 - To run test containers for CloudUmi API, Celery tasks, frontend, etc, use the `--add-host=cloudumi-redis:172.17.0.1` with the `docker run` command to link your container to the running local services (substitute cloudumi-redis as needed)
 - TODO: start all containers and py-binaries for projects
 
-### Local environment
+## Local environment
 
 - Visual Studio Code (and pretty much any other IDE): we ship .vscode config files for VSC specifically to run targets. For other IDEs, ensure that your PYTHONPATH is set to the root of the mono repo; this "should" just work. For VSCODE, just make sure you have the bazel plugin (and relevant plugin for your choice of IDE: https://marketplace.visualstudio.com/items?itemName=BazelBuild.vscode-bazel)
 - For command line development: set your PYTHONPATH to the root of the monorepo - `PYTHONPATH=~/dev/noq/cloudumi python ...`
 
-## More Bazel stuff
+# More Bazel stuff
 
 > Note on deployments - you must first authenticate with the ECR: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com`.
 
 > Also: you don't have to run all steps in sequence as the build targets depend on each other. For instance if you run the `//api:container-deploy-staging` target, it will automatically resolve the dependency chain, build the image, which depends on the library, which is built first.
 
-### API
-
-- Activate your local virtualenv first `. env/bin/activate` (Note: We haven't had success working with pyenv)
-- Run a local test of the API service using one of the py_binary targets.
-  - To run local-dev: `bazelisk run //api:bin`
-  - To run S3-dev: `bazelisk run //api:bin.s3` -- note that the only difference here is that the config files are pulled from S3
-- Build the API project library: `bazelisk build //api:lib`
-- Test the API project library: `bazelisk test //api` -- coming SOON
-- Run the API project local dev container: `bazelisk run //api:container-dev-local`
-- Deploy the API project container to staging: `bazelisk run //api:container-deploy-staging`
-- Deploy the API project container to production: `bazelisk run //api:container-deploy-prod`
-
-### Build Celery
-
-TODO
-
-### Launch local test env
+# Launch local test env
 
 A local dev environment sets up testing. Test can be setup by running either the `bin` targets or the `container-dev-local` targets in each component's build file.
 
@@ -106,34 +90,22 @@ To enable the UX:
 - Make any adjustments as needed
 - Once you decide which way to run the NOQ services, do either of the following
 
-#### Local environment run
+## Local environment run
 
 - Launch dependency services: `bazelisk run //deploy/local/deps-only`
 - `bazelisk run //api:bin`: to run the API in the local environment
 - `bazelisk run //common/celery_tasks:bin`: to run the Celery workers in the local environment
 
-#### Container environment run
+## Container environment run
 
 - Launch all services: `bazelisk run //deploy/local/containers-dev`
 
-##### OR:
+### OR:
 
 - Just run the services:
 - `docker-compose -f deploy/docker-compose-dependencies.yaml up -d`
 - `bazelisk run //api:container-dev-local`: to run the API in the container environment
 - `bazelisk run //common/celery_tasks:container-dev-local`: to run the Celery workers in the container environment
-
-### Publish to Staging
-
-Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
-
-- `bazelisk run //deploy/infrastructure/live/shared/staging-1:staging-1`
-
-### Publish to Prod
-
-> Do you really want this? Do you have access?
-
-- `bazelisk run //deploy/infrastructure/live/shared/prod-1:prod-1`
 
 ## Testing
 
@@ -145,38 +117,26 @@ You can use the `bazel test` command to run unit tests. A few pre-requisites:
   - `bazel test //...` to run all unit tests configured using the `py_test` bazel target (see example in common/lib/tests/BUILD)
   - `bazel test //common/config/...` to run all unit tests in the config module
 
-### Tech Debt
+# Tech Debt
 
 - We need to isolate all unit tests to stay with their components (we started on common/config)
 
-### Hermetic Weep
+# Hermetic Weep
 
 - We are also looking at running hermetic Weep by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
 
-## Versioning
+# Versioning
 
 We use GitVersion to automatically version our mono repo by providing modifier nouns in the commit message header: semver:+minor, semver:+minor, semver:+patch.
 
-## Troubleshooting
+# Troubleshooting
 
 - In the event that docker containers fail to run with an error on a symbol not found \*.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.
 
-### Troubleshooting in Container (SSH Rules)
+## Troubleshooting in Container (SSH Rules)
 
 - It may be useful to retrieve the environment variables used by the process in a Docker container running in Fargate.
   This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credential environment variables set
   appropriately without too much of a hassle. Run the following command to source all environment variables from the
   container's primary process (PID 1):
   - `. <(xargs -0 bash -c 'printf "export %q\n" "$@"' -- < /proc/1/environ)`
-
-## How to run in sysbox
-
-- Sysbox containers are fully fledged init containers with systemd and docker pre-installed
-- Use the ubunty_sysbox Dockerfile to set up your environment to mirror your user name, directory, etc, then mount into the countainer your cloudumi repo and bazel cache
-- Customize:
-- 1. Change ubunty_sysbox/Dockerfile and change all occurrences of "matt" to your user name
-- 2. Build: `docker build -t local/ubuntu-focal-systemd-docker:latest`
-- Then run the container: `docker run -v /home/matt/.aws:/home/matt/.aws -v /home/matt/.cache/bazel:/home/matt/.cache/bazel -v $(pwd):/cloudumi --runtime=sysbox-runc -it --rm -P --hostname=syscont local/ubuntu-focal-systemd-docker:latest`
-- OR! run the container using the `docker-compose` orchestration script, from the project root: `docker-compose -f dev_environment/docker-compose-ubunty-sysbox.yml up -d`
-  - And attach: `docker attach dev_environment_ubunty-sysbox_1`
-- Once in the container, install python: `pyenv install 3.9.7`.
