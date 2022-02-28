@@ -18,17 +18,17 @@ challenge_url:
   enabled: true
 environment: dev
 hub_account:
-  name: test_localhost
-  account_id: 123456789
-  role_arn: arn:aws:iam::123456789:role/aesenieg
-  external_id: test_id
+  name: NoqCentralRoleLocalDev
+  account_id: '259868150464'
+  role_arn: arn:aws:iam::259868150464:role/NoqCentralRoleLocalDev
+  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
 spoke_accounts:
-  test_localhost_spoke__123456789:
-    name: test_localhost_spoke
-    account_id: 1234567890
-    role_arn: arn:aws:iam::123456789:role/aesenieg
-    external_id: test_id
-    hub_account_arn: arn:aws:iam::123456789:role/boss
+  NoqSpokeRoleLocalDev__259868150464:
+    name: NoqSpokeRoleLocalDev
+    account_id: '259868150464'
+    role_arn: arn:aws:iam::259868150464:role/NoqSpokeRoleLocalDev
+    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+    hub_account_arn: arn:aws:iam::259868150464:role/NoqCentralRoleLocalDev
     master_for_account: false
 org_accounts:
   test_org:

@@ -135,7 +135,9 @@ Resources:
                   - "ec2:DescribeSubnets"
                   - "ec2:describevpcendpoints"
                   - "ec2:DescribeVpcs"
+                  # We need to start breaking iam:* apart
                   - "iam:*"
+                  - "iam:GenerateServiceLastAccessedDetails"
                   - "s3:GetBucketPolicy"
                   - "s3:GetBucketTagging"
                   - "s3:ListAllMyBuckets"
