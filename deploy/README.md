@@ -71,3 +71,15 @@ To test Github actions locally, we use the [act tool](https://github.com/nektos/
 - Specify what `runs-on` should run on locally (it's going to be configured for `self-hosted` in most if not all configurations): `-P self-hosted=nektos/act-environments-ubuntu:18.04`
 
 To test a particular job: `act -P self-hosted=nektos/act-environments-ubuntu:18.04 --secret-file .env_github_action_secrets workflow_dispatch -j build` will dispatch all jobs that are named `build`
+
+# Publish to Staging
+
+Publishing to staging is a build target that utilizes a genrule syntax to deploy containers via the `ECS-CLI` tool. Make sure that you have the tool installed - see `Installing ECS-CLI`.
+
+- `bazelisk run //deploy/infrastructure/live/shared/staging-1:staging-1`
+
+# Publish to Prod
+
+> Do you really want this? Do you have access?
+
+- `bazelisk run //deploy/infrastructure/live/shared/prod-1:prod-1`
