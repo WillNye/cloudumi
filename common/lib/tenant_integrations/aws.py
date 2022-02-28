@@ -318,6 +318,7 @@ async def handle_spoke_account_registration(body):
 
 async def handle_central_account_registration(body) -> Dict[str, Any]:
     # TODO: Fix "policies.role_name" configuration and validation
+    # host_config["policies"]["role_name"] = spoke_role_name
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }

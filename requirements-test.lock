@@ -54,7 +54,7 @@ attrs==21.4.0
     #   aiohttp
     #   jsonschema
     #   pytest
-backports-entry-points-selectable==1.1.1
+backports.entry-points-selectable==1.1.1
     # via virtualenv
 bandit==1.7.1
     # via
@@ -82,6 +82,8 @@ bleach==4.1.0
     # via
     #   -r requirements.lock
     #   readme-renderer
+blinker==1.4
+    # via -r requirements.lock
 boto==2.49.0
     # via
     #   -r requirements.lock
@@ -721,12 +723,12 @@ rsa==4.8
     #   -r requirements.lock
     #   google-auth
     #   python-jose
-ruamel-yaml==0.17.20
+ruamel.yaml==0.17.21
     # via -r requirements.lock
-ruamel-yaml-clib==0.2.6
+ruamel.yaml.clib==0.2.6
     # via
     #   -r requirements.lock
-    #   ruamel-yaml
+    #   ruamel.yaml
 s3transfer==0.5.1
     # via
     #   -r requirements.lock
