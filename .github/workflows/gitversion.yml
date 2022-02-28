@@ -37,6 +37,7 @@ jobs:
             echo ::set-output name=commit_message::$(git log --format=%B -n 1 HEAD^2)
           fi
       - uses: 8BitJonny/gh-get-current-pr@1.3.0
+        continue-on-error: true
         id: PR
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -52,6 +53,6 @@ jobs:
         with:
           tag_name: $GITVERSION_SEMVER
           release_name: Release $GITVERSION_SEMVER
-          body: ${{ steps.PR.outputs.pr_body }}
+          body: ${{ steps.PR.outputs.pr_body || "Failed to get PR body" }}
           draft: false
           prerelease: false

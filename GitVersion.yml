@@ -1,10 +1,7 @@
 mode: Mainline
+increment: Minor
 branches:
   main:
     regex: main
   pull-request:
     tag: PullRequest
-  increment: Minor
-ignore:
-  sha: []
-merge-message-formats: {}
