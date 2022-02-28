@@ -53,6 +53,6 @@ jobs:
         with:
           tag_name: $GITVERSION_SEMVER
           release_name: Release $GITVERSION_SEMVER
-          body: ${{ steps.PR.outputs.pr_body || "Failed to get PR body" }}
+          body: ${{ steps.PR.outputs.pr_body }}
           draft: false
           prerelease: false
