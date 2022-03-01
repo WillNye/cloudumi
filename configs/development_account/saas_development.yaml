@@ -3,30 +3,6 @@
 # TODO: Extends must NOT modify _global_. It must ONLY exist in the site_config specific namespace
 
 # AWS_PROFILE=noq_dev aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
-extends:
-  # - /home/ccastrapel/.config/consoleme_config/noq_localhost.yaml
-# - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cyberdyne_localhost.yaml
-#  - saas_bain_noq_dev.yaml
-#  - saas_localhost.yaml
-# - saas_oidc_noq_dev.yaml
-# - saas_saml_noq_dev.yaml
-# - saas_auth0_noq_dev.yaml
-# - saas_aws_sso_noq_dev.yaml
-# - saas_cognito_noq_dev.yaml
-#  - saas_cognito_noq_localhost.yaml
-#  - saas_cyberdyne_noq_dev.yaml
-# - saas_dm_noq_dev.yaml
-# - saas_stark_noq_dev.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_localhost.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_oidc_noq_dev.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_saml_noq_dev.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_auth0_noq_dev.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_aws_sso_noq_dev.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cognito_noq_dev.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_cyberdyne_noq_dev.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_dm_noq_dev.yaml
-#  - AWS_S3:s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_stark_noq_dev.yaml
 _global_:
   landing_page_domains:
     - localhost
@@ -47,20 +23,20 @@ _global_:
     traces_sample_rate: 1.0
   integrations:
     aws:
-      account_id: 940552945933
+      account_id: "759357822767"
       central_role_name: NoqCentralRoleLocalDev
       spoke_role_name: NoqSpokeRoleLocalDev
-      node_role: arn:aws:iam::259868150464:role/NoqSaasRoleLocalDev
+      node_role: arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev
       stage: prod
       region: us-west-2
       attributes: 1
-      registration_topic_arn: arn:aws:sns:us-west-2:259868150464:local-dev-registration-topic
-      registration_queue_arn: arn:aws:sqs:us-west-2:259868150464:local-dev-registration-queue
+      registration_topic_arn: arn:aws:sns:us-west-2:759357822767:local-dev-registration-topic
+      registration_queue_arn: arn:aws:sqs:us-west-2:759357822767:local-dev-registration-queue
   logging:
     file: ./cloudumi_tornado.log
   # sentry:
   #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
-  s3_cache_bucket: noqcache
+  s3_cache_bucket: noq-local-dev-cache
   environment: dev
   development: true
   tornado:

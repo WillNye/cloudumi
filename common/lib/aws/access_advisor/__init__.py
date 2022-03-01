@@ -31,13 +31,11 @@ class AccessAdvisor:
     @rate_limited()
     def _generate_service_last_accessed_details(self, iam, arn):
         """Wrapping the actual AWS API calls for rate limiting protection."""
-        log.debug("generating last accessed details for role %s", arn)
         return iam.generate_service_last_accessed_details(Arn=arn)["JobId"]
 
     @rate_limited()
     def _get_service_last_accessed_details(self, iam, job_id, marker=None):
         """Wrapping the actual AWS API calls for rate limiting protection."""
-        log.debug("getting last accessed details for job %s", job_id)
         params = {
             "JobId": job_id,
         }
