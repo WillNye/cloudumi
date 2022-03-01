@@ -1,0 +1,23 @@
+name: "Assert Branch Naming Convention"
+on: pull_request
+
+jobs:
+  branch-naming-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: deepakputhraya/action-branch-name@master
+        with:
+          regex: '([a-z])+\/([a-z])+' # Regex the branch should match. This example enforces grouping
+          allowed_prefixes: "fix,feat,task" # All branches should start with the given prefix
+          ignore: main,develop # Ignore exactly matching branch names from convention
+          min_length: 5 # Min length of the branch name
+          max_length: 20 # Max length of the branch name
+      - uses: deepakputhraya/action-pr-title@master
+        with:
+          regex: '([a-z])+\/([a-z])+' # Regex the title should match.
+          allowed_prefixes: "SAAS-" # title should start with the given prefix
+          disallowed_prefixes: "feat/,hotfix" # title should not start with the given prefix
+          prefix_case_sensitive: false # title prefix are case insensitive
+          min_length: 5 # Min length of the title
+          max_length: 20 # Max length of the title
+          github_token: ${{ github.token }} # Default: ${{ github.token }}
