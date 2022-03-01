@@ -2975,7 +2975,9 @@ schedule_5_minutes = timedelta(minutes=5)
 schedule_24_hours = timedelta(hours=24)
 schedule_1_hour = timedelta(hours=1)
 
-if config.get("_global_.development", False):
+if config.get("_global_.development", False) and config.get(
+    "_global_._development_run_celery_tasks_1_min", False
+):
     # If debug mode, we will set up the schedule to run the next minute after the job starts
     time_to_start = datetime.utcnow() + timedelta(minutes=1)
     dev_schedule = crontab(hour=time_to_start.hour, minute=time_to_start.minute)
