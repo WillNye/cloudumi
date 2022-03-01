@@ -5,6 +5,10 @@ jobs:
   branch-naming-rules:
     runs-on: ubuntu-latest
     steps:
+      - name: Cancel Previous Runs # Cancels github action runs if the PR/branch is updated
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
       - uses: deepakputhraya/action-branch-name@master
         with:
           regex: '([a-z])+\/([a-z])+' # Regex the branch should match. This example enforces grouping
