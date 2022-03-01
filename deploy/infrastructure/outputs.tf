@@ -45,7 +45,7 @@ output "ecs_task_execution_role_arn" {
 
 output "ecs_task_role_arn" {
   description = "The ECS task role ARN to be configured; note this has been referenced as NoqClusterRole1 in previous configurations"
-  value       = module.tenant_container_service.ecs_task_role
+  value       = module.tenant_ecs_task_role.ecs_task_role
 }
 
 output "elasticache_nodes" {

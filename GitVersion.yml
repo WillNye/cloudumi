@@ -1,11 +1,8 @@
 mode: Mainline
+increment: Minor
 branches:
   main:
     regex: main
   pull-request:
-    tag: pr
-  increment: Minor
-  is-mainline: true
-ignore:
-  sha: []
-merge-message-formats: {}
+    tag: PullRequest
+commit-message-incrementing: MergeMessageOnly

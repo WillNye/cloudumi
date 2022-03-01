@@ -63,6 +63,16 @@ module "tenant_dynamodb_service" {
   timeout                      = var.timeout
 }
 
+module "tenant_ecs_task_role" {
+  source = "./modules/services/ecs_task_role"
+
+  cloudumi_files_bucket            = module.tenant_s3_service.cloudumi_bucket_name
+  cluster_id                       = local.cluster_id
+  create_ecs_task_role             = var.create_ecs_task_role
+  registration_queue_arn           = module.tenant_messaging.sqs_registration_queue_arn
+  tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
+}
+
 module "tenant_elasticache_service" {
   source = "./modules/services/elasticache"
 
