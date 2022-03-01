@@ -73,8 +73,8 @@ variable "profile" {
   description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
   type        = string
   validation {
-    condition     = contains(["noq_dev", "noq_prod"], var.profile)
-    error_message = "Allowed AWS_PROFILEs are \"noq_dev\" and \"noq_prod\"."
+    condition     = contains(["noq_staging", "noq_prod"], var.profile)
+    error_message = "Allowed AWS_PROFILEs are \"noq_staging\" and \"noq_prod\"."
   }
 }
 

@@ -12,7 +12,7 @@ fi
 echo
 echo "Setting AWS_PROFILE=noq_staging"
 echo
-export AWS_PROFILE=noq_dev
+export AWS_PROFILE=noq_staging
 
 echo
 echo "Logging in to AWS ECR for 259868150464.dkr.ecr.us-west-2.amazonaws.com"
