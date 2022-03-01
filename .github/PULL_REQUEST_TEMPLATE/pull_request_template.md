@@ -1,12 +1,14 @@
 Please use this PR template for new features, or an abbreviated version for smaller bug fixes and changes.
 
 ### Branch name
+
 - [ ] Does your branch name follow the naming convention: [fix/feat/task/etc]/[task-label]
-(ex: feat/new-share-implementation)
+      (ex: feat/new-share-implementation)
 
 ### Title
+
 - [ ] Does your PR title reference a ticket, and a short description?
-(ex: KEY-10, KEY-11 - New share implementation + Improvements)?
+      (ex: KEY-10, KEY-11 - New share implementation + Improvements)?
 
 ### Description
 
