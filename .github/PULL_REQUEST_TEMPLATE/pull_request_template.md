@@ -12,6 +12,9 @@ Please use this PR template for new features, or an abbreviated version for smal
 
 ### Description
 
+- [ ] (Optional) - By default, a push to `main` will result in a `patch` version bump (see https://semver.org/). bump minor or major versions. You can
+      bump minor or major versions by adding either `+semver: minor` or `+semver: major` to your description
+
 - [ ] Write a simple description, adding enough information to explain what this new feature does
 
 - [ ] Use lists for all tasks the PR does
