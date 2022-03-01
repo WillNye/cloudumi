@@ -5,3 +5,4 @@ branches:
     regex: main
   pull-request:
     tag: PullRequest
+commit-message-incrementing: MergeMessageOnly
