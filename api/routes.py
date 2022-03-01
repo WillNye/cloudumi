@@ -111,6 +111,7 @@ from api.handlers.v3.services.aws.account import (
     SpokeDeleteHandler,
     SpokeHandler,
 )
+from api.handlers.v3.services.aws.role_access import CredentialBrokeringHandler
 from api.handlers.v3.tasks import TasksHandler
 from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
@@ -217,6 +218,10 @@ def make_app(jwt_validator=None):
             OrgDeleteHandler,
         ),
         (r"/api/v3/services/aws/account/org", OrgHandler),
+        (
+            r"/api/v3/services/aws/role-access/credential-brokering/(?P<_enabled>enable|disable)/?",
+            CredentialBrokeringHandler,
+        ),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         (r"/api/v3/identities/groups", IdentityGroupsTableHandler),

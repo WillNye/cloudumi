@@ -9,6 +9,7 @@ filegroup(
         "account.py",
         "config.py",
         "models.py",
+        "role_access.py",
     ),
     visibility = ["//visibility:public"],
 )
