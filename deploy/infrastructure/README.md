@@ -9,6 +9,9 @@ update prod or production environments!
 
 **NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`terraform workspace select shared-prod-1` for instance)
 
+**NOTE**: the ecs task role is incredibly important - once created it should **never** be deleted. This is why there is a special variable that is called `modify_ecs_task_role`, which should always be set to false. Once set to true, it allows modification, to include deletions of the variable.
+The only time the variable should be set to true is upon initial cluster creation - this is to ensure that the ecs task role is created.
+
 ## Pre-requisites:
 
 - AWS keys configured in ~/.aws/credentials - see the `AWS Credentials` section below

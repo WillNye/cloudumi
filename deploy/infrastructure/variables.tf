@@ -53,6 +53,11 @@ variable "lb_port" {
   default     = 443
 }
 
+variable "modify_ecs_task_role" {
+  type        = bool
+  description = "If set, creates the ECS task role; otherwise it will expect the role to already exist"
+}
+
 variable "namespace" {
   description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
   type        = string
