@@ -30,3 +30,47 @@ class TestRoleAccess(ConsoleMeAsyncHTTPTestCase):
                 role_access.toggle_role_access_credential_brokering("host", False)
             )
             ddb_patch.assert_called()
+
+    def test_upsert_authorized_groups_tags(self):
+        with patch(RestrictedDynamoHandler) as ddb_patch:
+            async_to_sync(
+                role_access.upsert_authorized_groups_tag("host", "test_tag", True)
+            )
+            ddb_patch.assert_called()
+
+    def test_delete_authorized_groups_tags(self):
+        with patch(RestrictedDynamoHandler) as ddb_patch:
+            async_to_sync(role_access.delete_authorized_groups_tag("host", "test_tag"))
+            ddb_patch.assert_called()
+
+    def test_upsert_authorized_groups_tags_web_access(self):
+        with patch(
+            RestrictedDynamoHandler,
+            return_value={
+                "cloud_credential_authorization_mapping": {
+                    "authorized_groups_tags": [
+                        "test_tag",
+                    ]
+                }
+            },
+        ) as ddb_patch:
+            assert async_to_sync(role_access.get_authorized_groups_tag("host")) == [
+                {"tag_name": "test_tag", "web_access": True}
+            ]
+            ddb_patch.assert_called()
+
+    def test_upsert_authorized_groups_tags_cli_only(self):
+        with patch(
+            RestrictedDynamoHandler,
+            return_value={
+                "cloud_credential_authorization_mapping": {
+                    "authorized_groups_cli_only_tags": [
+                        "test_tag",
+                    ]
+                }
+            },
+        ) as ddb_patch:
+            assert async_to_sync(role_access.get_authorized_groups_tag("host")) == [
+                {"tag_name": "test_tag", "web_access": False}
+            ]
+            ddb_patch.assert_called()
