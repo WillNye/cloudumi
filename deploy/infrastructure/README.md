@@ -114,7 +114,7 @@ Note specifically the `noq_dev` and `noq_prod` sections. Proper naming is critic
 - For convenience, run the `deploy/infrastructure/live/shared/staging-1/push_all_the_things.sh` script. If you are a
   masochist and desire to do this manually, run the below commands:
 
-- Set AWS_PROFILE: `export AWS_PROFILE=noq_dev`
+- Set AWS_PROFILE: `export AWS_PROFILE=noq_staging`
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com` (this authenticates your AWS PROFILE to ECR for registry upload purposes; hence the authentication via docker login)
 - Reference `Terraform` section above on how to deploy / update terraform infrastructure (should be seldom)
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
