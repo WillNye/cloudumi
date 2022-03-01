@@ -12,8 +12,7 @@
         "worker",
         "-l",
         "DEBUG",
-        "-P",
-        "solo",
+        "-B",
         "--concurrency",
         "8"
       ],
