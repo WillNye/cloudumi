@@ -1,5 +1,5 @@
-import React, { useContext, useEffect } from 'react';
-import { ApiContext, useApi } from 'hooks/useApi';
+import React, { useEffect, useState } from 'react';
+import { useApi } from 'hooks/useApi';
 import Datatable from 'lib/Datatable';
 import { DatatableWrapper } from 'lib/Datatable/ui/utils';
 import { useModal } from 'lib/hooks/useModal';
@@ -14,9 +14,7 @@ export const HubAccount = () => {
   
   const { error, success } = useToast();
 
-  const { openModal, ModalComponent } = useModal('Add Hub Account');
-
-  const { getResponse } = useContext(ApiContext);
+  const { openModal, closeModal, ModalComponent } = useModal('Add Hub Account');
 
   useEffect(() => get.do(), []);
 
@@ -31,26 +29,23 @@ export const HubAccount = () => {
     }
   };
 
-  const handleConfirm = () => {
-    post.do().then(() => {
-      success('Hub Account CONNECTED');
-      get.do();
-    });
-  };
-
   const handleClose = post.reset;
 
   const columns = hubAccountColumns({ handleClick });
 
   const label = `Status: ${get.status}${get.error ? ` / Error: ${get.error}` : ''}`;
 
-  const data = get.data;
+  let data = get.data;
 
-  // console.log('getResponse', getResponse);
-
+  // TODO: Remove after fixed in the API
+  if (!Array.isArray(data) && get.status === 'done' && !get.empty && Object.keys(data)?.length > 0) {
+    data = [data];
+  } else {
+    data = null;
+  }
+  
   return (
     <>
-
       <DatatableWrapper>
         <Datatable
           data={data}
@@ -64,10 +59,8 @@ export const HubAccount = () => {
         />
       </DatatableWrapper>
 
-      <ModalComponent
-        onClickToConfirm={handleConfirm}
-        onClose={handleClose}>
-        <NewHubAccount status={post.status} error={post.error} />
+      <ModalComponent onClose={handleClose} hideConfirm>
+        <NewHubAccount status={post.status} error={post.error} closeModal={closeModal} />
       </ModalComponent>
 
     </>

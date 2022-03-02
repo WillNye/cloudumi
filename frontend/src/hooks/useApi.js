@@ -27,9 +27,7 @@ const useInnerUtils = () => {
       setState({ data: null, status: 'done', error: 'Error!' })
       return 'Error!'
     }
-
-    const response = res?.data;
-
+    let response = res?.data;
     setState({ data: response, status: 'done' })
   }
 
@@ -54,12 +52,16 @@ const useGet = (commonPathname) => {
 
   const get = async (pathname) => {
     handleWorking()
-    const res = await sendRequestCommon(
-      null,
-      buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
-      'get'
-    )
-    return handleResponse(res)
+    try {
+      const res = await sendRequestCommon(
+        null,
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        'get'
+      )
+      return handleResponse(res)  
+    } catch (error) {
+      return error;
+    }
   }
 
   return {
@@ -78,12 +80,16 @@ const usePost = (commonPathname) => {
 
   const post = async (body, pathname) => {
     handleWorking()
-    const res = await sendRequestCommon(
-      body || {},
-      buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
-      'post'
-    )
-    return handleResponse(res)
+    try {
+      const res = await sendRequestCommon(
+        body || {},
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        'post'
+      )
+      return handleResponse(res)  
+    } catch (error) {
+      return error;
+    }
   }
 
   return {
@@ -102,14 +108,17 @@ const useRemove = (commonPathname) => {
 
   const remove = async (body, pathname) => {
     handleWorking()
-    const res = await sendRequestCommon(
-      body || {},
-      buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
-      'delete'
-    )
-    return handleResponse(res)
+    try {
+      const res = await sendRequestCommon(
+        body || {},
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        'delete'
+      )
+      return handleResponse(res)  
+    } catch (error) {
+      return error;
+    }
   }
-
   return {
     ...state,
     empty: !state?.data,

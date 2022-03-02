@@ -16,7 +16,7 @@ export const SpokeAccounts = () => {
   
   const { error, success } = useToast();
 
-  const { openModal, ModalComponent } = useModal('Add Hub Account');
+  const { openModal, ModalComponent } = useModal('Add Spoke Account');
 
   useEffect(() => get.do(), []);
 
@@ -31,13 +31,6 @@ export const SpokeAccounts = () => {
     }
   };
 
-  const handleConfirm = () => {
-    post.do().then(() => {
-      success('Hub Account CONNECTED');
-      get.do();
-    });
-  };
-
   const handleClose = post.reset;
 
   const columns = spokeAccountsColumns({ handleClick });
@@ -49,7 +42,7 @@ export const SpokeAccounts = () => {
   return (
     <>
 
-      <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
+      <DatatableWrapper renderAction={data?.length > 0 && <TableTopBar onClick={openModal} />}>
         <Datatable
           data={data}
           columns={columns}
@@ -62,9 +55,7 @@ export const SpokeAccounts = () => {
         />
       </DatatableWrapper>
 
-      <ModalComponent
-        onClickToConfirm={handleConfirm}
-        onClose={handleClose}>
+      <ModalComponent onClose={handleClose} hideConfirm>
         <NewSpokeAccount status={post.status} error={post.error} />
       </ModalComponent>
 

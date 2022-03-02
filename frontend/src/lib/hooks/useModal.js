@@ -19,6 +19,7 @@ export const useModal = (title, onOpen) => {
     children,
     onClickToConfirm,
     confirmButtonLabel,
+    hideConfirm,
     onClose
   }) => (
     <Modal open={isOpen}>
@@ -31,11 +32,13 @@ export const useModal = (title, onOpen) => {
           onClick={() => closeModal(onClose)}>
           Cancel
         </Button>
-        <Button
-          onClick={onClickToConfirm}
-          positive>
-          {confirmButtonLabel || 'Confirm'}
-        </Button>
+        {!hideConfirm && (
+          <Button
+            onClick={onClickToConfirm}
+            positive>
+            {confirmButtonLabel || 'Confirm'}
+          </Button>
+        )}
       </Modal.Actions>          
     </Modal>
   );

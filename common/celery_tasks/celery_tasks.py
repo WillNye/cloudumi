@@ -3082,3 +3082,5 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
+
+handle_tenant_aws_integration_queue()
