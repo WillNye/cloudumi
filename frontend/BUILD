@@ -19,6 +19,7 @@ copy_to_bin(
         ],
         exclude = _TESTS,
     ) + [
+        "jsconfig.json",
         "package.json",
         "yarn.lock",
     ],
