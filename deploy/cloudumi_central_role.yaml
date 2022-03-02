@@ -106,6 +106,8 @@ Resources:
                 Resource: "*"
   SpokeRole:
     Type: "AWS::IAM::Role"
+    DependsOn:
+      - "CentralRole"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -158,7 +160,9 @@ Resources:
                 Resource: "*"
   SnsCustomResource:
     Type: "Custom::SnsCustomResource"
-    DeletionPolicy: Retain
+    DependsOn:
+      - "SpokeRole"
+      - "CentralRole"
     Properties:
       ServiceToken: !Ref RegistrationTopicArnParameter
       IntegrationName: !Ref "AWS::StackName"
