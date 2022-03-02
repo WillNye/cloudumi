@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import List
 
 from asgiref.sync import sync_to_async
@@ -96,7 +95,7 @@ async def delete_authorized_groups_tag(host: str, tag_name: str) -> bool:
 async def get_authorized_groups_tags(host: str) -> List[dict]:
     ddb = RestrictedDynamoHandler()
     host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
-    groups_tags = defaultdict(dict)
+    groups_tags = list()
     for groups_tag in host_config.get("cloud_credential_authorization_mapping", {}).get(
         "authorized_groups_tags", []
     ):
