@@ -15,7 +15,7 @@ jobs:
           allowed_prefixes: "fix,feat,task,bug" # All branches should start with the given prefix
           ignore: main,develop # Ignore exactly matching branch names from convention
           min_length: 5 # Min length of the branch name
-          max_length: 20 # Max length of the branch name
+          max_length: 40 # Max length of the branch name
       - uses: deepakputhraya/action-pr-title@master
         with:
           regex: ".*" # Regex the title should match.
