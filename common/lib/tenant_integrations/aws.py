@@ -184,7 +184,7 @@ async def handle_spoke_account_registration(body):
                     ExternalId=external_id,
                 )
 
-    except ClientError as e:
+    except RetryError as e:
         error_message = "Unable to assume customer's central account role"
         sentry_sdk.capture_exception()
         log.error(
@@ -288,12 +288,12 @@ async def handle_spoke_account_registration(body):
             master_account = False
 
     spoke_account = SpokeAccount(
-        account_name,
-        account_id_for_role,
-        spoke_role_arn,
-        external_id,
-        hub_account.role_arn,
-        master_account,
+        name=account_name,
+        account_id=account_id_for_role,
+        role_arn=spoke_role_arn,
+        external_id=external_id,
+        hub_account_arn=hub_account.role_arn,
+        master_for_account=master_account,
     )
     await upsert_spoke_account(host, spoke_account)
     return {
