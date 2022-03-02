@@ -32,9 +32,9 @@ def __add_ecr_registry_aws_link(terraform_config: dict) -> dict:
 
 
 def __set_aws_profile(terraform_config: dict) -> dict:
-    """Set the aws_profile from configuration hints (noq_dev or noq_prod)."""
+    """Set the aws_profile from configuration hints (noq_staging or noq_prod)."""
     terraform_config["aws_profile"] = (
-        "noq_dev" if terraform_config["stage"] == "staging" else "noq_prod"
+        "noq_staging" if terraform_config["stage"] == "staging" else "noq_prod"
     )
     return terraform_config
 

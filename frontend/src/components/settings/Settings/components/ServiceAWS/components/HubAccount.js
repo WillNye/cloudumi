@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useApi } from 'hooks/useApi';
 import Datatable from 'lib/Datatable';
 import { DatatableWrapper } from 'lib/Datatable/ui/utils';
@@ -10,9 +10,9 @@ import { str } from 'components/settings/Settings/strings';
 
 export const HubAccount = () => {
 
-  const { get, post, remove } = useApi('services/aws/account/hub'); // data/status/empty/error/do
-  
-  const { error, success } = useToast();
+  const { get, post, remove } = useApi('services/aws/account/hub') // data/status/empty/error/do
+
+  const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add Hub Account');
 
@@ -27,13 +27,15 @@ export const HubAccount = () => {
       })
       .catch(() => error(str.toastErrorMsg));
     }
-  };
+  }
 
   const handleClose = post.reset;
 
-  const columns = hubAccountColumns({ handleClick });
+  const columns = hubAccountColumns({ handleClick })
 
-  const label = `Status: ${get.status}${get.error ? ` / Error: ${get.error}` : ''}`;
+  const label = `Status: ${get.status}${
+    get.error ? ` / Error: ${get.error}` : ''
+  }`
 
   let data = get.data;
 
@@ -46,13 +48,14 @@ export const HubAccount = () => {
   
   return (
     <>
+
       <DatatableWrapper>
         <Datatable
           data={data}
           columns={columns}
           emptyState={{
             label: 'Connect Hub Account',
-            onClick: openModal
+            onClick: openModal,
           }}
           isLoading={get.status === 'working'}
           loadingState={{ label }}
@@ -64,5 +67,5 @@ export const HubAccount = () => {
       </ModalComponent>
 
     </>
-  );
-};
+  )
+}

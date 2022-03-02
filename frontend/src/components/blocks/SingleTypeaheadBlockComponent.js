@@ -1,15 +1,15 @@
-import _ from "lodash";
-import React, { Component } from "react";
-import { Form, Search } from "semantic-ui-react";
+import _ from 'lodash'
+import React, { Component } from 'react'
+import { Form, Search } from 'semantic-ui-react'
 
 class SingleTypeaheadBlockComponent extends Component {
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       isLoading: false,
       results: [],
-      value: "",
-    };
+      value: '',
+    }
   }
 
   handleResultSelect(e, { result }) {
@@ -18,22 +18,22 @@ class SingleTypeaheadBlockComponent extends Component {
         value: result.title,
       },
       () => {
-        this.props.handleInputUpdate(result.title);
+        this.props.handleInputUpdate(result.title)
       }
-    );
+    )
   }
 
   handleSearchChange(e, { value }) {
-    const { typeahead } = this.props;
+    const { typeahead } = this.props
     this.setState(
       {
         isLoading: true,
         value,
       },
       () => {
-        this.props.handleInputUpdate(value);
+        this.props.handleInputUpdate(value)
       }
-    );
+    )
 
     setTimeout(() => {
       if (this.state.value.length < 1) {
@@ -41,39 +41,39 @@ class SingleTypeaheadBlockComponent extends Component {
           {
             isLoading: false,
             results: [],
-            value: "",
+            value: '',
           },
           () => {
-            this.props.handleInputUpdate("");
+            this.props.handleInputUpdate('')
           }
-        );
+        )
       }
 
-      const re = new RegExp(_.escapeRegExp(value), "i");
-      const isMatch = (result) => re.test(result.title);
+      const re = new RegExp(_.escapeRegExp(value), 'i')
+      const isMatch = (result) => re.test(result.title)
 
-      const TYPEAHEAD_API = typeahead.replace("{query}", value);
+      const TYPEAHEAD_API = typeahead.replace('{query}', value)
       this.props
-        .sendRequestCommon(null, TYPEAHEAD_API, "get")
+        .sendRequestCommon(null, TYPEAHEAD_API, 'get')
         .then((source) => {
           this.setState({
             isLoading: false,
             results: _.filter(source, isMatch),
-          });
-        });
-    }, 300);
+          })
+        })
+    }, 300)
   }
 
   render() {
-    const { isLoading, results, value } = this.state;
-    const { defaultValue, required, label } = this.props;
+    const { isLoading, results, value } = this.state
+    const { defaultValue, required, label } = this.props
 
     return (
       <Form.Field required={required || false}>
-        <label>{label || "Enter Value"}</label>
+        <label>{label || 'Enter Value'}</label>
         <Search
           fluid
-          defaultValue={defaultValue || ""}
+          defaultValue={defaultValue || ''}
           loading={isLoading}
           onResultSelect={this.handleResultSelect.bind(this)}
           onSearchChange={_.debounce(this.handleSearchChange.bind(this), 500, {
@@ -83,8 +83,8 @@ class SingleTypeaheadBlockComponent extends Component {
           value={value}
         />
       </Form.Field>
-    );
+    )
   }
 }
 
-export default SingleTypeaheadBlockComponent;
+export default SingleTypeaheadBlockComponent

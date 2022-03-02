@@ -10,11 +10,11 @@ export const NewHubAccount = ({ status = 'working', error, closeModal }) => {
 
   const aws = useContext(ApiContext);
 
-  const isWorking = status === 'working';
+  const isWorking = status === 'working'
 
-  const isSuccess = status === 'done' && !error;
+  const isSuccess = status === 'done' && !error
 
-  const hasError = (error && status === 'done');
+  const hasError = error && status === 'done';
     
   useEffect(() => {
     let sessionLogs = sessionStorage.getItem('services.aws.logs');
@@ -38,7 +38,6 @@ export const NewHubAccount = ({ status = 'working', error, closeModal }) => {
 
   return (
     <Segment basic>
-
       <DimmerWithStates
         loading={isWorking}
         showMessage={hasError}
@@ -77,4 +76,4 @@ export const NewHubAccount = ({ status = 'working', error, closeModal }) => {
 
     </Segment>
   )
-};
+}

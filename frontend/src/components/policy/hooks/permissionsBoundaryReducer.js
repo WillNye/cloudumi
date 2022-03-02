@@ -1,29 +1,29 @@
 export const initialState = {
-  actionType: "attach",
+  actionType: 'attach',
   permissionsBoundary: {},
-  permissionsBoundaryArn: "",
-};
+  permissionsBoundaryArn: '',
+}
 
 export const reducer = (state, action) => {
   switch (action.type) {
-    case "SET_PERMISSIONS_BOUNDARY":
+    case 'SET_PERMISSIONS_BOUNDARY':
       return {
         ...state,
         permissionsBoundary: action.policy,
-      };
-    case "ADD_PERMISSIONS_BOUNDARY":
+      }
+    case 'ADD_PERMISSIONS_BOUNDARY':
       return {
         ...state,
-        actionType: "attach",
+        actionType: 'attach',
         permissionsBoundaryArn: action.arn,
-      };
-    case "DELETE_PERMISSIONS_BOUNDARY":
+      }
+    case 'DELETE_PERMISSIONS_BOUNDARY':
       return {
         ...state,
-        actionType: "detach",
+        actionType: 'detach',
         permissionsBoundaryArn: action.arn,
-      };
+      }
     default:
-      throw new Error(`No such action type ${action.type} exist`);
+      throw new Error(`No such action type ${action.type} exist`)
   }
-};
+}

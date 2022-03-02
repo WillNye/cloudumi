@@ -2079,7 +2079,7 @@ components:
       type: object
       required:
         - org_id
-        - account_id  
+        - account_id
         - account_name
         - owner
       properties:

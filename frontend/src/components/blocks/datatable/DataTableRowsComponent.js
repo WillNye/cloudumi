@@ -1,10 +1,10 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { Button, Icon, Label, Table } from "semantic-ui-react";
-import ReactJson from "react-json-view";
-import ReactMarkdown from "react-markdown";
+import React from 'react'
+import { Link } from 'react-router-dom'
+import { Button, Icon, Label, Table } from 'semantic-ui-react'
+import ReactJson from 'react-json-view'
+import ReactMarkdown from 'react-markdown'
 
-const DEFAULT_ROWS_PER_PAGE = 50;
+const DEFAULT_ROWS_PER_PAGE = 50
 
 const DataTableRowsComponent = ({
   expandedRow,
@@ -18,22 +18,22 @@ const DataTableRowsComponent = ({
   const expandNestedJson = (data) => {
     Object.keys(data).forEach((key) => {
       try {
-        data[key] = JSON.parse(data[key]);
+        data[key] = JSON.parse(data[key])
       } catch (e) {
         // no-op
       }
-    });
-    return data;
-  };
+    })
+    return data
+  }
 
   const handleCellClick = (e, column, entry) => {
     // This function should appropriately handle a Cell Click given a desired
     // action by the column configuration
-    if (column.onClick && column.onClick.action === "redirect") {
+    if (column.onClick && column.onClick.action === 'redirect') {
       // TODO, change this to useHistory
-      setRedirect(entry[column.key] + window.location.search || "");
+      setRedirect(entry[column.key] + window.location.search || '')
     }
-  };
+  }
 
   const handleRowExpansion = (
     idx,
@@ -44,34 +44,34 @@ const DataTableRowsComponent = ({
   ) => {
     // close expansion if there is any expanded row.
     if (expandedRow && expandedRow.index === idx + 1) {
-      setExpandedRow(null);
+      setExpandedRow(null)
     } else {
-      const rowsPerPage = tableConfig.rowsPerPage || DEFAULT_ROWS_PER_PAGE;
+      const rowsPerPage = tableConfig.rowsPerPage || DEFAULT_ROWS_PER_PAGE
       // expand the row if a row is clicked.
       const filteredDataPaginated = filteredData.slice(
         (activePage - 1) * rowsPerPage,
         activePage * rowsPerPage - 1
-      );
+      )
 
       // get an offset if there is any expanded row and trying to expand row underneath
-      const offset = expandedRow && expandedRow.index < idx ? 1 : 0;
+      const offset = expandedRow && expandedRow.index < idx ? 1 : 0
       const newExpandedRow = {
         index: idx + 1 - offset,
         data: expandNestedJson(filteredDataPaginated[idx - offset]),
-      };
-      setExpandedRow(newExpandedRow);
+      }
+      setExpandedRow(newExpandedRow)
     }
-  };
+  }
 
-  const rowsPerPage = tableConfig.rowsPerPage || DEFAULT_ROWS_PER_PAGE;
+  const rowsPerPage = tableConfig.rowsPerPage || DEFAULT_ROWS_PER_PAGE
   const filteredDataPaginated = filteredData.slice(
     (activePage - 1) * rowsPerPage,
     activePage * rowsPerPage - 1
-  );
+  )
 
   if (expandedRow) {
-    const { index, data } = expandedRow;
-    filteredDataPaginated.splice(index, 0, data);
+    const { index, data } = expandedRow
+    filteredDataPaginated.splice(index, 0, data)
   }
 
   // Return the list of rows after building its cells and events
@@ -92,12 +92,12 @@ const DataTableRowsComponent = ({
               />
             </Table.Cell>
           </Table.Row>
-        );
+        )
       }
 
-      const cells = [];
+      const cells = []
       tableConfig.columns.forEach((column, cidx) => {
-        if (column.type === "daterange") {
+        if (column.type === 'daterange') {
           cells.push(
             <Table.Cell
               key={`cell-${ridx}-${cidx}`}
@@ -108,8 +108,8 @@ const DataTableRowsComponent = ({
                 children={new Date(entry[column.key] * 1000).toUTCString()}
               />
             </Table.Cell>
-          );
-        } else if (column.type === "button") {
+          )
+        } else if (column.type === 'button') {
           cells.push(
             <Table.Cell
               key={`cell-${ridx}-${cidx}`}
@@ -119,15 +119,15 @@ const DataTableRowsComponent = ({
               <Button
                 content={entry[column.content] || column.content}
                 fluid
-                labelPosition="right"
+                labelPosition='right'
                 icon={column.icon}
                 onClick={(e) => handleCellClick(e, column, entry)}
                 primary
-                size="mini"
+                size='mini'
               />
             </Table.Cell>
-          );
-        } else if (column.type === "icon") {
+          )
+        } else if (column.type === 'icon') {
           cells.push(
             <Table.Cell
               key={`cell-${ridx}-${cidx}`}
@@ -140,7 +140,7 @@ const DataTableRowsComponent = ({
                 name={column.icon}
               />
             </Table.Cell>
-          );
+          )
         } else if (column.useLabel) {
           cells.push(
             <Table.Cell
@@ -152,16 +152,16 @@ const DataTableRowsComponent = ({
                 {entry[column.key] != null && entry[column.key].toString()}
               </Label>
             </Table.Cell>
-          );
-        } else if (column.type === "link") {
+          )
+        } else if (column.type === 'link') {
           // TODO, provide an option not to send markdown format
           const value =
-            entry[column.key] != null && entry[column.key].toString();
-          let found = null;
+            entry[column.key] != null && entry[column.key].toString()
+          let found = null
           try {
-            found = value.match(/\[(.+?)\]\((.+?)\)/);
+            found = value.match(/\[(.+?)\]\((.+?)\)/)
           } catch (e) {
-            console.log(e);
+            console.log(e)
           }
           if (found) {
             cells.push(
@@ -170,15 +170,15 @@ const DataTableRowsComponent = ({
                 collapsing
                 style={column.style}
               >
-                {found[2].startsWith("/") ? (
+                {found[2].startsWith('/') ? (
                   <Link to={found[2]}>{found[1]}</Link>
                 ) : (
-                  <a href={found[2]} target="_blank" rel="noreferrer">
+                  <a href={found[2]} target='_blank' rel='noreferrer'>
                     {found[1]}
                   </a>
                 )}
               </Table.Cell>
-            );
+            )
           } else {
             cells.push(
               <Table.Cell
@@ -192,7 +192,7 @@ const DataTableRowsComponent = ({
                   }
                 />
               </Table.Cell>
-            );
+            )
           }
         } else {
           cells.push(
@@ -207,9 +207,9 @@ const DataTableRowsComponent = ({
                 }
               />
             </Table.Cell>
-          );
+          )
         }
-      });
+      })
 
       return (
         <Table.Row key={`row-${ridx}`}>
@@ -219,8 +219,8 @@ const DataTableRowsComponent = ({
                 link
                 name={
                   expandedRow && expandedRow.index - 1 === ridx
-                    ? "caret down"
-                    : "caret right"
+                    ? 'caret down'
+                    : 'caret right'
                 }
                 onClick={() =>
                   handleRowExpansion(
@@ -236,10 +236,10 @@ const DataTableRowsComponent = ({
           )}
           {cells}
         </Table.Row>
-      );
+      )
     },
     [handleCellClick, handleRowExpansion]
-  );
-};
+  )
+}
 
-export default DataTableRowsComponent;
+export default DataTableRowsComponent

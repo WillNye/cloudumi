@@ -1,35 +1,35 @@
-import React, { useEffect, useState } from "react";
-import { Accordion, Header, Icon, Message, Table } from "semantic-ui-react";
-import { ReadOnlyPolicyMonacoEditor } from "./PolicyMonacoEditor";
-import { useAuth } from "../../auth/AuthProviderDefault";
-import { usePolicyContext } from "./hooks/PolicyProvider";
+import React, { useEffect, useState } from 'react'
+import { Accordion, Header, Icon, Message, Table } from 'semantic-ui-react'
+import { ReadOnlyPolicyMonacoEditor } from './PolicyMonacoEditor'
+import { useAuth } from '../../auth/AuthProviderDefault'
+import { usePolicyContext } from './hooks/PolicyProvider'
 
 const ServiceControlPolicy = () => {
-  const { params = {} } = usePolicyContext();
-  const { accountID } = params;
-  const { sendRequestCommon } = useAuth();
-  const [serviceControlPolicies, setServiceControlPolicies] = useState([]);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [panels, setPanels] = useState([]);
-  const [activeTargets, setActiveTargets] = useState({});
+  const { params = {} } = usePolicyContext()
+  const { accountID } = params
+  const { sendRequestCommon } = useAuth()
+  const [serviceControlPolicies, setServiceControlPolicies] = useState([])
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [panels, setPanels] = useState([])
+  const [activeTargets, setActiveTargets] = useState({})
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       const result = await sendRequestCommon(
         null,
         `/api/v2/service_control_policies/${accountID}`,
-        "get"
-      );
+        'get'
+      )
       if (!result) {
-        return;
+        return
       }
-      if (result.status === "error") {
-        setErrorMessage(JSON.stringify(result));
+      if (result.status === 'error') {
+        setErrorMessage(JSON.stringify(result))
       } else {
-        setServiceControlPolicies(result.data);
+        setServiceControlPolicies(result.data)
       }
-    })();
-  }, [accountID, sendRequestCommon]);
+    })()
+  }, [accountID, sendRequestCommon])
 
   useEffect(() => {
     const newPanels =
@@ -42,7 +42,7 @@ const ServiceControlPolicy = () => {
               content: {
                 content: (
                   <>
-                    <Header as="h2">Details</Header>
+                    <Header as='h2'>Details</Header>
                     <Table celled striped definition>
                       <Table.Body>
                         <Table.Row>
@@ -60,12 +60,12 @@ const ServiceControlPolicy = () => {
                         <Table.Row>
                           <Table.Cell>AWS Managed</Table.Cell>
                           <Table.Cell>
-                            {policy.policy.aws_managed ? "True" : "False"}
+                            {policy.policy.aws_managed ? 'True' : 'False'}
                           </Table.Cell>
                         </Table.Row>
                       </Table.Body>
                     </Table>
-                    <Header as="h2">Content</Header>
+                    <Header as='h2'>Content</Header>
                     <ReadOnlyPolicyMonacoEditor
                       policy={JSON.parse(policy.policy.content)}
                     />
@@ -76,22 +76,22 @@ const ServiceControlPolicy = () => {
                             active={activeTargets[policy.policy.id] === true}
                             index={true}
                             onClick={() => {
-                              let newState = activeTargets;
+                              let newState = activeTargets
                               newState[policy.policy.id] =
-                                !newState[policy.policy.id];
+                                !newState[policy.policy.id]
                               setActiveTargets({
                                 ...activeTargets,
                                 ...newState,
-                              });
+                              })
                             }}
                           >
-                            <Icon name="dropdown" />
+                            <Icon name='dropdown' />
                             Targets
                           </Accordion.Title>
                           <Accordion.Content
                             active={activeTargets[policy.policy.id] === true}
                           >
-                            <Table celled attached="bottom">
+                            <Table celled attached='bottom'>
                               <Table.Header>
                                 <Table.Row>
                                   <Table.HeaderCell>Name</Table.HeaderCell>
@@ -111,7 +111,7 @@ const ServiceControlPolicy = () => {
                                       <Table.Cell>{target.arn}</Table.Cell>
                                       <Table.Cell>{target.type}</Table.Cell>
                                     </Table.Row>
-                                  );
+                                  )
                                 })}
                               </Table.Body>
                             </Table>
@@ -122,28 +122,28 @@ const ServiceControlPolicy = () => {
                   </>
                 ),
               },
-            };
+            }
           })
-        : [];
-    setPanels(newPanels);
-  }, [serviceControlPolicies, activeTargets]);
+        : []
+    setPanels(newPanels)
+  }, [serviceControlPolicies, activeTargets])
 
   return (
     <>
-      <Header as="h2">
+      <Header as='h2'>
         Service Control Policies
         <Header.Subheader>
           Service control policies (SCPs) are a type of organization policy that
           can be used to manage permissions across an entire AWS organization.
           More information about SCPs is
           <a
-            target="_blank"
-            rel="noopener noreferrer"
+            target='_blank'
+            rel='noopener noreferrer'
             href={
-              "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html"
+              'https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html'
             }
           >
-            {" "}
+            {' '}
             here
           </a>
         </Header.Subheader>
@@ -160,11 +160,11 @@ const ServiceControlPolicy = () => {
           fluid
           panels={panels}
           styled
-          style={{ marginTop: "2rem" }}
+          style={{ marginTop: '2rem' }}
         />
       ) : null}
     </>
-  );
-};
+  )
+}
 
-export default ServiceControlPolicy;
+export default ServiceControlPolicy

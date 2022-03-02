@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component } from 'react'
 import {
   Button,
   Comment,
@@ -8,30 +8,30 @@ import {
   Input,
   Message,
   Segment,
-} from "semantic-ui-react";
+} from 'semantic-ui-react'
 
 class CommentsFeedBlockComponent extends Component {
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       requestID: this.props.requestID,
       isLoading: false,
-      commentText: "",
+      commentText: '',
       messages: [],
-    };
-    this.handleCommentChange = this.handleCommentChange.bind(this);
-    this.handleSubmitComment = this.handleSubmitComment.bind(this);
-    this.reloadDataFromBackend = props.reloadDataFromBackend;
+    }
+    this.handleCommentChange = this.handleCommentChange.bind(this)
+    this.handleSubmitComment = this.handleSubmitComment.bind(this)
+    this.reloadDataFromBackend = props.reloadDataFromBackend
   }
 
   handleCommentChange(e) {
     this.setState({
       commentText: e.target.value,
-    });
+    })
   }
 
   handleSubmitComment() {
-    const { commentText, requestID } = this.state;
+    const { commentText, requestID } = this.state
     return this.setState(
       {
         isLoading: true,
@@ -40,18 +40,18 @@ class CommentsFeedBlockComponent extends Component {
       async () => {
         const request = {
           modification_model: {
-            command: "add_comment",
+            command: 'add_comment',
             comment_text: commentText,
           },
-        };
+        }
         const response = await this.props.sendRequestCommon(
           request,
-          "/api/v2/requests/" + requestID,
-          "PUT"
-        );
+          '/api/v2/requests/' + requestID,
+          'PUT'
+        )
 
         if (!response) {
-          return;
+          return
         }
 
         if (response.status === 403 || response.status === 400) {
@@ -59,22 +59,22 @@ class CommentsFeedBlockComponent extends Component {
           this.setState({
             isLoading: false,
             messages: [response.message],
-          });
-          return;
+          })
+          return
         }
-        this.reloadDataFromBackend();
+        this.reloadDataFromBackend()
         this.setState({
           isLoading: false,
-          commentText: "",
+          commentText: '',
           messages: [],
-        });
+        })
       }
-    );
+    )
   }
 
   render() {
-    const { commentText, isLoading, messages } = this.state;
-    const { comments } = this.props;
+    const { commentText, isLoading, messages } = this.state
+    const { comments } = this.props
     const messagesToShow =
       messages != null && messages.length > 0 ? (
         <Message negative>
@@ -85,7 +85,7 @@ class CommentsFeedBlockComponent extends Component {
             ))}
           </Message.List>
         </Message>
-      ) : null;
+      ) : null
 
     const commentsContent =
       comments && comments.length > 0 ? (
@@ -95,21 +95,21 @@ class CommentsFeedBlockComponent extends Component {
               {comment.user && comment.user.photo_url ? (
                 <Comment.Avatar src={comment.user.photo_url} />
               ) : (
-                <Comment.Avatar src="/static/images/logos/sunglasses/1.png" />
+                <Comment.Avatar src='/static/images/logos/sunglasses/1.png' />
               )}
               <Comment.Content>
                 {comment.user && comment.user.details_url ? (
-                  <Comment.Author as="a">
+                  <Comment.Author as='a'>
                     <a
                       href={comment.user.details_url}
-                      target="_blank"
-                      rel="noreferrer"
+                      target='_blank'
+                      rel='noreferrer'
                     >
                       {comment.user_email}
                     </a>
                   </Comment.Author>
                 ) : (
-                  <Comment.Author as="text">
+                  <Comment.Author as='text'>
                     {comment.user_email}
                   </Comment.Author>
                 )}
@@ -126,41 +126,41 @@ class CommentsFeedBlockComponent extends Component {
             </Comment>
           ))}
         </Comment.Group>
-      ) : null;
+      ) : null
 
     const addCommentButton = (
       <Button
-        content="Add comment"
+        content='Add comment'
         primary
-        disabled={commentText === ""}
+        disabled={commentText === ''}
         onClick={this.handleSubmitComment}
       />
-    );
+    )
 
     const commentInput = (
       <Input
         action={addCommentButton}
-        placeholder="Add a new comment..."
+        placeholder='Add a new comment...'
         fluid
-        icon="comment"
-        iconPosition="left"
+        icon='comment'
+        iconPosition='left'
         onChange={this.handleCommentChange}
         loading={isLoading}
         value={commentText}
       />
-    );
+    )
 
     return (
       <Segment>
-        <Header size="medium">
-          Comments <Icon name="comments" />
+        <Header size='medium'>
+          Comments <Icon name='comments' />
         </Header>
         {commentsContent}
         {messagesToShow}
         {commentInput}
       </Segment>
-    );
+    )
   }
 }
 
-export default CommentsFeedBlockComponent;
+export default CommentsFeedBlockComponent

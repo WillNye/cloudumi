@@ -1,56 +1,65 @@
-import React, { useMemo } from 'react';
+import React, { useMemo } from 'react'
 
 import {
   useTable,
   useResizeColumns,
   useFlexLayout,
   useRowSelect,
-} from 'react-table';
-import { DatatableHeader, DatatableRow } from './ui/styles';
-import { EmptyState, LoadingState } from './ui/utils';
+} from 'react-table'
+import { DatatableHeader, DatatableRow } from './ui/styles'
+import { EmptyState, LoadingState } from './ui/utils'
 
-const headerProps = (props, { column }) => getStyles(props, column.align);
+const headerProps = (props, { column }) => getStyles(props, column.align)
 
-const cellProps = (props, { cell }) => getStyles(props, cell.column.align);
+const cellProps = (props, { cell }) => getStyles(props, cell.column.align)
 
-const getAlign = (align) => align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start';
+const getAlign = (align) =>
+  align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start'
 
-const getStyles = (props, align = 'left') => [props, {
-  style: {
-    justifyContent: getAlign(align),
-    alignItems: 'center',
-    display: 'flex',
-    flexWrap: 'nowrap'
-  }
-}];
+const getStyles = (props, align = 'left') => [
+  props,
+  {
+    style: {
+      justifyContent: getAlign(align),
+      alignItems: 'center',
+      display: 'flex',
+      flexWrap: 'nowrap',
+    },
+  },
+]
 
 function Table({ columns, data }) {
+  const defaultColumn = React.useMemo(
+    () => ({
+      // When using the useFlexLayout:
+      minWidth: 30, // minWidth is only used as a limit for resizing
+      width: 150, // width is used for both the flex-basis and flex-grow
+      maxWidth: 200, // maxWidth is only used as a limit for resizing
+    }),
+    []
+  )
 
-  const defaultColumn = React.useMemo(() => ({
-    // When using the useFlexLayout:
-    minWidth: 30, // minWidth is only used as a limit for resizing
-    width: 150, // width is used for both the flex-basis and flex-grow
-    maxWidth: 200, // maxWidth is only used as a limit for resizing
-  }), []);
-
-  const { getTableProps, headerGroups, rows, prepareRow } = useTable({
-    columns,
-    data,
-    defaultColumn,
-  },
-  useResizeColumns,
-  useFlexLayout,
-  useRowSelect);
+  const { getTableProps, headerGroups, rows, prepareRow } = useTable(
+    {
+      columns,
+      data,
+      defaultColumn,
+    },
+    useResizeColumns,
+    useFlexLayout,
+    useRowSelect
+  )
 
   return (
-    <div {...getTableProps()} className="table">
+    <div {...getTableProps()} className='table'>
       <div>
-        {headerGroups.map(headerGroup => (
-          <div
-            {...headerGroup.getHeaderGroupProps()}
-            className="tr">
-            {headerGroup.headers.map(column => (
-              <DatatableHeader {...column.getHeaderProps(headerProps)} className="th">
+        {headerGroups.map((headerGroup) => (
+          <div {...headerGroup.getHeaderGroupProps()} className='tr'>
+            {headerGroup.headers.map((column) => (
+              <DatatableHeader
+                {...column.getHeaderProps(headerProps)}
+                className='th'
+              >
                 {column.render('Header')}
                 {/* Use column.getResizerProps to hook up the events correctly */}
                 {column.canResize && (
@@ -66,14 +75,14 @@ function Table({ columns, data }) {
           </div>
         ))}
       </div>
-      <div className="tbody">
-        {rows.map(row => {
+      <div className='tbody'>
+        {rows.map((row) => {
           prepareRow(row)
           return (
-            <DatatableRow {...row.getRowProps()} className="tr">
-              {row.cells.map(cell => {
+            <DatatableRow {...row.getRowProps()} className='tr'>
+              {row.cells.map((cell) => {
                 return (
-                  <div {...cell.getCellProps(cellProps)} className="td">
+                  <div {...cell.getCellProps(cellProps)} className='td'>
                     {cell.render('Cell')}
                   </div>
                 )
@@ -83,23 +92,22 @@ function Table({ columns, data }) {
         })}
       </div>
     </div>
-  );
-};
+  )
+}
 
 const Datatable = ({ data, columns, isLoading, loadingState, emptyState }) => {
-  
-  const memoizedData = useMemo(() => data, [data]);
-  const memoizedColumns = useMemo(() => columns, [columns]);
+  const memoizedData = useMemo(() => data, [data])
+  const memoizedColumns = useMemo(() => columns, [columns])
 
-  const renderTable = <Table data={memoizedData} columns={memoizedColumns} />;
+  const renderTable = <Table data={memoizedData} columns={memoizedColumns} />
 
-  const renderEmptyState = <EmptyState {...emptyState} />;
+  const renderEmptyState = <EmptyState {...emptyState} />
 
-  const hasData = data?.length > 0;
+  const hasData = data?.length > 0
 
-  if (isLoading) return <LoadingState {...loadingState} />;
+  if (isLoading) return <LoadingState {...loadingState} />
 
-  return hasData ? renderTable : renderEmptyState;
-};
+  return hasData ? renderTable : renderEmptyState
+}
 
-export default Datatable;
+export default Datatable

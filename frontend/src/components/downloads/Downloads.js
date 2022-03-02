@@ -1,25 +1,25 @@
-import React, { useEffect } from "react";
-import { Grid, Table, Segment, Header } from "semantic-ui-react";
-import { useAuth } from "./../../auth/AuthProviderDefault";
-import { CopyBlock, dracula } from "react-code-blocks";
+import React, { useEffect } from 'react'
+import { Grid, Table, Segment, Header } from 'semantic-ui-react'
+import { useAuth } from './../../auth/AuthProviderDefault'
+import { CopyBlock, dracula } from 'react-code-blocks'
 
 export const Downloads = () => {
-  const { sendRequestCommon } = useAuth();
-  const [weepInstallScript, setWeepInstallScript] = React.useState("");
-  const [weepDownloadTable, setWeepDownloadTable] = React.useState([]);
+  const { sendRequestCommon } = useAuth()
+  const [weepInstallScript, setWeepInstallScript] = React.useState('')
+  const [weepDownloadTable, setWeepDownloadTable] = React.useState([])
 
   useEffect(() => {
     async function fetchData() {
       const resJson = await sendRequestCommon(
         null,
-        "/api/v3/downloads/weep",
-        "get"
-      );
+        '/api/v3/downloads/weep',
+        'get'
+      )
       if (!resJson) {
-        return;
+        return
       }
-      console.log(resJson);
-      setWeepInstallScript(resJson.install_script);
+      console.log(resJson)
+      setWeepInstallScript(resJson.install_script)
       setWeepDownloadTable(
         resJson.download_links.map((item) => {
           return (
@@ -28,17 +28,17 @@ export const Downloads = () => {
                 <a href={item.download_url}>{item.os_name}</a>
               </Table.Cell>
             </Table.Row>
-          );
+          )
         })
-      );
+      )
     }
-    fetchData();
-  }, [sendRequestCommon]);
+    fetchData()
+  }, [sendRequestCommon])
 
   return (
     <Grid>
       <Grid.Column width={16}>
-        <Header as="h1">Downloads</Header>
+        <Header as='h1'>Downloads</Header>
       </Grid.Column>
       <Grid.Column width={8}>
         <Segment>
@@ -50,7 +50,7 @@ export const Downloads = () => {
           {weepInstallScript ? (
             <CopyBlock
               text={weepInstallScript}
-              language={"shell"}
+              language={'shell'}
               showLineNumbers={false}
               theme={dracula}
             />
@@ -61,5 +61,5 @@ export const Downloads = () => {
         </Segment>
       </Grid.Column>
     </Grid>
-  );
-};
+  )
+}

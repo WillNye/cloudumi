@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component } from 'react'
 import {
   Button,
   Dimmer,
@@ -8,24 +8,24 @@ import {
   Loader,
   Message,
   Segment,
-} from "semantic-ui-react";
-import MonacoDiffComponent from "./MonacoDiffComponent";
-import { sortAndStringifyNestedJSONObject } from "../../helpers/utils";
+} from 'semantic-ui-react'
+import MonacoDiffComponent from './MonacoDiffComponent'
+import { sortAndStringifyNestedJSONObject } from '../../helpers/utils'
 
 class AssumeRolePolicyChangeComponent extends Component {
   constructor(props) {
-    super(props);
-    const { change, config, requestReadOnly, requestID } = props;
+    super(props)
+    const { change, config, requestReadOnly, requestID } = props
     const oldPolicyDoc =
       change.old_policy && change.old_policy.policy_document
         ? change.old_policy.policy_document
-        : {};
+        : {}
 
     const newPolicyDoc =
       change.policy.policy_document && change.policy.policy_document
         ? change.policy.policy_document
-        : {};
-    const newStatement = sortAndStringifyNestedJSONObject(newPolicyDoc);
+        : {}
+    const newStatement = sortAndStringifyNestedJSONObject(newPolicyDoc)
     this.state = {
       newStatement,
       lastSavedStatement: newStatement,
@@ -38,13 +38,13 @@ class AssumeRolePolicyChangeComponent extends Component {
       requestReadOnly,
       requestID,
       isLoading: false,
-    };
+    }
 
-    this.onLintError = this.onLintError.bind(this);
-    this.onValueChange = this.onValueChange.bind(this);
-    this.onSubmitChange = this.onSubmitChange.bind(this);
-    this.updatePolicyDocument = props.updatePolicyDocument;
-    this.reloadDataFromBackend = props.reloadDataFromBackend;
+    this.onLintError = this.onLintError.bind(this)
+    this.onValueChange = this.onValueChange.bind(this)
+    this.onSubmitChange = this.onSubmitChange.bind(this)
+    this.updatePolicyDocument = props.updatePolicyDocument
+    this.reloadDataFromBackend = props.reloadDataFromBackend
   }
 
   componentDidUpdate(prevProps) {
@@ -57,17 +57,17 @@ class AssumeRolePolicyChangeComponent extends Component {
           isLoading: true,
         },
         () => {
-          const { change, config, requestReadOnly } = this.props;
+          const { change, config, requestReadOnly } = this.props
           const oldPolicyDoc =
             change.old_policy && change.old_policy.policy_document
               ? change.old_policy.policy_document
-              : {};
+              : {}
 
           const newPolicyDoc =
             change.policy.policy_document && change.policy.policy_document
               ? change.policy.policy_document
-              : {};
-          const newStatement = sortAndStringifyNestedJSONObject(newPolicyDoc);
+              : {}
+          const newStatement = sortAndStringifyNestedJSONObject(newPolicyDoc)
           this.setState({
             newStatement,
             lastSavedStatement: newStatement,
@@ -76,9 +76,9 @@ class AssumeRolePolicyChangeComponent extends Component {
             config,
             requestReadOnly,
             isLoading: false,
-          });
+          })
         }
-      );
+      )
     }
   }
 
@@ -87,30 +87,27 @@ class AssumeRolePolicyChangeComponent extends Component {
       this.setState({
         messages: lintErrors,
         isError: true,
-      });
+      })
     } else {
       this.setState({
         messages: [],
         isError: false,
-      });
+      })
     }
   }
 
   onValueChange(newValue) {
-    const { change } = this.state;
+    const { change } = this.state
     this.setState({
       newStatement: newValue,
       buttonResponseMessage: [],
-    });
-    this.updatePolicyDocument(change.id, newValue);
+    })
+    this.updatePolicyDocument(change.id, newValue)
   }
 
   onSubmitChange() {
-    const applyChange = this.props.sendProposedPolicy.bind(
-      this,
-      "apply_change"
-    );
-    applyChange();
+    const applyChange = this.props.sendProposedPolicy.bind(this, 'apply_change')
+    applyChange()
   }
 
   render() {
@@ -125,67 +122,67 @@ class AssumeRolePolicyChangeComponent extends Component {
       lastSavedStatement,
       isLoading,
       buttonResponseMessage,
-    } = this.state;
+    } = this.state
 
     const headerContent = (
-      <Header size="large">Assume Role Policy Change</Header>
-    );
+      <Header size='large'>Assume Role Policy Change</Header>
+    )
     const applyChangesButton =
       config.can_approve_reject &&
-      change.status === "not_applied" &&
+      change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
           <Button
-            content="Apply Change"
+            content='Apply Change'
             positive
             fluid
             disabled={isError}
             onClick={this.onSubmitChange}
           />
         </Grid.Column>
-      ) : null;
+      ) : null
 
-    const noChangesDetected = lastSavedStatement === newStatement;
+    const noChangesDetected = lastSavedStatement === newStatement
 
     const updateChangesButton =
       config.can_update_cancel &&
-      change.status === "not_applied" &&
+      change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
           <Button
-            content="Update Proposed Policy"
+            content='Update Proposed Policy'
             positive
             fluid
             disabled={isError || noChangesDetected}
-            onClick={this.props.sendProposedPolicy.bind(this, "update_change")}
+            onClick={this.props.sendProposedPolicy.bind(this, 'update_change')}
           />
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const cancelChangesButton =
       (config.can_approve_reject || config.can_update_cancel) &&
-      change.status === "not_applied" &&
+      change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
           <Button
-            content="Cancel Change"
+            content='Cancel Change'
             negative
             fluid
             disabled={isError}
-            onClick={this.props.sendProposedPolicy.bind(this, "cancel_change")}
+            onClick={this.props.sendProposedPolicy.bind(this, 'cancel_change')}
           />
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const readOnlyInfo =
-      requestReadOnly && change.status === "not_applied" ? (
+      requestReadOnly && change.status === 'not_applied' ? (
         <Grid.Column>
           <Message info>
             <Message.Header>View only</Message.Header>
             <p>This change is view only and can no longer be modified.</p>
           </Message>
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const messagesToShow =
       messages.length > 0 ? (
@@ -197,13 +194,13 @@ class AssumeRolePolicyChangeComponent extends Component {
             ))}
           </Message.List>
         </Message>
-      ) : null;
+      ) : null
 
     const responseMessagesToShow =
       buttonResponseMessage.length > 0 ? (
         <Grid.Column>
           {buttonResponseMessage.map((message) =>
-            message.status === "error" ? (
+            message.status === 'error' ? (
               <Message negative>
                 <Message.Header>An error occurred</Message.Header>
                 <Message.Content>{message.message}</Message.Content>
@@ -216,49 +213,49 @@ class AssumeRolePolicyChangeComponent extends Component {
             )
           )}
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const changesAlreadyAppliedContent =
-      change.status === "applied" ? (
+      change.status === 'applied' ? (
         <Grid.Column>
           <Message positive>
             <Message.Header>Change already applied</Message.Header>
             <p>This change has already been applied and cannot be modified.</p>
           </Message>
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const changesAlreadyCancelledContent =
-      change.status === "cancelled" ? (
+      change.status === 'cancelled' ? (
         <Grid.Column>
           <Message negative>
             <Message.Header>Change cancelled</Message.Header>
             <p>This change has been cancelled and cannot be modified.</p>
           </Message>
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const changeReadOnly =
       requestReadOnly ||
-      change.status === "applied" ||
-      change.status === "cancelled";
+      change.status === 'applied' ||
+      change.status === 'cancelled'
 
     const policyChangeContent = change ? (
       <Grid fluid>
-        <Grid.Row columns="equal">
+        <Grid.Row columns='equal'>
           <Grid.Column>
             <Header
-              size="medium"
-              content="Current Policy"
-              subheader="This is a read-only view of the current policy in AWS."
+              size='medium'
+              content='Current Policy'
+              subheader='This is a read-only view of the current policy in AWS.'
             />
           </Grid.Column>
           <Grid.Column>
             <Header
-              size="medium"
-              content="Proposed Policy"
-              subheader="This is an editable view of the proposed policy.
-              An approver can modify the proposed policy before approving and applying it."
+              size='medium'
+              content='Proposed Policy'
+              subheader='This is an editable view of the proposed policy.
+              An approver can modify the proposed policy before approving and applying it.'
             />
           </Grid.Column>
         </Grid.Row>
@@ -276,13 +273,13 @@ class AssumeRolePolicyChangeComponent extends Component {
             />
           </Grid.Column>
         </Grid.Row>
-        <Grid.Row columns="equal">
+        <Grid.Row columns='equal'>
           <Grid.Column>{messagesToShow}</Grid.Column>
         </Grid.Row>
-        <Grid.Row columns="equal">
+        <Grid.Row columns='equal'>
           <Grid.Column>{responseMessagesToShow}</Grid.Column>
         </Grid.Row>
-        <Grid.Row columns="equal">
+        <Grid.Row columns='equal'>
           {applyChangesButton}
           {updateChangesButton}
           {cancelChangesButton}
@@ -291,7 +288,7 @@ class AssumeRolePolicyChangeComponent extends Component {
           {changesAlreadyCancelledContent}
         </Grid.Row>
       </Grid>
-    ) : null;
+    ) : null
 
     return (
       <Segment>
@@ -302,8 +299,8 @@ class AssumeRolePolicyChangeComponent extends Component {
         <Divider hidden />
         {policyChangeContent}
       </Segment>
-    );
+    )
   }
 }
 
-export default AssumeRolePolicyChangeComponent;
+export default AssumeRolePolicyChangeComponent

@@ -29,7 +29,7 @@ export const SpokeAccounts = () => {
       })
       .catch(() => error(str.toastErrorMsg));
     }
-  };
+  }
 
   const handleClose = post.reset;
 
@@ -48,7 +48,7 @@ export const SpokeAccounts = () => {
           columns={columns}
           emptyState={{
             label: 'Connect a Spoke Account',
-            onClick: openModal
+            onClick: openModal,
           }}
           isLoading={get.status === 'working'}
           loadingState={{ label }}
@@ -60,5 +60,5 @@ export const SpokeAccounts = () => {
       </ModalComponent>
 
     </>
-  );
-};
+  )
+}

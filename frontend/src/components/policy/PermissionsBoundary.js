@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react'
 import {
   Button,
   Dropdown,
@@ -9,79 +9,79 @@ import {
   Segment,
   ButtonGroup,
   ButtonOr,
-} from "semantic-ui-react";
-import usePermissionsBoundary from "./hooks/usePermissionsBoundary";
-import { JustificationModal } from "./PolicyModals";
-import { useAuth } from "../../auth/AuthProviderDefault";
-import Editor from "@monaco-editor/react";
-import { getLocalStorageSettings } from "../../helpers/utils";
+} from 'semantic-ui-react'
+import usePermissionsBoundary from './hooks/usePermissionsBoundary'
+import { JustificationModal } from './PolicyModals'
+import { useAuth } from '../../auth/AuthProviderDefault'
+import Editor from '@monaco-editor/react'
+import { getLocalStorageSettings } from '../../helpers/utils'
 
 const PermissionsBoundary = () => {
-  const { user, sendRequestCommon } = useAuth();
+  const { user, sendRequestCommon } = useAuth()
   const {
-    accountID = "",
+    accountID = '',
     permissionsBoundary = {},
     resource,
     addPermissionsBoundary,
     deletePermissionsBoundary,
     setModalWithAdminAutoApprove,
     handlePermissionsBoundarySubmit,
-  } = usePermissionsBoundary();
+  } = usePermissionsBoundary()
 
-  const [availableManagedPolicies, setAvailableManagedPolicies] = useState([]);
-  const [selected, setSelected] = useState(null);
+  const [availableManagedPolicies, setAvailableManagedPolicies] = useState([])
+  const [selected, setSelected] = useState(null)
   const [
     attachedPermissionsBoundaryDetails,
     setAttachedPermissionsBoundaryDetails,
-  ] = useState(null);
-  const editorTheme = getLocalStorageSettings("editorTheme");
+  ] = useState(null)
+  const editorTheme = getLocalStorageSettings('editorTheme')
   // available managed policies are only used for rendering. so let's retrieve from here.
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       const result = await sendRequestCommon(
         null,
         `/api/v2/managed_policies/${accountID}`,
-        "get"
-      );
+        'get'
+      )
       if (!result) {
-        return;
+        return
       }
-      setAvailableManagedPolicies(result);
-    })();
-  }, [accountID, sendRequestCommon]);
+      setAvailableManagedPolicies(result)
+    })()
+  }, [accountID, sendRequestCommon])
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       if (!resource?.permissions_boundary?.PermissionsBoundaryArn) {
-        setAttachedPermissionsBoundaryDetails(null);
-        return null;
+        setAttachedPermissionsBoundaryDetails(null)
+        return null
       }
       const result = await sendRequestCommon(
         null,
         `/api/v2/managed_policies/${resource?.permissions_boundary?.PermissionsBoundaryArn}`,
-        "get"
-      );
+        'get'
+      )
       if (!result?.data) {
-        return;
+        return
       }
-      setAttachedPermissionsBoundaryDetails(result.data);
-    })();
-  }, [accountID, resource, sendRequestCommon]);
+      setAttachedPermissionsBoundaryDetails(result.data)
+    })()
+  }, [accountID, resource, sendRequestCommon])
 
   const onPermissionsBoundaryChange = (e, { value }) => {
-    addPermissionsBoundary(value);
-    setSelected(value);
-  };
-  const onPermissionsBoundarySave = () => setModalWithAdminAutoApprove(true);
-  const onPermissionsBoundarySubmit = () => setModalWithAdminAutoApprove(false);
+    addPermissionsBoundary(value)
+    setSelected(value)
+  }
+  const onPermissionsBoundarySave = () => setModalWithAdminAutoApprove(true)
+  const onPermissionsBoundarySubmit = () => setModalWithAdminAutoApprove(false)
   const onPermissionsBoundaryDelete = (arn) => {
-    deletePermissionsBoundary(arn);
-    setModalWithAdminAutoApprove(true);
-  };
+    deletePermissionsBoundary(arn)
+    setModalWithAdminAutoApprove(true)
+  }
   const onPermissionsBoundaryDeleteRequest = (arn) => {
-    deletePermissionsBoundary(arn);
-    setModalWithAdminAutoApprove(false);
-  };
+    deletePermissionsBoundary(arn)
+    setModalWithAdminAutoApprove(false)
+  }
 
   const options =
     availableManagedPolicies &&
@@ -90,8 +90,8 @@ const PermissionsBoundary = () => {
         key: policy,
         value: policy,
         text: policy,
-      };
-    });
+      }
+    })
 
   const editorOptions = {
     readOnly: true,
@@ -102,11 +102,11 @@ const PermissionsBoundary = () => {
     },
     scrollBeyondLastLine: false,
     automaticLayout: true,
-  };
+  }
 
   return (
     <>
-      <Header as="h2">
+      <Header as='h2'>
         Permissions Boundary
         <Header.Subheader>
           A permissions boundary is an advanced feature for using a managed
@@ -116,13 +116,13 @@ const PermissionsBoundary = () => {
           permissions boundaries. More information about permissions boundaries
           is
           <a
-            target="_blank"
-            rel="noopener noreferrer"
+            target='_blank'
+            rel='noopener noreferrer'
             href={
-              "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html"
+              'https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html'
             }
           >
-            {" "}
+            {' '}
             here
           </a>
         </Header.Subheader>
@@ -134,20 +134,20 @@ const PermissionsBoundary = () => {
             this role as a permissions boundary.
           </label>
           <Dropdown
-            placeholder="Choose a managed policy to use as a permissions boundary."
+            placeholder='Choose a managed policy to use as a permissions boundary.'
             fluid
             search
             selection
             options={options}
             onChange={onPermissionsBoundaryChange}
           />
-          <ButtonGroup attached="bottom">
+          <ButtonGroup attached='bottom'>
             {user?.authorization?.can_edit_policies ? (
               <>
                 <Button
                   positive
-                  icon="save"
-                  content="Add"
+                  icon='save'
+                  content='Add'
                   onClick={onPermissionsBoundarySave}
                   disabled={!selected}
                 />
@@ -156,26 +156,26 @@ const PermissionsBoundary = () => {
             ) : null}
             <Button
               primary
-              icon="send"
-              content="Request"
+              icon='send'
+              content='Request'
               onClick={onPermissionsBoundarySubmit}
               disabled={!selected}
             />
           </ButtonGroup>
         </Form.Field>
       </Form>
-      <Header as="h3" attached="top" content="Attached Permissions Boundary" />
-      <Segment attached="bottom">
+      <Header as='h3' attached='top' content='Attached Permissions Boundary' />
+      <Segment attached='bottom'>
         {attachedPermissionsBoundaryDetails ? (
-          <List divided size="medium" relaxed="very" verticalAlign="middle">
+          <List divided size='medium' relaxed='very' verticalAlign='middle'>
             <List.Item key={permissionsBoundary?.PolicyName}>
-              <List.Content floated="right">
-                <Button.Group attached="bottom">
+              <List.Content floated='right'>
+                <Button.Group attached='bottom'>
                   {user?.authorization?.can_edit_policies ? (
                     <>
                       <Button
                         negative
-                        size="small"
+                        size='small'
                         name={permissionsBoundary?.PermissionsBoundaryArn}
                         onClick={() =>
                           onPermissionsBoundaryDelete(
@@ -183,7 +183,7 @@ const PermissionsBoundary = () => {
                           )
                         }
                       >
-                        <Icon name="remove" />
+                        <Icon name='remove' />
                         Remove
                       </Button>
                       <Button.Or />
@@ -191,7 +191,7 @@ const PermissionsBoundary = () => {
                   ) : null}
                   <Button
                     negative
-                    size="small"
+                    size='small'
                     name={permissionsBoundary?.PermissionsBoundaryArn}
                     onClick={() =>
                       onPermissionsBoundaryDeleteRequest(
@@ -199,7 +199,7 @@ const PermissionsBoundary = () => {
                       )
                     }
                   >
-                    <Icon name="remove" />
+                    <Icon name='remove' />
                     Request Removal
                   </Button>
                 </Button.Group>
@@ -207,10 +207,10 @@ const PermissionsBoundary = () => {
               <List.Content>
                 <List.Header>
                   {permissionsBoundary?.PermissionsBoundaryArn?.split(
-                    "/"
+                    '/'
                   ).slice(-1)}
                 </List.Header>
-                <List.Description as="a">
+                <List.Description as='a'>
                   {permissionsBoundary?.PermissionsBoundaryArn}
                 </List.Description>
                 <Segment
@@ -221,28 +221,28 @@ const PermissionsBoundary = () => {
                   }}
                 >
                   <Editor
-                    height="540px"
-                    defaultLanguage="json"
+                    height='540px'
+                    defaultLanguage='json'
                     theme={editorTheme}
                     value={JSON.stringify(
                       attachedPermissionsBoundaryDetails,
                       null,
-                      "\t"
+                      '\t'
                     )}
                     options={editorOptions}
-                    textAlign="center"
+                    textAlign='center'
                   />
                 </Segment>
               </List.Content>
             </List.Item>
           </List>
         ) : (
-          "No permissions boundary is attached."
+          'No permissions boundary is attached.'
         )}
       </Segment>
       <JustificationModal handleSubmit={handlePermissionsBoundarySubmit} />
     </>
-  );
-};
+  )
+}
 
-export default PermissionsBoundary;
+export default PermissionsBoundary

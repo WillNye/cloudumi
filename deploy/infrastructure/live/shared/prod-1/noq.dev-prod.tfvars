@@ -1,3 +1,10 @@
+# Set to true to create the ECS task role -
+# this MUST ONLY BE DONE ONCE IN THE BEGINNING
+# Once the ECS task role is created and we get access to environments, when it
+# is deleted, so is our access to environments, NO MATTER WHAT WE NAME IT
+modify_ecs_task_role = false
+
+# Associated account id
 account_id = "940552945933"
 
 namespace   = "shared"
@@ -6,7 +13,6 @@ stage       = "prod"
 attributes  = 1
 domain_name = "*.noq.dev"
 
-noq_core   = true
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
 
@@ -17,6 +23,10 @@ tags = {
   "Name" : "noq.dev",
   "Environment" : "production",
 }
+
+# This variable should only be set to true for NOQ Corpo accounts
+# It sets up a container registry (so only for prod and staging)
+noq_core = true
 
 allowed_inbound_cidr_blocks = [
   "70.187.228.241/32", # Curtis

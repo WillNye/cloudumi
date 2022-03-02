@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component } from 'react'
 import {
   Button,
   Grid,
@@ -8,11 +8,11 @@ import {
   Segment,
   Loader,
   Dimmer,
-} from "semantic-ui-react";
+} from 'semantic-ui-react'
 
 class PermissionsBoundaryChangeComponent extends Component {
   constructor(props) {
-    super(props);
+    super(props)
     this.state = {
       isLoading: false,
       messages: [],
@@ -21,11 +21,11 @@ class PermissionsBoundaryChangeComponent extends Component {
       config: this.props.config,
       requestID: this.props.requestID,
       requestReadOnly: this.props.requestReadOnly,
-    };
+    }
 
-    this.onSubmitChange = this.onSubmitChange.bind(this);
-    this.onCancelChange = this.onCancelChange.bind(this);
-    this.reloadDataFromBackend = props.reloadDataFromBackend;
+    this.onSubmitChange = this.onSubmitChange.bind(this)
+    this.onCancelChange = this.onCancelChange.bind(this)
+    this.reloadDataFromBackend = props.reloadDataFromBackend
   }
 
   componentDidUpdate(prevProps) {
@@ -38,32 +38,29 @@ class PermissionsBoundaryChangeComponent extends Component {
           isLoading: true,
         },
         () => {
-          const { change, config, requestReadOnly } = this.props;
+          const { change, config, requestReadOnly } = this.props
           this.setState({
             change,
             config,
             requestReadOnly,
             isLoading: false,
-          });
+          })
         }
-      );
+      )
     }
   }
 
   onSubmitChange() {
-    const applyChange = this.props.sendProposedPolicy.bind(
-      this,
-      "apply_change"
-    );
-    applyChange();
+    const applyChange = this.props.sendProposedPolicy.bind(this, 'apply_change')
+    applyChange()
   }
 
   onCancelChange() {
     const cancelChange = this.props.sendProposedPolicy.bind(
       this,
-      "cancel_change"
-    );
-    cancelChange();
+      'cancel_change'
+    )
+    cancelChange()
   }
 
   render() {
@@ -73,78 +70,78 @@ class PermissionsBoundaryChangeComponent extends Component {
       requestReadOnly,
       isLoading,
       buttonResponseMessage,
-    } = this.state;
+    } = this.state
 
     const action =
-      change.action === "detach" ? (
-        <span style={{ color: "red" }}>Detach</span>
+      change.action === 'detach' ? (
+        <span style={{ color: 'red' }}>Detach</span>
       ) : (
-        <span style={{ color: "green" }}>Attach</span>
-      );
+        <span style={{ color: 'green' }}>Attach</span>
+      )
 
     const headerContent = (
-      <Header size="large">
+      <Header size='large'>
         Permissions Boundary Change - {action} {change.policy_name}
       </Header>
-    );
+    )
 
     const applyChangesButton =
       config.can_approve_reject &&
-      change.status === "not_applied" &&
+      change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
           <Button
-            content="Apply Change"
+            content='Apply Change'
             positive
             fluid
             onClick={this.onSubmitChange}
           />
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const cancelChangesButton =
       (config.can_approve_reject || config.can_update_cancel) &&
-      change.status === "not_applied" &&
+      change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
           <Button
-            content="Cancel Change"
+            content='Cancel Change'
             negative
             fluid
             onClick={this.onCancelChange}
           />
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const viewOnlyInfo =
-      requestReadOnly && change.status === "not_applied" ? (
+      requestReadOnly && change.status === 'not_applied' ? (
         <Grid.Column>
           <Message info>
             <Message.Header>View only</Message.Header>
             <p>This change is view only and can no longer be modified.</p>
           </Message>
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const changesAlreadyAppliedContent =
-      change.status === "applied" ? (
+      change.status === 'applied' ? (
         <Grid.Column>
           <Message positive>
             <Message.Header>Change already applied</Message.Header>
             <p>This change has already been applied and cannot be modified.</p>
           </Message>
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const changesAlreadyCancelledContent =
-      change.status === "cancelled" ? (
+      change.status === 'cancelled' ? (
         <Grid.Column>
           <Message negative>
             <Message.Header>Change cancelled</Message.Header>
             <p>This change has been cancelled and cannot be modified.</p>
           </Message>
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const requestDetailsContent = change ? (
       <Table celled definition striped>
@@ -155,7 +152,7 @@ class PermissionsBoundaryChangeComponent extends Component {
           </Table.Row>
           <Table.Row>
             <Table.Cell>Action</Table.Cell>
-            {change.action === "detach" ? (
+            {change.action === 'detach' ? (
               <Table.Cell negative>Detach</Table.Cell>
             ) : (
               <Table.Cell positive>Attach</Table.Cell>
@@ -167,13 +164,13 @@ class PermissionsBoundaryChangeComponent extends Component {
           </Table.Row>
         </Table.Body>
       </Table>
-    ) : null;
+    ) : null
 
     const responseMessagesToShow =
       buttonResponseMessage.length > 0 ? (
         <Grid.Column>
           {buttonResponseMessage.map((message) =>
-            message.status === "error" ? (
+            message.status === 'error' ? (
               <Message negative>
                 <Message.Header>An error occurred</Message.Header>
                 <Message.Content>{message.message}</Message.Content>
@@ -186,17 +183,17 @@ class PermissionsBoundaryChangeComponent extends Component {
             )
           )}
         </Grid.Column>
-      ) : null;
+      ) : null
 
     const policyChangeContent = change ? (
       <Grid fluid>
-        <Grid.Row columns="equal">
+        <Grid.Row columns='equal'>
           <Grid.Column>{requestDetailsContent}</Grid.Column>
         </Grid.Row>
-        <Grid.Row columns="equal">
+        <Grid.Row columns='equal'>
           <Grid.Column>{responseMessagesToShow}</Grid.Column>
         </Grid.Row>
-        <Grid.Row columns="equal">
+        <Grid.Row columns='equal'>
           {applyChangesButton}
           {cancelChangesButton}
           {viewOnlyInfo}
@@ -204,7 +201,7 @@ class PermissionsBoundaryChangeComponent extends Component {
           {changesAlreadyCancelledContent}
         </Grid.Row>
       </Grid>
-    ) : null;
+    ) : null
 
     return (
       <Segment>
@@ -214,8 +211,8 @@ class PermissionsBoundaryChangeComponent extends Component {
         {headerContent}
         {policyChangeContent}
       </Segment>
-    );
+    )
   }
 }
 
-export default PermissionsBoundaryChangeComponent;
+export default PermissionsBoundaryChangeComponent

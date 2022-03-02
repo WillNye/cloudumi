@@ -104,42 +104,42 @@
 
 .active.step1 > .icon {
   font-family: Step;
-  content: url("../../assets/icons/stepper1Active.svg");
+  content: url('../../assets/icons/stepper1Active.svg');
 }
 
 .complete.step1 > .icon {
   font-size: 4em;
   font-family: Step;
-  content: url("../../assets/icons/stepper1Complete.svg");
+  content: url('../../assets/icons/stepper1Complete.svg');
 }
 
 .step2 > .icon {
   font-size: 4em;
   font-family: Step;
-  content: url("../../assets/icons/stepper2Pending.svg");
+  content: url('../../assets/icons/stepper2Pending.svg');
 }
 
 .active.step2 > .icon {
   font-family: Step;
-  content: url("../../assets/icons/stepper2Active.svg");
+  content: url('../../assets/icons/stepper2Active.svg');
 }
 
 .complete.step2 > .icon {
   font-size: 4em;
   font-family: Step;
-  content: url("../../assets/icons/stepper2Complete.svg");
+  content: url('../../assets/icons/stepper2Complete.svg');
 }
 
 .step3 > .icon {
   font-size: 4em;
   font-family: Step;
-  content: url("../../assets/icons/stepper3Pending.svg");
+  content: url('../../assets/icons/stepper3Pending.svg');
 }
 
 .active.step3 > .icon {
   font-size: 4em;
   font-family: Step;
-  content: url("../../assets/icons/stepper3Active.svg");
+  content: url('../../assets/icons/stepper3Active.svg');
 }
 
 .users.large.icon,
