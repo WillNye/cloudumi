@@ -5,6 +5,7 @@ import AssumeRolePolicy from './AssumeRolePolicy'
 import ManagedPolicy from './ManagedPolicy'
 import PermissionsBoundary from './PermissionsBoundary'
 import ServiceControlPolicy from './ServiceControlPolicy'
+import EffectivePermissions from './UnusedPermissions'
 import InlinePolicy from './InlinePolicy'
 import Issues from './Issues'
 import Tags from './Tags'
@@ -71,6 +72,19 @@ const IAMRolePolicy = () => {
         return (
           <Tab.Pane>
             <ManagedPolicy />
+          </Tab.Pane>
+        )
+      },
+    },
+    {
+      menuItem: {
+        key: 'effective_permissions',
+        content: <>Effective (Combined) Permissions</>,
+      },
+      render: () => {
+        return (
+          <Tab.Pane>
+            <EffectivePermissions />
           </Tab.Pane>
         )
       },
