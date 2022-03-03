@@ -1,3 +1,5 @@
+import os
+
 """Web routes."""
 import pkg_resources
 import sentry_sdk
@@ -125,7 +127,7 @@ log = config.get_logger()
 def make_app(jwt_validator=None):
     """make_app."""
 
-    path = config.get(
+    path = os.getenv("FRONTEND_PATH") or config.get(
         "_global_.web.path", pkg_resources.resource_filename("api", "templates")
     )
 
