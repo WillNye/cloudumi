@@ -12,7 +12,6 @@ from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
 from api.handlers.auth import AuthHandler
 from api.handlers.v1.credentials import GetCredentialsHandler
-from api.handlers.v1.headers import ApiHeaderHandler
 from api.handlers.v1.health import HealthHandler
 from api.handlers.v1.policies import (
     ApiResourceTypeAheadHandler,
@@ -84,27 +83,7 @@ from api.handlers.v2.user import (
     UserRegistrationHandler,
 )
 from api.handlers.v2.user_profile import UserProfileHandler
-from api.handlers.v3.config import ConfigHandler
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
-from api.handlers.v3.identity.group import IdentityGroupHandler
-from api.handlers.v3.identity.groups import (
-    IdentityGroupPageConfigHandler,
-    IdentityGroupsTableHandler,
-)
-from api.handlers.v3.identity.requests.group import (
-    IdentityGroupRequestReviewHandler,
-    IdentityRequestGroupHandler,
-    IdentityRequestGroupsHandler,
-)
-from api.handlers.v3.identity.requests.table import (
-    IdentityRequestsPageConfigHandler,
-    IdentityRequestsTableHandler,
-)
-from api.handlers.v3.identity.users import (
-    IdentityUserHandler,
-    IdentityUsersPageConfigHandler,
-    IdentityUsersTableHandler,
-)
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
 from api.handlers.v3.services.aws.account import (
     HubAccountHandler,
@@ -113,7 +92,6 @@ from api.handlers.v3.services.aws.account import (
     SpokeDeleteHandler,
     SpokeHandler,
 )
-from api.handlers.v3.tasks import TasksHandler
 from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
@@ -145,7 +123,7 @@ def make_app(jwt_validator=None):
         (r"/api/v2/user_profile/?", UserProfileHandler),
         (r"/api/v2/self_service_config/?", SelfServiceConfigHandler),
         (r"/api/v2/permission_templates/?", PermissionTemplatesHandler),
-        (r"/api/v1/myheaders/?", ApiHeaderHandler),
+        # (r"/api/v1/myheaders/?", ApiHeaderHandler),
         (r"/api/v1/policies/typeahead", ApiResourceTypeAheadHandler),
         (r"/api/v2/policies/check", CheckPoliciesHandler),
         (r"/api/v2/dynamic_config", DynamicConfigApiHandler),
@@ -220,21 +198,21 @@ def make_app(jwt_validator=None):
         ),
         (r"/api/v3/services/aws/account/org", OrgHandler),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
-        (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
-        (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
-        (r"/api/v3/identities/users_page_config", IdentityUsersPageConfigHandler),
-        (r"/api/v3/identities/users", IdentityUsersTableHandler),
-        (r"/api/v3/identities/requests", IdentityRequestsTableHandler),
-        (r"/api/v3/identities/group/(.*?)/(.*)", IdentityGroupHandler),
-        (r"/api/v3/identities/user/(.*?)/(.*)", IdentityUserHandler),
-        (r"/api/v3/identities/group_requests/(.*)", IdentityGroupRequestReviewHandler),
-        (r"/api/v3/identities/requests/group/(.*?)/(.*)", IdentityRequestGroupHandler),
-        (r"/api/v3/identities/requests/groups", IdentityRequestGroupsHandler),
-        # (r"/api/v3/identities/requests/user/(.*?)/(.*)", IdentityRequestUserHandler),
-        (r"/api/v3/identities/requests_page_config", IdentityRequestsPageConfigHandler),
+        # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
+        # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
+        # (r"/api/v3/identities/users_page_config", IdentityUsersPageConfigHandler),
+        # (r"/api/v3/identities/users", IdentityUsersTableHandler),
+        # (r"/api/v3/identities/requests", IdentityRequestsTableHandler),
+        # (r"/api/v3/identities/group/(.*?)/(.*)", IdentityGroupHandler),
+        # (r"/api/v3/identities/user/(.*?)/(.*)", IdentityUserHandler),
+        # (r"/api/v3/identities/group_requests/(.*)", IdentityGroupRequestReviewHandler),
+        # (r"/api/v3/identities/requests/group/(.*?)/(.*)", IdentityRequestGroupHandler),
+        # (r"/api/v3/identities/requests/groups", IdentityRequestGroupsHandler),
+        # # (r"/api/v3/identities/requests/user/(.*?)/(.*)", IdentityRequestUserHandler),
+        # (r"/api/v3/identities/requests_page_config", IdentityRequestsPageConfigHandler),
         (r"/api/v3/integrations/aws", AwsIntegrationHandler),
-        (r"/api/v3/tasks", TasksHandler),
-        (r"/api/v3/config", ConfigHandler),
+        # (r"/api/v3/tasks", TasksHandler),
+        # (r"/api/v3/config", ConfigHandler),
         # (r"/api/v3/api_keys/add", AddApiKeyHandler),
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
