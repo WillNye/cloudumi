@@ -1,12 +1,19 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@build_bazel_rules_nodejs//:index.bzl", "copy_to_bin", "nodejs_test")
-#load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
-load("@io_bazel_rules_docker//nodejs:image.bzl", "nodejs_image")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
+load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
+load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
+#load("@io_bazel_rules_docker//nodejs:image.bzl", "nodejs_image")
 load("@npm//react-scripts:index.bzl", "react_scripts", "react_scripts_test")
 
 # Filename conventions described at
 # https://create-react-app.dev/docs/running-tests#filename-conventions
 _TESTS = []  # For later
+
+filegroup(
+    name = "nginx_config_file",
+    srcs = ["nginx/default.conf"],
+)
 
 # We don't want to teach react-scripts to include from multiple directories
 # So we copy everything it wants to read to the output "bin" directory
@@ -29,12 +36,12 @@ copy_to_bin(
 # So we'll need to chdir before it runs.
 write_file(
     name = "write_chdir_script",
-    out = "chdir.js",
+    out = "chdir.cjs",
     content = ["process.chdir(__dirname)"],
 )
 
 _RUNTIME_DEPS = [
-    "chdir.js",
+    "chdir.cjs",
     "copy_static_files",
 
     "@npm//@monaco-editor/react",
@@ -68,7 +75,7 @@ react_scripts(
     # https://create-react-app.dev/docs/advanced-configuration/
     name = "build",
     args = [
-        "--node_options=--require=./$(execpath chdir.js)",
+        "--node_options=--require=./$(execpath chdir.cjs)",
         "build",
     ],
     data = _RUNTIME_DEPS,
@@ -81,7 +88,7 @@ react_scripts(
 react_scripts(
     name = "start",
     args = [
-        "--node_options=--require=./$(rootpath chdir.js)",
+        "--node_options=--require=./$(rootpath chdir.cjs)",
         "start",
     ],
     data = _RUNTIME_DEPS,
@@ -93,8 +100,59 @@ react_scripts(
     ],
 )
 
-nodejs_image(
+pkg_tar(
+    name = "nginx_config",
+    srcs = [
+        ":nginx_config_file",
+    ],
+    strip_prefix = "/frontend/nginx",
+)
+
+container_layer(
+    name = "runtime_deps_layer",
+    files = [":build"] + _RUNTIME_DEPS,
+    data_path = "/ui",
+    directory = "/ui",
+)
+
+container_layer(
+    name = "nginx_config_layer",
+    tars = [":nginx_config"],
+    directory = "/etc/nginx/conf.d",
+)
+
+container_image(
+    name = "container-dev-local-initial",
+    base = "@nodejs_17_container//image",
+    layers = [
+        ":runtime_deps_layer",
+    ],
+    workdir = "/ui/frontend",
+)
+
+container_run_and_commit(
+    name = "container-dev-local-setup",
+    image = ":container-dev-local-initial",
+    commands = [
+        "npm install",
+    ],
+)
+
+container_image(
+    name = "container-dev-local",
+    base = ":container-dev-local-setup",
+    workdir = "/ui/frontend",
+    cmd = "npm start",
+)
+
+container_image(
     name = "container",
-    entry_point = "index.js",
-    data = [":index.js"] + _RUNTIME_DEPS,
+    base = "@nginx_1.20_container//image",
+    layers = [
+        ":nginx_config_layer",
+        ":runtime_deps_layer",
+    ],
+    workdir = "/ui/frontend/build",
+    ports = ["80:80"],
+    cmd = ["nginx", "-g", "daemon off;"],
 )
