@@ -6,6 +6,7 @@ import sentry_sdk
 import ujson as json
 from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
+from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 
 from common.config import config
@@ -175,12 +176,15 @@ async def handle_spoke_account_registration(body):
     # Assume role from noq_dev_central_role
     try:
         sts_client = await sync_to_async(boto3_cached_conn)("sts", host)
-        central_role_credentials = await sync_to_async(sts_client.assume_role)(
-            RoleArn=hub_account.role_arn,
-            RoleSessionName="noq_registration_verification",
-            ExternalId=external_id,
-        )
-    except ClientError as e:
+        for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
+            with attempt:
+                central_role_credentials = await sync_to_async(sts_client.assume_role)(
+                    RoleArn=hub_account.role_arn,
+                    RoleSessionName="noq_registration_verification",
+                    ExternalId=external_id,
+                )
+
+    except RetryError as e:
         error_message = "Unable to assume customer's central account role"
         sentry_sdk.capture_exception()
         log.error(
@@ -210,13 +214,15 @@ async def handle_spoke_account_registration(body):
     )
 
     try:
-        customer_spoke_role_credentials = await sync_to_async(
-            customer_central_role_sts_client.assume_role
-        )(
-            RoleArn=spoke_role_arn,
-            RoleSessionName="noq_registration_verification",
-        )
-    except ClientError as e:
+        for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
+            with attempt:
+                customer_spoke_role_credentials = await sync_to_async(
+                    customer_central_role_sts_client.assume_role
+                )(
+                    RoleArn=spoke_role_arn,
+                    RoleSessionName="noq_registration_verification",
+                )
+    except RetryError as e:
         error_message = "Unable to assume customer's spoke account role"
         sentry_sdk.capture_exception()
         log.error(
@@ -282,12 +288,12 @@ async def handle_spoke_account_registration(body):
             master_account = False
 
     spoke_account = SpokeAccount(
-        account_name,
-        account_id_for_role,
-        spoke_role_arn,
-        external_id,
-        hub_account.role_arn,
-        master_account,
+        name=account_name,
+        account_id=account_id_for_role,
+        role_arn=spoke_role_arn,
+        external_id=external_id,
+        hub_account_arn=hub_account.role_arn,
+        master_for_account=master_account,
     )
     await upsert_spoke_account(host, spoke_account)
     return {
@@ -297,6 +303,8 @@ async def handle_spoke_account_registration(body):
 
 
 async def handle_central_account_registration(body) -> Dict[str, Any]:
+    # TODO: Fix "policies.role_name" configuration and validation
+    # host_config["policies"]["role_name"] = spoke_role_name
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
@@ -366,15 +374,19 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "message": error_message,
         }
 
-    # Assume role from noq_dev_central_role
+    # Assume roe from noq_dev_central_role
     try:
         sts_client = boto3.client("sts")
-        customer_central_account_creds = await sync_to_async(sts_client.assume_role)(
-            RoleArn=role_arn,
-            RoleSessionName="noq_registration_verification",
-            ExternalId=external_id,
-        )
-    except ClientError as e:
+        for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
+            with attempt:
+                customer_central_account_creds = await sync_to_async(
+                    sts_client.assume_role
+                )(
+                    RoleArn=role_arn,
+                    RoleSessionName="noq_registration_verification",
+                    ExternalId=external_id,
+                )
+    except RetryError as e:
         error_message = "Unable to assume customer's central account role"
         sentry_sdk.capture_exception()
         log.error(
@@ -406,11 +418,13 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
                 "SessionToken"
             ],
         )
-        central_account_sts_client.assume_role(
-            RoleArn=spoke_role_arn,
-            RoleSessionName="noq_registration_verification",
-        )
-    except ClientError as e:
+        for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
+            with attempt:
+                central_account_sts_client.assume_role(
+                    RoleArn=spoke_role_arn,
+                    RoleSessionName="noq_registration_verification",
+                )
+    except RetryError as e:
         error_message = "Unable to assume customer's spoke account role"
         sentry_sdk.capture_message(error_message, "error")
         log.error(
@@ -430,15 +444,18 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         }
 
     hub_account = HubAccount(
-        "_hub_account_", account_id_for_role, role_arn, external_id
+        name=role_arn.split("/")[-1],
+        account_id=account_id_for_role,
+        role_arn=role_arn,
+        external_id=external_id,
     )
     await set_hub_account(host, hub_account)
     spoke_account = SpokeAccount(
-        spoke_role_name,
-        account_id_for_role,
-        spoke_role_arn,
-        external_id,
-        hub_account.role_arn,
+        name=spoke_role_name,
+        account_id=account_id_for_role,
+        role_arn=spoke_role_arn,
+        external_id=external_id,
+        hub_account_arn=hub_account.role_arn,
     )
     await upsert_spoke_account(host, spoke_account)
     return {"success": True}
