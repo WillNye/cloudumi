@@ -87,6 +87,7 @@ react_scripts(
         "BUILD_PATH": "./build",
     },
     output_dir = True,
+    visibility = ["//visibility:public"],
 )
 
 react_scripts(

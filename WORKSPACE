@@ -160,3 +160,14 @@ yarn_install(
         "target": "//frontend",
     },
 )
+
+# Weep
+http_archive(
+    name = "netflix_weep",
+    sha256 = "8cab1473704035de8674e77b21002130c9cd987e206443c15d2596699285929f",
+    urls = ["https://github.com/Netflix/weep/releases/download/v0.3.26/weep_0.3.26_linux_x86_64.tar.gz"],
+    strip_prefix = "/bin/linux_amd64",
+    build_file_content = """exports_files(['weep'])
+visibility=['//visibility:public']"""
+    #strip_prefix = "/bin/linux_amd64",
+)

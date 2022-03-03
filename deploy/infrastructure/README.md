@@ -17,7 +17,6 @@ The only time the variable should be set to true is upon initial cluster creatio
 - AWS keys configured in ~/.aws/credentials - see the `AWS Credentials` section below
 - terraform
 - ecs-cli
-- `yarn build_template` was run in the `frontend` folder
 
 ## Quick Start
 
