@@ -48,3 +48,5 @@ profile = "noq_prod"
 sentry_dsn = "https://b56872bca2c548cb9200121ae436b87d@o1134078.ingest.sentry.io/6181194"
 
 s3_access_log_bucket = "s3-access-logs.940552945933.us-west-2"
+
+elasticache_node_type = "cache.t3.micro"

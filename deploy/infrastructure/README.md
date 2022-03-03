@@ -53,7 +53,7 @@ terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 
 export AWS_PROFILE=noq_prod
 export AWS_REGION=us-west-2
-terraform wor kspace select cyberdyne-prod-1
+terraform workspace select cyberdyne-prod-1
 terraform refresh --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
 terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
 terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
