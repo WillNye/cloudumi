@@ -70,6 +70,10 @@ _RUNTIME_DEPS = [
     "@npm//yaml",
 ]
 
+_DEV_DEPS = [
+    "@npm//@craco/craco",
+]
+
 react_scripts(
     # Note: If you want to change the name make sure you update BUILD_PATH below accordingly
     # https://create-react-app.dev/docs/advanced-configuration/
@@ -116,33 +120,31 @@ container_layer(
 )
 
 container_layer(
+    name = "dev_deps_layer",
+    files = _DEV_DEPS,
+    data_path = "/",
+    directory = "/",
+)
+
+container_layer(
     name = "nginx_config_layer",
     tars = [":nginx_config"],
     directory = "/etc/nginx/conf.d",
 )
 
 container_image(
-    name = "container-dev-local-initial",
+    name = "container-dev-local",
     base = "@nodejs_17_container//image",
     layers = [
+        ":dev_deps_layer",
         ":runtime_deps_layer",
     ],
+    env = {
+        "NODE_PATH": "/npm/node_modules",
+    },
+    ports = ["80:80"],
     workdir = "/ui/frontend",
-)
-
-container_run_and_commit(
-    name = "container-dev-local-setup",
-    image = ":container-dev-local-initial",
-    commands = [
-        "npm install",
-    ],
-)
-
-container_image(
-    name = "container-dev-local",
-    base = ":container-dev-local-setup",
-    workdir = "/ui/frontend",
-    cmd = "npm start",
+    cmd = ["npm", "start"],
 )
 
 container_image(
