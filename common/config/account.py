@@ -68,7 +68,7 @@ async def upsert_spoke_account(host: str, spoke_account: SpokeAccount):
 
 async def delete_spoke_account(host: str, name: str, account_id: str) -> bool:
     ddb = RestrictedDynamoHandler()
-    spoke_key_path = __get_unique_spoke_account_key_path()(name, account_id)
+    spoke_key_path = __get_unique_spoke_account_key_path(name, account_id)
     spoke_account_config = config.get_host_specific_key(spoke_key_path, host, {})
     if not spoke_account_config:
         return False
@@ -102,11 +102,8 @@ async def delete_spoke_accounts(host: str) -> bool:
 
 
 async def get_spoke_accounts(host: str) -> List[SpokeAccount]:
-    host_config = config.get_host_specific_key(spoke_account_key_name, host)
-    spoke_accounts = [
-        SpokeAccount(**x) for x in host_config.get(spoke_account_key_name, {}).values()
-    ]
-    return spoke_accounts
+    spoke_accounts = config.get_host_specific_key(spoke_account_key_name, host)
+    return [SpokeAccount(**x) for x in spoke_accounts.values()]
 
 
 def __get_unique_org_account_key_name(org_id: str) -> str:
@@ -119,7 +116,7 @@ def __get_unique_org_account_key_path(org_id: str) -> str:
 
 async def upsert_org_account(host: str, org_account: OrgAccount):
     ddb = RestrictedDynamoHandler()
-    org_key_name = __get_unique_org_account_key_path(org_account.org_id)
+    org_key_name = __get_unique_org_account_key_name(org_account.org_id)
     host_config = config.get_tenant_static_config_from_dynamo(host)
     host_config[org_account_key_name][org_key_name] = dict(org_account)
 
@@ -161,8 +158,5 @@ async def delete_org_accounts(host: str) -> bool:
 
 
 async def get_org_accounts(host: str) -> List[OrgAccount]:
-    host_config = config.get_host_specific_key(org_account_key_name, host)
-    org_accounts = [
-        OrgAccount(**x) for x in host_config.get(org_account_key_name, {}).values()
-    ]
-    return org_accounts
+    org_accounts = config.get_host_specific_key(org_account_key_name, host)
+    return [OrgAccount(**x) for x in org_accounts.values()]
