@@ -28,6 +28,7 @@ class HubAccountHandler(BaseHandler):
             "host": host,
         }
         log.debug(log_data)
+        log.error("\n\n\n\nHello there...\n\n\n\n")
 
         # Checks authz levels of current user
         generic_error_message = "Cannot access hub account information"

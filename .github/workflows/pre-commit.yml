@@ -67,6 +67,8 @@ jobs:
           pip install \
             -r requirements-test.lock \
           pip install .
+          yarn --cwd frontend install
+          yarn --cwd frontend build_template
 
           # Checkov for Terraform security vulnerability checking
           pip install checkov

@@ -1,4 +1,4 @@
-# TODO: @ccastrapeli: I don't think we need this anymore
+# TODO: @ccastrapel: I don't think we need this anymore
 # For more information, please refer to https://aka.ms/vscode-docker-python
 FROM python:3.9.7
 RUN mkdir -p /apps
