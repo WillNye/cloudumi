@@ -1176,7 +1176,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             )
 
         for g in iam_groups:
-            arns.append(g["Arn"])
             group_entry = {
                 "arn": g.get("Arn"),
                 "host": host,
@@ -1194,7 +1193,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             )
 
         for policy in iam_policies:
-            arns.append(policy["Arn"])
             group_entry = {
                 "arn": policy.get("Arn"),
                 "host": host,
@@ -1218,6 +1216,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         ):
             store_iam_resources_in_git(all_iam_resources, account_id, host)
 
+        # TODO: Don't do this all the time. But include a last_updated parameter
         if config.get_host_specific_key(
             "cache_iam_resources_for_account.check_unused_permissions.enabled",
             host,

@@ -1,5 +1,7 @@
 import copy
+import datetime
 import time
+from typing import Tuple
 
 from blinker import Signal
 
@@ -7,6 +9,37 @@ from common.config import config
 from common.lib.assume_role import rate_limited
 
 log = config.get_logger()
+
+
+def get_epoch_authenticated(service_authenticated: int) -> Tuple[int, bool]:
+    """
+    Ensure service authenticated from Access Advisor is in seconds epoch
+
+    Args:
+        service_authenticated (int): The service authenticated time from Access Advisor
+
+    Returns:
+        int: The epoch time in seconds that the service was last authenticated
+        bool: Whether the service authenticated was valid
+    """
+
+    BEGINNING_OF_2015_MILLI_EPOCH = 1420113600000
+
+    dt = datetime.datetime.now(datetime.timezone.utc)
+    utc_time = dt.replace(tzinfo=datetime.timezone.utc)
+    current_time = int(utc_time.timestamp())
+    if service_authenticated == 0:
+        return 0, True
+
+    # we have an odd timestamp, try to check
+    elif BEGINNING_OF_2015_MILLI_EPOCH < service_authenticated < (current_time * 1000):
+        return int(service_authenticated / 1000), True
+
+    elif (BEGINNING_OF_2015_MILLI_EPOCH / 1000) < service_authenticated < current_time:
+        return service_authenticated, True
+
+    else:
+        return -1, False
 
 
 class AccessAdvisor:
