@@ -150,5 +150,5 @@ variable "s3_access_log_bucket" {
 variable "elasticache_node_type" {
   description = "The node type to use for Elasticache"
   type        = string
-  default     = "cache.t4g.micro"
+  default     = "cache.t3.micro"
 }
