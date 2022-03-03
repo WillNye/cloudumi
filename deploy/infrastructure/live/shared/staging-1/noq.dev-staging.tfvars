@@ -2,7 +2,7 @@
 # this MUST ONLY BE DONE ONCE IN THE BEGINNING
 # Once the ECS task role is created and we get access to environments, when it
 # is deleted, so is our access to environments, NO MATTER WHAT WE NAME IT
-create_ecs_task_role = false
+modify_ecs_task_role = false
 
 # Associated account id
 account_id = "259868150464"
