@@ -48,3 +48,9 @@ variable "vpc_id" {
   description = "The VPC ID as generated"
   type        = string
 }
+
+variable "elasticache_node_type" {
+  description = "The node type for the Elasticache cluster"
+  type        = string
+  default     = "cache.t4g.micro"
+}

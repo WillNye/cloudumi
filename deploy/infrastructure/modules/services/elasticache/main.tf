@@ -52,7 +52,7 @@
 resource "aws_elasticache_cluster" "redis" {
   cluster_id               = "${var.cluster_id}-redis-service"
   engine                   = "redis"
-  node_type                = "cache.m4.large"
+  node_type                = var.elasticache_node_type
   num_cache_nodes          = 1
   parameter_group_name     = aws_elasticache_parameter_group.redis_parameter_group.name
   engine_version           = "3.2.10"

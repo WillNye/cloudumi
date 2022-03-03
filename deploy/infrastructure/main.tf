@@ -86,6 +86,7 @@ module "tenant_elasticache_service" {
   tags                        = var.tags
   timeout                     = var.timeout
   vpc_id                      = module.tenant_networking.vpc_id
+  elasticache_node_type       = var.elasticache_node_type
 }
 
 
