@@ -131,7 +131,7 @@ async def delete_org_account(host: str, org_id: str) -> bool:
     if not host_config:
         raise RuntimeError("No host config! This is bad - something went really wrong")
     org_key_name = __get_unique_org_account_key_name(org_id)
-    if host_config.get(org_account_key_name, {}).get(org_key_name):
+    if not host_config.get(org_account_key_name, {}).get(org_key_name):
         return False
     del host_config[org_account_key_name][org_key_name]
     await ddb.update_static_config_for_host(
