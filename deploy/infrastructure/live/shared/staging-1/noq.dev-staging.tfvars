@@ -2,7 +2,7 @@
 # this MUST ONLY BE DONE ONCE IN THE BEGINNING
 # Once the ECS task role is created and we get access to environments, when it
 # is deleted, so is our access to environments, NO MATTER WHAT WE NAME IT
-create_ecs_task_role = false
+modify_ecs_task_role = false
 
 # Associated account id
 account_id = "259868150464"
@@ -50,3 +50,5 @@ profile = "noq_staging"
 sentry_dsn = "https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191"
 
 s3_access_log_bucket = "s3-access-logs.259868150464.us-west-2"
+
+elasticache_node_type = "cache.t3.micro"

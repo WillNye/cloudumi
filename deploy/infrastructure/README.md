@@ -48,6 +48,15 @@ terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 
+#### Cyberdyne
+
+export AWS_PROFILE=noq_prod
+export AWS_REGION=us-west-2
+terraform workspace select cyberdyne-prod-1
+terraform refresh --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+
 Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
 
 To use terraform, follow the below steps:
