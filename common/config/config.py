@@ -406,7 +406,7 @@ class Configuration(metaclass=Singleton):
         last_updated = self.tenant_configs[host].get("last_updated", 0)
         if current_time - last_updated > 60:
             tenant_config = self.load_tenant_config_from_redis(host)
-            last_updated = tenant_config.get("last_updated", 0)
+            last_updated = int(tenant_config.get("last_updated", 0))
             # If Redis config cache for host is newer than 60 seconds, update in-memory variables
             if current_time - last_updated < 60:
                 self.tenant_configs[host]["config"] = tenant_config["config"]
