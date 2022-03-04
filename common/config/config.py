@@ -74,9 +74,20 @@ class Configuration(metaclass=Singleton):
         try:
             session_kwargs = self.get("_global_.boto3.session_kwargs", {})
             session = boto3.Session(**session_kwargs)
-            session.client(
+            identity = session.client(
                 "sts", **self.get("_global_.boto3.client_kwargs", {})
             ).get_caller_identity()
+            identity_arn_with_session_name = (
+                identity["Arn"]
+                .replace(":sts:", ":iam:")
+                .replace("assumed-role", "role")
+            )
+            identity_arn = "/".join(identity_arn_with_session_name.split("/")[0:2])
+            node_role_arn = self.get("_global_.integrations.aws.node_role", {})
+            if identity_arn != node_role_arn:
+                raise Exception(
+                    f"AWS credentials are not set to the correct role. Expected {node_role_arn}, got {identity_arn}"
+                )
         except botocore.exceptions.NoCredentialsError:
             raise Exception(
                 "We were unable to detect valid AWS credentials. Noq needs valid AWS credentials to "
