@@ -132,8 +132,6 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
         log.debug(log_data)
 
         authorized_groups_tags = await role_access.get_authorized_groups_tags(host)
-        # spoke_account_data is a special structure, so we unroll it
-
         res = WebResponse(
             status="success",
             status_code=200,
