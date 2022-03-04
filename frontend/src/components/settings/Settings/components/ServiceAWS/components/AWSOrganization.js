@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from 'react';
 import { useApi } from 'hooks/useApi';
 import Datatable from 'lib/Datatable';

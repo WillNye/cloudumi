@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React,  { useEffect } from 'react'
 import { Button, Input, Form } from 'semantic-ui-react'
 import { Fill, Bar } from 'lib/Misc'

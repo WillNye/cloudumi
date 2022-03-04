@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { createContext, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProviderDefault'
 
