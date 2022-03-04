@@ -9,10 +9,9 @@ const initialState = {
   empty: true,
 }
 
-export const url = 'api/v3';
+export const url = 'api/v3'
 
 const useInnerUtils = () => {
-
   const [state, setState] = useState({
     ...initialState,
   })
@@ -28,7 +27,7 @@ const useInnerUtils = () => {
       setState({ data: null, status: 'done', error: 'Error!' })
       return 'Error!'
     }
-    let response = res?.data;
+    let response = res?.data
     setState({ data: response, status: 'done' })
   }
 
@@ -59,9 +58,9 @@ const useGet = (commonPathname) => {
         buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
         'get'
       )
-      return handleResponse(res)  
+      return handleResponse(res)
     } catch (error) {
-      return error;
+      return error
     }
   }
 
@@ -87,9 +86,9 @@ const usePost = (commonPathname) => {
         buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
         'post'
       )
-      return handleResponse(res)  
+      return handleResponse(res)
     } catch (error) {
-      return error;
+      return error
     }
   }
 
@@ -115,9 +114,9 @@ const useRemove = (commonPathname) => {
         buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
         'delete'
       )
-      return handleResponse(res)  
+      return handleResponse(res)
     } catch (error) {
-      return error;
+      return error
     }
   }
   return {
@@ -136,16 +135,12 @@ export const useApi = (commonPathname) => {
   }
 }
 
-export const ApiContext = createContext();
+export const ApiContext = createContext()
 
-export const ApiGetProvider = ({
-  children,
-  pathname
-}) => {
+export const ApiGetProvider = ({ children, pathname }) => {
+  const { get } = useApi(pathname)
 
-  const { get } = useApi(pathname);
-
-  useEffect(() => get.do(), []);  
+  useEffect(() => get.do(), [])
 
   return (
     <ApiContext.Provider
@@ -153,9 +148,10 @@ export const ApiGetProvider = ({
         status: get?.status,
         data: get?.data,
         error: get?.status,
-        empty: get?.empty
-      }}>
+        empty: get?.empty,
+      }}
+    >
       {children}
     </ApiContext.Provider>
-  );
-};
+  )
+}

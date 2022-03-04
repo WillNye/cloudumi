@@ -19,7 +19,7 @@ export const useModal = (title, onOpen) => {
     onClickToConfirm,
     confirmButtonLabel,
     hideConfirm,
-    onClose
+    onClose,
   }) => (
     <Modal open={isOpen}>
       <Modal.Header>{title}</Modal.Header>
@@ -27,13 +27,11 @@ export const useModal = (title, onOpen) => {
       <Modal.Actions>
         <Button onClick={() => closeModal(onClose)}>Close</Button>
         {!hideConfirm && (
-          <Button
-            onClick={onClickToConfirm}
-            positive>
+          <Button onClick={onClickToConfirm} positive>
             {confirmButtonLabel || 'Confirm'}
           </Button>
         )}
-      </Modal.Actions>          
+      </Modal.Actions>
     </Modal>
   )
 

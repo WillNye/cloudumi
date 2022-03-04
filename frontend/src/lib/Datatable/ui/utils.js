@@ -42,6 +42,11 @@ export const LoadingState = ({ label }) => {
 
 export const RefreshButton = ({ disabled, onClick = () => {} }) => {
   return (
-    <Button compact disabled={disabled} icon='refresh' onClick={() => onClick()} />
+    <Button
+      compact
+      disabled={disabled}
+      icon='refresh'
+      onClick={() => onClick()}
+    />
   )
 }
