@@ -1,7 +1,8 @@
+/* eslint-disable max-len */
 import React, { useContext } from 'react';
 import { ApiContext } from 'hooks/useApi';
 
-import { Button, Segment } from 'semantic-ui-react';
+import { Button, Image, Segment } from 'semantic-ui-react';
 
 export const NewHubAccount = ({ closeModal }) => {
 
@@ -24,14 +25,17 @@ export const NewHubAccount = ({ closeModal }) => {
       ) : (
         <>
           <p style={{ textAlign: 'center'}}>
-            <br /><br /><br />
-            Hello human, we gonna open a new tab to connect your account. Please follow the instructions below:<br />
-            - A new tab will be opened to complete the process;<br />
-            - Once you have the process completed, just close the tab;<br />
-            - After you click to confirm please wait a couple of minutes to check if everything works;<br />
-            <br /><br /><br />
+            Your hub role is Noq’s entrypoint into your environment. Whenever Noq attempts to gather information about your resources, update your resources, or broker credentials to your roles, it will first access your hub account with an external ID that is unique to your organization. Your hub account is an AWS account of your choosing that will be the entrypoint for Noq into your environment. Our onboarding process will walk you through the process of creating this role.
           </p>
-          <Button onClick={handleClick} fluid positive>Confirm</Button>
+          <ol>
+            <li>Authenticate to the AWS account that you want to use as the Hub Account.</li>
+            <li>
+              Start the process by clicking the Execute CloudFormation button.&nbsp;
+              This will open up a Cloudformation stack in a new tab.
+            </li>
+            <li>Execute the Cloudformation, and revisit this page after it has successfully executed.</li>
+          </ol>          
+          <Button onClick={handleClick} fluid positive>Execute CloudFormation</Button>
         </>
       )}
 

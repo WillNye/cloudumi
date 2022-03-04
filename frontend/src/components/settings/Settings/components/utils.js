@@ -30,7 +30,7 @@ export const SelectAccount = ({ register, label, name, options = [] }) => {
     <Form.Field>
       <label>{label}</label>
       <select {...register} disabled={isLoading || isEmpty}>
-        {isEmpty && <option value="">You need at least one Soke Account to proceed!</option>}
+        {isEmpty && <option value="">You need at least one Soke Account to proceed.</option>}
         {!isLoading && <option value="">Select one account</option>}
         {!isLoading ? handleOptions(get?.data).map((value, index) => (  
           <option key={index} value={value}>

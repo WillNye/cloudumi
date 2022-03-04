@@ -153,3 +153,5 @@ api/templates
 
 **/.terraform.lock.hcl
 **/*.dtmp
+
+cloudumi_tornado.log.*

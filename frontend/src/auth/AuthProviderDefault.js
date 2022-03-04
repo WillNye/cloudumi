@@ -131,7 +131,6 @@ export const AuthProvider = ({ children }) => {
     const xsrf = getCookie('_xsrf')
     return fetch(location, {
       method: method,
-      mode: 'cors',
       headers: {
         'Content-type': 'application/json',
         'X-Xsrftoken': xsrf,
