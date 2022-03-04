@@ -50,24 +50,18 @@ genrule(
            \
            aws ecs create-cluster --cluster-name {{ ecs_cluster_name }}; \
            \
-           aws ecs register-task-definition --cli-input-yaml file://deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/task_definition.yaml; \
+           register_task_definition_output=`aws ecs register-task-definition --cli-input-yaml file://deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/task_definition.yaml`; \
+           \
+           task_definition_name_version=`echo $register_task_definition_output | jq \'.taskDefinition.taskDefinitionArn | split("/")\'[1]`; \
            \
            aws ecs create-service --cluster {{ ecs_cluster_name }} --service-name {{ ecs_cluster_name }} \
-            --task-definition sample-fargate:1 --desired-count 1 --launch-type "FARGATE" --network-configuration \
-            "awsvpcConfiguration={subnets=[subnet-abcd1234],securityGroups=[sg-abcd1234]}"; \
+            --task-definition $task_definition_name_version --desired-count 1 --launch-type "FARGATE" --network-configuration \
+            --enable-execute-command \
+            "awsvpcConfiguration={subnets=[{{ subnet_name_private_az0 }}, {{ subnet_name_private_az1 }}],securityGroups=[{{ ecs_security_group }}]}"; \
            \
-           ecs-cli configure --cluster {{ ecs_cluster_name }} --default-launch-type FARGATE \
-           --config-name {{ ecs_cluster_name }} --region {{ region }}; \
-           \
-           ecs-cli up --cluster-config {{ ecs_cluster_name }}; \
-           \
-           ecs-cli compose -f deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
-           --cluster-config {{ ecs_cluster_name }} \
-           --ecs-params deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
-           -p {{ ecs_cluster_name }} \
-           --task-role-arn {{ ecs_task_role_arn }} \
-           --region {{ region }} service up --deployment-max-percent 200 --deployment-min-healthy-percent 50 --create-log-groups --timeout 15 \
-           --target-groups targetGroupArn={{ target_group_arn }},containerName={{ cluster_id_safed }}-api,containerPort=8092' >$@",
+           aws ecs update-service --cluster {{ ecs_cluster_name }} --service {{ ecs_cluster_name }} \
+            --task-definition $task_definition_name_version --desired-count 1 --enable-execute-command \
+            --network-configuration "awsvpcConfiguration={subnets=[{{ subnet_name_private_az0 }}, {{ subnet_name_private_az1 }}],securityGroups=[{{ ecs_security_group }}]}";' >$@",
     tags = ["manual"],
 )
 

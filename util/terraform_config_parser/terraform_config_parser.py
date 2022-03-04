@@ -278,6 +278,12 @@ if __name__ == "__main__":
     )
     write_file("build_file.jinja2", "BUILD", terraform_config, config_output_path)
     write_file(
+        "task_definition.yaml.jinja2",
+        "task_definition.yaml",
+        terraform_config,
+        config_output_path,
+    )
+    write_file(
         "compose.yaml.jinja2", "compose.yaml", terraform_config, config_output_path
     )
     write_file("ecs.yaml.jinja2", "ecs.yaml", terraform_config, config_output_path)

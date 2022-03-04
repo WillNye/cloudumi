@@ -1,0 +1,160 @@
+executionRoleArn: {{ ecs_task_execution_role_arn }}
+containerDefinitions:
+  - dnsSearchDomains: [ ]
+    # environmentFiles:
+    logConfiguration:
+      logDriver: awslogs
+      # secretOptions:
+      options:
+        awslogs-group: {{ ecs_cluster_name }}
+        awslogs-region: {{ region }}
+        awslogs-stream-prefix: web
+    entryPoint: [ ]
+    portMappings:
+      - hostPort: 8092
+        protocol: tcp
+        containerPort: 8092
+    command:
+      - python
+      - api/__main__.py
+    linuxParameters:
+      # capabilities:
+      #  add:
+      #  drop:
+      # sharedMemorySize:
+      # tmpfs:
+      devices: [ ]
+      # maxSwap: 10000
+      # swappiness: 60
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: {{ config_path_with_bucket }}
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+    # resourceRequirements:
+    # ulimits:
+    dnsServers: [ ]
+    mountPoints: [ ]
+    # workingDirectory:
+    # secrets:
+    dockerSecurityOptions: [ ]
+    # memory:
+    # memoryReservation:
+    volumesFrom: [ ]
+    # stopTimeout:
+    image: {{ registry_repository_url_api }}:prod
+    # startTimeout:
+    # firelensConfiguration:
+    # dependsOn:
+    # disableNetworking:
+    # interactive:
+    # healthCheck:
+    essential: true
+    links: [ ]
+    # hostname:
+    extraHosts: [ ]
+    pseudoTerminal: false
+    # user:
+    readonlyRootFilesystem: false
+    # dockerLabels:
+    # systemControls:
+    privileged: false
+    name: {{ ecs_cluster_name }}-api
+  - dnsSearchDomains: [ ]
+    # environmentFiles:
+    logConfiguration:
+      logDriver: awslogs
+      # secretOptions:
+      options:
+        awslogs-group: {{ ecs_cluster_name }}
+        awslogs-region: {{ region }}
+        awslogs-stream-prefix: celery
+    entryPoint: [ ]
+    # portMappings:
+    command:
+      - celery
+      - "-A"
+      - common.celery_tasks.celery_tasks
+      - worker
+      - "-l"
+      - DEBUG
+      - "-B"
+      - "-E"
+      - "--concurrency=8"
+    linuxParameters:
+      # capabilities:
+      #   add:
+      #   drop:
+      # sharedMemorySize:
+      # tmpfs:
+      devices: [ ]
+      # maxSwap: 10000
+      # swappiness: 60
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CELERY_CONCURRENCY
+        value: '8'
+      - name: CELERY_LOG_LEVEL
+        value: DEBUG
+      - name: CONFIG_LOCATION
+        value: {{ config_path_with_bucket }}
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+    # resourceRequirements:
+    # ulimits:
+    dnsServers: [ ]
+    mountPoints: [ ]
+    # workingDirectory:
+    # secrets:
+    dockerSecurityOptions: [ ]
+    # memory:
+    # memoryReservation:
+    volumesFrom: [ ]
+    # stopTimeout:
+    image: {{ registry_repository_url_celery }}:prod
+    # startTimeout:
+    # firelensConfiguration:
+    # dependsOn:
+    # disableNetworking:
+    # interactive:
+    # healthCheck:
+    essential: true
+    links: [ ]
+    # hostname:
+    extraHosts: [ ]
+    pseudoTerminal: false
+    # user:
+    readonlyRootFilesystem: false
+    # dockerLabels:
+    # systemControls:
+    privileged: false
+    name: {{ ecs_cluster_name }}-celery
+placementConstraints: [ ]
+memory: '8192'
+taskRoleArn: {{ ecs_task_role_arn }}
+family: {{ ecs_cluster_name }}
+#requiresAttributes:
+#  - name: com.amazonaws.ecs.capability.logging-driver.awslogs
+#    # targetId:
+#    # targetType:
+#    # value:
+#  - name: ecs.capability.execution-role-awslogs
+#  - name: com.amazonaws.ecs.capability.ecr-auth
+#  - name: com.amazonaws.ecs.capability.docker-remote-api.1.19
+#  - name: com.amazonaws.ecs.capability.docker-remote-api.1.17
+#  - name: com.amazonaws.ecs.capability.task-iam-role
+#  - name: ecs.capability.execution-role-ecr-pull
+#  - name: com.amazonaws.ecs.capability.docker-remote-api.1.18
+#  - name: ecs.capability.task-eni
+# pidMode:
+requiresCompatibilities:
+  - FARGATE
+networkMode: awsvpc
+# runtimePlatform:
+cpu: '2048'
+# inferenceAccelerators:
+# proxyConfiguration:
+volumes: [ ]
