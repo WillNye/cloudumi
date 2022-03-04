@@ -32,7 +32,12 @@ class CredentialBrokeringHandler(BaseHandler):
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
-                self, "unable to update cred brokering", errors, 403, "unauthorized", log_data
+                self,
+                "unable to update cred brokering",
+                errors,
+                403,
+                "unauthorized",
+                log_data,
             )
             return
         log.debug(log_data)

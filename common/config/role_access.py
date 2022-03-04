@@ -123,5 +123,7 @@ async def toggle_role_access_credential_brokering(host: str, enabled: bool) -> b
 
 
 async def get_role_access_credential_brokering(host: str) -> bool:
-    host_config = config.get_host_specific_key("cloud_credential_authorization_mapping", host, {})
+    host_config = config.get_host_specific_key(
+        "cloud_credential_authorization_mapping", host, {}
+    )
     return host_config.get("role_tags", {}).get("enabled", False)
