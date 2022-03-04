@@ -108,12 +108,10 @@ async def handle_spoke_account_registration(body):
                 "external_id": external_id,
             }
         )
-        return (
-            {
-                "success": False,
-                "message": error_message,
-            },
-        )
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     # Verify External ID
     external_id_in_config = config.get_host_specific_key(
@@ -138,12 +136,10 @@ async def handle_spoke_account_registration(body):
                 "host": host,
             }
         )
-        return (
-            {
-                "success": False,
-                "message": error_message,
-            },
-        )
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
 
@@ -166,12 +162,10 @@ async def handle_spoke_account_registration(body):
                 "host": host,
             }
         )
-        return (
-            {
-                "success": False,
-                "message": error_message,
-            },
-        )
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     # Assume role from noq_dev_central_role
     try:
@@ -197,12 +191,10 @@ async def handle_spoke_account_registration(body):
                 "error": str(e),
             }
         )
-        return (
-            {
-                "success": False,
-                "message": error_message,
-            },
-        )
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     customer_central_role_sts_client = await sync_to_async(boto3.client)(
         "sts",
@@ -235,12 +227,10 @@ async def handle_spoke_account_registration(body):
                 "error": str(e),
             }
         )
-        return (
-            {
-                "success": False,
-                "message": error_message,
-            },
-        )
+        return {
+            "success": False,
+            "message": error_message,
+        }
 
     customer_spoke_role_iam_client = await sync_to_async(boto3.client)(
         "iam",
