@@ -29,12 +29,10 @@ class CredentialBrokeringHandler(BaseHandler):
             "host": host,
         }
 
-        # Checks authz levels of current user
-        generic_error_message = "Unable to update hub account"
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
-                self, generic_error_message, errors, 403, "unauthorized", log_data
+                self, "unable to update cred brokering", errors, 403, "unauthorized", log_data
             )
             return
         log.debug(log_data)
@@ -78,7 +76,6 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
         }
         log.debug(log_data)
 
-        # Checks authz levels of current user
         generic_error_message = "Cannot access authorized groups tags information"
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
@@ -91,14 +88,14 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
         authorized_groups_tags = await role_access.get_authorized_groups_tags(host)
         # spoke_account_data is a special structure, so we unroll it
 
-        self.write(
-            {
-                "headers": {},
-                "count": len(authorized_groups_tags),
-                "data": authorized_groups_tags,
-                "attributes": {},
-            }
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message="Successfully retrieved AuthorizedGroupsTags",
+            count=len(authorized_groups_tags),
+            data=authorized_groups_tags,
         )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
         host = self.ctx.host

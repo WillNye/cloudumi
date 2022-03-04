@@ -2,6 +2,7 @@ from typing import List
 
 from asgiref.sync import sync_to_async
 
+from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
 
@@ -28,9 +29,7 @@ def __setup_subkeys_if_missing(host_config: dict) -> dict:
 
 async def upsert_authorized_groups_tag(host: str, tag_name: str, web_access: bool):
     ddb = RestrictedDynamoHandler()
-    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
-    if not host_config:
-        raise RuntimeError("No host config! This is bad - something went really wrong")
+    host_config = config.get_tenant_static_config_from_dynamo(host)
     host_config = __setup_subkeys_if_missing(host_config)
 
     if web_access:
@@ -67,9 +66,7 @@ async def upsert_authorized_groups_tag(host: str, tag_name: str, web_access: boo
 
 async def delete_authorized_groups_tag(host: str, tag_name: str) -> bool:
     ddb = RestrictedDynamoHandler()
-    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
-    if not host_config:
-        raise RuntimeError("No host config! This is bad - something went really wrong")
+    host_config = config.get_tenant_static_config_from_dynamo(host)
     host_config = __setup_subkeys_if_missing(host_config)
 
     try:
@@ -93,8 +90,7 @@ async def delete_authorized_groups_tag(host: str, tag_name: str) -> bool:
 
 
 async def get_authorized_groups_tags(host: str) -> List[dict]:
-    ddb = RestrictedDynamoHandler()
-    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
+    host_config = config.get_tenant_static_config_from_dynamo(host)
     groups_tags = list()
     for groups_tag in host_config.get("cloud_credential_authorization_mapping", {}).get(
         "authorized_groups_tags", []
@@ -114,9 +110,9 @@ async def get_authorized_groups_tags(host: str) -> List[dict]:
 
 async def toggle_role_access_credential_brokering(host: str, enabled: bool) -> bool:
     ddb = RestrictedDynamoHandler()
-    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
-    if not host_config:
-        raise RuntimeError("No host config! This is bad - something went really wrong")
+    host_config = config.get_tenant_static_config_from_dynamo(host)
+    if "cloud_credential_authorization_mapping" not in host_config:
+        return False
     host_config["cloud_credential_authorization_mapping"]["role_tags"][
         "enabled"
     ] = enabled
@@ -127,12 +123,5 @@ async def toggle_role_access_credential_brokering(host: str, enabled: bool) -> b
 
 
 async def get_role_access_credential_brokering(host: str) -> bool:
-    ddb = RestrictedDynamoHandler()
-    host_config = await sync_to_async(ddb.get_static_config_for_host_sync)(host)  # type: ignore
-    if not host_config:
-        raise RuntimeError("No host config! This is bad - something went really wrong")
-    return (
-        host_config.get("cloud_credential_authorization_mapping", {})
-        .get("role_tags", {})
-        .get("enabled", False)
-    )
+    host_config = config.get_host_specific_key("cloud_credential_authorization_mapping", host, {})
+    return host_config.get("role_tags", {}).get("enabled", False)
