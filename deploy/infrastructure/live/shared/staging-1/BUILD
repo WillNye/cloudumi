@@ -42,7 +42,7 @@ genrule(
     ],
     outs = ["run_deploy_staging"],
     message = "Deploying CloudUmi to staging...",
-    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have noq_staging as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\"; \
+    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have noq_staging as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\";' \
            \
            export AWS_PROFILE=noq_staging; \
            \
@@ -52,16 +52,16 @@ genrule(
            \
            register_task_definition_output=`aws ecs register-task-definition --cli-input-yaml file://deploy/infrastructure/live/shared/staging-1/task_definition.yaml`; \
            \
-           task_definition_name_version=`echo $register_task_definition_output | jq '.taskDefinition.taskDefinitionArn | split("/")'[1]`; \
+           task_definition_name_version=`echo $$register_task_definition_output | jq \'.taskDefinition.taskDefinitionArn | split(\"/\")\'[1]`; \
            \
            aws ecs create-service --cluster staging-noq-dev-shared-staging-1 --service-name staging-noq-dev-shared-staging-1 \
-            --task-definition $task_definition_name_version --desired-count 1 --launch-type "FARGATE" --network-configuration \
+            --task-definition $$task_definition_name_version --desired-count 1 --launch-type \"FARGATE\" --network-configuration \
             --enable-execute-command \
-            "awsvpcConfiguration={subnets=[subnet-0dd8e008f770bd447, subnet-0ae657185cbb32ee3],securityGroups=[sg-0344d82e7000960df]}"; \
+            \"awsvpcConfiguration={subnets=[subnet-0dd8e008f770bd447, subnet-0ae657185cbb32ee3],securityGroups=[sg-0344d82e7000960df]}\"; \
            \
            aws ecs update-service --cluster staging-noq-dev-shared-staging-1 --service staging-noq-dev-shared-staging-1 \
-            --task-definition $task_definition_name_version --desired-count 1 --enable-execute-command \
-            --network-configuration "awsvpcConfiguration={subnets=[subnet-0dd8e008f770bd447, subnet-0ae657185cbb32ee3],securityGroups=[sg-0344d82e7000960df]}";' >$@",
+            --task-definition $$task_definition_name_version --desired-count 1 --enable-execute-command \
+            --network-configuration \"awsvpcConfiguration={subnets=[subnet-0dd8e008f770bd447, subnet-0ae657185cbb32ee3],securityGroups=[sg-0344d82e7000960df]}\";' >$@",
     tags = ["manual"],
 )
 
