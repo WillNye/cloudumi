@@ -1,7 +1,5 @@
 from typing import List
 
-from asgiref.sync import sync_to_async
-
 from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
