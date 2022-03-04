@@ -63,6 +63,47 @@ class CredentialBrokeringHandler(BaseHandler):
         return
 
 
+class CredentialBrokeringCurrentStateHandler(BaseHandler):
+    """
+    Provides CRUD capabilities to enable or disable role access
+    """
+
+    async def get(self):
+        host = self.ctx.host
+
+        log_data = {
+            "function": "CredentialBrokeringCurrentStateHandler.get",
+            "user": self.user,
+            "message": "Retrieving current credential brokering state.",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "host": host,
+        }
+
+        if not can_admin_all(self.user, self.groups, host):
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self,
+                "unable to retrieve cred brokering",
+                errors,
+                403,
+                "unauthorized",
+                log_data,
+            )
+            return
+        log.debug(log_data)
+
+        current_state = await role_access.get_role_access_credential_brokering(host)
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message="Successfully retrieved role access credential brokering.",
+            data={"state": current_state},
+        )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
+        return
+
+
 class AuthorizedGroupsTagsHandler(BaseHandler):
     """
     Provides CRUD capabilities for a specific authorized groups tags

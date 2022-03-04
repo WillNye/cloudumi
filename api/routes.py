@@ -114,6 +114,7 @@ from api.handlers.v3.services.aws.account import (
 from api.handlers.v3.services.aws.role_access import (
     AuthorizedGroupsTagsDeleteHandler,
     AuthorizedGroupsTagsHandler,
+    CredentialBrokeringCurrentStateHandler,
     CredentialBrokeringHandler,
 )
 from api.handlers.v3.tasks import TasksHandler
@@ -222,6 +223,10 @@ def make_app(jwt_validator=None):
             OrgDeleteHandler,
         ),
         (r"/api/v3/services/aws/account/org", OrgHandler),
+        (
+            r"/api/v3/services/aws/role-access/credential-brokering",
+            CredentialBrokeringCurrentStateHandler,
+        ),
         (
             r"/api/v3/services/aws/role-access/credential-brokering/(?P<_enabled>enable|disable)/?",
             CredentialBrokeringHandler,
