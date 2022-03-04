@@ -14,12 +14,12 @@ filegroup(
     ]
 )
 
-filegroup(
-    name = "web_site_sources",
-    srcs = glob([
-        "templates/**/*",
-    ])
-)
+# filegroup(
+#     name = "web_site_sources",
+#     srcs = glob([
+#         "templates/**/*",
+#     ])
+# )
 
 INT_DEPS = [
     "//api/handlers:lib",
@@ -127,7 +127,7 @@ py_binary(
     name = "bin",
     data = [
         "//configs/development_account:configs",
-        ":web_site_sources"
+        "//frontend:build",
     ],
     srcs_version = "PY3",
     srcs = [
@@ -138,8 +138,9 @@ py_binary(
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "noq_cluster_dev",
+        "FRONTEND_PATH": "frontend/build",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -186,7 +187,7 @@ container_layer(
 container_layer(
     name = "web_site_layer",
     files = [
-        ":web_site_sources"
+        "//frontend:build",
     ],
     data_path = ".",
     directory = "/",
@@ -208,6 +209,14 @@ container_layer(
     directory = "/etc/newrelic",
 )
 
+container_layer(
+    name = "weep_layer",
+    files = [
+        "@netflix_weep//:weep",
+    ],
+    directory = "/usr/bin",
+)
+
 container_image(
     name = "base-api-dev-local",
     base = "//docker/base:base_docker",
@@ -215,20 +224,21 @@ container_image(
         "TZ": "America/Los_Angeles",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "NOQ_CONTAINER": "1",
-        "AWS_PROFILE": "noq_dev",
+        "AWS_PROFILE": "noq_cluster_dev",
         "DEBUG": "1",
     },
     layers = [
         ":config_layer",
         ":web_site_layer",
         ":sshd_config_layer",
-        ":newrelic_layer"
+        ":newrelic_layer",
+        ":weep_layer",
     ],
     ports = ["8092", "2222"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
-    docker_run_flags = "-v ~/.aws:/root/.aws",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v /etc/weep:/etc/weep",
 )
 
 container_image(

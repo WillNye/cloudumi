@@ -11,6 +11,7 @@
 - Run the API project local dev container: `bazelisk run //api:container-dev-local`
 - Deploy the API project container to staging: `bazelisk run //api:container-deploy-staging`
 - Deploy the API project container to production: `bazelisk run //api:container-deploy-prod`
+- For development, you can use `ibazel` as well and run the `//api:bin` target using ibazel: `ibazel run //api:bin`; anytime a change is made to the `frontend` or the `api` the system will automatically rebuild and restart.
 
 ## OpenAPI Spec
 

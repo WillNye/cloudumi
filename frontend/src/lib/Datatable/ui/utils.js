@@ -11,13 +11,13 @@ const CustomBar = styled(Bar)`
   display: block;
 `
 
-export const DatatableWrapper = ({ renderAction, children }) => {
+export const DatatableWrapper = ({ renderAction, children, isLoading }) => {
   const renderTopBar = renderAction && (
     <CustomTopBar>{renderAction}</CustomTopBar>
   )
 
   return (
-    <Segment>
+    <Segment loading={isLoading}>
       {renderTopBar}
       <CustomBar basic>{children}</CustomBar>
     </Segment>
@@ -37,5 +37,16 @@ export const LoadingState = ({ label }) => {
     <Segment basic inverted color='grey' textAlign='center'>
       <Button disabled>{label}</Button>
     </Segment>
+  )
+}
+
+export const RefreshButton = ({ disabled, onClick = () => {} }) => {
+  return (
+    <Button
+      compact
+      disabled={disabled}
+      icon='refresh'
+      onClick={() => onClick()}
+    />
   )
 }

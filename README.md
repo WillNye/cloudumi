@@ -79,12 +79,6 @@ To setup the test environment, make sure you have `docker-compose` accessible in
 - `bazelisk run //common/scripts:initialize_dynamodb`: to initialize the dynamo tables
 - `bazelisk run //common/scripts:initialize_redis`: to initialize the redis cache
 
-To enable the UX:
-
-- `cd frontend`
-- `yarn build_template`
-- `cd ..`
-
 * To setup an account in the local dynamo instance, browse to `localhost:8001` and find the table `dev_cloudumi_tenant_static_configs`. In the top right corner, there is a "Create Item" button, click it.
 * In the entry screen, add this:
 

@@ -68,7 +68,7 @@ module "tenant_ecs_task_role" {
 
   cloudumi_files_bucket            = module.tenant_s3_service.cloudumi_bucket_name
   cluster_id                       = local.cluster_id
-  create_ecs_task_role             = var.create_ecs_task_role
+  modify_ecs_task_role             = var.modify_ecs_task_role
   registration_queue_arn           = module.tenant_messaging.sqs_registration_queue_arn
   tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
 }
@@ -86,6 +86,7 @@ module "tenant_elasticache_service" {
   tags                        = var.tags
   timeout                     = var.timeout
   vpc_id                      = module.tenant_networking.vpc_id
+  elasticache_node_type       = var.elasticache_node_type
 }
 
 
