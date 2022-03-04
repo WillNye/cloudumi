@@ -15,7 +15,7 @@ export const AWSOrganization = () => {
   
   const { error, success } = useToast();
 
-  const { openModal, closeModal, ModalComponent } = useModal('Add Hub Account');
+  const { openModal, closeModal, ModalComponent } = useModal('Add Organization');
 
   useEffect(() => get.do(), []);
 

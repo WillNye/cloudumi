@@ -1,7 +1,9 @@
 {
   "name": "ui",
+  "type": "module",
   "version": "0.1.0",
   "private": false,
+  "cracoConfig": "craco.config.cjs",
   "dependencies": {
     "@craco/craco": "^6.4.3",
     "@monaco-editor/react": "^4.2.2",

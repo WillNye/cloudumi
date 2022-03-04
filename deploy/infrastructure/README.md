@@ -17,7 +17,6 @@ The only time the variable should be set to true is upon initial cluster creatio
 - AWS keys configured in ~/.aws/credentials - see the `AWS Credentials` section below
 - terraform
 - ecs-cli
-- `yarn build_template` was run in the `frontend` folder
 
 ## Quick Start
 
@@ -48,6 +47,15 @@ terraform workspace select shared-prod-1
 terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars
+
+#### Cyberdyne
+
+export AWS_PROFILE=noq_prod
+export AWS_REGION=us-west-2
+terraform workspace select cyberdyne-prod-1
+terraform refresh --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
 
 Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
 
