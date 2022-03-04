@@ -55,8 +55,8 @@ genrule(
            task_definition_name_version=`echo $$register_task_definition_output | jq \'.taskDefinition.taskDefinitionArn | split(\"/\")\'[1]`; \
            \
            aws ecs create-service --cluster staging-noq-dev-shared-staging-1 --service-name staging-noq-dev-shared-staging-1 \
-            --task-definition $$task_definition_name_version --desired-count 1 --launch-type \"FARGATE\" --network-configuration \
-            --enable-execute-command \
+            --task-definition $$task_definition_name_version --desired-count 1 --launch-type \"FARGATE\" --enable-execute-command \
+            --network-configuration \
             \"awsvpcConfiguration={subnets=[subnet-0dd8e008f770bd447, subnet-0ae657185cbb32ee3],securityGroups=[sg-0344d82e7000960df]}\"; \
            \
            aws ecs update-service --cluster staging-noq-dev-shared-staging-1 --service staging-noq-dev-shared-staging-1 \
