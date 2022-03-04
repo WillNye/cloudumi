@@ -48,6 +48,14 @@ genrule(
            \
            aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}; \
            \
+           aws ecs create-cluster --cluster-name {{ ecs_cluster_name }}; \
+           \
+           aws ecs register-task-definition --cli-input-yaml file://deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/task_definition.yaml; \
+           \
+           aws ecs create-service --cluster {{ ecs_cluster_name }} --service-name {{ ecs_cluster_name }} \
+            --task-definition sample-fargate:1 --desired-count 1 --launch-type "FARGATE" --network-configuration \
+            "awsvpcConfiguration={subnets=[subnet-abcd1234],securityGroups=[sg-abcd1234]}"; \
+           \
            ecs-cli configure --cluster {{ ecs_cluster_name }} --default-launch-type FARGATE \
            --config-name {{ ecs_cluster_name }} --region {{ region }}; \
            \
