@@ -25,10 +25,7 @@ export const useModal = (title, onOpen) => {
       <Modal.Header>{title}</Modal.Header>
       <Modal.Content>{children}</Modal.Content>
       <Modal.Actions>
-        <Button
-          onClick={() => closeModal(onClose)}>
-          Cancel
-        </Button>
+        <Button onClick={() => closeModal(onClose)}>Close</Button>
         {!hideConfirm && (
           <Button
             onClick={onClickToConfirm}

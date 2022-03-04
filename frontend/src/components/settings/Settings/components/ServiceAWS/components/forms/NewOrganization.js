@@ -1,42 +1,39 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { ApiContext } from 'hooks/useApi';
+import React from 'react';
+import { useApi } from 'hooks/useApi';
 
-import { Button, Segment } from 'semantic-ui-react';
+import { useForm } from 'react-hook-form';
+
+import { Form, Button, Segment } from 'semantic-ui-react';
 import { DimmerWithStates } from 'lib/DimmerWithStates';
+import { SelectAccount } from '../../../utils';
+import { Bar, Fill } from 'lib/Misc';
 
-export const NewOrganization = ({ status = 'working', error, closeModal }) => {
+export const NewOrganization = ({ closeModal, onFinish }) => {
 
-  // waiting/working/done
+  const { register, handleSubmit, watch } = useForm();
 
-  const [state, setState] = useState();
-
-  const aws = useContext(ApiContext);
-
-  const isWorking = status === 'working';
-
-  const isSuccess = status === 'done' && !error;
-
-  const hasError = (error && status === 'done');
-    
-  useEffect(() => {
-    let sessionLogs = sessionStorage.getItem('services.aws.logs');
-    sessionLogs = sessionLogs ? JSON.parse(sessionLogs) : {};
-    if (sessionLogs?.orgAccount?.lastAttempt) {
-      setState(sessionLogs?.orgAccount?.lastAttempt);
-    }
-  }, []);
-
-  const handleClick = () => {
-    sessionStorage.setItem('services.aws.logs', JSON.stringify({
-      orgAccount: {
-        lastAttempt: Date()
-      }
-    }));
-    window.open(aws.data?.central_account_role?.cloudformation_url, '_blank');
-    closeModal();
+  const { post } = useApi('services/aws/account/org');
+  
+  const onSubmit = (data) => {
+    const name = data.account_name.split(' - ');
+    data.account_name = name[0];
+    data.account_id = name[1];
+    post.do(data)
+    .then(() => {
+      closeModal();
+      onFinish();
+    });
   };
 
-  const isIneligible = aws.data?.central_account_role?.status === 'ineligible';
+  const watchFields = watch();
+
+  const isReady = Object.keys(watchFields)?.filter(k => !!watchFields[k])?.length === 3;
+
+  const isWorking = post?.status === 'working';
+
+  const isSuccess = post?.status === 'done' && !post?.error;
+
+  const hasError = (post?.error && post?.status === 'done');
 
   return (
     <Segment basic>
@@ -48,44 +45,29 @@ export const NewOrganization = ({ status = 'working', error, closeModal }) => {
         message={'Something went wrong, try again!'}
       />
 
-          {/*
-            Organization Id: free field string
-            Account ID: from spoke account lists
-            Account name: from spoke account lists
-            Owner: free field string
+      <Form onSubmit={handleSubmit(onSubmit)}>
 
-            add refresh button on our table: like aws
-          */}
+        <Form.Field>
+          <label>Organization Id</label>
+          <input {...register('org_id', { required: true })}/>
+        </Form.Field>
 
+        <SelectAccount
+          label='Spoke Account Name and Id'
+          register={{...register('account_name', { required: true })}}
+        />
 
-      {isIneligible ? (
-        <p style={{ textAlign: 'center'}}>
-          INELIGIBLE! You cannot connect your account, please ask to your admin to help.
-        </p>
-      ) : (
-        <>
-          <p style={{ textAlign: 'center'}}>
-            <br /><br /><br />
-            Hello human, we gonna open a new tab to connect your account. Please follow the instructions below:<br />
-            - A new tab will be opened to complete the process;<br />
-            - Once you have the process completed, just close the tab;<br />
-            - After you click to confirm please wait a couple of minutes to check if everything works;<br />
-            <br /><br /><br />
-          </p>
-          <p style={{ textAlign: 'center'}}>
-            {!state ? '' : (
-              'ATTENTION! You already started this operation, if you closed the tab or something went wrong, try again.'
-            )}
-          </p>
-          <Button
-            onClick={handleClick}
-            fluid
-            positive={!state}
-            color={state ? 'blue' : null}>
-            {!state ? 'Confirmar' : 'Repeat Operation'}
-          </Button>
-        </>
-      )}
+        <Form.Field>
+          <label>Owner</label>
+          <input {...register('owner', { required: true })}/>
+        </Form.Field>
+
+        <Bar>
+          <Fill />
+          <Button type='submit' disabled={!isReady} positive>Submit</Button>
+        </Bar>
+
+      </Form>
 
     </Segment>
   )

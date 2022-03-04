@@ -1,16 +1,17 @@
 import React, { useEffect } from 'react';
 import { useApi } from 'hooks/useApi';
 import Datatable from 'lib/Datatable';
-import { DatatableWrapper } from 'lib/Datatable/ui/utils';
+import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils';
 import { useModal } from 'lib/hooks/useModal';
 import { useToast } from 'lib/Toast';
 import { hubAccountColumns } from './columns';
 import { NewHubAccount } from './forms/NewHubAccount';
 import { str } from 'components/settings/Settings/strings';
+import { TableTopBar } from '../../utils';
 
 export const HubAccount = () => {
 
-  const { get, post, remove } = useApi('services/aws/account/hub') // data/status/empty/error/do
+  const { get, post, remove } = useApi('services/aws/account/hub')
 
   const { error, success } = useToast()
 
@@ -45,11 +46,21 @@ export const HubAccount = () => {
   } else {
     data = null;
   }
-  
+
+  const isWorking = get.status === 'working';
+
+  const handleRefresh = () => get.do();
+
   return (
     <>
 
-      <DatatableWrapper>
+      <DatatableWrapper
+        isLoading={remove.status === 'working'}
+        renderAction={(
+          <TableTopBar
+            extras={<RefreshButton disabled={isWorking} onClick={handleRefresh}/>}
+          />
+        )}>
         <Datatable
           data={data}
           columns={columns}
@@ -57,13 +68,13 @@ export const HubAccount = () => {
             label: 'Connect Hub Account',
             onClick: openModal,
           }}
-          isLoading={get.status === 'working'}
+          isLoading={isWorking}
           loadingState={{ label }}
         />
       </DatatableWrapper>
 
       <ModalComponent onClose={handleClose} hideConfirm>
-        <NewHubAccount status={post.status} error={post.error} closeModal={closeModal} />
+        <NewHubAccount closeModal={closeModal} />
       </ModalComponent>
 
     </>

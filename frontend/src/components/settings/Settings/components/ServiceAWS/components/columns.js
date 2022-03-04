@@ -21,7 +21,7 @@ export const awsOrganizationColumns = ({ handleClick }) => [{
   width: 60,
   align: 'center',
   Cell: ({ row }) => (
-    <RowStatusIndicator isActive={row?.values?.active} />
+    <RowStatusIndicator isActive={row?.values?.active || true} />
   )
 }, {
   Header: 'Actions',
@@ -55,7 +55,7 @@ export const spokeAccountsColumns = ({ handleClick }) => [{
   width: 60,
   align: 'center',
   Cell: ({ row }) => (
-    <RowStatusIndicator isActive={row?.values?.active} />
+    <RowStatusIndicator isActive={row?.values?.active || true} />
   )
 }, {
   Header: 'Actions',
@@ -89,7 +89,7 @@ export const hubAccountColumns = ({ handleClick }) => [{
   width: 60,
   align: 'center',
   Cell: ({ row }) => (
-    <RowStatusIndicator isActive={row?.values?.active} />
+    <RowStatusIndicator isActive={row?.values?.active || true} />
   )
 }, {
   Header: 'Actions',
