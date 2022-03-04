@@ -2,7 +2,7 @@
 import React, { useContext } from 'react';
 import { ApiContext } from 'hooks/useApi';
 
-import { Button, Image, Segment } from 'semantic-ui-react';
+import { Button, Segment } from 'semantic-ui-react';
 
 export const NewHubAccount = ({ closeModal }) => {
 
