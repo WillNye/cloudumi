@@ -1,4 +1,5 @@
-import { useState } from 'react'
+/* eslint-disable react-hooks/exhaustive-deps */
+import { createContext, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProviderDefault'
 
 const initialState = {
@@ -8,14 +9,14 @@ const initialState = {
   empty: true,
 }
 
-export const url = 'https://localhost:8092/'
+export const url = 'api/v3'
 
 const useInnerUtils = () => {
   const [state, setState] = useState({
     ...initialState,
   })
 
-  const buildPath = (pathName = '') => url + (pathName ? '/' : '') + pathName
+  const buildPath = (pathname = '') => url + (pathname ? '/' : '') + pathname
 
   const handleWorking = () => {
     setState({ data: null, status: 'working', error: null })
@@ -26,7 +27,8 @@ const useInnerUtils = () => {
       setState({ data: null, status: 'done', error: 'Error!' })
       return 'Error!'
     }
-    setState({ data: res?.data, status: 'done' })
+    let response = res?.data
+    setState({ data: response, status: 'done' })
   }
 
   const reset = () => {
@@ -42,20 +44,24 @@ const useInnerUtils = () => {
   }
 }
 
-const useGet = (commonPathName) => {
+const useGet = (commonPathname) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
     useInnerUtils()
 
-  const get = async (pathName) => {
+  const get = async (pathname) => {
     handleWorking()
-    const res = await sendRequestCommon(
-      null,
-      buildPath(commonPathName || pathName),
-      'get'
-    )
-    return handleResponse(res)
+    try {
+      const res = await sendRequestCommon(
+        null,
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        'get'
+      )
+      return handleResponse(res)
+    } catch (error) {
+      return error
+    }
   }
 
   return {
@@ -66,20 +72,24 @@ const useGet = (commonPathName) => {
   }
 }
 
-const usePost = (commonPathName) => {
+const usePost = (commonPathname) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
     useInnerUtils()
 
-  const post = async (body, pathName) => {
+  const post = async (body, pathname) => {
     handleWorking()
-    const res = await sendRequestCommon(
-      body || {},
-      buildPath(commonPathName || pathName),
-      'post'
-    )
-    return handleResponse(res)
+    try {
+      const res = await sendRequestCommon(
+        body || {},
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        'post'
+      )
+      return handleResponse(res)
+    } catch (error) {
+      return error
+    }
   }
 
   return {
@@ -90,22 +100,25 @@ const usePost = (commonPathName) => {
   }
 }
 
-const useRemove = (commonPathName) => {
+const useRemove = (commonPathname) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
     useInnerUtils()
 
-  const remove = async (body, pathName) => {
+  const remove = async (body, pathname) => {
     handleWorking()
-    const res = await sendRequestCommon(
-      body || {},
-      buildPath(commonPathName || pathName),
-      'delete'
-    )
-    return handleResponse(res)
+    try {
+      const res = await sendRequestCommon(
+        body || {},
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        'delete'
+      )
+      return handleResponse(res)
+    } catch (error) {
+      return error
+    }
   }
-
   return {
     ...state,
     empty: !state?.data,
@@ -114,10 +127,31 @@ const useRemove = (commonPathName) => {
   }
 }
 
-export const useApi = (commonPathName) => {
+export const useApi = (commonPathname) => {
   return {
-    get: useGet(commonPathName),
-    post: usePost(commonPathName),
-    remove: useRemove(commonPathName),
+    get: useGet(commonPathname),
+    post: usePost(commonPathname),
+    remove: useRemove(commonPathname),
   }
+}
+
+export const ApiContext = createContext()
+
+export const ApiGetProvider = ({ children, pathname }) => {
+  const { get } = useApi(pathname)
+
+  useEffect(() => get.do(), [])
+
+  return (
+    <ApiContext.Provider
+      value={{
+        status: get?.status,
+        data: get?.data,
+        error: get?.status,
+        empty: get?.empty,
+      }}
+    >
+      {children}
+    </ApiContext.Provider>
+  )
 }

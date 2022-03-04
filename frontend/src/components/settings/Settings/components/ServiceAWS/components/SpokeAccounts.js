@@ -1,68 +1,81 @@
-import React from 'react'
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
-import { DatatableWrapper } from 'lib/Datatable/ui/utils'
-import { spokeAccountsColumns } from './columns'
+import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
+import { useToast } from 'lib/Toast'
+import { NewSpokeAccount } from './forms/NewSpokeAccount'
+import { str } from 'components/settings/Settings/strings'
+
+import { spokeAccountsColumns } from './columns'
 import { TableTopBar } from '../../utils'
 
-// const data = [{
-//   accountName: 'noq_entrypoint',
-//   accountId: 3234671289,
-//   role: 'NoqCentralRole',
-//   accountAdmin: 'team_a@noq.com',
-//   active: true
-// }, {
-//   accountName: 'noq_entrypoint',
-//   accountId: 3234671289,
-//   role: 'NoqCentralRole',
-//   accountAdmin: 'team_a@noq.com',
-//   active: false
-// }];
-
 export const SpokeAccounts = () => {
-  const { get, post } = useApi('api/v3/services/aws/account/spoke') // data/status/empty/error/do
+  const { get, post, remove } = useApi('services/aws/account/spoke')
 
-  const { openModal, ModalComponent } = useModal(
-    'Add Spoke Account',
-    post.reset,
-    post.reset
-  )
+  const { error, success } = useToast()
+
+  const { openModal, closeModal, ModalComponent } =
+    useModal('Add Spoke Account')
+
+  useEffect(() => get.do(), [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
-      // Do something
+      remove
+        .do({}, `${rowValues?.name}/${rowValues?.account_id}`)
+        .then(() => {
+          success('Spoke Account REMOVED')
+          get.do()
+        })
+        .catch(() => error(str.toastErrorMsg))
     }
   }
 
+  const handleClose = post.reset
+
   const columns = spokeAccountsColumns({ handleClick })
 
-  const handleConfirm = () => post.do().then(get.do)
+  const label = `Status: ${get.status}${
+    get.error ? ` / Error: ${get.error}` : ''
+  }`
+
+  const data = get?.data
+
+  const hasData = data?.length > 0
+
+  const isWorking = get.status === 'working'
+
+  const handleRefresh = () => get.do()
 
   return (
     <>
-      <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
+      <DatatableWrapper
+        isLoading={remove.status === 'working'}
+        renderAction={
+          <TableTopBar
+            onClick={hasData ? openModal : null}
+            extras={
+              <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+            }
+          />
+        }
+      >
         <Datatable
-          data={get.data}
+          data={data}
           columns={columns}
           emptyState={{
             label: 'Connect a Spoke Account',
             onClick: openModal,
           }}
-          isLoading={get.status === 'working' || get.status === 'done'}
-          loadingState={{
-            label: `TABLE STATUS: ${get.status}${
-              get.error ? ` / Error: ${get.error}` : null
-            }`,
-          }}
+          isLoading={isWorking}
+          loadingState={{ label }}
         />
       </DatatableWrapper>
 
-      <ModalComponent onClickToConfirm={handleConfirm}>
-        Image/Diagram/Etc
-        <br />
-        STATUS: {post.status}
-        {post.error ? ` / Error: ${post.error}` : null}
+      <ModalComponent onClose={handleClose} hideConfirm>
+        <NewSpokeAccount closeModal={closeModal} />
       </ModalComponent>
     </>
   )

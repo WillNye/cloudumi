@@ -60,7 +60,16 @@ function Table({ columns, data }) {
                 {...column.getHeaderProps(headerProps)}
                 className='th'
               >
-                {column.render('Header')}
+                <div
+                  style={{
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                    padding: '0 10px',
+                  }}
+                >
+                  {column.render('Header')}
+                </div>
                 {/* Use column.getResizerProps to hook up the events correctly */}
                 {column.canResize && (
                   <div
@@ -83,7 +92,16 @@ function Table({ columns, data }) {
               {row.cells.map((cell) => {
                 return (
                   <div {...cell.getCellProps(cellProps)} className='td'>
-                    {cell.render('Cell')}
+                    <div
+                      style={{
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        padding: '0 10px',
+                      }}
+                    >
+                      {cell.render('Cell')}
+                    </div>
                   </div>
                 )
               })}
