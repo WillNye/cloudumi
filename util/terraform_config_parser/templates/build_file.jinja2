@@ -1,5 +1,9 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
+EXT_DEPS = [
+    requirement("boto3"),
+]
 filegroup(
     name = "{{ stage }}-{{ attributes }}-files",
     srcs = glob([
@@ -29,61 +33,17 @@ container_push(
 )
 
 py_binary(
-    name = "ecs_deployer-{{ stage }}",
+    name = "ecs_deployer",
     srcs_version = "PY3",
+    data = [
+    "{{ stage }}-{{ attributes }}-files",
+    ],
     srcs = [
         "ecs_deployer.py",
     ],
-    deps = [
-    ],
+    deps = EXT_DEPS,
+    main = "ecs_deployer.py",
     visibility = ["//visibility:public"],
-)
-
-genrule(
-    name = "ecs_deployer",
-    outs = ["foo.bar"],
-    cmd = """ # TODO: Fill this stuff out
-      python3 $(location //src:foo_tool)
-      cp foo.bar $@
-    """,
-    tools = [":foo_tool"],
-)
-
-genrule(
-    name = "{{ stage }}-{{ attributes }}",
-    srcs = [
-        ":api-container-deploy-{{ stage }}",
-        ":celery-container-deploy-{{ stage }}",
-        ":{{ stage }}-{{ attributes }}-files",
-    ],
-    executable = True,
-    exec_tools = [
-        ":api-container-deploy-{{ stage }}",
-        ":celery-container-deploy-{{ stage }}",
-    ],
-    outs = ["run_deploy_{{ stage }}"],
-    message = "Deploying CloudUmi to {{ stage }}...",
-    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have {{ aws_profile }} as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\";' \
-           \
-           export AWS_PROFILE={{ aws_profile }}; \
-           \
-           aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}; \
-           \
-           aws ecs create-cluster --cluster-name {{ ecs_cluster_name }}; \
-           \
-           register_task_definition_output=`aws ecs register-task-definition --cli-input-yaml file://deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/task_definition.yaml`; \
-           \
-           task_definition_name_version=`echo $$register_task_definition_output | jq \'.taskDefinition.taskDefinitionArn | split(\"/\")\'[1]`; \
-           \
-           aws ecs create-service --cluster {{ ecs_cluster_name }} --service-name {{ ecs_cluster_name }} \
-            --task-definition $$task_definition_name_version --desired-count 1 --launch-type \"FARGATE\" --network-configuration \
-            --enable-execute-command \
-            \"awsvpcConfiguration={subnets=[{{ subnet_name_private_az0 }}, {{ subnet_name_private_az1 }}],securityGroups=[{{ ecs_security_group }}]}\"; \
-           \
-           aws ecs update-service --cluster {{ ecs_cluster_name }} --service {{ ecs_cluster_name }} \
-            --task-definition $$task_definition_name_version --desired-count 1 --enable-execute-command \
-            --network-configuration \"awsvpcConfiguration={subnets=[{{ subnet_name_private_az0 }}, {{ subnet_name_private_az1 }}], securityGroups=[{{ ecs_security_group }}]}\"; >$@",
-    tags = ["manual"],
 )
 
 genrule(

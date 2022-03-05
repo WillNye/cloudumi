@@ -1,11 +1,13 @@
 import os
 import time
-
+import pathlib
 import boto3
 import yaml
 from botocore.exceptions import ClientError
 
-task_definition_yaml_f = "deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/task_definition.yaml"
+current_path = pathlib.Path(__file__).parent.resolve()
+
+task_definition_yaml_f = f"{current_path}/task_definition.yaml"
 cluster_name = "{{ ecs_cluster_name }}"
 service_name = "{{ ecs_cluster_name }}"
 subnets = ["{{ subnet_name_private_az0 }}", "{{ subnet_name_private_az1 }}"]

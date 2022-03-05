@@ -1,5 +1,9 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
+EXT_DEPS = [
+    requirement("boto3"),
+]
 filegroup(
     name = "staging-1-files",
     srcs = glob([
@@ -25,6 +29,20 @@ container_push(
     image = "//common/celery_tasks:container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     tag = "staging",
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "ecs_deployer",
+    srcs_version = "PY3",
+    data = [
+    "staging-1-files",
+    ],
+    srcs = [
+        "ecs_deployer.py",
+    ],
+    deps = EXT_DEPS,
+    main = "ecs_deployer.py",
     visibility = ["//visibility:public"],
 )
 

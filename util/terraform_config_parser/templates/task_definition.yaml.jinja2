@@ -44,7 +44,7 @@ containerDefinitions:
     # memoryReservation:
     volumesFrom: [ ]
     # stopTimeout:
-    image: {{ registry_repository_url_api }}:prod
+    image: {{ registry_repository_url_api }}:{{ stage }}
     # startTimeout:
     # firelensConfiguration:
     # dependsOn:
@@ -114,7 +114,7 @@ containerDefinitions:
     # memoryReservation:
     volumesFrom: [ ]
     # stopTimeout:
-    image: {{ registry_repository_url_celery }}:prod
+    image: {{ registry_repository_url_celery }}:{{ stage }}
     # startTimeout:
     # firelensConfiguration:
     # dependsOn:
