@@ -25,7 +25,7 @@ _global_:
   integrations:
     aws:
       account_id: "759357822767"
-      node_role: arn:aws:iam::759357822767:role/NoqClusterRole1
+      node_role: arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev
       registration_topic_arn: arn:aws:sns:us-west-2:759357822767:curtis-staging-noq-dev-shared-staging-1-registration-topic
       registration_queue_arn: arn:aws:sqs:us-west-2:759357822767:curtis-staging-noq-dev-shared-staging-1-registration-queue
     #    pre_role_arns_to_assume:
