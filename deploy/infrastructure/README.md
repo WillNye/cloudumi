@@ -165,7 +165,7 @@ aws sts get-caller-identity
 - Reference `Terraform` section above on how to deploy / update terraform infrastructure (should be seldom)
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/shared/staging-1:api-container-deploy-staging; bazelisk run //deploy/infrastructure/live/shared/staging-1:celery-container-staging-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/shared/staging-1`
+- Deploy: `bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_deployer`
 
 # Deploy to production automation
 
@@ -176,7 +176,7 @@ aws sts get-caller-identity
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/shared/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/shared/prod-1`
+- Deploy: `bazelisk run //deploy/infrastructure/live/shared/prod-1:ecs_deployer`
 
 # Deploy to isolated clusters
 
@@ -188,7 +188,7 @@ aws sts get-caller-identity
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/cyberdyne/...` - note: using `cyberdyne` for this example, replace cyberdyne with <company name>
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:celery-container-deploy-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1`
+- Deploy: `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:ecs_deployer`
 
 ## Technical Debt
 

@@ -1,10 +1,8 @@
 executionRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskExecutionRole
 containerDefinitions:
   - dnsSearchDomains: []
-    # environmentFiles:
     logConfiguration:
       logDriver: awslogs
-      # secretOptions:
       options:
         awslogs-group: staging-noq-dev-shared-staging-1
         awslogs-region: us-west-2
@@ -18,14 +16,7 @@ containerDefinitions:
       - python
       - api/__main__.py
     linuxParameters:
-      # capabilities:
-      #  add:
-      #  drop:
-      # sharedMemorySize:
-      # tmpfs:
       devices: []
-      # maxSwap: 10000
-      # swappiness: 60
       initProcessEnabled: true
     cpu: 0
     environment:
@@ -33,46 +24,26 @@ containerDefinitions:
         value: s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
-    # resourceRequirements:
-    # ulimits:
     dnsServers: []
     mountPoints: []
-    # workingDirectory:
-    # secrets:
     dockerSecurityOptions: []
-    # memory:
-    # memoryReservation:
     volumesFrom: []
-    # stopTimeout:
     image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:staging
-    # startTimeout:
-    # firelensConfiguration:
-    # dependsOn:
-    # disableNetworking:
-    # interactive:
-    # healthCheck:
     essential: true
     links: []
-    # hostname:
     extraHosts: []
     pseudoTerminal: false
-    # user:
     readonlyRootFilesystem: false
-    # dockerLabels:
-    # systemControls:
     privileged: false
     name: staging-noq-dev-shared-staging-1-api
   - dnsSearchDomains: []
-    # environmentFiles:
     logConfiguration:
       logDriver: awslogs
-      # secretOptions:
       options:
         awslogs-group: staging-noq-dev-shared-staging-1
         awslogs-region: us-west-2
         awslogs-stream-prefix: celery
     entryPoint: []
-    # portMappings:
     command:
       - celery
       - "-A"
@@ -84,14 +55,7 @@ containerDefinitions:
       - "-E"
       - "--concurrency=8"
     linuxParameters:
-      # capabilities:
-      #   add:
-      #   drop:
-      # sharedMemorySize:
-      # tmpfs:
       devices: []
-      # maxSwap: 10000
-      # swappiness: 60
       initProcessEnabled: true
     cpu: 0
     environment:
@@ -103,58 +67,24 @@ containerDefinitions:
         value: s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
-    # resourceRequirements:
-    # ulimits:
     dnsServers: []
     mountPoints: []
-    # workingDirectory:
-    # secrets:
     dockerSecurityOptions: []
-    # memory:
-    # memoryReservation:
     volumesFrom: []
-    # stopTimeout:
     image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-celery:staging
-    # startTimeout:
-    # firelensConfiguration:
-    # dependsOn:
-    # disableNetworking:
-    # interactive:
-    # healthCheck:
     essential: true
     links: []
-    # hostname:
     extraHosts: []
     pseudoTerminal: false
-    # user:
     readonlyRootFilesystem: false
-    # dockerLabels:
-    # systemControls:
     privileged: false
     name: staging-noq-dev-shared-staging-1-celery
 placementConstraints: []
 memory: "8192"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
 family: staging-noq-dev-shared-staging-1
-#requiresAttributes:
-#  - name: com.amazonaws.ecs.capability.logging-driver.awslogs
-#    # targetId:
-#    # targetType:
-#    # value:
-#  - name: ecs.capability.execution-role-awslogs
-#  - name: com.amazonaws.ecs.capability.ecr-auth
-#  - name: com.amazonaws.ecs.capability.docker-remote-api.1.19
-#  - name: com.amazonaws.ecs.capability.docker-remote-api.1.17
-#  - name: com.amazonaws.ecs.capability.task-iam-role
-#  - name: ecs.capability.execution-role-ecr-pull
-#  - name: com.amazonaws.ecs.capability.docker-remote-api.1.18
-#  - name: ecs.capability.task-eni
-# pidMode:
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-# runtimePlatform:
 cpu: "2048"
-# inferenceAccelerators:
-# proxyConfiguration:
 volumes: []
