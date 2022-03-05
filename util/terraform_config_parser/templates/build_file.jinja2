@@ -61,7 +61,7 @@ genrule(
            \
            aws ecs update-service --cluster {{ ecs_cluster_name }} --service {{ ecs_cluster_name }} \
             --task-definition $$task_definition_name_version --desired-count 1 --enable-execute-command \
-            --network-configuration \"awsvpcConfiguration={subnets=[{{ subnet_name_private_az0 }}, {{ subnet_name_private_az1 }}],securityGroups=[{{ ecs_security_group }}]}\";' >$@",
+            --network-configuration \"awsvpcConfiguration={subnets=[{{ subnet_name_private_az0 }}, {{ subnet_name_private_az1 }}], securityGroups=[{{ ecs_security_group }}]}\"; >$@",
     tags = ["manual"],
 )
 
