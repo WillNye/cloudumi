@@ -11,8 +11,8 @@ py_binary(
         "populate_services.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "noq_cluster_dev",
     },
     deps = [
         "//common:lib",
