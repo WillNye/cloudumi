@@ -112,6 +112,8 @@ async def delete_spoke_accounts(host: str) -> bool:
 
 async def get_spoke_accounts(host: str) -> List[SpokeAccount]:
     spoke_accounts = config.get_host_specific_key(spoke_account_key_name, host)
+    if not spoke_accounts:
+        return []
     return [SpokeAccount(**x) for x in spoke_accounts.values()]
 
 
@@ -127,6 +129,8 @@ async def upsert_org_account(host: str, org_account: OrgAccount):
     ddb = RestrictedDynamoHandler()
     org_key_name = __get_unique_org_account_key_name(org_account.org_id)
     host_config = config.get_tenant_static_config_from_dynamo(host)
+    if org_account_key_name not in host_config:
+        host_config[org_account_key_name] = dict()
     host_config[org_account_key_name][org_key_name] = dict(org_account)
 
     await ddb.update_static_config_for_host(
@@ -168,4 +172,6 @@ async def delete_org_accounts(host: str) -> bool:
 
 async def get_org_accounts(host: str) -> List[OrgAccount]:
     org_accounts = config.get_host_specific_key(org_account_key_name, host)
+    if not org_accounts:
+        return []
     return [OrgAccount(**x) for x in org_accounts.values()]
