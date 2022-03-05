@@ -161,11 +161,11 @@ resource "aws_iam_role" "ecs_task_role" {
       "Statement" : [
         {
           "Action" : [
-            "access-analyzer:*",
-            "cloudtrail:*",
+            "ssmmessages:CreateControlChannel",
+            "ssmmessages:CreateDataChannel",
+            "ssmmessages:OpenControlChannel",
+            "ssmmessages:OpenDataChannel",
             "cloudwatch:*",
-            "config:SelectResourceConfig",
-            "config:SelectAggregateResourceConfig",
             "dynamodb:batchgetitem",
             "dynamodb:batchwriteitem",
             "dynamodb:deleteitem",
@@ -201,35 +201,16 @@ resource "aws_iam_role" "ecs_task_role" {
             "autoscaling:Describe*",
             "cloudwatch:Get*",
             "cloudwatch:List*",
-            "config:BatchGet*",
-            "config:List*",
-            "config:Select*",
-            "ec2:DescribeSubnets",
-            "ec2:describevpcendpoints",
-            "ec2:DescribeVpcs",
-            "iam:GetAccountAuthorizationDetails",
-            "iam:ListAccountAliases",
-            "iam:ListAttachedRolePolicies",
-            "ec2:describeregions",
             "s3:GetBucketPolicy",
             "s3:GetBucketTagging",
-            "s3:ListAllMyBuckets",
             "s3:ListBucket",
-            "s3:PutBucketPolicy",
-            "s3:PutBucketTagging",
             "sns:GetTopicAttributes",
             "sns:ListTagsForResource",
             "sns:ListTopics",
-            "sns:SetTopicAttributes",
-            "sns:TagResource",
-            "sns:UnTagResource",
             "sqs:GetQueueAttributes",
             "sqs:GetQueueUrl",
             "sqs:ListQueues",
             "sqs:ListQueueTags",
-            "sqs:SetQueueAttributes",
-            "sqs:TagQueue",
-            "sqs:UntagQueue"
           ],
           "Effect" : "Allow",
           "Resource" : "*"
@@ -240,31 +221,6 @@ resource "aws_iam_role" "ecs_task_role" {
           "Action" : [
             "s3:ListBucket",
             "s3:GetObject"
-          ],
-          "Resource" : [
-            "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
-            "arn:aws:s3:::${var.tenant_configuration_bucket_name}/*"
-          ]
-        },
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "s3:ListStorageLensConfigurations",
-            "s3:ListAccessPointsForObjectLambda",
-            "s3:GetAccessPoint",
-            "s3:GetAccountPublicAccessBlock",
-            "s3:ListAllMyBuckets",
-            "s3:ListAccessPoints",
-            "s3:ListJobs",
-            "s3:ListMultiRegionAccessPoints"
-          ],
-          "Resource" : "*"
-        },
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "s3:get*",
-            "s3:list*"
           ],
           "Resource" : [
             "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
@@ -295,6 +251,17 @@ resource "aws_iam_role" "ecs_task_role" {
           "Resource" : [
             "${var.registration_queue_arn}",
           ]
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "kms:Decrypt",
+            "logs:DescribeLogGroups",
+            "logs:CreateLogStream",
+            "logs:DescribeLogStreams",
+            "logs:PutLogEvents",
+          ],
+          "Resource" : "*"
         }
       ],
       "Version" : "2012-10-17"
