@@ -136,8 +136,8 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
             status="success",
             status_code=200,
             message="Successfully retrieved AuthorizedGroupsTags",
-            count=len(authorized_groups_tags),
             data=authorized_groups_tags,
+            count=len(authorized_groups_tags),
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
 

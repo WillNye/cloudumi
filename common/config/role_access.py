@@ -68,6 +68,7 @@ async def upsert_authorized_groups_tag(host: str, tag_name: str, web_access: boo
 
 async def delete_authorized_groups_tag(host: str, tag_name: str) -> bool:
     ddb = RestrictedDynamoHandler()
+    deleted = False
     host_config = config.get_tenant_static_config_from_dynamo(host)
     host_config = __setup_subkeys_if_missing(host_config)
 
@@ -75,12 +76,14 @@ async def delete_authorized_groups_tag(host: str, tag_name: str) -> bool:
         host_config["cloud_credential_authorization_mapping"]["role_tags"][
             "authorized_groups_tags"
         ].remove(tag_name)
+        deleted = True
     except ValueError:
         pass
     try:
         host_config["cloud_credential_authorization_mapping"]["role_tags"][
             "authorized_groups_cli_only_tags"
         ].remove(tag_name)
+        deleted = True
     except ValueError:
         pass
 
@@ -88,7 +91,7 @@ async def delete_authorized_groups_tag(host: str, tag_name: str) -> bool:
         yaml.dump(host_config), updated_by_name, host  # type: ignore
     )
 
-    return True
+    return deleted
 
 
 async def get_authorized_groups_tags(host: str) -> List[dict]:
@@ -99,10 +102,12 @@ async def get_authorized_groups_tags(host: str) -> List[dict]:
         .get("role_tags", {})
         .get("authorized_groups_tags", [])
     ):
+        # using a hard coded "source": "noq" because two kv in a list of dicts does weird things in pydantic
         groups_tags.append(
             {
                 "tag_name": groups_tag,
                 "web_access": True,
+                "source": "noq",
             }
         )
     for groups_tag in (
@@ -110,7 +115,9 @@ async def get_authorized_groups_tags(host: str) -> List[dict]:
         .get("role_tags", {})
         .get("authorized_groups_cli_only_tags", [])
     ):
-        groups_tags.append({"tag_name": groups_tag, "web_access": False})
+        groups_tags.append(
+            {"tag_name": groups_tag, "web_access": False, "source": "noq"}
+        )
     return groups_tags
 
 
