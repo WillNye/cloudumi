@@ -146,3 +146,9 @@ variable "s3_access_log_bucket" {
   description = "The S3 bucket to store S3 access logs in"
   type        = string
 }
+
+variable "elasticache_node_type" {
+  description = "The node type to use for Elasticache"
+  type        = string
+  default     = "cache.t3.micro"
+}

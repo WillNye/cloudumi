@@ -74,9 +74,20 @@ class Configuration(metaclass=Singleton):
         try:
             session_kwargs = self.get("_global_.boto3.session_kwargs", {})
             session = boto3.Session(**session_kwargs)
-            session.client(
+            identity = session.client(
                 "sts", **self.get("_global_.boto3.client_kwargs", {})
             ).get_caller_identity()
+            identity_arn_with_session_name = (
+                identity["Arn"]
+                .replace(":sts:", ":iam:")
+                .replace("assumed-role", "role")
+            )
+            identity_arn = "/".join(identity_arn_with_session_name.split("/")[0:2])
+            node_role_arn = self.get("_global_.integrations.aws.node_role", {})
+            if identity_arn != node_role_arn:
+                raise Exception(
+                    f"AWS credentials are not set to the correct role. Expected {node_role_arn}, got {identity_arn}"
+                )
         except botocore.exceptions.NoCredentialsError:
             raise Exception(
                 "We were unable to detect valid AWS credentials. Noq needs valid AWS credentials to "
@@ -406,7 +417,7 @@ class Configuration(metaclass=Singleton):
         last_updated = self.tenant_configs[host].get("last_updated", 0)
         if current_time - last_updated > 60:
             tenant_config = self.load_tenant_config_from_redis(host)
-            last_updated = tenant_config.get("last_updated", 0)
+            last_updated = int(tenant_config.get("last_updated", 0))
             # If Redis config cache for host is newer than 60 seconds, update in-memory variables
             if current_time - last_updated < 60:
                 self.tenant_configs[host]["config"] = tenant_config["config"]

@@ -86,6 +86,24 @@ container_pull(
     tag = "3.9.10",
 )
 
+container_pull(
+    name = "nodejs_17_container",
+    architecture = "amd64",
+    registry = "index.docker.io",
+    repository = "library/node",
+    digest = "sha256:13961fc7673e7a62de914c59783364087038d03dc274ed720e9eae868cd422d5",
+    tag = "17-alpine",
+)
+
+container_pull(
+    name = "nginx_1.20_container",
+    architecture = "amd64",
+    registry = "index.docker.io",
+    repository = "library/nginx",
+    digest = "sha256:a67c36aaec8f2ac2e7cc83bc107dcac428ad4803c72be4710669039ab549cd24",
+    tag = "1.20",
+)
+
 ### gRPC
 http_archive(
     name = "rules_proto_grpc",
@@ -125,6 +143,12 @@ http_archive(
 load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
 build_bazel_rules_nodejs_dependencies()
 
+load(
+    "@io_bazel_rules_docker//nodejs:image.bzl",
+    _nodejs_image_repos = "repositories",
+)
+
+_nodejs_image_repos()
 # fetches nodejs, npm, and yarn
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "yarn_install")
 node_repositories()
@@ -135,4 +159,15 @@ yarn_install(
     links = {
         "target": "//frontend",
     },
+)
+
+# Weep
+http_archive(
+    name = "netflix_weep",
+    sha256 = "8cab1473704035de8674e77b21002130c9cd987e206443c15d2596699285929f",
+    urls = ["https://github.com/Netflix/weep/releases/download/v0.3.26/weep_0.3.26_linux_x86_64.tar.gz"],
+    strip_prefix = "/bin/linux_amd64",
+    build_file_content = """exports_files(['weep'])
+visibility=['//visibility:public']"""
+    #strip_prefix = "/bin/linux_amd64",
 )

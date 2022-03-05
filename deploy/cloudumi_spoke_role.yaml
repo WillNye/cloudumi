@@ -55,6 +55,7 @@ Resources:
                 Resource: "*"
   SnsCustomResource:
     Type: "Custom::SnsCustomResource"
+    DependsOn: "SpokeRole"
     Properties:
       ServiceToken: !Ref RegistrationTopicArnParameter
       IntegrationName: !Ref "AWS::StackName"

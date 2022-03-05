@@ -9,8 +9,13 @@
 
 ## Build
 
-- Run locally using bazel: `bazel run //frontend:server`
+- Just build locally: `bazel build //frontend:build`
+- Run locally using bazel: `bazel run //frontend:start`
 - Run in container: `bazel run //frontend:container-dev-local`
+
+### API integration
+
+- The frontend build artifact is still integrated in the API container; at some point we want to separate the Frontend from the API
 
 ## Notes
 

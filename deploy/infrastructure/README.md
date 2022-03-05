@@ -17,7 +17,6 @@ The only time the variable should be set to true is upon initial cluster creatio
 - AWS keys configured in ~/.aws/credentials - see the `AWS Credentials` section below
 - terraform
 - ecs-cli
-- `yarn build_template` was run in the `frontend` folder
 
 ## Quick Start
 
@@ -48,6 +47,15 @@ terraform workspace select shared-prod-1
 terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars
+
+#### Cyberdyne
+
+export AWS_PROFILE=noq_prod
+export AWS_REGION=us-west-2
+terraform workspace select cyberdyne-prod-1
+terraform refresh --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
 
 Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
 
@@ -157,7 +165,7 @@ aws sts get-caller-identity
 - Reference `Terraform` section above on how to deploy / update terraform infrastructure (should be seldom)
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/shared/staging-1:api-container-deploy-staging; bazelisk run //deploy/infrastructure/live/shared/staging-1:celery-container-staging-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/shared/staging-1`
+- Deploy: `bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_deployer`
 
 # Deploy to production automation
 
@@ -168,7 +176,7 @@ aws sts get-caller-identity
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/shared/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/shared/prod-1`
+- Deploy: `bazelisk run //deploy/infrastructure/live/shared/prod-1:ecs_deployer`
 
 # Deploy to isolated clusters
 
@@ -180,7 +188,7 @@ aws sts get-caller-identity
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/cyberdyne/...` - note: using `cyberdyne` for this example, replace cyberdyne with <company name>
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:celery-container-deploy-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1`
+- Deploy: `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:ecs_deployer`
 
 ## Technical Debt
 

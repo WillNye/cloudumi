@@ -1465,6 +1465,21 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             hosts.add(item["host"])
         return list(hosts)
 
+    async def copy_tenant_config_dynamo_to_redis(self, host, updated_at, config_item):
+        if not config_item:
+            return
+        red = RedisHandler().redis_sync(host)
+        red.set(
+            f"{host}_STATIC_CONFIGURATION",
+            json.dumps(
+                {
+                    "config": config_item,
+                    "last_updated": updated_at,
+                },
+                default=str,
+            ),
+        )
+
     async def update_static_config_for_host(
         self,
         new_config: str,
@@ -1511,6 +1526,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         }
         self.tenant_static_configs.put_item(
             Item=self._data_to_dynamo_replace(new_config_writable)
+        )
+        await self.copy_tenant_config_dynamo_to_redis(
+            host, int(time.time()), new_config_d
         )
 
 
