@@ -30,6 +30,6 @@ echo
 bazelisk run //deploy/infrastructure/live/shared/staging-1:celery-container-deploy-staging
 
 echo
-echo "Updating infrastructure"
+echo "Deploying Service"
 echo
-bazelisk run //deploy/infrastructure/live/shared/staging-1
+bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_deployer

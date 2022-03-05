@@ -30,6 +30,6 @@ echo
 bazelisk run //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod
 
 echo
-echo "Updating infrastructure"
+echo "Deploying Service"
 echo
-bazelisk run //deploy/infrastructure/live/shared/prod-1
+bazelisk run //deploy/infrastructure/live/shared/prod-1:ecs_deployer

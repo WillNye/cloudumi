@@ -1,5 +1,9 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
+EXT_DEPS = [
+    requirement("boto3"),
+]
 filegroup(
     name = "{{ stage }}-{{ attributes }}-files",
     srcs = glob([
@@ -28,39 +32,17 @@ container_push(
     visibility = ["//visibility:public"],
 )
 
-genrule(
-    name = "{{ stage }}-{{ attributes }}",
+py_binary(
+    name = "ecs_deployer",
+    srcs_version = "PY3",
+    data = [
+    "{{ stage }}-{{ attributes }}-files",
+    ],
     srcs = [
-        ":api-container-deploy-{{ stage }}",
-        ":celery-container-deploy-{{ stage }}",
-        ":{{ stage }}-{{ attributes }}-files",
+        "ecs_deployer.py",
     ],
-    executable = True,
-    exec_tools = [
-        ":api-container-deploy-{{ stage }}",
-        ":celery-container-deploy-{{ stage }}",
-    ],
-    outs = ["run_deploy_{{ stage }}"],
-    message = "Deploying CloudUmi to {{ stage }}...",
-    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have {{ aws_profile }} as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\"; \
-           \
-           export AWS_PROFILE={{ aws_profile }}; \
-           \
-           aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}; \
-           \
-           ecs-cli configure --cluster {{ ecs_cluster_name }} --default-launch-type FARGATE \
-           --config-name {{ ecs_cluster_name }} --region {{ region }}; \
-           \
-           ecs-cli up --cluster-config {{ ecs_cluster_name }}; \
-           \
-           ecs-cli compose -f deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/compose.yaml \
-           --cluster-config {{ ecs_cluster_name }} \
-           --ecs-params deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs.yaml \
-           -p {{ ecs_cluster_name }} \
-           --task-role-arn {{ ecs_task_role_arn }} \
-           --region {{ region }} service up --deployment-max-percent 200 --deployment-min-healthy-percent 50 --create-log-groups --timeout 15 \
-           --target-groups targetGroupArn={{ target_group_arn }},containerName={{ cluster_id_safed }}-api,containerPort=8092' >$@",
-    tags = ["manual"],
+    deps = EXT_DEPS,
+    visibility = ["//visibility:public"],
 )
 
 genrule(
