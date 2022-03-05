@@ -9,7 +9,7 @@ py_test(
         "test_auth.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -33,7 +33,7 @@ py_test(
         "test_celery_tasks.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [

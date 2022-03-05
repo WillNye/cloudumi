@@ -14,7 +14,7 @@ py_binary(
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -40,7 +40,7 @@ py_binary(
         # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [

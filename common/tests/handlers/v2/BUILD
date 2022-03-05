@@ -9,7 +9,7 @@ py_test(
         "test_aws_iam_users.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -33,7 +33,7 @@ py_test(
         "test_errors.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -57,7 +57,7 @@ py_test(
         "test_generate_changes.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -81,7 +81,7 @@ py_test(
         "test_policies.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -105,7 +105,7 @@ py_test(
         "test_requests.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -129,7 +129,7 @@ py_test(
         "test_roles.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -153,7 +153,7 @@ py_test(
         "test_typeahead.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -177,7 +177,7 @@ py_test(
         "test_user_profile.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -201,7 +201,7 @@ py_test(
         "test_user.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [

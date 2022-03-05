@@ -22,7 +22,7 @@ container_image(
     ],
     workdir = "/apps/common",
     env = {
-        "CONFIG_LOCATION": "/apps/configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "/apps/configs/development_account/saas_development.yaml",
     },
     visibility = ["//visibility:public"],
 )

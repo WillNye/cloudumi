@@ -9,7 +9,7 @@ py_test(
         "test_aws.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -33,7 +33,7 @@ py_test(
         "test_change_request.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -57,7 +57,7 @@ py_test(
         "test_generic.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -81,7 +81,7 @@ py_test(
         "test_policies.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
@@ -105,7 +105,7 @@ py_test(
         "test_requests_v2.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_dev",
     },
     deps = [
