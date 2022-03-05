@@ -28,6 +28,27 @@ container_push(
     visibility = ["//visibility:public"],
 )
 
+py_binary(
+    name = "ecs_deployer-{{ stage }}",
+    srcs_version = "PY3",
+    srcs = [
+        "ecs_deployer.py",
+    ],
+    deps = [
+    ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "ecs_deployer",
+    outs = ["foo.bar"],
+    cmd = """ # TODO: Fill this stuff out
+      python3 $(location //src:foo_tool)
+      cp foo.bar $@
+    """,
+    tools = [":foo_tool"],
+)
+
 genrule(
     name = "{{ stage }}-{{ attributes }}",
     srcs = [
