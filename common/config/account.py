@@ -60,6 +60,11 @@ async def upsert_spoke_account(host: str, spoke_account: SpokeAccount):
     if spoke_account_key_name not in host_config:
         host_config[spoke_account_key_name] = dict()
     host_config[spoke_account_key_name][spoke_key_name] = dict(spoke_account)
+    if not host_config.get("account_ids_to_name"):
+        host_config["account_ids_to_name"] = {}
+    host_config["account_ids_to_name"][
+        spoke_account.account_id
+    ] = spoke_account.account_id
 
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), updated_by_name, host  # type: ignore
@@ -79,6 +84,10 @@ async def delete_spoke_account(host: str, name: str, account_id: str) -> bool:
         ]
     except KeyError:
         return False
+
+    if host_config.get("account_ids_to_name", {}).get(account_id):
+        del host_config["account_ids_to_name"][account_id]
+
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), updated_by_name, host  # type: ignore
     )

@@ -6,15 +6,15 @@ import { Button, Checkbox } from 'semantic-ui-react'
 export const awsOrganizationColumns = ({ handleClick }) => [
   {
     Header: 'Organization ID',
-    accessor: 'organizationId',
+    accessor: 'org_id',
   },
   {
     Header: 'Account ID',
-    accessor: 'accountId',
+    accessor: 'account_id',
   },
   {
     Header: 'Account Name',
-    accessor: 'accountName',
+    accessor: 'account_name',
   },
   {
     Header: 'Owner',
@@ -25,7 +25,9 @@ export const awsOrganizationColumns = ({ handleClick }) => [
     accessor: 'active',
     width: 60,
     align: 'center',
-    Cell: ({ row }) => <RowStatusIndicator isActive={row?.values?.active} />,
+    Cell: ({ row }) => (
+      <RowStatusIndicator isActive={row?.values?.active || true} />
+    ),
   },
   {
     Header: 'Actions',
@@ -42,26 +44,31 @@ export const awsOrganizationColumns = ({ handleClick }) => [
 export const spokeAccountsColumns = ({ handleClick }) => [
   {
     Header: 'Account Name',
-    accessor: 'accountName',
+    accessor: 'name',
+    width: 80,
   },
   {
     Header: 'Account ID',
-    accessor: 'accountId',
+    accessor: 'account_id',
+    width: 80,
   },
   {
-    Header: 'Role',
-    accessor: 'role',
+    Header: 'Hub Role ARN',
+    accessor: 'role_arn',
   },
   {
-    Header: 'Account Admin',
-    accessor: 'accountAdmin',
+    Header: 'External ID',
+    accessor: 'external_id',
+    width: 60,
   },
   {
     Header: 'Status',
     accessor: 'active',
     width: 60,
     align: 'center',
-    Cell: ({ row }) => <RowStatusIndicator isActive={row?.values?.active} />,
+    Cell: ({ row }) => (
+      <RowStatusIndicator isActive={row?.values?.active || true} />
+    ),
   },
   {
     Header: 'Actions',
@@ -78,28 +85,31 @@ export const spokeAccountsColumns = ({ handleClick }) => [
 export const hubAccountColumns = ({ handleClick }) => [
   {
     Header: 'Account Name',
-    accessor: 'accountName',
+    accessor: 'name',
+    width: 80,
   },
   {
     Header: 'Account ID',
-    accessor: 'accountId',
+    accessor: 'account_id',
     width: 80,
   },
   {
-    Header: 'Role',
-    accessor: 'role',
-    width: 80,
+    Header: 'Hub Role ARN',
+    accessor: 'role_arn',
   },
   {
     Header: 'External ID',
-    accessor: 'externalId',
+    accessor: 'external_id',
+    width: 60,
   },
   {
     Header: 'Status',
     accessor: 'active',
     width: 60,
     align: 'center',
-    Cell: ({ row }) => <RowStatusIndicator isActive={row?.values?.active} />,
+    Cell: ({ row }) => (
+      <RowStatusIndicator isActive={row?.values?.active || true} />
+    ),
   },
   {
     Header: 'Actions',
