@@ -1,0 +1,27 @@
+site_name: Noq Docs
+
+# TODO: Set up GA
+# google_analytics:
+#   - UA-XXXXX-X
+
+theme:
+  name: material
+#    features:
+#        - navigation.tabs
+#        - navigation.tabs.sticky
+#        - navigation.tracking
+# logo:
+# favicon:
+# fonts:
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.tilde
+  - codehilite
+  - admonition
+
+nav:
+  - IAM Permissions: "iam.md"
