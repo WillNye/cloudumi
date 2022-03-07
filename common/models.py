@@ -135,7 +135,6 @@ class ChangeModel(BaseModel):
         example=20210905,
     )
 
-
 class Encoding(Enum):
     yaml = "yaml"
     json = "json"
