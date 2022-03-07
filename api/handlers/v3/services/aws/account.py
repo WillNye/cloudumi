@@ -43,12 +43,14 @@ class HubAccountHandler(BaseHandler):
         hub_account_data = await account.get_hub_account(host)
         # hub_account_data is a special structure, so we unroll it
         res = WebResponse(
-            success="success",
+            success="success" if hub_account_data else "failure",
             status_code=200,
-            message="Successfully updated",
-            data=hub_account_data.dict(),
+            message="Success" if hub_account_data else "Unable to retrieve hub account",
             count=1 if hub_account_data else 0,
         )
+        if hub_account_data:
+            res.data = (hub_account_data.dict(),)
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
@@ -284,7 +286,7 @@ class OrgHandler(BaseHandler):
         res = WebResponse(
             status="success",
             status_code=200,
-            message="Retrieved spoke account.",
+            message="Retrieved org account.",
             data=org_accounts,
             count=len(org_accounts),
         )

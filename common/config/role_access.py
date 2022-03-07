@@ -125,7 +125,7 @@ async def toggle_role_access_credential_brokering(host: str, enabled: bool) -> b
     ddb = RestrictedDynamoHandler()
     host_config = config.get_tenant_static_config_from_dynamo(host)
     if "cloud_credential_authorization_mapping" not in host_config:
-        return False
+        host_config = __setup_subkeys_if_missing(host_config)
     host_config["cloud_credential_authorization_mapping"]["role_tags"][
         "enabled"
     ] = enabled

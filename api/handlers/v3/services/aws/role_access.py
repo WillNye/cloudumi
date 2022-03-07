@@ -1,3 +1,4 @@
+import sentry_sdk
 import tornado.escape
 
 from common.config import config, role_access
@@ -47,18 +48,21 @@ class CredentialBrokeringHandler(BaseHandler):
         try:
             await role_access.toggle_role_access_credential_brokering(host, enabled)
         except Exception as exc:
+            sentry_sdk.capture_exception()
             log.error(exc)
             res = WebResponse(
                 success="error",
                 status_code=400,
                 message=f"Unable to {verb} role access credential brokering.",
             )
-        else:
-            res = WebResponse(
-                status="success",
-                status_code=200,
-                message=f"Successfully {verb} role access credential brokering.",
-            )
+            self.write(res.json(exclude_unset=True, exclude_none=True))
+            return
+
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message=f"Successfully {verb} role access credential brokering.",
+        )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
@@ -198,6 +202,7 @@ class AuthorizedGroupsTagsDeleteHandler(BaseHandler):
         log_data = {
             "function": "AuthorizedGroupsTagsDeleteHandler.delete",
             "user": self.user,
+            "tag_name": _tag_name,
             "message": "Deleting authorized groups tags",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
