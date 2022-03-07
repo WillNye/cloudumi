@@ -30,6 +30,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - Install bazelisk: https://github.com/bazelbuild/bazelisk/releases
   - Windows: `choco install bazelisk`
   - Mac: `brew install bazelisk`
+- Optionally install ibazel: https://github.com/bazelbuild/bazel-watcher/releases
 - Optionally install pyenv: https://github.com/pyenv/pyenv#basic-github-checkout
 - Install python 3.8.x & dependencies (requirements-test.lock)
 - Install tfsec: https://github.com/aquasecurity/tfsec#installation
@@ -43,6 +44,8 @@ Each target has a name that uniquely identifies a build target. The path disambi
 
 # Setup your dev environment
 
+- Note: you can use `ibazel` to replace all `bazel` or `bazelisk` commands to speed up development. See [iBazel Overview](#ibazel-overview) for an example.
+
 ## Containers
 
 - Start your local dev environment by running: `bazelisk build //deploy/local:containers-dev` - this starts all the containers to run Cloudumi
@@ -53,6 +56,12 @@ Each target has a name that uniquely identifies a build target. The path disambi
 
 - Visual Studio Code (and pretty much any other IDE): we ship .vscode config files for VSC specifically to run targets. For other IDEs, ensure that your PYTHONPATH is set to the root of the mono repo; this "should" just work. For VSCODE, just make sure you have the bazel plugin (and relevant plugin for your choice of IDE: https://marketplace.visualstudio.com/items?itemName=BazelBuild.vscode-bazel)
 - For command line development: set your PYTHONPATH to the root of the monorepo - `PYTHONPATH=~/dev/noq/cloudumi python ...`
+
+## iBazel Overview
+
+- Recommend to install it in ~/bin and point your path at it
+- Replace any `bazel` or `bazelisk` command with `ibazel`
+- For instance: `ibazel run //api:bin` will automatically rebuild and re-run anytime an update is detected
 
 # More Bazel stuff
 

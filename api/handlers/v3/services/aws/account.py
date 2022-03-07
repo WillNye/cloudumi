@@ -42,14 +42,16 @@ class HubAccountHandler(BaseHandler):
 
         hub_account_data = await account.get_hub_account(host)
         # hub_account_data is a special structure, so we unroll it
-        self.write(
-            {
-                "headers": {},
-                "count": 1 if hub_account_data else 0,
-                "data": hub_account_data.dict() if hub_account_data else {},
-                "attributes": {},
-            }
+        res = WebResponse(
+            success="success" if hub_account_data else "failure",
+            status_code=200,
+            message="Success" if hub_account_data else "Unable to retrieve hub account",
+            count=1 if hub_account_data else 0,
         )
+        if hub_account_data:
+            res.data = (hub_account_data.dict(),)
+
+        self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
         host = self.ctx.host
@@ -162,14 +164,14 @@ class SpokeHandler(BaseHandler):
         # spoke_account_data is a special structure, so we unroll it
         spoke_accounts = [spoke_account.dict() for spoke_account in spoke_account_data]
 
-        self.write(
-            {
-                "headers": {},
-                "count": len(spoke_accounts),
-                "data": spoke_accounts,
-                "attributes": {},
-            }
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message="Retrieved spoke account.",
+            data=spoke_accounts,
+            count=len(spoke_accounts),
         )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
         host = self.ctx.host
@@ -281,14 +283,14 @@ class OrgHandler(BaseHandler):
         # org_account_data is a special structure, so we unroll it
         org_accounts = [org_account.dict() for org_account in org_account_data]
 
-        self.write(
-            {
-                "headers": {},
-                "count": len(org_accounts),
-                "data": org_accounts,
-                "attributes": {},
-            }
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message="Retrieved org account.",
+            data=org_accounts,
+            count=len(org_accounts),
         )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
         host = self.ctx.host
