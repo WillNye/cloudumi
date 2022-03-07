@@ -4,7 +4,6 @@ from common.config import config
 from common.lib.account_indexers.aws_organizations import (
     retrieve_accounts_from_aws_organizations,
 )
-from common.lib.account_indexers.current_account import retrieve_current_account
 from common.lib.account_indexers.local_config import retrieve_accounts_from_config
 from common.lib.account_indexers.swag import retrieve_accounts_from_swag
 from common.lib.cache import (
@@ -34,9 +33,6 @@ async def cache_cloud_accounts(host) -> CloudAccountModelArray:
         account_mapping = await retrieve_accounts_from_swag(host)
     elif config.get_host_specific_key("cache_cloud_accounts.from_config", host, True):
         account_mapping = await retrieve_accounts_from_config(host)
-
-    if not account_mapping or not account_mapping.accounts:
-        account_mapping = await retrieve_current_account(host)
 
     account_id_to_name = {}
 
