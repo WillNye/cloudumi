@@ -66,6 +66,12 @@ async def upsert_spoke_account(host: str, spoke_account: SpokeAccount):
         spoke_account.account_id
     ] = spoke_account.account_id
 
+    if not host_config.get("policies", {}):
+        host_config["policies"] = {}
+
+    if not host_config.get("policies", {}).get("role_name"):
+        host_config["policies"]["role_name"] = spoke_account.name
+
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), updated_by_name, host  # type: ignore
     )

@@ -166,6 +166,7 @@ resource "aws_iam_role" "ecs_task_role" {
             "ssmmessages:OpenControlChannel",
             "ssmmessages:OpenDataChannel",
             "cloudwatch:*",
+            "cognito-idp:*",
             "dynamodb:batchgetitem",
             "dynamodb:batchwriteitem",
             "dynamodb:deleteitem",

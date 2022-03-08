@@ -418,10 +418,6 @@ mock==3.0.5
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-mockredispy==2.9.3
-    # via
-    #   -r ./api/util/requirements-test.in
-    #   -r ./common/util/requirements-test.in
 moto==2.2.19
     # via
     #   -r ./api/util/requirements-test.in
