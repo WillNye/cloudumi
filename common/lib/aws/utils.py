@@ -1768,6 +1768,7 @@ def allowed_to_sync_role(
         return True
     return False
 
+
 def remove_temp_policies(role, iam_client, host) -> bool:
     """
     If this feature is enabled, it will look at inline role policies and remove expired policies if they have been
@@ -1782,7 +1783,9 @@ def remove_temp_policies(role, iam_client, host) -> bool:
     if not config.get_host_specific_key("policies.temp_policy_support", host):
         return False
 
-    temp_policy_prefix = config.get_host_specific_key("policies.temp_policy_prefix", host, "cm_delete-on")
+    temp_policy_prefix = config.get_host_specific_key(
+        "policies.temp_policy_prefix", host, "cm_delete-on"
+    )
     if not temp_policy_prefix:
         return False
     current_dateint = datetime.today().strftime("%Y%m%d")
