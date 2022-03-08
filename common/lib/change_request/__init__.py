@@ -67,7 +67,9 @@ async def _generate_policy_sid(user: str) -> str:
     return f"cm{user_stripped}{int(time.time())}{random_string}"
 
 
-async def generate_policy_name(policy_name: str, user: str, host: str, expiration_date: Optional[int] = None) -> str:
+async def generate_policy_name(
+    policy_name: str, user: str, host: str, expiration_date: Optional[int] = None
+) -> str:
     """
     Generate a unique policy name identifying the user and time of the change request.
 
@@ -75,7 +77,9 @@ async def generate_policy_name(policy_name: str, user: str, host: str, expiratio
     :param user: User's e-mail address
     :return: policy name string
     """
-    temp_policy_prefix = config.get_host_specific_key("policies.temp_policy_prefix", host, "delete_on")
+    temp_policy_prefix = config.get_host_specific_key(
+        "policies.temp_policy_prefix", host, "delete_on"
+    )
     if policy_name:
         return policy_name
     user_stripped = user.split("@")[0]

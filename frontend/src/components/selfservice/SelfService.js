@@ -8,7 +8,7 @@ import SelfServiceStep2 from './SelfServiceStep2'
 import SelfServiceStep3 from './SelfServiceStep3'
 import { SelfServiceStepEnum } from './SelfServiceEnums'
 import { arnRegex } from '../../helpers/utils'
-import { DateTime } from "luxon";
+import { DateTime } from 'luxon'
 
 class SelfService extends Component {
   constructor(props) {
@@ -122,13 +122,13 @@ class SelfService extends Component {
   handleSetPolicyExpiration(event, data) {
     // Convert epoch milliseconds to epoch seconds
     if (!data?.value) {
-      return;
+      return
     }
-    const dateObj = DateTime.fromJSDate(data.value);
-    const dateString = dateObj.toFormat("yyyyMMdd");
+    const dateObj = DateTime.fromJSDate(data.value)
+    const dateString = dateObj.toFormat('yyyyMMdd')
     this.setState({
       expiration_date: parseInt(dateString),
-    });
+    })
   }
 
   handleStepClick(dir) {
@@ -228,7 +228,7 @@ class SelfService extends Component {
       role,
       services,
       updated_policy,
-      expiration_date
+      expiration_date,
     } = this.state
 
     let SelfServiceStep = null

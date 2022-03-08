@@ -1,5 +1,7 @@
 import asyncio
 import copy
+import time
+import unittest.mock as TestMock
 from datetime import datetime, timedelta
 from unittest import TestCase
 
@@ -391,3 +393,119 @@ class TestAwsLib(TestCase):
         )
 
         CONFIG.config = old_config
+
+    def test_remove_temp_policies(self):
+        from common.lib.aws import remove_temp_policies
+
+        iam_client = TestMock.Mock()
+        current_dateint = datetime.today().strftime("%Y%m%d")
+        past_dateint = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
+        future_dateint = (datetime.today() + timedelta(days=1)).strftime("%Y%m%d")
+        current_time = int(time.time())
+
+        # Should be deleted if date is current date
+        policy_name = f"cm_delete-on_{current_dateint}_username_{current_time}"
+        role = {
+            "RoleName": "rolewithtemppolicy",
+            "Arn": "arn:aws:iam::123456789012:role/rolewithtemppolicy",
+            "RolePolicyList": [
+                {
+                    "PolicyName": policy_name,
+                    "PolicyDocument": {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Action": ["sts:assumerole"],
+                                "Effect": "Allow",
+                                "Resource": ["arn:aws:iam::*:role/123"],
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+        result = remove_temp_policies(role, iam_client)
+        self.assertTrue(result)
+        iam_client.delete_role_policy.assert_called_with(
+            RoleName="rolewithtemppolicy", PolicyName=policy_name
+        )
+
+        # Should be deleted if date is past date
+        policy_name = f"cm_delete-on_{past_dateint}_username_{current_time}"
+        role = {
+            "RoleName": "rolewithtemppolicy",
+            "Arn": "arn:aws:iam::123456789012:role/rolewithtemppolicy",
+            "RolePolicyList": [
+                {
+                    "PolicyName": policy_name,
+                    "PolicyDocument": {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Action": ["sts:assumerole"],
+                                "Effect": "Allow",
+                                "Resource": ["arn:aws:iam::*:role/123"],
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+        iam_client = TestMock.Mock()
+        result = remove_temp_policies(role, iam_client)
+        self.assertTrue(result)
+        iam_client.delete_role_policy.assert_called_with(
+            RoleName="rolewithtemppolicy", PolicyName=policy_name
+        )
+
+        # Should not be deleted if date is future date
+        policy_name = f"cm_delete-on_{future_dateint}_username_{current_time}"
+        role = {
+            "RoleName": "rolewithtemppolicy",
+            "Arn": "arn:aws:iam::123456789012:role/rolewithtemppolicy",
+            "RolePolicyList": [
+                {
+                    "PolicyName": policy_name,
+                    "PolicyDocument": {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Action": ["sts:assumerole"],
+                                "Effect": "Allow",
+                                "Resource": ["arn:aws:iam::*:role/123"],
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+        iam_client = TestMock.Mock()
+        result = remove_temp_policies(role, iam_client)
+        self.assertFalse(result)
+        iam_client.delete_role_policy.assert_not_called()
+
+        # Should not be deleted if date is invalid date
+        policy_name = f"cm_delete-on_INVALID_username_{current_time}"
+        role = {
+            "RoleName": "rolewithtemppolicy",
+            "Arn": "arn:aws:iam::123456789012:role/rolewithtemppolicy",
+            "RolePolicyList": [
+                {
+                    "PolicyName": policy_name,
+                    "PolicyDocument": {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Action": ["sts:assumerole"],
+                                "Effect": "Allow",
+                                "Resource": ["arn:aws:iam::*:role/123"],
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+        iam_client = TestMock.Mock()
+        result = remove_temp_policies(role, iam_client)
+        self.assertFalse(result)
+        iam_client.delete_role_policy.assert_not_called()

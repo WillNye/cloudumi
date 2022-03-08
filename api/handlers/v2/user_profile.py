@@ -63,7 +63,9 @@ class UserProfileHandler(BaseAPIV1Handler):
                     60,
                 ),
             },
-            "temp_policy_support": config.get_host_specific_key("policies.temp_policy_support", host, True),
+            "temp_policy_support": config.get_host_specific_key(
+                "policies.temp_policy_support", host, True
+            ),
         }
 
         custom_page_header: Dict[str, str] = await get_custom_page_header(

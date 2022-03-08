@@ -65,7 +65,7 @@ from common.lib.aws.utils import (
     cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
-    remove_temp_policies
+    remove_temp_policies,
 )
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
@@ -992,7 +992,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "dev",
         "test",
     ]:
-        client = boto3_cached_conn(
+        conn = boto3_cached_conn(
             "iam",
             host,
             account_number=account_id,
@@ -1007,6 +1007,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "consoleme_cache_iam_resources_for_account"
             ),
         )
+        client = boto3_cached_conn("iam", **conn)
         paginator = client.get_paginator("get_account_authorization_details")
         response_iterator = paginator.paginate()
         all_iam_resources = defaultdict(list)
@@ -1128,7 +1129,9 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         # Save them:
         for role in iam_roles:
             if remove_temp_policies(role, client, host):
-                role = aws.get_iam_role_sync(account_id, role.get("RoleName", conn))
+                role = aws.get_iam_role_sync(
+                    account_id, role.get("RoleName", conn, host)
+                )
                 async_to_sync(aws.cloudaux_to_aws)(role)
             role_entry = {
                 "arn": role.get("Arn"),
