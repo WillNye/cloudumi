@@ -21,7 +21,9 @@ async def set_ip_restriction(host: str, ip_restriction: str) -> bool:
 
 
 async def get_ip_restrictions(host: str) -> list:
-    return config.get_host_specific_key("ip_restrictions", host)
+    return config.get_host_specific_key("ip_restrictions", host).get(
+        "ip_restrictions", []
+    )
 
 
 async def delete_ip_restriction(host: str, ip_restriction: str) -> bool:

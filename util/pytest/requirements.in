@@ -1,0 +1,12 @@
+boto3
+mock
+mockredis
+moto
+#mypy
+pytest
+pytest-asyncio
+#pytest-black
+#pytest-pylint
+redislite
+requests-mock
+tornado

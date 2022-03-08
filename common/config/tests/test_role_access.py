@@ -1,3 +1,4 @@
+from unittest import TestCase
 from unittest.mock import patch
 
 from asgiref.sync import async_to_sync
@@ -5,10 +6,9 @@ from tornado.httpclient import AsyncHTTPClient
 
 from common.config import role_access
 from common.lib.dynamo import RestrictedDynamoHandler
-from common.tests.util import ConsoleMeAsyncHTTPTestCase
 
 
-class TestRoleAccess(ConsoleMeAsyncHTTPTestCase):
+class TestRoleAccess(TestCase):
     """Docstring in public class."""
 
     def setUp(self):
