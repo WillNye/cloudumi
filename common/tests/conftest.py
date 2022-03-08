@@ -10,7 +10,6 @@ import boto3
 import pytest
 import redislite
 from mock import MagicMock, Mock, patch
-from mockredis import mock_strict_redis_client
 from moto import (
     mock_config,
     mock_dynamodb2,
@@ -130,17 +129,6 @@ class AioTestCase(unittest.TestCase):
                 self._function_cache[item] = self.coroutine_function_decorator(attr)
             return self._function_cache[item]
         return attr
-
-
-class MockBaseHandler:
-    async def authorization_flow(
-        self, user=None, console_only=True, refresh_cache=False
-    ):
-        self.user = "test@domain.com"
-        self.ip = "1.2.3.4"
-        self.groups = ["group1", "group2"]
-        self.contractor = False
-        self.red = mock_strict_redis_client()
 
 
 class MockBaseMtlsHandler:
