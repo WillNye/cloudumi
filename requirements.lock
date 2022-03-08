@@ -480,12 +480,12 @@ rsa==4.8
     # via
     #   google-auth
     #   python-jose
-ruamel-yaml==0.17.20
+ruamel.yaml==0.17.21
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
-ruamel-yaml-clib==0.2.6
+ruamel.yaml.clib==0.2.6
     # via ruamel.yaml
 s3transfer==0.5.1
     # via boto3
