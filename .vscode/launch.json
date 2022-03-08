@@ -81,12 +81,13 @@
     {
       "name": "Debug test",
       "type": "python",
-      "request": "launch",
+      "request": "test",
       "console": "externalTerminal",
       "justMyCode": false,
       "stopOnEntry": true,
       "env": {
-        "CONFIG_LOCATION": "${workspaceFolder}/util/pytest/test_configuration.yaml"
+        "CONFIG_LOCATION": "${workspaceFolder}/util/pytest/test_configuration.yaml",
+        "PYTHONPATH": "${workspaceFolder}/"
       }
     }
   ]

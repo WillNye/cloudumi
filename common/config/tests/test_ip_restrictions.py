@@ -1,11 +1,13 @@
 from unittest import TestCase
 from unittest.mock import patch
 
+import pytest
 from asgiref.sync import async_to_sync
 
 from common.config import config, ip_restrictions
 
 
+@pytest.mark.usefixtures("aws_credentials")
 class TestIpRestrictions(TestCase):
     """Docstring in public class."""
 
