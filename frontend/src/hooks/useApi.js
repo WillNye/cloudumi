@@ -27,6 +27,7 @@ const useInnerUtils = () => {
       setState({ data: null, status: 'done', error: 'Error!' })
       return 'Error!'
     }
+    console.log(res)
     let response = res?.data
     setState({ data: response, status: 'done' })
   }

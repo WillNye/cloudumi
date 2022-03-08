@@ -126,28 +126,28 @@ export const hubAccountColumns = ({ handleClick }) => [
 export const roleAccessAuthColumns = ({
   handleClick = null,
   handleChange = null,
-  disabled,
+  disabled = true,
 }) => [
   {
     Header: 'Tag Name',
-    accessor: 'tagName',
+    accessor: 'tag_name',
   },
   {
-    Header: 'Authorizations',
-    accessor: 'authorizations',
+    Header: 'Source',
+    accessor: 'source',
     width: 60,
     align: 'center',
   },
   {
-    Header: 'Allow Web Console Access',
-    accessor: 'allowWebConsole',
-    align: 'right',
+    Header: 'Allow Web Access',
+    accessor: 'web_access',
+    align: 'center',
     Cell: ({ row }) => (
       <Checkbox
         toggle
         onChange={handleChange}
-        disabled={disabled}
-        defaultChecked={row?.values?.allowWebConsole}
+        disabled
+        defaultChecked={row?.values?.web_access}
       />
     ),
   },
