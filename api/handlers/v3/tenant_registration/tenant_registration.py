@@ -635,7 +635,7 @@ tenant_details:
   creator: {tenant.email}
   creation_time: {int(time.time())}
 site_config:
-  landing_url: /settings
+  landing_url: /
 headers:
   identity:
     enabled: false
