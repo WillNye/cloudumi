@@ -49,7 +49,7 @@ class HubAccountHandler(BaseHandler):
             count=1 if hub_account_data else 0,
         )
         if hub_account_data:
-            res.data = (hub_account_data.dict(),)
+            res.data = hub_account_data.dict()
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
 

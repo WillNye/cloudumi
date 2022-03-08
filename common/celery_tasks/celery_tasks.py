@@ -3058,11 +3058,11 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
-    "cache_identities_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
-        "options": {"expires": 180},
-        "schedule": schedule_30_minute,
-    },
+    # "cache_identities_for_all_hosts": {
+    #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
+    #     "options": {"expires": 180},
+    #     "schedule": schedule_30_minute,
+    # },
     # "cache_identity_group_requests_for_all_hosts": {
     #     "task": "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_hosts",
     #     "options": {"expires": 180},
