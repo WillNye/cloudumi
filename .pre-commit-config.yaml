@@ -10,6 +10,20 @@ repos:
       - id: check-yaml
         args: [--allow-multiple-documents]
         exclude: "^docs/gitbook/|^helm/cloudumi|cdk/resources/create_config_lambda/config.yaml|^deploy"
+  - repo: local
+    hooks:
+      - id: python-async-to-sync
+        name: check for incorrect usage of async_to_sync
+        description: "A quick check to make sure async_to_sync is called with async_to_sync(function)(*args, **kwargs)"
+        entry: '\basync_to_sync\([a-zA-Z0-9_]+\('
+        language: pygrep
+        types: [python]
+      - id: python-sync-to-async
+        name: check for incorrect usage of async_to_sync
+        description: "A quick check to make sure sync_to_async is called with sync_to_async(function)(*args, **kwargs)"
+        entry: '\bsync_to_async\([a-zA-Z0-9_]+\('
+        language: pygrep
+        types: [python]
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
     hooks:
@@ -47,7 +61,7 @@ repos:
       - id: prettier
         exclude: "^helm/consoleme"
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.62.3
+    rev: v1.64.0
     hooks:
       - id: terraform_fmt
       - id: terraform_tfsec
