@@ -9,6 +9,7 @@ filegroup(
 py_library(
     name = "lib",
     srcs = [
+        "__init__.py",
         "conftest.py",
         "globals.py",
         "util.py",

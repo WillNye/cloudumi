@@ -9,7 +9,8 @@ def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
         name = name,
         srcs = [
             "//util/pytest:wrapper.py",
-            "//util/pytest:conftest.py",
+            "//util/pytest/fixtures:conftest.py",
+            "//util/pytest/fixtures:globals.py",
         ] + srcs,
         main = "//util/pytest:wrapper.py",
         args = [
@@ -22,6 +23,7 @@ def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
         python_version = "PY3",
         srcs_version = "PY3",
         deps = deps + [
+            "//common/celery_tasks:lib",
             requirement("boto3"),
             requirement("pytest"),
             requirement("pytest-asyncio"),

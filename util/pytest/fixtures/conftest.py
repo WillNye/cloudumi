@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 import boto3
 import pytest
 import redislite
+
+# Unit tests will create mock resources in us-east-1
+from fixtures.globals import host
 from mock import MagicMock, Mock, patch
 from mockredis import mock_strict_redis_client
 from moto import (
@@ -22,9 +25,6 @@ from moto import (
     mock_sts,
 )
 from tornado.concurrent import Future
-
-# Unit tests will create mock resources in us-east-1
-from common.tests.globals import host
 
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["ASYNC_TEST_TIMEOUT"] = "100"

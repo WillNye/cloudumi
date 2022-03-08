@@ -33,7 +33,11 @@ async def delete_ip_restriction(host: str, ip_restriction: str) -> bool:
         return False
     if ip_restriction not in host_config["ip_restrictions"]:
         return False
-    host_config["ip_restrictions"].pop(ip_restriction)
+    try:
+        idx = host_config["ip_restrictions"].index(ip_restriction)
+    except ValueError:
+        return False
+    host_config["ip_restrictions"].pop(idx)
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), updated_by_name, host
     )
