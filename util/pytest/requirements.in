@@ -5,6 +5,7 @@ moto
 #mypy
 pytest
 pytest-asyncio
+pyyaml
 #pytest-black
 #pytest-pylint
 redislite

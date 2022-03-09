@@ -14,7 +14,7 @@ Magic? Yes.
 ## Ground rules
 
 - Add unit tests close to their bazel module - so for instance, unit tests for the `common/config` bazel module should have tests in `common/config/tests`
-- Add any additional fixtures **only** in `/util/pytest/fixtures/` as a submodule (see {#developing-new-fixtures})
+- Add any additional fixtures **only** in `/util/pytest/fixtures/` as a submodule (see #developing-new-fixtures--test-stuff)
 
 ## Test with bazel
 

@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import boto3
 import pytest
 import redislite
+from asgiref.sync import async_to_sync
 
 # Unit tests will create mock resources in us-east-1
 from fixtures.globals import host
@@ -25,6 +26,8 @@ from moto import (
     mock_sts,
 )
 from tornado.concurrent import Future
+
+from common.lib import dynamo
 
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["ASYNC_TEST_TIMEOUT"] = "100"
@@ -755,6 +758,56 @@ def users_table(dynamodb):
     )
 
     yield dynamodb
+
+
+@pytest.fixture(autouse=True, scope="session")
+def tenant_static_configs_table(dynamodb):
+    table_name = "tenant_static_configs"
+    dynamodb.create_table(
+        TableName=table_name,
+        KeySchema=[
+            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "id", "KeyType": "RANGE"},
+        ],  # Partition key
+        AttributeDefinitions=[
+            {"AttributeName": "id", "AttributeType": "S"},
+            {"AttributeName": "host", "AttributeType": "S"},
+        ],
+        ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
+        StreamSpecification={
+            "StreamEnabled": False,
+            "StreamViewType": "NEW_AND_OLD_IMAGES",
+        },
+        GlobalSecondaryIndexes=[
+            {
+                "IndexName": "host_index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "host",
+                        "KeyType": "HASH",
+                    },
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL",
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 1,
+                    "WriteCapacityUnits": 1,
+                },
+            }
+        ],
+    )
+
+    yield dynamodb
+
+
+@pytest.fixture(scope="session")
+def with_test_configuration_tenant_static_config_data(tenant_static_configs_table):
+    ddb = dynamo.RestrictedDynamoHandler()
+    with open("util/pytest/test_configuration.yaml", "r") as fp:
+        async_to_sync(ddb.update_static_config_for_host)(
+            fp, "test@noq.dev", "test.noq.dev"
+        )
 
 
 @pytest.fixture(autouse=True, scope="session")

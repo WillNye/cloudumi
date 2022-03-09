@@ -7,29 +7,21 @@ from asgiref.sync import async_to_sync
 from common.config import config, ip_restrictions
 
 
-@pytest.mark.usefixtures("aws_credentials")
 class TestIpRestrictions(TestCase):
     """Docstring in public class."""
 
     def setUp(self):
         super(TestIpRestrictions, self).setUp()
 
-    @patch("common.lib.dynamo.RestrictedDynamoHandler")
-    def test_set_ip_restriction_without_ip_restrictions(
-        self, mock_restricted_dynamo_handler
-    ):
+    def test_set_ip_restriction_without_ip_restrictions(self):
         with patch.object(
             config, "get_tenant_static_config_from_dynamo", return_value={}
         ):
             assert async_to_sync(ip_restrictions.set_ip_restriction)(
                 "host", "10.10.10.10/8"
             )
-            assert mock_restricted_dynamo_handler.called
 
-    @patch("common.lib.dynamo.RestrictedDynamoHandler")
-    def test_set_ip_restriction_with_ip_restrictions(
-        self, mock_restricted_dynamo_handler
-    ):
+    def test_set_ip_restriction_with_ip_restrictions(self):
         with patch.object(
             config,
             "get_tenant_static_config_from_dynamo",
@@ -38,19 +30,15 @@ class TestIpRestrictions(TestCase):
             assert async_to_sync(ip_restrictions.set_ip_restriction)(
                 "host", "10.10.10.10/8"
             )
-            assert mock_restricted_dynamo_handler.called
 
-    @patch("common.lib.dynamo.RestrictedDynamoHandler")
-    def test_delete_ip_restriction_exists(self, mock_restricted_dynamo_handler):
-        with patch.object(
-            config,
-            "get_tenant_static_config_from_dynamo",
-            return_value={"ip_restrictions": ["10.10.10.10/8"]},
-        ):
-            assert async_to_sync(ip_restrictions.delete_ip_restriction)(
-                "host", "10.10.10.10/8"
-            )
-            assert mock_restricted_dynamo_handler.called
+    @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
+    def test_delete_ip_restriction_exists(self):
+        assert async_to_sync(ip_restrictions.set_ip_restriction)(
+            "host", "10.10.10.10/8"
+        )
+        assert async_to_sync(ip_restrictions.delete_ip_restriction)(
+            "host", "10.10.10.10/8"
+        )
 
     def test_delete_ip_restriction_empty(self):
         with patch.object(

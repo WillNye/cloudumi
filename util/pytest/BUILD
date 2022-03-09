@@ -36,10 +36,8 @@ py_package(
     packages = [
         "common.celery_tasks.celery_tasks",
         "common.config",
-        "common.lib.account_indexers",
-        "common.lib.cache",
-        "common.lib.dynamo",
-        "common.lib.redis",
+        "common.exceptions",
+        "common.lib",
         "plugins.celery_tasks",
         "util.pytest",
     ],
