@@ -1,19 +1,10 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
-filegroup(
-    name = "test_files",
-    data = ["conftest.py"],
-    visibility = ["//visibility:public"],
-)
-
 py_library(
     name = "lib",
-    srcs = [
-        "__init__.py",
-        "conftest.py",
-        "globals.py",
-        "util.py",
-    ],
+    srcs = glob([
+        "**/*py",
+    ]),
     visibility = ["//visibility:public"],
 )
 

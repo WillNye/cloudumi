@@ -5,9 +5,9 @@ INT_DEPS = [
     "//common:lib",
     "//common/config:lib",
     "//common/exceptions:lib",
-    "//common/tests:lib",
     "//identity:lib",
     "//plugins/metrics:lib",
+    "//util/pytest/fixtures:lib",
 ]
 
 EXT_DEPS = [

@@ -1,9 +1,9 @@
 import ujson as json
 from mock import patch
 
-from common.tests.conftest import create_future
-from common.tests.globals import host
-from common.tests.util import ConsoleMeAsyncHTTPTestCase
+from util.pytest.fixtures.conftest import create_future
+from util.pytest.fixtures.globals import host
+from util.pytest.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):

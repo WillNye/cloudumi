@@ -20,6 +20,9 @@ py_library(
     deps = [
         "//common:lib",
         "//common/config:lib",
+        "//common/exceptions:lib",
+        "//identity:lib",
+        "//plugins/metrics:lib",
         # "//common/tests:lib",
         # requirement("boto3"),
         # requirement("pytest"),
@@ -34,11 +37,9 @@ py_library(
 py_package(
     name = "fixtures_pkg",
     packages = [
-        "common.celery_tasks.celery_tasks",
-        "common.config",
-        "common.exceptions",
-        "common.lib",
-        "plugins.celery_tasks",
+        "common",
+        "identity",
+        "plugins",
         "util.pytest",
     ],
     deps = [":fixtures"],

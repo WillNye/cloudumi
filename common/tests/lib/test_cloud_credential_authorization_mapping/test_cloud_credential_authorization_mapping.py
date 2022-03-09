@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from common.tests.globals import host
+from util.pytest.fixtures.globals import host
 
 
 class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
