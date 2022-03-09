@@ -1,5 +1,4 @@
 exports_files([
-    "__init__.py",
     "conftest.py",
     "globals.py",
 ])
@@ -7,7 +6,6 @@ exports_files([
 py_library(
     name = "lib",
     srcs = [
-        "__init__.py",
         "conftest.py",
         "globals.py",
         "util.py",

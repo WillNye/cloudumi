@@ -21,6 +21,7 @@ py_library(
         "//common:lib",
         "//common/config:lib",
         "//common/exceptions:lib",
+        "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
         # "//common/tests:lib",
@@ -40,7 +41,7 @@ py_package(
         "common",
         "identity",
         "plugins",
-        "util.pytest",
+        "util",
     ],
     deps = [":fixtures"],
 )
