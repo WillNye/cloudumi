@@ -992,7 +992,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "dev",
         "test",
     ]:
-        conn = boto3_cached_conn(
+        client = boto3_cached_conn(
             "iam",
             host,
             account_number=account_id,
@@ -1007,7 +1007,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "consoleme_cache_iam_resources_for_account"
             ),
         )
-        client = boto3_cached_conn("iam", **conn)
         paginator = client.get_paginator("get_account_authorization_details")
         response_iterator = paginator.paginate()
         all_iam_resources = defaultdict(list)
@@ -1130,7 +1129,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         for role in iam_roles:
             if remove_temp_policies(role, client, host):
                 role = aws.get_iam_role_sync(
-                    account_id, role.get("RoleName", conn, host)
+                    account_id, role.get("RoleName"), client, host
                 )
                 async_to_sync(aws.cloudaux_to_aws)(role)
             role_entry = {
