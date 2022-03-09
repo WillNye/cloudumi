@@ -60,6 +60,9 @@ from common.lib.aws.s3 import list_buckets
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
 from common.lib.aws.typeahead_cache import cache_aws_resource_details
+from common.lib.aws.unused_permissions_remover import (
+    calculate_unused_policy_for_identities,
+)
 from common.lib.aws.utils import (
     allowed_to_sync_role,
     cache_all_scps,
@@ -1238,6 +1241,15 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                     ).format(resource_type="access_advisor", account_id=account_id),
                     host=host,
                 )
+                effective_role_permissions = async_to_sync(
+                    calculate_unused_policy_for_identities
+                )(
+                    host,
+                    arns,
+                    iam_policies,
+                    aa_data=aa_data,
+                )
+                print(effective_role_permissions)
 
     stats.count(
         "cache_iam_resources_for_account.success", tags={"account_id": account_id}
@@ -3110,3 +3122,5 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
+
+# cache_iam_resources_for_account("759357822767", "localhost")

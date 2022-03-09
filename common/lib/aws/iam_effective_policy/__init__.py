@@ -3,11 +3,7 @@ from asgiref.sync import async_to_sync
 from common.config import config
 from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
 from common.lib.aws.iam import get_role_managed_policy_documents
-from common.lib.aws.utils import (
-    calculate_policy_changes,
-    combine_all_policy_statements,
-    condense_statements,
-)
+from common.lib.aws.utils import condense_statements
 
 
 async def calculate_effective_policy_for_identity(host, arn, force_refresh=False):

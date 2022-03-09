@@ -12,11 +12,7 @@ py_binary(
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-<<<<<<< HEAD
-        "AWS_PROFILE": "noq_dev",
-=======
         "AWS_PROFILE": "noq_cluster_dev",
->>>>>>> main
     },
     deps = [
         "//common:lib",

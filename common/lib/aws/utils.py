@@ -2046,6 +2046,13 @@ async def entry_in_entries(value: str, values_to_compare: List[str]) -> bool:
     Returns True if value is included in values_to_compare, using wildcard matching.
     """
     for compare_to in values_to_compare:
+        if value == compare_to:
+            return True
+        if compare_to == "*":
+            return True
+        if "*" not in compare_to and ":" in value and ":" in compare_to:
+            if compare_to.split(":")[0] != value.split(":")[0]:
+                continue
         if fnmatch.fnmatch(value, compare_to):
             return True
     return False
@@ -2140,9 +2147,7 @@ async def generate_policy_from_permissions_string(permission: str) -> Dict[str, 
     return policy
 
 
-async def combine_all_policy_statements(
-    host, role, managed_policy_details
-) -> List[Dict[str, Any]]:
+async def combine_all_policy_statements(host, role, policies) -> List[Dict[str, Any]]:
     """
     Takes a list of policies and combines them into a single list of policies. This is useful for combining inline
     policies into a single list of policies.
@@ -2192,7 +2197,7 @@ async def calculate_policy_changes(
             all_before_policy_statements.append(copy.deepcopy(statement))
             new_actions = []
             new_resources = []
-            if should_exclude_policy_from_comparison(statement):
+            if await should_exclude_policy_from_comparison(statement):
                 after_policy_statements.append(statement)
                 continue
             if isinstance(statement["Action"], str):
@@ -2218,7 +2223,7 @@ async def calculate_policy_changes(
             computed_changes["after_policy_document"] = {
                 "Statement": after_policy_statements,
             }
-            if before_policy_document["Version"]:
+            if before_policy_document.get("Version"):
                 computed_changes["after_policy_document"][
                     "Version"
                 ] = before_policy_document["Version"]
