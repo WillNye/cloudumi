@@ -776,6 +776,11 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
         raise MissingConfigurationValue(
             "Missing Default Assume Role Policy Configuration"
         )
+
+    default_max_session_duration = config.get_host_specific_key(
+        "user_role_creator.default_max_session_duration", host, 3600
+    )
+
     if create_model.description:
         description = create_model.description
     else:
@@ -797,6 +802,7 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
         await sync_to_async(iam_client.create_role)(
             RoleName=create_model.role_name,
             AssumeRolePolicyDocument=json.dumps(default_trust_policy),
+            MaxSessionDuration=default_max_session_duration,
             Description=description,
             Tags=[],
         )
@@ -943,6 +949,16 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
             "Missing Default Assume Role Policy Configuration"
         )
 
+    default_max_session_duration = config.get_host_specific_key(
+        "user_role_creator.default_max_session_duration", host, 3600
+    )
+
+    max_session_duration = (
+        role.max_session_duration
+        if clone_model.options.max_session_duration
+        else default_max_session_duration
+    )
+
     if (
         clone_model.options.copy_description
         and role.description is not None
@@ -975,6 +991,7 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         await sync_to_async(iam_client.create_role)(
             RoleName=clone_model.dest_role_name,
             AssumeRolePolicyDocument=json.dumps(trust_policy),
+            MaxSessionDuration=max_session_duration,
             Description=description,
             Tags=tags,
         )

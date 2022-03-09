@@ -3123,4 +3123,4 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
 
-# cache_iam_resources_for_account("759357822767", "localhost")
+cache_iam_resources_for_account("759357822767", "localhost")
