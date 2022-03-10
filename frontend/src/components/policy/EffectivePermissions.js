@@ -12,8 +12,8 @@ const EffectivePermissions = () => {
   // useEffect(() => get.do(), [])
 
   // const handleRefresh = () => get.do()
-  const { sendRequestCommon } = useAuth()
-  const [data, setData] = useState('')
+  const [error, setError] = useState(null)
+  const [messages, setMessages] = useState([])
   const { resourceEffectivePermissions } = useEffectivePermissions()
 
   // useEffect(() => {
@@ -30,6 +30,15 @@ const EffectivePermissions = () => {
   //   }
   //   fetchData()
   // }, [sendRequestCommon])
+  const onLintError = (lintErrors) => {
+    if (lintErrors.length > 0) {
+      setError(true)
+      setMessages(lintErrors)
+    } else {
+      setError(false)
+      setMessages([])
+    }
+  }
 
   return (
     <>
@@ -52,6 +61,7 @@ const EffectivePermissions = () => {
       >
         {resourceEffectivePermissions ? (
           <MonacoDiffComponent
+            onLintError={onLintError}
             oldValue={JSON.stringify(
               resourceEffectivePermissions.effective_policy,
               null,
