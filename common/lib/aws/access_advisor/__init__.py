@@ -32,10 +32,19 @@ def get_epoch_authenticated(service_authenticated: int) -> Tuple[int, bool]:
         return 0, True
 
     # we have an odd timestamp, try to check
-    elif BEGINNING_OF_2015_MILLI_EPOCH < service_authenticated < (current_time * 1000):
+    # Sometimes AWS reports incorrect timestamps. We add current_time by a day to compensate
+    elif (
+        BEGINNING_OF_2015_MILLI_EPOCH
+        < service_authenticated
+        < (current_time * 1000) + 86400000
+    ):
         return int(service_authenticated / 1000), True
 
-    elif (BEGINNING_OF_2015_MILLI_EPOCH / 1000) < service_authenticated < current_time:
+    elif (
+        (BEGINNING_OF_2015_MILLI_EPOCH / 1000)
+        < service_authenticated
+        < current_time + 86400
+    ):
         return service_authenticated, True
 
     else:
@@ -160,7 +169,7 @@ class AccessAdvisor:
 
                     updated_item["LastAuthenticated"] = last_auth
                     updated_list.append(updated_item)
-                if details.get("Truncated", False):
+                if details.get("IsTruncated", False):
                     try:
                         details = self._get_service_last_accessed_details(
                             iam, job_id, marker=details.get("Marker")

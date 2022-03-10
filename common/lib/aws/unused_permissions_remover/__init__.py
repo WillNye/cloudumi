@@ -6,22 +6,45 @@ from common.config import config
 from common.lib.aws.access_advisor import get_epoch_authenticated
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.utils import calculate_policy_changes, condense_statements
+from common.lib.cache import retrieve_json_data_from_redis_or_s3
 
 log = config.get_logger()
 
 
 async def calculate_unused_policy_for_identities(
-    host, arns, managed_policies, aa_data, force_refresh=False
+    host,
+    arns,
+    managed_policy_details,
+    aa_data=None,
+    force_refresh=False,
+    account_id=None,
 ):
 
-    managed_policy_details = {}
+    if not aa_data:
+        if not account_id:
+            raise Exception("Unable to retrieve access advisor data without account ID")
+        aa_data = await retrieve_json_data_from_redis_or_s3(
+            s3_bucket=config.get_host_specific_key(
+                "cache_iam_resources_for_account.iam_policies.s3.bucket",
+                host,
+            ),
+            s3_key=config.get_host_specific_key(
+                "cache_iam_resources_for_account.iam_policies.s3.file",
+                host,
+                "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
+            ).format(resource_type="access_advisor", account_id=account_id),
+            host=host,
+            max_age=86400,
+        )
 
-    for policy in managed_policies:
-        policy_name = policy["PolicyName"]
-        for policy_version in policy["PolicyVersionList"]:
-            if policy_version["IsDefaultVersion"]:
-                managed_policy_details[policy_name] = policy_version["Document"]
-                break
+    # managed_policy_details = {}
+
+    # for policy in managed_policies:
+    #     policy_name = policy["PolicyName"]
+    #     for policy_version in policy["PolicyVersionList"]:
+    #         if policy_version["IsDefaultVersion"]:
+    #             managed_policy_details[policy_name] = policy_version["Document"]
+    #             break
 
     minimum_age = 90  # TODO: Make this configurable
     ago = datetime.timedelta(minimum_age)
@@ -102,16 +125,14 @@ async def calculate_unused_policy_for_identities(
             + individual_role_managed_policy_changes["all_after_policy_statements"]
         )
 
+        effective_policy = {"Statement": before_combined}
+        effective_policy_unused_permissions_removed = {"Statement": after_combined}
+
         if len(json.dumps(after_combined)) > 10240:
             log.error(
                 "After policy is too large: {}".format(len(json.dumps(after_combined)))
             )
             return
-
-        effective_policy = json.dumps(before_combined, indent=2)
-        effective_policy_unused_permissions_removed = json.dumps(
-            after_combined, indent=2
-        )
 
         role_permissions_data[arn] = {
             "arn": arn,

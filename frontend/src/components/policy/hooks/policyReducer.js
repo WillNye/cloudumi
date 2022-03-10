@@ -58,6 +58,12 @@ export const reducer = (state, action) => {
         ...state,
         context: action.context,
       }
+
+    case 'SET_RESOURCE_EFFECTIVE_PERMISSIONS':
+      return {
+        ...state,
+        resourceEffectivePermissions: action.resourceEffectivePermissions,
+      }
     default:
       throw new Error(`No such action type ${action.type} exist`)
   }

@@ -1219,7 +1219,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         ):
             store_iam_resources_in_git(all_iam_resources, account_id, host)
 
-        # TODO: Don't do this all the time. But include a last_updated parameter
+        # TODO: Don't do this all the time. Maybe once per day. Support refreshing for specific role on demand
         if config.get_host_specific_key(
             "cache_iam_resources_for_account.check_unused_permissions.enabled",
             host,
@@ -1241,7 +1241,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                     ).format(resource_type="access_advisor", account_id=account_id),
                     host=host,
                 )
-                effective_role_permissions = async_to_sync(
+                effective_identity_permissions = async_to_sync(
                     calculate_unused_policy_for_identities
                 )(
                     host,
@@ -1249,7 +1249,19 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                     iam_policies,
                     aa_data=aa_data,
                 )
-                print(effective_role_permissions)
+                async_to_sync(store_json_results_in_redis_and_s3)(
+                    effective_identity_permissions,
+                    s3_bucket=config.get_host_specific_key(
+                        "cache_iam_resources_for_account.effective_identity_permissions.s3.bucket",
+                        host,
+                    ),
+                    s3_key=config.get_host_specific_key(
+                        "cache_iam_resources_for_account.effective_identity_permissions.s3.file",
+                        host,
+                        "effective_identity_permissions/cache_effective_identity_permissions_{account_id}_v1.json.gz",
+                    ).format(account_id=account_id),
+                    host=host,
+                )
 
     stats.count(
         "cache_iam_resources_for_account.success", tags={"account_id": account_id}

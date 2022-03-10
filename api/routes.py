@@ -1,5 +1,7 @@
 import os
 
+from api.handlers.v3.services.effective_role_policy import EffectiveRolePolicyHandler
+
 """Web routes."""
 import pkg_resources
 import sentry_sdk
@@ -218,6 +220,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/role-access/credential-brokering/auth-tags/(?P<_tag_name>[^\/]+)/?",
             AuthorizedGroupsTagsDeleteHandler,
+        ),
+        (
+            r"/api/v3/services/aws/policies/effective/role/(?P<_account_id>[^\/]+)/(?P<_role_name>[^\/]+)/?",
+            EffectiveRolePolicyHandler,
         ),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),

@@ -2212,27 +2212,30 @@ async def calculate_policy_changes(
         before_policy_document_copy = copy.deepcopy(before_policy_document)
         for statement in before_policy_document_copy["Statement"]:
             all_before_policy_statements.append(copy.deepcopy(statement))
-            new_actions = []
-            new_resources = []
+            new_actions = set()
+            new_resources = set()
             if await should_exclude_policy_from_comparison(statement):
                 after_policy_statements.append(statement)
                 continue
             if isinstance(statement["Action"], str):
                 statement["Action"] = [statement["Action"]]
             for action in statement["Action"]:
-                if action.split(":")[0] in used_services:
-                    new_actions.append(action)
+                if used_services and action == "*":
+                    for service in used_services:
+                        new_actions.add(f"{service}:*")
+                elif action.split(":")[0] in used_services:
+                    new_actions.add(action)
             if isinstance(statement["Resource"], str):
                 statement["Resource"] = [statement["Resource"]]
 
             for resource in statement["Resource"]:
                 if resource == "*":
-                    new_resources.append(resource)
+                    new_resources.add(resource)
                 elif resource.split(":")[2] in used_services:
-                    new_resources.append(resource)
+                    new_resources.add(resource)
             if new_actions and new_resources:
-                statement["Action"] = new_actions
-                statement["Resource"] = new_resources
+                statement["Action"] = list(new_actions)
+                statement["Resource"] = list(new_resources)
                 after_policy_statements.append(statement)
                 all_after_policy_statements.append(statement)
                 continue
