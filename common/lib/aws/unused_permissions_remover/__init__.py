@@ -23,6 +23,7 @@ async def calculate_unused_policy_for_identities(
     if not aa_data:
         if not account_id:
             raise Exception("Unable to retrieve access advisor data without account ID")
+        # TODO: Figure out proper expiration
         aa_data = await retrieve_json_data_from_redis_or_s3(
             s3_bucket=config.get_host_specific_key(
                 "cache_iam_resources_for_account.iam_policies.s3.bucket",
@@ -34,7 +35,7 @@ async def calculate_unused_policy_for_identities(
                 "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
             ).format(resource_type="access_advisor", account_id=account_id),
             host=host,
-            max_age=86400,
+            # max_age=86400,
         )
 
     # managed_policy_details = {}
