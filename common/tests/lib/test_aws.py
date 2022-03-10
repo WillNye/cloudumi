@@ -404,7 +404,7 @@ class TestAwsLib(TestCase):
         current_time = int(time.time())
 
         # Should be deleted if date is current date
-        policy_name = f"cm_delete-on_{current_dateint}_username_{current_time}"
+        policy_name = f"noq_delete_on_{current_dateint}_username_{current_time}"
         role = {
             "RoleName": "rolewithtemppolicy",
             "Arn": "arn:aws:iam::123456789012:role/rolewithtemppolicy",
@@ -431,7 +431,7 @@ class TestAwsLib(TestCase):
         )
 
         # Should be deleted if date is past date
-        policy_name = f"cm_delete-on_{past_dateint}_username_{current_time}"
+        policy_name = f"noq_delete_on_{past_dateint}_username_{current_time}"
         role = {
             "RoleName": "rolewithtemppolicy",
             "Arn": "arn:aws:iam::123456789012:role/rolewithtemppolicy",
@@ -459,7 +459,7 @@ class TestAwsLib(TestCase):
         )
 
         # Should not be deleted if date is future date
-        policy_name = f"cm_delete-on_{future_dateint}_username_{current_time}"
+        policy_name = f"noq_delete_on_{future_dateint}_username_{current_time}"
         role = {
             "RoleName": "rolewithtemppolicy",
             "Arn": "arn:aws:iam::123456789012:role/rolewithtemppolicy",
@@ -485,7 +485,7 @@ class TestAwsLib(TestCase):
         iam_client.delete_role_policy.assert_not_called()
 
         # Should not be deleted if date is invalid date
-        policy_name = f"cm_delete-on_INVALID_username_{current_time}"
+        policy_name = f"noq_delete_on_INVALID_username_{current_time}"
         role = {
             "RoleName": "rolewithtemppolicy",
             "Arn": "arn:aws:iam::123456789012:role/rolewithtemppolicy",
