@@ -95,6 +95,7 @@ from api.handlers.v3.services.aws.account import (
 from api.handlers.v3.services.aws.role_access import (
     AuthorizedGroupsTagsDeleteHandler,
     AuthorizedGroupsTagsHandler,
+    AutomaticPolicyUpdateHandler,
     CredentialBrokeringCurrentStateHandler,
     CredentialBrokeringHandler,
 )
@@ -219,7 +220,10 @@ def make_app(jwt_validator=None):
             r"/api/v3/services/aws/role-access/credential-brokering/auth-tags/(?P<_tag_name>[^\/]+)/?",
             AuthorizedGroupsTagsDeleteHandler,
         ),
-        (r"/api/v3/downloads/weep", WeepDownloadHandler),
+        (
+            r"/api/v3/services/aws/role-access/automatic-update/(?P<_enabled>enable|disable)/?",
+            AutomaticPolicyUpdateHandler,
+        )(r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
         # (r"/api/v3/identities/users_page_config", IdentityUsersPageConfigHandler),
