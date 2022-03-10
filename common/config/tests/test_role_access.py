@@ -68,9 +68,9 @@ class TestRoleAccess(TestCase):
 
     def test_delete_authorized_groups_tags(self):
         set_host_config(
-            {
+            **{
                 "cloud_credential_authorization_mapping": {
-                    "role_tags": {"authorized_groups_tags": [{"tag_name": "test_tag"}]}
+                    "role_tags": {"authorized_groups_tags": ["test_tag"]}
                 }
             }
         )
@@ -85,17 +85,17 @@ class TestRoleAccess(TestCase):
         )
 
     def test_upsert_authorized_groups_tags_web_access(self):
-        async_to_sync(
-            role_access.upsert_authorized_groups_tag("host", "test_tag", True)
+        async_to_sync(role_access.upsert_authorized_groups_tag)(
+            "host", "test_tag", True
         )
-        assert get_host_config()["cloud_credential_authorization_mapping"][
+        assert get_host_config()["cloud_credential_authorization_mapping"]["role_tags"][
             "authorized_groups_tags"
         ] == ["test_tag"]
 
     def test_upsert_authorized_groups_tags_cli_only(self):
-        async_to_sync(
-            role_access.upsert_authorized_groups_tag("host", "test_tag", False)
+        async_to_sync(role_access.upsert_authorized_groups_tag)(
+            "host", "test_tag", False
         )
-        assert get_host_config()["cloud_credential_authorization_mapping"][
+        assert get_host_config()["cloud_credential_authorization_mapping"]["role_tags"][
             "authorized_groups_cli_only_tags"
         ] == ["test_tag"]
