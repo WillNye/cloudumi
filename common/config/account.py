@@ -26,7 +26,11 @@ async def delete_hub_account(host: str) -> bool:
 async def get_hub_account(host: str) -> Optional[HubAccount]:
     hub_account_config = config.get_host_specific_key(hub_account_key_name, host, {})
     if not hub_account_config:
-        return None
+        # Redis cache sometimes is a bit behind
+        hub_account = config.get_tenant_static_config_from_dynamo(host)
+        if hub_account_key_name not in hub_account:
+            return False
+        hub_account_config = hub_account.get(hub_account_key_name)
     hub_account = HubAccount(**hub_account_config)
     return hub_account
 
@@ -66,7 +70,9 @@ async def upsert_spoke_account(host: str, spoke_account: SpokeAccount):
         spoke_account.account_id
     ] = spoke_account.account_id
 
-    if not host_config.get("policies", {}).get("role_name"):
+    if not host_config.get("policies"):
+        host_config["policies"] = dict()
+    if "role_name" not in host_config["policies"]:
         host_config["policies"]["role_name"] = spoke_account.name
 
     await ddb.update_static_config_for_host(
@@ -79,8 +85,14 @@ async def delete_spoke_account(host: str, name: str, account_id: str) -> bool:
     spoke_key_path = __get_unique_spoke_account_key_path(name, account_id)
     spoke_account_config = config.get_host_specific_key(spoke_key_path, host, {})
     if not spoke_account_config:
-        return False
-    host_config = config.get_tenant_static_config_from_dynamo(host)
+        host_config = config.get_tenant_static_config_from_dynamo(host)
+        if (
+            spoke_account_key_name not in host_config
+            or spoke_key_path not in host_config[spoke_account_key_name]
+        ):
+            return False
+    else:
+        host_config = config.get_tenant_static_config_from_dynamo(host)
     try:
         del host_config[spoke_account_key_name][
             __get_unique_spoke_account_key_name(name, account_id)
@@ -102,7 +114,11 @@ async def delete_spoke_accounts(host: str) -> bool:
     ddb = RestrictedDynamoHandler()
     host_config = config.get_tenant_static_config_from_dynamo(host)
     if spoke_account_key_name not in host_config:
-        return False
+        host_config = config.get_tenant_static_config_from_dynamo(host)
+        if spoke_account_key_name not in host_config:
+            return False
+    else:
+        host_config = config.get_tenant_static_config_from_dynamo(host)
     try:
         del host_config[spoke_account_key_name]
     except KeyError:
@@ -116,7 +132,8 @@ async def delete_spoke_accounts(host: str) -> bool:
 async def get_spoke_accounts(host: str) -> List[SpokeAccount]:
     spoke_accounts = config.get_host_specific_key(spoke_account_key_name, host)
     if not spoke_accounts:
-        return []
+        host_config = config.get_tenant_static_config_from_dynamo(host)
+        spoke_accounts = host_config.get(spoke_account_key_name, {})
     return [SpokeAccount(**x) for x in spoke_accounts.values()]
 
 
@@ -143,13 +160,10 @@ async def upsert_org_account(host: str, org_account: OrgAccount):
 
 async def delete_org_account(host: str, org_id: str) -> bool:
     ddb = RestrictedDynamoHandler()
-    org_key_path = __get_unique_org_account_key_path(org_id)
-    org_account_config = config.get_host_specific_key(org_key_path, host)
-    if not org_account_config:
-        return False
+    org_key_path = __get_unique_org_account_key_name(org_id)
     host_config = config.get_tenant_static_config_from_dynamo(host)
     try:
-        del host_config[org_account_key_name][__get_unique_org_account_key_name(org_id)]
+        del host_config[org_account_key_name][org_key_path]
     except KeyError:
         return False
     await ddb.update_static_config_for_host(
@@ -176,5 +190,6 @@ async def delete_org_accounts(host: str) -> bool:
 async def get_org_accounts(host: str) -> List[OrgAccount]:
     org_accounts = config.get_host_specific_key(org_account_key_name, host)
     if not org_accounts:
-        return []
+        host_config = config.get_tenant_static_config_from_dynamo(host)
+        org_accounts = host_config.get(org_account_key_name, {})
     return [OrgAccount(**x) for x in org_accounts.values()]

@@ -24,6 +24,7 @@ Magic? Yes.
 
 ## Test with VSCODE
 
+- Make sure you run VSCODE as follows: `PYTHONPATH=$(pwd) code .` from your cloudumi repo
 - Build the cloudumi pytest utility: `bazel build //util/pytest:wheel`
 - Note the path to the wheel file in the output (for instance: `bazel-bin/util/pytest/cloudumi_fixtures-0.0.1-py3-none-any.whl`)
 - Make sure you are in your venv

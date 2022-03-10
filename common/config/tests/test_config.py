@@ -12,7 +12,13 @@ class TestConfig(TestCase):
             suffix=".yaml", delete=False, prefix=os.path.basename(__file__)
         )
         original_config_location = os.environ.get("CONFIG_LOCATION")
-        config_a = {"_global_": {"config_item_a": "b", "config_item_b": "c"}}
+        config_a = {
+            "_global_": {
+                "environment": "test",
+                "config_item_a": "b",
+                "config_item_b": "c",
+            }
+        }
         tf.write(yaml.dump(config_a).encode())
         tf.flush()
         config_file = tf.name
@@ -46,6 +52,7 @@ class TestConfig(TestCase):
         )
         tf1_config = {
             "extends": [tf2.name],
+            "_global_": {"environment": "test"},
             "this_value_should_stick": "yes_it_works!",
             "tf1_value": "tf1_value",
             "tf1_value_list": ["item1", "item2"],
@@ -66,6 +73,7 @@ class TestConfig(TestCase):
 
         tf2_config = {
             "extends": [tf3.name],
+            "_global_": {"environment": "test"},
             "this_value_should_stick": "nope_its_broken_by_tf2",
             "tf2_value": "tf2_value",
             "tf2_value_should_not_be_overwritten_by_tf3": "yes_it_works!",
@@ -85,6 +93,7 @@ class TestConfig(TestCase):
 
         tf3_config = {
             "this_value_should_stick": "nope_its_broken_by_tf3",
+            "_global_": {"environment": "test"},
             "tf3_value": "tf3_value",
             "tf2_value_should_not_be_overwritten_by_tf3": "nope_its_broken_by_tf3",
             "tf2_value_list": ["this", "should", "not", "override"],
@@ -102,6 +111,7 @@ class TestConfig(TestCase):
         }
 
         should_look_like_this = {
+            "_global_": {"environment": "test"},
             "tf1_value": "tf1_value",
             "tf1_value_dict": {
                 "tf1_value_nested_list": [
