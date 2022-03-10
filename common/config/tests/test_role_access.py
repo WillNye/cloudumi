@@ -58,6 +58,23 @@ class TestRoleAccess(TestCase):
             is False
         )
 
+    def test_enable_role_access_automatic_policy_update(self):
+        async_to_sync(role_access.toggle_role_access_automatic_policy_update)(
+            "host", True
+        )
+        assert (
+            get_host_config()["aws"]["automatically_update_role_trust_policies"] is True
+        )
+
+    def test_disable_role_access_automatic_policy_update(self):
+        async_to_sync(role_access.toggle_role_access_automatic_policy_update)(
+            "host", False
+        )
+        assert (
+            get_host_config()["aws"]["automatically_update_role_trust_policies"]
+            is False
+        )
+
     def test_upsert_authorized_groups_tags(self):
         async_to_sync(role_access.upsert_authorized_groups_tag)(
             "host", "test_tag", True
