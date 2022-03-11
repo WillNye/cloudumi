@@ -46,9 +46,6 @@
     "clean": "rm -rf build && rm -rf ../api/templates",
     "build_template": "yarn run clean && yarn build && yarn run copy"
   },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
   "browserslist": {
     "production": [
       ">0.2%",
