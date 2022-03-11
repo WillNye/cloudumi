@@ -68,7 +68,7 @@ class TestIpRestrictions(TestCase):
         with patch.object(
             config,
             "get_host_specific_key",
-            return_value={"ip_restrictions": ["10.10.10.10/10"]},
+            return_value=["10.10.10.10/10"],
         ):
             assert async_to_sync(ip_restrictions.get_ip_restrictions)("host") == [
                 "10.10.10.10/10"

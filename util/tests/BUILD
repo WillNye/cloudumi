@@ -9,6 +9,14 @@ exports_files([
     "test_configuration.yaml",
 ])
 
+filegroup(
+    name = "configs",
+    srcs = glob([
+        "*.yaml",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
 py_library(
     name = "fixtures",
     srcs_version = "PY3",

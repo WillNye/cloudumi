@@ -23,8 +23,6 @@ from moto import (
 )
 from tornado.concurrent import Future
 
-from common.lib import dynamo
-
 # Unit tests will create mock resources in us-east-1
 from util.tests.fixtures.globals import host
 
@@ -791,6 +789,8 @@ def tenant_static_configs_table(dynamodb):
 
 @pytest.fixture(scope="session")
 def with_test_configuration_tenant_static_config_data(tenant_static_configs_table):
+    from common.lib import dynamo
+
     ddb = dynamo.RestrictedDynamoHandler()
     with open("util/tests/test_configuration.yaml", "r") as fp:
         async_to_sync(ddb.update_static_config_for_host)(

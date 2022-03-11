@@ -11,14 +11,13 @@ py_library(
 py_test(
     name = "test_main",
     data = [
-        "//configs/development_account:configs",
+        "//util/tests:configs",
     ],
     srcs = [
         "test_main.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
     },
     deps = [
         "//common:lib",
@@ -27,6 +26,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
