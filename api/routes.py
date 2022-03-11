@@ -92,10 +92,7 @@ from api.handlers.v3.services.aws.account import (
     SpokeDeleteHandler,
     SpokeHandler,
 )
-from api.handlers.v3.services.aws.ip_restrictions import (
-    IpRestrictionsDeleteHandler,
-    IpRestrictionsHandler,
-)
+from api.handlers.v3.services.aws.ip_restrictions import IpRestrictionsHandler
 from api.handlers.v3.services.aws.role_access import (
     AuthorizedGroupsTagsDeleteHandler,
     AuthorizedGroupsTagsHandler,
@@ -231,10 +228,6 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/ip-access/?",
             IpRestrictionsHandler,
-        ),
-        (
-            r"/api/v3/services/aws/ip-access/(?P<_cidr>[a-zA-Z0-9_-]+)/?",
-            IpRestrictionsDeleteHandler,
         ),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),

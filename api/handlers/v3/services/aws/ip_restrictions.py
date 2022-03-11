@@ -92,14 +92,11 @@ class IpRestrictionsHandler(BaseHandler):
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
-
-class IpRestrictionsDeleteHandler(BaseHandler):
-    """
-    Provides delete ops for the ip restrictions
-    """
-
-    async def delete(self, _cidr):
+    async def delete(self):
         host = self.ctx.host
+
+        data = tornado.escape.json_decode(self.request.body)
+        _cidr = data.get("cidr")
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
