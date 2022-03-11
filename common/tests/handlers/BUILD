@@ -19,6 +19,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
@@ -43,18 +44,19 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
 )
 
 py_test(
-    name = "test_policies",
+    name = "test_policies_handlers",
     data = [
         "//configs/development_account:configs",
     ],
     srcs = [
-        "test_policies.py",
+        "test_policies_handlers.py",
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
@@ -67,6 +69,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
@@ -91,6 +94,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
@@ -115,6 +119,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],

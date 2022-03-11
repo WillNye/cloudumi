@@ -5,8 +5,8 @@ import sys
 import ujson as json
 from mock import MagicMock, patch
 
-from util.pytest.fixtures.conftest import MockRedisHandler, create_future
-from util.pytest.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.fixtures import MockRedisHandler, create_future
+from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))

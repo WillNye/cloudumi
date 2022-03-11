@@ -27,8 +27,8 @@ from common.models import (
     Status,
     UserModel,
 )
-from util.pytest.fixtures.conftest import create_future
-from util.pytest.fixtures.globals import host
+from util.tests.fixtures.fixtures import create_future
+from util.tests.fixtures.globals import host
 
 test_role_name = "TestRequestsLibV2RoleName"
 test_role_arn = f"arn:aws:iam::123456789012:role/{test_role_name}"

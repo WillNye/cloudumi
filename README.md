@@ -14,7 +14,7 @@
 - How to Build:
   - [Build Instructions](#build-instructions)
 - Testing:
-  - [Testing Instructions](util/pytest/README.md)
+  - [Testing Instructions](util/tests/README.md)
 
 # Build Instructions
 

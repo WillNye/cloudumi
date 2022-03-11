@@ -8,16 +8,16 @@ def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
     py_test(
         name = name,
         srcs = [
-            "//util/pytest:wrapper.py",
-            "//util/pytest/fixtures:conftest.py",
-            "//util/pytest/fixtures:globals.py",
+            "//util/tests:wrapper.py",
+            "//util/tests/fixtures:fixtures.py",
+            "//util/tests/fixtures:globals.py",
         ] + srcs,
-        main = "//util/pytest:wrapper.py",
+        main = "//util/tests:wrapper.py",
         args = [
             "--capture=no",
             # "--black",
             # "--pylint",
-            # "--pylint-rcfile=$(location //util/pytest:.pylintrc)",
+            # "--pylint-rcfile=$(location //util/tests:.pylintrc)",
             # "--mypy",
         ] + args + ["$(location :%s)" % x for x in srcs],
         python_version = "PY3",
@@ -34,11 +34,11 @@ def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
             # requirement("pytest-mypy"),
         ],
         env = {
-            "CONFIG_LOCATION": "util/pytest/test_configuration.yaml",
+            "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
         },
         data = [
-            "//util/pytest:.pylintrc",
-            "//util/pytest:test_configuration.yaml",
+            "//util/tests:.pylintrc",
+            "//util/tests:test_configuration.yaml",
         ] + data,
         **kwargs
     )

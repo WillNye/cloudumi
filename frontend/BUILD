@@ -71,7 +71,7 @@ _RUNTIME_DEPS = [
 ]
 
 _DEV_DEPS = [
-    "@npm//@craco/craco",
+    "@npm//react-scripts",
 ]
 
 react_scripts(

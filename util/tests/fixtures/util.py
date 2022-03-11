@@ -2,7 +2,7 @@ from asgiref.sync import async_to_sync
 from tornado.testing import AsyncHTTPTestCase
 
 from common.lib.jwt import generate_jwt_token
-from util.pytest.fixtures.globals import host, host_header
+from util.tests.fixtures.globals import host, host_header
 
 
 def generate_jwt_token_for_testing(

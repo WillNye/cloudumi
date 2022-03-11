@@ -1,7 +1,7 @@
 import ujson as json
 from mock import patch
 
-from util.pytest.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
