@@ -366,6 +366,9 @@ class GetCredentialsHandler(BaseMtlsHandler):
         log_data["request"] = json.dumps(request)
         log.debug(log_data)
         arn_parts = requested_role.split(":")
+        ip_restrictions_enabled = config.get_host_specific_key(
+            "policies.ip_restrictions", host, False
+        )
         if (
             len(arn_parts) != 6
             or arn_parts[0] != "arn"
@@ -413,7 +416,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             app_name,
             requested_role,
             host,
-            enforce_ip_restrictions=False,
+            enforce_ip_restrictions=ip_restrictions_enabled,
             user_role=False,
             account_id=None,
             custom_ip_restrictions=request.get("custom_ip_restrictions"),
@@ -426,6 +429,111 @@ class GetCredentialsHandler(BaseMtlsHandler):
         self.write(json.dumps(credentials))
         await self.finish()
         return
+
+    async def maybe_get_user_role_and_account_id(self, matching_roles):
+        # User role must be in user's attributes
+        user_role = False
+        account_id = None
+        if (
+            self.user_role_name
+            and matching_roles[0].split("role/")[1] == self.user_role_name
+        ):
+            user_role = True
+            account_id = matching_roles[0].split("arn:aws:iam::")[1].split(":role")[0]
+        return (user_role, account_id)
+
+    async def authorize_via_mfa(
+        self, request, host, requested_role, matching_roles, stats, log_data
+    ):
+        aws = get_plugin_by_name(
+            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+        )()
+        ip_restrictions_enabled = config.get_host_specific_key(
+            "policies.ip_restrictions", host, False
+        )
+        try:
+            enforce_ip_restrictions = ip_restrictions_enabled
+            if request["no_ip_restrictions"]:
+                # Duo prompt the user in order to get non IP-restricted credentials
+                mfa_success = await duo_mfa_user(
+                    self.user.split("@")[0],
+                    host,
+                    message="ConsoleMe Non-IP Restricted Credential Request",
+                )
+
+                if mfa_success:
+                    enforce_ip_restrictions = False
+                    stats.count(
+                        "GetCredentialsHandler.post.no_ip_restriction.success",
+                        tags={"user": self.user, "requested_role": requested_role},
+                    )
+                    log_data["message"] = "User requested non-IP-restricted credentials"
+                    log.debug(log_data)
+                else:
+                    # Log and emit a metric
+                    log_data["message"] = "MFA Denied or Timeout"
+                    log.warning(log_data)
+                    stats.count(
+                        "GetCredentialsHandler.post.no_ip_restriction.failure",
+                        tags={"user": self.user, "requested_role": requested_role},
+                    )
+                    error = {
+                        "code": "902",
+                        "message": "MFA Not Successful",
+                        "requested_role": requested_role,
+                        "request_id": self.request_uuid,
+                    }
+                    self.set_status(403)
+                    self.write(error)
+                    await self.finish()
+                    return
+
+            log_data["enforce_ip_restrictions"] = enforce_ip_restrictions
+            log_data["message"] = "Retrieving credentials"
+            log.debug(log_data)
+
+            # User-role logic:
+            # User-role should come in as cm-[username or truncated username]_[N or NC]
+            user_role = False
+            account_id = None
+
+            # User role must be in user's attributes
+            user_role, account_id = await self.maybe_get_user_role_and_account_id(
+                matching_roles
+            )
+
+            return await aws.get_credentials(
+                self.user,
+                matching_roles[0],
+                host,
+                enforce_ip_restrictions=enforce_ip_restrictions,
+                user_role=user_role,
+                account_id=account_id,
+            )
+        except Exception as e:
+            log_data["message"] = "Unable to get credentials for user"
+            log_data["eligible_roles"] = self.eligible_roles
+            log.error(log_data, exc_info=True)
+            stats.count(
+                "GetCredentialsHandler.post.exception",
+                tags={
+                    "user": self.user,
+                    "requested_role": requested_role,
+                    "authorized": False,
+                },
+            )
+            error = {
+                "code": "902",
+                "message": f"Unable to get credentials: {str(e)}",
+                "requested_role": requested_role,
+                "matching_role": matching_roles[0],
+                "exception": str(e),
+                "request_id": self.request_uuid,
+            }
+            self.set_status(403)
+            self.write(error)
+            await self.finish()
+            return None
 
     async def get_credentials_user_flow(self, user_email, request, stats, log_data):
         host = self.ctx.host
@@ -455,6 +563,11 @@ class GetCredentialsHandler(BaseMtlsHandler):
         log_data["message"] = "User is requesting role"
         log.debug(log_data)
         matching_roles = await group_mapping.filter_eligible_roles(requested_role, self)
+
+        auth_via_mfa = config.get_host_specific_key("auth.mfa", host, False)
+        ip_restrictions_enabled = config.get_host_specific_key(
+            "policies.ip_restrictions", host, False
+        )
 
         log_data["matching_roles"] = matching_roles
 
@@ -497,96 +610,23 @@ class GetCredentialsHandler(BaseMtlsHandler):
             await self.raise_if_certificate_too_old(
                 matching_roles[0], stats, log_data=log_data
             )
-            try:
-                enforce_ip_restrictions = True
-                if request["no_ip_restrictions"]:
-                    # Duo prompt the user in order to get non IP-restricted credentials
-                    mfa_success = await duo_mfa_user(
-                        self.user.split("@")[0],
-                        host,
-                        message="ConsoleMe Non-IP Restricted Credential Request",
-                    )
-
-                    if mfa_success:
-                        enforce_ip_restrictions = False
-                        stats.count(
-                            "GetCredentialsHandler.post.no_ip_restriction.success",
-                            tags={"user": self.user, "requested_role": requested_role},
-                        )
-                        log_data[
-                            "message"
-                        ] = "User requested non-IP-restricted credentials"
-                        log.debug(log_data)
-                    else:
-                        # Log and emit a metric
-                        log_data["message"] = "MFA Denied or Timeout"
-                        log.warning(log_data)
-                        stats.count(
-                            "GetCredentialsHandler.post.no_ip_restriction.failure",
-                            tags={"user": self.user, "requested_role": requested_role},
-                        )
-                        error = {
-                            "code": "902",
-                            "message": "MFA Not Successful",
-                            "requested_role": requested_role,
-                            "request_id": self.request_uuid,
-                        }
-                        self.set_status(403)
-                        self.write(error)
-                        await self.finish()
-                        return
-
-                log_data["enforce_ip_restrictions"] = enforce_ip_restrictions
-                log_data["message"] = "Retrieving credentials"
-                log.debug(log_data)
-
-                # User-role logic:
-                # User-role should come in as cm-[username or truncated username]_[N or NC]
-                user_role = False
-                account_id = None
-
-                # User role must be in user's attributes
-                if (
-                    self.user_role_name
-                    and matching_roles[0].split("role/")[1] == self.user_role_name
-                ):
-                    user_role = True
-                    account_id = (
-                        matching_roles[0].split("arn:aws:iam::")[1].split(":role")[0]
-                    )
-
+            if auth_via_mfa:
+                credentials = await self.authorize_via_mfa(
+                    request, host, requested_role, matching_roles, stats, log_data
+                )
+            else:
+                user_role, account_id = await self.maybe_get_user_role_and_account_id(
+                    matching_roles
+                )
                 credentials = await aws.get_credentials(
                     self.user,
                     matching_roles[0],
                     host,
-                    enforce_ip_restrictions=enforce_ip_restrictions,
+                    enforce_ip_restrictions=ip_restrictions_enabled,
                     user_role=user_role,
                     account_id=account_id,
                 )
-            except Exception as e:
-                log_data["message"] = "Unable to get credentials for user"
-                log_data["eligible_roles"] = self.eligible_roles
-                log.error(log_data, exc_info=True)
-                stats.count(
-                    "GetCredentialsHandler.post.exception",
-                    tags={
-                        "user": self.user,
-                        "requested_role": requested_role,
-                        "authorized": False,
-                    },
-                )
-                error = {
-                    "code": "902",
-                    "message": f"Unable to get credentials: {str(e)}",
-                    "requested_role": requested_role,
-                    "matching_role": matching_roles[0],
-                    "exception": str(e),
-                    "request_id": self.request_uuid,
-                }
-                self.set_status(403)
-                self.write(error)
-                await self.finish()
-                return
+
         if not credentials:
             log_data["message"] = "Unauthorized or invalid role"
             log.warning(log_data)

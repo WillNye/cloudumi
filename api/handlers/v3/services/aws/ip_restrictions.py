@@ -128,3 +128,42 @@ class IpRestrictionsHandler(BaseHandler):
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
+
+
+class IpRestrictionsToggleHandler(BaseHandler):
+    """
+    Provides a toggle handler for ip restrictions
+    """
+
+    async def post(self, _enabled):
+        host = self.ctx.host
+
+        log_data = {
+            "function": f"{type(self).__name__}.{__name__}",
+            "user": self.user,
+            "message": "Toggling ip restrictions",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "enabled": _enabled,
+            "host": host,
+        }
+
+        # Checks authz levels of current user
+        generic_error_message = "Unable to toggle ip restrictions"
+        if not can_admin_all(self.user, self.groups, host):
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 403, "unauthorized", log_data
+            )
+            return
+        log.debug(log_data)
+
+        await ip_restrictions.toggle_ip_restrictions(host, _enabled)
+
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message=f"Successfully toggled ip restrictions {_enabled}.",
+        )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
+        return

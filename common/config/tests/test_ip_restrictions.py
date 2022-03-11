@@ -77,3 +77,13 @@ class TestIpRestrictions(TestCase):
     def test_get_ip_restrictions_empty(self):
         with patch.object(config, "get_host_specific_key", return_value={}):
             assert async_to_sync(ip_restrictions.get_ip_restrictions)("host") == []
+
+    def test_toggle_ip_restrictions(self):
+        with patch.object(
+            config,
+            "get_host_specific_key",
+            return_value={"policies": {"ip_restrictions": False}},
+        ):
+            assert async_to_sync(ip_restrictions.toggle_ip_restrictions)(
+                "host", enabled=True
+            )
