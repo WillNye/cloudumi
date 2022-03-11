@@ -1,14 +1,86 @@
 import datetime
 
+import sentry_sdk
 import ujson as json
+from asgiref.sync import sync_to_async
 
 from common.config import config
 from common.lib.aws.access_advisor import get_epoch_authenticated
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
+from common.lib.aws.iam import get_role_managed_policy_documents
 from common.lib.aws.utils import calculate_policy_changes, condense_statements
-from common.lib.cache import retrieve_json_data_from_redis_or_s3
+from common.lib.cache import (
+    retrieve_json_data_from_redis_or_s3,
+    store_json_results_in_redis_and_s3,
+)
+from common.lib.s3_helpers import is_object_older_than_seconds
 
 log = config.get_logger()
+
+
+async def calculate_unused_policy_for_identity(
+    host, account_id, identity_name, identity_type=None
+):
+    """
+    1. Pull unused policy from cache if it is newer than 1 hour
+    2. Generate unused policy otherwise
+    3. Store unused policy in cache
+    """
+    if not identity_type:
+        raise Exception("Unable to generate unused policy without identity type")
+    arn = f"arn:aws:iam::{account_id}:{identity_type}/{identity_name}"
+
+    s3_bucket = config.get_host_specific_key(
+        "calculate_unused_policy_for_identity.s3.bucket",
+        host,
+        config.get(
+            "_global_.s3_cache_bucket",
+        ),
+    )
+
+    s3_key = config.get_host_specific_key(
+        "calculate_unused_policy_for_identity.s3.file",
+        host,
+        f"calculate_unused_policy_for_identity/{arn}.json.gz",
+    )
+
+    if not await is_object_older_than_seconds(
+        s3_key, bucket=s3_bucket, host=host, older_than_seconds=86400
+    ):
+        return await retrieve_json_data_from_redis_or_s3(
+            s3_bucket=s3_bucket,
+            s3_key=s3_key,
+            host=host,
+        )
+
+    identity_type_string = "RoleName" if identity_type == "role" else "UserName"
+    try:
+        managed_policy_details = await sync_to_async(get_role_managed_policy_documents)(
+            {identity_type_string: identity_name},
+            account_number=account_id,
+            assume_role=config.get_host_specific_key("policies.role_name", host),
+            region=config.region,
+            retry_max_attempts=2,
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            host=host,
+        )
+    except Exception:
+        sentry_sdk.capture_exception()
+        raise
+
+    effective_identity_permissions = await calculate_unused_policy_for_identities(
+        host,
+        [arn],
+        managed_policy_details,
+        account_id=account_id,
+    )
+    await store_json_results_in_redis_and_s3(
+        effective_identity_permissions[arn],
+        host=host,
+        s3_bucket=s3_bucket,
+        s3_key=s3_key,
+    )
+    return effective_identity_permissions[arn]
 
 
 async def calculate_unused_policy_for_identities(
