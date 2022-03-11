@@ -395,7 +395,7 @@ class TestAwsLib(TestCase):
         CONFIG.config = old_config
 
     def test_remove_temp_policies(self):
-        from common.lib.aws import remove_temp_policies
+        from common.lib.aws.utils import remove_temp_policies
 
         iam_client = TestMock.Mock()
         current_dateint = datetime.today().strftime("%Y%m%d")
@@ -424,7 +424,7 @@ class TestAwsLib(TestCase):
                 }
             ],
         }
-        result = remove_temp_policies(role, iam_client)
+        result = remove_temp_policies(role, iam_client, host)
         self.assertTrue(result)
         iam_client.delete_role_policy.assert_called_with(
             RoleName="rolewithtemppolicy", PolicyName=policy_name
@@ -452,7 +452,7 @@ class TestAwsLib(TestCase):
             ],
         }
         iam_client = TestMock.Mock()
-        result = remove_temp_policies(role, iam_client)
+        result = remove_temp_policies(role, iam_client, host)
         self.assertTrue(result)
         iam_client.delete_role_policy.assert_called_with(
             RoleName="rolewithtemppolicy", PolicyName=policy_name
@@ -480,7 +480,7 @@ class TestAwsLib(TestCase):
             ],
         }
         iam_client = TestMock.Mock()
-        result = remove_temp_policies(role, iam_client)
+        result = remove_temp_policies(role, iam_client, host)
         self.assertFalse(result)
         iam_client.delete_role_policy.assert_not_called()
 
@@ -506,6 +506,6 @@ class TestAwsLib(TestCase):
             ],
         }
         iam_client = TestMock.Mock()
-        result = remove_temp_policies(role, iam_client)
+        result = remove_temp_policies(role, iam_client, host)
         self.assertFalse(result)
         iam_client.delete_role_policy.assert_not_called()
