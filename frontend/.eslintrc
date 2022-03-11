@@ -1,6 +1,9 @@
 {
   "root": true,
-  "extends": ["plugin:react-hooks/recommended"],
+  "extends": [
+    "react-app",
+    "plugin:react-hooks/recommended"
+  ],
   "plugins": ["react-hooks"],
   "rules": {
     "react-hooks/rules-of-hooks": "error",

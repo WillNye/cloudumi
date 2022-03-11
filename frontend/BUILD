@@ -44,7 +44,6 @@ write_file(
 _RUNTIME_DEPS = [
     "chdir.cjs",
     "copy_static_files",
-
     "@npm//@monaco-editor/react",
     "@npm//axios",
     "@npm//http-server",
@@ -69,10 +68,23 @@ _RUNTIME_DEPS = [
     "@npm//semantic-ui-react",
     "@npm//survey-react",
     "@npm//yaml",
+    "@npm//eslint-config-react-app",
 ]
 
 _DEV_DEPS = [
     "@npm//react-scripts",
+    "@npm//@babel/helper-create-class-features-plugin",
+    "@npm//@testing-library/jest-dom",
+    "@npm//@testing-library/react",
+    "@npm//@testing-library/user-event",
+    "@npm//babel-eslint",
+    "@npm//eslint",
+    "@npm//eslint-config-prettier",
+    "@npm//eslint-plugin-flowtype",
+    "@npm//eslint-plugin-import",
+    "@npm//eslint-plugin-jsx-a11y",
+    "@npm//eslint-plugin-react",
+    "@npm//eslint-plugin-react-hooks",
 ]
 
 react_scripts(
