@@ -7,12 +7,10 @@ import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
 
-export const NewTag = ({ closeModal, onFinish }) => {
+export const NewProvider = ({ closeModal, onFinish }) => {
   const { register, handleSubmit, watch } = useForm()
 
-  const { post } = useApi(
-    'services/aws/role-access/credential-brokering/auth-tags'
-  )
+  const { post } = useApi('integrations/sso/identity-providers')
 
   const onSubmit = (data) => {
     post.do(data).then(() => {
@@ -30,8 +28,29 @@ export const NewTag = ({ closeModal, onFinish }) => {
   const isSuccess = post?.status === 'done' && !post?.error
 
   const hasError = post?.error && post?.status === 'done'
+    
+  // {
+  //   "idp_type": "oidc",
+  //   "idp_settings": {
+  //       "client_id": "client_id",
+  //       "client_secret": "client_secret",
+  //       "attributes_request_method": "attributes_request_method",
+  //       "oidc_issuer": "oidc_issuer",
+  //       "authorize_scopes": "authorize_scopes",
+  //       "token_url": "token_url",
+  //       "attributes_url": "attributes_url",
+  //       "jwks_uri": "jwks_uri"
+  //   }
+  // }
 
-  // TODO: Tag keys and values can include any combination of letters, numbers, spaces, and _ . : / = + - @ symbols.
+  // {
+  //   "idp_type": "saml",
+  //   "idp_settings": {
+  //       "metadata_url": "metadata_url",
+  //       "metadata_file": "metadata_file",
+  //       "idp_signout": "idp_signout"
+  //   }
+  // }
 
   return (
     <Segment basic>
@@ -43,19 +62,6 @@ export const NewTag = ({ closeModal, onFinish }) => {
       />
 
       <Form onSubmit={handleSubmit(onSubmit)}>
-        <Form.Field>
-          <label>Tag Name</label>
-          <input {...register('tag_name', { required: true })} />
-        </Form.Field>
-
-        <Form.Field inline>
-          <input
-            id='check'
-            type='checkbox'
-            {...register('allow_webconsole_access')}
-          />
-          <label htmlFor='check'>Allow Web Console Access?</label>
-        </Form.Field>
 
         <Bar>
           <Fill />

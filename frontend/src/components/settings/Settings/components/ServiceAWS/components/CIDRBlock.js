@@ -6,27 +6,27 @@ import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
 import { str } from 'components/settings/Settings/strings'
-import { TableTopBar } from '../utils'
+import { TableTopBar } from '../../utils'
 import { Segment } from 'semantic-ui-react'
-import { integrationSSOColumns } from './columns'
-import { NewProvider } from './forms/NewProvider'
+import { CIDRBlockColumns } from './columns'
+import { NewCIDR } from './forms/NewCIDR'
 
-export const IntegrationSSO = () => {
+export const CIDRBlock = () => {
 
-  const { get, post, remove } = useApi('integrations/sso/identity-providers')
+  const { get, post, remove } = useApi('services/aws/ip-access')
 
   const { error, success } = useToast()
 
-  const { openModal, closeModal, ModalComponent } = useModal('Add Provider')
+  const { openModal, closeModal, ModalComponent } = useModal('Add CIDR')
 
-  useEffect(() => get.do(), [])
+  // useEffect(() => get.do(), [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do({}, `${rowValues?.tag_name}`)
+        .do({}, `${rowValues?.cidr}`)
         .then(() => {
-          success('Provider REMOVED')
+          success('CIDR REMOVED')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))
@@ -34,13 +34,13 @@ export const IntegrationSSO = () => {
   }
 
   const handleFinish = () => {
-    success('Provider added successfully!')
+    success('CIDR added successfully!')
     get.do()
   }
 
   const handleClose = post.reset
 
-  const columns = integrationSSOColumns({ handleClick })
+  const columns = CIDRBlockColumns({ handleClick })
 
   const label = `Status: ${get.status}${
     get.error ? ` / Error: ${get.error}` : ''
@@ -71,7 +71,7 @@ export const IntegrationSSO = () => {
           data={data}
           columns={columns}
           emptyState={{
-            label: 'Add Provider',
+            label: 'Add CIDR',
             onClick: openModal,
           }}
           isLoading={isWorking}
@@ -80,7 +80,7 @@ export const IntegrationSSO = () => {
       </DatatableWrapper>
 
       <ModalComponent onClose={handleClose} hideConfirm>
-        <NewProvider closeModal={closeModal} onFinish={handleFinish} />
+        <NewCIDR closeModal={closeModal} onFinish={handleFinish} />
       </ModalComponent>
     </Segment>
   )

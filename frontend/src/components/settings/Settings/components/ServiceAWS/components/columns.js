@@ -166,3 +166,22 @@ export const roleAccessAuthColumns = ({
     ),
   },
 ]
+
+export const CIDRBlockColumns = ({
+  handleClick = null
+}) => [
+  {
+    Header: 'CIDR Block',
+    accessor: 'ip',
+  },
+  {
+    Header: 'Actions',
+    width: 80,
+    align: 'right',
+    Cell: ({ row }) => (
+      <Button size='mini' onClick={() => handleClick('remove', row?.values)}>
+        Remove
+      </Button>
+    ),
+  },
+]
