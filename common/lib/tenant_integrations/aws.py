@@ -509,13 +509,6 @@ async def handle_tenant_integration_queue(
                     }
                 )
 
-                # TODO: handle deletion / updates
-                if message["body"]["RequestType"] != "Create":
-                    log_data[
-                        "message"
-                    ] = f"RequestType {message['body']['RequestType']} not supported"
-                    log.debug(log_data)
-                    continue
                 action_type = message["body"]["ResourceProperties"]["ActionType"]
                 if action_type not in [
                     "AWSSpokeAcctRegistration",
@@ -586,7 +579,7 @@ async def handle_tenant_integration_queue(
                         )
                     continue
 
-                if request_type not in ["Create", "Delete"]:
+                if request_type not in ["Create", "Update", "Delete"]:
                     log.error(
                         {
                             **log_data,
@@ -595,31 +588,19 @@ async def handle_tenant_integration_queue(
                             "request_type": request_type,
                         }
                     )
-                    if request_type == "Update":
-                        await return_cf_response(
-                            "SUCCESS",
-                            "OK",
-                            response_url,
-                            physical_resource_id,
-                            stack_id,
-                            request_id,
-                            logical_resource_id,
-                            host,
-                        )
-                    else:
-                        await return_cf_response(
-                            "FAILED",
-                            "Unknown Request Type",
-                            response_url,
-                            physical_resource_id,
-                            stack_id,
-                            request_id,
-                            logical_resource_id,
-                            host,
-                        )
+                    await return_cf_response(
+                        "FAILED",
+                        "Unknown Request Type",
+                        response_url,
+                        physical_resource_id,
+                        stack_id,
+                        request_id,
+                        logical_resource_id,
+                        host,
+                    )
                     continue
 
-                if request_type == "Delete":
+                if request_type in ["Update", "Delete"]:
                     # Send success message to CloudFormation
                     await return_cf_response(
                         "SUCCESS",
