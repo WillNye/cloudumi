@@ -69,6 +69,9 @@ class AccessAdvisor:
         )  # Wait 5 minutes before giving up on jobs
 
     async def store_access_advisor_results(self, account_id, host, aa_data):
+        """
+        Store Access Advisor results in S3 for identities across an account.
+        """
         await store_json_results_in_redis_and_s3(
             aa_data,
             s3_bucket=config.get_host_specific_key(
@@ -84,6 +87,9 @@ class AccessAdvisor:
         )
 
     async def generate_and_save_access_advisor_data(self, host, account_id):
+        """
+        Generates and saves access advisor data for an account.
+        """
         client = await get_boto3_instance(
             "iam", host, account_id, session_name="cache_access_advisor"
         )
@@ -101,6 +107,9 @@ class AccessAdvisor:
     async def generate_and_save_effective_identity_permissions(
         self, host, account_id, arns, aa_data
     ):
+        """
+        Generates and saves the "effective permissions" for each arn in `arns`.
+        """
         from common.lib.aws.unused_permissions_remover import (
             calculate_unused_policy_for_identities,
         )

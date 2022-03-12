@@ -50,7 +50,7 @@ from common.lib.account_indexers import (
     cache_cloud_accounts,
     get_account_id_to_name_mapping,
 )
-from common.lib.assume_role import boto3_cached_conn
+from common.lib.assume_role import get_boto3_instance
 from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import (
@@ -62,7 +62,6 @@ from common.lib.aws.cloudtrail import CloudTrail
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import get_all_managed_policies
 from common.lib.aws.s3 import list_buckets
-from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
 from common.lib.aws.typeahead_cache import cache_aws_resource_details
 from common.lib.aws.utils import (
@@ -979,20 +978,8 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "dev",
         "test",
     ]:
-        client = boto3_cached_conn(
-            "iam",
-            host,
-            account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
-            region=config.region,
-            sts_client_kwargs=dict(
-                region_name=config.region,
-                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-            ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-            session_name=sanitize_session_name(
-                "consoleme_cache_iam_resources_for_account"
-            ),
+        client = async_to_sync(get_boto3_instance)(
+            "iam", host, account_id, session_name="cache_iam_resources_for_account"
         )
         paginator = client.get_paginator("get_account_authorization_details")
         response_iterator = paginator.paginate()
@@ -1200,7 +1187,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
 @app.task(soft_time_limit=3600)
 def cache_access_advisor_for_account(host, account_id):
     """
-    Cache access advisor data for an account.
+    Cache access advisor data for an account that belongs to a host.
     """
     log_data = {
         "account_id": account_id,
@@ -1214,7 +1201,10 @@ def cache_access_advisor_for_account(host, account_id):
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advior_across_accounts(host) -> Dict:
+def cache_access_advisor_across_accounts(host) -> Dict:
+    """
+    Trigger tasks to cache access advisor data for each account that belongs to a host.
+    """
     if not host:
         raise Exception("`host` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -1235,6 +1225,9 @@ def cache_access_advior_across_accounts(host) -> Dict:
 
 @app.task(soft_time_limit=3600)
 def cache_access_advior_across_accounts_for_all_hosts() -> Dict:
+    """
+    Trigger tasks to cache access advisor data for each account across all hosts.
+    """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
     log_data = {
@@ -1250,7 +1243,7 @@ def cache_access_advior_across_accounts_for_all_hosts() -> Dict:
             True,
         ):
             continue
-        cache_iam_resources_across_accounts.delay(
+        cache_access_advisor_across_accounts.delay(
             host=host, wait_for_subtask_completion=False
         )
     return log_data
@@ -1881,23 +1874,13 @@ def cache_sqs_queues_for_account(
     enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, host)
     for region in enabled_regions:
         try:
-            client = boto3_cached_conn(
+            client = async_to_sync(get_boto3_instance)(
                 "sqs",
                 host,
-                account_number=account_id,
-                assume_role=config.get_host_specific_key("policies.role_name", host),
-                region=region,
+                account_id,
+                "cache_sqs_queues_for_account",
+                region_name=region,
                 read_only=True,
-                sts_client_kwargs=dict(
-                    region_name=config.region,
-                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-                ),
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
-                ),
-                session_name=sanitize_session_name(
-                    "consoleme_cache_sqs_queues_for_account"
-                ),
             )
 
             paginator = client.get_paginator("list_queues")

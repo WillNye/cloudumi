@@ -128,7 +128,13 @@ def _resource(service, region, role, retry_config, client_kwargs, session=None):
 
 
 async def get_boto3_instance(
-    service, host, account_id, session_name, service_type="client"
+    service,
+    host,
+    account_id,
+    session_name,
+    region=consoleme_config.region,
+    service_type="client",
+    read_only=False,
 ):
     return await sync_to_async(boto3_cached_conn)(
         service,
@@ -137,7 +143,8 @@ async def get_boto3_instance(
         account_number=account_id,
         # TODO: Make it possible to use a separate role per account
         assume_role=consoleme_config.get_host_specific_key("policies.role_name", host),
-        region=consoleme_config.region,
+        region=region,
+        read_only=read_only,
         sts_client_kwargs=dict(
             region_name=consoleme_config.region,
             endpoint_url=f"https://sts.{consoleme_config.region}.amazonaws.com",

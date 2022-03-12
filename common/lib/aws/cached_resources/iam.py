@@ -8,6 +8,9 @@ from common.lib.cache import (
 
 
 async def store_iam_roles_for_host(all_roles: Any, host: str) -> bool:
+    """
+    Store all IAM roles for a host in Redis and S3
+    """
     await store_json_results_in_redis_and_s3(
         all_roles,
         redis_key=config.get_host_specific_key(
@@ -31,6 +34,9 @@ async def store_iam_roles_for_host(all_roles: Any, host: str) -> bool:
 
 
 async def retrieve_iam_roles_for_host(host: str):
+    """
+    Retrieves all IAM roles for a host from Redis or S3
+    """
     return await retrieve_json_data_from_redis_or_s3(
         redis_key=config.get_host_specific_key(
             "aws.iamroles_redis_key",
@@ -55,6 +61,9 @@ async def retrieve_iam_roles_for_host(host: str):
 async def get_identity_arns_for_account(
     host: str, account_id: str, identity_type: str = "role"
 ) -> List[str]:
+    """
+    Retrieves a list of all IAM role ARNs for a given account
+    """
     if identity_type != "role":
         raise NotImplementedError(f"identity_type {identity_type} not implemented")
 
@@ -69,6 +78,9 @@ async def get_identity_arns_for_account(
 async def store_iam_managed_policies_for_host(
     host: str, iam_policies: Any, account_id: str
 ) -> bool:
+    """
+    Store all managed policies for an account in S3
+    """
     await store_json_results_in_redis_and_s3(
         iam_policies,
         s3_bucket=config.get_host_specific_key(
@@ -85,6 +97,9 @@ async def store_iam_managed_policies_for_host(
 
 
 async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> bool:
+    """
+    Retrieves all managed policies for an account from S3
+    """
     managed_policies = await retrieve_json_data_from_redis_or_s3(
         s3_bucket=config.get_host_specific_key(
             "cache_iam_resources_for_account.iam_policies.s3.bucket",
