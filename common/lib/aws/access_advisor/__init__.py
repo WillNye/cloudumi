@@ -6,7 +6,12 @@ from typing import Tuple
 from blinker import Signal
 
 from common.config import config
-from common.lib.assume_role import rate_limited
+from common.lib.assume_role import get_boto3_instance, rate_limited
+from common.lib.aws.cached_resources.iam import (
+    get_identity_arns_for_account,
+    retrieve_iam_managed_policies_for_host,
+)
+from common.lib.cache import store_json_results_in_redis_and_s3
 
 log = config.get_logger()
 
@@ -63,12 +68,60 @@ class AccessAdvisor:
             5 * 60
         )  # Wait 5 minutes before giving up on jobs
 
-    def generate_access_advisor_data(self, iam, arns):
-        jobs = self._generate_job_ids(iam, arns)
-        details = self._get_job_results(iam, jobs)
-        if arns and not details:
+    async def store_access_advisor_results(self, account_id, host, aa_data):
+        await store_json_results_in_redis_and_s3(
+            aa_data,
+            s3_bucket=config.get_host_specific_key(
+                "access_advisor.s3.bucket",
+                host,
+            ),
+            s3_key=config.get_host_specific_key(
+                "access_advisor.s3.file",
+                host,
+                "access_advisor/cache_access_advisor_{account_id}_v1.json.gz",
+            ).format(account_id=account_id),
+            host=host,
+        )
+
+    async def generate_and_save_access_advisor_data(self, host, account_id):
+        client = await get_boto3_instance(
+            "iam", host, account_id, session_name="cache_access_advisor"
+        )
+        arns = await get_identity_arns_for_account(host, account_id)
+        jobs = self._generate_job_ids(client, arns)
+        aa_data = self._get_job_results(client, jobs)
+        if arns and not aa_data:
             log.error("Didn't get any results from Access Advisor")
-        return details
+        await self.store_access_advisor_results(account_id, host, aa_data)
+        await self.generate_and_save_effective_identity_permissions(
+            host, account_id, arns, aa_data
+        )
+        return aa_data
+
+    async def generate_and_save_effective_identity_permissions(
+        self, host, account_id, arns, aa_data
+    ):
+        from common.lib.aws.unused_permissions_remover import (
+            calculate_unused_policy_for_identities,
+        )
+
+        iam_policies = await retrieve_iam_managed_policies_for_host(host, account_id)
+        effective_identity_permissions = await calculate_unused_policy_for_identities(
+            host, arns, iam_policies, aa_data
+        )
+        await store_json_results_in_redis_and_s3(
+            effective_identity_permissions,
+            s3_bucket=config.get_host_specific_key(
+                "cache_iam_resources_for_account.effective_identity_permissions.s3.bucket",
+                host,
+            ),
+            s3_key=config.get_host_specific_key(
+                "cache_iam_resources_for_account.effective_identity_permissions.s3.file",
+                host,
+                "effective_identity_permissions/cache_effective_identity_permissions_{account_id}_v1.json.gz",
+            ).format(account_id=account_id),
+            host=host,
+        )
 
     @rate_limited()
     def _generate_service_last_accessed_details(self, iam, arn):

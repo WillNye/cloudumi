@@ -2,6 +2,7 @@ import ujson as json
 
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.aws.cached_resources.iam import retrieve_iam_roles_for_host
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -25,25 +26,7 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
         "cache_self_service_typeahead.app_name_tag", host
     )
     # Cache role and app information
-    role_data = await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get_host_specific_key(
-            "aws.iamroles_redis_key",
-            host,
-            f"{host}_IAM_ROLE_CACHE",
-        ),
-        redis_data_type="hash",
-        s3_bucket=config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-            host,
-        ),
-        s3_key=config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-            host,
-            "account_resource_cache/cache_all_roles_v1.json.gz",
-        ),
-        host=host,
-        default={},
-    )
+    role_data = await retrieve_iam_roles_for_host(host)
 
     accounts_d = await get_account_id_to_name_mapping(host)
 

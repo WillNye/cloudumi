@@ -7,6 +7,7 @@ import sentry_sdk
 from pydantic.json import pydantic_encoder
 
 from common.config import config
+from common.lib.aws.cached_resources.iam import retrieve_iam_roles_for_host
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -158,31 +159,8 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
             not self._all_roles[host]
             or int(time.time()) - self._all_roles_last_update.get(host, 0) > 600
         ):
-            redis_topic = config.get_host_specific_key(
-                "aws.iamroles_redis_key",
-                host,
-                f"{host}_IAM_ROLE_CACHE",
-            )
-            s3_bucket = config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-                host,
-            )
-            s3_key = config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-                host,
-                "account_resource_cache/cache_all_roles_v1.json.gz",
-            )
             try:
-                all_roles = await retrieve_json_data_from_redis_or_s3(
-                    redis_topic,
-                    redis_data_type="hash",
-                    s3_bucket=s3_bucket,
-                    s3_key=s3_key,
-                    json_object_hook=RoleAuthorizationsDecoder,
-                    json_encoder=pydantic_encoder,
-                    max_age=max_age,
-                    host=host,
-                )
+                all_roles = await retrieve_iam_roles_for_host(host)
             except Exception as e:
                 sentry_sdk.capture_exception()
                 log.error(

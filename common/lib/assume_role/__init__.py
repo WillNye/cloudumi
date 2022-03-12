@@ -7,11 +7,13 @@ import boto
 import boto3
 import botocore.exceptions
 import dateutil.tz
+from asgiref.sync import sync_to_async
 from botocore.config import Config
 from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
 from common.config import config as consoleme_config
 from common.exceptions.exceptions import TenantNoCentralRoleConfigured
+from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
 
 CACHE = {}
@@ -59,19 +61,6 @@ class ConsoleMeCloudAux:
         if "tech" in kwargs:
             del kwargs["tech"]
         return wrapped_method(function_name, **kwargs)
-
-
-# client = boto3_cached_conn(
-#             "iam",
-#             account_number=account_id,
-#             assume_role=config.get_host_specific_key("policies.role_name", host),
-#             region=config.region,
-#             sts_client_kwargs=dict(
-#                 region_name=config.region,
-#                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-#             ),
-#             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-#         )
 
 
 def _get_cached_creds(
@@ -135,6 +124,28 @@ def _resource(service, region, role, retry_config, client_kwargs, session=None):
         service,
         **_conn_kwargs(region, role, retry_config),
         **client_kwargs,
+    )
+
+
+async def get_boto3_instance(
+    service, host, account_id, session_name, service_type="client"
+):
+    return await sync_to_async(boto3_cached_conn)(
+        service,
+        host,
+        service_type=service_type,
+        account_number=account_id,
+        # TODO: Make it possible to use a separate role per account
+        assume_role=consoleme_config.get_host_specific_key("policies.role_name", host),
+        region=consoleme_config.region,
+        sts_client_kwargs=dict(
+            region_name=consoleme_config.region,
+            endpoint_url=f"https://sts.{consoleme_config.region}.amazonaws.com",
+        ),
+        client_kwargs=consoleme_config.get_host_specific_key(
+            "boto3.client_kwargs", host, {}
+        ),
+        session_name=sanitize_session_name(session_name),
     )
 
 

@@ -53,6 +53,11 @@ from common.lib.account_indexers import (
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
+from common.lib.aws.cached_resources.iam import (
+    retrieve_iam_roles_for_host,
+    store_iam_managed_policies_for_host,
+    store_iam_roles_for_host,
+)
 from common.lib.aws.cloudtrail import CloudTrail
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import get_all_managed_policies
@@ -60,9 +65,6 @@ from common.lib.aws.s3 import list_buckets
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
 from common.lib.aws.typeahead_cache import cache_aws_resource_details
-from common.lib.aws.unused_permissions_remover import (
-    calculate_unused_policy_for_identities,
-)
 from common.lib.aws.utils import (
     allowed_to_sync_role,
     cache_all_scps,
@@ -627,25 +629,7 @@ def cache_policies_table_details(host=None) -> bool:
         "cache_policies_table_details.skip_iam_roles", host, False
     )
     if not skip_iam_roles:
-        all_iam_roles = async_to_sync(retrieve_json_data_from_redis_or_s3)(
-            redis_key=config.get_host_specific_key(
-                "aws.iamroles_redis_key",
-                host,
-                f"{host}_IAM_ROLE_CACHE",
-            ),
-            redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-                host,
-            ),
-            s3_key=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-                host,
-                "account_resource_cache/cache_all_roles_v1.json.gz",
-            ),
-            default={},
-            host=host,
-        )
+        all_iam_roles = async_to_sync(retrieve_iam_roles_for_host)(host)
 
         for arn, role_details_j in all_iam_roles.items():
             role_details = ujson.loads(role_details_j)
@@ -1112,18 +1096,8 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             log_data["num_iam_groups"] = len(iam_groups)
 
         if iam_policies:
-            async_to_sync(store_json_results_in_redis_and_s3)(
-                iam_policies,
-                s3_bucket=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_policies.s3.bucket",
-                    host,
-                ),
-                s3_key=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_policies.s3.file",
-                    host,
-                    "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
-                ).format(resource_type="iam_policies", account_id=account_id),
-                host=host,
+            async_to_sync(
+                store_iam_managed_policies_for_host(host, iam_policies, account_id)
             )
             log_data["num_iam_policies"] = len(iam_policies)
         arns = []
@@ -1219,54 +1193,69 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         ):
             store_iam_resources_in_git(all_iam_resources, account_id, host)
 
-        # TODO: Don't do this all the time. Maybe once per day. Support refreshing for specific role on demand
-        if config.get_host_specific_key(
-            "cache_iam_resources_for_account.check_unused_permissions.enabled",
-            host,
-            True,
-        ):
-            aa = AccessAdvisor(host)
-            aa_data = aa.generate_access_advisor_data(client, arns)
-            if aa_data:
-                async_to_sync(store_json_results_in_redis_and_s3)(
-                    aa_data,
-                    s3_bucket=config.get_host_specific_key(
-                        "cache_iam_resources_for_account.iam_policies.s3.bucket",
-                        host,
-                    ),
-                    s3_key=config.get_host_specific_key(
-                        "cache_iam_resources_for_account.iam_policies.s3.file",
-                        host,
-                        "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
-                    ).format(resource_type="access_advisor", account_id=account_id),
-                    host=host,
-                )
-                effective_identity_permissions = async_to_sync(
-                    calculate_unused_policy_for_identities
-                )(
-                    host,
-                    arns,
-                    iam_policies,
-                    aa_data=aa_data,
-                )
-                async_to_sync(store_json_results_in_redis_and_s3)(
-                    effective_identity_permissions,
-                    s3_bucket=config.get_host_specific_key(
-                        "cache_iam_resources_for_account.effective_identity_permissions.s3.bucket",
-                        host,
-                    ),
-                    s3_key=config.get_host_specific_key(
-                        "cache_iam_resources_for_account.effective_identity_permissions.s3.file",
-                        host,
-                        "effective_identity_permissions/cache_effective_identity_permissions_{account_id}_v1.json.gz",
-                    ).format(account_id=account_id),
-                    host=host,
-                )
-
     stats.count(
         "cache_iam_resources_for_account.success", tags={"account_id": account_id}
     )
     log.debug({**log_data, "message": "Finished caching IAM resources for account"})
+    return log_data
+
+
+@app.task(soft_time_limit=3600)
+def cache_access_advisor_for_account(host, account_id):
+    """
+    Cache access advisor data for an account.
+    """
+    log_data = {
+        "account_id": account_id,
+        "host": host,
+        "message": "Caching access advisor data for account",
+    }
+    log.debug(log_data)
+
+    aa = AccessAdvisor(host)
+    async_to_sync(aa.generate_and_save_access_advisor_data)(host, account_id)
+
+
+@app.task(soft_time_limit=3600)
+def cache_access_advior_across_accounts(host) -> Dict:
+    if not host:
+        raise Exception("`host` must be passed to this task.")
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
+
+    for account_id in accounts_d.keys():
+        if config.get("_global_.environment") == "prod":
+            cache_access_advisor_for_account.delay(host, account_id)
+        else:
+            if account_id in config.get_host_specific_key(
+                "celery.test_account_ids", host, []
+            ):
+                cache_access_advisor_for_account.delay(host, account_id)
+
+    stats.count(f"{function}.success")
+    return True
+
+
+@app.task(soft_time_limit=3600)
+def cache_access_advior_across_accounts_for_all_hosts() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    hosts = get_all_hosts()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_hosts": len(hosts),
+    }
+    log.debug(log_data)
+    for host in hosts:
+        if not config.get_host_specific_key(
+            "cache_iam_resources_for_account.check_unused_permissions.enabled",
+            host,
+            True,
+        ):
+            continue
+        cache_iam_resources_across_accounts.delay(
+            host=host, wait_for_subtask_completion=False
+        )
     return log_data
 
 
@@ -1422,21 +1411,7 @@ def cache_iam_resources_across_accounts(
     log_data["num_iam_roles"] = len(all_roles)
     # Store full list of roles in a single place. This list will be ~30 minutes out of date.
     if all_roles:
-        async_to_sync(store_json_results_in_redis_and_s3)(
-            all_roles,
-            redis_key=cache_keys["iam_roles"]["cache_key"],
-            redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-                host,
-            ),
-            s3_key=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-                host,
-                "account_resource_cache/cache_all_roles_v1.json.gz",
-            ),
-            host=host,
-        )
+        async_to_sync(store_iam_roles_for_host)(all_roles, host)
         cache_aws_resource_details(all_roles, host)
 
     all_iam_users = red.hgetall(cache_keys["iam_users"]["temp_cache_key"])
@@ -3108,6 +3083,11 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
+    "cache_access_advior_across_accounts_for_all_hosts": {
+        "task": "common.celery_tasks.celery_tasks.cache_access_advior_across_accounts_for_all_hosts",
+        "options": {"expires": 180},
+        "schedule": schedule_6_hours,
+    },
     # "cache_identities_for_all_hosts": {
     #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
     #     "options": {"expires": 180},
@@ -3134,5 +3114,3 @@ if config.get("_global_.celery.clear_tasks_for_development", False):
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
-
-cache_iam_resources_for_account("759357822767", "localhost")
