@@ -29,7 +29,7 @@ copy_to_bin(
         "jsconfig.json",
         "package.json",
         "yarn.lock",
-        ".eslintrc",
+        ".eslintrc"
     ],
 )
 
@@ -73,18 +73,6 @@ _RUNTIME_DEPS = [
 
 _DEV_DEPS = [
     "@npm//react-scripts",
-    "@npm//@babel/helper-create-class-features-plugin",
-    "@npm//@testing-library/jest-dom",
-    "@npm//@testing-library/react",
-    "@npm//@testing-library/user-event",
-    "@npm//babel-eslint",
-    "@npm//eslint",
-    "@npm//eslint-config-prettier",
-    "@npm//eslint-plugin-flowtype",
-    "@npm//eslint-plugin-import",
-    "@npm//eslint-plugin-jsx-a11y",
-    "@npm//eslint-plugin-react",
-    "@npm//eslint-plugin-react-hooks",
 ]
 
 react_scripts(
