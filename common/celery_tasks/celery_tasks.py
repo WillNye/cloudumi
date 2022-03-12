@@ -1100,11 +1100,9 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 store_iam_managed_policies_for_host(host, iam_policies, account_id)
             )
             log_data["num_iam_policies"] = len(iam_policies)
-        arns = []
         ttl: int = int((datetime.utcnow() + timedelta(hours=36)).timestamp())
         # Save them:
         for role in iam_roles:
-            arns.append(role["Arn"])
             role_entry = {
                 "arn": role.get("Arn"),
                 "host": host,
@@ -1134,7 +1132,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             aws.handle_detected_role(role)
 
         for user in iam_users:
-            arns.append(user["Arn"])
             user_entry = {
                 "arn": user.get("Arn"),
                 "host": host,

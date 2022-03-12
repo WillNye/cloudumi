@@ -1,12 +1,12 @@
-from asgiref.sync import async_to_sync
-
 from common.config import config
 from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
 from common.lib.aws.iam import get_role_managed_policy_documents
 from common.lib.aws.utils import condense_statements
 
 
-async def calculate_effective_policy_for_identity(host, arn, force_refresh=False):
+async def calculate_effective_policy_for_identity(
+    host, arn, managed_policies, force_refresh=False
+):
     """
     Calculate the effective policy for a given host and arn
     """
@@ -54,9 +54,3 @@ async def calculate_effective_policy_for_identity(host, arn, force_refresh=False
         combined_policy_statements
     )
     return condensed_combined_policy_statements
-
-
-async_to_sync(calculate_effective_policy_for_identity)(
-    "localhost",
-    "arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole",
-)
