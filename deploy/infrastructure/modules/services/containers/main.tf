@@ -17,7 +17,7 @@ resource "aws_kms_key" "noq_ecs_kms_key" {
   description             = "ECS KMS key"
   policy                  = data.aws_iam_policy_document.cloudwatch.json
   deletion_window_in_days = 7
-  enable_key_rotation     = false
+  enable_key_rotation     = true
 }
 
 resource "aws_kms_alias" "cloudwatch" {
