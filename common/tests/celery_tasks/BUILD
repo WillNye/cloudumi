@@ -18,7 +18,7 @@ py_test(
         "//common/exceptions:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
-        "//util/pytest/fixtures:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],

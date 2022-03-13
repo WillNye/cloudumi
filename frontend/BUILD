@@ -44,7 +44,6 @@ write_file(
 _RUNTIME_DEPS = [
     "chdir.cjs",
     "copy_static_files",
-
     "@npm//@monaco-editor/react",
     "@npm//axios",
     "@npm//http-server",
@@ -69,6 +68,7 @@ _RUNTIME_DEPS = [
     "@npm//semantic-ui-react",
     "@npm//survey-react",
     "@npm//yaml",
+    "@npm//eslint-config-react-app",
 ]
 
 _DEV_DEPS = [

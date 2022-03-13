@@ -3,8 +3,8 @@ from unittest.mock import mock_open, patch
 import ujson as json
 from deepdiff import DeepDiff
 
-from util.pytest.fixtures.globals import host
-from util.pytest.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.globals import host
+from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
