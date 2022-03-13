@@ -5,12 +5,9 @@ data "aws_partition" "current" {}
 data "aws_region" "current" {}
 
 resource "aws_cloudwatch_log_group" "noq_log_group" {
-  name = var.cluster_id
-}
-
-resource "aws_cloudwatch_log_group" "noq_ecs_log_group" {
-  name       = format("%s-%s", var.cluster_id, "ecs")
-  kms_key_id = aws_kms_key.noq_ecs_kms_key.arn
+  name              = var.cluster_id
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.noq_ecs_kms_key.arn
 }
 
 resource "aws_kms_key" "noq_ecs_kms_key" {

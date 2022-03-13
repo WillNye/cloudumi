@@ -206,8 +206,3 @@ output "kms_key_id" {
   description = "The configured KMS key ID"
   value       = module.tenant_container_service.kms_key_id
 }
-
-output "noq_ecs_log_group" {
-  description = "The configured ECS log group name"
-  value       = module.tenant_container_service.noq_ecs_log_group
-}

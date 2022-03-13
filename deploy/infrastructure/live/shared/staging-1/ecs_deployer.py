@@ -19,7 +19,7 @@ account_id = "259868150464"
 kms_key_arn = (
     "arn:aws:kms:us-west-2:259868150464:key/c772a276-6f4d-455b-a2fc-99681435401e"
 )
-noq_ecs_log_group_name = "staging-noq-dev-shared-staging-1-ecs"
+noq_ecs_log_group_name = "staging-noq-dev-shared-staging-1"
 
 with open(task_definition_yaml_f, "r") as f:
     task_definition = yaml.load(f, Loader=yaml.FullLoader)

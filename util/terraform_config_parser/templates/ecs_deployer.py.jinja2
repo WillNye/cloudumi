@@ -16,7 +16,7 @@ os.environ["AWS_PROFILE"] = "{{ aws_profile }}"
 region = "{{ region }}"
 account_id = "{{ account_id}}"
 kms_key_arn = "{{ kms_key_id }}"
-noq_ecs_log_group_name = "{{ noq_ecs_log_group }}"
+noq_ecs_log_group_name = "{{ ecs_awslogs_group }}"
 
 with open(task_definition_yaml_f, "r") as f:
     task_definition = yaml.load(f, Loader=yaml.FullLoader)
