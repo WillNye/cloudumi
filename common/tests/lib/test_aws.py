@@ -9,8 +9,8 @@ import pytz
 import ujson as json
 from mock import patch
 
-from common.tests.conftest import create_future
-from common.tests.globals import host
+from util.pytest.fixtures.conftest import create_future
+from util.pytest.fixtures.globals import host
 
 ROLE = {
     "Arn": "arn:aws:iam::123456789012:role/TestInstanceProfile",

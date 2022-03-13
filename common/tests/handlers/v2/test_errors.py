@@ -1,7 +1,7 @@
 import ujson as json
 
-from common.tests.globals import host
-from common.tests.util import ConsoleMeAsyncHTTPTestCase
+from util.pytest.fixtures.globals import host
+from util.pytest.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):

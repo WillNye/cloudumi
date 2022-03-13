@@ -2,11 +2,9 @@ load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 py_library(
     name = "lib",
-    srcs = [
-        "conftest.py",
-        "globals.py",
-        "util.py",
-    ],
+    srcs = glob([
+        "**/*py",
+    ]),
     visibility = ["//visibility:public"],
 )
 
@@ -20,7 +18,7 @@ py_test(
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "AWS_PROFILE": "noq_cluster_dev",
     },
     deps = [
         "//common:lib",

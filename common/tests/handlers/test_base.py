@@ -3,7 +3,7 @@ import json
 import jwt
 from tornado.web import Application
 
-from common.tests.util import ConsoleMeAsyncHTTPTestCase
+from util.pytest.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 TEST_SECRET = "SECRET"
 TEST_ALG = ["HS256"]
