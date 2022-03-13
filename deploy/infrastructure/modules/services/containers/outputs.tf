@@ -37,3 +37,13 @@ output "registry_repository_url_frontend" {
   description = "The respository URL for the Frontend registry"
   value       = aws_ecr_repository.noq_ecr_repository-frontend
 }
+
+output "kms_key_id" {
+  description = "The KMS key ID for the ECS cluster"
+  value       = aws_kms_key.noq_ecs_kms_key.arn
+}
+
+output "noq_ecs_log_group" {
+  description = "The ECS Logs Group Name"
+  value       = aws_cloudwatch_log_group.noq_ecs_log_group.name
+}

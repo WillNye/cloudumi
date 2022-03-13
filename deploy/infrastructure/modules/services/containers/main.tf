@@ -1,11 +1,28 @@
+data "aws_caller_identity" "current" {}
+
+data "aws_partition" "current" {}
+
+data "aws_region" "current" {}
+
 resource "aws_cloudwatch_log_group" "noq_log_group" {
   name = var.cluster_id
 }
 
+resource "aws_cloudwatch_log_group" "noq_ecs_log_group" {
+  name       = format("%s-%s", var.cluster_id, "ecs")
+  kms_key_id = aws_kms_key.noq_ecs_kms_key.arn
+}
+
 resource "aws_kms_key" "noq_ecs_kms_key" {
   description             = "ECS KMS key"
+  policy                  = data.aws_iam_policy_document.cloudwatch.json
   deletion_window_in_days = 7
-  enable_key_rotation     = true
+  enable_key_rotation     = false
+}
+
+resource "aws_kms_alias" "cloudwatch" {
+  name          = format("alias/%s-%s", var.cluster_id, "kms")
+  target_key_id = aws_kms_key.noq_ecs_kms_key.key_id
 }
 
 resource "aws_ecs_cluster" "noq_ecs_cluster" {
@@ -321,4 +338,47 @@ resource "aws_security_group" "ecs-sg" {
       Name = "allow_access_to_noq"
     }
   )
+}
+
+data "aws_iam_policy_document" "cloudwatch" {
+  policy_id = "key-policy-cloudwatch"
+  statement {
+    sid = "Enable IAM User Permissions"
+    actions = [
+      "kms:*",
+    ]
+    effect = "Allow"
+    principals {
+      type = "AWS"
+      identifiers = [
+        format(
+          "arn:%s:iam::%s:root",
+          data.aws_partition.current.partition,
+          data.aws_caller_identity.current.account_id
+        )
+      ]
+    }
+    resources = ["*"]
+  }
+  statement {
+    sid = "AllowCloudWatchLogs"
+    actions = [
+      "kms:Encrypt*",
+      "kms:Decrypt*",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:Describe*"
+    ]
+    effect = "Allow"
+    principals {
+      type = "Service"
+      identifiers = [
+        format(
+          "logs.%s.amazonaws.com",
+          data.aws_region.current.name
+        )
+      ]
+    }
+    resources = ["*"]
+  }
 }
