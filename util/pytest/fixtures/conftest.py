@@ -26,8 +26,6 @@ from moto import (
 )
 from tornado.concurrent import Future
 
-from common.lib import dynamo
-
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["ASYNC_TEST_TIMEOUT"] = "100"
 
@@ -789,8 +787,10 @@ def tenant_static_configs_table(dynamodb):
     yield dynamodb
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def with_test_configuration_tenant_static_config_data(tenant_static_configs_table):
+    from common.lib import dynamo
+
     ddb = dynamo.RestrictedDynamoHandler()
     with open("util/pytest/test_configuration.yaml", "r") as fp:
         async_to_sync(ddb.update_static_config_for_host)(

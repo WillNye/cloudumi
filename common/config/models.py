@@ -11,16 +11,13 @@ UPDATED_BY = "NOQ_Automaton"
 
 
 class ModelAdapter:
-    def __init__(
-        self, pydantic_model_class: BaseModel, updated_by: str = UPDATED_BY
-    ) -> object:
+    def __init__(self, pydantic_model_class: BaseModel, updated_by: str = UPDATED_BY):
         self._model_class = pydantic_model_class
-        self._model = None
+        self._model = BaseModel()
         self._key = None
         self._host = None
         self._default = None
         self._updated_by = updated_by
-        return self
 
     def __access_subkey(self, config_item: dict, key: str, default: Any = None) -> dict:
         parts = key.split(".")
@@ -45,27 +42,34 @@ class ModelAdapter:
         return config_item
 
     def __nested_store(self, config: dict, key: str, value: BaseModel) -> dict:
+        if not config:
+            config = dict()
+
+        if len(key.split(".")) == 1:
+            # Base Condition
+            config[key] = dict(value)
+            return config
+
         for k in key.split("."):
-            if len(k) == 1:
-                # Base Condition
-                config[k] = dict(value)
-                return config
-            config[k] = self.__nested_store(config, k, value)
+            config[k] = self.__nested_store(config, ".".join(k[1:]), value)
         return config
 
-    def load_from_config(
-        self, key: str, host: str = None, default: Any = None
-    ) -> object:
+    def load_config(self, key: str, host: str = None, default: Any = None) -> object:
         """Required to be run before using any other functions."""
         self._key = key
         self._host = host
         self._default = default
         config_item = self.__optimistic_loader(key, host, default)
-        if not isinstance(config_item, dict):
+        if config_item and not isinstance(config_item, dict):
             raise ValueError(
                 f"Expect configuration object to be of type dict, got {type(config_item)} instead: {config_item}"
             )
-        self._model = self._model_class.parse_obj(config_item)
+        elif config_item:
+            self._model = self._model_class.parse_obj(config_item)
+        return self
+
+    def from_dict(self, model_dict: dict) -> object:
+        self._model = self._model_class.parse_obj(model_dict)
         return self
 
     @property
@@ -85,10 +89,10 @@ class ModelAdapter:
     def store(self) -> bool:
         """Break the chain; meant as an end state function."""
         ddb = RestrictedDynamoHandler()
-        config = self.__optimistic_loader(self._key, self._host, self._default)
-        config = self.__nested_store(config, self._key, self._model)
+        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        host_config = self.__nested_store(config, self._key, self._model)
         async_to_sync(ddb.update_static_config_for_host)(
-            yaml.dump(config), self._updated_by, self._host
+            yaml.dump(host_config), self._updated_by, self._host
         )
         return True
 
