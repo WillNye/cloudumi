@@ -90,7 +90,7 @@ class ModelAdapter:
         """Break the chain; meant as an end state function."""
         ddb = RestrictedDynamoHandler()
         host_config = config.get_tenant_static_config_from_dynamo(self._host)
-        host_config = self.__nested_store(config, self._key, self._model)
+        host_config = self.__nested_store(host_config, self._key, self._model)
         async_to_sync(ddb.update_static_config_for_host)(
             yaml.dump(host_config), self._updated_by, self._host
         )

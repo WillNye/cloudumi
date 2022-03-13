@@ -70,6 +70,8 @@ class TestModels(TestCase):
         assert self.model_adapter.dict.get("name") == "test_model"
 
     @pytest.mark.usefixtures("aws_credentials")
+    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
     def test_store_and_delete(self):
         assert self.model_adapter.store()
         host_config = config.get_tenant_static_config_from_dynamo(self.test_host)
