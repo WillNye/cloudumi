@@ -197,7 +197,7 @@ class AWSHelper:
         return str(random.randrange(100000000000, 999999999999))
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def redis_prereqs(redis):
     from common.lib.redis import RedisHandler
 
@@ -213,7 +213,7 @@ def redis_prereqs(redis):
     )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
@@ -222,7 +222,7 @@ def aws_credentials():
     os.environ["AWS_SESSION_TOKEN"] = "testing"
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def sts(aws_credentials):
     """Mocked STS Fixture."""
     from common.config import config
@@ -235,7 +235,7 @@ def sts(aws_credentials):
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def ec2(aws_credentials):
     """Mocked ec2 Fixture."""
     from common.config import config
@@ -248,7 +248,7 @@ def ec2(aws_credentials):
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def iam(aws_credentials):
     """Mocked IAM Fixture."""
     from common.config import config
@@ -261,7 +261,7 @@ def iam(aws_credentials):
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def aws_config(aws_credentials):
     """Mocked Config Fixture."""
     from common.config import config
@@ -274,7 +274,7 @@ def aws_config(aws_credentials):
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def s3(aws_credentials):
     """Mocked S3 Fixture."""
     from common.config import config
@@ -287,7 +287,7 @@ def s3(aws_credentials):
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def ses(aws_credentials):
     """Mocked SES Fixture."""
     from common.config import config
@@ -302,7 +302,7 @@ def ses(aws_credentials):
         yield client
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def sqs(aws_credentials):
     """Mocked SQS Fixture."""
     from common.config import config
@@ -315,7 +315,7 @@ def sqs(aws_credentials):
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def sns(aws_credentials):
     """Mocked S3 Fixture."""
     from common.config import config
@@ -328,7 +328,7 @@ def sns(aws_credentials):
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_table):
     from asgiref.sync import async_to_sync
 
@@ -390,7 +390,7 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
     )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def dynamodb(aws_credentials):
     """Mocked DynamoDB Fixture."""
     with mock_dynamodb2():
@@ -409,7 +409,7 @@ def dynamodb(aws_credentials):
         CONFIG.config["_global_"]["dynamodb_server"] = old_value
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def retry():
     """Mock the retry library so that it doesn't retry."""
 
@@ -426,7 +426,7 @@ def retry():
     patch_retry.stop()
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def iamrole_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
@@ -451,7 +451,7 @@ def iamrole_table(dynamodb):
     yield dynamodb
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def cloudtrail_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
@@ -480,7 +480,7 @@ def cloudtrail_table(dynamodb):
     yield dynamodb
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def sqs_queue(sqs):
     sqs.create_queue(
         QueueName="consoleme-cloudtrail-role-events-test",
@@ -677,7 +677,7 @@ def sqs_queue(sqs):
     yield sqs
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def policy_requests_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
@@ -708,7 +708,7 @@ def policy_requests_table(dynamodb):
     yield dynamodb
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def requests_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
@@ -727,7 +727,7 @@ def requests_table(dynamodb):
     yield dynamodb
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def users_table(dynamodb):
     # Create the table:
     dynamodb.create_table(
@@ -746,7 +746,7 @@ def users_table(dynamodb):
     yield dynamodb
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def tenant_static_configs_table(dynamodb):
     table_name = "tenant_static_configs"
     dynamodb.create_table(
@@ -798,7 +798,7 @@ def with_test_configuration_tenant_static_config_data(tenant_static_configs_tabl
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def dummy_requests_data(requests_table):
     user = {
         "host": {"S": host},
@@ -825,7 +825,7 @@ def dummy_requests_data(requests_table):
     yield requests_table
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def dummy_users_data(users_table):
     user = {
         "host": {"S": host},
@@ -845,7 +845,7 @@ def dummy_users_data(users_table):
     yield users_table
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def iam_sync_principals(iam):
     statement_policy = json.dumps(
         {
@@ -946,7 +946,7 @@ def iam_sync_principals(iam):
     yield iam
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def www_user():
     return json.loads(
         """{
@@ -1044,7 +1044,7 @@ class FakeRedis(redislite.StrictRedis):
         )
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def redis(session_mocker):
     session_mocker.patch("redis.Redis", FakeRedis)
     session_mocker.patch("redis.StrictRedis", FakeRedis)
@@ -1142,7 +1142,7 @@ def user_iam_role(iamrole_table, www_user):
     ddb.sync_iam_role_for_account(role_entry)
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def mock_exception_stats():
     p = patch("common.exceptions.exceptions.get_plugin_by_name")
 
@@ -1151,7 +1151,7 @@ def mock_exception_stats():
     p.stop()
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def mock_celery_stats(mock_exception_stats):
     p = patch("common.celery_tasks.celery_tasks.stats")
 
@@ -1173,7 +1173,7 @@ def mock_async_http_client():
     p.stop()
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=False, scope="session")
 def populate_caches(
     redis,
     user_iam_role,
