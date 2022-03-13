@@ -41,18 +41,18 @@ class ModelAdapter:
             config_item = config.get(key, default)
         return config_item
 
-    def __nested_store(self, config: dict, key: str, value: BaseModel) -> dict:
-        if not config:
-            config = dict()
+    def __nested_store(self, config_item: dict, key: str, value: BaseModel) -> dict:
+        if not config_item:
+            config_item = dict()
 
         if len(key.split(".")) == 1:
             # Base Condition
-            config[key] = dict(value)
-            return config
+            config_item[key] = dict(value)
+            return config_item
 
         for k in key.split("."):
-            config[k] = self.__nested_store(config, ".".join(k[1:]), value)
-        return config
+            config_item[k] = self.__nested_store(config_item, ".".join(k[1:]), value)
+        return config_item
 
     def load_config(self, key: str, host: str = None, default: Any = None) -> object:
         """Required to be run before using any other functions."""
