@@ -27,6 +27,20 @@ class ModelAdapter:
         config_item = config_item.get(parts[-1])
         return config_item or default
 
+    def __access_subkey_parent(
+        self, config_item: dict, key: str, default: Any = None
+    ) -> dict:
+        parts = key.split(".")
+        if len(parts) > 1:
+            for k in parts[:-2]:
+                config_item = config_item.get(k, {})
+        if len(parts) == 1:
+            return config_item
+        if len(parts) == 0:
+            return default
+        config_item = config_item.get(parts[-1])
+        return config_item or default
+
     def __optimistic_loader(
         self, key: str, host: str = None, default: Any = None
     ) -> dict:
@@ -100,10 +114,10 @@ class ModelAdapter:
         """Break the chain; meant as an end state function."""
         ddb = RestrictedDynamoHandler()
         host_config = config.get_tenant_static_config_from_dynamo(self._host)
-        config_item = self.__access_subkey(host_config, self._key, self._default)
+        config_item = self.__access_subkey_parent(host_config, self._key, self._default)
         if not config_item:
             return False
-        del config_item
+        del config_item[self._key]
         async_to_sync(ddb.update_static_config_for_host)(
             yaml.dump(host_config), self._updated_by, self._host
         )
