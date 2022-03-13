@@ -29,6 +29,7 @@ copy_to_bin(
         "jsconfig.json",
         "package.json",
         "yarn.lock",
+        ".eslintrc"
     ],
 )
 
@@ -71,7 +72,7 @@ _RUNTIME_DEPS = [
 ]
 
 _DEV_DEPS = [
-    "@npm//@craco/craco",
+    "@npm//react-scripts",
 ]
 
 react_scripts(
