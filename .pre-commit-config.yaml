@@ -91,14 +91,6 @@ repos:
           ]
   - repo: local
     hooks:
-      #      - id: pytest
-      #        name: pytest
-      #        entry: env CONFIG_LOCATION=common/tests/test_configuration.yaml pytest
-      #        args: ["common/tests"]
-      #        language: system
-      #        pass_filenames: false
-      #        always_run: true
-
       - id: python-bandit-vulnerability-check
         name: bandit
         entry: bandit
