@@ -1,3 +1,4 @@
+import pytest
 import ujson as json
 from mock import patch
 
@@ -6,6 +7,9 @@ from util.tests.fixtures.globals import host
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
 class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
@@ -98,6 +102,9 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertDictEqual(json.loads(response.body), expected)
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
 class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
@@ -128,6 +135,9 @@ class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertDictEqual(json.loads(response.body), expected)
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
 class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
@@ -211,6 +221,9 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(json.loads(res.body), expected)
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
 class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
@@ -228,6 +241,9 @@ class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertDictEqual(json.loads(response.body), expected)
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
 class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app

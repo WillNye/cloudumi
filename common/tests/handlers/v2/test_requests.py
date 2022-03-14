@@ -1,5 +1,6 @@
 from unittest.mock import mock_open, patch
 
+import pytest
 import ujson as json
 from deepdiff import DeepDiff
 
@@ -7,6 +8,11 @@ from util.tests.fixtures.globals import host
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("sqs")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("sts")
+@pytest.mark.usefixtures("create_default_resources")
 class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
@@ -30,6 +36,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         response = self.fetch("/api/v2/requests", method="GET", headers=headers)
         self.assertEqual(response.code, 405)
 
+    @pytest.mark.usefixtures("populate_caches")
     def test_requestshandler_post(self):
         mock_request_data = [
             {
@@ -78,6 +85,8 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         diff = DeepDiff(json.loads(response.body), expected_response)
         self.assertFalse(diff)
 
+    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("populate_caches")
     def test_post_request(self):
         mock_request_data = {
             "justification": "test asdf",
@@ -143,6 +152,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(response_d["request_created"], True)
         self.assertIn("/policies/request/", response_d["request_url"])
 
+    @pytest.mark.usefixtures("populate_caches")
     def test_post_request_admin_auto_approve(self):
         mock_request_data = {
             "justification": "test asdf",
@@ -266,6 +276,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(len(json.loads(response.body)["data"]), 1)
         self.assertEqual(res["data"][0], mock_request_data[1])
 
+    @pytest.mark.usefixtures("populate_caches")
     def test_post_new_managed_policy_resource_request(self):
         headers = {
             self.config.get_host_specific_key(
@@ -408,6 +419,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             },
         )
 
+    @pytest.mark.usefixtures("populate_caches")
     def test_post_new_managed_policy_resource_request_autoapprove(self):
         user = "consoleme_admins@example.com"
 
