@@ -2095,3 +2095,17 @@ components:
         owner:
           type: string
           description: AWS account owner
+    GoogleOIDCSSOIDPProvider:
+      type: object
+      required:
+        - something
+      properties:
+        client_id:
+          type: string
+          description: A unique client_id to be used for identification
+        client_secret:
+          type: string
+          description: The client secret used to authenticate to SSO IDP
+        authorize_scopes:
+          type: string
+          description:
