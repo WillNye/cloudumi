@@ -10,9 +10,6 @@ import boto3
 import pytest
 import redislite
 from asgiref.sync import async_to_sync
-
-# Unit tests will create mock resources in us-east-1
-from fixtures.globals import host
 from mock import MagicMock, Mock, patch
 from moto import (
     mock_config,
@@ -26,14 +23,15 @@ from moto import (
 )
 from tornado.concurrent import Future
 
-from common.lib import dynamo
+# Unit tests will create mock resources in us-east-1
+from util.tests.fixtures.globals import host
 
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["ASYNC_TEST_TIMEOUT"] = "100"
 
 # This must be set before loading ConsoleMe's configuration
 if not os.environ.get("CONFIG_LOCATION"):
-    os.environ["CONFIG_LOCATION"] = "util/pytest/test_configuration.yaml"
+    os.environ["CONFIG_LOCATION"] = "util/tests/test_configuration.yaml"
 
 MOCK_ROLE = {
     "arn": "arn:aws:iam::123456789012:role/FakeRole",
@@ -215,7 +213,7 @@ def redis_prereqs(redis):
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(autouse=True, scope="session")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
@@ -791,8 +789,10 @@ def tenant_static_configs_table(dynamodb):
 
 @pytest.fixture(scope="session")
 def with_test_configuration_tenant_static_config_data(tenant_static_configs_table):
+    from common.lib import dynamo
+
     ddb = dynamo.RestrictedDynamoHandler()
-    with open("util/pytest/test_configuration.yaml", "r") as fp:
+    with open("util/tests/test_configuration.yaml", "r") as fp:
         async_to_sync(ddb.update_static_config_for_host)(
             fp, "test@noq.dev", "test.noq.dev"
         )

@@ -201,3 +201,8 @@ output "celery_concurrency" {
   description = "The configured celery concurrency"
   value       = var.celery_concurrency
 }
+
+output "kms_key_id" {
+  description = "The configured KMS key ID"
+  value       = module.tenant_container_service.kms_key_id
+}

@@ -4,8 +4,8 @@ from unittest import TestCase
 import ujson as json
 from mock import MagicMock, patch
 
-from util.pytest.fixtures.conftest import create_future
-from util.pytest.fixtures.globals import host
+from util.tests.fixtures.fixtures import create_future
+from util.tests.fixtures.globals import host
 
 mock_aws_config_resources_redis = MagicMock(
     return_value=create_future(json.dumps({"accountId": "123456789012"}))

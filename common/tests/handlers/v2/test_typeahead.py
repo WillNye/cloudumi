@@ -7,9 +7,9 @@ from common.lib.self_service.models import (
     SelfServiceTypeaheadModelArray,
 )
 from common.models import AwsResourcePrincipalModel
-from util.pytest.fixtures.conftest import create_future
-from util.pytest.fixtures.globals import host
-from util.pytest.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.fixtures import create_future
+from util.tests.fixtures.globals import host
+from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):

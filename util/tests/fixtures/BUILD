@@ -1,12 +1,12 @@
 exports_files([
-    "conftest.py",
+    "fixtures.py",
     "globals.py",
 ])
 
 py_library(
     name = "lib",
     srcs = [
-        "conftest.py",
+        "fixtures.py",
         "globals.py",
         "util.py",
     ],

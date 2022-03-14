@@ -1,5 +1,5 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
-load("//util/pytest:defs.bzl", "pytest_test")
+load("//util/tests:defs.bzl", "pytest_test")
 
 INT_DEPS = [
     "//common:lib",
@@ -7,7 +7,7 @@ INT_DEPS = [
     "//common/exceptions:lib",
     "//identity:lib",
     "//plugins/metrics:lib",
-    "//util/pytest/fixtures:lib",
+    "//util/tests/fixtures:lib",
 ]
 
 EXT_DEPS = [

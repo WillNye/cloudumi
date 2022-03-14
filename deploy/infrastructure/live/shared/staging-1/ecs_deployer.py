@@ -16,6 +16,10 @@ security_groups = ["sg-0344d82e7000960df"]
 os.environ["AWS_PROFILE"] = "noq_staging"
 region = "us-west-2"
 account_id = "259868150464"
+kms_key_arn = (
+    "arn:aws:kms:us-west-2:259868150464:key/c772a276-6f4d-455b-a2fc-99681435401e"
+)
+noq_ecs_log_group_name = "staging-noq-dev-shared-staging-1"
 
 with open(task_definition_yaml_f, "r") as f:
     task_definition = yaml.load(f, Loader=yaml.FullLoader)
@@ -32,6 +36,16 @@ ecs_client = boto3.client("ecs", region_name=region)
 try:
     ecs_client.create_cluster(
         clusterName=cluster_name,
+        configuration={
+            "executeCommandConfiguration": {
+                "kmsKeyId": kms_key_arn,
+                "logging": "OVERRIDE",
+                "logConfiguration": {
+                    "cloudWatchLogGroupName": noq_ecs_log_group_name,
+                    "cloudWatchEncryptionEnabled": True,
+                },
+            }
+        },
     )
 except ClientError as e:
     if not e.response["Error"] == {
@@ -39,6 +53,19 @@ except ClientError as e:
         "Code": "InvalidParameterException",
     }:
         raise
+    ecs_client.update_cluster(
+        cluster=cluster_name,
+        configuration={
+            "executeCommandConfiguration": {
+                "kmsKeyId": kms_key_arn,
+                "logging": "OVERRIDE",
+                "logConfiguration": {
+                    "cloudWatchLogGroupName": noq_ecs_log_group_name,
+                    "cloudWatchEncryptionEnabled": True,
+                },
+            }
+        },
+    )
 
 registered_task_definition = ecs_client.register_task_definition(**task_definition)
 
@@ -55,7 +82,6 @@ try:
         desiredCount=1,
         launchType="FARGATE",
         enableExecuteCommand=True,
-        executeCommandConfiguration={"logging": "NONE"},
         networkConfiguration={
             "awsvpcConfiguration": {
                 "subnets": subnets,
@@ -75,7 +101,6 @@ except ClientError as e:
         service=service_name,
         taskDefinition=task_definition_name,
         desiredCount=1,
-        executeCommandConfiguration={"logging": "NONE"},
         enableExecuteCommand=True,
         networkConfiguration={
             "awsvpcConfiguration": {

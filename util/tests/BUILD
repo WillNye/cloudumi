@@ -9,13 +9,21 @@ exports_files([
     "test_configuration.yaml",
 ])
 
+filegroup(
+    name = "configs",
+    srcs = glob([
+        "*.yaml",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
 py_library(
     name = "fixtures",
     srcs_version = "PY3",
     srcs = [
         "__init__.py",
-        "//util/pytest/fixtures:conftest.py",
-        "//util/pytest/fixtures:globals.py",
+        "//util/tests/fixtures:fixtures.py",
+        "//util/tests/fixtures:globals.py",
     ],
     deps = [
         "//common:lib",
@@ -50,8 +58,8 @@ py_wheel(
     name = "wheel",
     distribution = "cloudumi_fixtures",
     python_tag = "py3",
-    entry_points = {"pytest11": ["fixtures = fixtures.conftest"]},
-    strip_path_prefixes = ["util/pytest"],
+    entry_points = {"pytest11": ["fixtures = fixtures.fixtures"]},
+    strip_path_prefixes = ["util/tests"],
     version = "0.0.1",
     deps = [":fixtures_pkg"],
 )
