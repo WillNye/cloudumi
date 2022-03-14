@@ -1098,10 +1098,6 @@ components:
           default: false
         updated_by:
           type: string
-        expiration_date:
-          type: integer
-          example: 20210905
-          description: Date to expire requested policy, in the format of YYYYmmdd
     GenericFileChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
