@@ -1,3 +1,5 @@
+import ipaddress
+
 from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
@@ -7,6 +9,11 @@ updated_by_name = "noq_automated_account_management"
 
 async def set_ip_restriction(host: str, ip_restriction: str) -> bool:
     ddb = RestrictedDynamoHandler()
+    try:
+        # Noteworthy: this will throw an exception if bits are set in the host field
+        _ = ipaddress.ip_network(ip_restriction)
+    except ValueError:
+        return False
     host_config = config.get_tenant_static_config_from_dynamo(host)
     if "aws" not in host_config:
         host_config["aws"] = dict()
@@ -30,11 +37,7 @@ async def get_ip_restrictions(host: str) -> list:
 async def delete_ip_restriction(host: str, ip_restriction: str) -> bool:
     ddb = RestrictedDynamoHandler()
     host_config = config.get_tenant_static_config_from_dynamo(host)
-    if "aws" not in host_config:
-        host_config["aws"] = dict()
-    if "ip_restrictions" not in host_config["aws"]:
-        return False
-    if ip_restriction not in host_config["aws"]["ip_restrictions"]:
+    if ip_restriction not in host_config.get("aws", {}).get("ip_restrictions", []):
         return False
     try:
         idx = host_config["aws"]["ip_restrictions"].index(ip_restriction)
