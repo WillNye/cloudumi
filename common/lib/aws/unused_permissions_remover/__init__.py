@@ -3,6 +3,7 @@ import datetime
 import sentry_sdk
 import ujson as json
 from asgiref.sync import sync_to_async
+from jinja2 import Environment, FileSystemLoader
 
 from common.config import config
 from common.lib.aws.access_advisor import get_epoch_authenticated
@@ -81,6 +82,42 @@ async def calculate_unused_policy_for_identity(
         s3_key=s3_key,
     )
     return effective_identity_permissions[arn]
+
+
+async def generate_permission_removal_commands(identity, new_policy_document):
+    identity_type = identity["arn"].split(":")[-1].split("/")[0]
+    identity_name = identity["arn"].split(":")[-1].split("/")[1]
+    inline_policy_names = [
+        p["PolicyName"] for p in identity["policy"].get("RolePolicyList", [])
+    ]
+    managed_policy_arns = [
+        p["PolicyArn"] for p in identity["policy"].get("AttachedManagedPolicies", [])
+    ]
+    new_policy_name = f"{identity_name}-policy"
+    env = Environment(
+        loader=FileSystemLoader("common/templates"),
+        extensions=["jinja2.ext.loopcontrols"],
+    )
+    aws_cli_template = env.get_template("aws_cli_permissions_removal.py.j2")
+    aws_cli_script = aws_cli_template.render(
+        identity_type=identity_type,
+        new_policy_name=new_policy_name,
+        managed_policy_arns=managed_policy_arns,
+        inline_policy_names=inline_policy_names,
+        new_policy_document=json.dumps(new_policy_document),
+    )
+    python_boto3_template = env.get_template("boto3_permissions_removal.py.j2")
+    python_boto3_script = python_boto3_template.render(
+        identity_type=identity_type,
+        new_policy_name=new_policy_name,
+        managed_policy_arns=managed_policy_arns,
+        inline_policy_names=inline_policy_names,
+        new_policy_document=json.dumps(new_policy_document),
+    )
+    return {
+        "aws_cli_script": aws_cli_script,
+        "python_boto3_script": python_boto3_script,
+    }
 
 
 async def calculate_unused_policy_for_identities(
@@ -207,6 +244,10 @@ async def calculate_unused_policy_for_identities(
             )
             return
 
+        permission_removal_commands = await generate_permission_removal_commands(
+            role, effective_policy_unused_permissions_removed
+        )
+
         role_permissions_data[arn] = {
             "arn": arn,
             "host": host,
@@ -214,6 +255,7 @@ async def calculate_unused_policy_for_identities(
             "effective_policy_unused_permissions_removed": effective_policy_unused_permissions_removed,
             "individual_role_inline_policy_changes": individual_role_inline_policy_changes,
             "individual_role_managed_policy_changes": individual_role_managed_policy_changes,
+            "permission_removal_commands": permission_removal_commands,
         }
 
     return role_permissions_data

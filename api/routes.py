@@ -229,6 +229,8 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/policies/effective/role/(?P<_account_id>[^\/]+)/(?P<_role_name>[^\/]+)/?",
             EffectiveRolePolicyHandler,
+        ),
+        (
             r"/api/v3/services/aws/role-access/automatic-update/(?P<_enabled>enable|disable)/?",
             AutomaticPolicyUpdateHandler,
         ),
