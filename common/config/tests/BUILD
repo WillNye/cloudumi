@@ -1,75 +1,52 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("//util/tests:defs.bzl", "pytest_test")
 
-py_test(
+INT_DEPS = [
+    "//common:lib",
+    "//common/config:lib",
+    "//common/exceptions:lib",
+    "//identity:lib",
+    "//plugins/metrics:lib",
+    "//util/tests/fixtures:lib",
+]
+
+EXT_DEPS = [
+    requirement("asgiref"),
+    requirement("tornado"),
+]
+
+pytest_test(
     name = "test_config",
-    data = [
-        "//configs/development_account:configs",
-    ],
     srcs = [
         "test_config.py",
     ],
-    env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
-    },
     deps = [
-        "//common:lib",
-        "//common/config:lib",
-        "//common/exceptions:lib",
-        "//common/tests:lib",
-        "//identity:lib",
-        "//plugins/metrics:lib",
-        requirement("asgiref"),
-        requirement("tornado"),
-    ],
+    ] + INT_DEPS + EXT_DEPS,
 )
 
-py_test(
+pytest_test(
     name = "test_account",
-    data = [
-        "//configs/development_account:configs",
-        "//common/config:weep_config",
-    ],
     srcs = [
         "test_account.py",
     ],
-    env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
-    },
     deps = [
-        "//common:lib",
-        "//common/config:lib",
-        "//common/exceptions:lib",
-        "//common/tests:lib",
-        "//identity:lib",
-        "//plugins/metrics:lib",
-        requirement("asgiref"),
-        requirement("tornado"),
-    ],
+    ] + INT_DEPS + EXT_DEPS,
 )
 
-py_test(
+pytest_test(
     name = "test_role_access",
-    data = [
-        "//configs/development_account:configs",
-        "//common/config:weep_config",
-    ],
     srcs = [
         "test_role_access.py",
     ],
-    env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_local_development.yaml",
-        "AWS_PROFILE": "noq_dev",
-    },
     deps = [
-        "//common:lib",
-        "//common/config:lib",
-        "//common/exceptions:lib",
-        "//common/tests:lib",
-        "//identity:lib",
-        "//plugins/metrics:lib",
-        requirement("asgiref"),
-        requirement("tornado"),
+    ] + INT_DEPS + EXT_DEPS,
+)
+
+pytest_test(
+    name = "test_ip_restrictions",
+    srcs = [
+        "test_ip_restrictions.py",
     ],
+    deps = [
+    ] + INT_DEPS + EXT_DEPS,
 )

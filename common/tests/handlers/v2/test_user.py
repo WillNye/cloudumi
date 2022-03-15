@@ -2,8 +2,8 @@ import json
 
 from asgiref.sync import async_to_sync
 
-from common.tests.globals import host
-from common.tests.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.globals import host
+from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):

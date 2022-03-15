@@ -140,3 +140,14 @@ async def get_role_access_credential_brokering(host: str) -> bool:
         "cloud_credential_authorization_mapping", host, {}
     )
     return host_config.get("role_tags", {}).get("enabled", False)
+
+
+async def toggle_role_access_automatic_policy_update(host: str, enabled: bool) -> bool:
+    ddb = RestrictedDynamoHandler()
+    host_config = config.get_tenant_static_config_from_dynamo(host)
+    if "aws" not in host_config:
+        host_config["aws"] = dict()
+    host_config["aws"]["automatically_update_role_trust_policies"] = enabled
+    await ddb.update_static_config_for_host(
+        yaml.dump(host_config), updated_by_name, host  # type: ignore
+    )
