@@ -6,3 +6,4 @@ ujson
 asgiref
 pytz
 ruamel.yaml
+tornado

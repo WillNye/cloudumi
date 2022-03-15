@@ -1,7 +1,5 @@
 from typing import Any, Union
 
-from asgiref.sync import async_to_sync
-
 from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.pydantic import BaseModel
@@ -104,17 +102,17 @@ class ModelAdapter:
             )
         return self._model.dict()
 
-    def store(self) -> bool:
+    async def store(self) -> bool:
         """Break the chain; meant as an end state function."""
         ddb = RestrictedDynamoHandler()
         host_config = config.get_tenant_static_config_from_dynamo(self._host)
         host_config = self.__nested_store(host_config, self._key, self._model)
-        async_to_sync(ddb.update_static_config_for_host)(
+        await ddb.update_static_config_for_host(
             yaml.dump(host_config), self._updated_by, self._host
         )
         return True
 
-    def delete(self) -> bool:
+    async def delete(self) -> bool:
         """Break the chain; meant as an end state function."""
         ddb = RestrictedDynamoHandler()
         host_config = config.get_tenant_static_config_from_dynamo(self._host)
@@ -122,7 +120,7 @@ class ModelAdapter:
         if not config_item:
             return False
         del config_item[self._key]
-        async_to_sync(ddb.update_static_config_for_host)(
+        await ddb.update_static_config_for_host(
             yaml.dump(host_config), self._updated_by, self._host
         )
         return True

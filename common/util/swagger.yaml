@@ -2119,7 +2119,6 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
-          enum: ["Google"]
         user_pool_id:
           type: string
           description: The user pool ID.
@@ -2141,7 +2140,6 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
-          enum: ["Google"]
         user_pool_id:
           type: string
           description: The user pool ID.
@@ -2194,7 +2192,6 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
-          enum: ["Google"]
         user_pool_id:
           type: string
           description: The user pool ID.
