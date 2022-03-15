@@ -2197,9 +2197,18 @@ components:
     SSOIDPProviders:
       type: object
       properties:
-        google_oidc_sso_idp_provider:
-          $ref: "#/components/schemas/GoogleOIDCSSOIDPProvider"
-        saml_oidc_sso_idp_provider:
-          $ref: "#/components/schemas/SamlOIDCSSOIDPProvider"
-        oidc_sso_idp_provider:
-          $ref: "#/components/schemas/OIDCSSOIDPProvider"
+        google:
+          type: object
+          # properties:
+          #   google_oidc_sso_idp_provider:
+          #     $ref: "#/components/schemas/GoogleOIDCSSOIDPProvider"
+        saml:
+          type: object
+          # properties:
+          #   saml_oidc_sso_idp_provider:
+          #     $ref: "#/components/schemas/SamlOIDCSSOIDPProvider"
+        oidc:
+          type: object
+          # properties:
+          #   oidc_sso_idp_provider:
+          #     $ref: "#/components/schemas/OIDCSSOIDPProvider"
