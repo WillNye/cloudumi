@@ -59,13 +59,15 @@ class ModelAdapter:
         if not config_item:
             config_item = dict()
 
-        if len(key.split(".")) == 1:
+        segmented_key = key.split(".")
+        if len(segmented_key) == 1:
             # Base Condition
             config_item[key] = dict(value)
             return config_item
 
-        for k in key.split("."):
-            config_item[k] = self.__nested_store(config_item, ".".join(k[1:]), value)
+        config_item[segmented_key[0]] = self.__nested_store(
+            config_item, ".".join(segmented_key[1:]), value
+        )
         return config_item
 
     def load_config(self, key: str, host: str = None, default: Any = None) -> object:

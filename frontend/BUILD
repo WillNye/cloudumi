@@ -29,7 +29,6 @@ copy_to_bin(
         "jsconfig.json",
         "package.json",
         "yarn.lock",
-        ".eslintrc"
     ],
 )
 

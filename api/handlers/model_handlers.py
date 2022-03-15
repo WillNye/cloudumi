@@ -35,6 +35,8 @@ class ConfigurationCrudHandler(BaseHandler):
             "message": "Retrieving information",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
+            "model_class": self._model_class,
+            "config_key": self._config_key,
             "host": host,
         }
         log.debug(log_data)
@@ -74,6 +76,8 @@ class ConfigurationCrudHandler(BaseHandler):
             "message": "Updating data",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
+            "model_class": self._model_class,
+            "config_key": self._config_key,
             "host": host,
         }
 
@@ -121,6 +125,8 @@ class ConfigurationCrudHandler(BaseHandler):
             "message": "Deleting data",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
+            "model_class": self._model_class,
+            "config_key": self._config_key,
             "host": host,
         }
 

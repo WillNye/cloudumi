@@ -40,6 +40,7 @@ test_model_dict = {
 }
 
 
+@pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
 class TestModels(TestCase):
     """Docstring in public class."""
 
@@ -54,24 +55,20 @@ class TestModels(TestCase):
             .from_dict(test_model_dict)
         )
 
-    @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
     def test_load_from_config(self):
         obj = ModelAdapter(TestModel).load_config("spoke_accounts", self.test_host)
         assert isinstance(obj, ModelAdapter)
 
-    @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
     def test_get_model(self):
         assert isinstance(self.model_adapter.model, TestModel)
         assert self.model_adapter.model.name == "test_model"
 
-    @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
     def test_get_dict(self):
         assert isinstance(self.model_adapter.dict, dict)
         assert self.model_adapter.dict.get("name") == "test_model"
 
     @pytest.mark.usefixtures("aws_credentials")
     @pytest.mark.usefixtures("dynamodb")
-    @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
     def test_store_and_delete(self):
         assert self.model_adapter.store()
         host_config = config.get_tenant_static_config_from_dynamo(self.test_host)
@@ -80,3 +77,18 @@ class TestModels(TestCase):
         assert self.model_adapter.delete()
         host_config = config.get_tenant_static_config_from_dynamo(self.test_host)
         assert self.test_key not in host_config
+
+    @pytest.mark.usefixtures("aws_credentials")
+    @pytest.mark.usefixtures("dynamodb")
+    def test_nested_store_op(self):
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config("auth.test.nested", self.test_host)
+            .from_dict(test_model_dict)
+        )
+        assert model_adapter.store()
+        host_config = config.get_tenant_static_config_from_dynamo(self.test_host)
+        assert (
+            host_config.get("auth", {}).get("test", {}).get("nested", {})
+            == test_model_dict
+        )

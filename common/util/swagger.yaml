@@ -2098,7 +2098,11 @@ components:
     GoogleOIDCSSOIDPProvider:
       type: object
       required:
-        - something
+        - client_id
+        - client_secret
+        - authorize_scopes
+        - provider_name
+        - provider_type
       properties:
         client_id:
           type: string
@@ -2108,4 +2112,90 @@ components:
           description: The client secret used to authenticate to SSO IDP
         authorize_scopes:
           type: string
-          description:
+          description: OpenID Connect Clients use scope values as defined in 3.3 of OAuth 2.0 [RFC6749] to specify what access privileges are being requested for Access Tokens. The scopes associated with Access Tokens determine what resources will be available when they are used to access OAuth 2.0 protected endpoints. For OpenID Connect, scopes can be used to request that specific sets of information be made available as Claim Values. This document describes only the scope values used by OpenID Connect.
+        provider_name:
+          type: string
+          description: The identity provider name.
+        provider_type:
+          type: string
+          description: The identity provider type.
+          enum: ["Google"]
+        user_pool_id:
+          type: string
+          description: The user pool ID.
+          pattern: '[\w-]+_[0-9a-zA-Z]+'
+    SamlOIDCSSOIDPProvider:
+      type: object
+      required:
+        - metadata_url
+        - provider_name
+        - provider_type
+        - user_pool_id
+      properties:
+        metadata_url:
+          type: string
+          description: The metadata defining the SAML authentication
+        provider_name:
+          type: string
+          description: The identity provider name.
+        provider_type:
+          type: string
+          description: The identity provider type.
+          enum: ["Google"]
+        user_pool_id:
+          type: string
+          description: The user pool ID.
+          pattern: '[\w-]+_[0-9a-zA-Z]+'
+    OIDCSSOIDPProvider:
+      type: object
+      required:
+        - client_id
+        - client_secret
+        - attributes_request_method
+        - oidc_issuer
+        - authorize_scopes
+        - provider_name
+        - provider_type
+        - user_pool_id
+      properties:
+        client_id:
+          type: string
+          description: A unique client id used for authentication with OIDC providers
+        client_secret:
+          type: string
+          description: A unique client id used for authentication with OIDC providers
+        attributes_request_method:
+          type: string
+          description: A unique client id used for authentication with OIDC providers
+        oidc_issuer:
+          type: string
+          description: A unique client id used for authentication with OIDC providers
+        authorize_scopes:
+          type: string
+          description: A unique client id used for authentication with OIDC providers
+        authorize_url:
+          type: string
+          description: if not available from discovery URL specified by oidc_issuer key
+        token_url:
+          type: string
+          description: if not available from discovery URL specified by oidc_issuer key
+        attributes_url:
+          type: string
+          description: if not available from discovery URL specified by oidc_issuer key
+        jwks_uri:
+          type: string
+          description: if not available from discovery URL specified by oidc_issuer key
+        attributes_url_add_attributes:
+          type: string
+          description: a read-only property that is set automatically
+        provider_name:
+          type: string
+          description: The identity provider name.
+        provider_type:
+          type: string
+          description: The identity provider type.
+          enum: ["Google"]
+        user_pool_id:
+          type: string
+          description: The user pool ID.
+          pattern: '[\w-]+_[0-9a-zA-Z]+'
