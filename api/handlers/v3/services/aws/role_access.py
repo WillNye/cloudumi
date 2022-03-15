@@ -230,3 +230,60 @@ class AuthorizedGroupsTagsDeleteHandler(BaseHandler):
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
+
+
+class AutomaticPolicyUpdateHandler(BaseHandler):
+    """
+    Provides a toggle to enable and disable automatic policy updates if NOQ does not have required permissions
+    """
+
+    async def post(self, _enabled: str):
+        host = self.ctx.host
+        enabled = True if _enabled == "enable" else False
+
+        log_data = {
+            "function": f"{type(self).__name__}.{__name__}",
+            "user": self.user,
+            "message": "Enabling automatic updates"
+            if enabled
+            else "Disabling automatic updates",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "host": host,
+        }
+
+        if not can_admin_all(self.user, self.groups, host):
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self,
+                "unable to set automatic updates",
+                errors,
+                403,
+                "unauthorized",
+                log_data,
+            )
+            return
+        log.debug(log_data)
+
+        verb = "enabled" if enabled else "disabled"
+
+        try:
+            await role_access.toggle_role_access_automatic_policy_update(host, enabled)
+        except Exception as exc:
+            sentry_sdk.capture_exception()
+            log.error(exc)
+            res = WebResponse(
+                success="error",
+                status_code=400,
+                message=f"Unable to {verb} role access automatic policy update.",
+            )
+            self.write(res.json(exclude_unset=True, exclude_none=True))
+            return
+
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message=f"Successfully {verb} role access automatic policy update.",
+        )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
+        return

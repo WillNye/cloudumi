@@ -1,13 +1,14 @@
 from asgiref.sync import async_to_sync
 from tornado.testing import AsyncHTTPTestCase
 
-from common.lib.jwt import generate_jwt_token
-from common.tests.globals import host, host_header
+from util.tests.fixtures.globals import host, host_header
 
 
 def generate_jwt_token_for_testing(
     user="testuser@example.com", groups=None, formatted_host_name=host
 ):
+    from common.lib.jwt import generate_jwt_token
+
     if not groups:
         groups = ["groupa", "groupb", "groupc"]
     if isinstance(groups, str):

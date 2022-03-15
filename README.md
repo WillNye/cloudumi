@@ -13,6 +13,8 @@
   - [Overview](frontend/README.md)
 - How to Build:
   - [Build Instructions](#build-instructions)
+- Testing:
+  - [Testing Instructions](util/tests/README.md)
 
 # Build Instructions
 

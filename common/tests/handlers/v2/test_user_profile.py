@@ -4,8 +4,8 @@ import sys
 
 import ujson as json
 
-from common.tests.globals import host
-from common.tests.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.globals import host
+from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
