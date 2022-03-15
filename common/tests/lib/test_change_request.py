@@ -6,7 +6,7 @@ from common.models import (
     InlinePolicyChangeModel,
     ResourceModel,
 )
-from common.tests.globals import host
+from util.tests.fixtures.globals import host
 
 
 class TestChangeRequestLib(AsyncTestCase):
