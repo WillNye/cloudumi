@@ -56,11 +56,9 @@ class TestIpRestrictions(TestCase):
 
     @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
     def test_delete_ip_restriction_exists(self):
-        assert async_to_sync(ip_restrictions.set_ip_restriction)(
-            "host", "10.10.10.10/8"
-        )
+        assert async_to_sync(ip_restrictions.set_ip_restriction)("host", "10.0.0.0/8")
         assert async_to_sync(ip_restrictions.delete_ip_restriction)(
-            "host", "10.10.10.10/8"
+            "host", "10.0.0.0/8"
         )
 
     def test_delete_ip_restriction_empty(self):
