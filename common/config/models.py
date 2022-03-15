@@ -66,7 +66,7 @@ class ModelAdapter:
             return config_item
 
         config_item[segmented_key[0]] = self.__nested_store(
-            config_item, ".".join(segmented_key[1:]), value
+            config_item[segmented_key[0]], ".".join(segmented_key[1:]), value
         )
         return config_item
 
