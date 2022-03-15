@@ -30,8 +30,8 @@ async def set_ip_restriction(host: str, ip_restriction: str) -> bool:
 
 
 async def get_ip_restrictions(host: str) -> list:
-    ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host)
-    return ip_restrictions or list()
+    ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host, [])
+    return ip_restrictions
 
 
 async def delete_ip_restriction(host: str, ip_restriction: str) -> bool:
