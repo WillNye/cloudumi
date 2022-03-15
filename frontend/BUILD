@@ -29,6 +29,9 @@ copy_to_bin(
         "jsconfig.json",
         "package.json",
         "yarn.lock",
+        ".eslintrc",
+        ".eslintignore",
+        ".yarnrc.yml"
     ],
 )
 
@@ -43,7 +46,6 @@ write_file(
 _RUNTIME_DEPS = [
     "chdir.cjs",
     "copy_static_files",
-
     "@npm//@monaco-editor/react",
     "@npm//axios",
     "@npm//http-server",
@@ -68,10 +70,20 @@ _RUNTIME_DEPS = [
     "@npm//semantic-ui-react",
     "@npm//survey-react",
     "@npm//yaml",
+    "@npm//eslint-config-react-app",
+    "@npm//babel-eslint",
+    "@npm//eslint",
+    "@npm//eslint-config-prettier",
+    "@npm//eslint-plugin-flowtype",
+    "@npm//eslint-plugin-import",
+    "@npm//eslint-plugin-jsx-a11y",
+    "@npm//eslint-plugin-react",
+    "@npm//eslint-plugin-react-hooks"
+
 ]
 
 _DEV_DEPS = [
-    "@npm//@craco/craco",
+    "@npm//react-scripts",
 ]
 
 react_scripts(
@@ -85,6 +97,7 @@ react_scripts(
     data = _RUNTIME_DEPS,
     env = {
         "BUILD_PATH": "./build",
+        "DISABLE_ESLINT_PLUGIN": "true"
     },
     output_dir = True,
     visibility = ["//visibility:public"],
@@ -96,6 +109,9 @@ react_scripts(
         "--node_options=--require=./$(rootpath chdir.cjs)",
         "start",
     ],
+    env = {
+        "DISABLE_ESLINT_PLUGIN": "true"
+    },
     data = _RUNTIME_DEPS,
     tags = [
         # This tag instructs ibazel to pipe into stdin a event describing actions.
