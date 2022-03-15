@@ -94,9 +94,14 @@ from api.handlers.v3.services.aws.account import (
     SpokeDeleteHandler,
     SpokeHandler,
 )
+from api.handlers.v3.services.aws.ip_restrictions import (
+    IpRestrictionsHandler,
+    IpRestrictionsToggleHandler,
+)
 from api.handlers.v3.services.aws.role_access import (
     AuthorizedGroupsTagsDeleteHandler,
     AuthorizedGroupsTagsHandler,
+    AutomaticPolicyUpdateHandler,
     CredentialBrokeringCurrentStateHandler,
     CredentialBrokeringHandler,
 )
@@ -224,6 +229,16 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/policies/effective/role/(?P<_account_id>[^\/]+)/(?P<_role_name>[^\/]+)/?",
             EffectiveRolePolicyHandler,
+            r"/api/v3/services/aws/role-access/automatic-update/(?P<_enabled>enable|disable)/?",
+            AutomaticPolicyUpdateHandler,
+        ),
+        (
+            r"/api/v3/services/aws/ip-access/?",
+            IpRestrictionsHandler,
+        ),
+        (
+            r"/api/v3/services/aws/ip-access/(?P<_enabled>enable|disable)/?",
+            IpRestrictionsToggleHandler,
         ),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),

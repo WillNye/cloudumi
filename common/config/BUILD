@@ -8,6 +8,7 @@ filegroup(
         "__init__.py",
         "account.py",
         "config.py",
+        "ip_restrictions.py",
         "models.py",
         "role_access.py",
     ),

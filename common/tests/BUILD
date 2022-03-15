@@ -2,25 +2,22 @@ load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 py_library(
     name = "lib",
-    srcs = [
-        "conftest.py",
-        "globals.py",
-        "util.py",
-    ],
+    srcs = glob([
+        "**/*py",
+    ]),
     visibility = ["//visibility:public"],
 )
 
 py_test(
     name = "test_main",
     data = [
-        "//configs/development_account:configs",
+        "//util/tests:configs",
     ],
     srcs = [
         "test_main.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
     },
     deps = [
         "//common:lib",
@@ -29,6 +26,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],

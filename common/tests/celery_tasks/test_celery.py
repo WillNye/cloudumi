@@ -6,7 +6,7 @@ import sys
 from datetime import datetime, timedelta
 from unittest import TestCase
 
-from common.tests.globals import host
+from util.tests.fixtures.globals import host
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))

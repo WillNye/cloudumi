@@ -7,9 +7,9 @@ from common.lib.self_service.models import (
     SelfServiceTypeaheadModelArray,
 )
 from common.models import AwsResourcePrincipalModel
-from common.tests.conftest import create_future
-from common.tests.globals import host
-from common.tests.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.fixtures import create_future
+from util.tests.fixtures.globals import host
+from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
 class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):

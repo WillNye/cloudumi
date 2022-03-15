@@ -242,13 +242,16 @@ class Aws:
             "message": "Generating authenticated AWS console URL",
         }
         log.debug(log_data)
+        ip_restrictions_enabled = config.get_host_specific_key(
+            "policies.ip_restrictions", host, False
+        )
         credentials = await self.get_credentials(
             user,
             role,
             host,
             user_role=user_role,
             account_id=account_id,
-            enforce_ip_restrictions=False,
+            enforce_ip_restrictions=ip_restrictions_enabled,
         )
 
         credentials_d = {

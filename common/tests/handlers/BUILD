@@ -3,14 +3,13 @@ load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 py_test(
     name = "test_accessui",
     data = [
-        "//configs/development_account:configs",
+        "//util/tests:configs",
     ],
     srcs = [
         "test_accessui.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
     },
     deps = [
         "//common:lib",
@@ -19,6 +18,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
@@ -27,14 +27,13 @@ py_test(
 py_test(
     name = "test_base",
     data = [
-        "//configs/development_account:configs",
+        "//util/tests:configs",
     ],
     srcs = [
         "test_base.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
     },
     deps = [
         "//common:lib",
@@ -43,22 +42,22 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
 )
 
 py_test(
-    name = "test_policies",
+    name = "test_policies_handlers",
     data = [
-        "//configs/development_account:configs",
+        "//util/tests:configs",
     ],
     srcs = [
-        "test_policies.py",
+        "test_policies_handlers.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
     },
     deps = [
         "//common:lib",
@@ -67,6 +66,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
@@ -75,14 +75,13 @@ py_test(
 py_test(
     name = "test_role_login_api",
     data = [
-        "//configs/development_account:configs",
+        "//util/tests:configs",
     ],
     srcs = [
         "test_role_login_api.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
     },
     deps = [
         "//common:lib",
@@ -91,6 +90,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
@@ -99,14 +99,13 @@ py_test(
 py_test(
     name = "test_users",
     data = [
-        "//configs/development_account:configs",
+        "//util/tests:configs",
     ],
     srcs = [
         "test_users.py",
     ],
     env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
     },
     deps = [
         "//common:lib",
@@ -115,6 +114,7 @@ py_test(
         "//common/tests:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/tests/fixtures:lib",
         requirement("asgiref"),
         requirement("tornado"),
     ],
