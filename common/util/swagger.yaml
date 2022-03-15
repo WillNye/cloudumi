@@ -2194,3 +2194,12 @@ components:
           type: string
           description: The user pool ID.
           pattern: '[\w-]+_[0-9a-zA-Z]+'
+    SSOIDPProviders:
+      type: object
+      properties:
+        google_oidc_sso_idp_provider:
+          $ref: "#/components/schemas/GoogleOIDCSSOIDPProvider"
+        saml_oidc_sso_idp_provider:
+          $ref: "#/components/schemas/SamlOIDCSSOIDPProvider"
+        oidc_sso_idp_provider:
+          $ref: "#/components/schemas/OIDCSSOIDPProvider"

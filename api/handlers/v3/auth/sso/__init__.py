@@ -3,6 +3,7 @@ from common.models import (
     GoogleOIDCSSOIDPProvider,
     OIDCSSOIDPProvider,
     SamlOIDCSSOIDPProvider,
+    SSOIDPProviders,
 )
 
 
@@ -19,3 +20,8 @@ class SamlOidcIdpConfigurationCrudHandler(ConfigurationCrudHandler):
 class OidcIdpConfigurationCrudHandler(ConfigurationCrudHandler):
     _model_class = OIDCSSOIDPProvider
     _config_key = "secrets.auth.oidc"
+
+
+class SsoIdpProviderConfigurationCrudHandler(ConfigurationCrudHandler):
+    _model_class = (SSOIDPProviders,)
+    _config_key = "secrets.auth"

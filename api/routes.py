@@ -87,6 +87,7 @@ from api.handlers.v3.auth.sso import (
     GoogleOidcIdpConfigurationCrudHandler,
     OidcIdpConfigurationCrudHandler,
     SamlOidcIdpConfigurationCrudHandler,
+    SsoIdpProviderConfigurationCrudHandler,
 )
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
@@ -253,6 +254,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/auth/sso/oidc/?",
             OidcIdpConfigurationCrudHandler,
+        ),
+        (
+            r"/api/v3/auth/sso/?",
+            SsoIdpProviderConfigurationCrudHandler,
         ),
         (
             r"/api/v3/reflection/ip/?",
