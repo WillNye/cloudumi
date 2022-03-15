@@ -89,6 +89,37 @@ class TestModels(TestCase):
         host_config = config.get_tenant_static_config_from_dynamo(__name__)
         assert self.test_key not in host_config
 
+    def test_nested_delete(self):
+        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config["auth"] = dict()
+        host_config["auth"]["test"] = dict()
+        host_config["auth"]["test"]["nested"] = {
+            "name": "test_model_before",
+            "account_id": "123456789_before",
+            "role_arn": "iam:aws:something:::yes_before",
+            "external_id": "test_external_id_before",
+            "hub_account_arn": "iam:aws:hub:account:this_Before",
+            "master_for_account": True,
+        }
+        host_config["auth"]["other"] = dict()
+        host_config["auth"]["other"]["something"] = {
+            "one": "2222",
+            "two": "3333",
+        }
+        ddb = RestrictedDynamoHandler()
+        async_to_sync(ddb.update_static_config_for_host)(
+            yaml.dump(host_config), "test", __name__
+        )
+        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config("auth.test.nested", __name__)
+            .from_dict(test_model_dict)
+        )
+        assert async_to_sync(model_adapter.delete)()
+        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        assert host_config.get("auth", {}).get("test", {}).get("nested") is None
+
     def test_nested_store_op(self):
         model_adapter = (
             ModelAdapter(TestModel)

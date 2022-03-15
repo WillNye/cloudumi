@@ -98,7 +98,7 @@ class ConfigurationCrudHandler(BaseHandler):
         data["external_id"] = external_id
 
         try:
-            ModelAdapter(self._model_class).load_config(
+            await ModelAdapter(self._model_class).load_config(
                 self._config_key, host
             ).from_dict(data).store()
         except Exception as exc:
@@ -133,7 +133,7 @@ class ConfigurationCrudHandler(BaseHandler):
         }
 
         # Checks authz levels of current user
-        generic_error_message = "Unable to delete hub account"
+        generic_error_message = "Unable to delete data"
         if not can_admin_all(self.user, self.groups, host):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
@@ -143,7 +143,9 @@ class ConfigurationCrudHandler(BaseHandler):
         log.debug(log_data)
 
         deleted = (
-            ModelAdapter(self._model_class).load_config(self._config_key, host).delete()
+            await ModelAdapter(self._model_class)
+            .load_config(self._config_key, host)
+            .delete()
         )
 
         res = WebResponse(

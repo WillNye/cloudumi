@@ -257,7 +257,8 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/reflection/ip/?",
             GetClientIPAddress,
-        )(r"/api/v3/downloads/weep", WeepDownloadHandler),
+        ),
+        (r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
         # (r"/api/v3/identities/users_page_config", IdentityUsersPageConfigHandler),

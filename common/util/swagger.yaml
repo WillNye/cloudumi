@@ -2129,7 +2129,6 @@ components:
         - metadata_url
         - provider_name
         - provider_type
-        - user_pool_id
       properties:
         metadata_url:
           type: string
@@ -2154,7 +2153,6 @@ components:
         - authorize_scopes
         - provider_name
         - provider_type
-        - user_pool_id
       properties:
         client_id:
           type: string
