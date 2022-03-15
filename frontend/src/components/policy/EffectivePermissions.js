@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Header, Segment, Icon, Message, Tab } from 'semantic-ui-react'
 import MonacoDiffComponent from '../blocks/MonacoDiffComponent'
 import useEffectivePermissions from './hooks/useEffectivePermissions'
+import { ReadOnlyPolicyMonacoEditor } from './PolicyMonacoEditor'
 
 const EffectivePermissions = () => {
   const [error, setError] = useState(null)
@@ -86,11 +87,33 @@ const EffectivePermissions = () => {
     },
     {
       menuItem: 'Remove Unused Permissions With AWS CLI',
-      render: () => <Tab.Pane attached={false}>Tab 2 Content</Tab.Pane>,
+      render: () => (
+        <Tab.Pane attached={false}>
+          <ReadOnlyPolicyMonacoEditor
+            policy={resourceEffectivePermissions?.permission_removal_commands?.aws_cli_script.replace(
+              '\n',
+              '\r\n'
+            )}
+            json={false}
+            defaultLanguage={'shell'}
+          />
+        </Tab.Pane>
+      ),
     },
     {
       menuItem: 'Remove Unused Permissions With Python',
-      render: () => <Tab.Pane attached={false}>Tab 3 Content</Tab.Pane>,
+      render: () => (
+        <Tab.Pane attached={false}>
+          <ReadOnlyPolicyMonacoEditor
+            policy={
+              resourceEffectivePermissions?.permission_removal_commands
+                ?.python_boto3_script
+            }
+            json={false}
+            defaultLanguage={'python'}
+          />
+        </Tab.Pane>
+      ),
     },
   ]
 

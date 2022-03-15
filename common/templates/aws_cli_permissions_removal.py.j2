@@ -2,19 +2,19 @@
 aws iam put-role-policy --role-name {{ identity_name }} --policy-name {{ new_policy_name }} --policy-document '{{ new_policy_document }}' || { echo 'my_command failed' ; exit 1; }
 {% elif identity_type == "user" -%}
 aws iam put-user-policy --user-name {{ identity_name }} --policy-name {{ new_policy_name }} --policy-document '{{ new_policy_document }}' || { echo 'my_command failed' ; exit 1; }
-{% endif -%}
+{% endif %}
 
-{% for managed_policy_arn in managed_policy_arns -%}
 # Detach existing managed policies
+{% for managed_policy_arn in managed_policy_arns %}
 {% if identity_type == "role" -%}
 aws iam detach-role-policy --role-name {{ identity_name }} --policy-arn {{ managed_policy_arn }} || { echo 'my_command failed' ; exit 1; }
 {% elif identity_type == "user" -%}
 aws iam detach-user-policy --user-name {{ identity_name }} --policy-arn {{ managed_policy_arn }} || { echo 'my_command failed' ; exit 1; }
 {% endif -%}
-{% endfor -%}
+{% endfor %}
 
 {% for policy_name in inline_policy_names -%}
-{%- if policy_name == new_policy_name %}{% continue %}{% endif %}
+{%- if policy_name == new_policy_name %}{% continue %}{% endif -%}
 {% if identity_type == "role" -%}
 aws iam delete-role-policy --role-name {{ identity_name }} --policy-name {{ policy_name }} || { echo 'my_command failed' ; exit 1; }
 {% elif identity_type == "user" -%}

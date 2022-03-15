@@ -4,6 +4,7 @@ import sentry_sdk
 import ujson as json
 from asgiref.sync import sync_to_async
 from jinja2 import Environment, FileSystemLoader
+from jinja2.utils import select_autoescape
 
 from common.config import config
 from common.lib.aws.access_advisor import get_epoch_authenticated
@@ -45,8 +46,9 @@ async def calculate_unused_policy_for_identity(
         f"calculate_unused_policy_for_identity/{arn}.json.gz",
     )
 
+    # TODO Revert
     if not await is_object_older_than_seconds(
-        s3_key, bucket=s3_bucket, host=host, older_than_seconds=86400
+        s3_key, bucket=s3_bucket, host=host, older_than_seconds=1
     ):
         return await retrieve_json_data_from_redis_or_s3(
             s3_bucket=s3_bucket,
@@ -97,10 +99,12 @@ async def generate_permission_removal_commands(identity, new_policy_document):
     env = Environment(
         loader=FileSystemLoader("common/templates"),
         extensions=["jinja2.ext.loopcontrols"],
+        autoescape=select_autoescape(),
     )
     aws_cli_template = env.get_template("aws_cli_permissions_removal.py.j2")
     aws_cli_script = aws_cli_template.render(
         identity_type=identity_type,
+        identity_name=identity_name,
         new_policy_name=new_policy_name,
         managed_policy_arns=managed_policy_arns,
         inline_policy_names=inline_policy_names,
@@ -109,10 +113,11 @@ async def generate_permission_removal_commands(identity, new_policy_document):
     python_boto3_template = env.get_template("boto3_permissions_removal.py.j2")
     python_boto3_script = python_boto3_template.render(
         identity_type=identity_type,
+        identity_name=identity_name,
         new_policy_name=new_policy_name,
         managed_policy_arns=managed_policy_arns,
         inline_policy_names=inline_policy_names,
-        new_policy_document=json.dumps(new_policy_document),
+        new_policy_document=json.dumps(new_policy_document, indent=2),
     )
     return {
         "aws_cli_script": aws_cli_script,
