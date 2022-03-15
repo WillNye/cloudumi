@@ -29,7 +29,9 @@ copy_to_bin(
         "jsconfig.json",
         "package.json",
         "yarn.lock",
-        ".eslintrc"
+        ".eslintrc",
+        ".eslintignore",
+        ".yarnrc.yml"
     ],
 )
 
@@ -69,6 +71,15 @@ _RUNTIME_DEPS = [
     "@npm//survey-react",
     "@npm//yaml",
     "@npm//eslint-config-react-app",
+    "@npm//babel-eslint",
+    "@npm//eslint",
+    "@npm//eslint-config-prettier",
+    "@npm//eslint-plugin-flowtype",
+    "@npm//eslint-plugin-import",
+    "@npm//eslint-plugin-jsx-a11y",
+    "@npm//eslint-plugin-react",
+    "@npm//eslint-plugin-react-hooks"
+
 ]
 
 _DEV_DEPS = [
@@ -86,6 +97,7 @@ react_scripts(
     data = _RUNTIME_DEPS,
     env = {
         "BUILD_PATH": "./build",
+        "DISABLE_ESLINT_PLUGIN": "true"
     },
     output_dir = True,
     visibility = ["//visibility:public"],
@@ -97,6 +109,9 @@ react_scripts(
         "--node_options=--require=./$(rootpath chdir.cjs)",
         "start",
     ],
+    env = {
+        "DISABLE_ESLINT_PLUGIN": "true"
+    },
     data = _RUNTIME_DEPS,
     tags = [
         # This tag instructs ibazel to pipe into stdin a event describing actions.
