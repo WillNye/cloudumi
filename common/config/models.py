@@ -65,6 +65,8 @@ class ModelAdapter:
             config_item[key] = dict(value)
             return config_item
 
+        if not segmented_key[0] in config_item:
+            config_item[segmented_key[0]] = dict()
         config_item[segmented_key[0]] = self.__nested_store(
             config_item[segmented_key[0]], ".".join(segmented_key[1:]), value
         )
