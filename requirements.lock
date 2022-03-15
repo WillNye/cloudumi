@@ -73,15 +73,9 @@ black==22.1.0
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
 bleach==4.1.0
-<<<<<<< HEAD
     # via -r ./common/util/requirements.in
 blinker==1.4
     # via -r ./common/lib/requirements.in
-=======
-    # via
-    #   -r ./common/util/requirements.in
-    #   readme-renderer
->>>>>>> main
 boto==2.49.0
     # via
     #   -r ./api/requirements.in
