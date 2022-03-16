@@ -129,16 +129,16 @@ async def calculate_unused_policy_for_identities(
     host,
     arns,
     managed_policy_details,
-    aa_data=None,
+    access_advisor_data=None,
     force_refresh=False,
     account_id=None,
 ):
 
-    if not aa_data:
+    if not access_advisor_data:
         if not account_id:
             raise Exception("Unable to retrieve access advisor data without account ID")
         # TODO: Figure out proper expiration
-        aa_data = await retrieve_json_data_from_redis_or_s3(
+        access_advisor_data = await retrieve_json_data_from_redis_or_s3(
             s3_bucket=config.get_host_specific_key(
                 "cache_iam_resources_for_account.iam_policies.s3.bucket",
                 host,
@@ -185,11 +185,11 @@ async def calculate_unused_policy_for_identities(
         account_number = role["accountId"]
 
         # Get last-used data for role
-        aa_data_for_role = aa_data.get(role["arn"], [])
+        access_advisor_data_for_role = access_advisor_data.get(role["arn"], [])
         used_services = set()
         unused_services = set()
 
-        for service in aa_data_for_role:
+        for service in access_advisor_data_for_role:
             (accessed, valid_authenticated) = get_epoch_authenticated(
                 service["LastAuthenticated"]
             )
@@ -264,51 +264,3 @@ async def calculate_unused_policy_for_identities(
         }
 
     return role_permissions_data
-
-
-# Take recommended actions: Add new policy, and remove old policies
-# Athena
-
-#     athena_config = {
-#         "account_id": "259868150464",
-#         "region": "us-west-2",
-#         "table_name": "cloudtrail_logs_noq",
-#         "date_look_back": "90",
-#     }
-#     table_name = athena_config["table_name"]
-#     date_look_back = athena_config["date_look_back"]
-
-#     query = f"""select distinct eventsource,
-# 	eventname,
-# 	useridentity.sessioncontext.sessionissuer.arn,
-# 	resources
-# from {table_name}
-# where useridentity.sessioncontext.sessionissuer.arn not like '%:role/aws-service-role/%'
-# 	and date_parse(date, '%Y/%m/%d') > current_timestamp - interval '{date_look_back}' day
-#     """
-
-#     athena_client = boto3_cached_conn(
-#         "athena",
-#         host,
-#         account_number=athena_config["account_id"],
-#         assume_role=config.get_host_specific_key("policies.role_name", host),
-#         region=config.region,
-#         sts_client_kwargs=dict(
-#             region_name=config.region,
-#             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-#         ),
-#         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-#         session_name=sanitize_session_name("noq_athena_cloudtrail_query"),
-#     )
-
-#     athena_client.start_query_execution()
-
-# TODO: Figure out table name
-# TODO: Calculate event time
-# query = """SELECT distinct useridentity.sessioncontext.sessionissuer.arn, eventSource, eventName, eventSource FROM
-# eb531e81-49f4-4eb9-bf06-93ba8de5846f WHERE eventTime >= '2021-09-16 00:00:00'
-# """
-#
-# response = client.start_query(
-#     QueryStatement='string'
-# )

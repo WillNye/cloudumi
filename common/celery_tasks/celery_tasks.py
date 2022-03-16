@@ -54,7 +54,7 @@ from common.lib.assume_role import get_boto3_instance
 from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import (
-    retrieve_iam_roles_for_host,
+    get_iam_roles_for_host,
     store_iam_managed_policies_for_host,
     store_iam_roles_for_host,
 )
@@ -629,7 +629,7 @@ def cache_policies_table_details(host=None) -> bool:
         "cache_policies_table_details.skip_iam_roles", host, False
     )
     if not skip_iam_roles:
-        all_iam_roles = async_to_sync(retrieve_iam_roles_for_host)(host)
+        all_iam_roles = async_to_sync(get_iam_roles_for_host)(host)
 
         for arn, role_details_j in all_iam_roles.items():
             role_details = ujson.loads(role_details_j)

@@ -68,12 +68,12 @@ class AccessAdvisor:
             5 * 60
         )  # Wait 5 minutes before giving up on jobs
 
-    async def store_access_advisor_results(self, account_id, host, aa_data):
+    async def store_access_advisor_results(self, account_id, host, access_advisor_data):
         """
         Store Access Advisor results in S3 for identities across an account.
         """
         await store_json_results_in_redis_and_s3(
-            aa_data,
+            access_advisor_data,
             s3_bucket=config.get_host_specific_key(
                 "access_advisor.s3.bucket",
                 host,
@@ -95,17 +95,17 @@ class AccessAdvisor:
         )
         arns = await get_identity_arns_for_account(host, account_id)
         jobs = self._generate_job_ids(client, arns)
-        aa_data = self._get_job_results(client, jobs)
-        if arns and not aa_data:
+        access_advisor_data = self._get_job_results(client, jobs)
+        if arns and not access_advisor_data:
             log.error("Didn't get any results from Access Advisor")
-        await self.store_access_advisor_results(account_id, host, aa_data)
+        await self.store_access_advisor_results(account_id, host, access_advisor_data)
         await self.generate_and_save_effective_identity_permissions(
-            host, account_id, arns, aa_data
+            host, account_id, arns, access_advisor_data
         )
-        return aa_data
+        return access_advisor_data
 
     async def generate_and_save_effective_identity_permissions(
-        self, host, account_id, arns, aa_data
+        self, host, account_id, arns, access_advisor_data
     ):
         """
         Generates and saves the "effective permissions" for each arn in `arns`.
@@ -116,7 +116,7 @@ class AccessAdvisor:
 
         iam_policies = await retrieve_iam_managed_policies_for_host(host, account_id)
         effective_identity_permissions = await calculate_unused_policy_for_identities(
-            host, arns, iam_policies, aa_data
+            host, arns, iam_policies, access_advisor_data
         )
         await store_json_results_in_redis_and_s3(
             effective_identity_permissions,

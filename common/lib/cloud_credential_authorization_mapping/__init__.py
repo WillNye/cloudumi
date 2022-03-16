@@ -7,7 +7,7 @@ import sentry_sdk
 from pydantic.json import pydantic_encoder
 
 from common.config import config
-from common.lib.aws.cached_resources.iam import retrieve_iam_roles_for_host
+from common.lib.aws.cached_resources.iam import get_iam_roles_for_host
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -160,7 +160,7 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
             or int(time.time()) - self._all_roles_last_update.get(host, 0) > 600
         ):
             try:
-                all_roles = await retrieve_iam_roles_for_host(host)
+                all_roles = await get_iam_roles_for_host(host)
             except Exception as e:
                 sentry_sdk.capture_exception()
                 log.error(

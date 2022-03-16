@@ -33,7 +33,7 @@ async def store_iam_roles_for_host(all_roles: Any, host: str) -> bool:
     return True
 
 
-async def retrieve_iam_roles_for_host(host: str):
+async def get_iam_roles_for_host(host: str):
     """
     Retrieves all IAM roles for a host from Redis or S3
     """
@@ -67,7 +67,7 @@ async def get_identity_arns_for_account(
     if identity_type != "role":
         raise NotImplementedError(f"identity_type {identity_type} not implemented")
 
-    all_roles = await retrieve_iam_roles_for_host(host)
+    all_roles = await get_iam_roles_for_host(host)
     matching_roles = set()
     for arn in all_roles.keys():
         if arn.split(":")[4] == account_id:
