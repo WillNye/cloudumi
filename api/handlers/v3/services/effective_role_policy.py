@@ -8,8 +8,14 @@ from common.lib.aws.unused_permissions_remover import (
 from common.models import Status2, WebResponse
 
 
-class EffectiveRolePolicyHandler(BaseHandler):
-    async def get(self, _account_id, _role_name):
+class EffectiveUnusedRolePolicyHandler(BaseHandler):
+    async def get(self, _account_id: str, _role_name: str) -> None:
+        """Returns effective and unused policies for a given role, as well as
+        AWS CLI and Python commands to remove excessive permissions.
+
+        :param _account_id: AWS account ID
+        :param _role_name: IAM role name
+        """
         host = self.ctx.host
 
         try:

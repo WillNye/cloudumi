@@ -1,4 +1,5 @@
 import datetime
+from typing import Any, Dict, List, Optional
 
 import sentry_sdk
 import ujson as json
@@ -21,12 +22,16 @@ log = config.get_logger()
 
 
 async def calculate_unused_policy_for_identity(
-    host, account_id, identity_name, identity_type=None
-):
-    """
-    1. Pull unused policy from cache if it is newer than 1 hour
-    2. Generate unused policy otherwise
-    3. Store unused policy in cache
+    host: str, account_id: str, identity_name: str, identity_type: Optional[str] = None
+) -> Dict[str, Any]:
+    """Generates and stories effective and unused policies for an identity.
+
+    :param host: Tenant ID
+    :param account_id: AWS Account ID
+    :param identity_name: IAM Identity Name (Role name or User name)
+    :param identity_type: "role" or "user", defaults to None
+    :raises Exception: Raises an exception if there is a validation error
+    :return: Returns a dictionary of effective and "repoed" policy documents.
     """
     if not identity_type:
         raise Exception("Unable to generate unused policy without identity type")
@@ -86,7 +91,17 @@ async def calculate_unused_policy_for_identity(
     return effective_identity_permissions[arn]
 
 
-async def generate_permission_removal_commands(identity, new_policy_document):
+async def generate_permission_removal_commands(
+    identity: Any, new_policy_document: Dict[str, Any]
+) -> Dict[str, str]:
+    """Generates Python and AWS CLI commands to remove unused permissions.
+
+    Generated commands will: 1) add new policy to identity, 2) remove all other policies from identity.
+
+    :param identity: Dictionary of identity details
+    :param new_policy_document: New policy document with all unused permissions removed
+    :return: A dictionary of AWS CLI and Python commands to remove unused permissions
+    """
     identity_type = identity["arn"].split(":")[-1].split("/")[0]
     identity_name = identity["arn"].split(":")[-1].split("/")[1]
     inline_policy_names = [
@@ -126,13 +141,24 @@ async def generate_permission_removal_commands(identity, new_policy_document):
 
 
 async def calculate_unused_policy_for_identities(
-    host,
-    arns,
-    managed_policy_details,
-    access_advisor_data=None,
-    force_refresh=False,
-    account_id=None,
-):
+    host: str,
+    arns: List[str],
+    managed_policy_details: Dict[str, Any],
+    access_advisor_data: Optional[Dict[str, Any]] = None,
+    force_refresh: bool = False,
+    account_id: Optional[str] = None,
+) -> Dict[str, Dict[str, Any]]:
+    """Generates effective and unused policies for a list of identities.
+
+    :param host: Tenant ID
+    :param arns: A list of ARNs to calculate unused policies for
+    :param managed_policy_details: A dictionary of managed policy and managed policy statement for an account
+    :param access_advisor_data: A dictionary of access adivisor data per ARN, defaults to None
+    :param force_refresh: Specifies whether we need to force-refresh each IAM role when we fetch it, defaults to False
+    :param account_id: AWS Account ID, defaults to None
+    :raises Exception: Raises an exception if there is a validation error
+    :return: A dictionary of arn to its generated effective and unused policies.
+    """
 
     if not access_advisor_data:
         if not account_id:
@@ -151,15 +177,6 @@ async def calculate_unused_policy_for_identities(
             host=host,
             # max_age=86400,
         )
-
-    # managed_policy_details = {}
-
-    # for policy in managed_policies:
-    #     policy_name = policy["PolicyName"]
-    #     for policy_version in policy["PolicyVersionList"]:
-    #         if policy_version["IsDefaultVersion"]:
-    #             managed_policy_details[policy_name] = policy_version["Document"]
-    #             break
 
     minimum_age = 90  # TODO: Make this configurable
     ago = datetime.timedelta(minimum_age)

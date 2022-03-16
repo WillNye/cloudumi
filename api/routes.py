@@ -1,7 +1,5 @@
 import os
 
-from api.handlers.v3.services.effective_role_policy import EffectiveRolePolicyHandler
-
 """Web routes."""
 import pkg_resources
 import sentry_sdk
@@ -104,6 +102,9 @@ from api.handlers.v3.services.aws.role_access import (
     AutomaticPolicyUpdateHandler,
     CredentialBrokeringCurrentStateHandler,
     CredentialBrokeringHandler,
+)
+from api.handlers.v3.services.effective_role_policy import (
+    EffectiveUnusedRolePolicyHandler,
 )
 from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
@@ -228,7 +229,7 @@ def make_app(jwt_validator=None):
         ),
         (
             r"/api/v3/services/aws/policies/effective/role/(?P<_account_id>[^\/]+)/(?P<_role_name>[^\/]+)/?",
-            EffectiveRolePolicyHandler,
+            EffectiveUnusedRolePolicyHandler,
         ),
         (
             r"/api/v3/services/aws/role-access/automatic-update/(?P<_enabled>enable|disable)/?",
