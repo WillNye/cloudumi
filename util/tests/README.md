@@ -22,7 +22,7 @@ Magic? Yes.
 - `bazel test //api/...` - runs all API tests
 - `bazel test //common/config:test_ip_restriction` - runs a specific test
 
-## Test with VSCODE
+## Test with VSCODE | command line
 
 - Make sure you run VSCODE as follows: `PYTHONPATH=$(pwd) code .` from your cloudumi repo
 - Build the cloudumi pytest utility: `bazel build //util/tests:wheel`

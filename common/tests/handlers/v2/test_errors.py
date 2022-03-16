@@ -1,9 +1,13 @@
+import pytest
 import ujson as json
 
 from util.tests.fixtures.globals import host
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
 class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config

@@ -3,6 +3,7 @@ import os
 import unittest
 
 import boto3
+import pytest
 from asgiref.sync import async_to_sync
 
 from util.tests.fixtures.globals import host
@@ -27,6 +28,10 @@ policy_document = json.dumps(
 )
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("sts")
 class TestHandler(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         from common.config import config

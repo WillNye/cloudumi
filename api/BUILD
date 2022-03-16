@@ -146,6 +146,28 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
+py_binary(
+    name = "bin-no-frontend",
+    data = [
+        "//configs/development_account:configs",
+    ],
+    srcs_version = "PY3",
+    srcs = [
+        ":src",
+    ],
+    main = "__main__.py",
+    env = {
+        # Get this by including it (via data = []) and then searching for it: `find -L . -iname "saas_development.yaml"`
+        # Note: `bazel info --show_make_env` will show all available predefined variables
+        # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "noq_cluster_dev",
+        "FRONTEND_PATH": "frontend/build",
+    },
+    deps = INT_DEPS + EXT_DEPS,
+    visibility = ["//visibility:public"],
+)
+
 py_wheel(
     name = "wheel",
     distribution = "cloudumi_api",
