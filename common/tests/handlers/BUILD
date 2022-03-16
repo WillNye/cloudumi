@@ -20,6 +20,7 @@ py_test(
         "//plugins/metrics:lib",
         "//util/tests/fixtures:lib",
         requirement("asgiref"),
+        requirement("pytest"),
         requirement("tornado"),
     ],
 )
@@ -44,6 +45,7 @@ py_test(
         "//plugins/metrics:lib",
         "//util/tests/fixtures:lib",
         requirement("asgiref"),
+        requirement("pytest"),
         requirement("tornado"),
     ],
 )
@@ -68,6 +70,7 @@ py_test(
         "//plugins/metrics:lib",
         "//util/tests/fixtures:lib",
         requirement("asgiref"),
+        requirement("pytest"),
         requirement("tornado"),
     ],
 )
@@ -116,6 +119,7 @@ py_test(
         "//plugins/metrics:lib",
         "//util/tests/fixtures:lib",
         requirement("asgiref"),
+        requirement("pytest"),
         requirement("tornado"),
     ],
 )

@@ -2,6 +2,7 @@
 import os
 import sys
 
+import pytest
 import ujson as json
 
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
@@ -10,6 +11,9 @@ APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
 class TestRoleLoginApi(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
@@ -33,6 +37,7 @@ class TestRoleLoginApi(ConsoleMeAsyncHTTPTestCase):
             },
         )
 
+    @pytest.mark.usefixtures("populate_caches")
     def test_role_api_fail_multiple_matching_roles(self):
         pass
 
@@ -51,6 +56,7 @@ class TestRoleLoginApi(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(response_j["type"], "redirect")
         self.assertIn("/?arn=role&warningMessage=", response_j["redirect_url"])
 
+    @pytest.mark.usefixtures("populate_caches")
     def test_role_api_success(self):
         pass
 

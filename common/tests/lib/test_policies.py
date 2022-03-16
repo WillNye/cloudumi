@@ -1,6 +1,7 @@
 import asyncio
 from unittest import TestCase
 
+import pytest
 import ujson as json
 from mock import MagicMock, patch
 
@@ -12,6 +13,9 @@ mock_aws_config_resources_redis = MagicMock(
 )
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
 class TestPoliciesLib(TestCase):
     def test_get_actions_for_resource(self):
         from common.lib.policies import get_actions_for_resource
