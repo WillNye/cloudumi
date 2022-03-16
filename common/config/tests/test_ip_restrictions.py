@@ -89,3 +89,13 @@ class TestIpRestrictions(TestCase):
             assert async_to_sync(ip_restrictions.toggle_ip_restrictions)(
                 "host", enabled=True
             )
+
+    def test_toggle_ip_restrictions_on_requester_ip_only(self):
+        with patch.object(
+            config,
+            "get_tenant_static_config_from_dynamo",
+            return_value={"policies": {"ip_restrictions_on_requesters_ip": False}},
+        ):
+            assert async_to_sync(
+                ip_restrictions.toggle_ip_restrictions_on_requester_ip_only
+            )("host", enabled=True)

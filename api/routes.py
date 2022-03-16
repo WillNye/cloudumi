@@ -101,6 +101,7 @@ from api.handlers.v3.services.aws.account import (
 )
 from api.handlers.v3.services.aws.ip_restrictions import (
     IpRestrictionsHandler,
+    IpRestrictionsRequesterIpOnlyToggleHandler,
     IpRestrictionsToggleHandler,
 )
 from api.handlers.v3.services.aws.role_access import (
@@ -242,6 +243,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/ip-access/(?P<_enabled>enable|disable)/?",
             IpRestrictionsToggleHandler,
+        ),
+        (
+            r"/api/v3/services/aws/ip-access/origin/(?P<_enabled>enable|disable)/?",
+            IpRestrictionsRequesterIpOnlyToggleHandler,
         ),
         (
             r"/api/v3/auth/sso/google/?",
