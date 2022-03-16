@@ -1,6 +1,7 @@
 import boto3
-from common.config import config
+
 from common.celery_tasks import app
+from common.config import config
 
 
 @app.task
