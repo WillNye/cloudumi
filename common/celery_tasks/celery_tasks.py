@@ -1192,8 +1192,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
 
 @app.task(soft_time_limit=3600)
 def cache_access_advisor_for_account(host, account_id):
-    """
-    Cache access advisor data for an account that belongs to a host.
+    """Caches AWS access advisor data for an account that belongs to a host.
+    This tells us which services each role has used.
+
+    :param host: Tenant ID
+    :param account_id: AWS Account ID
     """
     log_data = {
         "account_id": account_id,
@@ -1208,13 +1211,24 @@ def cache_access_advisor_for_account(host, account_id):
 
 @app.task(soft_time_limit=3600)
 def cache_access_advisor_across_accounts(host) -> Dict:
-    """
-    Trigger tasks to cache access advisor data for each account that belongs to a host.
+    """Triggers `cache_access_advisor_for_account` tasks on each AWS account that belongs to a host.
+
+    :param host: Tenant ID
+    :raises Exception: When host is not valid
+    :return: Summary of the number of tasks triggered
     """
     if not host:
         raise Exception("`host` must be passed to this task.")
+
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "host": host,
+        "message": "Caching access advisor data for tenant's accounts",
+    }
+
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
+    log_data["num_accounts"] = len(accounts_d.keys())
 
     for account_id in accounts_d.keys():
         if config.get("_global_.environment") == "prod":
@@ -1226,13 +1240,15 @@ def cache_access_advisor_across_accounts(host) -> Dict:
                 cache_access_advisor_for_account.delay(host, account_id)
 
     stats.count(f"{function}.success")
-    return True
+    log.debug(log_data)
+    return log_data
 
 
 @app.task(soft_time_limit=3600)
 def cache_access_advior_across_accounts_for_all_hosts() -> Dict:
-    """
-    Trigger tasks to cache access advisor data for each account across all hosts.
+    """Triggers `cache_access_advisor_across_accounts` task for each tenant.
+
+    :return: Number of tenants that had tasks triggered.
     """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()

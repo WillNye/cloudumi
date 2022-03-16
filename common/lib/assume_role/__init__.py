@@ -136,6 +136,20 @@ async def get_boto3_instance(
     service_type="client",
     read_only=False,
 ):
+    """Gets a boto3 instance for a given service on a specific tenant's account.
+
+    Noq/CloudUmi SaaS role will assume the customer's `hub role` with it's unique external ID, and from there,
+    assume the `spoke role` on the target `account_id`, then create the boto3 instance on the target account.
+
+    :param service: AWS service name (ie: iam, ec2, etc)
+    :param host: Tenant ID
+    :param account_id: AWS Account ID
+    :param session_name: Session Name to use when assuming role. This is logged to Cloudtrail
+    :param region: Region to create instance in, defaults to consoleme_config.region
+    :param service_type: Service of the boto3 instance, defaults to "client". Could also be "resource"
+    :param read_only: Should we prevent write operations through the assumed role credentials?, defaults to False
+    :return: A Boto3 client or resource instance in a tenant's environment
+    """
     return await sync_to_async(boto3_cached_conn)(
         service,
         host,
