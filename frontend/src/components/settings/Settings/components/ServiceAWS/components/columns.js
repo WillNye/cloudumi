@@ -167,9 +167,7 @@ export const roleAccessAuthColumns = ({
   },
 ]
 
-export const CIDRBlockColumns = ({
-  handleClick = null
-}) => [
+export const CIDRBlockColumns = ({ handleClick = null }) => [
   {
     Header: 'CIDR Block',
     accessor: 'ip',

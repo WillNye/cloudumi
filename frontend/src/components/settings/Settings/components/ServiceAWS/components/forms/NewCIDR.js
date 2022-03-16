@@ -6,15 +6,16 @@ import { useForm } from 'react-hook-form'
 import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
+import { useGeoIP } from 'hooks/useGeoIP'
 
 export const NewCIDR = ({ closeModal, onFinish }) => {
   const { register, handleSubmit, watch } = useForm()
 
-  const { post } = useApi(
-    'services/aws/ip-access/cli'
-  )
+  const { post } = useApi('services/aws/ip-access')
 
-  // services/aws/ip-access/web
+  // const { data, status } = useGeoIP()
+
+  // console.log(data, status)
 
   const onSubmit = (data) => {
     post.do(data).then(() => {

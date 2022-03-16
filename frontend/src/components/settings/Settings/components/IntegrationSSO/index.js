@@ -1,25 +1,25 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
 import { str } from 'components/settings/Settings/strings'
-import { TableTopBar } from '../utils'
+import { SectionTitle, TableTopBar } from '../utils'
 import { Segment } from 'semantic-ui-react'
 import { integrationSSOColumns } from './columns'
 import { NewProvider } from './forms/NewProvider'
+import { Section } from 'lib/Section'
 
 export const IntegrationSSO = () => {
-
-  const { get, post, remove } = useApi('integrations/sso/identity-providers')
+  const { get, post, remove } = useApi('auth/sso')
 
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add Provider')
 
-  useEffect(() => get.do(), [])
+  // useEffect(() => get.do(), [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -55,33 +55,35 @@ export const IntegrationSSO = () => {
   const handleRefresh = () => get.do()
 
   return (
-    <Segment basic vertical>
-      <DatatableWrapper
-        isLoading={remove.status === 'working'}
-        renderAction={
-          <TableTopBar
-            onClick={hasData ? openModal : null}
-            extras={
-              <RefreshButton disabled={isWorking} onClick={handleRefresh} />
-            }
+    <Section title={<SectionTitle title='Single Sign-On' helpHandler='sso' />}>
+      <Segment basic vertical>
+        <DatatableWrapper
+          isLoading={remove.status === 'working'}
+          renderAction={
+            <TableTopBar
+              onClick={hasData ? openModal : null}
+              extras={
+                <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              }
+            />
+          }
+        >
+          <Datatable
+            data={data}
+            columns={columns}
+            emptyState={{
+              label: 'Add Provider',
+              onClick: openModal,
+            }}
+            isLoading={isWorking}
+            loadingState={{ label }}
           />
-        }
-      >
-        <Datatable
-          data={data}
-          columns={columns}
-          emptyState={{
-            label: 'Add Provider',
-            onClick: openModal,
-          }}
-          isLoading={isWorking}
-          loadingState={{ label }}
-        />
-      </DatatableWrapper>
+        </DatatableWrapper>
 
-      <ModalComponent onClose={handleClose} hideConfirm>
-        <NewProvider closeModal={closeModal} onFinish={handleFinish} />
-      </ModalComponent>
-    </Segment>
+        <ModalComponent onClose={handleClose} hideConfirm>
+          <NewProvider closeModal={closeModal} onFinish={handleFinish} />
+        </ModalComponent>
+      </Segment>
+    </Section>
   )
 }

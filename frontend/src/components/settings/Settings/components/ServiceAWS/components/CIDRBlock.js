@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
@@ -12,19 +12,20 @@ import { CIDRBlockColumns } from './columns'
 import { NewCIDR } from './forms/NewCIDR'
 
 export const CIDRBlock = () => {
-
   const { get, post, remove } = useApi('services/aws/ip-access')
 
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add CIDR')
 
-  // useEffect(() => get.do(), [])
+  useEffect(() => get.do(), [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do({}, `${rowValues?.cidr}`)
+        .do({
+          cidr: rowValues?.cidr,
+        })
         .then(() => {
           success('CIDR REMOVED')
           get.do()
