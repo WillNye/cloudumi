@@ -6,6 +6,7 @@ from common.models import (
     InlinePolicyChangeModel,
     ResourceModel,
 )
+from util.tests.fixtures.globals import host
 
 
 class TestChangeRequestLib(AsyncTestCase):
@@ -20,9 +21,9 @@ class TestChangeRequestLib(AsyncTestCase):
     async def test_generate_policy_name(self):
         from common.lib.change_request import generate_policy_name
 
-        random_sid = await generate_policy_name(None, "username@example.com")
+        random_sid = await generate_policy_name(None, "username@example.com", host)
         self.assertRegex(random_sid, "^noq_username_\d{10}_[a-z]{4}$")  # noqa
-        explicit = await generate_policy_name("blah", "username@example.com")
+        explicit = await generate_policy_name("blah", "username@example.com", host)
         self.assertRegex(explicit, "blah")
 
     @tornado.testing.gen_test

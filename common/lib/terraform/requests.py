@@ -44,7 +44,7 @@ async def generate_terraform_request_from_change_model_array(
     primary_principal = None
     t = int(time.time())
     generated_branch_name = f"{user}-{t}"
-    policy_name = await generate_policy_name(None, user)
+    policy_name = await generate_policy_name(None, user, host)
     repo_config = None
 
     auth = get_plugin_by_name(

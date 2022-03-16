@@ -46,6 +46,7 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
                     "google_analytics": {"tracking_id": None, "options": {}},
                     "documentation_url": "https://hawkins.gitbook.io/consoleme/",
                     "support_contact": None,
+                    "temp_policy_support": True,
                     "support_chat_url": "https://discord.com/invite/nQVpNGGkYu",
                     "security_logo": None,
                     "security_url": None,

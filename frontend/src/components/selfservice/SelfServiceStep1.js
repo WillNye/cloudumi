@@ -14,6 +14,7 @@ import {
 } from 'semantic-ui-react'
 import ReactMarkdown from 'react-markdown'
 import RoleDetails from '../roles/RoleDetails'
+import SemanticDatepicker from 'react-semantic-ui-datepickers'
 import './SelfService.css'
 
 class SelfServiceStep1 extends Component {
@@ -161,7 +162,8 @@ class SelfServiceStep1 extends Component {
 
   render() {
     const { config, role } = this.props
-    const { isLoading, isRoleLoading, messages, results, value } = this.state
+    const { isLoading, isRoleLoading, messages, results, value, principal } =
+      this.state
     const messagesToShow =
       messages.length > 0 ? (
         <Message negative>
@@ -214,6 +216,27 @@ class SelfServiceStep1 extends Component {
                       placeholder='Enter search terms here'
                     />
                   </Form.Field>
+                  {/*Allow users to specify expiration dates for AwsResources*/}
+                  {this.props?.user?.site_config?.temp_policy_support &&
+                  principal &&
+                  principal?.principal_type === 'AwsResource' ? (
+                    <Form.Field>
+                      <br />
+
+                      <Header as='h1'>
+                        <Header.Subheader>
+                          (Optional) Expiration date for requested permissions
+                        </Header.Subheader>
+                      </Header>
+                      <SemanticDatepicker
+                        onChange={this.props.handleSetPolicyExpiration.bind(
+                          this
+                        )}
+                        type='basic'
+                        compact
+                      />
+                    </Form.Field>
+                  ) : null}
                 </Form>
               </div>
               <Grid stackable columns={2}>
