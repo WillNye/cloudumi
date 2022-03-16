@@ -21,7 +21,7 @@ class TestIpRestrictions(TestCase):
             config, "get_tenant_static_config_from_dynamo", return_value={}
         ):
             assert async_to_sync(ip_restrictions.set_ip_restriction)(
-                "host", "10.10.10.10/8"
+                "host", "10.0.0.0/8"
             )
 
     def test_set_ip_restriction_with_ip_restrictions(self):
@@ -31,15 +31,36 @@ class TestIpRestrictions(TestCase):
             return_value={"ip_restrictions": []},
         ):
             assert async_to_sync(ip_restrictions.set_ip_restriction)(
-                "host", "10.10.10.10/8"
+                "host", "10.0.0.0/8"
+            )
+
+    def test_set_ip_restriction_with_host_address(self):
+        with patch.object(
+            config,
+            "get_tenant_static_config_from_dynamo",
+            return_value={"ip_restrictions": []},
+        ):
+            assert async_to_sync(ip_restrictions.set_ip_restriction)(
+                "host", "192.168.44.11/32"
+            )
+
+    def test_set_ip_restriction_with_invalid_ip(self):
+        with patch.object(
+            config,
+            "get_tenant_static_config_from_dynamo",
+            return_value={"ip_restrictions": []},
+        ):
+            assert (
+                async_to_sync(ip_restrictions.set_ip_restriction)(
+                    "host", "356.10.10.10/8"
+                )
+                is False
             )
 
     def test_delete_ip_restriction_exists(self):
-        assert async_to_sync(ip_restrictions.set_ip_restriction)(
-            "host", "10.10.10.10/8"
-        )
+        assert async_to_sync(ip_restrictions.set_ip_restriction)("host", "10.0.0.0/8")
         assert async_to_sync(ip_restrictions.delete_ip_restriction)(
-            "host", "10.10.10.10/8"
+            "host", "10.0.0.0/8"
         )
 
     def test_delete_ip_restriction_empty(self):

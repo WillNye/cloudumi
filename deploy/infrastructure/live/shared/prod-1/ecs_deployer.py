@@ -16,6 +16,10 @@ security_groups = ["sg-0e7a1ca3c697feb53"]
 os.environ["AWS_PROFILE"] = "noq_prod"
 region = "us-west-2"
 account_id = "940552945933"
+kms_key_arn = (
+    "arn:aws:kms:us-west-2:940552945933:key/4705da2e-1c2a-4594-bf31-b240e1daa8ab"
+)
+noq_ecs_log_group_name = "noq-dev-shared-prod-1"
 
 with open(task_definition_yaml_f, "r") as f:
     task_definition = yaml.load(f, Loader=yaml.FullLoader)
@@ -32,6 +36,16 @@ ecs_client = boto3.client("ecs", region_name=region)
 try:
     ecs_client.create_cluster(
         clusterName=cluster_name,
+        configuration={
+            "executeCommandConfiguration": {
+                "kmsKeyId": kms_key_arn,
+                "logging": "OVERRIDE",
+                "logConfiguration": {
+                    "cloudWatchLogGroupName": noq_ecs_log_group_name,
+                    "cloudWatchEncryptionEnabled": True,
+                },
+            }
+        },
     )
 except ClientError as e:
     if not e.response["Error"] == {
@@ -39,6 +53,19 @@ except ClientError as e:
         "Code": "InvalidParameterException",
     }:
         raise
+    ecs_client.update_cluster(
+        cluster=cluster_name,
+        configuration={
+            "executeCommandConfiguration": {
+                "kmsKeyId": kms_key_arn,
+                "logging": "OVERRIDE",
+                "logConfiguration": {
+                    "cloudWatchLogGroupName": noq_ecs_log_group_name,
+                    "cloudWatchEncryptionEnabled": True,
+                },
+            }
+        },
+    )
 
 registered_task_definition = ecs_client.register_task_definition(**task_definition)
 

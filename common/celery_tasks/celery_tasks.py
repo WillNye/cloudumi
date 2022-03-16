@@ -65,6 +65,7 @@ from common.lib.aws.utils import (
     cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
+    remove_temp_policies,
 )
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
@@ -1126,6 +1127,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         ttl: int = int((datetime.utcnow() + timedelta(hours=36)).timestamp())
         # Save them:
         for role in iam_roles:
+            if remove_temp_policies(role, client, host):
+                role = aws.get_iam_role_sync(
+                    account_id, role.get("RoleName"), client, host
+                )
+                async_to_sync(aws.cloudaux_to_aws)(role)
             role_entry = {
                 "arn": role.get("Arn"),
                 "host": host,

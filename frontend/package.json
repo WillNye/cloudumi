@@ -1,7 +1,7 @@
 {
-  "name": "ui",
-  "type": "module",
+  "name": "frontend",
   "version": "0.1.0",
+  "type": "module",
   "private": false,
   "dependencies": {
     "@monaco-editor/react": "^4.3.1",
@@ -70,6 +70,7 @@
     "babel-eslint": "^10.1.0",
     "eslint": "^7.11.0",
     "eslint-config-prettier": "^8.5.0",
+    "eslint-config-react-app": "6",
     "eslint-plugin-flowtype": "^8.0.3",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-jsx-a11y": "^6.5.1",
@@ -78,7 +79,7 @@
     "npm-run-all": "^4.1.5",
     "prettier": "^2.5.1"
   },
-  "author": "infrasec",
+  "author": "noq",
   "license": "Apache-2.0",
   "proxy": "http://localhost:8092"
 }

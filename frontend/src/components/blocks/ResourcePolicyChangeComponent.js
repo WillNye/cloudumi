@@ -254,9 +254,9 @@ class ResourcePolicyChangeComponent extends Component {
           <p>
             This resource is currently not supported for automatic application
             of resource policies. This is usually because the resource type is
-            not supported, or the resource wasn't found in ConsoleMe's resource
-            cache. A best effort proposed resource policy is shown above. Please
-            review carefully before applying.
+            not supported, or the resource wasn't found in our resource cache. A
+            best effort proposed resource policy is shown above. Please review
+            carefully before applying.
           </p>
         </Message>
       </Grid.Column>

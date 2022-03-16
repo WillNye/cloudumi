@@ -795,6 +795,11 @@ class ChangeGeneratorModel(BaseModel):
         description="An array with a list of extra actions the user wants appended to the policy",
         example=["*", "s3:getobject", "s3:list*"],
     )
+    expiration_date: Optional[int] = Field(
+        None,
+        description="Date to expire requested policy, in the format of YYYYmmdd",
+        example=20210905,
+    )
 
 
 class AdvancedChangeGeneratorModel(ChangeGeneratorModel):
@@ -855,6 +860,11 @@ class InlinePolicyChangeModel(ChangeModel):
     new: Optional[bool] = True
     action: Optional[Action] = None
     change_type: Optional[constr(regex=r"inline_policy")] = None
+    expiration_date: Optional[int] = Field(
+        None,
+        description="Date to expire requested policy, in the format of YYYYmmdd",
+        example=20210905,
+    )
     policy: Optional[PolicyModel] = None
     old_policy: Optional[PolicyModel] = None
 
