@@ -10,8 +10,11 @@ from common.models import Status2, WebResponse
 
 class EffectiveUnusedRolePolicyHandler(BaseHandler):
     async def get(self, _account_id: str, _role_name: str) -> None:
-        """Returns effective and unused policies for a given role, as well as
-        AWS CLI and Python commands to remove excessive permissions.
+        """Returns the effective policy for an AWS IAM role, which is a minimized and normalized version
+        of the role's inline and managed policies.
+
+        Also returns an effective policy of a role that excludes any unused services from the role's
+        permissions, and shell/python commands for manually configuring the effective policy.
 
         :param _account_id: AWS account ID
         :param _role_name: IAM role name

@@ -1,7 +1,7 @@
 import copy
 import datetime
 import time
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 
 from blinker import Signal
 
@@ -17,15 +17,13 @@ log = config.get_logger()
 
 
 def get_epoch_authenticated(service_authenticated: int) -> Tuple[int, bool]:
-    """
-    Ensure service authenticated from Access Advisor is in seconds epoch
+    """Validates the last authenticated time for each service returned
+    by access advisor. If we're able to parse the time, we return the last authenticated time.
+    Otherwise, we do not.
 
-    Args:
-        service_authenticated (int): The service authenticated time from Access Advisor
-
-    Returns:
-        int: The epoch time in seconds that the service was last authenticated
-        bool: Whether the service authenticated was valid
+    :param service_authenticated: The service authenticated time from Access Advisor
+    :return: The epoch time in seconds that the service was last authenticated, and whether
+        the time reported was valid.
     """
 
     BEGINNING_OF_2015_MILLI_EPOCH = 1420113600000
@@ -69,8 +67,11 @@ class AccessAdvisor:
         )  # Wait 5 minutes before giving up on jobs
 
     async def store_access_advisor_results(self, account_id, host, access_advisor_data):
-        """
-        Store Access Advisor results in S3 for identities across an account.
+        """Stores Access Advisor results in S3 for identities across an account.
+
+        :param account_id: AWS Account ID
+        :param host: Tenant ID
+        :param access_advisor_data: All Access Advisor data for identities across a single AWS account
         """
         await store_json_results_in_redis_and_s3(
             access_advisor_data,
@@ -86,9 +87,13 @@ class AccessAdvisor:
             host=host,
         )
 
-    async def generate_and_save_access_advisor_data(self, host, account_id):
-        """
-        Generates and saves access advisor data for an account.
+    async def generate_and_save_access_advisor_data(self, host: str, account_id: str):
+        """Generates effective and removed permissions
+        for all identities across an account.
+
+        :param host: Tenant ID
+        :param account_id: AWS Account ID
+        :return: Access Advisor data for identities across a single AWS account
         """
         client = await get_boto3_instance(
             "iam", host, account_id, session_name="cache_access_advisor"
@@ -105,10 +110,18 @@ class AccessAdvisor:
         return access_advisor_data
 
     async def generate_and_save_effective_identity_permissions(
-        self, host, account_id, arns, access_advisor_data
+        self,
+        host: str,
+        account_id: str,
+        arns: List[str],
+        access_advisor_data: Dict[str, Any],
     ):
-        """
-        Generates and saves the "effective permissions" for each arn in `arns`.
+        """Generates and saves the "effective permissions" for each identity
+        arn in `arns`.
+
+        :param host: Tenant ID
+        :param account_id: AWS Account ID
+        :return: Access Advisor data for identities across a single AWS account
         """
         from common.lib.aws.unused_permissions_remover import (
             calculate_unused_policy_for_identities,
@@ -134,7 +147,13 @@ class AccessAdvisor:
 
     @rate_limited()
     def _generate_service_last_accessed_details(self, iam, arn):
-        """Wrapping the actual AWS API calls for rate limiting protection."""
+        """Generates the last accessed time for each service for a given identity.
+        Wraps it around rate limit protection.
+
+        :param iam: Boto3 IAM client
+        :param arn: Identity ARN
+        :return: Service Last Access Details
+        """
         return iam.generate_service_last_accessed_details(Arn=arn)["JobId"]
 
     @rate_limited()
