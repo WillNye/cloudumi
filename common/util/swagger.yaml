@@ -793,6 +793,10 @@ components:
             An array with a list of extra actions the user wants appended to the policy
           items:
             type: string
+        expiration_date:
+          type: integer
+          example: 20210905
+          description: Date to expire requested policy, in the format of YYYYmmdd
     AdvancedChangeGeneratorModel:
       allOf:
         - $ref: "#/components/schemas/ChangeGeneratorModel"
@@ -1135,6 +1139,10 @@ components:
             change_type:
               type: string
               pattern: "inline_policy"
+            expiration_date:
+              type: integer
+              example: 20210905
+              description: Date to expire requested policy, in the format of YYYYmmdd
             policy:
               $ref: "#/components/schemas/PolicyModel"
             old_policy:

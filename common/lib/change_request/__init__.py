@@ -67,7 +67,9 @@ async def _generate_policy_sid(user: str) -> str:
     return f"cm{user_stripped}{int(time.time())}{random_string}"
 
 
-async def generate_policy_name(policy_name: Optional[str], user: str) -> str:
+async def generate_policy_name(
+    policy_name: str, user: str, host: str, expiration_date: Optional[int] = None
+) -> str:
     """
     Generate a unique policy name identifying the user and time of the change request.
 
@@ -75,10 +77,17 @@ async def generate_policy_name(policy_name: Optional[str], user: str) -> str:
     :param user: User's e-mail address
     :return: policy name string
     """
+    temp_policy_prefix = config.get_host_specific_key(
+        "policies.temp_policy_prefix", host, "noq_delete_on"
+    )
     if policy_name:
         return policy_name
     user_stripped = user.split("@")[0]
     random_string = await generate_random_string()
+    if expiration_date:
+        return (
+            f"{temp_policy_prefix}_{expiration_date}_{user_stripped}_{int(time.time())}"
+        )
     return f"noq_{user_stripped}_{int(time.time())}_{random_string}"
 
 
@@ -104,6 +113,7 @@ async def _generate_inline_policy_change_model(
     resources: List[ResourceModel],
     statements: List[Dict],
     user: str,
+    host: str,
     is_new: bool = True,
     policy_name: Optional[str] = None,
 ) -> InlinePolicyChangeModel:
@@ -118,7 +128,7 @@ async def _generate_inline_policy_change_model(
     :param policy_name: Optional policy name. If not provided, one will be generated
     :return: InlinePolicyChangeModel
     """
-    policy_name = await generate_policy_name(policy_name, user)
+    policy_name = await generate_policy_name(policy_name, user, host)
     policy_document = await _generate_inline_policy_model_from_statements(statements)
     change_details = {
         "change_type": "inline_policy",
@@ -388,7 +398,7 @@ async def _generate_resource_model_from_arn(
 
 async def generate_change_model_array(
     changes: ChangeGeneratorModelArray,
-    host,
+    host: str,
 ) -> ChangeModelArray:
     """
     Compiles a ChangeModelArray which includes all of the AWS policies required to satisfy the
@@ -469,7 +479,7 @@ async def generate_change_model_array(
     )
     # TODO(ccastrapel): Check if the inline policy statements would be auto-approved and supply that context
     inline_iam_policy_change_model = await _generate_inline_policy_change_model(
-        primary_principal, resources, inline_iam_policy_statements, primary_user
+        primary_principal, resources, inline_iam_policy_statements, primary_user, host
     )
     change_models.append(inline_iam_policy_change_model)
     return ChangeModelArray.parse_obj({"changes": change_models})
