@@ -57,6 +57,8 @@ from common.models import (
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
+PERMISSIONS_SEPARATOR = "||"
+
 
 async def get_resource_policy(
     account: str, resource_type: str, name: str, region: str, host: str
@@ -2105,11 +2107,14 @@ async def get_resource_account(arn: str, host: str) -> str:
     return ""
 
 
-async def should_exclude_policy_from_comparison(policy):
-    """
-    AWS IAM policies come in all shapes and sizes. We ignore policies that have Effect=Deny, or
-    NotEffect (instead of Effect), NotResource (instead of Resource),
-    and NotAction (instead of Action).
+async def should_exclude_policy_from_comparison(policy: Dict[str, Any]) -> bool:
+    """Ignores policies from comparison if we don't support them.
+
+    AWS IAM policies come in all shapes and sizes. We ignore policies that have Effect=Deny, or NotEffect (instead of Effect),
+    NotResource (instead of Resource), and NotAction (instead of Action).
+
+    :param policy: A policy dictionary, ie: {'Statement': [{'Action': 's3:*', 'Effect': 'Allow', 'Resource': '*'}]}
+    :return: Whether to exclude the policy from comparison or not.
     """
     if not policy.get("Effect") or policy["Effect"] == "Deny":
         return True
@@ -2121,8 +2126,11 @@ async def should_exclude_policy_from_comparison(policy):
 
 
 async def entry_in_entries(value: str, values_to_compare: List[str]) -> bool:
-    """
-    Returns True if value is included in values_to_compare, using wildcard matching.
+    """Returns True if value is included in values_to_compare, using wildcard matching.
+
+    :param value: Some string. Usually a resource or IAM action. IE: s3:getbucketpolicy
+    :param values_to_compare: A list of strings, usually resources or actions. IE: ['s3:*', 's3:ListBucket']
+    :return: a boolean that specifies whether value is encommpassed in values_to_compare
     """
     for compare_to in values_to_compare:
         if value == compare_to:
@@ -2138,8 +2146,11 @@ async def entry_in_entries(value: str, values_to_compare: List[str]) -> bool:
 
 
 async def includes_resources(resourceA: List[str], resourceB: List[str]) -> bool:
-    """
-    Returns True if all of the resources in resourceA are included in resourceB, using fnmatch (wildcard) matching.
+    """Returns True if all of the resources in resourceA are included in resourceB, using fnmatch (wildcard) matching.
+
+    :param resourceA: A list of resource ARNs. For example: ['arn:aws:s3:::my-bucket/*', 'arn:aws:s3:::my-bucket/my-object']
+    :param resourceB: Another list of resource ARNs. For example: ['*']
+    :return: True if all of the resources in resourceA are included/encompassed in resourceB, otherwise False.
     """
     for resource in resourceA:
         match = False
@@ -2153,12 +2164,17 @@ async def includes_resources(resourceA: List[str], resourceB: List[str]) -> bool
 async def is_already_allowed_by_other_policy(
     inline_policy: Dict[str, Any], all_policies: List[Dict[str, Any]]
 ) -> bool:
-    """
-    Returns True if a list of policies (all_policies) has permissions that already encompass inline_policy. A caveat:
-    This function will ignore comparing equivalent policies. eg: If inline_policy matches a policy in all_policies, it
+    """Returns True if a list of policies (all_policies) has permissions that already encompass inline_policy.
+
+    A caveat: This function will ignore comparing equivalent policies. eg: If inline_policy matches a policy in all_policies, it
     will be ignored and this function will continue comparing the inline_policy against all of the other policies in
     all_policies. Why? Because normally we're comparing a single inline policy against a list of inline policies which
     includes all policies (including the current)
+
+    :param inline_policy: A specific policy statement, ie: {'Action': ['s3:putbuckettagging'], 'Effect': 'Allow', 'Resource': ['*']}
+    :param all_policies: A list of policy documents to compare `inline_policy` to. IE: [{'Action': ['s3:putbuckettagging'], 'Effect': 'Allow', 'Resource': ['*']}, ...]
+    :raises Exception: Validation error if the policy is not supported for comparison.
+    :return: A boolean, whether the `inline_policy` is already allowed by a policy in the list of `all_policies`.
     """
     if await should_exclude_policy_from_comparison(inline_policy):
         return False
@@ -2187,8 +2203,13 @@ async def is_already_allowed_by_other_policy(
 
 
 async def normalize_policy_actions_resources_to_list(policies: List[Any]) -> List[Any]:
-    """
-    Ensures that all Actions and all Resources are lists, and not strings
+    """Normalizes policies by ensuring that all Actions and all Resources are Lists, and not Strings
+
+    _extended_summary_
+
+    :param policies: A list of IAM policy statements. IE: [{'Action': 's3:*', 'Effect': 'Allow', 'Resource': '*'}, ...]
+    :return: A list of policy statements where all Actions and all Resources are Lists, and not Strings
+        IE: [{'Action': ['s3:*'], 'Effect': 'Allow', 'Resource': ['*']}, ...]
     """
     for policy in policies:
         if isinstance(policy.get("Resource"), str):
@@ -2199,24 +2220,28 @@ async def normalize_policy_actions_resources_to_list(policies: List[Any]) -> Lis
 
 
 async def convert_policy_to_string(policy: Dict[str, Any]) -> str:
-    """
-    Converts a policy dictionary into a policy string while retaining order. This is useful for creating a policy hash
-    and ensuring uniqueness by adding the return string to a set.
+    """Converts a policy dictionary into a policy string while retaining order. This is useful for creating a policy hash
+    and ensuring uniqueness by adding the return string to a set to eliminate duplicates
+
+    :param policy: a policy dictionary, ie: {'Action': ['autoscaling:describe*'], 'Resource': ['*'], 'Effect': 'Allow'}
+    :return: A policy string, ie: 'Action==["autoscaling:describe*"]||Effect=="Allow"||Resource==["*"]'
     """
     policy_list = []
     for policy_key in sorted(policy.keys()):
         if policy_key == "Sid":
             continue
         policy_list.append(f"{policy_key}=={json.dumps(policy[policy_key])}")
-    return "||".join(policy_list)
+    return PERMISSIONS_SEPARATOR.join(policy_list)
 
 
 async def generate_policy_from_permissions_string(permission: str) -> Dict[str, Any]:
-    """
-    Converts a policy string (generated by convert_policy_to_string) back into a policy dictionary. This is useful to do
+    """Converts a policy string (generated by convert_policy_to_string) back into a policy dictionary. This is useful to do
     after you've ensured uniquness for all of your policy strings
+
+    :param permission: This is the permissions string, IE: 'Action==["sqs:getqueueattributes"]||Effect=="Allow"||Resource==["*"]'
+    :return: This is the policy dictionary, IE: {'Action': ['sqs:getqueueattributes'], 'Resource': ['*'], 'Effect': 'Allow'}
     """
-    permission_list = permission.split("||")
+    permission_list = permission.split(PERMISSIONS_SEPARATOR)
     policy = {}
     for item in permission_list:
         item_key, item_value = item.split("==")
@@ -2226,10 +2251,14 @@ async def generate_policy_from_permissions_string(permission: str) -> Dict[str, 
     return policy
 
 
-async def combine_all_policy_statements(host, role, policies) -> List[Dict[str, Any]]:
-    """
-    Takes a list of policies and combines them into a single list of policies. This is useful for combining inline
-    policies into a single list of policies.
+async def combine_all_policy_statements(
+    policies: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """Takes a list of policies and combines them into a single list of policies. This is useful for combining inline
+    policies and managed policies into a single list of policies.
+
+    :param policies: A List of policies. IE: [{'Action': ['s3:*'], 'Effect': 'Allow', 'Resource': ['*']}, ...]
+    :return: a combined list of policies.
     """
     combined_policies = []
     for policy in policies:
@@ -2242,12 +2271,22 @@ async def combine_all_policy_statements(host, role, policies) -> List[Dict[str, 
 
 
 async def calculate_policy_changes(
-    identity, used_services, policy_type, managed_policy_details=None
+    identity: Dict[str, Any],
+    used_services: Set[str],
+    policy_type: str,
+    managed_policy_details: Dict[str, Any] = None,
 ):
-    """
-    Given the identity, the list of services (not permissions, but services like `s3`, `sqs`, etc), the policy type
+    """Given the identity, the list of used_services (not permissions, but services like `s3`, `sqs`, etc), the policy type
     (inline_policy or manage_policy), and the managed policy details (if applicable), this function will calculate the
     changes that need to be made to the identity's policies to remove all unused services.
+
+    :param identity: Details about the AWS IAM Role or User.
+    :param used_services: A set or list of used services.
+    :param policy_type: Either inline_policy or manage_policy.
+    :param managed_policy_details: A dictionary of managed policy name to the default managed policy document, defaults to None.
+    :raises Exception: Raises an exception on validation error.
+    :return: Returns effective policy as-is, effective policy with unused services removed, and individual changes to a role's
+        list of internal policies.
     """
     if policy_type == "inline_policy":
         identity_policy_list_name = "RolePolicyList"
@@ -2319,10 +2358,19 @@ async def calculate_policy_changes(
 
 async def condense_statements(
     statements: List[Dict[str, Any]],
-):
-    """
-    Removes redundant policies, and actions that are already permitted by a different wildcard / partial wildcard
+) -> List[Dict[str, Any]]:
+    """Removes redundant policies, and actions that are already permitted by a different wildcard / partial wildcard
     statement.
+
+    :param statements: A list of statements, IE: [
+        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['*']},
+        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['arn:aws:s3:::bucket']},
+        ...
+    ]
+    :return: A list of statements with all redundant policies removed, IE: [
+        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['*']},
+        ...
+    ]
     """
     derived_permissions_unique = set()
     statements = await normalize_policy_actions_resources_to_list(statements)

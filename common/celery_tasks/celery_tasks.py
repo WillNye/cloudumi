@@ -1084,8 +1084,8 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             log_data["num_iam_groups"] = len(iam_groups)
 
         if iam_policies:
-            async_to_sync(
-                store_iam_managed_policies_for_host(host, iam_policies, account_id)
+            async_to_sync(store_iam_managed_policies_for_host)(
+                host, iam_policies, account_id
             )
             log_data["num_iam_policies"] = len(iam_policies)
         ttl: int = int((datetime.utcnow() + timedelta(hours=36)).timestamp())
@@ -1191,7 +1191,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advisor_for_account(host, account_id):
+def cache_access_advisor_for_account(host: str, account_id: str) -> Dict[str, Any]:
     """Caches AWS access advisor data for an account that belongs to a host.
     This tells us which services each role has used.
 
@@ -1203,14 +1203,16 @@ def cache_access_advisor_for_account(host, account_id):
         "host": host,
         "message": "Caching access advisor data for account",
     }
-    log.debug(log_data)
 
     aa = AccessAdvisor(host)
-    async_to_sync(aa.generate_and_save_access_advisor_data)(host, account_id)
+    res = async_to_sync(aa.generate_and_save_access_advisor_data)(host, account_id)
+    log_data["num_roles_analyzed"] = len(res.keys())
+    log.debug(log_data)
+    return log_data
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advisor_across_accounts(host) -> Dict:
+def cache_access_advisor_across_accounts(host: str) -> Dict:
     """Triggers `cache_access_advisor_for_account` tasks on each AWS account that belongs to a host.
 
     :param host: Tenant ID
