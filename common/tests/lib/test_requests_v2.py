@@ -97,6 +97,10 @@ async def get_extended_request_helper():
     return extended_request
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("sts")
 class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.maxDiff = None
@@ -1977,6 +1981,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model.policy.policy_document,
         )
 
+    @pytest.mark.usefixtures("sqs")
     async def test_apply_resource_policy_change_sqs(self):
         from common.config import config
         from common.lib.v2.requests import apply_resource_policy_change
@@ -2082,6 +2087,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model.policy.policy_document,
         )
 
+    @pytest.mark.usefixtures("sns")
     async def test_apply_resource_policy_change_sns(self):
         from common.config import config
         from common.lib.v2.requests import apply_resource_policy_change
@@ -2184,6 +2190,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model.policy.policy_document,
         )
 
+    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("populate_caches")
     @patch("common.lib.v2.requests.send_communications_new_comment")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_add_comment(
@@ -2231,6 +2239,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(comment.user_email, "user2@example.com")
         self.assertEqual(comment.text, "Sample comment")
 
+    @pytest.mark.usefixtures("populate_caches")
+    @pytest.mark.usefixtures("dynamodb")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_update_change(
         self, mock_dynamo_write
@@ -2312,6 +2322,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             updated_policy_doc,
         )
 
+    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("populate_caches")
     @patch("common.lib.v2.requests.populate_old_policies")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     @patch("common.lib.v2.requests.can_admin_policies")
@@ -2420,6 +2432,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             inline_policy.get("PolicyDocument"),
         )
 
+    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("populate_caches")
     @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_cancel_request(
@@ -2493,6 +2507,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         # Make sure request got cancelled
         self.assertEqual(RequestStatus.cancelled, extended_request.request_status)
 
+    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("populate_caches")
     @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch("common.lib.v2.requests.can_move_back_to_pending_v2")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
@@ -2594,6 +2610,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         # Make sure request got moved back
         self.assertEqual(RequestStatus.pending, extended_request.request_status)
 
+    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("populate_caches")
     @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch(
         "common.lib.aws.fetch_iam_principal.fetch_iam_role",

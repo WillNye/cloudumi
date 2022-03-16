@@ -2,6 +2,7 @@
 import os
 import sys
 
+import pytest
 import ujson as json
 from mock import MagicMock, patch
 
@@ -36,6 +37,9 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
     # @patch("common.lib.aws.RedisHandler", mock_policy_redis)
     # @patch("common.handlers.base.auth")
     # @patch("consoleme_saas_plugins.plugins.auth.auth.Auth")
+    @pytest.mark.usefixtures("redis")
+    @pytest.mark.usefixtures("s3")
+    @pytest.mark.usefixtures("create_default_resources")
     @patch("api.handlers.v1.policies.retrieve_json_data_from_redis_or_s3")
     def test_resource_typeahead(
         self,

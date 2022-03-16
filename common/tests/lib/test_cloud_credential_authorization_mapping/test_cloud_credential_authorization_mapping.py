@@ -1,9 +1,15 @@
 import copy
 import unittest
 
+import pytest
+
 from util.tests.fixtures.globals import host
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("sts")
 class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(cls):

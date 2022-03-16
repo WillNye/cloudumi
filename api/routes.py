@@ -83,6 +83,12 @@ from api.handlers.v2.user import (
     UserRegistrationHandler,
 )
 from api.handlers.v2.user_profile import UserProfileHandler
+from api.handlers.v3.auth.sso import (
+    GoogleOidcIdpConfigurationCrudHandler,
+    OidcIdpConfigurationCrudHandler,
+    SamlOidcIdpConfigurationCrudHandler,
+    SsoIdpProviderConfigurationCrudHandler,
+)
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
 from api.handlers.v3.services.aws.account import (
@@ -94,6 +100,7 @@ from api.handlers.v3.services.aws.account import (
 )
 from api.handlers.v3.services.aws.ip_restrictions import (
     IpRestrictionsHandler,
+    IpRestrictionsRequesterIpOnlyToggleHandler,
     IpRestrictionsToggleHandler,
 )
 from api.handlers.v3.services.aws.role_access import (
@@ -235,6 +242,26 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/ip-access/(?P<_enabled>enable|disable)/?",
             IpRestrictionsToggleHandler,
+        ),
+        (
+            r"/api/v3/services/aws/ip-access/origin/(?P<_enabled>enable|disable)/?",
+            IpRestrictionsRequesterIpOnlyToggleHandler,
+        ),
+        (
+            r"/api/v3/auth/sso/google/?",
+            GoogleOidcIdpConfigurationCrudHandler,
+        ),
+        (
+            r"/api/v3/auth/sso/saml/?",
+            SamlOidcIdpConfigurationCrudHandler,
+        ),
+        (
+            r"/api/v3/auth/sso/oidc/?",
+            OidcIdpConfigurationCrudHandler,
+        ),
+        (
+            r"/api/v3/auth/sso/?",
+            SsoIdpProviderConfigurationCrudHandler,
         ),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),

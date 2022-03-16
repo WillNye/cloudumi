@@ -9,6 +9,7 @@ filegroup(
     srcs = [
         "__init__.py",
         "auth.py",
+        "model_handlers.py",
     ]
 )
 

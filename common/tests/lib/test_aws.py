@@ -23,6 +23,10 @@ ROLE = {
 }
 
 
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("sts")
 class TestAwsLib(TestCase):
     def test_is_role_instance_profile(self):
         from common.lib.aws.utils import is_role_instance_profile

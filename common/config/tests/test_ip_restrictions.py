@@ -7,6 +7,9 @@ from asgiref.sync import async_to_sync
 from common.config import config, ip_restrictions
 
 
+@pytest.mark.usefixtures("aws_credentials")
+@pytest.mark.usefixtures("dynamodb")
+@pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
 class TestIpRestrictions(TestCase):
     """Docstring in public class."""
 
@@ -54,7 +57,6 @@ class TestIpRestrictions(TestCase):
                 is False
             )
 
-    @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
     def test_delete_ip_restriction_exists(self):
         assert async_to_sync(ip_restrictions.set_ip_restriction)("host", "10.0.0.0/8")
         assert async_to_sync(ip_restrictions.delete_ip_restriction)(
@@ -108,3 +110,13 @@ class TestIpRestrictions(TestCase):
             assert async_to_sync(ip_restrictions.toggle_ip_restrictions)(
                 "host", enabled=True
             )
+
+    def test_toggle_ip_restrictions_on_requester_ip_only(self):
+        with patch.object(
+            config,
+            "get_tenant_static_config_from_dynamo",
+            return_value={"policies": {"ip_restrictions_on_requesters_ip": False}},
+        ):
+            assert async_to_sync(
+                ip_restrictions.toggle_ip_restrictions_on_requester_ip_only
+            )("host", enabled=True)
