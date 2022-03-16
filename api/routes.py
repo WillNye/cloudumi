@@ -91,7 +91,6 @@ from api.handlers.v3.auth.sso import (
 )
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
-from api.handlers.v3.reflection import GetClientIPAddress
 from api.handlers.v3.services.aws.account import (
     HubAccountHandler,
     OrgDeleteHandler,
@@ -263,10 +262,6 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/auth/sso/?",
             SsoIdpProviderConfigurationCrudHandler,
-        ),
-        (
-            r"/api/v3/reflection/ip/?",
-            GetClientIPAddress,
         ),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
