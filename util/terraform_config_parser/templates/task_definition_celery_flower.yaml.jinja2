@@ -39,11 +39,11 @@ containerDefinitions:
     privileged: false
     name: {{ ecs_cluster_name }}-celery-flower
 placementConstraints: [ ]
-memory: '2192'
+memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}
+family: {{ ecs_cluster_name }}-celery-flower
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: '1024'
+cpu: '2048'
 volumes: [ ]

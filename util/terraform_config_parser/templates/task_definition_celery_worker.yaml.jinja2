@@ -47,7 +47,7 @@ containerDefinitions:
 placementConstraints: [ ]
 memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}
+family: {{ ecs_cluster_name }}-celery-worker
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc

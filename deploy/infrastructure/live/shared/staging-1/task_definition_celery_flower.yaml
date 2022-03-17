@@ -39,11 +39,11 @@ containerDefinitions:
     privileged: false
     name: staging-noq-dev-shared-staging-1-celery-flower
 placementConstraints: []
-memory: "2192"
+memory: "8192"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
-family: staging-noq-dev-shared-staging-1
+family: staging-noq-dev-shared-staging-1-celery-flower
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: "1024"
+cpu: "2048"
 volumes: []

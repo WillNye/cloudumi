@@ -13,6 +13,13 @@ service_task_definition_map = [
         "service": "api",
         "task_definition": f"{current_path}/task_definition_api.yaml",
         "desiredCount": 1,
+        "loadBalancers": [
+            {
+                "containerName": "staging-noq-dev-shared-staging-1-api",
+                "containerPort": 8092,
+                "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:259868150464:targetgroup/tf-20220210002026526700000001/72dfc466694ddd66",
+            },
+        ],
     },
     {
         "service": "celery_scheduler",
@@ -31,9 +38,7 @@ service_task_definition_map = [
     },
 ]
 
-# task_definition_yaml_f = f"{current_path}/task_definition.yaml"
 cluster_name = "staging-noq-dev-shared-staging-1"
-# service_name = "staging-noq-dev-shared-staging-1"
 subnets = ["subnet-0dd8e008f770bd447", "subnet-0ae657185cbb32ee3"]
 security_groups = ["sg-0344d82e7000960df"]
 os.environ["AWS_PROFILE"] = "noq_staging"
@@ -109,6 +114,7 @@ for service in service_task_definition_map:
                 taskDefinition=task_definition_name,
                 desiredCount=service["desiredCount"],
                 launchType="FARGATE",
+                loadBalancers=service.get("loadBalancers", []),
                 enableExecuteCommand=True,
                 networkConfiguration={
                     "awsvpcConfiguration": {
@@ -129,6 +135,7 @@ for service in service_task_definition_map:
                 service=service_name,
                 taskDefinition=task_definition_name,
                 desiredCount=1,
+                loadBalancers=service.get("loadBalancers", []),
                 enableExecuteCommand=True,
                 networkConfiguration={
                     "awsvpcConfiguration": {
@@ -139,34 +146,47 @@ for service in service_task_definition_map:
                 },
             )
 
+service_rollout_completed = 0
+rollout_finalized = False
+
 while True:
-    service_status = ecs_client.describe_services(
-        cluster=cluster_name, services=[service_name]
-    )
-    rollout_finalized = False
-    for service in service_status["services"]:
-        for deployment in service["deployments"]:
-            if deployment["status"] == "PRIMARY":
-                print(
-                    "Service: {}, Pending Count: {}, Running Count: {}, Rollout State: {}".format(
-                        service_name,
-                        deployment["pendingCount"],
-                        deployment["runningCount"],
-                        deployment["rolloutState"],
-                    )
-                )
-                if deployment["rolloutState"] == "COMPLETED":
-                    print("Rollout completed")
-                    rollout_finalized = True
-                    break
-                elif deployment["rolloutState"] == "FAILED":
-                    print("Rollout failed")
-                    rollout_finalized = True
-                    break
-                if deployment["failedTasks"] > 0:
-                    print("Rollout failed. Number of failed tasks is greater than 0")
-                    rollout_finalized = True
-                    break
-    if rollout_finalized:
+    if service_rollout_completed == len(service_task_definition_map):
         break
-    time.sleep(5)
+
+    for service in service_task_definition_map:
+        if service.get("status") in ["COMPLETED", "FAILED"]:
+            continue
+        service_name = service["service"]
+        service_status = ecs_client.describe_services(
+            cluster=cluster_name, services=[service_name]
+        )
+        for service_status in service_status["services"]:
+            for deployment in service_status["deployments"]:
+                if deployment["status"] == "PRIMARY":
+                    print(
+                        "Service: {}, Pending Count: {}, Running Count: {}, Rollout State: {}".format(
+                            service_name,
+                            deployment["pendingCount"],
+                            deployment["runningCount"],
+                            deployment["rolloutState"],
+                        )
+                    )
+                    if deployment["rolloutState"] == "COMPLETED":
+                        print(f"Service: {service_name}, Rollout completed")
+                        service["status"] = "COMPLETED"
+                        service_rollout_completed += 1
+                        break
+                    elif deployment["rolloutState"] == "FAILED":
+                        print(f"Service: {service_name}, Rollout failed")
+                        service["status"] = "FAILED"
+                        service_rollout_completed += 1
+                        break
+                    if deployment["failedTasks"] > 0:
+                        print(
+                            "Rollout failed. Number of failed tasks is greater than 0"
+                        )
+                        rollout_finalized = True
+                        break
+        if rollout_finalized:
+            break
+        time.sleep(5)

@@ -11,7 +11,14 @@ service_task_definition_map = [
     {
         "service": "api",
         "task_definition": f"{current_path}/task_definition_api.yaml",
-        "desiredCount": 1
+        "desiredCount": 1,
+        "loadBalancers": [
+            {
+                'containerName': "{{ ecs_cluster_name }}-api",
+                'containerPort': 8092,
+                'targetGroupArn': '{{ target_group_arn }}',
+            },
+        ]
     },
     {
         "service": "celery_scheduler",
@@ -31,9 +38,7 @@ service_task_definition_map = [
 
 ]
 
-# task_definition_yaml_f = f"{current_path}/task_definition.yaml"
 cluster_name = "{{ ecs_cluster_name }}"
-# service_name = "{{ ecs_cluster_name }}"
 subnets = ["{{ subnet_name_private_az0 }}", "{{ subnet_name_private_az1 }}"]
 security_groups = ["{{ ecs_security_group }}"]
 os.environ["AWS_PROFILE"] = "{{ aws_profile }}"
@@ -106,6 +111,7 @@ for service in service_task_definition_map:
                                                 taskDefinition=task_definition_name,
                                                 desiredCount=service["desiredCount"],
                                                 launchType='FARGATE',
+                                                loadBalancers=service.get("loadBalancers", []),
                                                 enableExecuteCommand=True,
                                                 networkConfiguration={
                                                     'awsvpcConfiguration': {
@@ -122,6 +128,7 @@ for service in service_task_definition_map:
                 raise
             service = ecs_client.update_service(cluster=cluster_name, service=service_name, taskDefinition=task_definition_name,
                                                 desiredCount=1,
+                                                loadBalancers=service.get("loadBalancers", []),
                                                 enableExecuteCommand=True, networkConfiguration={
                     'awsvpcConfiguration': {
                         'subnets': subnets,
@@ -130,31 +137,42 @@ for service in service_task_definition_map:
                     }
                 })
 
+service_rollout_completed = 0
+rollout_finalized = False
+
 while True:
-    service_status = ecs_client.describe_services(cluster=cluster_name, services=[service_name])
-    rollout_finalized = False
-    for service in service_status["services"]:
-        for deployment in service['deployments']:
-            if deployment['status'] == 'PRIMARY':
-                print("Service: {}, Pending Count: {}, Running Count: {}, Rollout State: {}".format(
-                    service_name,
-                    deployment['pendingCount'],
-                    deployment['runningCount'],
-                    deployment['rolloutState']
-                )
-                )
-                if deployment['rolloutState'] == "COMPLETED":
-                    print("Rollout completed")
-                    rollout_finalized = True
-                    break
-                elif deployment['rolloutState'] == "FAILED":
-                    print("Rollout failed")
-                    rollout_finalized = True
-                    break
-                if deployment['failedTasks'] > 0:
-                    print("Rollout failed. Number of failed tasks is greater than 0")
-                    rollout_finalized = True
-                    break
-    if rollout_finalized:
+    if service_rollout_completed == len(service_task_definition_map):
         break
-    time.sleep(5)
+
+    for service in service_task_definition_map:
+        if service.get("status") in ["COMPLETED", "FAILED"]:
+            continue
+        service_name = service["service"]
+        service_status = ecs_client.describe_services(cluster=cluster_name, services=[service_name])
+        for service_status in service_status["services"]:
+            for deployment in service_status['deployments']:
+                if deployment['status'] == 'PRIMARY':
+                    print("Service: {}, Pending Count: {}, Running Count: {}, Rollout State: {}".format(
+                        service_name,
+                        deployment['pendingCount'],
+                        deployment['runningCount'],
+                        deployment['rolloutState']
+                    )
+                    )
+                    if deployment['rolloutState'] == "COMPLETED":
+                        print(f"Service: {service_name}, Rollout completed")
+                        service["status"] = "COMPLETED"
+                        service_rollout_completed += 1
+                        break
+                    elif deployment['rolloutState'] == "FAILED":
+                        print(f"Service: {service_name}, Rollout failed")
+                        service["status"] = "FAILED"
+                        service_rollout_completed += 1
+                        break
+                    if deployment['failedTasks'] > 0:
+                        print("Rollout failed. Number of failed tasks is greater than 0")
+                        rollout_finalized = True
+                        break
+        if rollout_finalized:
+            break
+        time.sleep(5)
