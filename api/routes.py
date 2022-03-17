@@ -239,9 +239,13 @@ def make_app(jwt_validator=None):
             r"/api/v3/services/aws/ip-access/?",
             IpRestrictionsHandler,
         ),
-        (
+        (r"/api/v3/services/aws/ip-access/enabled/?", IpRestrictionsToggleHandler)(
             r"/api/v3/services/aws/ip-access/(?P<_enabled>enable|disable)/?",
             IpRestrictionsToggleHandler,
+        ),
+        (
+            r"/api/v3/services/aws/ip-access/origin/enabled/?",
+            IpRestrictionsRequesterIpOnlyToggleHandler,
         ),
         (
             r"/api/v3/services/aws/ip-access/origin/(?P<_enabled>enable|disable)/?",

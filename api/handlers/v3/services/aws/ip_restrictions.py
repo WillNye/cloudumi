@@ -135,6 +135,37 @@ class IpRestrictionsToggleHandler(BaseHandler):
     Provides a toggle handler for ip restrictions
     """
 
+    async def get(self):
+        host = self.ctx.host
+
+        log_data = {
+            "function": f"{type(self).__name__}.{__name__}",
+            "user": self.user,
+            "message": "Retrieving configured ip restrictions",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "host": host,
+        }
+        log.debug(log_data)
+
+        generic_error_message = "Cannot access ip restrictions toggle"
+        if not can_admin_all(self.user, self.groups, host):
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 403, "unauthorized", log_data
+            )
+            return
+        log.debug(log_data)
+
+        enabled = await ip_restrictions.get_ip_restrictions_toggle(host)
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message="Successfully retrieved IP Restrictions Toggle",
+            data=enabled,
+        )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
+
     async def post(self, _enabled):
         host = self.ctx.host
 
@@ -173,6 +204,39 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
     """
     Provides a toggle handler to restrict credentials to requesters IP
     """
+
+    async def get(self):
+        host = self.ctx.host
+
+        log_data = {
+            "function": f"{type(self).__name__}.{__name__}",
+            "user": self.user,
+            "message": "Retrieving configured ip restrictions toggle on requester ip only",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "host": host,
+        }
+        log.debug(log_data)
+
+        generic_error_message = "Cannot access ip restrictions toggle"
+        if not can_admin_all(self.user, self.groups, host):
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 403, "unauthorized", log_data
+            )
+            return
+        log.debug(log_data)
+
+        enabled = await ip_restrictions.get_ip_restrictions_on_requester_ip_only_toggle(
+            host
+        )
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message="Successfully retrieved IP Restrictions requester ip only toggle",
+            data=enabled,
+        )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self, _enabled):
         host = self.ctx.host
