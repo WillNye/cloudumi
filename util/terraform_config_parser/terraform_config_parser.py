@@ -278,8 +278,26 @@ if __name__ == "__main__":
     )
     write_file("build_file.jinja2", "BUILD", terraform_config, config_output_path)
     write_file(
-        "task_definition.yaml.jinja2",
-        "task_definition.yaml",
+        "task_definition_api.yaml.jinja2",
+        "task_definition_api.yaml",
+        terraform_config,
+        config_output_path,
+    )
+    write_file(
+        "task_definition_celery_flower.yaml.jinja2",
+        "task_definition_celery_flower.yaml",
+        terraform_config,
+        config_output_path,
+    )
+    write_file(
+        "task_definition_celery_scheduler.yaml.jinja2",
+        "task_definition_celery_scheduler.yaml",
+        terraform_config,
+        config_output_path,
+    )
+    write_file(
+        "task_definition_celery_worker.yaml.jinja2",
+        "task_definition_celery_worker.yaml",
         terraform_config,
         config_output_path,
     )

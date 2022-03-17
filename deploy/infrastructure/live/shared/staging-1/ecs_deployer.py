@@ -8,9 +8,32 @@ from botocore.exceptions import ClientError
 
 current_path = pathlib.Path(__file__).parent.resolve()
 
-task_definition_yaml_f = f"{current_path}/task_definition.yaml"
+service_task_definition_map = [
+    {
+        "service": "api",
+        "task_definition": f"{current_path}/task_definition_api.yaml",
+        "desiredCount": 1,
+    },
+    {
+        "service": "celery_scheduler",
+        "task_definition": f"{current_path}/task_definition_celery_scheduler.yaml",
+        "desiredCount": 1,
+    },
+    {
+        "service": "celery_worker",
+        "task_definition": f"{current_path}/task_definition_celery_worker.yaml",
+        "desiredCount": 1,
+    },
+    {
+        "service": "celery_flower",
+        "task_definition": f"{current_path}/task_definition_celery_flower.yaml",
+        "desiredCount": 1,
+    },
+]
+
+# task_definition_yaml_f = f"{current_path}/task_definition.yaml"
 cluster_name = "staging-noq-dev-shared-staging-1"
-service_name = "staging-noq-dev-shared-staging-1"
+# service_name = "staging-noq-dev-shared-staging-1"
 subnets = ["subnet-0dd8e008f770bd447", "subnet-0ae657185cbb32ee3"]
 security_groups = ["sg-0344d82e7000960df"]
 os.environ["AWS_PROFILE"] = "noq_staging"
@@ -20,9 +43,6 @@ kms_key_arn = (
     "arn:aws:kms:us-west-2:259868150464:key/c772a276-6f4d-455b-a2fc-99681435401e"
 )
 noq_ecs_log_group_name = "staging-noq-dev-shared-staging-1"
-
-with open(task_definition_yaml_f, "r") as f:
-    task_definition = yaml.load(f, Loader=yaml.FullLoader)
 
 ecr_client = boto3.client("ecr", region_name=region)
 response = ecr_client.get_authorization_token(
@@ -67,49 +87,57 @@ except ClientError as e:
         },
     )
 
-registered_task_definition = ecs_client.register_task_definition(**task_definition)
+for service in service_task_definition_map:
+    service_name = service["service"]
 
-task_definition_name = "{}:{}".format(
-    registered_task_definition["taskDefinition"]["family"],
-    registered_task_definition["taskDefinition"]["revision"],
-)
+    with open(service["task_definition"], "r") as f:
+        task_definition = yaml.load(f, Loader=yaml.FullLoader)
 
-try:
-    service = ecs_client.create_service(
-        cluster=cluster_name,
-        serviceName=service_name,
-        taskDefinition=task_definition_name,
-        desiredCount=1,
-        launchType="FARGATE",
-        enableExecuteCommand=True,
-        networkConfiguration={
-            "awsvpcConfiguration": {
-                "subnets": subnets,
-                "assignPublicIp": "DISABLED",
-                "securityGroups": security_groups,
-            }
-        },
-    )
-except ClientError as e:
-    if e.response["Error"] != {
-        "Message": "Creation of service was not idempotent.",
-        "Code": "InvalidParameterException",
-    }:
-        raise
-    service = ecs_client.update_service(
-        cluster=cluster_name,
-        service=service_name,
-        taskDefinition=task_definition_name,
-        desiredCount=1,
-        enableExecuteCommand=True,
-        networkConfiguration={
-            "awsvpcConfiguration": {
-                "subnets": subnets,
-                "assignPublicIp": "DISABLED",
-                "securityGroups": security_groups,
-            }
-        },
-    )
+        registered_task_definition = ecs_client.register_task_definition(
+            **task_definition
+        )
+
+        task_definition_name = "{}:{}".format(
+            registered_task_definition["taskDefinition"]["family"],
+            registered_task_definition["taskDefinition"]["revision"],
+        )
+
+        try:
+            service = ecs_client.create_service(
+                cluster=cluster_name,
+                serviceName=service_name,
+                taskDefinition=task_definition_name,
+                desiredCount=service["desiredCount"],
+                launchType="FARGATE",
+                enableExecuteCommand=True,
+                networkConfiguration={
+                    "awsvpcConfiguration": {
+                        "subnets": subnets,
+                        "assignPublicIp": "DISABLED",
+                        "securityGroups": security_groups,
+                    }
+                },
+            )
+        except ClientError as e:
+            if e.response["Error"] != {
+                "Message": "Creation of service was not idempotent.",
+                "Code": "InvalidParameterException",
+            }:
+                raise
+            service = ecs_client.update_service(
+                cluster=cluster_name,
+                service=service_name,
+                taskDefinition=task_definition_name,
+                desiredCount=1,
+                enableExecuteCommand=True,
+                networkConfiguration={
+                    "awsvpcConfiguration": {
+                        "subnets": subnets,
+                        "assignPublicIp": "DISABLED",
+                        "securityGroups": security_groups,
+                    }
+                },
+            )
 
 while True:
     service_status = ecs_client.describe_services(
