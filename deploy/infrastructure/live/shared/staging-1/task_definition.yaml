@@ -42,27 +42,21 @@ containerDefinitions:
       options:
         awslogs-group: staging-noq-dev-shared-staging-1
         awslogs-region: us-west-2
-        awslogs-stream-prefix: celery
+        awslogs-stream-prefix: celery-scheduler
     entryPoint: []
     command:
       - celery
       - "-A"
       - common.celery_tasks.celery_tasks
-      - worker
+      - beat
       - "-l"
       - DEBUG
-      - "-B"
-      - "-E"
-      - "--concurrency=8"
+      - "--pidfile=/tmp/celery.pid"
     linuxParameters:
       devices: []
       initProcessEnabled: true
     cpu: 0
     environment:
-      - name: CELERY_CONCURRENCY
-        value: "8"
-      - name: CELERY_LOG_LEVEL
-        value: DEBUG
       - name: CONFIG_LOCATION
         value: s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
       - name: SETUPTOOLS_USE_DISTUTILS
@@ -78,7 +72,51 @@ containerDefinitions:
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
-    name: staging-noq-dev-shared-staging-1-celery
+    name: staging-noq-dev-shared-staging-1-celery-scheduler
+  - dnsSearchDomains: []
+    logConfiguration:
+      logDriver: awslogs
+      options:
+        awslogs-group: staging-noq-dev-shared-staging-1
+        awslogs-region: us-west-2
+        awslogs-stream-prefix: celery-worker
+    entryPoint: []
+    command:
+      - celery
+      - "-A"
+      - common.celery_tasks.celery_tasks
+      - worker
+      - "-l"
+      - DEBUG
+      - "-E"
+      - "--concurrency=8"
+      - "--pidfile=/tmp/celery.pid"
+      - "--max-memory-per-child=1000000"
+      - "--max-tasks-per-child=50"
+      - "--soft-time-limit=3600"
+      - "-O"
+      - "fair"
+    linuxParameters:
+      devices: []
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+    dnsServers: []
+    mountPoints: []
+    dockerSecurityOptions: []
+    volumesFrom: []
+    image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-celery:staging
+    essential: true
+    links: []
+    extraHosts: []
+    pseudoTerminal: false
+    readonlyRootFilesystem: false
+    privileged: false
+    name: staging-noq-dev-shared-staging-1-celery-worker
 placementConstraints: []
 memory: "8192"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
