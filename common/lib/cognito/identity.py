@@ -49,21 +49,46 @@ def upsert_identity_provider(user_pool_id: str, id_provider: SSOIDPProviders) ->
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name!
     :param id_provider: the pydantic model SSOIDPProviders with one of the groups filled out (either google, saml or oidc)
-    :raises ValueError: raised if no valid group was passed in the SSOIDPProviders model object
     :return: True if the operation is successful - currently always returns true or raises an exception
     """
     client = boto3.client("cognito-idp", region_name=config.region)
     identity_provider_dict = dict()
     identity_provider_type = ""
+    responses = list()
+
+    def set_provider():
+        LOG.info(
+            f"Storing {identity_provider_type} Identity Provider in Cognito in user pool {user_pool_id}"
+        )
+        provider_name = identity_provider_dict.get("provider_name")
+        provider_type = identity_provider_dict.get("provider_type")
+        LOG.info(
+            f"Using {provider_required} to create_identity_provider in Cognito with type {identity_provider_type}"
+        )
+
+        response = client.create_identity_provider(
+            UserPoolId=user_pool_id,
+            ProviderName=provider_name,
+            ProviderType=provider_type,
+            ProviderDetails={
+                x: y
+                for x, y in identity_provider_dict.items()
+                if x in provider_required and y is not None
+            },
+        )
+        return response
+
     if id_provider.google:
         identity_provider_dict = id_provider.google.dict()
         identity_provider_type = "Google"
         provider_required = ["client_id", "client_secret", "authorize_scopes"]
-    elif id_provider.saml:
+        responses.append(set_provider())
+    if id_provider.saml:
         identity_provider_dict = id_provider.saml.dict()
         identity_provider_type = "SAML"
         provider_required = ["metadata_url"]
-    elif id_provider.oidc:
+        responses.append(set_provider())
+    if id_provider.oidc:
         identity_provider_dict = id_provider.oidc.dict()
         identity_provider_type = "OIDC"
         provider_required = [
@@ -78,32 +103,9 @@ def upsert_identity_provider(user_pool_id: str, id_provider: SSOIDPProviders) ->
             "jwks_uri",
             "attributes_url_add_attributes",
         ]
-    else:
-        raise ValueError(
-            "SSOIDPProviders model object is in an invalid state, no id providers have been defined"
-        )
+        responses.append(set_provider())
 
-    LOG.info(
-        f"Storing {identity_provider_type} Identity Provider in Cognito in user pool {user_pool_id}"
-    )
-    provider_name = identity_provider_dict.get("provider_name")
-    provider_type = identity_provider_dict.get("provider_type")
-    LOG.info(
-        f"Using {provider_required} to create_identity_provider in Cognito with type {identity_provider_type}"
-    )
-
-    response = client.create_identity_provider(
-        UserPoolId=user_pool_id,
-        ProviderName=provider_name,
-        ProviderType=provider_type,
-        ProviderDetails={
-            x: y
-            for x, y in identity_provider_dict.items()
-            if x in provider_required and y is not None
-        },
-    )
-
-    LOG.info(f"Created IDP: {response}")
+    LOG.info(f"Created {len(responses)} IDP: {responses}")
     return True
 
 
