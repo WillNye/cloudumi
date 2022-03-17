@@ -26,7 +26,7 @@ export const awsOrganizationColumns = ({ handleClick }) => [
     width: 60,
     align: 'center',
     Cell: ({ row }) => (
-      <RowStatusIndicator isActive={row?.values?.active || true} />
+      <RowStatusIndicator isActive={row?.original?.active || true} />
     ),
   },
   {
@@ -34,7 +34,7 @@ export const awsOrganizationColumns = ({ handleClick }) => [
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.values)}>
+      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
         Remove
       </Button>
     ),
@@ -67,7 +67,7 @@ export const spokeAccountsColumns = ({ handleClick }) => [
     width: 60,
     align: 'center',
     Cell: ({ row }) => (
-      <RowStatusIndicator isActive={row?.values?.active || true} />
+      <RowStatusIndicator isActive={row?.original?.active || true} />
     ),
   },
   {
@@ -75,7 +75,7 @@ export const spokeAccountsColumns = ({ handleClick }) => [
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.values)}>
+      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
         Remove
       </Button>
     ),
@@ -108,7 +108,7 @@ export const hubAccountColumns = ({ handleClick }) => [
     width: 60,
     align: 'center',
     Cell: ({ row }) => (
-      <RowStatusIndicator isActive={row?.values?.active || true} />
+      <RowStatusIndicator isActive={row?.original?.active || true} />
     ),
   },
   {
@@ -116,7 +116,7 @@ export const hubAccountColumns = ({ handleClick }) => [
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.values)}>
+      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
         Remove
       </Button>
     ),
@@ -147,7 +147,7 @@ export const roleAccessAuthColumns = ({
         toggle
         onChange={handleChange}
         disabled
-        defaultChecked={row?.values?.web_access}
+        defaultChecked={row?.original?.web_access}
       />
     ),
   },
@@ -158,7 +158,7 @@ export const roleAccessAuthColumns = ({
     Cell: ({ row }) => (
       <Button
         size='mini'
-        onClick={() => handleClick('remove', row?.values)}
+        onClick={() => handleClick('remove', row?.original)}
         disabled={disabled}
       >
         Remove
@@ -177,7 +177,7 @@ export const CIDRBlockColumns = ({ handleClick = null }) => [
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.values)}>
+      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
         Remove
       </Button>
     ),

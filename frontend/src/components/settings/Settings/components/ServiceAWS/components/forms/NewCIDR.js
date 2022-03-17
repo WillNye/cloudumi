@@ -24,9 +24,13 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
     })
   }
 
-  const watchFields = watch()
+  const fields = watch()
 
-  const isReady = !!watchFields.cidr
+  const fieldsSize = Object.keys(fields)?.length
+
+  const currentFieldsSize = Object.keys(fields)?.filter(key => fields[key])?.length
+  
+  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize;
 
   const isWorking = post?.status === 'working'
 

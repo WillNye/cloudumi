@@ -29,14 +29,14 @@ export const userColumns = ({ handleClick }) => [
     accessor: 'enabled',
     width: 60,
     align: 'center',
-    Cell: ({ row }) => <RowStatusIndicator isActive={row?.values?.active} />,
+    Cell: ({ row }) => <RowStatusIndicator isActive={row?.original?.active} />,
   },
   {
     Header: 'Actions',
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.values)}>
+      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
         Remove
       </Button>
     ),
@@ -65,7 +65,7 @@ export const groupColumns = ({ handleClick }) => [
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.values)}>
+      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
         Remove
       </Button>
     ),

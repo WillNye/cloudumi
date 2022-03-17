@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useApi } from 'hooks/useApi'
 
 import { useForm } from 'react-hook-form'
@@ -8,28 +8,56 @@ import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
 import { ProviderTypeFields } from './ProviderTypeFields'
 
-export const NewProvider = ({ closeModal, onFinish }) => {
-  const { register, handleSubmit, watch } = useForm()
+export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
+
+  const { register, reset, watch, handleSubmit } = useForm({ defaultValues })
 
   const { post } = useApi('auth/sso')
 
   const onSubmit = (data) => {
-    console.log(data)
-    // post.do(data).then(() => {
-    //   closeModal()
-    //   onFinish()
-    // })
+    let provider = ''
+    switch (data?.provider_type) {
+      case 'google':
+        provider = 'google'
+        break
+      case 'saml':
+        provider = 'saml'
+        break
+      case 'oidc':
+        provider = 'oidc'
+        break
+      default:
+        provider = ''
+    }  
+    post.do(data, provider).then(() => {
+      closeModal()
+      onFinish()
+    })
   }
 
-  const watchFields = watch()
+  const [type, setType] = useState()
 
-  const isReady = !!watchFields.tag_name || true
+  const fields = watch()
+
+  delete fields?.user_pool_id
+
+  const fieldsSize = Object.keys(fields)?.length
+
+  const currentFieldsSize = Object.keys(fields)?.filter(key => fields[key])?.length
+  
+  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize;
 
   const isWorking = post?.status === 'working'
 
   const isSuccess = post?.status === 'done' && !post?.error
 
   const hasError = post?.error && post?.status === 'done'
+
+  const hasDefault = defaultValues?.provider_type
+
+  useEffect(() => {
+    if (hasDefault) setType(defaultValues?.provider_type)
+  }, [defaultValues?.provider_type])
 
   return (
     <Segment basic>
@@ -43,7 +71,10 @@ export const NewProvider = ({ closeModal, onFinish }) => {
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Form.Field>
           <label>Type</label>
-          <select {...register('idp_type', { required: true })}>
+          <select value={type} disabled={hasDefault} onChange={({ target }) => {
+              setType(target.value)
+              reset()
+            }}>
             <option value=''>Select one account</option>
             <option value='google'>Google</option>
             <option value='saml'>SAML</option>
@@ -51,7 +82,7 @@ export const NewProvider = ({ closeModal, onFinish }) => {
           </select>
         </Form.Field>
 
-        <ProviderTypeFields type={watchFields?.idp_type} register={register} />
+        <ProviderTypeFields type={type} register={register} />
 
         <Bar>
           <Fill />

@@ -23,10 +23,13 @@ export const NewOrganization = ({ closeModal, onFinish }) => {
     })
   }
 
-  const watchFields = watch()
+  const fields = watch()
 
-  const isReady =
-    Object.keys(watchFields)?.filter((k) => !!watchFields[k])?.length === 3
+  const fieldsSize = Object.keys(fields)?.length
+
+  const currentFieldsSize = Object.keys(fields)?.filter(key => fields[key])?.length
+  
+  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize;
 
   const isWorking = post?.status === 'working'
 

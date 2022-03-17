@@ -5,11 +5,11 @@ import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 
 export const IPRestrictionToggle = ({ checked }) => {
-  const { get, post } = useApi('services/aws/ip-access')
+  const { get, post } = useApi('services/aws/ip-access/origin')
 
   const { toast, success } = useToast()
 
-  useEffect(() => get.do(), [])
+  useEffect(() => get.do('enabled'), [])
 
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'
