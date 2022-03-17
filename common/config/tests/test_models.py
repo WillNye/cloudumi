@@ -247,3 +247,16 @@ class TestModels(TestCase):
         assert spoke_accounts[0].get("name") == "test_model_one"
         assert spoke_accounts[1].get("name") == "test_model_two"
         assert async_to_sync(model_adapter.delete_list)()
+
+    def test_store_with_single_item_into_array(self):
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .from_dict(test_model_dict)
+        )
+        assert async_to_sync(model_adapter.store_item_in_list)()
+        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        assert self.test_key_list in host_config
+        spoke_accounts = host_config.get(self.test_key_list, [])
+        assert spoke_accounts[0].get("name") == "test_model"
+        assert async_to_sync(model_adapter.delete_list)()

@@ -31,7 +31,6 @@ copy_to_bin(
         "yarn.lock",
         ".eslintrc",
         ".eslintignore",
-        ".yarnrc.yml"
     ],
 )
 
