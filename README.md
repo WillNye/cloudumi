@@ -15,6 +15,8 @@
   - [Build Instructions](#build-instructions)
 - Testing:
   - [Testing Instructions](util/tests/README.md)
+- Debugging and Troubleshooting:
+  - [Debug/Troubleshoot](docs/debug_troubleshooting/README.md)
 
 # Build Instructions
 

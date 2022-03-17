@@ -1,6 +1,14 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_binary")
 
+exports_files(
+    srcs = [
+        "initialize_dynamodb.py",
+        "initialize_redis.py",
+    ],
+    visibility = ["//visibility:public"]
+)
+
 py_binary(
     name = "initialize_dynamodb",
     data = [
