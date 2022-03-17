@@ -157,7 +157,7 @@ class ConfigurationCrudHandler(BaseHandler):
         return
 
 
-class MultiItemConfigurationCrudHandler(ConfigurationCrudHandler):
+class MultiItemConfigurationCrudHandler(BaseHandler):
     """
     Provides generic CRUD capabilities for list-based configuration items that are specifically tied to a pydantic model
 
@@ -171,6 +171,14 @@ class MultiItemConfigurationCrudHandler(ConfigurationCrudHandler):
     * each deletion merely removes an items from the list, versus removing the key
     * each get call will *always* return a list
     """
+
+    _model_class = None
+    _config_key = None
+
+    @classmethod
+    def __validate_class_vars(cls):
+        if not cls._model_class or not cls._config_key:
+            raise RuntimeError(f"{cls.__name__} is not properly configured")
 
     async def get(self):
         host = self.ctx.host
