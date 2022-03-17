@@ -272,7 +272,8 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/auth/cognito/groups/?",
             CognitoGroupCrudHandler,
-        )(r"/api/v3/downloads/weep", WeepDownloadHandler),
+        ),
+        (r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
         # (r"/api/v3/identities/users_page_config", IdentityUsersPageConfigHandler),
