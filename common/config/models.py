@@ -108,7 +108,7 @@ class ModelAdapter:
             self._model = self._model_class.parse_obj(config_item)
             self._model_content = "one"
         elif config_item and isinstance(config_item, list):
-            self._model_array = [self._model_class.parse_object(x) for x in config_item]
+            self._model_array = [self._model_class.parse_obj(x) for x in config_item]
             self._model_content = "many"
         else:
             self._model_content = "none"
@@ -192,6 +192,15 @@ class ModelAdapter:
         host_config = self.__nested_store_array(
             host_config, self._key, self._model_array
         )
+        await ddb.update_static_config_for_host(
+            yaml.dump(host_config), self._updated_by, self._host
+        )
+        return True
+
+    async def store_item_in_list(self) -> bool:
+        ddb = RestrictedDynamoHandler()
+        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        host_config = self.__nested_store_array(host_config, self._key, [self._model])
         await ddb.update_static_config_for_host(
             yaml.dump(host_config), self._updated_by, self._host
         )

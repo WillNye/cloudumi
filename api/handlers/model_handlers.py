@@ -269,7 +269,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         try:
             await ModelAdapter(self._model_class).load_config(
                 self._config_key, host
-            ).from_dict(data).store_list()
+            ).from_dict(data).store_item_in_list()
         except Exception as exc:
             log.error(exc)
             res = WebResponse(
