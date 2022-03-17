@@ -2211,3 +2211,46 @@ components:
           $ref: "#/components/schemas/SamlOIDCSSOIDPProvider"
         oidc:
           $ref: "#/components/schemas/OIDCSSOIDPProvider"
+    CognitoUser:
+      type: object
+      properties:
+        user_name:
+          type: string
+          description: required - The username for the user. Must be unique within the user pool. Must be a UTF-8 string between 1 and 128 characters. After the user is created, the username can't be changed.
+        user_attributes:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: attribute name - reference https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html#CognitoIdentityProvider.Client.admin_create_user
+              value:
+                type: string
+                description: attribute value - reference https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html#CognitoIdentityProvider.Client.admin_create_user
+        temporary_password:
+          type: string
+          description: The user's temporary password. This password must conform to the password policy that you specified when you created the user pool.
+        desired_delivery_medium:
+          type: string
+          description: EMAIL or SMS, while the boto3 API supports multiple, we only support one
+    CognitoGroup:
+      type: object
+      properties:
+        group_name:
+          type: string
+          description: required - The name of the group. Must be unique.
+        description:
+          type: string
+          description: uhm... description is the description, and that is this description of the description
+    CognitoAccounts:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/CognitoUser"
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/CognitoGroup"
