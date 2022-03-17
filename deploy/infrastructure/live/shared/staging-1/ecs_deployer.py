@@ -153,6 +153,9 @@ while True:
     if service_rollout_completed == len(service_task_definition_map):
         break
 
+    if rollout_finalized:
+        break
+
     for service in service_task_definition_map:
         if service.get("status") in ["COMPLETED", "FAILED"]:
             continue
@@ -183,10 +186,8 @@ while True:
                         break
                     if deployment["failedTasks"] > 0:
                         print(
-                            "Rollout failed. Number of failed tasks is greater than 0"
+                            f"Rollout failed. Number of failed tasks is greater than 0: {deployment}"
                         )
                         rollout_finalized = True
                         break
-        if rollout_finalized:
-            break
         time.sleep(5)
