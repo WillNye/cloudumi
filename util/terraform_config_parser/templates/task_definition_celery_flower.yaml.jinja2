@@ -7,8 +7,7 @@ containerDefinitions:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
         awslogs-stream-prefix: celery-flower
-    entryPoint: [ ]
-    command:
+    entryPoint:
       - pip
       - install
       - flower

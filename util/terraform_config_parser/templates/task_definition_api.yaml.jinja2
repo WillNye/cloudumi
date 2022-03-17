@@ -7,12 +7,11 @@ containerDefinitions:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
         awslogs-stream-prefix: web
-    entryPoint: [ ]
     portMappings:
       - hostPort: 8092
         protocol: tcp
         containerPort: 8092
-    command:
+    entryPoint:
       - python
       - api/__main__.py
     linuxParameters:
@@ -39,7 +38,7 @@ containerDefinitions:
 placementConstraints: [ ]
 memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}-api
+family: {{ ecs_cluster_name }}
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc

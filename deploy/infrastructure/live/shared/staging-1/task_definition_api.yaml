@@ -7,12 +7,11 @@ containerDefinitions:
         awslogs-group: staging-noq-dev-shared-staging-1
         awslogs-region: us-west-2
         awslogs-stream-prefix: web
-    entryPoint: []
     portMappings:
       - hostPort: 8092
         protocol: tcp
         containerPort: 8092
-    command:
+    entryPoint:
       - python
       - api/__main__.py
     linuxParameters:
@@ -39,7 +38,7 @@ containerDefinitions:
 placementConstraints: []
 memory: "8192"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
-family: staging-noq-dev-shared-staging-1-api
+family: staging-noq-dev-shared-staging-1
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc

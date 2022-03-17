@@ -7,8 +7,7 @@ containerDefinitions:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
         awslogs-stream-prefix: celery-scheduler
-    entryPoint: [ ]
-    command:
+    entryPoint:
       - celery
       - "-A"
       - common.celery_tasks.celery_tasks
