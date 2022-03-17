@@ -648,9 +648,6 @@ class GoogleOIDCSSOIDPProvider(BaseModel):
     )
     provider_name: str = Field(..., description="The identity provider name.")
     provider_type: str = Field(..., description="The identity provider type.")
-    user_pool_id: Optional[constr(regex=r"[\w-]+_[0-9a-zA-Z]+")] = Field(
-        None, description="The user pool ID."
-    )
 
 
 class SamlOIDCSSOIDPProvider(BaseModel):
@@ -659,9 +656,6 @@ class SamlOIDCSSOIDPProvider(BaseModel):
     )
     provider_name: str = Field(..., description="The identity provider name.")
     provider_type: str = Field(..., description="The identity provider type.")
-    user_pool_id: Optional[constr(regex=r"[\w-]+_[0-9a-zA-Z]+")] = Field(
-        None, description="The user pool ID."
-    )
 
 
 class OIDCSSOIDPProvider(BaseModel):
@@ -706,9 +700,6 @@ class OIDCSSOIDPProvider(BaseModel):
     )
     provider_name: str = Field(..., description="The identity provider name.")
     provider_type: str = Field(..., description="The identity provider type.")
-    user_pool_id: Optional[constr(regex=r"[\w-]+_[0-9a-zA-Z]+")] = Field(
-        None, description="The user pool ID."
-    )
 
 
 class SSOIDPProviders(BaseModel):

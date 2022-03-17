@@ -2127,10 +2127,6 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
-        user_pool_id:
-          type: string
-          description: The user pool ID.
-          pattern: '[\w-]+_[0-9a-zA-Z]+'
     SamlOIDCSSOIDPProvider:
       type: object
       required:
@@ -2147,10 +2143,6 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
-        user_pool_id:
-          type: string
-          description: The user pool ID.
-          pattern: '[\w-]+_[0-9a-zA-Z]+'
     OIDCSSOIDPProvider:
       type: object
       required:
@@ -2198,10 +2190,6 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
-        user_pool_id:
-          type: string
-          description: The user pool ID.
-          pattern: '[\w-]+_[0-9a-zA-Z]+'
     SSOIDPProviders:
       type: object
       properties:

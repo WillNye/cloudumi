@@ -19,6 +19,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
     _model_class = None
     _config_key = None
+    _triggers = list()
 
     @classmethod
     def __validate_class_vars(cls):
@@ -63,6 +64,10 @@ class ConfigurationCrudHandler(BaseHandler):
         )
         if get_data:
             res.data = get_data
+
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
@@ -112,6 +117,11 @@ class ConfigurationCrudHandler(BaseHandler):
                 status_code=200,
                 message="Successfully updated",
             )
+
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
@@ -153,6 +163,11 @@ class ConfigurationCrudHandler(BaseHandler):
             if deleted
             else "Unable to delete data.",
         )
+
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
