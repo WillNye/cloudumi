@@ -571,8 +571,8 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
     )
     if process_cloudtrail_errors_res["num_new_or_changed_notifications"] > 0:
         cache_notifications.apply_async((host,))
-    log_data["number_of_roles_with_errors"]: len(cloudtrail_errors.keys())
-    log_data["number_errors"]: sum(cloudtrail_errors.values())
+    log_data["number_of_roles_with_errors"] = len(cloudtrail_errors.keys())
+    log_data["number_errors"] = sum(cloudtrail_errors.values())
     log.debug(log_data)
     return log_data
 
