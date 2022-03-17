@@ -162,7 +162,7 @@ class IpRestrictionsToggleHandler(BaseHandler):
             status="success",
             status_code=200,
             message="Successfully retrieved IP Restrictions Toggle",
-            data=enabled,
+            data={"enabled": enabled},
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
@@ -234,7 +234,7 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
             status="success",
             status_code=200,
             message="Successfully retrieved IP Restrictions requester ip only toggle",
-            data=enabled,
+            data={"enabled": enabled},
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
