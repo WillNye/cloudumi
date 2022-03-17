@@ -2,6 +2,7 @@ from api.handlers.model_handlers import (
     ConfigurationCrudHandler,
     MultiItemConfigurationCrudHandler,
 )
+from common.celery_tasks.settings import synchronize_cognito_sso
 from common.models import (
     CognitoGroup,
     CognitoUser,
