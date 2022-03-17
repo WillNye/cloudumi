@@ -17,7 +17,6 @@ def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
             "--capture=no",
             # "--black",
             # "--pylint",
-            # "--pylint-rcfile=$(location //util/tests:.pylintrc)",
             # "--mypy",
         ] + args + ["$(location :%s)" % x for x in srcs],
         python_version = "PY3",
@@ -37,7 +36,6 @@ def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
             "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
         },
         data = [
-            "//util/tests:.pylintrc",
             "//util/tests:test_configuration.yaml",
         ] + data,
         **kwargs
