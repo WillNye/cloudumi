@@ -67,7 +67,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
         for trigger in self._triggers:
             log.info(f"Applying trigger {trigger.name}")
-            trigger.apply_async(self.ctx)
+            trigger.apply_async((self.ctx.__dict__,))
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
@@ -120,7 +120,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
         for trigger in self._triggers:
             log.info(f"Applying trigger {trigger.name}")
-            trigger.apply_async(self.ctx)
+            trigger.apply_async((self.ctx.__dict__,))
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -166,7 +166,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
         for trigger in self._triggers:
             log.info(f"Applying trigger {trigger.name}")
-            trigger.apply_async(self.ctx)
+            trigger.apply_async((self.ctx.__dict__,))
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

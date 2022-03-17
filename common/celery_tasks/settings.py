@@ -1,5 +1,6 @@
-from common.celery_tasks import app
-from common.config import ModelAdapter, config
+from common.celery_tasks.celery_tasks import app
+from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.cognito import identity
 from common.models import (
     GoogleOIDCSSOIDPProvider,
@@ -12,9 +13,9 @@ LOG = config.get_logger()
 
 
 @app.task
-def synchronize_cognito_sso(context: object) -> bool:
+def synchronize_cognito_sso(context: dict) -> bool:
     LOG.info("Synchronizing Cognito")
-    host = context.host
+    host = context.get("host")
     user_pool_id = config.get_host_specific_key(
         "auth.cognito_config.user_pool_id", host
     )
