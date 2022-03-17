@@ -1,5 +1,10 @@
-from api.handlers.model_handlers import ConfigurationCrudHandler
+from api.handlers.model_handlers import (
+    ConfigurationCrudHandler,
+    MultiItemConfigurationCrudHandler,
+)
 from common.models import (
+    CognitoGroup,
+    CognitoUser,
     GoogleOIDCSSOIDPProvider,
     OIDCSSOIDPProvider,
     SamlOIDCSSOIDPProvider,
@@ -25,3 +30,13 @@ class OidcIdpConfigurationCrudHandler(ConfigurationCrudHandler):
 class SsoIdpProviderConfigurationCrudHandler(ConfigurationCrudHandler):
     _model_class = SSOIDPProviders
     _config_key = "secrets.auth"
+
+
+class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
+    _model_class = CognitoUser
+    _config_key = "aws.cognito.accounts.users"
+
+
+class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
+    _model_class = CognitoGroup
+    _config_key = "aws.cognito.accounts.groups"
