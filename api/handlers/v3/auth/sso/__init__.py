@@ -29,4 +29,3 @@ class OidcIdpConfigurationCrudHandler(ConfigurationCrudHandler):
 class SsoIdpProviderConfigurationCrudHandler(ConfigurationCrudHandler):
     _model_class = SSOIDPProviders
     _config_key = "secrets.auth"
-    _triggers = [synchronize_cognito_sso]
