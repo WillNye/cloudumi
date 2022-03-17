@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+import pytest
 import yaml
 from asgiref.sync import async_to_sync
 from tornado.httpclient import AsyncHTTPClient
@@ -31,6 +32,9 @@ def delete_role_access():
     )
 
 
+@pytest.mark.usefixtures("aws_credentials")
+@pytest.mark.usefixtures("dynamodb")
+@pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
 class TestRoleAccess(TestCase):
     """Docstring in public class."""
 
