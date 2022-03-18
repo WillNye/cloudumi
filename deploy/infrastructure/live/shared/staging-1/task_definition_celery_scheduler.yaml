@@ -33,11 +33,11 @@ containerDefinitions:
     privileged: false
     name: staging-noq-dev-shared-staging-1-celery-scheduler
 placementConstraints: []
-memory: "8192"
+memory: "2048"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
 family: staging-noq-dev-shared-staging-1-celery-scheduler
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: "2048"
+cpu: "1024"
 volumes: []

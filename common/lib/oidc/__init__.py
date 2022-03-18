@@ -352,7 +352,7 @@ async def authenticate_user_by_oidc(request):
         if config.get("_global_.auth.set_auth_cookie", True):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                 minutes=config.get_host_specific_key(
-                    "jwt.expiration_minutes", host, 1440
+                    "jwt.expiration_minutes", host, 1200
                 )
             )
             encoded_cookie = await generate_jwt_token(

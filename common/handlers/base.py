@@ -679,7 +679,7 @@ class BaseHandler(TornadoRequestHandler):
         ):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                 minutes=config.get_host_specific_key(
-                    "jwt.expiration_minutes", host, 1440
+                    "jwt.expiration_minutes", host, 1200
                 )
             )
 

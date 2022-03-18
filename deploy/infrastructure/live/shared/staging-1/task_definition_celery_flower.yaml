@@ -7,6 +7,10 @@ containerDefinitions:
         awslogs-group: staging-noq-dev-shared-staging-1
         awslogs-region: us-west-2
         awslogs-stream-prefix: celery-flower
+    portMappings:
+      - hostPort: 7071
+        protocol: tcp
+        containerPort: 7071
     entryPoint:
       - bash
       - "-c"
@@ -33,11 +37,11 @@ containerDefinitions:
     privileged: false
     name: staging-noq-dev-shared-staging-1-celery-flower
 placementConstraints: []
-memory: "8192"
+memory: "512"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
 family: staging-noq-dev-shared-staging-1-celery-flower
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: "2048"
+cpu: "256"
 volumes: []
