@@ -234,6 +234,10 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         if get_data:
             res.data = get_data
 
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
@@ -284,6 +288,11 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 status_code=200,
                 message="Successfully updated",
             )
+
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
@@ -332,5 +341,10 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             if deleted
             else "Unable to delete data.",
         )
+
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
