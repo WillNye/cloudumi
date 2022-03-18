@@ -48,6 +48,7 @@ filegroup(
         "__init__.py",
         "celery_tasks.py",
         "run.py",
+        "settings.py",
     ),
 )
 

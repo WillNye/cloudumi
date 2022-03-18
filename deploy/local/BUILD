@@ -9,6 +9,8 @@ py_binary(
     srcs_version = "PY3",
     srcs = [
         "populate_services.py",
+        "//common/scripts:initialize_dynamodb.py",
+        "//common/scripts:initialize_redis.py",
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
@@ -16,10 +18,12 @@ py_binary(
     },
     deps = [
         "//common:lib",
+        "//common/celery_tasks:lib",
         "//common/config:lib",
         "//common/exceptions:lib",
         "//identity:lib",
         "//plugins/metrics:lib",
+        "//util/debug",
         requirement("asgiref"),
     ],
     visibility = ["//visibility:public"],

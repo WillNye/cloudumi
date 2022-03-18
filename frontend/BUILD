@@ -30,7 +30,7 @@ copy_to_bin(
         "package.json",
         "yarn.lock",
         ".eslintrc",
-        ".eslintignore"
+        ".eslintignore",
     ],
 )
 
