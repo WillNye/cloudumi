@@ -8,14 +8,9 @@ containerDefinitions:
         awslogs-region: us-west-2
         awslogs-stream-prefix: celery-flower
     entryPoint:
-      - pip
-      - install
-      - flower
-      - ";"
-      - flower
-      - "--broker=redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1"
-      - "--broker_api=redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1"
-      - "--port=7101"
+      - bash
+      - "-c"
+      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; cd /app/common/celery_tasks/container.binary.runfiles/cloudumi; pip install flower; python -m celery -A common.celery_tasks.celery_tasks flower --port=7101'
     linuxParameters:
       devices: []
       initProcessEnabled: true

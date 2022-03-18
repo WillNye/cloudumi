@@ -12,8 +12,9 @@ containerDefinitions:
         protocol: tcp
         containerPort: 8092
     entryPoint:
-      - python
-      - api/__main__.py
+      - bash
+      - "-c"
+      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; python /app/api/container.binary.runfiles/cloudumi/api/__main__.py'
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
@@ -38,7 +39,7 @@ containerDefinitions:
 placementConstraints: [ ]
 memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}
+family: {{ ecs_cluster_name }}-api
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
