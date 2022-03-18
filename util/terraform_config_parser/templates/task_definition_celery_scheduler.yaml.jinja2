@@ -33,11 +33,11 @@ containerDefinitions:
     privileged: false
     name: {{ ecs_cluster_name }}-celery-scheduler
 placementConstraints: [ ]
-memory: '8192'
+memory: '2048'
 taskRoleArn: {{ ecs_task_role_arn }}
 family: {{ ecs_cluster_name }}-celery-scheduler
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: '2048'
+cpu: '1024'
 volumes: [ ]
