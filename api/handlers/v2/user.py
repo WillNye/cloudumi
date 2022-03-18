@@ -229,7 +229,7 @@ class LoginHandler(TornadoRequestHandler):
             return
         # Make and set jwt for user
         expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-            minutes=config.get_host_specific_key("jwt.expiration_minutes", host, 1440)
+            minutes=config.get_host_specific_key("jwt.expiration_minutes", host, 1200)
         )
         encoded_cookie = await generate_jwt_token(
             authenticated_response.username,
