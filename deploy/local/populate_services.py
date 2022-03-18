@@ -3,6 +3,9 @@ from secrets import token_urlsafe
 
 from asgiref.sync import async_to_sync
 
+import common.scripts.initialize_dynamodb
+import common.scripts.initialize_redis
+
 from common.lib.dynamo import RestrictedDynamoHandler
 
 tenant_config = f"""

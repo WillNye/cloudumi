@@ -84,6 +84,8 @@ from api.handlers.v2.user import (
 )
 from api.handlers.v2.user_profile import UserProfileHandler
 from api.handlers.v3.auth.sso import (
+    CognitoGroupCrudHandler,
+    CognitoUserCrudHandler,
     GoogleOidcIdpConfigurationCrudHandler,
     OidcIdpConfigurationCrudHandler,
     SamlOidcIdpConfigurationCrudHandler,
@@ -246,9 +248,13 @@ def make_app(jwt_validator=None):
             r"/api/v3/services/aws/ip-access/?",
             IpRestrictionsHandler,
         ),
-        (
+        (r"/api/v3/services/aws/ip-access/enabled/?", IpRestrictionsToggleHandler)(
             r"/api/v3/services/aws/ip-access/(?P<_enabled>enable|disable)/?",
             IpRestrictionsToggleHandler,
+        ),
+        (
+            r"/api/v3/services/aws/ip-access/origin/enabled/?",
+            IpRestrictionsRequesterIpOnlyToggleHandler,
         ),
         (
             r"/api/v3/services/aws/ip-access/origin/(?P<_enabled>enable|disable)/?",
@@ -269,6 +275,14 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/auth/sso/?",
             SsoIdpProviderConfigurationCrudHandler,
+        ),
+        (
+            r"/api/v3/auth/cognito/users/?",
+            CognitoUserCrudHandler,
+        ),
+        (
+            r"/api/v3/auth/cognito/groups/?",
+            CognitoGroupCrudHandler,
         ),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
