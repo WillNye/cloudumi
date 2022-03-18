@@ -99,4 +99,4 @@ jobs:
       - name: Run tests
         run: |
           source /tmp/env/bin/activate
-          bazelisk test //...
+          bazel test $(bazel query 'kind(".*_test rule", //...)')
