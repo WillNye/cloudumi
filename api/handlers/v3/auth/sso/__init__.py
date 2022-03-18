@@ -2,7 +2,11 @@ from api.handlers.model_handlers import (
     ConfigurationCrudHandler,
     MultiItemConfigurationCrudHandler,
 )
-from common.celery_tasks.settings import synchronize_cognito_sso
+from common.celery_tasks.settings import (
+    synchronize_cognito_groups,
+    synchronize_cognito_sso,
+    synchronize_cognito_users,
+)
 from common.models import (
     CognitoGroup,
     CognitoUser,
@@ -39,8 +43,10 @@ class SsoIdpProviderConfigurationCrudHandler(ConfigurationCrudHandler):
 class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoUser
     _config_key = "aws.cognito.accounts.users"
+    _triggers = [synchronize_cognito_users]
 
 
 class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoGroup
     _config_key = "aws.cognito.accounts.groups"
+    _triggers = [synchronize_cognito_groups]
