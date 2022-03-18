@@ -8,8 +8,11 @@ from common.lib.cache import (
 
 
 async def store_iam_roles_for_host(all_roles: Any, host: str) -> bool:
-    """
-    Store all IAM roles for a host in Redis and S3
+    """Store all IAM roles for a host in Redis and S3.
+
+    :param all_roles: A dict of all IAM roles for a host
+    :param host: Tenant ID
+    :return: bool indicating success
     """
     await store_json_results_in_redis_and_s3(
         all_roles,
@@ -33,9 +36,11 @@ async def store_iam_roles_for_host(all_roles: Any, host: str) -> bool:
     return True
 
 
-async def get_iam_roles_for_host(host: str):
-    """
-    Retrieves all IAM roles for a host from Redis or S3
+async def get_iam_roles_for_host(host: str) -> Any:
+    """Retrieves all IAM roles for a host from Redis or S3.
+
+    :param host: Tenant ID
+    :return: Any (A struct with all of the IAM roles)
     """
     return await retrieve_json_data_from_redis_or_s3(
         redis_key=config.get_host_specific_key(
@@ -61,8 +66,13 @@ async def get_iam_roles_for_host(host: str):
 async def get_identity_arns_for_account(
     host: str, account_id: str, identity_type: str = "role"
 ) -> List[str]:
-    """
-    Retrieves a list of all IAM role ARNs for a given account
+    """Retrieves a list of all IAM role ARNs for a given account.
+
+    :param host: Tenant ID
+    :param account_id: AWS Account ID
+    :param identity_type: "user" (indicating AWS IAM User) or "role" (Indicating AWS IAM Role), defaults to "role"
+    :raises NotImplementedError: When identity type is not supported
+    :return: _description_
     """
     if identity_type != "role":
         raise NotImplementedError(f"identity_type {identity_type} not implemented")
@@ -78,8 +88,12 @@ async def get_identity_arns_for_account(
 async def store_iam_managed_policies_for_host(
     host: str, iam_policies: Any, account_id: str
 ) -> bool:
-    """
-    Store all managed policies for an account in S3
+    """Store all managed policies for an account in S3.
+
+    :param host: Tenant ID
+    :param iam_policies: A struct containing all managed policies for an account
+    :param account_id: AWS Account ID
+    :return: A boolean indicating success
     """
     await store_json_results_in_redis_and_s3(
         iam_policies,
@@ -94,6 +108,7 @@ async def store_iam_managed_policies_for_host(
         ).format(resource_type="iam_policies", account_id=account_id),
         host=host,
     )
+    return True
 
 
 async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> bool:
