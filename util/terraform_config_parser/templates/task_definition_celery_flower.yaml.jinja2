@@ -1,0 +1,43 @@
+executionRoleArn: {{ ecs_task_execution_role_arn }}
+containerDefinitions:
+  - dnsSearchDomains: [ ]
+    logConfiguration:
+      logDriver: awslogs
+      options:
+        awslogs-group: {{ ecs_cluster_name }}
+        awslogs-region: {{ region }}
+        awslogs-stream-prefix: celery-flower
+    entryPoint:
+      - bash
+      - "-c"
+      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; cd /app/common/celery_tasks/container.binary.runfiles/cloudumi; pip install flower; python -m celery -A common.celery_tasks.celery_tasks flower --port=7101'
+    linuxParameters:
+      devices: [ ]
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: {{ config_path_with_bucket }}
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+    dnsServers: [ ]
+    mountPoints: [ ]
+    dockerSecurityOptions: [ ]
+    volumesFrom: [ ]
+    image: {{ registry_repository_url_celery }}:{{ stage }}
+    essential: true
+    links: [ ]
+    extraHosts: [ ]
+    pseudoTerminal: false
+    readonlyRootFilesystem: false
+    privileged: false
+    name: {{ ecs_cluster_name }}-celery-flower
+placementConstraints: [ ]
+memory: '8192'
+taskRoleArn: {{ ecs_task_role_arn }}
+family: {{ ecs_cluster_name }}-celery-flower
+requiresCompatibilities:
+  - FARGATE
+networkMode: awsvpc
+cpu: '2048'
+volumes: [ ]
