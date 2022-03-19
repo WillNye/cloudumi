@@ -11,6 +11,8 @@
   - [Celery Tasks](common/celery_tasks/README.md)
 - Frontend:
   - [Overview](frontend/README.md)
+- Docs:
+  - [Overview](docs/README.md)
 - How to Build:
   - [Build Instructions](#build-instructions)
 - Testing:

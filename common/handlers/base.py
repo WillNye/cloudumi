@@ -904,3 +904,19 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
         self.set_header(
             "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"
         )
+
+
+class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler):
+    def initialize(self, **kwargs) -> None:
+        self.kwargs = kwargs
+        self.tracer = None
+        self.responses = []
+        self.ctx = None
+        self.base_handler = BaseHandler(self.application, self.request)
+        self.prepare = self.base_handler.prepare
+
+        super(AuthenticatedStaticFileHandler, self).initialize(**kwargs)
+
+    async def get(self, path: str, include_body: bool = True) -> None:
+        self.ctx = self.base_handler.ctx
+        await super(AuthenticatedStaticFileHandler, self).get(path, include_body)
