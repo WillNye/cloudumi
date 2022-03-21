@@ -1,6 +1,6 @@
 # TODO: @ccastrapel: I don't think we need this anymore
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.9.7
+FROM python:3.9.11
 RUN mkdir -p /apps
 RUN apt clean
 RUN apt update
@@ -51,6 +51,8 @@ RUN npm install yarn -g
 # Install pip requirements
 ADD requirements.lock .
 RUN python -m pip install -r requirements.lock
+ADD frontend/yarn.lock frontend/yarn.lock
+RUN yarn --cwd frontend
 
 WORKDIR /app
 COPY . /app
@@ -58,7 +60,6 @@ COPY . /app
 RUN python -m pip install -e .
 
 # Install SPA frontend
-RUN yarn --cwd frontend
 RUN yarn --cwd frontend build_template
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug

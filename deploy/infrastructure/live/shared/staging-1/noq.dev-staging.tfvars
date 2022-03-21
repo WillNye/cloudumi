@@ -43,7 +43,7 @@ allowed_inbound_cidr_blocks = [
 dynamo_table_replica_regions = ["us-west-2"]
 
 # Redis
-redis_node_type = "cache.t3.small"
+redis_node_type = "cache.t3.micro"
 
 profile = "noq_staging"
 # Sentry

@@ -6,3 +6,6 @@ branches:
   pull-request:
     tag: PullRequest
 commit-message-incrementing: MergeMessageOnly
+major-version-bump-message: '\+semver:\s?(breaking|major)'
+minor-version-bump-message: '\+semver:\s?(feature|minor)'
+patch-version-bump-message: '\+semver:\s?(fix|patch)'

@@ -19,6 +19,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
     _model_class = None
     _config_key = None
+    _triggers = list()
 
     @classmethod
     def __validate_class_vars(cls):

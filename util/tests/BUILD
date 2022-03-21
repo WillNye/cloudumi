@@ -5,7 +5,6 @@ load("@rules_python//python:packaging.bzl", "py_package", "py_wheel")
 
 exports_files([
     "wrapper.py",
-    ".pylintrc",
     "test_configuration.yaml",
 ])
 

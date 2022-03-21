@@ -1,0 +1,47 @@
+executionRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskExecutionRole
+containerDefinitions:
+  - dnsSearchDomains: []
+    logConfiguration:
+      logDriver: awslogs
+      options:
+        awslogs-group: staging-noq-dev-shared-staging-1
+        awslogs-region: us-west-2
+        awslogs-stream-prefix: celery-flower
+    portMappings:
+      - hostPort: 7071
+        protocol: tcp
+        containerPort: 7071
+    entryPoint:
+      - bash
+      - "-c"
+      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; cd /app/common/celery_tasks/container.binary.runfiles/cloudumi; pip install flower; python -m celery -A common.celery_tasks.celery_tasks flower --port=7101'
+    linuxParameters:
+      devices: []
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+    dnsServers: []
+    mountPoints: []
+    dockerSecurityOptions: []
+    volumesFrom: []
+    image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-celery:staging
+    essential: true
+    links: []
+    extraHosts: []
+    pseudoTerminal: false
+    readonlyRootFilesystem: false
+    privileged: false
+    name: staging-noq-dev-shared-staging-1-celery-flower
+placementConstraints: []
+memory: "512"
+taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
+family: staging-noq-dev-shared-staging-1-celery-flower
+requiresCompatibilities:
+  - FARGATE
+networkMode: awsvpc
+cpu: "256"
+volumes: []

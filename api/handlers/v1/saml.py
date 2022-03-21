@@ -55,7 +55,7 @@ class SamlHandler(BaseHandler):
                 self_url = await sync_to_async(OneLogin_Saml2_Utils.get_self_url)(req)
                 expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                     minutes=config.get_host_specific_key(
-                        "jwt.expiration_minutes", host, 1440
+                        "jwt.expiration_minutes", host, 1200
                     )
                 )
                 encoded_cookie = await generate_jwt_token(
