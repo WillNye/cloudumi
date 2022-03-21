@@ -43,10 +43,12 @@ class SsoIdpProviderConfigurationCrudHandler(ConfigurationCrudHandler):
 class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoUser
     _config_key = "aws.cognito.accounts.users"
+    _identifying_keys = ["Username"]
     _triggers = [synchronize_cognito_users]
 
 
 class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoGroup
     _config_key = "aws.cognito.accounts.groups"
+    _identifying_keys = ["GroupName"]
     _triggers = [synchronize_cognito_groups]
