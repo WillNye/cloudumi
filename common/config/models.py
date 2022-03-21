@@ -320,8 +320,14 @@ class ModelAdapter:
             )
         config_items = self.__access_subkey(host_config, self._key, self._default)
         for model in self._model_array:
-            if model.dict() in config_items:
-                config_items.pop(config_items.index(model.dict()))
+            if self.__filter_unique_comparators(model.dict()) in [
+                self.__filter_unique_comparators(x) for x in config_items
+            ]:
+                config_items.pop(
+                    [self.__filter_unique_comparators(x) for x in config_items].index(
+                        self.__filter_unique_comparators(model.dict())
+                    )
+                )
         await ddb.update_static_config_for_host(
             yaml.dump(host_config), self._updated_by, self._host
         )
