@@ -100,7 +100,7 @@
       "justMyCode": false,
       "stopOnEntry": true,
       "env": {
-        "CONFIG_LOCATION": "${workspaceFolder}/util/pytest/test_configuration.yaml",
+        "CONFIG_LOCATION": "${workspaceFolder}/util/tests/test_configuration.yaml",
         "PYTHONPATH": "${workspaceFolder}/"
       }
     }
