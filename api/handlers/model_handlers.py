@@ -19,6 +19,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
     _model_class = None
     _config_key = None
+    _identifying_keys = list()
     _triggers = list()
 
     @classmethod
@@ -189,6 +190,8 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
     _model_class = None
     _config_key = None
+    _identifying_keys = list()
+    _triggers = list()
 
     @classmethod
     def __validate_class_vars(cls):

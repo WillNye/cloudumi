@@ -288,11 +288,16 @@ class TestModels(TestCase):
         host_config = config.get_tenant_static_config_from_dynamo(__name__)
         assert self.test_key_list in host_config
         spoke_accounts = host_config.get(self.test_key_list, [])
-        assert len(spoke_accounts) == 2
-        assert spoke_accounts[0].get("name") == "test_model_one"
-        assert spoke_accounts[1].get("name") == "test_model_two"
-        assert spoke_accounts[0].get("role_arn") == "iam:aws:something:::no"
-        assert spoke_accounts[0].get("external_id") == "_test_update_"
-        assert spoke_accounts[0].get("hub_account_arn") == "iam:aws:hub:account:that"
-        assert spoke_accounts[0].get("master_for_account") is False
+        test_model_one = test_model_two = dict()
+        for item in spoke_accounts:
+            if item.get("name") == "test_model_one":
+                test_model_one = item
+            elif item.get("name") == "test_model_two":
+                test_model_two = item
+        assert test_model_one.get("name") == "test_model_one"
+        assert test_model_two.get("name") == "test_model_two"
+        assert test_model_one.get("role_arn") == "iam:aws:something:::no"
+        assert test_model_one.get("external_id") == "_test_update_"
+        assert test_model_one.get("hub_account_arn") == "iam:aws:hub:account:that"
+        assert test_model_one.get("master_for_account") is False
         assert async_to_sync(model_adapter.delete_list)()

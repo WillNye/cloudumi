@@ -206,7 +206,8 @@ class ModelAdapter:
         :param comparison_identifiers: a list of keys that identify the uniqueness of this object
         :return: itself
         """
-        self._uniqueness_comparators = uniqueness_comparators
+        if uniqueness_comparators:
+            self._uniqueness_comparators = uniqueness_comparators
         return self
 
     def __objects_similar(self, left: Dict[str, Any], right: Dict[str, Any]) -> bool:
