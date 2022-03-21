@@ -67,7 +67,9 @@ def synchronize_cognito_users(context: dict) -> bool:
         ModelAdapter(CognitoUser).load_config("aws.cognito.accounts.users", host).models
     )
     delete_users = [x for x in cognito_users if x not in [y for y in noq_users]]
-    result = False not in [identity.delete_identity_user(x) for x in delete_users]
+    result = False not in [
+        identity.delete_identity_user(user_pool_id, x) for x in delete_users
+    ]
     if result is False:
         LOG.warning("Unable to synchronize users in Cognito - pruning Cognito failed")
     add_users = [x for x in noq_users if x not in [y for y in cognito_users]]
@@ -100,7 +102,9 @@ def synchronize_cognito_groups(context: dict) -> bool:
         .models
     )
     delete_groups = [x for x in cognito_groups if x not in [y for y in noq_groups]]
-    result = False not in [identity.delete_identity_group(x) for x in delete_groups]
+    result = False not in [
+        identity.delete_identity_group(user_pool_id, x) for x in delete_groups
+    ]
     if result is False:
         LOG.warning("Unable to synchronize groups in Cognito - pruning Cognito failed")
     add_groups = [x for x in noq_groups if x not in [y for y in cognito_groups]]

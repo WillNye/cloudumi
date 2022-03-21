@@ -163,7 +163,7 @@ class TestIdentity(TestCase):
                 },
             ],
             Enabled=True,
-            temporary_password=self.temp_pass,
+            TemporaryPassword=self.temp_pass,
             MFAOptions=[{"DeliveryMedium": "SMS"}],
             UserStatus="COMPROMISED",
         )

@@ -304,7 +304,7 @@ def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
         UserPoolId=user_pool_id,
         Username=user.Username,
         UserAttributes=user_attributes,
-        TemporaryPassword=user.temporary_password,
+        TemporaryPassword=user.TemporaryPassword,
         DesiredDeliveryMediums=delivery_mediums,
     )
     user_update = CognitoUser(**response.get("User", {}))
