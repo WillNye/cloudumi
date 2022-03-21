@@ -57,9 +57,8 @@ async def calculate_unused_policy_for_identity(
         f"calculate_unused_policy_for_identity/{arn}.json.gz",
     )
 
-    # TODO Revert
     if not await is_object_older_than_seconds(
-        s3_key, bucket=s3_bucket, host=host, older_than_seconds=1
+        s3_key, bucket=s3_bucket, host=host, older_than_seconds=86400
     ):
         return await retrieve_json_data_from_redis_or_s3(
             s3_bucket=s3_bucket,
@@ -108,9 +107,9 @@ async def generate_permission_removal_commands(
     :param new_policy_document: New policy document with all unused permissions removed
     :return: A dictionary of AWS CLI and Python commands to remove unused permissions
     """
-    identity_type = await get_identity_type_from_arn(identity["Arn"])
+    identity_type = await get_identity_type_from_arn(identity["arn"])
 
-    identity_name = await get_identity_name_from_arn(identity["Arn"])
+    identity_name = await get_identity_name_from_arn(identity["arn"])
     inline_policy_names = [
         policy["PolicyName"] for policy in identity["policy"].get("RolePolicyList", [])
     ]
@@ -171,17 +170,17 @@ async def calculate_unused_policy_for_identities(
     if not access_advisor_data:
         if not account_id:
             raise Exception("Unable to retrieve access advisor data without account ID")
-        # TODO: Figure out a good expiration parameter
+
         access_advisor_data = await retrieve_json_data_from_redis_or_s3(
             s3_bucket=config.get_host_specific_key(
-                "cache_iam_resources_for_account.iam_policies.s3.bucket",
+                "access_advisor.s3.bucket",
                 host,
             ),
             s3_key=config.get_host_specific_key(
-                "cache_iam_resources_for_account.iam_policies.s3.file",
+                "access_advisor.s3.file",
                 host,
-                "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
-            ).format(resource_type="access_advisor", account_id=account_id),
+                "access_advisor/cache_access_advisor_{account_id}_v1.json.gz",
+            ).format(account_id=account_id),
             host=host,
             max_age=86400,
         )

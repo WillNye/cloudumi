@@ -1267,9 +1267,7 @@ def cache_access_advior_across_accounts_for_all_hosts() -> Dict:
             True,
         ):
             continue
-        cache_access_advisor_across_accounts.delay(
-            host=host, wait_for_subtask_completion=False
-        )
+        cache_access_advisor_across_accounts.delay(host=host)
     return log_data
 
 

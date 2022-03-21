@@ -51,34 +51,33 @@ const EffectivePermissions = () => {
                       {messages}
                     </Message>
                   ) : null}
-
-                  <MonacoDiffComponent
-                    onLintError={onLintError}
-                    oldValue={JSON.stringify(
-                      resourceEffectivePermissions.effective_policy,
-                      null,
-                      2
-                    )}
-                    newValue={JSON.stringify(
-                      resourceEffectivePermissions.effective_policy_unused_permissions_removed,
-                      null,
-                      2
-                    )}
-                    // readOnly={
-                    //   (!config.can_update_cancel && !config.can_approve_reject) ||
-                    //   changeReadOnly
-                    // }
-                    //  onLintError={onLintError}
-                    //  onValueChange={onValueChange}
-                  />
+                  {resourceEffectivePermissions.effective_policy !==
+                  resourceEffectivePermissions.effective_policy_unused_permissions_removed ? (
+                    <MonacoDiffComponent
+                      onLintError={onLintError}
+                      oldValue={JSON.stringify(
+                        resourceEffectivePermissions.effective_policy,
+                        null,
+                        2
+                      )}
+                      newValue={JSON.stringify(
+                        resourceEffectivePermissions.effective_policy_unused_permissions_removed,
+                        null,
+                        2
+                      )}
+                    />
+                  ) : (
+                    <ReadOnlyPolicyMonacoEditor
+                      onLintError={onLintError}
+                      policy={JSON.stringify(
+                        resourceEffectivePermissions.effective_policy,
+                        null,
+                        2
+                      )}
+                    />
+                  )}
                 </>
               ) : null}
-              <Header.Subheader>
-                Steps to remove unused permissions: 1. Add new least-privilege
-                policy 2. Remove existing inline policies 3. Detach existing
-                managed policies a script is available below to help with these
-                steps.
-              </Header.Subheader>
             </Segment>
             {/* <JustificationModal handleSubmit={handleAssumeRolePolicySubmit} /> */}
           </>
