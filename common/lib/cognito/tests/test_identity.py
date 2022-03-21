@@ -145,7 +145,7 @@ class TestIdentity(TestCase):
 
     def test_create_identity_user_sparse(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username="new_user")
-        user_update = identity.create_identity_user(self.pool_id, user, "123456")
+        user_update = identity.create_identity_user(self.pool_id, user)
         assert len(identity.get_identity_users(self.pool_id)) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
@@ -163,10 +163,11 @@ class TestIdentity(TestCase):
                 },
             ],
             Enabled=True,
+            temporary_password=self.temp_pass,
             MFAOptions=[{"DeliveryMedium": "SMS"}],
             UserStatus="COMPROMISED",
         )
-        user_update = identity.create_identity_user(self.pool_id, user, "123456")
+        user_update = identity.create_identity_user(self.pool_id, user)
         assert len(identity.get_identity_users(self.pool_id)) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
@@ -175,7 +176,7 @@ class TestIdentity(TestCase):
 
     def test_delete_identity_user(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username="delete_user")
-        _ = identity.create_identity_user(self.pool_id, user, "123456")
+        _ = identity.create_identity_user(self.pool_id, user)
         assert len(identity.get_identity_users(self.pool_id)) == 2
         identity.delete_identity_user(self.pool_id, user)
         assert len(identity.get_identity_users(self.pool_id)) == 1

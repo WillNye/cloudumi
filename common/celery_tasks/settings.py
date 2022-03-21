@@ -64,18 +64,16 @@ def synchronize_cognito_users(context: dict) -> bool:
         return False
     cognito_users = identity.get_identity_users(user_pool_id)
     noq_users = (
-        ModelAdapter(CognitoUser).load_config("auth.cognito_config.users", host).list
+        ModelAdapter(CognitoUser).load_config("aws.cognito.accounts.users", host).models
     )
-    delete_users = [
-        x for x in cognito_users if x.dict() not in [y.dict() for y in noq_users]
-    ]
+    delete_users = [x for x in cognito_users if x not in [y for y in noq_users]]
     result = False not in [identity.delete_identity_user(x) for x in delete_users]
     if result is False:
         LOG.warning("Unable to synchronize users in Cognito - pruning Cognito failed")
-    add_users = [
-        x for x in noq_users if x.dict() not in [y.dict() for y in cognito_users]
+    add_users = [x for x in noq_users if x not in [y for y in cognito_users]]
+    result = False not in [
+        identity.create_identity_user(user_pool_id, x) for x in add_users
     ]
-    result = False not in [identity.create_identity_user(x) for x in add_users]
     if result is False:
         LOG.warning(
             "Unable to synchronize users in Cognito - create operation in Cognito failed"
@@ -97,18 +95,18 @@ def synchronize_cognito_groups(context: dict) -> bool:
         return False
     cognito_groups = identity.get_identity_groups(user_pool_id)
     noq_groups = (
-        ModelAdapter(CognitoGroup).load_config("auth.cognito_config.groups", host).list
+        ModelAdapter(CognitoGroup)
+        .load_config("aws.cognito.accounts.groups", host)
+        .models
     )
-    delete_groups = [
-        x for x in cognito_groups if x.dict() not in [y.dict() for y in noq_groups]
-    ]
+    delete_groups = [x for x in cognito_groups if x not in [y for y in noq_groups]]
     result = False not in [identity.delete_identity_group(x) for x in delete_groups]
     if result is False:
         LOG.warning("Unable to synchronize groups in Cognito - pruning Cognito failed")
-    add_groups = [
-        x for x in noq_groups if x.dict() not in [y.dict() for y in cognito_groups]
+    add_groups = [x for x in noq_groups if x not in [y for y in cognito_groups]]
+    result = False not in [
+        identity.create_identity_group(user_pool_id, x) for x in add_groups
     ]
-    result = False not in [identity.create_identity_group(x) for x in add_groups]
     if result is False:
         LOG.warning(
             "Unable to synchronize groups in Cognito - create operation in Cognito failed"
