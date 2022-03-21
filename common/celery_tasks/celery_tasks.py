@@ -50,13 +50,18 @@ from common.lib.account_indexers import (
     cache_cloud_accounts,
     get_account_id_to_name_mapping,
 )
-from common.lib.assume_role import boto3_cached_conn
+from common.lib.assume_role import get_boto3_instance
 from common.lib.aws import aws_config
+from common.lib.aws.access_advisor import AccessAdvisor
+from common.lib.aws.cached_resources.iam import (
+    get_iam_roles_for_host,
+    store_iam_managed_policies_for_host,
+    store_iam_roles_for_host,
+)
 from common.lib.aws.cloudtrail import CloudTrail
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import get_all_managed_policies
 from common.lib.aws.s3 import list_buckets
-from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
 from common.lib.aws.typeahead_cache import cache_aws_resource_details
 from common.lib.aws.utils import (
@@ -624,25 +629,7 @@ def cache_policies_table_details(host=None) -> bool:
         "cache_policies_table_details.skip_iam_roles", host, False
     )
     if not skip_iam_roles:
-        all_iam_roles = async_to_sync(retrieve_json_data_from_redis_or_s3)(
-            redis_key=config.get_host_specific_key(
-                "aws.iamroles_redis_key",
-                host,
-                f"{host}_IAM_ROLE_CACHE",
-            ),
-            redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-                host,
-            ),
-            s3_key=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-                host,
-                "account_resource_cache/cache_all_roles_v1.json.gz",
-            ),
-            default={},
-            host=host,
-        )
+        all_iam_roles = async_to_sync(get_iam_roles_for_host)(host)
 
         for arn, role_details_j in all_iam_roles.items():
             role_details = ujson.loads(role_details_j)
@@ -992,20 +979,8 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "dev",
         "test",
     ]:
-        client = boto3_cached_conn(
-            "iam",
-            host,
-            account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
-            region=config.region,
-            sts_client_kwargs=dict(
-                region_name=config.region,
-                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-            ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-            session_name=sanitize_session_name(
-                "consoleme_cache_iam_resources_for_account"
-            ),
+        client = async_to_sync(get_boto3_instance)(
+            "iam", host, account_id, session_name="cache_iam_resources_for_account"
         )
         paginator = client.get_paginator("get_account_authorization_details")
         response_iterator = paginator.paginate()
@@ -1109,21 +1084,10 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             log_data["num_iam_groups"] = len(iam_groups)
 
         if iam_policies:
-            async_to_sync(store_json_results_in_redis_and_s3)(
-                iam_policies,
-                s3_bucket=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_policies.s3.bucket",
-                    host,
-                ),
-                s3_key=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_policies.s3.file",
-                    host,
-                    "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
-                ).format(resource_type="iam_policies", account_id=account_id),
-                host=host,
+            async_to_sync(store_iam_managed_policies_for_host)(
+                host, iam_policies, account_id
             )
             log_data["num_iam_policies"] = len(iam_policies)
-
         ttl: int = int((datetime.utcnow() + timedelta(hours=36)).timestamp())
         # Save them:
         for role in iam_roles:
@@ -1223,6 +1187,89 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "cache_iam_resources_for_account.success", tags={"account_id": account_id}
     )
     log.debug({**log_data, "message": "Finished caching IAM resources for account"})
+    return log_data
+
+
+@app.task(soft_time_limit=3600)
+def cache_access_advisor_for_account(host: str, account_id: str) -> Dict[str, Any]:
+    """Caches AWS access advisor data for an account that belongs to a host.
+    This tells us which services each role has used.
+
+    :param host: Tenant ID
+    :param account_id: AWS Account ID
+    """
+    log_data = {
+        "account_id": account_id,
+        "host": host,
+        "message": "Caching access advisor data for account",
+    }
+
+    aa = AccessAdvisor(host)
+    res = async_to_sync(aa.generate_and_save_access_advisor_data)(host, account_id)
+    log_data["num_roles_analyzed"] = len(res.keys())
+    log.debug(log_data)
+    return log_data
+
+
+@app.task(soft_time_limit=3600)
+def cache_access_advisor_across_accounts(host: str) -> Dict:
+    """Triggers `cache_access_advisor_for_account` tasks on each AWS account that belongs to a host.
+
+    :param host: Tenant ID
+    :raises Exception: When host is not valid
+    :return: Summary of the number of tasks triggered
+    """
+    if not host:
+        raise Exception("`host` must be passed to this task.")
+
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "host": host,
+        "message": "Caching access advisor data for tenant's accounts",
+    }
+
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
+    log_data["num_accounts"] = len(accounts_d.keys())
+
+    for account_id in accounts_d.keys():
+        if config.get("_global_.environment") == "prod":
+            cache_access_advisor_for_account.delay(host, account_id)
+        else:
+            if account_id in config.get_host_specific_key(
+                "celery.test_account_ids", host, []
+            ):
+                cache_access_advisor_for_account.delay(host, account_id)
+
+    stats.count(f"{function}.success")
+    log.debug(log_data)
+    return log_data
+
+
+@app.task(soft_time_limit=3600)
+def cache_access_advior_across_accounts_for_all_hosts() -> Dict:
+    """Triggers `cache_access_advisor_across_accounts` task for each tenant.
+
+    :return: Number of tenants that had tasks triggered.
+    """
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    hosts = get_all_hosts()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_hosts": len(hosts),
+    }
+    log.debug(log_data)
+    for host in hosts:
+        if not config.get_host_specific_key(
+            "cache_iam_resources_for_account.check_unused_permissions.enabled",
+            host,
+            True,
+        ):
+            continue
+        cache_access_advisor_across_accounts.delay(
+            host=host, wait_for_subtask_completion=False
+        )
     return log_data
 
 
@@ -1378,21 +1425,7 @@ def cache_iam_resources_across_accounts(
     log_data["num_iam_roles"] = len(all_roles)
     # Store full list of roles in a single place. This list will be ~30 minutes out of date.
     if all_roles:
-        async_to_sync(store_json_results_in_redis_and_s3)(
-            all_roles,
-            redis_key=cache_keys["iam_roles"]["cache_key"],
-            redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-                host,
-            ),
-            s3_key=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-                host,
-                "account_resource_cache/cache_all_roles_v1.json.gz",
-            ),
-            host=host,
-        )
+        async_to_sync(store_iam_roles_for_host)(all_roles, host)
         cache_aws_resource_details(all_roles, host)
 
     all_iam_users = red.hgetall(cache_keys["iam_users"]["temp_cache_key"])
@@ -1865,23 +1898,13 @@ def cache_sqs_queues_for_account(
     enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, host)
     for region in enabled_regions:
         try:
-            client = boto3_cached_conn(
+            client = async_to_sync(get_boto3_instance)(
                 "sqs",
                 host,
-                account_number=account_id,
-                assume_role=config.get_host_specific_key("policies.role_name", host),
-                region=region,
+                account_id,
+                "cache_sqs_queues_for_account",
+                region_name=region,
                 read_only=True,
-                sts_client_kwargs=dict(
-                    region_name=config.region,
-                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-                ),
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
-                ),
-                session_name=sanitize_session_name(
-                    "consoleme_cache_sqs_queues_for_account"
-                ),
             )
 
             paginator = client.get_paginator("list_queues")
@@ -3063,6 +3086,11 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_minute,
+    },
+    "cache_access_advior_across_accounts_for_all_hosts": {
+        "task": "common.celery_tasks.celery_tasks.cache_access_advior_across_accounts_for_all_hosts",
+        "options": {"expires": 180},
+        "schedule": schedule_6_hours,
     },
     # "cache_identities_for_all_hosts": {
     #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
