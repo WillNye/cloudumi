@@ -19,6 +19,7 @@ from common.lib.aws.iam import (
     list_role_tags,
 )
 from common.lib.aws.sanitize import sanitize_session_name
+from common.lib.aws.utils import get_identity_type_from_arn
 from common.lib.dynamo import IAMRoleDynamoHandler
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
@@ -72,7 +73,7 @@ async def _cloudaux_to_aws(principal):
     # Pop out the fields that are not required:
     # Arn and RoleName/UserName will be popped off later:
     unrequired_fields = ["_version", "MaxSessionDuration"]
-    principal_type = principal["Arn"].split(":")[-1].split("/")[0]
+    principal_type = await get_identity_type_from_arn(principal["Arn"])
     for uf in unrequired_fields:
         principal.pop(uf, None)
 

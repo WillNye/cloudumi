@@ -2041,8 +2041,8 @@ async def simulate_iam_principal_action(
 
 async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str]:
     principal_details = {}
-    principal_type = arn.split(":")[-1].split("/")[0]
-    account_id = arn.split(":")[4]
+    principal_type = await get_identity_type_from_arn(arn)
+    account_id = await get_account_id_from_arn(arn)
     # trying to find principal for subsequent queries
     if principal_type == "role":
         principal_details = await fetch_iam_role(account_id, arn, host)
@@ -2399,3 +2399,36 @@ async def condense_statements(
         deduplicated_statements.append(statement)
     combined_policies = await minimize_iam_policy_statements(deduplicated_statements)
     return combined_policies
+
+
+async def get_identity_type_from_arn(arn: str) -> str:
+    """Returns identity type (`user` or `role`) from an ARN.
+
+    :param arn: Amazon Resource Name of an IAM user or role,
+        ex: arn:aws:iam::123456789012:role/role_name -> returns 'role'
+            arn:aws:iam::123456789012:user/user_name -> returns 'user'
+    :return: Identity type (`user` or `role`)
+    """
+    return arn.split(":")[-1].split("/")[0]
+
+
+async def get_identity_name_from_arn(arn: str) -> str:
+    """Returns identity name from an ARN.
+
+    :param arn: Amazon Resource Name of an IAM user or role,
+        ex: arn:aws:iam::123456789012:role/role_name -> returns 'role_name'
+            arn:aws:iam::123456789012:user/user_name -> returns 'user_name'
+    :return: Identity name
+    """
+    return arn.split("/")[-1]
+
+
+async def get_account_id_from_arn(arn: str) -> str:
+    """Returns account ID from an ARN.
+
+    :param arn: Amazon Resource Name of an IAM user or role,
+        ex: arn:aws:iam::123456789012:role/role_name -> returns '123456789012'
+            arn:aws:iam::123456789012:user/user_name -> returns '123456789012'
+    :return: Identity name
+    """
+    return arn.split(":")[4]

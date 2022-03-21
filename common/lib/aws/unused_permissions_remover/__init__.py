@@ -11,7 +11,13 @@ from common.config import config
 from common.lib.aws.access_advisor import get_epoch_authenticated
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import get_role_managed_policy_documents
-from common.lib.aws.utils import calculate_policy_changes, condense_statements
+from common.lib.aws.utils import (
+    calculate_policy_changes,
+    condense_statements,
+    get_account_id_from_arn,
+    get_identity_name_from_arn,
+    get_identity_type_from_arn,
+)
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -102,13 +108,15 @@ async def generate_permission_removal_commands(
     :param new_policy_document: New policy document with all unused permissions removed
     :return: A dictionary of AWS CLI and Python commands to remove unused permissions
     """
-    identity_type = identity["arn"].split(":")[-1].split("/")[0]
-    identity_name = identity["arn"].split(":")[-1].split("/")[1]
+    identity_type = await get_identity_type_from_arn(identity["Arn"])
+
+    identity_name = await get_identity_name_from_arn(identity["Arn"])
     inline_policy_names = [
-        p["PolicyName"] for p in identity["policy"].get("RolePolicyList", [])
+        policy["PolicyName"] for policy in identity["policy"].get("RolePolicyList", [])
     ]
     managed_policy_arns = [
-        p["PolicyArn"] for p in identity["policy"].get("AttachedManagedPolicies", [])
+        policy["PolicyArn"]
+        for policy in identity["policy"].get("AttachedManagedPolicies", [])
     ]
     new_policy_name = f"{identity_name}-policy"
     env = Environment(
@@ -163,7 +171,7 @@ async def calculate_unused_policy_for_identities(
     if not access_advisor_data:
         if not account_id:
             raise Exception("Unable to retrieve access advisor data without account ID")
-        # TODO: Figure out proper expiration
+        # TODO: Figure out a good expiration parameter
         access_advisor_data = await retrieve_json_data_from_redis_or_s3(
             s3_bucket=config.get_host_specific_key(
                 "cache_iam_resources_for_account.iam_policies.s3.bucket",
@@ -175,10 +183,12 @@ async def calculate_unused_policy_for_identities(
                 "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
             ).format(resource_type="access_advisor", account_id=account_id),
             host=host,
-            # max_age=86400,
+            max_age=86400,
         )
 
-    minimum_age = 90  # TODO: Make this configurable
+    minimum_age = config.get_host_specific_key(
+        "aws.calculate_unused_policy_for_identities.max_unused_age", host, 90
+    )
     ago = datetime.timedelta(minimum_age)
     now = datetime.datetime.now(tz=datetime.timezone.utc)
 
@@ -189,7 +199,7 @@ async def calculate_unused_policy_for_identities(
             continue
         if ":role/aws-reserved" in arn:
             continue
-        account_id = arn.split(":")[4]
+        account_id = await get_account_id_from_arn(arn)
         role = await fetch_iam_role(
             account_id,
             arn,

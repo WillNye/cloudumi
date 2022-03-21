@@ -3,6 +3,7 @@ import ujson as json
 
 from common.config import config
 from common.handlers.base import BaseHandler
+from common.lib.aws.utils import get_account_id_from_arn
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
 
@@ -92,7 +93,7 @@ class EligibleRoleHandler(BaseHandler):
         roles = []
         for arn in self.eligible_roles:
             role_name = arn.split("/")[-1]
-            account_id = arn.split(":")[4]
+            account_id = await get_account_id_from_arn(arn)
             account_name = self.eligible_accounts.get(account_id, "")
             formatted_account_name = config.get_host_specific_key(
                 "role_select_page.formatted_account_name",
