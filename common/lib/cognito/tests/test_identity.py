@@ -3,6 +3,7 @@ from unittest import TestCase
 import boto3
 import moto
 
+from common.config import config
 from common.lib.cognito import identity
 from common.models import (
     CognitoGroup,
@@ -20,7 +21,7 @@ class TestIdentity(TestCase):
 
     def setUp(self):
         super(TestIdentity, self).setUp()
-        self.client = boto3.client("cognito-idp")
+        self.client = boto3.client("cognito-idp", region_name=config.region)
         self.pool_name = "test_pool"
         self.pool_response = self.client.create_user_pool(PoolName=self.pool_name)
         self.pool_id = self.pool_response.get("UserPool", {}).get("Id")
