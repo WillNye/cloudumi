@@ -15,6 +15,15 @@ filegroup(
     ],
 )
 
+genrule(
+    name = "create_tag_file",
+    srcs = [
+    ],
+    stamp = True,
+    outs = [ "tag_file" ],
+    cmd = "git rev-parse HEAD >> $@",
+)
+
 container_layer(
     name = "etc_layer",
     directory = "/",

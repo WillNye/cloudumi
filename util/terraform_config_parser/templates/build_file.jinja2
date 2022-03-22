@@ -18,7 +18,8 @@ container_push(
     repository = "{{ namespace }}-{{ stage }}-registry-api",
     image = "//api:container",
     registry = "{{ registry_repository_url }}",
-    tag = "{{ stage }}",
+    skip_unchanged_digest = True,
+    tag_file = "{VERSION}",
     visibility = ["//visibility:public"],
 )
 
@@ -28,7 +29,8 @@ container_push(
     repository = "{{ namespace }}-{{ stage }}-registry-celery",
     image = "//common/celery_tasks:container",
     registry = "{{ registry_repository_url }}",
-    tag = "{{ stage }}",
+    skip_unchanged_digest = True,
+    tag_file = "{VERSION}",
     visibility = ["//visibility:public"],
 )
 
