@@ -256,7 +256,16 @@ def delete_identity_provider(
 
 
 def get_identity_users(user_pool_id: str) -> List[CognitoUser]:
+    """Get Cognito users and format as pydantic CognitoUser objects.
+
+    Retrieves all cognito users and returns them in a list as CognitoUser
+    objects.
+
+    :param user_pool_id: the current user pool id
+    :return: a list of CognitoUser objects
+    """
     client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     users = list()
     response = client.list_users(UserPoolId=user_pool_id)
     users.extend(response.get("Users", []))
@@ -268,12 +277,20 @@ def get_identity_users(user_pool_id: str) -> List[CognitoUser]:
     return [CognitoUser(**x) for x in users]
 
 
-def create_identity_user(
-    user_pool_id: str, user: CognitoUser, temporary_password: str
-) -> CognitoUser:
+def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
+    """Create a Cognito user account.
+
+    Note: this account will delete an already existing user and recreate it. This
+    uses the admin_create_user functionality, side-stepping the user sign up process.
+
+    :param user_pool_id: the id of the user pool that should have the new user
+    :param user: a CognitoUser object that is validated and describes the new user
+    :return: an updated CognitoUser object that may contain additional info from AWS
+    """
     client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     current_users = get_identity_users(user_pool_id)
-    if user.dict() in [x.dict() for x in current_users]:
+    if user in [x for x in current_users]:
         delete_identity_user(user_pool_id, user)
     delivery_mediums = list()
     if user.MFAOptions:
@@ -287,7 +304,7 @@ def create_identity_user(
         UserPoolId=user_pool_id,
         Username=user.Username,
         UserAttributes=user_attributes,
-        TemporaryPassword=temporary_password,
+        TemporaryPassword=user.TemporaryPassword,
         DesiredDeliveryMediums=delivery_mediums,
     )
     user_update = CognitoUser(**response.get("User", {}))
@@ -295,13 +312,29 @@ def create_identity_user(
 
 
 def delete_identity_user(user_pool_id: str, user: CognitoUser) -> bool:
+    """Delete a Cognito user.
+
+    Uses the admin_delete_user functionality to delete a user from the
+    Cognito database.
+
+    :param user_pool_id: the id of the user pool from which to delete the user
+    :param user: a CognitoUser object that describes the user
+    :return: true if successful
+    """
     client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     client.admin_delete_user(UserPoolId=user_pool_id, Username=user.Username)
     return True
 
 
 def get_identity_groups(user_pool_id: str) -> List[CognitoGroup]:
+    """Get Cognito groups.
+
+    :param user_pool_id: the id of the user pool from which to get groups
+    :return: a list of CognitoGroup objects
+    """
     client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     groups = list()
     response = client.list_groups(UserPoolId=user_pool_id)
     groups.extend(response.get("Groups", []))
@@ -314,9 +347,16 @@ def get_identity_groups(user_pool_id: str) -> List[CognitoGroup]:
 
 
 def create_identity_group(user_pool_id: str, group: CognitoGroup) -> CognitoGroup:
+    """Create a Cognito group.
+
+    :param user_pool_id: the id of the user pool in which to create the group
+    :param group: a CognitoGroup object that describes the group
+    :return: an updated group object that may contain additional information from AWS
+    """
     client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     current_groups = get_identity_groups(user_pool_id)
-    if group.dict() in [x.dict() for x in current_groups]:
+    if group in [x for x in current_groups]:
         delete_identity_group(user_pool_id, group)
     response = client.create_group(
         UserPoolId=user_pool_id,
@@ -328,6 +368,13 @@ def create_identity_group(user_pool_id: str, group: CognitoGroup) -> CognitoGrou
 
 
 def delete_identity_group(user_pool_id: str, group: CognitoGroup) -> bool:
+    """Delete a Cognito group
+
+    :param user_pool_id: the id of the user pool that contains the group to be deleted
+    :param group: a CognitoGroup object that describes the group
+    :return: true if successful
+    """
     client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     client.delete_group(UserPoolId=user_pool_id, GroupName=group.GroupName)
     return True

@@ -76,6 +76,7 @@ py_binary(
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_REGION": "us-west-2",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],

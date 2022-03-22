@@ -3,6 +3,7 @@ from unittest import TestCase
 import boto3
 import moto
 
+from common.config import config
 from common.lib.cognito import identity
 from common.models import (
     CognitoGroup,
@@ -20,7 +21,7 @@ class TestIdentity(TestCase):
 
     def setUp(self):
         super(TestIdentity, self).setUp()
-        self.client = boto3.client("cognito-idp")
+        self.client = boto3.client("cognito-idp", region_name=config.region)
         self.pool_name = "test_pool"
         self.pool_response = self.client.create_user_pool(PoolName=self.pool_name)
         self.pool_id = self.pool_response.get("UserPool", {}).get("Id")
@@ -145,7 +146,7 @@ class TestIdentity(TestCase):
 
     def test_create_identity_user_sparse(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username="new_user")
-        user_update = identity.create_identity_user(self.pool_id, user, "123456")
+        user_update = identity.create_identity_user(self.pool_id, user)
         assert len(identity.get_identity_users(self.pool_id)) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
@@ -163,10 +164,11 @@ class TestIdentity(TestCase):
                 },
             ],
             Enabled=True,
+            TemporaryPassword=self.temp_pass,
             MFAOptions=[{"DeliveryMedium": "SMS"}],
             UserStatus="COMPROMISED",
         )
-        user_update = identity.create_identity_user(self.pool_id, user, "123456")
+        user_update = identity.create_identity_user(self.pool_id, user)
         assert len(identity.get_identity_users(self.pool_id)) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
@@ -175,7 +177,7 @@ class TestIdentity(TestCase):
 
     def test_delete_identity_user(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username="delete_user")
-        _ = identity.create_identity_user(self.pool_id, user, "123456")
+        _ = identity.create_identity_user(self.pool_id, user)
         assert len(identity.get_identity_users(self.pool_id)) == 2
         identity.delete_identity_user(self.pool_id, user)
         assert len(identity.get_identity_users(self.pool_id)) == 1
