@@ -1,9 +1,12 @@
+asgiref
+atlassian-python-api
 boto3
 mock
 mockredis
 moto
 #mypy
 pytest
+pytest_mock
 pytest-asyncio
 pyyaml
 #pytest-black
