@@ -49,6 +49,16 @@ Magic? Yes.
 }
 ```
 
+Here is the .env file content:
+
+```json
+PYTHONPATH="/path/to/cloudumi"
+AWS_REGION="us-west-2"
+CONFIG_LOCATION="/path/to/cloudumi/util/tests/test_configuration.yaml"
+```
+
+Obviously, change `/path/to/cloudumi` to be the absolute path on your system to the root of the cloudumi mono repo
+
 For VSCODE, these are all one-time setup instructions. _This is important_ in VSCODE, do **NOT** select `python configure tests` as it will overwrite the workspace settings.json file.
 
 ## Developing new fixtures / test stuff
