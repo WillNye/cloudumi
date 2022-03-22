@@ -1,4 +1,5 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("//util/tests:defs.bzl", "pytest_test")
 
 py_library(
     name = "lib",
@@ -8,7 +9,7 @@ py_library(
     visibility = ["//visibility:public"],
 )
 
-py_test(
+pytest_test(
     name = "test_main",
     data = [
         "//util/tests:configs",
@@ -16,18 +17,7 @@ py_test(
     srcs = [
         "test_main.py",
     ],
-    env = {
-        "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
-    },
     deps = [
-        "//common:lib",
-        "//common/config:lib",
-        "//common/exceptions:lib",
-        "//common/tests:lib",
-        "//identity:lib",
-        "//plugins/metrics:lib",
-        "//util/tests/fixtures:lib",
-        requirement("asgiref"),
-        requirement("tornado"),
+        "//util/tests:test_dependencies_lib",
     ],
 )

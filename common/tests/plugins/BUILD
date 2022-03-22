@@ -1,49 +1,28 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("//util/tests:defs.bzl", "pytest_test")
 
-py_test(
-    name = "test_auth",
-    data = [
-        "//configs/development_account:configs",
-    ],
-    srcs = [
-        "test_auth.py",
-    ],
-    env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
-    },
-    deps = [
-        "//common:lib",
-        "//common/config:lib",
-        "//common/exceptions:lib",
-        "//identity:lib",
-        "//plugins/metrics:lib",
-        "//util/tests/fixtures:lib",
-        requirement("asgiref"),
-        requirement("tornado"),
-    ],
-)
+# pytest_test(
+#     name = "test_auth",
+#     data = [
+#         "//configs/development_account:configs",
+#     ],
+#     srcs = [
+#         "test_auth.py",
+#     ],
+    # deps = [
+    #     "//util/tests:test_dependencies_lib",
+    # ],
+# )
 
-py_test(
-    name = "test_celery_tasks",
-    data = [
-        "//configs/development_account:configs",
-    ],
-    srcs = [
-        "test_celery_tasks.py",
-    ],
-    env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
-    },
-    deps = [
-        "//common:lib",
-        "//common/config:lib",
-        "//common/exceptions:lib",
-        "//identity:lib",
-        "//plugins/metrics:lib",
-        "//util/tests/fixtures:lib",
-        requirement("asgiref"),
-        requirement("tornado"),
-    ],
-)
+# pytest_test(
+#     name = "test_celery_tasks",
+#     data = [
+#         "//configs/development_account:configs",
+#     ],
+#     srcs = [
+#         "test_celery_tasks.py",
+#     ],
+    # deps = [
+    #     "//util/tests:test_dependencies_lib",
+    #],
+# )
