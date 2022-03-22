@@ -3,6 +3,7 @@ load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 EXT_DEPS = [
     requirement("boto3"),
+    requirement("pyyaml"),
 ]
 filegroup(
     name = "staging-1-files",
@@ -19,7 +20,7 @@ container_push(
     image = "//api:container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     skip_unchanged_digest = True,
-    tag_file = "{VERSION}",
+    tag = "{VERSION}",
     visibility = ["//visibility:public"],
 )
 
@@ -30,7 +31,7 @@ container_push(
     image = "//common/celery_tasks:container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
     skip_unchanged_digest = True,
-    tag_file = "{VERSION}",
+    tag = "{VERSION}",
     visibility = ["//visibility:public"],
 )
 

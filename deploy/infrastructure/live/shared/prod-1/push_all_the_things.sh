@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 echo
 echo "Checking whether VIRTUALENV exists in your environment"
 echo
@@ -22,14 +23,16 @@ aws ecr get-login-password --region us-west-2 | docker login --username AWS --pa
 echo
 echo "Pushing API container"
 echo
-bazelisk run //deploy/infrastructure/live/shared/prod-1:api-container-deploy-prod
+bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/prod-1:api-container-deploy-prod
+bazelisk run --stamp --workspace_status_command="echo VERSION $(echo latest)" //deploy/infrastructure/live/shared/prod-1:api-container-deploy-prod
 
 echo
 echo "Pushing Celery container"
 echo
-bazelisk run //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod
+bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod
+bazelisk run --stamp --workspace_status_command="echo VERSION $(echo latest)" //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod
 
 echo
 echo "Deploying Service"
 echo
-bazelisk run //deploy/infrastructure/live/shared/prod-1:ecs_deployer
+bazelisk run --stamp --workspace_status_command="echo VERSION $(echo latest)" //deploy/infrastructure/live/shared/prod-1:ecs_deployer

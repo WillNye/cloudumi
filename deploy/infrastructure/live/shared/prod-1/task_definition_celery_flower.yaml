@@ -1,11 +1,11 @@
-executionRoleArn: {{ ecs_task_execution_role_arn }}
+executionRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskExecutionRole
 containerDefinitions:
-  - dnsSearchDomains: [ ]
+  - dnsSearchDomains: []
     logConfiguration:
       logDriver: awslogs
       options:
-        awslogs-group: {{ ecs_cluster_name }}
-        awslogs-region: {{ region }}
+        awslogs-group: noq-dev-shared-prod-1
+        awslogs-region: us-west-2
         awslogs-stream-prefix: celery-flower
     portMappings:
       - hostPort: 7071
@@ -16,32 +16,32 @@ containerDefinitions:
       - "-c"
       - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; cd /app/common/celery_tasks/container.binary.runfiles/cloudumi; pip install flower; python -m celery -A common.celery_tasks.celery_tasks flower --port=7101'
     linuxParameters:
-      devices: [ ]
+      devices: []
       initProcessEnabled: true
     cpu: 0
     environment:
       - name: CONFIG_LOCATION
-        value: {{ config_path_with_bucket }}
+        value: s3://noq-dev-shared-prod-1-tenant-configuration-store/shared/prod.1.config.yaml
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
-    dnsServers: [ ]
-    mountPoints: [ ]
-    dockerSecurityOptions: [ ]
-    volumesFrom: [ ]
-    image: {{ registry_repository_url_celery }}:latest
+    dnsServers: []
+    mountPoints: []
+    dockerSecurityOptions: []
+    volumesFrom: []
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-celery:latest
     essential: true
-    links: [ ]
-    extraHosts: [ ]
+    links: []
+    extraHosts: []
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
-    name: {{ ecs_cluster_name }}-celery-flower
-placementConstraints: [ ]
-memory: '512'
-taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}-celery-flower
+    name: noq-dev-shared-prod-1-celery-flower
+placementConstraints: []
+memory: "512"
+taskRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
+family: noq-dev-shared-prod-1-celery-flower
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: '256'
-volumes: [ ]
+cpu: "256"
+volumes: []

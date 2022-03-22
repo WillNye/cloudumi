@@ -1,43 +1,43 @@
-executionRoleArn: {{ ecs_task_execution_role_arn }}
+executionRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskExecutionRole
 containerDefinitions:
-  - dnsSearchDomains: [ ]
+  - dnsSearchDomains: []
     logConfiguration:
       logDriver: awslogs
       options:
-        awslogs-group: {{ ecs_cluster_name }}
-        awslogs-region: {{ region }}
+        awslogs-group: noq-dev-shared-prod-1
+        awslogs-region: us-west-2
         awslogs-stream-prefix: celery-worker
     entryPoint:
       - bash
       - "-c"
       - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; cd /app/common/celery_tasks/container.binary.runfiles/cloudumi; python -m celery -A common.celery_tasks.celery_tasks worker -l DEBUG -E --concurrency=8 --max-memory-per-child=1000000 --max-tasks-per-child=50 --soft-time-limit=3600 -O fair'
     linuxParameters:
-      devices: [ ]
+      devices: []
       initProcessEnabled: true
     cpu: 0
     environment:
       - name: CONFIG_LOCATION
-        value: {{ config_path_with_bucket }}
+        value: s3://noq-dev-shared-prod-1-tenant-configuration-store/shared/prod.1.config.yaml
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
-    dnsServers: [ ]
-    mountPoints: [ ]
-    dockerSecurityOptions: [ ]
-    volumesFrom: [ ]
-    image: {{ registry_repository_url_celery }}:latest
+    dnsServers: []
+    mountPoints: []
+    dockerSecurityOptions: []
+    volumesFrom: []
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-celery:latest
     essential: true
-    links: [ ]
-    extraHosts: [ ]
+    links: []
+    extraHosts: []
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
-    name: {{ ecs_cluster_name }}-celery-worker
-placementConstraints: [ ]
-memory: '8192'
-taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}-celery-worker
+    name: noq-dev-shared-prod-1-celery-worker
+placementConstraints: []
+memory: "8192"
+taskRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
+family: noq-dev-shared-prod-1-celery-worker
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: '2048'
-volumes: [ ]
+cpu: "2048"
+volumes: []
