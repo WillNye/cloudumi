@@ -5,6 +5,7 @@ import os
 import sys
 
 import mock
+import pytest
 from mock import Mock, patch
 from tornado.httpclient import AsyncHTTPClient
 
@@ -17,6 +18,7 @@ APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
 
 
+@pytest.mark.usefixtures("aws_credentials")
 class TestMain(ConsoleMeAsyncHTTPTestCase):
     """Docstring in public class."""
 
@@ -45,6 +47,7 @@ class TestMain(ConsoleMeAsyncHTTPTestCase):
                 self.__main__.init()
 
 
+@pytest.mark.usefixtures("aws_credentials")
 class TestHealth(AsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app

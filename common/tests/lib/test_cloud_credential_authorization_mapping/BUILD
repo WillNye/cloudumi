@@ -1,4 +1,5 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("//util/tests:defs.bzl", "pytest_test")
 
 py_test(
     name = "test_cloud_credential_authorization_mapping",
@@ -8,18 +9,7 @@ py_test(
     srcs = [
         "test_cloud_credential_authorization_mapping.py",
     ],
-    env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
-    },
     deps = [
-        "//common:lib",
-        "//common/config:lib",
-        "//common/exceptions:lib",
-        "//identity:lib",
-        "//plugins/metrics:lib",
-        "//util/tests/fixtures:lib",
-        requirement("asgiref"),
-        requirement("tornado"),
+        "//util/tests:test_dependencies_lib",
     ],
 )
