@@ -18,9 +18,19 @@ rules_pkg_dependencies()
 # Python build rules: https://github.com/bazelbuild/rules_python
 http_archive(
     name = "rules_python",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.5.0/rules_python-0.5.0.tar.gz",
-    sha256 = "cd6730ed53a002c56ce4e2f396ba3b3be262fd7cb68339f0377a45e8227fe332",
+    sha256 = "9fcf91dbcc31fde6d1edb15f117246d912c33c36f44cf681976bd886538deba6",
+    strip_prefix = "rules_python-0.8.0",
+    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.8.0.tar.gz",
 )
+
+python_register_toolchains(
+    name = "python3_8",
+    # Available versions are listed in @rules_python//python:versions.bzl.
+    # We recommend using the same version your team is already standardized on.
+    python_version = "3.8",
+)
+
+load("@python3_8//:defs.bzl", "interpreter")
 
 # Setup Python Configuration to include a central pip repo
 load("@rules_python//python:pip.bzl", "pip_parse")
@@ -29,6 +39,7 @@ load("@rules_python//python:pip.bzl", "pip_parse")
 # requirements_lock.txt.
 pip_parse(
     name = "cloudumi_python_ext",
+    python_interpreter_target = interpreter,
     requirements_lock = "//:requirements.lock",
 )
 
