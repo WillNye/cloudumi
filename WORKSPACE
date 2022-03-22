@@ -23,14 +23,16 @@ http_archive(
     url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.8.0.tar.gz",
 )
 
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+
 python_register_toolchains(
-    name = "python3_8",
+    name = "python3_9",
     # Available versions are listed in @rules_python//python:versions.bzl.
     # We recommend using the same version your team is already standardized on.
-    python_version = "3.8",
+    python_version = "3.9",
 )
 
-load("@python3_8//:defs.bzl", "interpreter")
+load("@python3_9//:defs.bzl", "interpreter")
 
 # Setup Python Configuration to include a central pip repo
 load("@rules_python//python:pip.bzl", "pip_parse")
