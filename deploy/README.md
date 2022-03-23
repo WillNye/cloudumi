@@ -84,3 +84,21 @@ Publishing to staging is a build target that utilizes a genrule syntax to deploy
 > Do you really want this? Do you have access?
 
 - `bazelisk run //deploy/infrastructure/live/shared/prod-1:prod-1`
+
+# Revert Staging
+
+Sometimes S\*\*\* happens.
+
+To revert: `bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_undeployer` or `deploy/infrastructure/live/shared/staging-1/revert_all_the_things.sh`
+
+Notice: the above command, run without argument, will automatically find the previous version. Sometimes it is more desirable to target a specific version. In that case use the `ROLLBACK_VERSION` environment variable:
+`ROLLBACK_VERSION=1.2.3 bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_undeployer` or `ROLLBACK_VERSION=1.2.3 deploy/infrastructure/live/shared/staging-1/revert_all_the_things.sh`.
+
+# Revert Prod
+
+Sometimes S\*\*\* happens. Hopefully this will never be your nightmare...
+
+To revert: `bazelisk run //deploy/infrastructure/live/shared/prod-1:ecs_undeployer` or `deploy/infrastructure/live/shared/prod-1/revert_all_the_things.sh`
+
+Notice: the above command, run without argument, will automatically find the previous version. Sometimes it is more desirable to target a specific version. In that case use the `ROLLBACK_VERSION` environment variable:
+`ROLLBACK_VERSION=1.2.3 bazelisk run //deploy/infrastructure/live/shared/prod-1:ecs_undeployer` or `ROLLBACK_VERSION=1.2.3 deploy/infrastructure/live/shared/prod-1/revert_all_the_things.sh`.

@@ -48,6 +48,7 @@ kms_key_arn = (
     "arn:aws:kms:us-west-2:259868150464:key/c772a276-6f4d-455b-a2fc-99681435401e"
 )
 noq_ecs_log_group_name = "staging-noq-dev-shared-staging-1"
+version = os.getenv("VERSION")
 
 ecr_client = boto3.client("ecr", region_name=region)
 response = ecr_client.get_authorization_token(
@@ -97,6 +98,9 @@ for service in service_task_definition_map:
 
     with open(service["task_definition"], "r") as f:
         task_definition = yaml.load(f, Loader=yaml.FullLoader)
+
+        for task in task_definition.get("containerDefinitions", []):
+            task["image"] = task["image"].split(":")[0] + f":{version}"
 
         registered_task_definition = ecs_client.register_task_definition(
             **task_definition
