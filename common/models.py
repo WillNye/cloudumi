@@ -756,6 +756,10 @@ class CognitoUser(BaseModel):
     MFAOptions: Optional[List[MFAOption]] = Field(
         None, description="Align with what we get back from cognito list users"
     )
+    Groups: Optional[List[str]] = Field(
+        None,
+        description="assigns Cognito group memberships to user account; these groups *must* exist before they can be assigned",
+    )
     UserStatus: Optional[UserStatus] = Field(
         None,
         description="Can be UNCONFIRMED, CONFIRMED, ARCHIVED, COMPROMISED, UNKNOWN, RESET_REQUIRED, FORCE_CHANGE_PASSWORD",
