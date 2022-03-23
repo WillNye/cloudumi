@@ -24,7 +24,7 @@ containerDefinitions:
     mountPoints: []
     dockerSecurityOptions: []
     volumesFrom: []
-    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-celery:latest
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-celery:prod
     essential: true
     links: []
     extraHosts: []

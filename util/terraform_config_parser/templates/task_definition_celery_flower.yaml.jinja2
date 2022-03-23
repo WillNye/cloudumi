@@ -28,7 +28,7 @@ containerDefinitions:
     mountPoints: [ ]
     dockerSecurityOptions: [ ]
     volumesFrom: [ ]
-    image: {{ registry_repository_url_celery }}:latest
+    image: {{ registry_repository_url_celery }}:{{ stage }}
     essential: true
     links: [ ]
     extraHosts: [ ]
