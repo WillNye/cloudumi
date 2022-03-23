@@ -1,6 +1,16 @@
+from copy import deepcopy
+
+import pytest
 import tornado
 from tornado.testing import AsyncTestCase
 
+from common.lib.change_request import (
+    _generate_inline_policy_change_model,
+    _generate_inline_policy_model_from_statements,
+    _generate_policy_sid,
+    _generate_policy_statement,
+    generate_policy_name,
+)
 from common.models import (
     AwsResourcePrincipalModel,
     InlinePolicyChangeModel,
@@ -9,17 +19,17 @@ from common.models import (
 from util.tests.fixtures.globals import host
 
 
+@pytest.mark.usefixtures("aws_credentials")
+@pytest.mark.usefixtures("dynamodb")
 class TestChangeRequestLib(AsyncTestCase):
     @tornado.testing.gen_test
     async def test_generate_policy_sid(self):
-        from common.lib.change_request import _generate_policy_sid
 
         random_sid = await _generate_policy_sid("username@example.com")
         self.assertRegex(random_sid, "^cmusername\d{10}[a-z]{4}$")  # noqa
 
     @tornado.testing.gen_test
     async def test_generate_policy_name(self):
-        from common.lib.change_request import generate_policy_name
 
         random_sid = await generate_policy_name(None, "username@example.com", host)
         self.assertRegex(random_sid, "^noq_username_\d{10}_[a-z]{4}$")  # noqa
@@ -28,11 +38,6 @@ class TestChangeRequestLib(AsyncTestCase):
 
     @tornado.testing.gen_test
     async def test_generate_inline_policy_model_from_statements(self):
-        from copy import deepcopy
-
-        from common.lib.change_request import (
-            _generate_inline_policy_model_from_statements,
-        )
 
         original_statements = [
             {
@@ -95,7 +100,6 @@ class TestChangeRequestLib(AsyncTestCase):
 
     @tornado.testing.gen_test
     async def test_generate_policy_statement(self):
-        from common.lib.change_request import _generate_policy_statement
 
         actions = ["iam:List*"]
         resources = ["arn:aws:iam::123456789012:role/resource1"]
@@ -115,7 +119,6 @@ class TestChangeRequestLib(AsyncTestCase):
 
     @tornado.testing.gen_test
     async def test_generate_inline_policy_change_model(self):
-        from common.lib.change_request import _generate_inline_policy_change_model
 
         is_new = True
         policy_name = None
@@ -240,6 +243,6 @@ class TestChangeRequestLib(AsyncTestCase):
         ]
         user = "username@example.com"
         result = await _generate_inline_policy_change_model(
-            principal, resources, statements, user, is_new, policy_name
+            principal, resources, statements, user, "host", is_new, policy_name
         )
         self.assertIsInstance(result, InlinePolicyChangeModel)

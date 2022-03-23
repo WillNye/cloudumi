@@ -55,8 +55,6 @@ async def toggle_ip_restrictions(host: str, enabled: bool = False) -> bool:
     host_config = config.get_tenant_static_config_from_dynamo(host)
     if "policies" not in host_config:
         host_config["policies"] = dict()
-    if "ip_restrictions" not in host_config["policies"]:
-        return False
     host_config["policies"]["ip_restrictions"] = enabled
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), updated_by_name, host
@@ -70,7 +68,7 @@ async def get_ip_restrictions_toggle(host: str) -> bool:
         host_config["policies"] = dict()
     if "ip_restrictions" not in host_config["policies"]:
         return False
-    return host_config["policies"]["ip_restrictions"]
+    return host_config["policies"]["ip_restrictions"] == "enable"
 
 
 async def toggle_ip_restrictions_on_requester_ip_only(
@@ -80,8 +78,6 @@ async def toggle_ip_restrictions_on_requester_ip_only(
     host_config = config.get_tenant_static_config_from_dynamo(host)
     if "policies" not in host_config:
         host_config["policies"] = dict()
-    if "ip_restrictions_on_requesters_ip" not in host_config["policies"]:
-        return False
     host_config["policies"]["ip_restrictions_on_requesters_ip"] = enabled
     await ddb.update_static_config_for_host(
         yaml.dump(host_config), updated_by_name, host
@@ -95,4 +91,4 @@ async def get_ip_restrictions_on_requester_ip_only_toggle(host: str) -> bool:
         host_config["policies"] = dict()
     if "ip_restrictions_on_requesters_ip" not in host_config["policies"]:
         return False
-    return host_config["policies"]["ip_restrictions_on_requesters_ip"]
+    return host_config["policies"]["ip_restrictions_on_requesters_ip"] == "enable"

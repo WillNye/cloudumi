@@ -19,6 +19,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
     _model_class = None
     _config_key = None
+    _identifying_keys = list()
     _triggers = list()
 
     @classmethod
@@ -103,7 +104,7 @@ class ConfigurationCrudHandler(BaseHandler):
         try:
             await ModelAdapter(self._model_class).load_config(
                 self._config_key, host
-            ).from_dict(data).store()
+            ).from_dict(data).with_object_key(self._identifying_keys).store()
         except Exception as exc:
             log.error(exc)
             res = WebResponse(
@@ -153,6 +154,7 @@ class ConfigurationCrudHandler(BaseHandler):
         deleted = (
             await ModelAdapter(self._model_class)
             .load_config(self._config_key, host)
+            .with_object_key(self._identifying_keys)
             .delete()
         )
 
@@ -189,6 +191,8 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
     _model_class = None
     _config_key = None
+    _identifying_keys = list()
+    _triggers = list()
 
     @classmethod
     def __validate_class_vars(cls):
@@ -234,6 +238,10 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         if get_data:
             res.data = get_data
 
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
@@ -270,7 +278,9 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         try:
             await ModelAdapter(self._model_class).load_config(
                 self._config_key, host
-            ).from_dict(data).store_item_in_list()
+            ).from_dict(data).with_object_key(
+                self._identifying_keys
+            ).store_item_in_list()
         except Exception as exc:
             log.error(exc)
             res = WebResponse(
@@ -284,6 +294,11 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 status_code=200,
                 message="Successfully updated",
             )
+
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
 
@@ -322,6 +337,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             await ModelAdapter(self._model_class)
             .load_config(self._config_key, host)
             .from_dict(data)
+            .with_object_key(self._identifying_keys)
             .delete_list()
         )
 
@@ -332,5 +348,10 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             if deleted
             else "Unable to delete data.",
         )
+
+        for trigger in self._triggers:
+            log.info(f"Applying trigger {trigger.name}")
+            trigger.apply_async((self.ctx.__dict__,))
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

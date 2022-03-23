@@ -260,3 +260,44 @@ class TestModels(TestCase):
         spoke_accounts = host_config.get(self.test_key_list, [])
         assert spoke_accounts[0].get("name") == "test_model"
         assert async_to_sync(model_adapter.delete_list)()
+
+    def test_store_with_specific_key_overwrite_in_list(self):
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .with_object_key(["name", "account_id"])
+            .from_list(test_model_list_dict)
+        )
+        assert async_to_sync(model_adapter.store_list)()
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .with_object_key(["name", "account_id"])
+            .from_dict(
+                {
+                    "name": "test_model_one",
+                    "account_id": "123456789",
+                    "role_arn": "iam:aws:something:::no",
+                    "external_id": "_test_update_",
+                    "hub_account_arn": "iam:aws:hub:account:that",
+                    "master_for_account": False,
+                }
+            )
+        )
+        assert async_to_sync(model_adapter.store_item_in_list)()
+        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        assert self.test_key_list in host_config
+        spoke_accounts = host_config.get(self.test_key_list, [])
+        test_model_one = test_model_two = dict()
+        for item in spoke_accounts:
+            if item.get("name") == "test_model_one":
+                test_model_one = item
+            elif item.get("name") == "test_model_two":
+                test_model_two = item
+        assert test_model_one.get("name") == "test_model_one"
+        assert test_model_two.get("name") == "test_model_two"
+        assert test_model_one.get("role_arn") == "iam:aws:something:::no"
+        assert test_model_one.get("external_id") == "_test_update_"
+        assert test_model_one.get("hub_account_arn") == "iam:aws:hub:account:that"
+        assert test_model_one.get("master_for_account") is False
+        assert async_to_sync(model_adapter.delete_list)()

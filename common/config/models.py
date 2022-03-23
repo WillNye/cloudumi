@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, Dict, List, Union
 
 from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
@@ -18,6 +18,8 @@ class ModelAdapter:
         self._host = None
         self._default = None
         self._updated_by = updated_by
+        # By default compare all fields; this can be set using the with_object_key member function
+        self._uniqueness_comparators = [x for x in self._model_class.__fields__.keys()]
 
     def __access_subkey(self, config_item: dict, key: str, default: Any = None) -> dict:
         parts = key.split(".")
@@ -64,7 +66,7 @@ class ModelAdapter:
             config_item[key] = dict(value)
             return config_item
 
-        if not segmented_key[0] in config_item:
+        if segmented_key[0] not in config_item:
             config_item[segmented_key[0]] = dict()
         config_item[segmented_key[0]] = self.__nested_store(
             config_item[segmented_key[0]], ".".join(segmented_key[1:]), value
@@ -83,12 +85,22 @@ class ModelAdapter:
             if key not in config_item:
                 config_item[key] = list()
             for value in values:
-                if value.dict() not in config_item[key]:
-                    config_item[key].append(value.dict())
-                else:
+                similar_item = False
+                for item in config_item[key]:
+                    if self.__objects_similar(value.dict(), item):
+                        similar_item = True
+
+                if similar_item:
+                    # Update similar item
                     config_item[key][
-                        config_item[key].index(value.dict())
+                        [
+                            self.__filter_unique_comparators(x)
+                            for x in config_item[key]
+                        ].index(self.__filter_unique_comparators(value.dict()))
                     ] = value.dict()
+                else:
+                    # Add new item
+                    config_item[key].append(value.dict())
             return config_item
 
         if not segmented_key[0] in config_item:
@@ -161,6 +173,16 @@ class ModelAdapter:
         return self._model.dict()
 
     @property
+    def models(self) -> List[BaseModel]:
+        """Retrieve a list of models
+
+        This is like the "list" function below, but it returns a list of objects versus a list of dicts.
+
+        :return: List of models, whatever the model is
+        """
+        return self._model_array
+
+    @property
     def list(self) -> list:
         """Return a list of properties under the selected key.
 
@@ -176,10 +198,59 @@ class ModelAdapter:
         """
         return self._model_content
 
+    def with_object_key(self, uniqueness_comparators: List[str]) -> object:
+        """Compare two objects based on a list of identifying keys as opposed to comparing the whole object.
+
+        This is useful when trying to update a user based on user name only, when other attributes are updated
+
+        :param comparison_identifiers: a list of keys that identify the uniqueness of this object
+        :return: itself
+        """
+        if uniqueness_comparators:
+            self._uniqueness_comparators = uniqueness_comparators
+        return self
+
+    def __objects_similar(self, left: Dict[str, Any], right: Dict[str, Any]) -> bool:
+        """Resolve uniqueness keys in left and right comparison dicts.
+
+        This function considers a list of keys that make the object "unique", essentially creating a primary
+        key of unique attributes that act as a mask or filter to update items that are not unique from a data
+        perspective, but are unique based on set attributes.
+
+        This ... could ... probably be simplified into a for loop bonanza. However, at it's core, this is just
+        a basic comparison to check that all keys identified in the uniqueness_comparators are equal between
+        left and right.
+
+        :param left: dict to compare (left side)
+        :param right: dict to compare (right side)
+        :return: True if all uniqueness comparator identified values are equal between left and right
+        """
+        return len(
+            [c for c in self._uniqueness_comparators if left.get(c) == right.get(c)]
+        ) == len(self._uniqueness_comparators)
+
+    def __filter_unique_comparators(self, unfiltered: Dict[str, Any]) -> Dict[str, Any]:
+        """Filter `unfiltered` to only have compared items that determine the compared items' uniqueness.
+
+        This accompanies the __resolve_unique_comparators function to effectively compare objects based
+        on their uniqueness. If only some attributes contribute to making an entry unique, those effectively
+        discriminate objects.
+
+        :param unfiltered: _description_
+        :return: _description_
+        """
+        return {
+            x: y for x, y in unfiltered.items() if x in self._uniqueness_comparators
+        }
+
     async def store_item(self) -> bool:
         """Break the chain; meant as an end state function."""
         ddb = RestrictedDynamoHandler()
         host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        if not self._model:
+            raise ValueError(
+                f"Consistency error: self._model is undefined: {self._model}"
+            )
         host_config = self.__nested_store(host_config, self._key, self._model)
         await ddb.update_static_config_for_host(
             yaml.dump(host_config), self._updated_by, self._host
@@ -189,6 +260,10 @@ class ModelAdapter:
     async def store_list(self) -> bool:
         ddb = RestrictedDynamoHandler()
         host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        if not self._model_array:
+            raise ValueError(
+                f"Consistency error: self._model_array is empty: {self._model_array}"
+            )
         host_config = self.__nested_store_array(
             host_config, self._key, self._model_array
         )
@@ -200,6 +275,10 @@ class ModelAdapter:
     async def store_item_in_list(self) -> bool:
         ddb = RestrictedDynamoHandler()
         host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        if not self._model:
+            raise ValueError(
+                f"Consistency error: self._model is undefined: {self._model}"
+            )
         host_config = self.__nested_store_array(host_config, self._key, [self._model])
         await ddb.update_static_config_for_host(
             yaml.dump(host_config), self._updated_by, self._host
@@ -241,8 +320,14 @@ class ModelAdapter:
             )
         config_items = self.__access_subkey(host_config, self._key, self._default)
         for model in self._model_array:
-            if model.dict() in config_items:
-                config_items.pop(config_items.index(model.dict()))
+            if self.__filter_unique_comparators(model.dict()) in [
+                self.__filter_unique_comparators(x) for x in config_items
+            ]:
+                config_items.pop(
+                    [self.__filter_unique_comparators(x) for x in config_items].index(
+                        self.__filter_unique_comparators(model.dict())
+                    )
+                )
         await ddb.update_static_config_for_host(
             yaml.dump(host_config), self._updated_by, self._host
         )

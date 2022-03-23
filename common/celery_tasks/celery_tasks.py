@@ -551,7 +551,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
         config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
     )()
     log_data: Dict = {"function": function}
-    if is_task_already_running(function, []):
+    if is_task_already_running(function, [host]):
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
         return log_data
@@ -1306,7 +1306,7 @@ def cache_iam_resources_across_accounts(
     }
 
     log_data = {"function": function, "host": host}
-    if is_task_already_running(function, []):
+    if is_task_already_running(function, [host]):
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
         return log_data
