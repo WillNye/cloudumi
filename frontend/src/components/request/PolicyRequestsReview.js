@@ -42,7 +42,7 @@ class PolicyRequestReview extends Component {
   }
 
   async sendProposedPolicy(command) {
-    const { change, newStatement, requestID } = this.state
+    const { change, newStatement, requestID, newExpirationDate } = this.state
     this.setState(
       {
         isLoading: true,
@@ -56,6 +56,7 @@ class PolicyRequestReview extends Component {
         }
         if (newStatement) {
           request.modification_model.policy_document = JSON.parse(newStatement)
+          request.modification_model.expiration_date = newExpirationDate
         }
         this.props
           .sendRequestCommon(request, '/api/v2/requests/' + requestID, 'PUT')
@@ -166,7 +167,10 @@ class PolicyRequestReview extends Component {
 
   updatePolicyDocument(changeID, policyDocument) {
     const { policyDocuments } = this.state
-    policyDocuments[changeID] = policyDocument
+    policyDocuments[changeID] = {
+      document: policyDocument.document,
+      expiration_date: policyDocument.expiration_date,
+    }
     this.setState({
       policyDocuments,
     })

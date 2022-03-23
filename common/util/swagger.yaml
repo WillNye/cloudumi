@@ -1748,6 +1748,8 @@ components:
               type: object
             change_id:
               type: string
+            expiration_date:
+              type: integer
     ApplyChangeModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
