@@ -175,7 +175,7 @@ class TestIdentity(TestCase):
         )
         assert len(identity.get_identity_users(self.pool_id)) == 1
 
-    def test_assing_identity_user(self):
+    def test_assigning_identity_user(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username=self.username)
         group = CognitoGroup(GroupName=self.groupname, UserPoolId=self.pool_id)
         assert identity.assign_identity_user(self.pool_id, user, [group])
@@ -185,6 +185,31 @@ class TestIdentity(TestCase):
         assert updated_user.Groups
         assert len(updated_user.Groups) == 1
         assert updated_user.Groups[0] == self.groupname
+
+    def test_create_identity_user_with_groups(self):
+        groups = ["group1", "group2"]
+        user = CognitoUser(UserPoolId=self.pool_id, Username="new_user", Groups=groups)
+        for group in groups:
+            assert identity.create_identity_group(
+                self.pool_id, CognitoGroup(GroupName=group)
+            )
+        assert identity.create_identity_user(self.pool_id, user)
+        user_update = [
+            x
+            for x in identity.get_identity_users(self.pool_id)
+            if x.Username == "new_user"
+        ][0]
+        assert user_update.Groups
+        assert len([x for x in user_update.Groups if x in groups]) == len(groups)
+        assert len(identity.get_identity_users(self.pool_id)) == 2
+        self.client.admin_delete_user(
+            UserPoolId=self.pool_id, Username=user_update.Username
+        )
+        for group in groups:
+            assert identity.delete_identity_group(
+                self.pool_id, CognitoGroup(GroupName=group)
+            )
+        assert len(identity.get_identity_users(self.pool_id)) == 1
 
     def test_delete_identity_user(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username="delete_user")

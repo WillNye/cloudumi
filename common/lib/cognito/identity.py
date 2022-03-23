@@ -336,6 +336,11 @@ def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
         DesiredDeliveryMediums=delivery_mediums,
     )
     user_update = CognitoUser(**response.get("User", {}))
+    if user.Groups:
+        LOG.info(f"Adding groups {user.Groups} to user {user.Username}")
+        assign_identity_user(
+            user_pool_id, user_update, [CognitoGroup(GroupName=x) for x in user.Groups]
+        )
     return user_update
 
 
