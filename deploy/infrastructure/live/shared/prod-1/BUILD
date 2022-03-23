@@ -3,6 +3,8 @@ load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 EXT_DEPS = [
     requirement("boto3"),
+    requirement("pyyaml"),
+    requirement("semver"),
 ]
 filegroup(
     name = "prod-1-files",
@@ -18,7 +20,8 @@ container_push(
     repository = "shared-prod-registry-api",
     image = "//api:container",
     registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
+    skip_unchanged_digest = True,
+    tag = "{VERSION}",
     visibility = ["//visibility:public"],
 )
 
@@ -28,7 +31,8 @@ container_push(
     repository = "shared-prod-registry-celery",
     image = "//common/celery_tasks:container",
     registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
+    skip_unchanged_digest = True,
+    tag = "{VERSION}",
     visibility = ["//visibility:public"],
 )
 
@@ -36,10 +40,20 @@ py_binary(
     name = "ecs_deployer",
     srcs_version = "PY3",
     data = [
-    "prod-1-files",
+        "prod-1-files",
     ],
     srcs = [
         "ecs_deployer.py",
+    ],
+    deps = EXT_DEPS,
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "ecs_undeployer",
+    srcs_version = "PY3",
+    srcs = [
+        "ecs_undeployer.py",
     ],
     deps = EXT_DEPS,
     visibility = ["//visibility:public"],

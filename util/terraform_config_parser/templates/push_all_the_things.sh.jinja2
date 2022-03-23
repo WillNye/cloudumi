@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 echo
 echo "Checking whether VIRTUALENV exists in your environment"
 echo
@@ -20,16 +21,16 @@ echo
 aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}
 
 echo
-echo "Pushing API container"
+echo "Pushing API container - $(git describe --tags --abbrev=0)"
 echo
-bazelisk run //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:api-container-deploy-{{ stage }}
+bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:api-container-deploy-{{ stage }}
 
 echo
-echo "Pushing Celery container"
+echo "Pushing Celery container - $(git describe --tags --abbrev=0)"
 echo
-bazelisk run //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:celery-container-deploy-{{ stage }}
+bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:celery-container-deploy-{{ stage }}
 
 echo
-echo "Deploying Service"
+echo "Deploying Service - $(git describe --tags --abbrev=0)"
 echo
-bazelisk run //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:ecs_deployer
+VERSION=$(git describe --tags --abbrev=0) bazelisk run //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:ecs_deployer

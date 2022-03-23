@@ -1,0 +1,47 @@
+executionRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskExecutionRole
+containerDefinitions:
+  - dnsSearchDomains: []
+    logConfiguration:
+      logDriver: awslogs
+      options:
+        awslogs-group: noq-dev-shared-prod-1
+        awslogs-region: us-west-2
+        awslogs-stream-prefix: web
+    portMappings:
+      - hostPort: 8092
+        protocol: tcp
+        containerPort: 8092
+    entryPoint:
+      - bash
+      - "-c"
+      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; python /app/api/container.binary.runfiles/cloudumi/api/__main__.py'
+    linuxParameters:
+      devices: []
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: s3://noq-dev-shared-prod-1-tenant-configuration-store/shared/prod.1.config.yaml
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+    dnsServers: []
+    mountPoints: []
+    dockerSecurityOptions: []
+    volumesFrom: []
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:prod
+    essential: true
+    links: []
+    extraHosts: []
+    pseudoTerminal: false
+    readonlyRootFilesystem: false
+    privileged: false
+    name: noq-dev-shared-prod-1-api
+placementConstraints: []
+memory: "8192"
+taskRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
+family: noq-dev-shared-prod-1-api
+requiresCompatibilities:
+  - FARGATE
+networkMode: awsvpc
+cpu: "2048"
+volumes: []

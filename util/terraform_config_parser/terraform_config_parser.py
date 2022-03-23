@@ -308,6 +308,12 @@ if __name__ == "__main__":
         config_output_path,
     )
     write_file(
+        "ecs_undeployer.py.jinja2",
+        "ecs_undeployer.py",
+        terraform_config,
+        config_output_path,
+    )
+    write_file(
         "test.tfvars.jinja2", "test.tfvars", terraform_config, config_output_path
     )
     write_file(
@@ -316,5 +322,12 @@ if __name__ == "__main__":
         terraform_config,
         config_output_path,
     )
+    write_file(
+        "revert_all_the_things.sh.jinja2",
+        "revert_all_the_things.sh",
+        terraform_config,
+        config_output_path,
+    )
     make_file_executable(config_output_path, "push_all_the_things.sh")
+    make_file_executable(config_output_path, "revert_all_the_things.sh")
     # Write configuration locally for upload to S3

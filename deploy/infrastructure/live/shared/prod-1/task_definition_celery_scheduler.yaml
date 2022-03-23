@@ -1,0 +1,43 @@
+executionRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskExecutionRole
+containerDefinitions:
+  - dnsSearchDomains: []
+    logConfiguration:
+      logDriver: awslogs
+      options:
+        awslogs-group: noq-dev-shared-prod-1
+        awslogs-region: us-west-2
+        awslogs-stream-prefix: celery-scheduler
+    entryPoint:
+      - bash
+      - "-c"
+      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; cd /app/common/celery_tasks/container.binary.runfiles/cloudumi; python -m celery -A common.celery_tasks.celery_tasks beat -l DEBUG'
+    linuxParameters:
+      devices: []
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: s3://noq-dev-shared-prod-1-tenant-configuration-store/shared/prod.1.config.yaml
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+    dnsServers: []
+    mountPoints: []
+    dockerSecurityOptions: []
+    volumesFrom: []
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-celery:prod
+    essential: true
+    links: []
+    extraHosts: []
+    pseudoTerminal: false
+    readonlyRootFilesystem: false
+    privileged: false
+    name: noq-dev-shared-prod-1-celery-scheduler
+placementConstraints: []
+memory: "2048"
+taskRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
+family: noq-dev-shared-prod-1-celery-scheduler
+requiresCompatibilities:
+  - FARGATE
+networkMode: awsvpc
+cpu: "1024"
+volumes: []

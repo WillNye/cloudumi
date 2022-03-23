@@ -141,7 +141,7 @@ You can use the `bazel test` command to run unit tests. A few pre-requisites:
 
 # Versioning
 
-We use GitVersion to automatically version our mono repo by providing modifier nouns in the commit message header: semver:+minor, semver:+minor, semver:+patch.
+We use GitVersion to automatically version our mono repo by providing modifier nouns in the commit message header: +semver: major, +semver: minor, +semver: patch.
 
 # Troubleshooting
 

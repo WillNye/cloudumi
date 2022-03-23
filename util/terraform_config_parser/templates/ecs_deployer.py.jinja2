@@ -1,6 +1,6 @@
 import os
-import time
 import pathlib
+import time
 import boto3
 import yaml
 from botocore.exceptions import ClientError
@@ -46,6 +46,7 @@ region = "{{ region }}"
 account_id = "{{ account_id}}"
 kms_key_arn = "{{ kms_key_id }}"
 noq_ecs_log_group_name = "{{ ecs_awslogs_group }}"
+version = os.getenv("VERSION")
 
 ecr_client = boto3.client("ecr", region_name=region)
 response = ecr_client.get_authorization_token(
@@ -95,6 +96,9 @@ for service in service_task_definition_map:
 
     with open(service["task_definition"], "r") as f:
         task_definition = yaml.load(f, Loader=yaml.FullLoader)
+
+        for task in task_definition.get("containerDefinitions", []):
+            task["image"] = task["image"].split(":")[0] + f":{version}"
 
         registered_task_definition = ecs_client.register_task_definition(
             **task_definition
