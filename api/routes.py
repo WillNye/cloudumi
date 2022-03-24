@@ -1,9 +1,6 @@
 import os
 
-from common.handlers.base import (
-    AuthenticatedDocAssetsStaticFileHandler,
-    AuthenticatedStaticFileHandler,
-)
+from common.handlers.base import AuthenticatedStaticFileHandler
 
 """Web routes."""
 import pkg_resources
@@ -291,11 +288,6 @@ def make_app(jwt_validator=None):
         (
             r"/docs/?(.*)",
             AuthenticatedStaticFileHandler,
-            {"path": docs_path, "default_filename": "index.html"},
-        ),
-        (
-            r"/doc_assets/?(.*)",
-            AuthenticatedDocAssetsStaticFileHandler,
             {"path": docs_path, "default_filename": "index.html"},
         ),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
