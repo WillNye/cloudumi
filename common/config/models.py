@@ -45,6 +45,7 @@ class ModelAdapter:
     def __optimistic_loader(
         self, key: str, host: str = None, default: Any = None
     ) -> dict:
+        config_item = dict()
         if host:
             config_item = config.get_host_specific_key(key, host, default)
             if not config_item:
@@ -53,7 +54,10 @@ class ModelAdapter:
                 )
                 config_item = self.__access_subkey(config_item, key, default)
         else:
-            config_item = config.get(key, default)
+            try:
+                config_item = config.get(key, default)
+            except Exception:
+                pass
         return config_item
 
     def __nested_store(self, config_item: dict, key: str, value: BaseModel) -> dict:

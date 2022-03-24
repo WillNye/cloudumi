@@ -104,7 +104,7 @@ class ConfigurationCrudHandler(BaseHandler):
         try:
             await ModelAdapter(self._model_class).load_config(
                 self._config_key, host
-            ).from_dict(data).with_object_key(self._identifying_keys).store()
+            ).from_dict(data).with_object_key(self._identifying_keys).store_item()
         except Exception as exc:
             log.error(exc)
             res = WebResponse(
