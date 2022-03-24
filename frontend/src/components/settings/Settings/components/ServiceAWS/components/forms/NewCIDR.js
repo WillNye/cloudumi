@@ -49,7 +49,7 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
           <label>CIDR</label>
           <input
             {...register('cidr', { required: true })}
-            placeholder='it.is.my.ip/number'
+            placeholder='172.0.0.1/24'
           />
         </Form.Field>
         <Bar>

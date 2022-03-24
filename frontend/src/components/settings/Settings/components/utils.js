@@ -34,7 +34,7 @@ export const SelectAccount = ({ register, label, name, options = [] }) => {
             You need at least one Soke Account to proceed.
           </option>
         )}
-        {!isLoading && <option value=''>Select one account</option>}
+        {!isLoading && <option value=''>Select provider type</option>}
         {!isLoading ? (
           handleOptions(get?.data).map((value, index) => (
             <option key={index} value={value}>

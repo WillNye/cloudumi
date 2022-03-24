@@ -84,9 +84,6 @@ const ConsoleMeHeader = () => {
             <Dropdown.Item as={NavLink} to='/settings'>
               Settings
             </Dropdown.Item>
-            <Dropdown.Item as={NavLink} to='/tasks'>
-              Tasks
-            </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
       )
