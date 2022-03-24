@@ -83,7 +83,7 @@ export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
               reset()
             }}
           >
-            <option value=''>Select one account</option>
+            <option value=''>Select provider type</option>
             <option value='google'>Google</option>
             <option value='saml'>SAML</option>
             <option value='oidc'>OIDC</option>
