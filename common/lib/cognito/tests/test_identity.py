@@ -141,6 +141,62 @@ class TestIdentity(TestCase):
         providers = identity.get_identity_providers(self.pool_id)
         assert not providers.saml
 
+    def test_connect_idp_to_app_client(self):
+        client = boto3.client("cognito-idp")
+        saml_provider = SamlOIDCSSOIDPProvider(
+            MetadataURL="http://somewhere.over.the.rainbow",
+            provider_name="SamlIDP",
+            provider_type="SAML",
+        )
+        sso_provider = SSOIDPProviders(saml=saml_provider)
+        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
+        app_client = client.create_user_pool_client(
+            UserPoolId=self.pool_id,
+            ClientName="test_client",
+        ).get("UserPoolClient")
+        assert identity.connect_idp_to_app_client(
+            self.pool_id, app_client.get("ClientId"), saml_provider
+        )
+        app_clients = identity.get_user_pool_client(
+            self.pool_id, app_client["ClientId"]
+        )
+        assert app_clients.get("UserPoolClient", {}).get(
+            "SupportedIdentityProviders", []
+        ) == ["SamlIDP"]
+
+    def test_disconnect_idp_from_app_client(self):
+        client = boto3.client("cognito-idp")
+        saml_provider = SamlOIDCSSOIDPProvider(
+            MetadataURL="http://somewhere.over.the.rainbow",
+            provider_name="SamlIDP",
+            provider_type="SAML",
+        )
+        sso_provider = SSOIDPProviders(saml=saml_provider)
+        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
+        app_client = client.create_user_pool_client(
+            UserPoolId=self.pool_id,
+            ClientName="test_client",
+        ).get("UserPoolClient")
+        assert identity.connect_idp_to_app_client(
+            self.pool_id, app_client.get("ClientId"), saml_provider
+        )
+        app_clients = identity.get_user_pool_client(
+            self.pool_id, app_client.get("ClientId")
+        )
+        assert app_clients.get("UserPoolClient", {}).get(
+            "SupportedIdentityProviders", []
+        ) == ["SamlIDP"]
+        assert identity.disconnect_idp_from_app_client(
+            self.pool_id, app_client.get("ClientId"), saml_provider
+        )
+        app_clients = identity.get_user_pool_client(
+            self.pool_id, app_client.get("ClientId")
+        )
+        assert (
+            app_clients.get("UserPoolClient", {}).get("SupportedIdentityProviders", [])
+            == []
+        )
+
     def test_get_identity_users(self):
         assert identity.get_identity_users(self.pool_id)[0].Username == self.username
 
@@ -173,6 +229,42 @@ class TestIdentity(TestCase):
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
         )
+        assert len(identity.get_identity_users(self.pool_id)) == 1
+
+    def test_assigning_identity_user(self):
+        user = CognitoUser(UserPoolId=self.pool_id, Username=self.username)
+        group = CognitoGroup(GroupName=self.groupname, UserPoolId=self.pool_id)
+        assert identity.assign_identity_user(self.pool_id, user, [group])
+        users = identity.get_identity_users(self.pool_id)
+        updated_user = [x for x in users if x.Username == self.username][0]
+        assert updated_user
+        assert updated_user.Groups
+        assert len(updated_user.Groups) == 1
+        assert updated_user.Groups[0] == self.groupname
+
+    def test_create_identity_user_with_groups(self):
+        groups = ["group1", "group2"]
+        user = CognitoUser(UserPoolId=self.pool_id, Username="new_user", Groups=groups)
+        for group in groups:
+            assert identity.create_identity_group(
+                self.pool_id, CognitoGroup(GroupName=group)
+            )
+        assert identity.create_identity_user(self.pool_id, user)
+        user_update = [
+            x
+            for x in identity.get_identity_users(self.pool_id)
+            if x.Username == "new_user"
+        ][0]
+        assert user_update.Groups
+        assert len([x for x in user_update.Groups if x in groups]) == len(groups)
+        assert len(identity.get_identity_users(self.pool_id)) == 2
+        self.client.admin_delete_user(
+            UserPoolId=self.pool_id, Username=user_update.Username
+        )
+        for group in groups:
+            assert identity.delete_identity_group(
+                self.pool_id, CognitoGroup(GroupName=group)
+            )
         assert len(identity.get_identity_users(self.pool_id)) == 1
 
     def test_delete_identity_user(self):

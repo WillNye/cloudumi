@@ -1748,6 +1748,8 @@ components:
               type: object
             change_id:
               type: string
+            expiration_date:
+              type: integer
     ApplyChangeModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
@@ -2238,6 +2240,12 @@ components:
                   - EMAIL
               AttributeName:
                 type: string
+        Groups:
+          type: array
+          description: assigns Cognito group memberships to user account; these groups *must* exist before they can be assigned
+          items:
+            type: string
+            description: CognitoGroup by GroupName - must match with an existing group in the host / tenant
         UserStatus:
           type: string
           description: Can be UNCONFIRMED, CONFIRMED, ARCHIVED, COMPROMISED, UNKNOWN, RESET_REQUIRED, FORCE_CHANGE_PASSWORD

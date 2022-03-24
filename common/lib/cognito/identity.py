@@ -115,6 +115,103 @@ def __get_oidc_provider(
     return oidc_provider
 
 
+def get_user_pool_client_id(user_pool_id: str, client_name: str) -> str:
+    """Get the user pool client ID for a given client name.
+
+    :param user_pool_id: the user pool ID
+    :param client_name: the client name
+    :return: the user pool ID
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    response = client.list_user_pool_clients(UserPoolId=user_pool_id)
+    for client in response.get("UserPoolClients", []):
+        if client.get("ClientName") == client_name:
+            return client.get("ClientId")
+    next_token = response.get("NextToken")
+    while next_token:
+        response = client.list_user_pool_clients(
+            UserPoolId=user_pool_id, NextToken=next_token
+        )
+        for client in response.get("UserPoolClients", []):
+            if client.get("ClientName") == client_name:
+                return client.get("ClientId")
+        next_token = response.get("NextToken")
+    raise Exception(f"Could not find user pool ID for client {client_name}")
+
+
+def get_user_pool_client(user_pool_id: str, client_id: str) -> dict:
+    """Get a specific client from a user pool.
+
+    :param user_pool_id: ensure this is the user pool ID not the user pool name
+    :param client_id: the client ID to get
+    :return: the client object
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    response = client.describe_user_pool_client(
+        UserPoolId=user_pool_id, ClientId=client_id
+    )
+    return response
+
+
+def connect_idp_to_app_client(
+    user_pool_id: str,
+    client_id: str,
+    idp: Union[GoogleOIDCSSOIDPProvider, SamlOIDCSSOIDPProvider, OIDCSSOIDPProvider],
+) -> bool:
+    """Connects the IDP to the app client.
+
+    :param user_pool_id: ensure this is the user pool ID not the user pool name
+    :param client_id: the client ID of the app client
+    :return: true if successful, currently always returns true
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    user_pool_supported_idp = (
+        get_user_pool_client(user_pool_id, client_id)
+        .get("UserPoolClient", {})
+        .get("SupportedIdentityProviders")
+    )
+    if not user_pool_supported_idp:
+        user_pool_supported_idp = list()
+    if idp.provider_name not in user_pool_supported_idp:
+        user_pool_supported_idp.append(idp.provider_name)
+        client.update_user_pool_client(
+            UserPoolId=user_pool_id,
+            ClientId=client_id,
+            SupportedIdentityProviders=user_pool_supported_idp,
+        )
+    return True
+
+
+def disconnect_idp_from_app_client(
+    user_pool_id: str,
+    client_id: str,
+    idp: Union[GoogleOIDCSSOIDPProvider, SamlOIDCSSOIDPProvider, OIDCSSOIDPProvider],
+) -> bool:
+    """Disconnect an IDP from the app client.
+
+    :param user_pool_id: ensure this is the user pool ID not the user pool name
+    :param client_id: the client ID of the app client
+    :param idp: one of the NOQ internal identity provider objects
+    :return: reflects that the desired state is reached, meaning that the idp is not connected to the app client
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    user_pool_supported_idp = (
+        get_user_pool_client(user_pool_id, client_id)
+        .get("UserPoolClient", {})
+        .get("SupportedIdentityProviders")
+    )
+    if not user_pool_supported_idp:
+        return True
+    if idp.provider_name in user_pool_supported_idp:
+        user_pool_supported_idp.remove(idp.provider_name)
+        client.update_user_pool_client(
+            UserPoolId=user_pool_id,
+            ClientId=client_id,
+            SupportedIdentityProviders=user_pool_supported_idp,
+        )
+    return True
+
+
 def get_identity_providers(user_pool_id: str) -> SSOIDPProviders:
     """Get all identity providers.
 
@@ -177,6 +274,9 @@ def upsert_identity_provider(user_pool_id: str, id_provider: SSOIDPProviders) ->
 
     current_providers = get_identity_providers(user_pool_id)
     if id_provider.google and current_providers.google:
+        disconnect_idp_from_app_client(
+            user_pool_id,
+        )
         delete_identity_provider(user_pool_id, current_providers.google)
     if id_provider.saml and current_providers.saml:
         delete_identity_provider(user_pool_id, current_providers.saml)
@@ -255,6 +355,29 @@ def delete_identity_provider(
     return True
 
 
+def __get_group_assignments(user_pool_id: str, user: CognitoUser) -> List[CognitoGroup]:
+    """Get the group assignments for a user pool.
+
+    :param user_pool_id: the user pool ID
+    :param user: the user for which to extract group assignments
+    :return: a list of dictionaries representing the group assignments
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    groups = list()
+    response = client.admin_list_groups_for_user(
+        Username=user.Username, UserPoolId=user_pool_id
+    )
+    groups.extend([CognitoGroup(**x) for x in response.get("Groups", [])])
+    next_token = response.get("NextToken")
+    while next_token:
+        response = client.admin_list_groups_for_user(
+            Username=user.Username, UserPoolId=user_pool_id
+        )
+        groups.extend([CognitoGroup(**x) for x in response.get("Groups", [])])
+        next_token = response.get("NextToken")
+    return groups
+
+
 def get_identity_users(user_pool_id: str) -> List[CognitoUser]:
     """Get Cognito users and format as pydantic CognitoUser objects.
 
@@ -274,7 +397,12 @@ def get_identity_users(user_pool_id: str) -> List[CognitoUser]:
         response = client.list_users(UserPoolId=user_pool_id, NextToken=next_token)
         users.extend(response.get("Users", []))
         next_token = response.get("NextToken")
-    return [CognitoUser(**x) for x in users]
+    cognito_users = [CognitoUser(**x) for x in users]
+    for cognito_user in cognito_users:
+        cognito_user.Groups = [
+            x.GroupName for x in __get_group_assignments(user_pool_id, cognito_user)
+        ]
+    return cognito_users
 
 
 def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
@@ -308,6 +436,11 @@ def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
         DesiredDeliveryMediums=delivery_mediums,
     )
     user_update = CognitoUser(**response.get("User", {}))
+    if user.Groups:
+        LOG.info(f"Adding groups {user.Groups} to user {user.Username}")
+        assign_identity_user(
+            user_pool_id, user_update, [CognitoGroup(GroupName=x) for x in user.Groups]
+        )
     return user_update
 
 
@@ -324,6 +457,44 @@ def delete_identity_user(user_pool_id: str, user: CognitoUser) -> bool:
     client = boto3.client("cognito-idp", region_name=config.region)
     LOG.info(f"{__name__} using boto3 client in region {config.region}")
     client.admin_delete_user(UserPoolId=user_pool_id, Username=user.Username)
+    return True
+
+
+def assign_identity_user(
+    user_pool_id: str, user: CognitoUser, groups: List[CognitoGroup]
+) -> bool:
+    """Assign a user to a group.
+
+    :param user_pool_id: the id of the user pool from which to delete the user
+    :param user: a CognitoUser object that describes the user
+    :param groups: a list of CognitoGroup objects that describe the groups to which the user should be added
+    :return: true if successful
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
+    for group in groups:
+        try:
+            client.admin_add_user_to_group(
+                UserPoolId=user_pool_id,
+                Username=user.Username,
+                GroupName=group.GroupName,
+            )
+        except client.exceptions.UserNotFoundException:
+            LOG.warning(f"User {group.Username} not found in user pool {user_pool_id}.")
+            return False
+        except client.exceptions.ResourceNotFoundException:
+            LOG.warning(
+                f"Group {group.GroupName} not found in user pool {user_pool_id}."
+            )
+            return False
+        except client.exceptions.ResourceConflictException:
+            LOG.warning(f"User {group.Username} already in group {group.GroupName}.")
+            return False
+        except Exception:
+            LOG.exception(
+                f"Error assigning user {group.Username} to group {group.GroupName}"
+            )
+            return False
     return True
 
 

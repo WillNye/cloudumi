@@ -2631,6 +2631,11 @@ async def parse_and_apply_policy_request_modification(
             and specific_change.status == Status.not_applied
         ):
             specific_change.policy.policy_document = update_change_model.policy_document
+            if specific_change.expiration_date != update_change_model.expiration_date:
+                specific_change.policy_name = await generate_policy_name(
+                    None, user, host, update_change_model.expiration_date
+                )
+                specific_change.expiration_date = update_change_model.expiration_date
             if (
                 specific_change.change_type == "resource_policy"
                 or specific_change.change_type == "sts_resource_policy"
