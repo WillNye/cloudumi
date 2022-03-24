@@ -3,8 +3,12 @@ import React, { useContext } from 'react'
 import { ApiContext } from 'hooks/useApi'
 
 import { Button, Segment } from 'semantic-ui-react'
+import { Bar } from 'lib/Misc'
+import { useCopyToClipboard } from 'hooks/useCopyToClipboard'
 
 export const NewHubAccount = ({ closeModal }) => {
+  const { CopyButton } = useCopyToClipboard()
+
   const aws = useContext(ApiContext)
 
   const handleClick = () => {
@@ -48,9 +52,14 @@ export const NewHubAccount = ({ closeModal }) => {
               successfully executed.
             </li>
           </ol>
-          <Button onClick={handleClick} fluid positive>
-            Execute CloudFormation
-          </Button>
+          <Bar>
+            <Button onClick={handleClick} fluid positive>
+              Execute CloudFormation
+            </Button>
+            <CopyButton
+              value={aws.data?.central_account_role?.cloudformation_url}
+            />
+          </Bar>
         </>
       )}
     </Segment>

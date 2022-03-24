@@ -26,7 +26,7 @@ export const SpokeAccounts = () => {
       remove
         .do({}, `${rowValues?.name}/${rowValues?.account_id}`)
         .then(() => {
-          success('Spoke Account REMOVED')
+          success('Spoke Account removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))

@@ -5,18 +5,14 @@ import { useForm } from 'react-hook-form'
 
 import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
-import { SelectAccount } from '../../../utils'
 import { Bar, Fill } from 'lib/Misc'
 
-export const NewOrganization = ({ closeModal, onFinish }) => {
+export const NewUser = ({ closeModal, onFinish }) => {
   const { register, handleSubmit, watch } = useForm()
 
-  const { post } = useApi('services/aws/account/org')
+  const { post } = useApi('auth/cognito/users')
 
   const onSubmit = (data) => {
-    const name = data.account_name.split(' - ')
-    data.account_name = name[0]
-    data.account_id = name[1]
     post.do(data).then(() => {
       closeModal()
       onFinish()
@@ -50,18 +46,13 @@ export const NewOrganization = ({ closeModal, onFinish }) => {
 
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Form.Field>
-          <label>Organization Id</label>
-          <input {...register('org_id', { required: true })} />
+          <label>Username</label>
+          <input {...register('Username', { required: true })} />
         </Form.Field>
 
-        <SelectAccount
-          label='Spoke Account Name and Id'
-          register={{ ...register('account_name', { required: true }) }}
-        />
-
         <Form.Field>
-          <label>Owner</label>
-          <input {...register('owner', { required: true })} />
+          <label>Password</label>
+          <input {...register('temporary_password', { required: true })} />
         </Form.Field>
 
         <Bar>

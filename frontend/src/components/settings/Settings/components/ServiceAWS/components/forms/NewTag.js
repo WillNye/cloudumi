@@ -5,39 +5,33 @@ import { useForm } from 'react-hook-form'
 
 import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
-import { SelectAccount } from '../../../utils'
 import { Bar, Fill } from 'lib/Misc'
 
-export const NewOrganization = ({ closeModal, onFinish }) => {
+export const NewTag = ({ closeModal, onFinish }) => {
   const { register, handleSubmit, watch } = useForm()
 
-  const { post } = useApi('services/aws/account/org')
+  const { post } = useApi(
+    'services/aws/role-access/credential-brokering/auth-tags'
+  )
 
   const onSubmit = (data) => {
-    const name = data.account_name.split(' - ')
-    data.account_name = name[0]
-    data.account_id = name[1]
     post.do(data).then(() => {
       closeModal()
       onFinish()
     })
   }
 
-  const fields = watch()
+  const watchFields = watch()
 
-  const fieldsSize = Object.keys(fields)?.length
-
-  const currentFieldsSize = Object.keys(fields)?.filter(
-    (key) => fields[key]
-  )?.length
-
-  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize
+  const isReady = !!watchFields.tag_name
 
   const isWorking = post?.status === 'working'
 
   const isSuccess = post?.status === 'done' && !post?.error
 
   const hasError = post?.error && post?.status === 'done'
+
+  // TODO: Tag keys and values can include any combination of letters, numbers, spaces, and _ . : / = + - @ symbols.
 
   return (
     <Segment basic>
@@ -50,18 +44,17 @@ export const NewOrganization = ({ closeModal, onFinish }) => {
 
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Form.Field>
-          <label>Organization Id</label>
-          <input {...register('org_id', { required: true })} />
+          <label>Tag Name</label>
+          <input {...register('tag_name', { required: true })} />
         </Form.Field>
 
-        <SelectAccount
-          label='Spoke Account Name and Id'
-          register={{ ...register('account_name', { required: true }) }}
-        />
-
-        <Form.Field>
-          <label>Owner</label>
-          <input {...register('owner', { required: true })} />
+        <Form.Field inline>
+          <input
+            id='check'
+            type='checkbox'
+            {...register('allow_webconsole_access')}
+          />
+          <label htmlFor='check'>Allow Web Console Access?</label>
         </Form.Field>
 
         <Bar>

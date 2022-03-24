@@ -1,58 +1,113 @@
-import React from 'react'
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useState } from 'react'
+import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
-import { DatatableWrapper } from 'lib/Datatable/ui/utils'
-import { Section } from 'lib/Section'
-import { ScreenHeading } from 'lib/Screen/styles'
-import { SectionTitle } from '../utils'
-
-import { userColumns } from '../GeneralUsers/components/columns'
-import { TableTopBar } from '../utils'
+import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
-
-const data = [
-  {
-    user: 'curtis',
-    enabled: true,
-    email: 'curtis@foo.bar',
-    updatedAt: '2021-04-04',
-    createdAt: '2021-04-01',
-    expiration: 'never',
-  },
-  {
-    user: 'cspilhere',
-    enabled: false,
-    email: 'cspilhere@foo.bar',
-    updatedAt: '2021-04-04',
-    createdAt: '2021-04-01',
-    expiration: 'never',
-  },
-]
+import { useToast } from 'lib/Toast'
+import { str } from 'components/settings/Settings/strings'
+import { SectionTitle, TableTopBar } from '../utils'
+import { Segment } from 'semantic-ui-react'
+import { integrationSSOColumns } from './columns'
+import { NewProvider } from './forms/NewProvider'
+import { Section } from 'lib/Section'
 
 export const IntegrationSSO = () => {
-  const { openModal, ModalComponent } = useModal('New Provider')
+  const { get, post, remove } = useApi('auth/sso')
 
-  const handleClick = (action, rowValues) => {}
+  const [defaultValues, setDefaultValues] = useState()
 
-  const columns = userColumns({ handleClick })
+  const { error, success } = useToast()
+
+  const { openModal, closeModal, ModalComponent } = useModal('Add Provider')
+
+  useEffect(() => get.do(), [])
+
+  const handleClick = (action, rowValues) => {
+    if (action === 'remove') {
+      remove
+        .do()
+        .then(() => {
+          success('Provider removed')
+          get.do()
+        })
+        .catch(() => error(str.toastErrorMsg))
+    }
+    if (action === 'edit') {
+      setDefaultValues(rowValues)
+      openModal()
+    }
+  }
+
+  const handleFinish = ({ success, message }) => {
+    if (success) {
+      success('Provider added successfully!')
+      get.do()
+    } else {
+      error(message)
+    }
+  }
+
+  const handleClose = () => {
+    setDefaultValues(null)
+    post.reset()
+  }
+
+  const columns = integrationSSOColumns({ handleClick })
+
+  const label = `Status: ${get.status}${
+    get.error ? ` / Error: ${get.error}` : ''
+  }`
+
+  const data = get.data
+
+  const preparedData = []
+
+  data?.google && preparedData.push(data?.google)
+  data?.saml && preparedData.push(data?.saml)
+  data?.oidc && preparedData.push(data?.oidc)
+
+  const hasData = preparedData?.length > 0
+
+  const isWorking = get.status === 'working'
+
+  const handleRefresh = () => get.do()
 
   return (
-    <>
-      <ScreenHeading>Single Sign-On</ScreenHeading>
-
-      <Section title={<SectionTitle title='SSO Providers' />}>
-        <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
+    <Section title={<SectionTitle title='Single Sign-On' helpHandler='sso' />}>
+      <Segment basic vertical>
+        <DatatableWrapper
+          isLoading={remove.status === 'working'}
+          renderAction={
+            <TableTopBar
+              onClick={hasData ? openModal : null}
+              extras={
+                <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              }
+            />
+          }
+        >
           <Datatable
-            data={data}
+            data={preparedData}
             columns={columns}
             emptyState={{
               label: 'Add Provider',
-              onClick: () => {},
+              onClick: openModal,
             }}
+            isLoading={isWorking}
+            loadingState={{ label }}
           />
         </DatatableWrapper>
 
-        <ModalComponent onClickToConfirm={() => {}}>Foo</ModalComponent>
-      </Section>
-    </>
+        <ModalComponent onClose={handleClose} hideConfirm>
+          <NewProvider
+            closeModal={closeModal}
+            onFinish={handleFinish}
+            defaultValues={defaultValues}
+            current={preparedData}
+          />
+        </ModalComponent>
+      </Segment>
+    </Section>
   )
 }

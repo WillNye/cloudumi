@@ -16,7 +16,8 @@ const useInnerUtils = () => {
     ...initialState,
   })
 
-  const buildPath = (pathname = '') => url + (pathname ? '/' : '') + pathname
+  const buildPath = (pathname = '', customUrl) =>
+    customUrl || url + (pathname ? '/' : '') + pathname
 
   const handleWorking = () => {
     setState({ data: null, status: 'working', error: null })
@@ -27,8 +28,13 @@ const useInnerUtils = () => {
       setState({ data: null, status: 'done', error: 'Error!' })
       return 'Error!'
     }
+    if (res?.status_code === 400) {
+      setState({ error: res?.message, status: 'done' })
+      throw new Error(res?.message)
+    }
     let response = res?.data
     setState({ data: response, status: 'done' })
+    return response
   }
 
   const reset = () => {
@@ -44,7 +50,7 @@ const useInnerUtils = () => {
   }
 }
 
-const useGet = (commonPathname) => {
+const useGet = (commonPathname, { url }) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
@@ -55,12 +61,12 @@ const useGet = (commonPathname) => {
     try {
       const res = await sendRequestCommon(
         null,
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, url),
         'get'
       )
       return handleResponse(res)
     } catch (error) {
-      return error
+      throw new Error(error)
     }
   }
 
@@ -72,7 +78,7 @@ const useGet = (commonPathname) => {
   }
 }
 
-const usePost = (commonPathname) => {
+const usePost = (commonPathname, { url }) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
@@ -83,12 +89,12 @@ const usePost = (commonPathname) => {
     try {
       const res = await sendRequestCommon(
         body || {},
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, url),
         'post'
       )
       return handleResponse(res)
     } catch (error) {
-      return error
+      throw new Error(error)
     }
   }
 
@@ -100,7 +106,7 @@ const usePost = (commonPathname) => {
   }
 }
 
-const useRemove = (commonPathname) => {
+const useRemove = (commonPathname, { url }) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
@@ -111,12 +117,12 @@ const useRemove = (commonPathname) => {
     try {
       const res = await sendRequestCommon(
         body || {},
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`),
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, url),
         'delete'
       )
       return handleResponse(res)
     } catch (error) {
-      return error
+      throw new Error(error)
     }
   }
   return {
@@ -127,11 +133,11 @@ const useRemove = (commonPathname) => {
   }
 }
 
-export const useApi = (commonPathname) => {
+export const useApi = (commonPathname, options = {}) => {
   return {
-    get: useGet(commonPathname),
-    post: usePost(commonPathname),
-    remove: useRemove(commonPathname),
+    get: useGet(commonPathname, options),
+    post: usePost(commonPathname, options),
+    remove: useRemove(commonPathname, options),
   }
 }
 

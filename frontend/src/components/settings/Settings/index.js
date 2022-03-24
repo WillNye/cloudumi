@@ -2,9 +2,14 @@ import React, { useState } from 'react'
 import { Screen } from 'lib/Screen'
 import { ServiceAWS } from './components/ServiceAWS'
 import { Sidebar } from './components/Sidebar'
+import { useHistory } from 'react-router-dom'
 
 export const Settings = () => {
   const defaultActiveItem = { name: 'aws', Component: ServiceAWS }
+
+  const history = useHistory()
+
+  console.log(history)
 
   const [{ name: activeItem, Component }, setActiveItem] =
     useState(defaultActiveItem)

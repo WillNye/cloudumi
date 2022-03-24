@@ -1,41 +1,86 @@
-import React from 'react'
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect } from 'react'
+import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
-import { DatatableWrapper } from 'lib/Datatable/ui/utils'
+import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
+import { useModal } from 'lib/hooks/useModal'
+import { useToast } from 'lib/Toast'
+import { str } from 'components/settings/Settings/strings'
 
 import { groupColumns } from './columns'
 import { TableTopBar } from '../../utils'
-import { useModal } from 'lib/hooks/useModal'
-
-const data = [
-  {
-    name: 'admins',
-    description: 'AWS Admins',
-    updatedAt: '2021-04-04',
-    createdAt: '2021-04-01',
-  },
-]
+import { NewGroup } from '../forms/NewGroup'
 
 export const Groups = () => {
-  const { openModal, ModalComponent } = useModal('New Group')
+  const { get, post, remove } = useApi('auth/cognito/groups')
 
-  const handleClick = (action, rowValues) => {}
+  const { error, success } = useToast()
+
+  const { openModal, closeModal, ModalComponent } = useModal('Add Group')
+
+  useEffect(() => get.do(), [])
+
+  const handleClick = (action, rowValues) => {
+    if (action === 'remove') {
+      remove
+        .do({}, `${rowValues?.name}/${rowValues?.account_id}`)
+        .then(() => {
+          success('Group removed')
+          get.do()
+        })
+        .catch(() => error(str.toastErrorMsg))
+    }
+  }
+
+  const handleFinish = () => {
+    success('Organization created successfully!')
+    get.do()
+  }
+
+  const handleClose = post.reset
 
   const columns = groupColumns({ handleClick })
 
+  const label = `Status: ${get.status}${
+    get.error ? ` / Error: ${get.error}` : ''
+  }`
+
+  const data = get?.data
+
+  const hasData = data?.length > 0
+
+  const isWorking = get.status === 'working'
+
+  const handleRefresh = () => get.do()
+
   return (
     <>
-      <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
+      <DatatableWrapper
+        isLoading={remove.status === 'working'}
+        renderAction={
+          <TableTopBar
+            onClick={hasData ? openModal : null}
+            extras={
+              <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+            }
+          />
+        }
+      >
         <Datatable
           data={data}
           columns={columns}
           emptyState={{
-            label: 'Create Group',
-            onClick: () => {},
+            label: 'Add Group',
+            onClick: openModal,
           }}
+          isLoading={isWorking}
+          loadingState={{ label }}
         />
       </DatatableWrapper>
 
-      <ModalComponent onClickToConfirm={() => {}}>Foo</ModalComponent>
+      <ModalComponent onClose={handleClose} hideConfirm>
+        <NewGroup closeModal={closeModal} onFinish={handleFinish} />
+      </ModalComponent>
     </>
   )
 }

@@ -5,26 +5,29 @@ import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
-import { awsOrganizationColumns } from './columns'
-import { NewOrganization } from './forms/NewOrganization'
 import { str } from 'components/settings/Settings/strings'
 import { TableTopBar } from '../../utils'
+import { Segment } from 'semantic-ui-react'
+import { CIDRBlockColumns } from './columns'
+import { NewCIDR } from './forms/NewCIDR'
 
-export const AWSOrganization = () => {
-  const { get, post, remove } = useApi('services/aws/account/org')
+export const CIDRBlock = () => {
+  const { get, post, remove } = useApi('services/aws/ip-access')
 
   const { error, success } = useToast()
 
-  const { openModal, closeModal, ModalComponent } = useModal('Add Organization')
+  const { openModal, closeModal, ModalComponent } = useModal('Add CIDR')
 
   useEffect(() => get.do(), [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do({}, `${rowValues?.org_id}`)
+        .do({
+          cidr: rowValues?.cidr,
+        })
         .then(() => {
-          success('Organization removed')
+          success('CIDR removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))
@@ -32,13 +35,13 @@ export const AWSOrganization = () => {
   }
 
   const handleFinish = () => {
-    success('Organization created successfully!')
+    success('CIDR added successfully!')
     get.do()
   }
 
   const handleClose = post.reset
 
-  const columns = awsOrganizationColumns({ handleClick })
+  const columns = CIDRBlockColumns({ handleClick })
 
   const label = `Status: ${get.status}${
     get.error ? ` / Error: ${get.error}` : ''
@@ -53,7 +56,7 @@ export const AWSOrganization = () => {
   const handleRefresh = () => get.do()
 
   return (
-    <>
+    <Segment basic vertical>
       <DatatableWrapper
         isLoading={remove.status === 'working'}
         renderAction={
@@ -69,7 +72,7 @@ export const AWSOrganization = () => {
           data={data}
           columns={columns}
           emptyState={{
-            label: 'Connect an AWS Organization',
+            label: 'Add CIDR',
             onClick: openModal,
           }}
           isLoading={isWorking}
@@ -78,8 +81,8 @@ export const AWSOrganization = () => {
       </DatatableWrapper>
 
       <ModalComponent onClose={handleClose} hideConfirm>
-        <NewOrganization closeModal={closeModal} onFinish={handleFinish} />
+        <NewCIDR closeModal={closeModal} onFinish={handleFinish} />
       </ModalComponent>
-    </>
+    </Segment>
   )
 }
