@@ -20,7 +20,6 @@ container_push(
     repository = "shared-staging-registry-api",
     image = "//api:container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    skip_unchanged_digest = True,
     tag = "{VERSION}",
     visibility = ["//visibility:public"],
 )
@@ -31,7 +30,6 @@ container_push(
     repository = "shared-staging-registry-celery",
     image = "//common/celery_tasks:container",
     registry = "259868150464.dkr.ecr.us-west-2.amazonaws.com",
-    skip_unchanged_digest = True,
     tag = "{VERSION}",
     visibility = ["//visibility:public"],
 )
