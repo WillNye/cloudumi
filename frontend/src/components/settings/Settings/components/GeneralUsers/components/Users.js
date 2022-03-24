@@ -25,7 +25,7 @@ export const Users = () => {
       remove
         .do({}, `${rowValues?.name}/${rowValues?.account_id}`)
         .then(() => {
-          success('User REMOVED')
+          success('User removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))

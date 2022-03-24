@@ -28,7 +28,7 @@ export const IntegrationSSO = () => {
       remove
         .do()
         .then(() => {
-          success('Provider REMOVED')
+          success('Provider removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))

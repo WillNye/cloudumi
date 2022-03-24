@@ -30,7 +30,7 @@ export const RoleAccessAuth = () => {
       remove
         .do({}, `${rowValues?.tag_name}`)
         .then(() => {
-          success('Tag REMOVED')
+          success('Tag removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))

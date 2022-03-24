@@ -25,7 +25,7 @@ export const Groups = () => {
       remove
         .do({}, `${rowValues?.name}/${rowValues?.account_id}`)
         .then(() => {
-          success('Group REMOVED')
+          success('Group removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))

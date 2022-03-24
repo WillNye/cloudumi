@@ -52,11 +52,6 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
             placeholder='it.is.my.ip/number'
           />
         </Form.Field>
-        {/* <p style={{ marginTop: -10 }}>
-          <small>
-            Use <a target="_blank" href="https://whatismyipaddress.com/">https://whatismyipaddress.com/</a> to get your IP
-          </small>
-        </p> */}
         <Bar>
           <Fill />
           <Button type='submit' disabled={!isReady} positive>

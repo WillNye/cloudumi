@@ -27,7 +27,7 @@ export const CIDRBlock = () => {
           cidr: rowValues?.cidr,
         })
         .then(() => {
-          success('CIDR REMOVED')
+          success('CIDR removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))

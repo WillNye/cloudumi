@@ -24,7 +24,7 @@ export const AWSOrganization = () => {
       remove
         .do({}, `${rowValues?.org_id}`)
         .then(() => {
-          success('Organization REMOVED')
+          success('Organization removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))
