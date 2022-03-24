@@ -39,9 +39,13 @@ export const IntegrationSSO = () => {
     }
   }
 
-  const handleFinish = () => {
-    success('Provider added successfully!')
-    get.do()
+  const handleFinish = ({ success, message }) => {
+    if (success) {
+      success('Provider added successfully!')
+      get.do()
+    } else {
+      error(message)
+    }
   }
 
   const handleClose = () => {
@@ -96,7 +100,12 @@ export const IntegrationSSO = () => {
         </DatatableWrapper>
 
         <ModalComponent onClose={handleClose} hideConfirm>
-          <NewProvider closeModal={closeModal} onFinish={handleFinish} defaultValues={defaultValues} current={preparedData} />
+          <NewProvider
+            closeModal={closeModal}
+            onFinish={handleFinish}
+            defaultValues={defaultValues}
+            current={preparedData}
+          />
         </ModalComponent>
       </Segment>
     </Section>

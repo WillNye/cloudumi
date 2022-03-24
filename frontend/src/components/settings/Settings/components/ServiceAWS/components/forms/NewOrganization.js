@@ -27,9 +27,11 @@ export const NewOrganization = ({ closeModal, onFinish }) => {
 
   const fieldsSize = Object.keys(fields)?.length
 
-  const currentFieldsSize = Object.keys(fields)?.filter(key => fields[key])?.length
-  
-  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize;
+  const currentFieldsSize = Object.keys(fields)?.filter(
+    (key) => fields[key]
+  )?.length
+
+  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize
 
   const isWorking = post?.status === 'working'
 

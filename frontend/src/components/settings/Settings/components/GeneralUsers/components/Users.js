@@ -9,16 +9,16 @@ import { str } from 'components/settings/Settings/strings'
 
 import { userColumns } from './columns'
 import { TableTopBar } from '../../utils'
-import NewUser from '../forms/NewUser'
+import { NewUser } from '../forms/NewUser'
 
 export const Users = () => {
-  const { get, post, remove } = useApi('services/aws/account/spoke')
+  const { get, post, remove } = useApi('auth/cognito/users')
 
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add User')
 
-  // useEffect(() => get.do(), [])
+  useEffect(() => get.do(), [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -30,6 +30,11 @@ export const Users = () => {
         })
         .catch(() => error(str.toastErrorMsg))
     }
+  }
+
+  const handleFinish = () => {
+    success('Organization created successfully!')
+    get.do()
   }
 
   const handleClose = post.reset
@@ -74,7 +79,7 @@ export const Users = () => {
       </DatatableWrapper>
 
       <ModalComponent onClose={handleClose} hideConfirm>
-        <NewUser closeModal={closeModal} />
+        <NewUser closeModal={closeModal} onFinish={handleFinish} />
       </ModalComponent>
     </>
   )

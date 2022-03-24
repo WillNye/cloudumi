@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react'
 import { useApi } from 'hooks/useApi'
 
@@ -9,7 +10,6 @@ import { Bar, Fill } from 'lib/Misc'
 import { ProviderTypeFields } from './ProviderTypeFields'
 
 export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
-
   const { register, reset, watch, handleSubmit } = useForm({ defaultValues })
 
   const { post } = useApi('auth/sso')
@@ -28,11 +28,16 @@ export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
         break
       default:
         provider = ''
-    }  
-    post.do(data, provider).then(() => {
-      closeModal()
-      onFinish()
-    })
+    }
+    post
+      .do(data, provider)
+      .then(() => {
+        closeModal()
+        onFinish({ success: true })
+      })
+      .catch((error) => {
+        onFinish({ success: false, message: error.message })
+      })
   }
 
   const [type, setType] = useState()
@@ -43,15 +48,15 @@ export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
 
   const fieldsSize = Object.keys(fields)?.length
 
-  const currentFieldsSize = Object.keys(fields)?.filter(key => fields[key])?.length
-  
-  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize;
+  const currentFieldsSize = Object.keys(fields)?.filter(
+    (key) => fields[key]
+  )?.length
+
+  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize
 
   const isWorking = post?.status === 'working'
 
   const isSuccess = post?.status === 'done' && !post?.error
-
-  const hasError = post?.error && post?.status === 'done'
 
   const hasDefault = defaultValues?.provider_type
 
@@ -63,7 +68,6 @@ export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
     <Segment basic>
       <DimmerWithStates
         loading={isWorking}
-        showMessage={hasError}
         messageType={isSuccess ? 'success' : 'warning'}
         message={'Something went wrong, try again!'}
       />
@@ -71,10 +75,14 @@ export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Form.Field>
           <label>Type</label>
-          <select value={type} disabled={hasDefault} onChange={({ target }) => {
+          <select
+            value={type}
+            disabled={hasDefault}
+            onChange={({ target }) => {
               setType(target.value)
               reset()
-            }}>
+            }}
+          >
             <option value=''>Select one account</option>
             <option value='google'>Google</option>
             <option value='saml'>SAML</option>

@@ -28,8 +28,13 @@ const useInnerUtils = () => {
       setState({ data: null, status: 'done', error: 'Error!' })
       return 'Error!'
     }
+    if (res?.status_code === 400) {
+      setState({ error: res?.message, status: 'done' })
+      throw new Error(res?.message)
+    }
     let response = res?.data
     setState({ data: response, status: 'done' })
+    return response
   }
 
   const reset = () => {
@@ -61,7 +66,7 @@ const useGet = (commonPathname, { url }) => {
       )
       return handleResponse(res)
     } catch (error) {
-      return error
+      throw new Error(error)
     }
   }
 
@@ -89,7 +94,7 @@ const usePost = (commonPathname, { url }) => {
       )
       return handleResponse(res)
     } catch (error) {
-      return error
+      throw new Error(error)
     }
   }
 
@@ -117,7 +122,7 @@ const useRemove = (commonPathname, { url }) => {
       )
       return handleResponse(res)
     } catch (error) {
-      return error
+      throw new Error(error)
     }
   }
   return {

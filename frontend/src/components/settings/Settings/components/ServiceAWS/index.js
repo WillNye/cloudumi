@@ -3,7 +3,6 @@ import { Section } from 'lib/Section'
 import { AWSOrganization } from './components/AWSOrganization'
 import { General } from './components/General'
 import { HubAccount } from './components/HubAccount'
-import { Legacy } from './components/Legacy'
 import { SpokeAccounts } from './components/SpokeAccounts'
 import { RoleAccessAuth } from './components/RoleAccessAuth'
 import { SectionTitle } from '../utils'
@@ -50,10 +49,6 @@ export const ServiceAWS = () => {
 
       <Section title={<SectionTitle title='General' />}>
         <General />
-      </Section>
-
-      <Section title='Legacy' defaultActive={false} isCollapsible>
-        <Legacy />
       </Section>
     </ApiGetProvider>
   )

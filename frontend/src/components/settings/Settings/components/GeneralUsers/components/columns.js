@@ -1,35 +1,11 @@
 import React from 'react'
-import { RowStatusIndicator } from 'lib/Misc'
 
 import { Button } from 'semantic-ui-react'
 
 export const userColumns = ({ handleClick }) => [
   {
     Header: 'User',
-    accessor: 'user',
-  },
-  {
-    Header: 'Email',
-    accessor: 'email',
-  },
-  {
-    Header: 'Updated at',
-    accessor: 'updatedAt',
-  },
-  {
-    Header: 'Created at',
-    accessor: 'createdAt',
-  },
-  {
-    Header: 'Expires',
-    accessor: 'expiration',
-  },
-  {
-    Header: 'Enabled',
-    accessor: 'enabled',
-    width: 60,
-    align: 'center',
-    Cell: ({ row }) => <RowStatusIndicator isActive={row?.original?.active} />,
+    accessor: 'Username',
   },
   {
     Header: 'Actions',
@@ -46,19 +22,11 @@ export const userColumns = ({ handleClick }) => [
 export const groupColumns = ({ handleClick }) => [
   {
     Header: 'Group Name',
-    accessor: 'name',
+    accessor: 'GroupName',
   },
   {
     Header: 'Description',
-    accessor: 'description',
-  },
-  {
-    Header: 'Updated at',
-    accessor: 'updatedAt',
-  },
-  {
-    Header: 'Created at',
-    accessor: 'createdAt',
+    accessor: 'Description',
   },
   {
     Header: 'Actions',

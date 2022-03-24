@@ -9,16 +9,16 @@ import { str } from 'components/settings/Settings/strings'
 
 import { groupColumns } from './columns'
 import { TableTopBar } from '../../utils'
-import NewGroup from '../forms/NewGroup'
+import { NewGroup } from '../forms/NewGroup'
 
 export const Groups = () => {
-  const { get, post, remove } = useApi('services/aws/account/spoke')
+  const { get, post, remove } = useApi('auth/cognito/groups')
 
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add Group')
 
-  // useEffect(() => get.do(), [])
+  useEffect(() => get.do(), [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -30,6 +30,11 @@ export const Groups = () => {
         })
         .catch(() => error(str.toastErrorMsg))
     }
+  }
+
+  const handleFinish = () => {
+    success('Organization created successfully!')
+    get.do()
   }
 
   const handleClose = post.reset
@@ -74,7 +79,7 @@ export const Groups = () => {
       </DatatableWrapper>
 
       <ModalComponent onClose={handleClose} hideConfirm>
-        <NewGroup closeModal={closeModal} />
+        <NewGroup closeModal={closeModal} onFinish={handleFinish} />
       </ModalComponent>
     </>
   )

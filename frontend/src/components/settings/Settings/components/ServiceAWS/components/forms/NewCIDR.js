@@ -6,16 +6,11 @@ import { useForm } from 'react-hook-form'
 import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
-import { useGeoIP } from 'hooks/useGeoIP'
 
 export const NewCIDR = ({ closeModal, onFinish }) => {
   const { register, handleSubmit, watch } = useForm()
 
   const { post } = useApi('services/aws/ip-access')
-
-  // const { data, status } = useGeoIP()
-
-  // console.log(data, status)
 
   const onSubmit = (data) => {
     post.do(data).then(() => {
@@ -28,9 +23,11 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
 
   const fieldsSize = Object.keys(fields)?.length
 
-  const currentFieldsSize = Object.keys(fields)?.filter(key => fields[key])?.length
-  
-  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize;
+  const currentFieldsSize = Object.keys(fields)?.filter(
+    (key) => fields[key]
+  )?.length
+
+  const isReady = fieldsSize !== 0 && currentFieldsSize === fieldsSize
 
   const isWorking = post?.status === 'working'
 
@@ -50,9 +47,16 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Form.Field>
           <label>CIDR</label>
-          <input {...register('cidr', { required: true })} />
+          <input
+            {...register('cidr', { required: true })}
+            placeholder='it.is.my.ip/number'
+          />
         </Form.Field>
-
+        {/* <p style={{ marginTop: -10 }}>
+          <small>
+            Use <a target="_blank" href="https://whatismyipaddress.com/">https://whatismyipaddress.com/</a> to get your IP
+          </small>
+        </p> */}
         <Bar>
           <Fill />
           <Button type='submit' disabled={!isReady} positive>

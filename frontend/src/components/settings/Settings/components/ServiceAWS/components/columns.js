@@ -43,7 +43,7 @@ export const awsOrganizationColumns = ({ handleClick }) => [
 
 export const spokeAccountsColumns = ({ handleClick }) => [
   {
-    Header: 'Account Name',
+    Header: 'Role Name',
     accessor: 'name',
     width: 80,
   },
@@ -84,7 +84,7 @@ export const spokeAccountsColumns = ({ handleClick }) => [
 
 export const hubAccountColumns = ({ handleClick }) => [
   {
-    Header: 'Account Name',
+    Header: 'Role Name',
     accessor: 'name',
     width: 80,
   },
@@ -170,7 +170,7 @@ export const roleAccessAuthColumns = ({
 export const CIDRBlockColumns = ({ handleClick = null }) => [
   {
     Header: 'CIDR Block',
-    accessor: 'ip',
+    Cell: ({ row }) => row?.original,
   },
   {
     Header: 'Actions',

@@ -21,7 +21,10 @@ export const integrationSSOColumns = ({ handleClick }) => [
         <Button size='mini' onClick={() => handleClick('edit', row?.original)}>
           Edit
         </Button>
-        <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
+        <Button
+          size='mini'
+          onClick={() => handleClick('remove', row?.original)}
+        >
           Remove
         </Button>
       </Bar>

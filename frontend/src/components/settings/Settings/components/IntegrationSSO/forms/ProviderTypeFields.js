@@ -19,7 +19,7 @@ const GoogleFields = ({ register }) => (
     </Form.Field>
     <input
       type='hidden'
-      value='Google'
+      value='google'
       {...register('provider_name', { required: true })}
     />
     <input
@@ -34,11 +34,11 @@ const SAMLFields = ({ register }) => (
   <>
     <Form.Field>
       <label>Metadata URL</label>
-      <input {...register('metadata_url', { required: true })} />
+      <input {...register('MetadataURL', { required: true })} />
     </Form.Field>
     <input
       type='hidden'
-      value='SAML'
+      value='saml'
       {...register('provider_name', { required: true })}
     />
     <input
@@ -85,7 +85,7 @@ const OIDCFields = ({ register }) => (
     </Form.Field>
     <input
       type='hidden'
-      value='OIDC'
+      value='oidc'
       {...register('provider_name', { required: true })}
     />
     <input
@@ -97,7 +97,6 @@ const OIDCFields = ({ register }) => (
 )
 
 export const ProviderTypeFields = ({ type, register }) => {
-
   const [render, setRender] = useState(null)
 
   useEffect(() => {
@@ -110,8 +109,35 @@ export const ProviderTypeFields = ({ type, register }) => {
         return setRender(<OIDCFields register={register} />)
       default:
         return setRender(null)
-    }  
+    }
   }, [type])
 
   return render
 }
+
+// const GoogleFields = {
+//   client_id: '[type]',
+//   client_secret: '[type]',
+//   authorize_scopes: '[type]',
+//   provider_name: '[type]',
+//   provider_type: '[type]'
+// }
+
+// const SAMLFields = {
+//   metadata_url: '[type]',
+//   provider_name: '[type]',
+//   provider_type: '[type]'
+// }
+
+// const OIDCFields = {
+//   client_id: '[type]',
+//   client_secret: '[type]',
+//   attributes_request_method: '[type]',
+//   oidc_issuer: '[type]',
+//   authorize_scopes: '[type]',
+//   token_url: '[type]',
+//   attributes_url: '[type]',
+//   jwks_uri: '[type]',
+//   provider_name: '[type]',
+//   provider_type: '[type]'
+// }

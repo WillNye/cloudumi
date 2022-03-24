@@ -11,7 +11,10 @@ export const IPRestrictionToggle = () => {
 
   const [checked, setChecked] = useState(false)
 
-  useEffect(() => get.do('enabled').then((data) => setChecked(data?.enabled)), [])
+  useEffect(
+    () => get.do('enabled').then((data) => setChecked(data?.enabled)),
+    []
+  )
 
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'
@@ -22,26 +25,10 @@ export const IPRestrictionToggle = () => {
     })
   }
 
-  // const handleHelpModal = (handler) => {}
-
   const isWorking = get?.status !== 'done' || post?.status === 'working'
 
   return (
     <>
-      {/* <Message>
-        <Checkbox
-          size='mini'
-          toggle
-          checked={checked}
-          // disabled={isWorking}
-          name="requestersIpAddress"
-          onChange={handleChange}
-          label={{
-            children:
-              `Restrict brokered credentials to requester's IP address`,
-          }}
-        />
-      </Message> */}
       <Message>
         <Checkbox
           size='mini'

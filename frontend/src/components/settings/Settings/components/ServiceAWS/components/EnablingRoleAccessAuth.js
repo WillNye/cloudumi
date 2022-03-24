@@ -9,7 +9,13 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
 
   const { toast, success } = useToast()
 
-  useEffect(() => get.do().then(onChange), [])
+  useEffect(
+    () =>
+      get.do().then((res) => {
+        onChange(res?.state)
+      }),
+    []
+  )
 
   const handleChange = (event, { checked }) => {
     const action = checked ? 'enable' : 'disable'
