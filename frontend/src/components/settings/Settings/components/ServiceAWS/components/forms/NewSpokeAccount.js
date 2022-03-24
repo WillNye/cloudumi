@@ -20,7 +20,7 @@ export const NewSpokeAccount = ({ closeModal }) => {
 
   return (
     <Segment basic>
-      {!isIneligible ? (
+      {isIneligible ? (
         <p style={{ textAlign: 'center' }}>
           You cannot connect your Spoke Accounts before having a Hub Account
           connected.

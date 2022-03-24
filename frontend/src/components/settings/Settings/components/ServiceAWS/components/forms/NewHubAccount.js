@@ -22,13 +22,13 @@ export const NewHubAccount = ({ closeModal }) => {
     <Segment basic>
       {isIneligible ? (
         <p style={{ textAlign: 'center' }}>
-          INELIGIBLE! You cannot connect your account, please ask to your admin
+          Ineligible. You are unable to connect your account, please ask to your admin
           to help.
         </p>
       ) : (
         <>
           <p style={{ textAlign: 'center' }}>
-            Your hub role is Noq’s entrypoint into your environment. Whenever
+            Your hub role is Noq's entrypoint into your environment. Whenever
             Noq attempts to gather information about your resources, update your
             resources, or broker credentials to your roles, it will first access
             your hub account with an external ID that is unique to your
