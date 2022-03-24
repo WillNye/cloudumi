@@ -920,3 +920,12 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler):
     async def get(self, path: str, include_body: bool = True) -> None:
         self.ctx = self.base_handler.ctx
         await super(AuthenticatedStaticFileHandler, self).get(path, include_body)
+
+
+class AuthenticatedDocAssetsStaticFileHandler(AuthenticatedStaticFileHandler):
+    async def get(self, path: str, include_body: bool = True) -> None:
+        """Doc assets are handled in a special way so they are routed properly when served
+        by the backend.
+        """
+        path = f"docassets/{path}"
+        super(AuthenticatedDocAssetsStaticFileHandler, self).get(path, include_body)
