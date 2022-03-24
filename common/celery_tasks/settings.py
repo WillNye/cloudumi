@@ -20,7 +20,7 @@ def synchronize_cognito_sso(context: dict) -> bool:
         return False
     existing_providers = identity.get_identity_providers(user_pool_id)
     configured_providers = (
-        ModelAdapter(SSOIDPProviders).load_config("secrets.auth").model
+        ModelAdapter(SSOIDPProviders).load_config("secrets.auth", host).model
     )
     client_id = config.get_host_specific_key("aws.cognito_config.client_id", host)
     if existing_providers.google and not configured_providers.google:
@@ -39,15 +39,15 @@ def synchronize_cognito_sso(context: dict) -> bool:
         )
         identity.delete_identity_provider(user_pool_id, existing_providers.oidc)
     identity.upsert_identity_provider(user_pool_id, configured_providers)
-    if configured_providers.google:
+    if configured_providers.google and not existing_providers.google:
         identity.connect_idp_to_app_client(
             user_pool_id, client_id, configured_providers.google
         )
-    if configured_providers.saml:
+    if configured_providers.saml and not existing_providers.saml:
         identity.connect_idp_to_app_client(
             user_pool_id, client_id, configured_providers.saml
         )
-    if configured_providers.oidc:
+    if configured_providers.oidc and not existing_providers.oidc:
         identity.connect_idp_to_app_client(
             user_pool_id, client_id, configured_providers.oidc
         )

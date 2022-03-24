@@ -11,7 +11,7 @@ UPDATED_BY = "NOQ_Automaton"
 class ModelAdapter:
     def __init__(self, pydantic_model_class: BaseModel, updated_by: str = UPDATED_BY):
         self._model_class = pydantic_model_class
-        self._model = BaseModel()
+        self._model = None
         self._model_array = list()
         self._model_content = None
         self._key = None
@@ -165,6 +165,10 @@ class ModelAdapter:
     @property
     def model(self) -> Union[BaseModel, None]:
         """Easy getter"""
+        if self._model is None:
+            raise ValueError(
+                "ModelAdapter is in an invalid state. Please call load_config() first - or make sure data is loaded before using this property."
+            )
         return self._model
 
     @property
@@ -172,7 +176,7 @@ class ModelAdapter:
         """Easy getter"""
         if self._model is None:
             raise ValueError(
-                "Internal model state is None; this indicates improper initialization"
+                "ModelAdapter is in an invalid state. Please call load_config() first - or make sure data is loaded before using this property."
             )
         return self._model.dict()
 

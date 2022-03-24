@@ -111,6 +111,7 @@ class ConfigurationCrudHandler(BaseHandler):
                 success="error",
                 status_code=400,
                 message="Invalid body data received",
+                errors=str(exc).split("\n"),
             )
         else:
             res = WebResponse(
@@ -151,12 +152,22 @@ class ConfigurationCrudHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        deleted = (
-            await ModelAdapter(self._model_class)
-            .load_config(self._config_key, host)
-            .with_object_key(self._identifying_keys)
-            .delete()
-        )
+        deleted = False
+        try:
+            deleted = (
+                await ModelAdapter(self._model_class)
+                .load_config(self._config_key, host)
+                .with_object_key(self._identifying_keys)
+                .delete_key()
+            )
+        except KeyError as exc:
+            log.error(exc)
+            res = WebResponse(
+                success="error",
+                status_code=400,
+                message="Unable to delete data",
+                errors=[f"Unable to find {self._config_key}"],
+            )
 
         res = WebResponse(
             status="success" if deleted else "error",
@@ -287,6 +298,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 success="error",
                 status_code=400,
                 message="Invalid body data received",
+                errors=str(exc).split("\n"),
             )
         else:
             res = WebResponse(
@@ -333,13 +345,23 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time
-        deleted = (
-            await ModelAdapter(self._model_class)
-            .load_config(self._config_key, host)
-            .from_dict(data)
-            .with_object_key(self._identifying_keys)
-            .delete_list()
-        )
+        deleted = False
+        try:
+            deleted = (
+                await ModelAdapter(self._model_class)
+                .load_config(self._config_key, host)
+                .from_dict(data)
+                .with_object_key(self._identifying_keys)
+                .delete_list()
+            )
+        except KeyError as exc:
+            log.error(exc)
+            res = WebResponse(
+                success="error",
+                status_code=400,
+                message="Unable to delete data",
+                errors=[f"Unable to find {self._config_key}"],
+            )
 
         res = WebResponse(
             status="success" if deleted else "error",
