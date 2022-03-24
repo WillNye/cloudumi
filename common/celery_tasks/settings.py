@@ -28,6 +28,7 @@ def synchronize_cognito_sso(context: dict) -> bool:
     configured_providers = (
         ModelAdapter(SSOIDPProviders).load_config("secrets.auth").dict
     )
+    client_id = config.get_host_specific_key("aws.cognito_config.client_id", host)
     for provider in existing_providers:
         if provider.get("ProviderName") not in [
             x.get("ProviderName")
@@ -35,20 +36,33 @@ def synchronize_cognito_sso(context: dict) -> bool:
             for x, _ in configured_providers.get(c, {})
         ]:
             if provider.get("ProviderType") == "Google":
-                identity.delete_identity_provider(
-                    user_pool_id, GoogleOIDCSSOIDPProvider(**provider)
+                provider = GoogleOIDCSSOIDPProvider(**provider)
+                identity.disconnect_idp_from_app_client(
+                    user_pool_id, client_id, provider
                 )
+                identity.delete_identity_provider(user_pool_id, provider)
             elif provider.get("ProviderType") == "Saml":
-                identity.delete_identity_provider(
-                    user_pool_id, SamlOIDCSSOIDPProvider(**provider)
+                provider = SamlOIDCSSOIDPProvider(**provider)
+                identity.disconnect_idp_from_app_client(
+                    user_pool_id, client_id, provider
                 )
+                identity.delete_identity_provider(user_pool_id, provider)
             elif provider.get("ProviderType") == "Oidc":
-                identity.delete_identity_provider(
-                    user_pool_id, OIDCSSOIDPProvider(**provider)
+                provider = OIDCSSOIDPProvider(**provider)
+                identity.disconnect_idp_from_app_client(
+                    user_pool_id, client_id, provider
                 )
-    identity.upsert_identity_provider(
-        user_pool_id, ModelAdapter(SSOIDPProviders).load_config("secrets.auth").model
-    )
+                identity.delete_identity_provider(user_pool_id, provider)
+    noq_providers = ModelAdapter(SSOIDPProviders).load_config("secrets.auth").model
+    identity.upsert_identity_provider(user_pool_id, noq_providers)
+    if noq_providers.google:
+        identity.connect_idp_to_app_client(
+            user_pool_id, client_id, noq_providers.google
+        )
+    if noq_providers.saml:
+        identity.connect_idp_to_app_client(user_pool_id, client_id, noq_providers.saml)
+    if noq_providers.oidc:
+        identity.connect_idp_to_app_client(user_pool_id, client_id, noq_providers.oidc)
     return True
 
 
