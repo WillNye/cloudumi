@@ -1,5 +1,5 @@
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
-# load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_python//python:packaging.bzl", "py_package", "py_wheel")
 
@@ -7,6 +7,33 @@ exports_files([
     "wrapper.py",
     "test_configuration.yaml",
 ])
+
+TEST_INT_DEPS = [
+    "//api:lib",
+    "//common:lib",
+    "//common/celery_tasks:lib",
+    "//common/config:lib",
+    "//common/exceptions:lib",
+    "//identity:lib",
+    "//plugins/metrics:lib",
+    "//util/tests/fixtures:lib",
+]
+
+TEST_EXT_DEPS = [
+    requirement("asgiref"),
+    requirement("atlassian-python-api"),
+    requirement("mock"),
+    requirement("moto"),
+    requirement("pytest"),
+    requirement("pytest_mock"),
+    requirement("tornado"),
+]
+
+py_library(
+    name = "test_dependencies_lib",
+    srcs = TEST_EXT_DEPS + TEST_INT_DEPS,
+    visibility = ["//visibility:public"],
+)
 
 filegroup(
     name = "configs",
@@ -33,7 +60,8 @@ py_library(
         "//plugins/metrics:lib",
         # "//common/tests:lib",
         # requirement("boto3"),
-        # requirement("pytest"),
+        requirement("pytest"),
+        requirement("pytest_mock"),
         # requirement("redislite"),
         # requirement("mock"),
         # requirement("mockredis"),

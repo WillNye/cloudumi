@@ -1,27 +1,14 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 load("//util/tests:defs.bzl", "pytest_test")
 
-INT_DEPS = [
-    "//common:lib",
-    "//common/config:lib",
-    "//common/exceptions:lib",
-    "//identity:lib",
-    "//plugins/metrics:lib",
-    "//util/tests/fixtures:lib",
-]
-
-EXT_DEPS = [
-    requirement("asgiref"),
-    requirement("tornado"),
-]
-
 pytest_test(
     name = "test_config",
     srcs = [
         "test_config.py",
     ],
     deps = [
-    ] + INT_DEPS + EXT_DEPS,
+        "//util/tests:test_dependencies_lib",
+    ],
 )
 
 pytest_test(
@@ -30,7 +17,8 @@ pytest_test(
         "test_account.py",
     ],
     deps = [
-    ] + INT_DEPS + EXT_DEPS,
+        "//util/tests:test_dependencies_lib",
+    ],
 )
 
 pytest_test(
@@ -39,7 +27,8 @@ pytest_test(
         "test_role_access.py",
     ],
     deps = [
-    ] + INT_DEPS + EXT_DEPS,
+        "//util/tests:test_dependencies_lib",
+    ],
 )
 
 pytest_test(
@@ -48,5 +37,6 @@ pytest_test(
         "test_ip_restrictions.py",
     ],
     deps = [
-    ] + INT_DEPS + EXT_DEPS,
+        "//util/tests:test_dependencies_lib",
+    ],
 )

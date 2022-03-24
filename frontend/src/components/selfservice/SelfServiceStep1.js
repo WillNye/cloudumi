@@ -229,6 +229,10 @@ class SelfServiceStep1 extends Component {
                         </Header.Subheader>
                       </Header>
                       <SemanticDatepicker
+                        filterDate={(date) => {
+                          const now = new Date()
+                          return date >= now
+                        }}
                         onChange={this.props.handleSetPolicyExpiration.bind(
                           this
                         )}

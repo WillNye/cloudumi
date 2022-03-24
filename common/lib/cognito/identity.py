@@ -255,6 +255,29 @@ def delete_identity_provider(
     return True
 
 
+def __get_group_assignments(user_pool_id: str, user: CognitoUser) -> List[CognitoGroup]:
+    """Get the group assignments for a user pool.
+
+    :param user_pool_id: the user pool ID
+    :param user: the user for which to extract group assignments
+    :return: a list of dictionaries representing the group assignments
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    groups = list()
+    response = client.admin_list_groups_for_user(
+        Username=user.Username, UserPoolId=user_pool_id
+    )
+    groups.extend([CognitoGroup(**x) for x in response.get("Groups", [])])
+    next_token = response.get("NextToken")
+    while next_token:
+        response = client.admin_list_groups_for_user(
+            Username=user.Username, UserPoolId=user_pool_id
+        )
+        groups.extend([CognitoGroup(**x) for x in response.get("Groups", [])])
+        next_token = response.get("NextToken")
+    return groups
+
+
 def get_identity_users(user_pool_id: str) -> List[CognitoUser]:
     """Get Cognito users and format as pydantic CognitoUser objects.
 
@@ -274,7 +297,12 @@ def get_identity_users(user_pool_id: str) -> List[CognitoUser]:
         response = client.list_users(UserPoolId=user_pool_id, NextToken=next_token)
         users.extend(response.get("Users", []))
         next_token = response.get("NextToken")
-    return [CognitoUser(**x) for x in users]
+    cognito_users = [CognitoUser(**x) for x in users]
+    for cognito_user in cognito_users:
+        cognito_user.Groups = [
+            x.GroupName for x in __get_group_assignments(user_pool_id, cognito_user)
+        ]
+    return cognito_users
 
 
 def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
@@ -308,6 +336,11 @@ def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
         DesiredDeliveryMediums=delivery_mediums,
     )
     user_update = CognitoUser(**response.get("User", {}))
+    if user.Groups:
+        LOG.info(f"Adding groups {user.Groups} to user {user.Username}")
+        assign_identity_user(
+            user_pool_id, user_update, [CognitoGroup(GroupName=x) for x in user.Groups]
+        )
     return user_update
 
 
@@ -324,6 +357,44 @@ def delete_identity_user(user_pool_id: str, user: CognitoUser) -> bool:
     client = boto3.client("cognito-idp", region_name=config.region)
     LOG.info(f"{__name__} using boto3 client in region {config.region}")
     client.admin_delete_user(UserPoolId=user_pool_id, Username=user.Username)
+    return True
+
+
+def assign_identity_user(
+    user_pool_id: str, user: CognitoUser, groups: List[CognitoGroup]
+) -> bool:
+    """Assign a user to a group.
+
+    :param user_pool_id: the id of the user pool from which to delete the user
+    :param user: a CognitoUser object that describes the user
+    :param groups: a list of CognitoGroup objects that describe the groups to which the user should be added
+    :return: true if successful
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
+    for group in groups:
+        try:
+            client.admin_add_user_to_group(
+                UserPoolId=user_pool_id,
+                Username=user.Username,
+                GroupName=group.GroupName,
+            )
+        except client.exceptions.UserNotFoundException:
+            LOG.warning(f"User {group.Username} not found in user pool {user_pool_id}.")
+            return False
+        except client.exceptions.ResourceNotFoundException:
+            LOG.warning(
+                f"Group {group.GroupName} not found in user pool {user_pool_id}."
+            )
+            return False
+        except client.exceptions.ResourceConflictException:
+            LOG.warning(f"User {group.Username} already in group {group.GroupName}.")
+            return False
+        except Exception:
+            LOG.exception(
+                f"Error assigning user {group.Username} to group {group.GroupName}"
+            )
+            return False
     return True
 
 
