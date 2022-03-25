@@ -649,6 +649,11 @@ secrets:
     oidc:
       client_id: {cognito_client_id}
       client_secret: {cognito_user_pool_client_secret}
+  cognito:
+    config:
+        user_pool_id: {user_pool_id}
+        user_pool_client_id: {cognito_client_id}
+        user_pool_client_secret: {cognito_user_pool_client_secret}
 get_user_by_oidc_settings:
   client_scopes:
     - email
@@ -667,10 +672,6 @@ auth:
   force_redirect_to_identity_provider: false
   # get_user_by_password: true
   # get_user_by_cognito: true
-  cognito_config:
-    user_pool_id: {user_pool_id}
-    user_pool_client_id: {cognito_client_id}
-    user_pool_client_secret: {cognito_user_pool_client_secret}
 """
 
         # Store tenant information in DynamoDB

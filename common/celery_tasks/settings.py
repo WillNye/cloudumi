@@ -13,7 +13,10 @@ def synchronize_cognito_sso(context: dict) -> bool:
     host = context.get("host")
     static_config = config.get_tenant_static_config_from_dynamo(host)
     user_pool_id = (
-        static_config.get("auth", {}).get("cognito_config", {}).get("user_pool_id")
+        static_config.get("secrets", {})
+        .get("cognito", {})
+        .get("config", {})
+        .get("user_pool_id")
     )
     if not user_pool_id:
         LOG.error("Cognito user pool id not configured")
@@ -22,7 +25,9 @@ def synchronize_cognito_sso(context: dict) -> bool:
     configured_providers = (
         ModelAdapter(SSOIDPProviders).load_config("secrets.auth", host).model
     )
-    client_id = config.get_host_specific_key("aws.cognito_config.client_id", host)
+    client_id = config.get_host_specific_key(
+        "secrets.cognito.config.user_pool_client_id", host
+    )
     if existing_providers.google and not configured_providers.google:
         identity.disconnect_idp_from_app_client(
             user_pool_id, client_id, existing_providers.google
@@ -60,14 +65,19 @@ def synchronize_cognito_users(context: dict) -> bool:
     host = context.get("host")
     static_config = config.get_tenant_static_config_from_dynamo(host)
     user_pool_id = (
-        static_config.get("auth", {}).get("cognito_config", {}).get("user_pool_id")
+        static_config.get("secrets", {})
+        .get("cognito", {})
+        .get("config", {})
+        .get("user_pool_id")
     )
     if not user_pool_id:
         LOG.error("Cognito user pool id not configured")
         return False
     cognito_users = identity.get_identity_users(user_pool_id)
     noq_users = (
-        ModelAdapter(CognitoUser).load_config("aws.cognito.accounts.users", host).models
+        ModelAdapter(CognitoUser)
+        .load_config("secrets.cognito.accounts.users", host)
+        .models
     )
     delete_users = [x for x in cognito_users if x not in [y for y in noq_users]]
     result = False not in [
@@ -94,7 +104,10 @@ def synchronize_cognito_groups(context: dict) -> bool:
     host = context.get("host")
     static_config = config.get_tenant_static_config_from_dynamo(host)
     user_pool_id = (
-        static_config.get("auth", {}).get("cognito_config", {}).get("user_pool_id")
+        static_config.get("secrets", {})
+        .get("cognito", {})
+        .get("config", {})
+        .get("user_pool_id")
     )
     if not user_pool_id:
         LOG.error("Cognito user pool id not configured")
@@ -102,7 +115,7 @@ def synchronize_cognito_groups(context: dict) -> bool:
     cognito_groups = identity.get_identity_groups(user_pool_id)
     noq_groups = (
         ModelAdapter(CognitoGroup)
-        .load_config("aws.cognito.accounts.groups", host)
+        .load_config("secrets.cognito.accounts.groups", host)
         .models
     )
     delete_groups = [x for x in cognito_groups if x not in [y for y in noq_groups]]
