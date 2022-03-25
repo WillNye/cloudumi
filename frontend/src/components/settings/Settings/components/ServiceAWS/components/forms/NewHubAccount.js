@@ -22,8 +22,8 @@ export const NewHubAccount = ({ closeModal }) => {
     <Segment basic>
       {isIneligible ? (
         <p style={{ textAlign: 'center' }}>
-          Ineligible. You are unable to connect your account, please ask to your admin
-          to help.
+          Ineligible. You are unable to connect your account, please ask to your
+          admin to help.
         </p>
       ) : (
         <>

@@ -2129,6 +2129,7 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
+          pattern: "^Google$"
     SamlOIDCSSOIDPProvider:
       type: object
       required:
@@ -2145,6 +2146,7 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
+          pattern: "^SAML$"
     OIDCSSOIDPProvider:
       type: object
       required:
@@ -2192,6 +2194,7 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
+          pattern: "^OIDC$"
     SSOIDPProviders:
       type: object
       properties:
@@ -2283,3 +2286,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CognitoGroup"
+    ChallengeUrl:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether CLI authentication via Challenge URL is enabled

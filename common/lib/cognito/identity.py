@@ -17,7 +17,7 @@ LOG = config.get_logger()
 
 def __get_google_provider(
     user_pool_id: str, identity_providers: Dict[str, List[Dict[str, Any]]]
-) -> GoogleOIDCSSOIDPProvider:
+) -> Union[GoogleOIDCSSOIDPProvider, None]:
     client = boto3.client("cognito-idp", region_name=config.region)
     google_provider = None
     google_provider_names = [
@@ -46,7 +46,7 @@ def __get_google_provider(
 
 def __get_saml_provider(
     user_pool_id: str, identity_providers: Dict[str, List[Dict[str, Any]]]
-) -> SamlOIDCSSOIDPProvider:
+) -> Union[SamlOIDCSSOIDPProvider, None]:
     client = boto3.client("cognito-idp", region_name=config.region)
     saml_provider = None
     saml_provider_names = [
@@ -71,7 +71,7 @@ def __get_saml_provider(
 
 def __get_oidc_provider(
     user_pool_id: str, identity_providers: Dict[str, List[Dict[str, Any]]]
-) -> OIDCSSOIDPProvider:
+) -> Union[OIDCSSOIDPProvider, None]:
     client = boto3.client("cognito-idp", region_name=config.region)
     oidc_provider = None
     oidc_provider_names = [
