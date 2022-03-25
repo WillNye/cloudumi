@@ -2291,4 +2291,4 @@ components:
       properties:
         enabled:
           type: boolean
-          description: Whether Weep can be used to automate authentication to the system
+          description: Whether CLI authentication via Challenge URL is enabled
