@@ -142,7 +142,7 @@ class TestIdentity(TestCase):
         assert not providers.saml
 
     def test_connect_idp_to_app_client(self):
-        client = boto3.client("cognito-idp")
+        client = boto3.client("cognito-idp", region_name="us-east-1")
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
             provider_name="SamlIDP",
@@ -165,7 +165,7 @@ class TestIdentity(TestCase):
         ) == ["SamlIDP"]
 
     def test_disconnect_idp_from_app_client(self):
-        client = boto3.client("cognito-idp")
+        client = boto3.client("cognito-idp", region_name="us-east-1")
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
             provider_name="SamlIDP",
