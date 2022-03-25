@@ -2286,3 +2286,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CognitoGroup"
+    ChallengeUrl:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether Weep can be used to automate authentication to the system
