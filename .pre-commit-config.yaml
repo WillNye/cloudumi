@@ -89,6 +89,7 @@ repos:
             "--ignore-path",
             "./frontend/.eslintignore",
           ]
+        exclude: "^api/docs"
   - repo: local
     hooks:
       - id: python-bandit-vulnerability-check
