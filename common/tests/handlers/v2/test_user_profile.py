@@ -44,7 +44,7 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
             {
                 "site_config": {
                     "google_analytics": {"tracking_id": None, "options": {}},
-                    "documentation_url": "https://hawkins.gitbook.io/consoleme/",
+                    "documentation_url": "/docs",
                     "support_contact": None,
                     "temp_policy_support": True,
                     "support_chat_url": "https://communityinviter.com/apps/noqcommunity/noq",
