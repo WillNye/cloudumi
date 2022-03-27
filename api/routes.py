@@ -1,5 +1,7 @@
 import os
 
+from common.handlers.base import AuthenticatedStaticFileHandler
+
 """Web routes."""
 import pkg_resources
 import sentry_sdk
@@ -128,6 +130,10 @@ def make_app(jwt_validator=None):
 
     path = os.getenv("FRONTEND_PATH") or config.get(
         "_global_.web.path", pkg_resources.resource_filename("api", "templates")
+    )
+
+    docs_path = os.getenv("DOCS_PATH") or config.get(
+        "_global_.docs.path", pkg_resources.resource_filename("api", "docs")
     )
 
     routes = [
@@ -284,6 +290,11 @@ def make_app(jwt_validator=None):
             ChallengeUrlConfigurationCrudHandler,
         ),
         (r"/api/v3/downloads/weep", WeepDownloadHandler),
+        (
+            r"/docs/?(.*)",
+            AuthenticatedStaticFileHandler,
+            {"path": docs_path, "default_filename": "index.html"},
+        ),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
         # (r"/api/v3/identities/users_page_config", IdentityUsersPageConfigHandler),

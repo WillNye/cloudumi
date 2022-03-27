@@ -38,13 +38,13 @@ class UserProfileHandler(BaseAPIV1Handler):
             "documentation_url": config.get_host_specific_key(
                 "documentation_page",
                 host,
-                "https://hawkins.gitbook.io/consoleme/",
+                "/docs",
             ),
             "support_contact": config.get_host_specific_key("support_contact", host),
             "support_chat_url": config.get_host_specific_key(
                 "support_chat_url",
                 host,
-                "https://discord.com/invite/nQVpNGGkYu",
+                "https://communityinviter.com/apps/noqcommunity/noq",
             ),
             "security_logo": config.get_host_specific_key("security_logo.image", host),
             "security_url": config.get_host_specific_key("security_logo.url", host),
