@@ -1633,6 +1633,13 @@ async def populate_cross_account_resource_policy_for_change(
                                         action.lower()
                                         in supported_trust_policy_permissions
                                     ):
+                                        # Unfortunately, trust policies actions are case sensitive :-(
+                                        action = action.replace(
+                                            "assumerole", "AssumeRole"
+                                        )
+                                        action = action.replace(
+                                            "tagsession", "TagSession"
+                                        )
                                         actions.append(action)
                                 else:
                                     actions.append(action)

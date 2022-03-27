@@ -325,6 +325,14 @@ class InlinePolicyChangeComponent extends Component {
       </Grid>
     ) : null
 
+    let expirationDate = null
+    if (change.expiration_date) {
+      expirationDate = DateTime.fromFormat(
+        `${change.expiration_date}`,
+        'yyyyMMdd'
+      ).toJSDate()
+    }
+
     return (
       <Segment>
         <Dimmer active={isLoading} inverted>
@@ -334,7 +342,8 @@ class InlinePolicyChangeComponent extends Component {
         <Form.Field>
           <Header as='h1'>
             <Header.Subheader>
-              Update Policy expiration date for requested permissions
+              Set or update the expiration date for the requested permissions.
+              If no date is set, the permissions will not expire.
             </Header.Subheader>
           </Header>
           <SemanticDatepicker
@@ -344,10 +353,7 @@ class InlinePolicyChangeComponent extends Component {
             }}
             onChange={this.handleSetPolicyExpiration}
             type='basic'
-            value={DateTime.fromFormat(
-              `${change.expiration_date}`,
-              'yyyyMMdd'
-            ).toJSDate()}
+            value={expirationDate}
             compact
           />
         </Form.Field>
