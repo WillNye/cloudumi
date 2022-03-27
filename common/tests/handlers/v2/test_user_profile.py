@@ -47,7 +47,7 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
                     "documentation_url": "https://hawkins.gitbook.io/consoleme/",
                     "support_contact": None,
                     "temp_policy_support": True,
-                    "support_chat_url": "https://discord.com/invite/nQVpNGGkYu",
+                    "support_chat_url": "https://communityinviter.com/apps/noqcommunity/noq",
                     "security_logo": None,
                     "security_url": None,
                     "landing_url": None,
