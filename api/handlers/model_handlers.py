@@ -1,3 +1,4 @@
+import sentry_sdk
 import tornado.escape
 
 from common.config import config
@@ -53,16 +54,34 @@ class ConfigurationCrudHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        get_data = (
-            ModelAdapter(self._model_class).load_config(self._config_key, host).dict
-        )
+        try:
+            get_data = (
+                ModelAdapter(self._model_class).load_config(self._config_key, host).dict
+            )
+            res = WebResponse(
+                success="success" if get_data else "failure",
+                status_code=200,
+                message="Success" if get_data else "Unable to retrieve data",
+                count=1 if get_data else 0,
+            )
+        except ValueError:
+            get_data = None
+            res = WebResponse(
+                success="failure",
+                status_code=404,
+                message=f"Desired entry {self._config_key} not found",
+                count=0,
+            )
+        except Exception as exc:
+            get_data = None
+            res = WebResponse(
+                success="failure",
+                status_code=500,
+                message=f"Something went wrong {str(exc)}",
+                count=0,
+            )
+            sentry_sdk.capture_exception()
         # hub_account_data is a special structure, so we unroll it
-        res = WebResponse(
-            success="success" if get_data else "failure",
-            status_code=200,
-            message="Success" if get_data else "Unable to retrieve data",
-            count=1 if get_data else 0,
-        )
         if get_data:
             res.data = get_data
 
@@ -113,6 +132,7 @@ class ConfigurationCrudHandler(BaseHandler):
                 message="Invalid body data received",
                 errors=str(exc).split("\n"),
             )
+            sentry_sdk.capture_exception()
         else:
             res = WebResponse(
                 status="success",
@@ -300,6 +320,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 message="Invalid body data received",
                 errors=str(exc).split("\n"),
             )
+            sentry_sdk.capture_exception()
         else:
             res = WebResponse(
                 status="success",
