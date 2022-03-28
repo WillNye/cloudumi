@@ -1,3 +1,4 @@
+import sentry_sdk
 import tornado.escape
 
 from common.config import config
@@ -79,6 +80,7 @@ class ConfigurationCrudHandler(BaseHandler):
                 message=f"Something went wrong {str(exc)}",
                 count=0,
             )
+            sentry_sdk.capture_exception()
         # hub_account_data is a special structure, so we unroll it
         if get_data:
             res.data = get_data
@@ -130,6 +132,7 @@ class ConfigurationCrudHandler(BaseHandler):
                 message="Invalid body data received",
                 errors=str(exc).split("\n"),
             )
+            sentry_sdk.capture_exception()
         else:
             res = WebResponse(
                 status="success",
@@ -317,6 +320,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 message="Invalid body data received",
                 errors=str(exc).split("\n"),
             )
+            sentry_sdk.capture_exception()
         else:
             res = WebResponse(
                 status="success",
