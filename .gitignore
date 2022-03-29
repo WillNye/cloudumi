@@ -157,3 +157,5 @@ api/templates
 cloudumi_tornado.log.*
 
 deploy/infrastructure/.tfsec
+deploy/infrastructure/modules/services/dynamo/.tfsec
+deploy/infrastructure/modules/services/networking/.tfsec
