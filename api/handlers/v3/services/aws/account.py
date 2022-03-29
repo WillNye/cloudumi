@@ -2,6 +2,7 @@ from api.handlers.model_handlers import (
     ConfigurationCrudHandler,
     MultiItemConfigurationCrudHandler,
 )
+from common.celery_tasks.auth import synchronize_account_ids_to_name
 from common.models import HubAccount, OrgAccount, SpokeAccount
 
 
@@ -13,7 +14,7 @@ class HubAccountConfigurationCrudHandler(ConfigurationCrudHandler):
 class SpokeAccountConfigurationCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = SpokeAccount
     _config_key = "spoke_accounts"
-    # TODO: might need a celery task to add alias to `account_ids_to_name`
+    _triggers = [synchronize_account_ids_to_name]
 
 
 class OrgAccountConfigurationCrudHandler(MultiItemConfigurationCrudHandler):
