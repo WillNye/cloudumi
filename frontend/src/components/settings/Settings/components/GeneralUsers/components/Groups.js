@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
@@ -14,6 +14,8 @@ import { NewGroup } from '../forms/NewGroup'
 export const Groups = () => {
   const { get, post, remove } = useApi('auth/cognito/groups')
 
+  const [defaultValues, setDefaultValues] = useState()
+
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add Group')
@@ -23,21 +25,29 @@ export const Groups = () => {
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do({}, `${rowValues?.name}/${rowValues?.account_id}`)
+        .do({ GroupName: rowValues?.GroupName })
         .then(() => {
           success('Group removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))
     }
+    if (action === 'edit') {
+      delete rowValues.RoleArn
+      setDefaultValues(rowValues)
+      openModal()
+    }
   }
 
   const handleFinish = () => {
-    success('Organization created successfully!')
+    success('Group created successfully!')
     get.do()
   }
 
-  const handleClose = post.reset
+  const handleClose = () => {
+    setDefaultValues(null)
+    post.reset()
+  }
 
   const columns = groupColumns({ handleClick })
 
@@ -79,7 +89,11 @@ export const Groups = () => {
       </DatatableWrapper>
 
       <ModalComponent onClose={handleClose} hideConfirm>
-        <NewGroup closeModal={closeModal} onFinish={handleFinish} />
+        <NewGroup
+          closeModal={closeModal}
+          onFinish={handleFinish}
+          defaultValues={defaultValues}
+        />
       </ModalComponent>
     </>
   )

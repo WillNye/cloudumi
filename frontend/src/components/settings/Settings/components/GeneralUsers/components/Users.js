@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
@@ -14,6 +14,8 @@ import { NewUser } from '../forms/NewUser'
 export const Users = () => {
   const { get, post, remove } = useApi('auth/cognito/users')
 
+  const [defaultValues, setDefaultValues] = useState()
+
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add User')
@@ -23,21 +25,28 @@ export const Users = () => {
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do({}, `${rowValues?.name}/${rowValues?.account_id}`)
+        .do({ Username: rowValues?.Username })
         .then(() => {
           success('User removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))
     }
+    if (action === 'edit') {
+      setDefaultValues(rowValues)
+      openModal()
+    }
   }
 
   const handleFinish = () => {
-    success('Organization created successfully!')
+    success('User created successfully!')
     get.do()
   }
 
-  const handleClose = post.reset
+  const handleClose = () => {
+    setDefaultValues(null)
+    post.reset()
+  }
 
   const columns = userColumns({ handleClick })
 
@@ -79,7 +88,11 @@ export const Users = () => {
       </DatatableWrapper>
 
       <ModalComponent onClose={handleClose} hideConfirm>
-        <NewUser closeModal={closeModal} onFinish={handleFinish} />
+        <NewUser
+          closeModal={closeModal}
+          onFinish={handleFinish}
+          defaultValues={defaultValues}
+        />
       </ModalComponent>
     </>
   )

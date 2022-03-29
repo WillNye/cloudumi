@@ -1,3 +1,4 @@
+import { Bar } from 'lib/Misc'
 import React from 'react'
 
 import { Button } from 'semantic-ui-react'
@@ -9,12 +10,20 @@ export const userColumns = ({ handleClick }) => [
   },
   {
     Header: 'Actions',
-    width: 80,
+    width: 120,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
-        Remove
-      </Button>
+      <Bar>
+        <Button size='mini' onClick={() => handleClick('edit', row?.original)}>
+          Edit
+        </Button>
+        <Button
+          size='mini'
+          onClick={() => handleClick('remove', row?.original)}
+        >
+          Remove
+        </Button>
+      </Bar>
     ),
   },
 ]
@@ -30,12 +39,20 @@ export const groupColumns = ({ handleClick }) => [
   },
   {
     Header: 'Actions',
-    width: 80,
+    width: 120,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
-        Remove
-      </Button>
+      <Bar>
+        <Button size='mini' onClick={() => handleClick('edit', row?.original)}>
+          Edit
+        </Button>
+        <Button
+          size='mini'
+          onClick={() => handleClick('remove', row?.original)}
+        >
+          Remove
+        </Button>
+      </Bar>
     ),
   },
 ]
