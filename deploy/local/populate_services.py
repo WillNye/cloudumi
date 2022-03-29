@@ -34,8 +34,7 @@ spoke_accounts:
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
     master_for_account: false
 org_accounts:
-  test_org:
-    org_id: test_org
+  - org_id: test_org
     account_id: 123456789
     account_name: test_account
     owner: user
