@@ -24,7 +24,7 @@ export const HubAccount = () => {
       remove
         .do({ account_id: rowValues?.account_id })
         .then(() => {
-          success('Hub Account REMOVED')
+          success('Hub Account removed')
           get.do()
         })
         .catch(() => error(str.toastErrorMsg))

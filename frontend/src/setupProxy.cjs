@@ -34,4 +34,10 @@ module.exports = function (app) {
       changeOrigin: false,
     })
   )
+  app.use(
+    proxy('/docs', {
+      target: 'http://localhost:8092',
+      changeOrigin: false,
+    })
+  )
 }

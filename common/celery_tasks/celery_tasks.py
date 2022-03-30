@@ -1096,6 +1096,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                     account_id, role.get("RoleName"), client, host
                 )
                 async_to_sync(aws.cloudaux_to_aws)(role)
+
             role_entry = {
                 "arn": role.get("Arn"),
                 "host": host,

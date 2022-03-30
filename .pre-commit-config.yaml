@@ -43,7 +43,7 @@ repos:
         args: ["--profile", "black"]
 
   - repo: https://github.com/ambv/black
-    rev: 22.1.0
+    rev: 22.3.0
     hooks:
       - id: black
         language_version: python3.8
@@ -89,6 +89,7 @@ repos:
             "--ignore-path",
             "./frontend/.eslintignore",
           ]
+        exclude: "^api/docs"
   - repo: local
     hooks:
       - id: python-bandit-vulnerability-check

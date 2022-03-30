@@ -1760,6 +1760,8 @@ components:
               type: object
             change_id:
               type: string
+            expiration_date:
+              type: integer
     ApplyChangeModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
@@ -2139,6 +2141,7 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
+          pattern: "^Google$"
     SamlOIDCSSOIDPProvider:
       type: object
       required:
@@ -2155,6 +2158,7 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
+          pattern: "^SAML$"
     OIDCSSOIDPProvider:
       type: object
       required:
@@ -2202,6 +2206,7 @@ components:
         provider_type:
           type: string
           description: The identity provider type.
+          pattern: "^OIDC$"
     SSOIDPProviders:
       type: object
       properties:
@@ -2250,6 +2255,12 @@ components:
                   - EMAIL
               AttributeName:
                 type: string
+        Groups:
+          type: array
+          description: assigns Cognito group memberships to user account; these groups *must* exist before they can be assigned
+          items:
+            type: string
+            description: CognitoGroup by GroupName - must match with an existing group in the host / tenant
         UserStatus:
           type: string
           description: Can be UNCONFIRMED, CONFIRMED, ARCHIVED, COMPROMISED, UNKNOWN, RESET_REQUIRED, FORCE_CHANGE_PASSWORD
@@ -2287,3 +2298,18 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CognitoGroup"
+    ChallengeUrl:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether CLI authentication via Challenge URL is enabled
+    SlackIntegration:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the slack webhook is enabled
+        webhook_url:
+          type: string
+          description: The slack webhook URL to configure for the callback

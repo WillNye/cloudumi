@@ -1,0 +1,13 @@
+TBD
+
+TODO:
+Walk user through AWS Console Login experience, shortcuts, and 1-click-resource access
+Feature Request: Default regions per account
+Walk the user through a cross-account permission request, and show cross-account policy generation
+Show low-risk Auto-approval process
+This will be a checkbox in our configuration
+Add users, or connect your federated identity provider (most companies want this)
+User can configure OAuth2 and SAML-compatible identity providers, such as Okta, Google, Auth0, Azure AD, etc.
+Tag your roles with the users / groups that should have access to role credentials via Noq
+Users can use the Self-Service wizard to update role tags
+How does Challenge URL Authentication work under the hood?
