@@ -3,8 +3,9 @@ import tempfile
 from unittest import TestCase
 
 import pytest
-import yaml
 from asgiref.sync import async_to_sync
+
+from common.lib.yaml import yaml
 
 
 @pytest.mark.usefixtures("aws_credentials")

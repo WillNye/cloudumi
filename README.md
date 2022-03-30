@@ -108,13 +108,13 @@ To setup the test environment, make sure you have `docker-compose` accessible in
   127.0.0.1 cloudumi-dynamodb
   127.0.0.1 cloudumi-redis
 
-- Launch dependency services: `bazelisk run //deploy/local/deps-only`
+- Launch dependency services: `bazelisk run //deploy/local:deps-only`
 - `bazelisk run //api:bin`: to run the API in the local environment
 - `bazelisk run //common/celery_tasks:bin`: to run the Celery workers in the local environment
 
 ## Container environment run
 
-- Launch all services: `bazelisk run //deploy/local/containers-dev`
+- Launch all services: `bazelisk run //deploy/local:containers-dev`
 
 ### OR:
 
