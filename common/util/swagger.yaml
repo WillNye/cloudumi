@@ -1235,6 +1235,10 @@ components:
               pattern: "managed_policy"
             action:
               $ref: "#/components/schemas/Action"
+            expiration_date:
+              type: integer
+              example: 20210905
+              description: Date to expire requested policy, in the format of YYYYmmdd
     ManagedPolicyResourceChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
