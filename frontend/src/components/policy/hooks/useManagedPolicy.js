@@ -22,6 +22,7 @@ const useManagedPolicy = () => {
     arn,
     adminAutoApprove,
     justification,
+    expirationDate,
   }) => {
     const requestV2 = {
       justification,
@@ -36,6 +37,7 @@ const useManagedPolicy = () => {
             arn: state.managedPolicyArn,
             change_type: 'managed_policy',
             action: state.actionType,
+            expiration_date: expirationDate,
           },
         ],
       },

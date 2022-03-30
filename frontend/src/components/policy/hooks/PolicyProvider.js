@@ -93,6 +93,8 @@ export const PolicyProvider = ({ children }) => {
     dispatch({ type: 'SET_ADMIN_AUTO_APPROVE', approve })
   const setTogglePolicyModal = (toggle) =>
     dispatch({ type: 'TOGGLE_POLICY_MODAL', toggle })
+  const setShowExpirationDate = (visible) =>
+    dispatch({ type: 'SHOW_SET_EXPIRATION_DATE', visible })
 
   const handleDeleteRole = async () => {
     const { serviceType, accountID, resourceName } = state.params
@@ -119,6 +121,7 @@ export const PolicyProvider = ({ children }) => {
         setIsSuccess,
         setTogglePolicyModal,
         setModalWithAdminAutoApprove,
+        setShowExpirationDate,
         handleDeleteRole,
         sendRequestV2,
       }}

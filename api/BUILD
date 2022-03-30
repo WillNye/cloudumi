@@ -21,6 +21,13 @@ filegroup(
 #     ])
 # )
 
+filegroup(
+    name = "docs_sources",
+    srcs = glob([
+        "docs/**/*",
+    ])
+)
+
 INT_DEPS = [
     "//api/handlers:lib",
     "//common/celery_tasks:lib",
@@ -128,6 +135,7 @@ py_binary(
     data = [
         "//configs/development_account:configs",
         "//frontend:build",
+        ":docs_sources",
     ],
     srcs_version = "PY3",
     srcs = [

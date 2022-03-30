@@ -3,7 +3,11 @@ import { usePolicyContext } from './PolicyProvider'
 import { initialState, reducer } from './inlinePolicyReducer'
 
 const useInlinePolicy = () => {
-  const { resource = {}, sendRequestV2 } = usePolicyContext()
+  const {
+    resource = {},
+    sendRequestV2,
+    showExpirationDate,
+  } = usePolicyContext()
   const [state, dispatch] = useReducer(reducer, initialState)
 
   useEffect(() => {
@@ -14,6 +18,7 @@ const useInlinePolicy = () => {
     arn,
     adminAutoApprove,
     justification,
+    expirationDate,
   }) => {
     return sendRequestV2({
       justification,
@@ -32,6 +37,7 @@ const useInlinePolicy = () => {
             policy: {
               policy_document: state.newPolicy.PolicyDocument,
             },
+            expiration_date: expirationDate,
           },
         ],
       },
@@ -41,6 +47,7 @@ const useInlinePolicy = () => {
   return {
     ...state,
     arn: resource?.arn,
+    showExpirationDate,
     setInlinePolicies: (policies) =>
       dispatch({ type: 'SET_POLICIES', policies }),
     setIsNewPolicy: useCallback(

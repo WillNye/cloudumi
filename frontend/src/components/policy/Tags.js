@@ -140,7 +140,7 @@ const Tags = () => {
           />
         </Button.Group>
       </Form>
-      <JustificationModal handleSubmit={handleTagSave} />
+      <JustificationModal handleSubmit={handleTagSave} showExpirationDate />
     </>
   )
 }
