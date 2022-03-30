@@ -15,6 +15,7 @@ const InlinePolicy = () => {
     deleteInlinePolicy,
     setIsNewPolicy,
     handleInlinePolicySubmit,
+    showExpirationDate,
   } = useInlinePolicy()
 
   const [activeIndex, setActiveIndex] = useState([])
@@ -119,7 +120,10 @@ const InlinePolicy = () => {
         panels={panels}
         styled
       />
-      <JustificationModal handleSubmit={handleInlinePolicySubmit} />
+      <JustificationModal
+        handleSubmit={handleInlinePolicySubmit}
+        showExpirationDate={showExpirationDate}
+      />
     </>
   )
 }

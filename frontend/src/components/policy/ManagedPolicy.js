@@ -30,6 +30,7 @@ const ManagedPolicy = () => {
 
   const [availableManagedPolicies, setAvailableManagedPolicies] = useState([])
   const [selected, setSelected] = useState(null)
+  const [showExpirationDate, setShowExpirationDate] = useState(true)
   const [attachedManagedPolicyDetails, setAttachedManagedPolicyDetails] =
     useState(null)
   const editorTheme = getLocalStorageSettings('editorTheme')
@@ -66,15 +67,24 @@ const ManagedPolicy = () => {
     addManagedPolicy(value)
     setSelected(value)
   }
-  const onManagedPolicySave = () => setModalWithAdminAutoApprove(true)
-  const onManagedPolicySubmit = () => setModalWithAdminAutoApprove(false)
+  const onManagedPolicySave = () => {
+    setModalWithAdminAutoApprove(true)
+    setShowExpirationDate(true)
+  }
+  const onManagedPolicySubmit = () => {
+    setModalWithAdminAutoApprove(false)
+    setShowExpirationDate(true)
+  }
   const onManagePolicyDelete = (arn) => {
     deleteManagedPolicy(arn)
     setModalWithAdminAutoApprove(true)
+    setShowExpirationDate(false)
   }
+
   const onManagePolicyDeleteRequest = (arn) => {
     deleteManagedPolicy(arn)
     setModalWithAdminAutoApprove(false)
+    setShowExpirationDate(false)
   }
 
   const options =
@@ -205,7 +215,10 @@ const ManagedPolicy = () => {
           })}
         </List>
       </Segment>
-      <JustificationModal handleSubmit={handleManagedPolicySubmit} />
+      <JustificationModal
+        handleSubmit={handleManagedPolicySubmit}
+        showExpirationDate={showExpirationDate}
+      />
     </>
   )
 }

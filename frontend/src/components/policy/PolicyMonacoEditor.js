@@ -110,7 +110,8 @@ export const PolicyMonacoEditor = ({
   enableLinting = true,
 }) => {
   const { user, sendRequestCommon } = useAuth()
-  const { setModalWithAdminAutoApprove } = usePolicyContext()
+  const { setModalWithAdminAutoApprove, setShowExpirationDate } =
+    usePolicyContext()
   const editorRef = useRef()
   const monaco = useMonaco()
   const editorTheme = getLocalStorageSettings('editorTheme')
@@ -181,7 +182,7 @@ export const PolicyMonacoEditor = ({
       ...policy,
       PolicyDocument: JSON.parse(policyDocument),
     })
-    setModalWithAdminAutoApprove(true)
+    setShowExpirationDate(true)
   }
 
   const handlePolicySubmit = () => {
@@ -190,6 +191,7 @@ export const PolicyMonacoEditor = ({
       PolicyDocument: JSON.parse(policyDocument),
     })
     setModalWithAdminAutoApprove(false)
+    setShowExpirationDate(true)
   }
 
   const handleDelete = () => {
@@ -198,6 +200,7 @@ export const PolicyMonacoEditor = ({
       PolicyDocument: JSON.parse(policyDocument),
     })
     setModalWithAdminAutoApprove(true)
+    setShowExpirationDate(false)
   }
 
   function handleEditorDidMount(editor, monaco) {
@@ -279,7 +282,8 @@ export const PolicyMonacoEditor = ({
 
 export const NewPolicyMonacoEditor = ({ addPolicy, setIsNewPolicy }) => {
   const { user, sendRequestCommon } = useAuth()
-  const { setModalWithAdminAutoApprove } = usePolicyContext()
+  const { setModalWithAdminAutoApprove, setShowExpirationDate } =
+    usePolicyContext()
   const editorRef = useRef()
   const editorTheme = getLocalStorageSettings('editorTheme')
   const timeout = useRef(null)
@@ -372,6 +376,7 @@ export const NewPolicyMonacoEditor = ({ addPolicy, setIsNewPolicy }) => {
       PolicyDocument: JSON.parse(policyDocument),
     })
     setModalWithAdminAutoApprove(true)
+    setShowExpirationDate(true)
   }
 
   const handlePolicySubmit = () => {
@@ -380,6 +385,7 @@ export const NewPolicyMonacoEditor = ({ addPolicy, setIsNewPolicy }) => {
       PolicyDocument: JSON.parse(policyDocument),
     })
     setModalWithAdminAutoApprove(false)
+    setShowExpirationDate(true)
   }
 
   const onTemplateChange = (e, { value }) => {
