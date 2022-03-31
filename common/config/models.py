@@ -177,6 +177,15 @@ class ModelAdapter:
         )
         return self
 
+    def from_model(self, model: BaseModel) -> object:
+        """Set the model to a specific pydantic model versus parsing a dict.
+
+        :param model: a pydantic model
+        :return: itself
+        """
+        self._model = model
+        return self
+
     def from_dict(self, model_dict: dict) -> object:
         self._model = self._model_class.parse_obj(model_dict)
         return self

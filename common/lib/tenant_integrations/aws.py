@@ -9,8 +9,7 @@ from botocore.exceptions import ClientError
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 
-from common.config import config
-from common.config.account import get_hub_account, set_hub_account, upsert_spoke_account
+from common.config import config, models
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.messaging import iterate_event_messages
@@ -145,7 +144,9 @@ async def handle_spoke_account_registration(body):
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
-    hub_account = await get_hub_account(host)
+    hub_account = (
+        await models.ModelAdapter(HubAccount).load_config("hub_accounts").model
+    )
     if not hub_account:
         error_message = "No Central Role ARN detected in configuration."
         sentry_sdk.capture_message(
@@ -285,7 +286,9 @@ async def handle_spoke_account_registration(body):
         hub_account_arn=hub_account.role_arn,
         master_for_account=master_account,
     )
-    await upsert_spoke_account(host, spoke_account)
+    await models.ModelAdapter(SpokeAccount).load_config(
+        "spoke_accounts", host
+    ).from_model(spoke_account).store_item_in_list()
     return {
         "success": True,
         "message": "Successfully registered spoke account",
@@ -439,7 +442,9 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         role_arn=role_arn,
         external_id=external_id,
     )
-    await set_hub_account(host, hub_account)
+    await models.ModelAdapter(HubAccount).load_config("hub_accounts", host).from_model(
+        hub_account
+    ).store_item()
     spoke_account = SpokeAccount(
         name=spoke_role_name,
         account_id=account_id_for_role,
@@ -447,7 +452,9 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         external_id=external_id,
         hub_account_arn=hub_account.role_arn,
     )
-    await upsert_spoke_account(host, spoke_account)
+    await models.ModelAdapter(SpokeAccount).load_config(
+        "spoke_accounts", host
+    ).from_model(spoke_account).store_item_in_list()
     return {"success": True}
 
 

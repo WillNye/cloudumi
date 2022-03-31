@@ -1,9 +1,9 @@
 import tornado.escape
 
-from common.config import account, config
+from common.config import config, models
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
-from common.models import WebResponse
+from common.models import HubAccount, WebResponse
 
 
 class ConfigHandler(BaseHandler):
@@ -170,7 +170,11 @@ class ConfigHandler(BaseHandler):
             },
         }
 
-        hub_account = await account.get_hub_account(host)
+        hub_account = (
+            await models.ModelAdapter(HubAccount)
+            .load_config("hub_accounts", host)
+            .model
+        )
         if hub_account:
             config_to_return["aws"]["central_role_arn"] = hub_account.role_arn
             config_to_return["aws"]["spoke_role_trust_policy"] = {

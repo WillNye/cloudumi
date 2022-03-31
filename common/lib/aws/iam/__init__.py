@@ -6,8 +6,7 @@ from collections import defaultdict
 from asgiref.sync import sync_to_async
 from joblib import Parallel, delayed
 
-from common.config import config
-from common.config.account import get_hub_account
+from common.config import config, models
 from common.lib.assume_role import (
     ConsoleMeCloudAux,
     boto3_cached_conn,
@@ -18,6 +17,7 @@ from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import RedisHandler
+from common.models import HubAccount
 
 log = config.get_logger(__name__)
 
@@ -370,7 +370,9 @@ async def update_assume_role_policy_trust_noq(host, role_name, account_id):
     if not assume_role_trust_policy:
         return False
 
-    hub_account = await get_hub_account(host)
+    hub_account = (
+        await models.ModelAdapter(HubAccount).load_config("hub_accounts", host).model
+    )
     if not hub_account:
         return False
 
