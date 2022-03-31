@@ -39,12 +39,12 @@ export const IntegrationSSO = () => {
     }
   }
 
-  const handleFinish = ({ success, message }) => {
-    if (success) {
+  const handleFinish = (response) => {
+    if (response?.success) {
       success('Provider added successfully!')
       get.do()
     } else {
-      error(message)
+      error(response?.message)
     }
   }
 
@@ -59,7 +59,7 @@ export const IntegrationSSO = () => {
     get.error ? ` / Error: ${get.error}` : ''
   }`
 
-  const data = get.data
+  const data = get?.data
 
   const preparedData = []
 
@@ -80,7 +80,9 @@ export const IntegrationSSO = () => {
           isLoading={remove.status === 'working'}
           renderAction={
             <TableTopBar
-              onClick={hasData ? openModal : null}
+              onClick={
+                hasData ? (preparedData?.length !== 3 ? openModal : null) : null
+              }
               extras={
                 <RefreshButton disabled={isWorking} onClick={handleRefresh} />
               }
@@ -105,6 +107,7 @@ export const IntegrationSSO = () => {
             onFinish={handleFinish}
             defaultValues={defaultValues}
             current={preparedData}
+            existentProviders={data}
           />
         </ModalComponent>
       </Segment>

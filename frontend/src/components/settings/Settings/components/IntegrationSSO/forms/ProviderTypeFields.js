@@ -24,7 +24,7 @@ const GoogleFields = ({ register }) => (
     />
     <input
       type='hidden'
-      value='google'
+      value='Google'
       {...register('provider_type', { required: true })}
     />
   </>
@@ -43,7 +43,7 @@ const SAMLFields = ({ register }) => (
     />
     <input
       type='hidden'
-      value='saml'
+      value='SAML'
       {...register('provider_type', { required: true })}
     />
   </>
@@ -90,7 +90,7 @@ const OIDCFields = ({ register }) => (
     />
     <input
       type='hidden'
-      value='oidc'
+      value='OIDC'
       {...register('provider_type', { required: true })}
     />
   </>
@@ -101,11 +101,11 @@ export const ProviderTypeFields = ({ type, register }) => {
 
   useEffect(() => {
     switch (type) {
-      case 'google':
+      case 'Google':
         return setRender(<GoogleFields register={register} />)
-      case 'saml':
+      case 'SAML':
         return setRender(<SAMLFields register={register} />)
-      case 'oidc':
+      case 'OIDC':
         return setRender(<OIDCFields register={register} />)
       default:
         return setRender(null)
@@ -114,30 +114,3 @@ export const ProviderTypeFields = ({ type, register }) => {
 
   return render
 }
-
-// const GoogleFields = {
-//   client_id: '[type]',
-//   client_secret: '[type]',
-//   authorize_scopes: '[type]',
-//   provider_name: '[type]',
-//   provider_type: '[type]'
-// }
-
-// const SAMLFields = {
-//   metadata_url: '[type]',
-//   provider_name: '[type]',
-//   provider_type: '[type]'
-// }
-
-// const OIDCFields = {
-//   client_id: '[type]',
-//   client_secret: '[type]',
-//   attributes_request_method: '[type]',
-//   oidc_issuer: '[type]',
-//   authorize_scopes: '[type]',
-//   token_url: '[type]',
-//   attributes_url: '[type]',
-//   jwks_uri: '[type]',
-//   provider_name: '[type]',
-//   provider_type: '[type]'
-// }
