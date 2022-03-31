@@ -143,15 +143,14 @@ const useDataTable = (config, mock) => {
       // This means it raised an exception from fetching data
       if (data && data.status != null) {
         data = []
-      }      
+      }
 
-      if (data.data?.length <= 0) data.data = (mock || [])
+      if (data.data?.length <= 0) data.data = mock || []
 
       dispatch({
         type: 'SET_DATA',
         data: data,
       })
-
     })(tableConfig)
   }, [tableConfig, sendRequestCommon, mock])
 

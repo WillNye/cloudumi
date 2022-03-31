@@ -1,5 +1,3 @@
-import distutils.cmd
-import distutils.log
 import os
 from shutil import rmtree
 

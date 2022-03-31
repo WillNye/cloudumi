@@ -9,7 +9,6 @@ import { useForm } from 'react-hook-form'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 
 export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
-
   const { register, handleSubmit, watch } = useForm({ defaultValues })
 
   const { post } = useApi('services/aws/account/spoke')
@@ -42,30 +41,31 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
 
   const hasError = post?.error && post?.status === 'done'
 
-  if (defaultValues) return (
-    <Segment basic>
-      <DimmerWithStates
-        loading={isWorking}
-        showMessage={hasError}
-        messageType={isSuccess ? 'success' : 'warning'}
-        message={'Something went wrong, try again!'}
-      />
+  if (defaultValues)
+    return (
+      <Segment basic>
+        <DimmerWithStates
+          loading={isWorking}
+          showMessage={hasError}
+          messageType={isSuccess ? 'success' : 'warning'}
+          message={'Something went wrong, try again!'}
+        />
 
-      <Form onSubmit={handleSubmit(onSubmit)}>
-        <Form.Field>
-          <label>Role Name</label>
-          <input {...register('name', { required: true })} />
-        </Form.Field>
+        <Form onSubmit={handleSubmit(onSubmit)}>
+          <Form.Field>
+            <label>Role Name</label>
+            <input {...register('name', { required: true })} />
+          </Form.Field>
 
-        <Bar>
-          <Fill />
-          <Button type='submit' disabled={!isReady} positive>
-            Submit
-          </Button>
-        </Bar>
-      </Form>
-    </Segment>
-  )
+          <Bar>
+            <Fill />
+            <Button type='submit' disabled={!isReady} positive>
+              Submit
+            </Button>
+          </Bar>
+        </Form>
+      </Segment>
+    )
 
   return (
     <Segment basic>

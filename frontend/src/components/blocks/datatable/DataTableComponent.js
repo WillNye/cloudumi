@@ -17,9 +17,6 @@ import 'react-semantic-ui-datepickers/dist/react-semantic-ui-datepickers.css'
 
 const DEFAULT_ROWS_PER_PAGE = 50
 
-
-
-
 const DataTableComponent = ({ config, mock }) => {
   const {
     activePage = 1,
