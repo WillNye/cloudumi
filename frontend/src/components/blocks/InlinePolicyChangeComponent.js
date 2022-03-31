@@ -108,12 +108,10 @@ class InlinePolicyChangeComponent extends Component {
       newStatement: newValue,
       buttonResponseMessage: [],
     })
-    // console.log('--------------------------', newValue)
     this.updatePolicyDocument(change.id, newValue)
   }
 
   handleSetPolicyExpiration(event, data) {
-    // Convert epoch milliseconds to epoch seconds
     if (!data?.value) {
       return
     }
