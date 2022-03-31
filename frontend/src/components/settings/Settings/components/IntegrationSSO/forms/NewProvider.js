@@ -9,7 +9,12 @@ import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
 import { ProviderTypeFields } from './ProviderTypeFields'
 
-export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
+export const NewProvider = ({
+  closeModal,
+  onFinish,
+  defaultValues,
+  existentProviders,
+}) => {
   const { register, reset, watch, handleSubmit } = useForm({ defaultValues })
 
   const { post } = useApi('auth/sso')
@@ -17,20 +22,20 @@ export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
   const onSubmit = (data) => {
     let provider = ''
     switch (data?.provider_type) {
-      case 'google':
-        provider = 'google'
+      case 'Google':
+        provider = 'Google'
         break
-      case 'saml':
-        provider = 'saml'
+      case 'SAML':
+        provider = 'SAML'
         break
-      case 'oidc':
-        provider = 'oidc'
+      case 'OIDC':
+        provider = 'OIDC'
         break
       default:
         provider = ''
     }
     post
-      .do(data, provider)
+      .do(data, provider.toLowerCase())
       .then(() => {
         closeModal()
         onFinish({ success: true })
@@ -73,22 +78,31 @@ export const NewProvider = ({ closeModal, onFinish, defaultValues }) => {
       />
 
       <Form onSubmit={handleSubmit(onSubmit)}>
-        <Form.Field>
-          <label>Type</label>
-          <select
-            value={type}
-            disabled={hasDefault}
-            onChange={({ target }) => {
-              setType(target.value)
-              reset()
-            }}
-          >
-            <option value=''>Select provider type</option>
-            <option value='google'>Google</option>
-            <option value='saml'>SAML</option>
-            <option value='oidc'>OIDC</option>
-          </select>
-        </Form.Field>
+        {!hasDefault ? (
+          <Form.Field>
+            <label>Type</label>
+            <select
+              value={type}
+              disabled={hasDefault}
+              onChange={({ target }) => {
+                setType(target.value)
+                reset()
+              }}
+            >
+              <option value=''>Select provider type</option>
+              {!existentProviders?.google && (
+                <option value='Google'>Google</option>
+              )}
+              {!existentProviders?.saml && <option value='SAML'>SAML</option>}
+              {!existentProviders?.oidc && <option value='OIDC'>OIDC</option>}
+            </select>
+          </Form.Field>
+        ) : (
+          <h3>
+            <small>Editing provider: </small>
+            {defaultValues?.provider_type}
+          </h3>
+        )}
 
         <ProviderTypeFields type={type} register={register} />
 

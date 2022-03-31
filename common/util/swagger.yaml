@@ -1235,6 +1235,10 @@ components:
               pattern: "managed_policy"
             action:
               $ref: "#/components/schemas/Action"
+            expiration_date:
+              type: integer
+              example: 20210905
+              description: Date to expire requested policy, in the format of YYYYmmdd
     ManagedPolicyResourceChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -2292,3 +2296,12 @@ components:
         enabled:
           type: boolean
           description: Whether CLI authentication via Challenge URL is enabled
+    SlackIntegration:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the slack webhook is enabled
+        webhook_url:
+          type: string
+          description: The slack webhook URL to configure for the callback

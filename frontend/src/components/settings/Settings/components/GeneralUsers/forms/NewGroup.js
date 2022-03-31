@@ -7,8 +7,8 @@ import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
 
-export const NewGroup = ({ closeModal, onFinish }) => {
-  const { register, handleSubmit, watch } = useForm()
+export const NewGroup = ({ closeModal, onFinish, defaultValues }) => {
+  const { register, handleSubmit, watch } = useForm({ defaultValues })
 
   const { post } = useApi('auth/cognito/groups')
 

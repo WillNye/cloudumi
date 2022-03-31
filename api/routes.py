@@ -113,6 +113,7 @@ from api.handlers.v3.services.aws.role_access import (
     CredentialBrokeringCurrentStateHandler,
     CredentialBrokeringHandler,
 )
+from api.handlers.v3.slack import SlackIntegrationConfigurationCrudHandler
 from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
@@ -255,6 +256,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/ip-access/origin/(?P<_enabled>enable|disable)/?",
             IpRestrictionsRequesterIpOnlyToggleHandler,
+        ),
+        (
+            r"/api/v3/slack/?",
+            SlackIntegrationConfigurationCrudHandler,
         ),
         (
             r"/api/v3/auth/sso/google/?",

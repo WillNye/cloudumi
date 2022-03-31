@@ -8,6 +8,7 @@ export const initialState = {
   toggleRefreshRole: false,
   isSuccess: false,
   togglePolicyModal: false,
+  showExpirationDate: false,
 }
 
 export const reducer = (state, action) => {
@@ -52,6 +53,11 @@ export const reducer = (state, action) => {
         ...state,
         adminAutoApprove: action.approve,
         togglePolicyModal: true,
+      }
+    case 'SHOW_SET_EXPIRATION_DATE':
+      return {
+        ...state,
+        showExpirationDate: action.visible,
       }
     case 'SET_CONTEXT':
       return {

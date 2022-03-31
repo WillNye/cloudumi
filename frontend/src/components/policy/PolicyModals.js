@@ -1,13 +1,16 @@
 import React, { useState } from 'react'
+import { DateTime } from 'luxon'
 import {
   Button,
   Dimmer,
   Form,
+  Header,
   Loader,
   Message,
   Modal,
   TextArea,
 } from 'semantic-ui-react'
+import SemanticDatepicker from 'react-semantic-ui-datepickers'
 import ReactMarkdown from 'react-markdown'
 import { usePolicyContext } from './hooks/PolicyProvider'
 import { useHistory } from 'react-router-dom'
@@ -36,7 +39,7 @@ const StatusMessage = ({ message, isSuccess }) => {
   return null
 }
 
-export const JustificationModal = ({ handleSubmit }) => {
+export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
   const {
     adminAutoApprove = false,
     context = 'inline_policy',
@@ -51,6 +54,7 @@ export const JustificationModal = ({ handleSubmit }) => {
 
   const [message, setMessage] = useState('')
   const [justification, setJustification] = useState('')
+  const [expirationDate, setExpirationDate] = useState(null)
 
   const handleJustificationUpdate = (e) => {
     setJustification(e.target.value)
@@ -70,12 +74,22 @@ export const JustificationModal = ({ handleSubmit }) => {
       adminAutoApprove,
       context,
       justification,
+      expirationDate,
     })
 
     setMessage(response.message)
     setIsPolicyEditorLoading(false)
     setIsSuccess(response.request_created)
     setJustification('')
+  }
+
+  const handleSetPolicyExpiration = (event, data) => {
+    if (!data?.value) {
+      return
+    }
+    const dateObj = DateTime.fromJSDate(data.value)
+    const dateString = dateObj.toFormat('yyyyMMdd')
+    setExpirationDate(parseInt(dateString))
   }
 
   const handleOk = () => {
@@ -104,14 +118,37 @@ export const JustificationModal = ({ handleSubmit }) => {
         <Dimmer.Dimmable dimmed={isPolicyEditorLoading}>
           <StatusMessage isSuccess={isSuccess} message={message} />
           {!isSuccess && (
-            <Form>
-              <TextArea
-                placeholder='Tell us why you need this change'
-                onChange={handleJustificationUpdate}
-                style={{ width: 'fluid' }}
-                defaultValue={justification}
-              />
-            </Form>
+            <>
+              <Form>
+                <TextArea
+                  placeholder='Tell us why you need this change'
+                  onChange={handleJustificationUpdate}
+                  style={{ width: 'fluid' }}
+                  defaultValue={justification}
+                />
+              </Form>
+
+              {showExpirationDate && (
+                <>
+                  <Header as='h6'>
+                    <Header.Subheader>
+                      (Optional) Set expiration date for requested policy If no
+                      date is set, the policy will not expire.
+                    </Header.Subheader>
+                  </Header>
+
+                  <SemanticDatepicker
+                    filterDate={(date) => {
+                      const now = new Date()
+                      return date >= now
+                    }}
+                    onChange={handleSetPolicyExpiration}
+                    type='basic'
+                    compact
+                  />
+                </>
+              )}
+            </>
           )}
 
           <Dimmer active={isPolicyEditorLoading} inverted>
