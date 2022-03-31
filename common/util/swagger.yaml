@@ -2066,9 +2066,6 @@ components:
       required:
         - name
         - account_id
-        - role_arn
-        - external_id
-        - hub_account_arn
       properties:
         name:
           type: string
@@ -2094,8 +2091,6 @@ components:
       required:
         - org_id
         - account_id
-        - account_name
-        - owner
       properties:
         org_id:
           type: string
