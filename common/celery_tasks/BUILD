@@ -46,6 +46,7 @@ filegroup(
     name = "src_files",
     srcs = (
         "__init__.py",
+        "auth.py",
         "celery_tasks.py",
         "run.py",
         "settings.py",

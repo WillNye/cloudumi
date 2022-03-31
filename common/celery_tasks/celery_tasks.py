@@ -3089,5 +3089,12 @@ if internal_celery_tasks and isinstance(internal_celery_tasks, dict):
 if config.get("_global_.celery.clear_tasks_for_development", False):
     schedule = {}
 
+app.autodiscover_tasks(
+    [
+        "common.celery_tasks.auth",
+        "common.celery_tasks.settings",
+    ]
+)
+
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
