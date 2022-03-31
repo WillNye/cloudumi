@@ -45,25 +45,15 @@ async def set_hub_account(host: str, hub_account: HubAccount):
     )
 
 
-def __get_unique_spoke_account_key_name(name: str, account_id: str) -> str:
-    return f"{name}__{account_id}"
-
-
-def __get_unique_spoke_account_key_path(name: str, account_id: str) -> str:
-    return ".".join(
-        [spoke_account_key_name, __get_unique_spoke_account_key_name(name, account_id)]
-    )
-
-
 async def upsert_spoke_account(host: str, spoke_account: SpokeAccount):
     ddb = RestrictedDynamoHandler()
     host_config = config.get_tenant_static_config_from_dynamo(host)
-    spoke_key_name = __get_unique_spoke_account_key_name(
-        spoke_account.name, spoke_account.account_id
-    )
-    if spoke_account_key_name not in host_config:
-        host_config[spoke_account_key_name] = dict()
-    host_config[spoke_account_key_name][spoke_key_name] = dict(spoke_account)
+    if not host_config.get(spoke_account_key_name):
+        host_config[spoke_account_key_name] = []
+    for current_spoke_account in host_config[spoke_account_key_name]:
+        if current_spoke_account["role_arn"] == spoke_account.role_arn:
+            raise ValueError(f"Spoke account with name {spoke_account.role_arn} already exists")
+    host_config[spoke_account_key_name].append(SpokeAccount(spoke_account))
     if not host_config.get("account_ids_to_name"):
         host_config["account_ids_to_name"] = {}
     host_config["account_ids_to_name"][
@@ -81,19 +71,15 @@ async def upsert_spoke_account(host: str, spoke_account: SpokeAccount):
     )
 
 
-async def delete_spoke_account(host: str, name: str, account_id: str) -> bool:
+async def delete_spoke_account(host: str, role_arn: str) -> bool:
+    account_id = role_arn.split(":")[4]
     ddb = RestrictedDynamoHandler()
-    spoke_key_path = __get_unique_spoke_account_key_path(name, account_id)
-    spoke_account_config = config.get_host_specific_key(spoke_key_path, host, {})
-    if not spoke_account_config:
-        host_config = config.get_tenant_static_config_from_dynamo(host)
-        if (
-            spoke_account_key_name not in host_config
-            or spoke_key_path not in host_config[spoke_account_key_name]
-        ):
-            return False
-    else:
-        host_config = config.get_tenant_static_config_from_dynamo(host)
+    spoke_account_config = config.get_host_specific_key(spoke_account_key_name, host, [])
+
+    if not any(spoke_account["role_arn"] == role_arn for spoke_account in spoke_account_config):
+        return False
+
+    host_config = config.get_tenant_static_config_from_dynamo(host)
     try:
         del host_config[spoke_account_key_name][
             __get_unique_spoke_account_key_name(name, account_id)
