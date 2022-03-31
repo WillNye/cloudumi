@@ -98,9 +98,8 @@ class ModelAdapter:
                     # Update similar item
                     config_item[key][
                         [
-                            self.__filter_unique_comparators(x)
-                            for x in config_item[key]
-                        ].index(self.__filter_unique_comparators(value.dict()))
+                            self.filter_unique_comparators(x) for x in config_item[key]
+                        ].index(self.filter_unique_comparators(value.dict()))
                     ] = value.dict()
                 else:
                     # Add new item
@@ -110,6 +109,30 @@ class ModelAdapter:
         if not segmented_key[0] in config_item:
             config_item[segmented_key[0]] = dict()
         config_item[segmented_key[0]] = self.__nested_store_array(
+            config_item[segmented_key[0]], ".".join(segmented_key[1:]), values
+        )
+        return config_item
+
+    def __nested_delete_from_list(
+        self, config_item: dict, key: str, values: List[BaseModel]
+    ) -> dict:
+        if not config_item:
+            config_item = dict()
+
+        segmented_key = key.split(".")
+        if len(segmented_key) == 1:
+            # Base Condition
+            if key not in config_item:
+                config_item[key] = list()
+            for value in values:
+                for item in config_item.get(key, []):
+                    if self.__objects_similar(value.dict(), item):
+                        config_item[key].remove(item)
+            return config_item
+
+        if segmented_key[0] not in config_item:
+            config_item[segmented_key[0]] = dict()
+        config_item[segmented_key[0]] = self.__nested_delete_from_list(
             config_item[segmented_key[0]], ".".join(segmented_key[1:]), values
         )
         return config_item
@@ -237,7 +260,7 @@ class ModelAdapter:
             [c for c in self._uniqueness_comparators if left.get(c) == right.get(c)]
         ) == len(self._uniqueness_comparators)
 
-    def __filter_unique_comparators(self, unfiltered: Dict[str, Any]) -> Dict[str, Any]:
+    def filter_unique_comparators(self, unfiltered: Dict[str, Any]) -> Dict[str, Any]:
         """Filter `unfiltered` to only have compared items that determine the compared items' uniqueness.
 
         This accompanies the __resolve_unique_comparators function to effectively compare objects based
@@ -318,8 +341,41 @@ class ModelAdapter:
         )
         return True
 
+    async def delete_item_from_list(self) -> bool:
+        """Delete a specific item, specified via from_dict, from a list of items.
+
+        Note: this is to delete ONE item from a list of items. This means that the configuration
+        key points to a list of items (like spoke_accounts) and we want to delete one specific item
+
+        :return: True if the item was deleted, False if it wasn't
+        """
+        ddb = RestrictedDynamoHandler()
+        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        if not self._key:
+            raise ValueError(
+                f"ModelAdapter in an invalid state, self._key ({self._key}) is not set"
+            )
+        if not self._model:
+            raise ValueError(
+                f"Consistency error: self._model is undefined: {self._model}"
+            )
+        host_config = self.__nested_delete_from_list(
+            host_config, self._key, [self._model]
+        )
+        await ddb.update_static_config_for_host(
+            yaml.dump(host_config), self._updated_by, self._host
+        )
+        return True
+
     async def delete_list(self) -> bool:
-        """Break the chain; meant as an end state function."""
+        """Delete a list of items, specified via from_list method, from a list of items.
+
+        Note: this is to delete a list of items from a list of items. This means that the configuration
+        key points to a list of items (like spoke_accounts) and we want to delete a list of items
+        from that list.
+
+        :return: True if the list was deleted, False if it wasn't
+        """
         ddb = RestrictedDynamoHandler()
         host_config = config.get_tenant_static_config_from_dynamo(self._host)
         if self._key is None:
@@ -328,12 +384,12 @@ class ModelAdapter:
             )
         config_items = self.__access_subkey(host_config, self._key, self._default)
         for model in self._model_array:
-            if self.__filter_unique_comparators(model.dict()) in [
-                self.__filter_unique_comparators(x) for x in config_items
+            if self.filter_unique_comparators(model.dict()) in [
+                self.filter_unique_comparators(x) for x in config_items
             ]:
                 config_items.pop(
-                    [self.__filter_unique_comparators(x) for x in config_items].index(
-                        self.__filter_unique_comparators(model.dict())
+                    [self.filter_unique_comparators(x) for x in config_items].index(
+                        self.filter_unique_comparators(model.dict())
                     )
                 )
         await ddb.update_static_config_for_host(

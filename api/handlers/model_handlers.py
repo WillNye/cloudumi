@@ -373,7 +373,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 .load_config(self._config_key, host)
                 .from_dict(data)
                 .with_object_key(self._identifying_keys)
-                .delete_list()
+                .delete_item_from_list()
             )
         except KeyError as exc:
             log.error(exc)
