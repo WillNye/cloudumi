@@ -4,7 +4,6 @@ from secrets import token_urlsafe
 from asgiref.sync import async_to_sync
 
 import common.scripts.initialize_dynamodb  # noqa: F401
-import common.scripts.initialize_redis  # noqa: F401
 from common.lib.dynamo import RestrictedDynamoHandler
 
 tenant_config = f"""
@@ -54,6 +53,8 @@ url: https://localhost
 application_admin: user@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
+account_ids_to_name:
+  "759357822767": "development"
 """
 
 # Store tenant information in DynamoDB
@@ -63,3 +64,6 @@ ddb = RestrictedDynamoHandler()
 async_to_sync(ddb.update_static_config_for_host)(
     tenant_config, "user@noq.dev", "localhost"
 )
+
+# Force a re-cache of cloud resources with updated configuration
+import common.scripts.initialize_redis  # noqa: F401,E402
