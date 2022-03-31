@@ -264,7 +264,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             success="success" if get_data else "failure",
             status_code=200,
             message="Success" if get_data else "Unable to retrieve data",
-            count=1 if get_data else 0,
+            count=len(get_data) if get_data else 0,
         )
         if get_data:
             res.data = get_data

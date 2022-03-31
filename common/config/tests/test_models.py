@@ -2,7 +2,6 @@ from typing import Optional
 from unittest import TestCase
 
 import pytest
-import yaml
 from asgiref.sync import async_to_sync
 from pydantic import Field
 from tornado.httpclient import AsyncHTTPClient
@@ -11,6 +10,7 @@ from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.pydantic import BaseModel
+from common.lib.yaml import yaml
 
 
 class TestModel(BaseModel):
