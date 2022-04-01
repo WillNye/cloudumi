@@ -906,6 +906,32 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
         )
 
 
+class StaticFileHandler(tornado.web.StaticFileHandler):
+    def get_host(self):
+        if config.get("_global_.development"):
+            x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
+            if x_forwarded_host:
+                return x_forwarded_host.split(":")[0]
+
+        return self.request.host
+
+    def get_host_name(self):
+        return self.get_host().split(":")[0].replace(".", "_")
+
+    def initialize(self, **kwargs) -> None:
+        host = self.get_host_name()
+        if not config.is_host_configured(host):
+            self.set_status(418)
+            raise tornado.web.Finish()
+        self.ctx = RequestContext(
+            host=host,
+            user=None,
+            request_uuid=str(uuid.uuid4()),
+            uri=self.request.uri,
+        )
+        super(StaticFileHandler, self).initialize(**kwargs)
+
+
 class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler):
     def initialize(self, **kwargs) -> None:
         self.kwargs = kwargs

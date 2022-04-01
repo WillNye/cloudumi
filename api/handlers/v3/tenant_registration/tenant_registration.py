@@ -233,7 +233,7 @@ async def create_user_pool(noq_subdomain):
         # ],
         UserPoolTags={"tenant": noq_subdomain},
         AdminCreateUserConfig={
-            "AllowAdminCreateUserOnly": False,
+            "AllowAdminCreateUserOnly": True,
             "UnusedAccountValidityDays": 7,
         },
         # TODO: Enable advanced security mode

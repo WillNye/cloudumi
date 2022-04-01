@@ -1,13 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from 'react'
-import { Button, Checkbox, Message } from 'semantic-ui-react'
+import { Checkbox, Message } from 'semantic-ui-react'
 import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
+import { useHelpModal } from 'lib/hooks/useHelpModal'
 
 export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
   const { get, post } = useApi('services/aws/role-access/credential-brokering')
 
   const { toast, success } = useToast()
+
+  const { QuestionMark } = useHelpModal()
 
   useEffect(
     () =>
@@ -25,8 +28,6 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
       onChange(checked)
     })
   }
-
-  const handleHelpModal = (handler) => {}
 
   const isWorking = get?.status !== 'done' || post?.status === 'working'
 
@@ -48,13 +49,7 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
       <Message.List>
         <Message.Item>
           Broker temporary credentials to AWS IAM roles.&nbsp;
-          <Button
-            size='mini'
-            circular
-            icon='question'
-            basic
-            onClick={() => handleHelpModal('aws-iam-roles')}
-          />
+          <QuestionMark handler='aws-iam-roles' />
         </Message.Item>
         <Message.Item>
           Use the following IAM role tag values to identify users and groups
