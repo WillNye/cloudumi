@@ -14,6 +14,7 @@ from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
     NoMatchingRequest,
@@ -85,6 +86,7 @@ from common.models import (
     ResourceModel,
     ResourcePolicyChangeModel,
     ResourceTagChangeModel,
+    SpokeAccount,
     Status,
     TagAction,
     UpdateChangeModificationModel,
@@ -284,9 +286,10 @@ async def generate_request_from_change_model_array(
                     host=host,
                     policy_arn=primary_principal.principal_arn,
                     account_number=account_id,
-                    assume_role=config.get_host_specific_key(
-                        "policies.role_name", host
-                    ),
+                    assume_role=ModelAdapter(SpokeAccount)
+                    .load_config("spoke_accounts", host)
+                    .with_query({"account_id": account_id})
+                    .first.name,
                     region=config.region,
                     retry_max_attempts=2,
                 )
@@ -922,7 +925,10 @@ async def apply_changes_to_role(
         service_type="client",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         session_name=sanitize_session_name("principal-updater-" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
@@ -1443,7 +1449,10 @@ async def populate_old_managed_policies(
                 host=host,
                 policy_arn=principal_arn,
                 account_number=arn_parsed["account"],
-                assume_role=config.get_host_specific_key("policies.role_name", host),
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": arn_parsed["account"]})
+                .first.name,
                 region=config.region,
                 retry_max_attempts=2,
             )
@@ -1770,7 +1779,10 @@ async def apply_managed_policy_resource_tag_change(
         service_type="client",
         account_number=resource_account,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": resource_account})
+        .first.name,
         session_name=sanitize_session_name("tag-updater-" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
@@ -1936,7 +1948,10 @@ async def apply_non_iam_resource_tag_change(
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": resource_account})
+            .first.name,
             region=resource_region or config.region,
             session_name=sanitize_session_name("apply-resource-tag-" + user),
             arn_partition="aws",
@@ -2126,7 +2141,10 @@ async def apply_managed_policy_resource_change(
 
     conn_details = {
         "account_number": resource_account,
-        "assume_role": config.get_host_specific_key("policies.role_name", host),
+        "assume_role": ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": resource_account})
+        .first.name,
         "session_name": sanitize_session_name(f"ConsoleMe_MP_{user}"),
         "client_kwargs": config.get_host_specific_key("boto3.client_kwargs", host, {}),
         "host": host,
@@ -2300,7 +2318,10 @@ async def apply_resource_policy_change(
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": resource_account})
+            .first.name,
             region=resource_region or config.region,
             session_name=sanitize_session_name("apply-resource-policy-" + user),
             arn_partition="aws",

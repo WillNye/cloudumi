@@ -145,7 +145,7 @@ async def handle_spoke_account_registration(body):
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
     hub_account = (
-        await models.ModelAdapter(HubAccount).load_config("hub_accounts").model
+        await models.ModelAdapter(HubAccount).load_config("hub_account", host).model
     )
     if not hub_account:
         error_message = "No Central Role ARN detected in configuration."
@@ -442,7 +442,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         role_arn=role_arn,
         external_id=external_id,
     )
-    await models.ModelAdapter(HubAccount).load_config("hub_accounts", host).from_model(
+    await models.ModelAdapter(HubAccount).load_config("hub_account", host).from_model(
         hub_account
     ).store_item()
     spoke_account = SpokeAccount(
