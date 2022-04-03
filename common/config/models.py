@@ -6,6 +6,7 @@ from common.lib.pydantic import BaseModel
 from common.lib.yaml import yaml
 
 UPDATED_BY = "NOQ_Automaton"
+log = config.get_logger()
 
 
 class ModelAdapter:
@@ -19,7 +20,7 @@ class ModelAdapter:
         self._default = None
         self._updated_by = updated_by
         # By default compare all fields; this can be set using the with_object_key member function
-        self._uniqueness_comparators = [x for x in self._model_class.__fields__.keys()]
+        self._compare_on = [x for x in self._model_class.__fields__.keys()]
 
     def __access_subkey(self, config_item: dict, key: str, default: Any = None) -> dict:
         parts = key.split(".")
@@ -97,9 +98,9 @@ class ModelAdapter:
                 if similar_item:
                     # Update similar item
                     config_item[key][
-                        [
-                            self.filter_unique_comparators(x) for x in config_item[key]
-                        ].index(self.filter_unique_comparators(value.dict()))
+                        [self.filter_on(x) for x in config_item[key]].index(
+                            self.filter_on(value.dict())
+                        )
                     ] = value.dict()
                 else:
                     # Add new item
@@ -197,11 +198,20 @@ class ModelAdapter:
     @property
     def model(self) -> Union[BaseModel, None]:
         """Easy getter"""
+        if self._model is None:
+            log.warning(
+                "ModelAdapter may be in an invalid state. Please call load_config() first - or make sure data is loaded before using this property."
+            )
         return self._model
 
     @property
     def dict(self) -> dict:
         """Easy getter"""
+        if self._model is None:
+            log.warning(
+                "ModelAdapter may be in an invalid state. Please call load_config() first - or make sure data is loaded before using this property."
+            )
+            return dict()
         return self._model.dict()
 
     @property
@@ -230,7 +240,7 @@ class ModelAdapter:
         """
         return self._model_content
 
-    def with_object_key(self, uniqueness_comparators: List[str]) -> object:
+    def with_object_key(self, compare_on: List[str]) -> object:
         """Compare two objects based on a list of identifying keys as opposed to comparing the whole object.
 
         This is useful when trying to update a user based on user name only, when other attributes are updated
@@ -238,11 +248,13 @@ class ModelAdapter:
         :param comparison_identifiers: a list of keys that identify the uniqueness of this object
         :return: itself
         """
-        if uniqueness_comparators:
-            self._uniqueness_comparators = uniqueness_comparators
+        if compare_on:
+            self._compare_on = compare_on
         return self
 
-    def __objects_similar(self, left: Dict[str, Any], right: Dict[str, Any]) -> bool:
+    def __objects_similar(
+        self, left: Dict[str, Any], right: Dict[str, Any], compare_on: List[str] = []
+    ) -> bool:
         """Resolve uniqueness keys in left and right comparison dicts.
 
         This function considers a list of keys that make the object "unique", essentially creating a primary
@@ -255,13 +267,16 @@ class ModelAdapter:
 
         :param left: dict to compare (left side)
         :param right: dict to compare (right side)
+        :param uniqueness: an optional override of keys to compare, otherwise this defaults to _uniqueness_comparators
         :return: True if all uniqueness comparator identified values are equal between left and right
         """
-        return len(
-            [c for c in self._uniqueness_comparators if left.get(c) == right.get(c)]
-        ) == len(self._uniqueness_comparators)
+        if not compare_on:
+            compare_on = self._compare_on
+        return len([c for c in compare_on if left.get(c) == right.get(c)]) == len(
+            compare_on
+        )
 
-    def filter_unique_comparators(self, unfiltered: Dict[str, Any]) -> Dict[str, Any]:
+    def filter_on(self, unfiltered: Dict[str, Any]) -> Dict[str, Any]:
         """Filter `unfiltered` to only have compared items that determine the compared items' uniqueness.
 
         This accompanies the __resolve_unique_comparators function to effectively compare objects based
@@ -271,9 +286,75 @@ class ModelAdapter:
         :param unfiltered: _description_
         :return: _description_
         """
-        return {
-            x: y for x, y in unfiltered.items() if x in self._uniqueness_comparators
+        return {x: y for x, y in unfiltered.items() if x in self._compare_on}
+
+    def query(self, query: Dict[str, Any]) -> Union[List[BaseModel], BaseModel, None]:
+        """Return all items that match the query map.
+
+        The query dict has the following format:
+        {
+            "key": "value",
+            .
+            .
+            .
         }
+
+        A query dict can have a single entry or multiple entries.
+
+        :param query: a dict that describes the item we would like to query and extract
+        :return: a list of matches
+        """
+        config_item = self.__optimistic_loader(self._key, self._host, self._default)
+        if config_item is None:
+            # Maybe a log?
+            return None
+        elif isinstance(config_item, dict):
+            return self.__objects_similar(config_item, query)
+        elif isinstance(config_item, list):
+            compare_on = list(query.keys())
+            return [
+                self._model_class.parse_obj(x)
+                for x in config_item
+                if self.__objects_similar(x, query, compare_on=compare_on)
+            ]
+        else:
+            return None
+
+    def with_query(self, query: Dict[str, Any]) -> object:
+        """Set the query to a specific dict.
+
+        :param query: a dict that describes the item we would like to query and extract
+        :return: itself
+        """
+        self._query = query
+        self._answer = self.query(self._query)
+        return self
+
+    @property
+    def first(self) -> Union[BaseModel, None]:
+        """Return the first item in the list of query answers.
+
+        Requires running with_query first
+
+        :return: the first item in the list
+        """
+        if isinstance(self._answer, list) and len(self._answer) > 0:
+            return self._answer[0]
+        else:
+            return None
+
+    @property
+    def last(self) -> Union[BaseModel, None]:
+        """Return the last item in the list of query answers.
+
+        Requires running with_query first
+
+        :return: the last item in the list
+        """
+        if isinstance(self._answer, list) and len(self._answer) > 0:
+            return self._answer[-1]
+        else:
+            return None
 
     async def store_item(self) -> bool:
         """Break the chain; meant as an end state function."""
@@ -385,12 +466,12 @@ class ModelAdapter:
             )
         config_items = self.__access_subkey(host_config, self._key, self._default)
         for model in self._model_array:
-            if self.filter_unique_comparators(model.dict()) in [
-                self.filter_unique_comparators(x) for x in config_items
+            if self.filter_on(model.dict()) in [
+                self.filter_on(x) for x in config_items
             ]:
                 config_items.pop(
-                    [self.filter_unique_comparators(x) for x in config_items].index(
-                        self.filter_unique_comparators(model.dict())
+                    [self.filter_on(x) for x in config_items].index(
+                        self.filter_on(model.dict())
                     )
                 )
         await ddb.update_static_config_for_host(

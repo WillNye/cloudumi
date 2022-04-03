@@ -144,7 +144,9 @@ async def handle_spoke_account_registration(body):
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
-    hub_account = await models.ModelAdapter(HubAccount).load_config("hub_account").model
+    hub_account = (
+        await models.ModelAdapter(HubAccount).load_config("hub_account", host).model
+    )
     if not hub_account:
         error_message = "No Central Role ARN detected in configuration."
         sentry_sdk.capture_message(
