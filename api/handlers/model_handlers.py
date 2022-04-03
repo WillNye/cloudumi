@@ -121,7 +121,7 @@ class ConfigurationCrudHandler(BaseHandler):
         data["external_id"] = external_id
 
         try:
-            await ModelAdapter(self._model_class).load_config(
+            ModelAdapter(self._model_class).load_config(
                 self._config_key, host
             ).from_dict(data).with_object_key(self._identifying_keys).store_item()
         except Exception as exc:
@@ -175,7 +175,7 @@ class ConfigurationCrudHandler(BaseHandler):
         deleted = False
         try:
             deleted = (
-                await ModelAdapter(self._model_class)
+                ModelAdapter(self._model_class)
                 .load_config(self._config_key, host)
                 .with_object_key(self._identifying_keys)
                 .delete_key()
@@ -307,7 +307,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time
         try:
-            await ModelAdapter(self._model_class).load_config(
+            ModelAdapter(self._model_class).load_config(
                 self._config_key, host
             ).from_dict(data).with_object_key(
                 self._identifying_keys
@@ -369,7 +369,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         deleted = False
         try:
             deleted = (
-                await ModelAdapter(self._model_class)
+                ModelAdapter(self._model_class)
                 .load_config(self._config_key, host)
                 .from_dict(data)
                 .with_object_key(self._identifying_keys)
