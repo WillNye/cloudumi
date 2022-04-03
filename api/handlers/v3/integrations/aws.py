@@ -125,9 +125,7 @@ class AwsIntegrationHandler(BaseHandler):
         )
 
         hub_account = (
-            await models.ModelAdapter(HubAccount)
-            .load_config("hub_accounts", host)
-            .model
+            models.ModelAdapter(HubAccount).load_config("hub_account", host).model
         )
         if hub_account:
             customer_central_account_role = hub_account.role_arn

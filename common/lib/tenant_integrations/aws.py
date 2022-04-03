@@ -144,9 +144,7 @@ async def handle_spoke_account_registration(body):
 
     external_id = config.get_host_specific_key("tenant_details.external_id", host)
     # Get central role arn
-    hub_account = (
-        await models.ModelAdapter(HubAccount).load_config("hub_accounts").model
-    )
+    hub_account = await models.ModelAdapter(HubAccount).load_config("hub_account").model
     if not hub_account:
         error_message = "No Central Role ARN detected in configuration."
         sentry_sdk.capture_message(
@@ -413,7 +411,9 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         )
         for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
             with attempt:
-                central_account_sts_client.assume_role(
+                customer_spoke_role_credentials = await sync_to_async(
+                    central_account_sts_client.assume_role
+                )(
                     RoleArn=spoke_role_arn,
                     RoleSessionName="noq_registration_verification",
                 )
@@ -436,17 +436,60 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "message": error_message,
         }
 
+    customer_spoke_role_iam_client = await sync_to_async(boto3.client)(
+        "iam",
+        aws_access_key_id=customer_spoke_role_credentials["Credentials"]["AccessKeyId"],
+        aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
+            "SecretAccessKey"
+        ],
+        aws_session_token=customer_spoke_role_credentials["Credentials"][
+            "SessionToken"
+        ],
+    )
+
+    account_aliases_co = await sync_to_async(
+        customer_spoke_role_iam_client.list_account_aliases
+    )()
+    account_aliases = account_aliases_co["AccountAliases"]
+    if account_aliases:
+        account_name = account_aliases[0]
+    else:
+        account_name = account_id_for_role
+        # Try Organizations
+        customer_spoke_role_org_client = await sync_to_async(boto3.client)(
+            "organizations",
+            aws_access_key_id=customer_spoke_role_credentials["Credentials"][
+                "AccessKeyId"
+            ],
+            aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
+                "SecretAccessKey"
+            ],
+            aws_session_token=customer_spoke_role_credentials["Credentials"][
+                "SessionToken"
+            ],
+        )
+        try:
+            account_details_call = await sync_to_async(
+                customer_spoke_role_org_client.describe_account
+            )(AccountId=account_id_for_role)
+            account_details = account_details_call.get("Account")
+            if account_details and account_details.get("Name"):
+                account_name = account_details["Name"]
+        except ClientError:
+            # Most likely this isn't an organizations master account and we can ignore
+            pass
+
     hub_account = HubAccount(
-        name=role_arn.split("/")[-1],
+        name=account_name,
         account_id=account_id_for_role,
         role_arn=role_arn,
         external_id=external_id,
     )
-    await models.ModelAdapter(HubAccount).load_config("hub_accounts", host).from_model(
+    await models.ModelAdapter(HubAccount).load_config("hub_account", host).from_model(
         hub_account
     ).store_item()
     spoke_account = SpokeAccount(
-        name=spoke_role_name,
+        name=account_name,
         account_id=account_id_for_role,
         role_arn=spoke_role_arn,
         external_id=external_id,

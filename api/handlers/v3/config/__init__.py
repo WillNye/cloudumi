@@ -171,9 +171,7 @@ class ConfigHandler(BaseHandler):
         }
 
         hub_account = (
-            await models.ModelAdapter(HubAccount)
-            .load_config("hub_accounts", host)
-            .model
+            models.ModelAdapter(HubAccount).load_config("hub_account", host).model
         )
         if hub_account:
             config_to_return["aws"]["central_role_arn"] = hub_account.role_arn

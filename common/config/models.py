@@ -197,19 +197,11 @@ class ModelAdapter:
     @property
     def model(self) -> Union[BaseModel, None]:
         """Easy getter"""
-        if self._model is None:
-            raise ValueError(
-                "ModelAdapter is in an invalid state. Please call load_config() first - or make sure data is loaded before using this property."
-            )
         return self._model
 
     @property
     def dict(self) -> dict:
         """Easy getter"""
-        if self._model is None:
-            raise ValueError(
-                "ModelAdapter is in an invalid state. Please call load_config() first - or make sure data is loaded before using this property."
-            )
         return self._model.dict()
 
     @property
