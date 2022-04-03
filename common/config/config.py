@@ -415,7 +415,7 @@ class Configuration(metaclass=Singleton):
         # fall back to Redis cache, and lastly fall back to Dynamo
         current_time = int(time.time())
         last_updated = self.tenant_configs[host].get("last_updated", 0)
-        if current_time - last_updated > 60:
+        if current_time - last_updated > 5:
             tenant_config = self.load_tenant_config_from_redis(host)
             last_updated = int(tenant_config.get("last_updated", 0))
             # If Redis config cache for host is newer than 60 seconds, update in-memory variables

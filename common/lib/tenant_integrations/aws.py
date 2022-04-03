@@ -279,7 +279,8 @@ async def handle_spoke_account_registration(body):
             master_account = False
 
     spoke_account = SpokeAccount(
-        name=account_name,
+        name=spoke_role_name,
+        account_name=account_name,
         account_id=account_id_for_role,
         role_arn=spoke_role_arn,
         external_id=external_id,
@@ -482,7 +483,8 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             pass
 
     hub_account = HubAccount(
-        name=account_name,
+        name=role_arn.split("/")[-1],
+        account_name=account_name,
         account_id=account_id_for_role,
         role_arn=role_arn,
         external_id=external_id,
@@ -491,7 +493,8 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         hub_account
     ).store_item()
     spoke_account = SpokeAccount(
-        name=account_name,
+        name=spoke_role_name,
+        account_name=account_name,
         account_id=account_id_for_role,
         role_arn=spoke_role_arn,
         external_id=external_id,
