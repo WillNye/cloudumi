@@ -149,10 +149,30 @@ We use GitVersion to automatically version our mono repo by providing modifier n
 
 - In the event that docker containers fail to run with an error on a symbol not found \*.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.
 
-## Troubleshooting in Container (SSH Rules)
+## Troubleshooting in Container
 
-- It may be useful to retrieve the environment variables used by the process in a Docker container running in Fargate.
-  This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credential environment variables set
-  appropriately without too much of a hassle. Run the following command to source all environment variables from the
-  container's primary process (PID 1):
-  - `. <(xargs -0 bash -c 'printf "export %q\n" "$@"' -- < /proc/1/environ)`
+We use a slightly modified version of `ecsgo` to connect to our containers. Run the following commands to install `ecsgo`:
+
+```bash
+gh repo clone noqdev/ecsgo
+cd ecsgo/cmd
+go build
+sudo cp ./cmd /usr/local/bin/ecsgo
+```
+
+To connect to the containers:
+
+```bash
+AWS_PROFILE=noq_staging ecsgo
+# For prod
+AWS_PROFILE=noq_prod ecsgo
+```
+
+Select the appropriate cluster, service, and tasks to connect to the container of your choice.
+
+It may be useful to retrieve the environment variables used by the process in a Docker container running in Fargate.
+This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credential environment variables set
+appropriately without too much of a hassle. Run the following command to source all environment variables from the
+container's primary process (PID 1):
+
+- `. <(xargs -0 bash -c 'printf "export %q\n" "$@"' -- < /proc/1/environ)`
