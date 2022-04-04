@@ -392,6 +392,7 @@ class BaseHandler(TornadoRequestHandler):
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
         # TODO: Return Authentication prompt regardless of subdomain
+
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
@@ -906,17 +907,42 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
         )
 
 
-class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler):
+class StaticFileHandler(tornado.web.StaticFileHandler):
+    def get_host(self):
+        if config.get("_global_.development"):
+            x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
+            if x_forwarded_host:
+                return x_forwarded_host.split(":")[0]
+
+        return self.request.host
+
+    def get_host_name(self):
+        return self.get_host().split(":")[0].replace(".", "_")
+
+    def initialize(self, **kwargs) -> None:
+        host = self.get_host_name()
+        if not config.is_host_configured(host):
+            self.set_status(418)
+            raise tornado.web.Finish()
+        self.ctx = RequestContext(
+            host=host,
+            user=None,
+            request_uuid=str(uuid.uuid4()),
+            uri=self.request.uri,
+        )
+        super(StaticFileHandler, self).initialize(**kwargs)
+
+
+class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler):
     def initialize(self, **kwargs) -> None:
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
         self.ctx = None
-        self.base_handler = BaseHandler(self.application, self.request)
-        self.prepare = self.base_handler.prepare
-
         super(AuthenticatedStaticFileHandler, self).initialize(**kwargs)
 
+    async def prepare(self) -> None:
+        await super(AuthenticatedStaticFileHandler, self).prepare()
+
     async def get(self, path: str, include_body: bool = True) -> None:
-        self.ctx = self.base_handler.ctx
         await super(AuthenticatedStaticFileHandler, self).get(path, include_body)
