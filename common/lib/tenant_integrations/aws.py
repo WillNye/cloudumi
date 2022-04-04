@@ -285,9 +285,9 @@ async def handle_spoke_account_registration(body):
         hub_account_arn=hub_account.role_arn,
         master_for_account=master_account,
     )
-    models.ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).from_model(
-        spoke_account
-    ).store_item_in_list()
+    await models.ModelAdapter(SpokeAccount).load_config(
+        "spoke_accounts", host
+    ).from_model(spoke_account).store_item_in_list()
     return {
         "success": True,
         "message": "Successfully registered spoke account",
@@ -487,7 +487,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         role_arn=role_arn,
         external_id=external_id,
     )
-    models.ModelAdapter(HubAccount).load_config("hub_account", host).from_model(
+    await models.ModelAdapter(HubAccount).load_config("hub_account", host).from_model(
         hub_account
     ).store_item()
     spoke_account = SpokeAccount(
@@ -498,9 +498,9 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         external_id=external_id,
         hub_account_arn=hub_account.role_arn,
     )
-    models.ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).from_model(
-        spoke_account
-    ).store_item_in_list()
+    await models.ModelAdapter(SpokeAccount).load_config(
+        "spoke_accounts", host
+    ).from_model(spoke_account).store_item_in_list()
     return {"success": True}
 
 
