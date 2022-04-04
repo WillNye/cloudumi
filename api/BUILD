@@ -220,6 +220,7 @@ container_layer(
     name = "web_site_layer",
     files = [
         "//frontend:build",
+        ":docs_sources",
     ],
     data_path = ".",
     directory = "/",
