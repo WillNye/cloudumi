@@ -3,6 +3,8 @@ from api.handlers.model_handlers import (
     MultiItemConfigurationCrudHandler,
 )
 from common.celery_tasks.settings import synchronize_cognito_sso
+from common.config import config
+from common.lib.cognito import identity
 from common.models import (
     CognitoGroup,
     CognitoUser,
@@ -41,14 +43,34 @@ class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
     _config_key = None
     _identifying_keys = ["Username"]
 
+    @property
+    def user_pool_id(self) -> str:
+        user_pool_id = config.get_host_specific_key(
+            "secrets.cognito.config.user_pool_id", self.ctx.host
+        )
+        if not user_pool_id:
+            raise ValueError("Cognito user pool id not configured")
+
+        return user_pool_id
+
     def _retrieve(self) -> list[dict]:
-        pass
+        users = list()
+        for user in identity.get_identity_users(self.user_pool_id):
+            user_dict: dict = user.dict()
+            user_dict.pop("TemporaryPassword")
+            users.append(user_dict)
 
-    async def _create(self, data):
-        pass
+        return users
 
-    async def _delete(self, data):
-        pass
+    async def _create(self, data) -> CognitoUser:
+        return identity.create_identity_user(
+            self.user_pool_id, self._model_class(**data)
+        )
+
+    async def _delete(self, data) -> bool:
+        return identity.delete_identity_user(
+            self.user_pool_id, self._model_class(**data)
+        )
 
 
 class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
