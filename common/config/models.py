@@ -341,7 +341,9 @@ class ModelAdapter:
         if isinstance(self._answer, list) and len(self._answer) > 0:
             return self._answer[0]
         else:
-            return None
+            raise ValueError(
+                f"ModelAdapter({self._model_class}) did not find any items with the given query: {self._query}"
+            )
 
     @property
     def last(self) -> Union[BaseModel, None]:
@@ -354,7 +356,9 @@ class ModelAdapter:
         if isinstance(self._answer, list) and len(self._answer) > 0:
             return self._answer[-1]
         else:
-            return None
+            raise ValueError(
+                f"ModelAdapter({self._model_class}) did not find any items with the given query: {self._query}"
+            )
 
     async def store_item(self) -> bool:
         """Break the chain; meant as an end state function."""
