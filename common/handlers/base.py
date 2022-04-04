@@ -392,6 +392,7 @@ class BaseHandler(TornadoRequestHandler):
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
         # TODO: Return Authentication prompt regardless of subdomain
+
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
@@ -932,17 +933,16 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
         super(StaticFileHandler, self).initialize(**kwargs)
 
 
-class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler):
+class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler):
     def initialize(self, **kwargs) -> None:
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
         self.ctx = None
-        self.base_handler = BaseHandler(self.application, self.request)
-        self.prepare = self.base_handler.prepare
-
         super(AuthenticatedStaticFileHandler, self).initialize(**kwargs)
 
+    async def prepare(self) -> None:
+        await super(AuthenticatedStaticFileHandler, self).prepare()
+
     async def get(self, path: str, include_body: bool = True) -> None:
-        self.ctx = self.base_handler.ctx
         await super(AuthenticatedStaticFileHandler, self).get(path, include_body)
