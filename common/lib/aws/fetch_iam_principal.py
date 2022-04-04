@@ -159,10 +159,7 @@ async def _get_iam_role_async(
         .first.name,
         read_only=True,
         retry_max_attempts=2,
-        client_kwargs=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     role_details = asyncio.ensure_future(
         sync_to_async(client.get_role)(RoleName=role_name)
