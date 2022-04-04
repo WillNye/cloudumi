@@ -136,7 +136,7 @@ def make_app(jwt_validator=None):
     )
 
     routes = [
-        (r"/auth", AuthHandler),  # /auth is still used by OIDC callback
+        (r"/auth/?", AuthHandler),  # /auth is still used by OIDC callback
         (r"/saml/(.*)", SamlHandler),
         (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
