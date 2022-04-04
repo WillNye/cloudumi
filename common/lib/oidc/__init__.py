@@ -123,6 +123,9 @@ async def authenticate_user_by_oidc(request):
         after_redirect_uri = request.request.arguments.get("state", [""])[0]
     if after_redirect_uri and isinstance(after_redirect_uri, bytes):
         after_redirect_uri = after_redirect_uri.decode("utf-8")
+    if not after_redirect_uri and force_redirect:
+        # If we're forcing a redirect, we need to redirect to the same page.
+        after_redirect_uri = request.request.uri
     if not after_redirect_uri:
         after_redirect_uri = config.get_host_specific_key(
             "url", host, f"{protocol}://{full_host}/"
