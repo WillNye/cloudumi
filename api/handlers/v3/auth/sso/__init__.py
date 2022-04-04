@@ -75,14 +75,30 @@ class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
 
 class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoGroup
-    _config_key = "secrets.cognito.accounts.groups"
+    _config_key = "Unused"
     _identifying_keys = ["GroupName"]
 
+    @property
+    def user_pool_id(self) -> str:
+        user_pool_id = config.get_host_specific_key(
+            "secrets.cognito.config.user_pool_id", self.ctx.host
+        )
+        if not user_pool_id:
+            raise ValueError("Cognito user pool id not configured")
+
+        return user_pool_id
+
     def _retrieve(self) -> list[dict]:
-        pass
+        return [
+            group.dict() for group in identity.get_identity_groups(self.user_pool_id)
+        ]
 
-    async def _create(self, data):
-        pass
+    async def _create(self, data) -> CognitoGroup:
+        return identity.create_identity_group(
+            self.user_pool_id, self._model_class(**data)
+        )
 
-    async def _delete(self, data):
-        pass
+    async def _delete(self, data) -> bool:
+        return identity.delete_identity_group(
+            self.user_pool_id, self._model_class(**data)
+        )
