@@ -2,11 +2,7 @@ from api.handlers.model_handlers import (
     ConfigurationCrudHandler,
     MultiItemConfigurationCrudHandler,
 )
-from common.celery_tasks.settings import (
-    synchronize_cognito_groups,
-    synchronize_cognito_sso,
-    synchronize_cognito_users,
-)
+from common.celery_tasks.settings import synchronize_cognito_sso
 from common.models import (
     CognitoGroup,
     CognitoUser,
@@ -42,13 +38,29 @@ class SsoIdpProviderConfigurationCrudHandler(ConfigurationCrudHandler):
 
 class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoUser
-    _config_key = "secrets.cognito.accounts.users"
+    _config_key = None
     _identifying_keys = ["Username"]
-    _triggers = [synchronize_cognito_users]
+
+    def _retrieve(self) -> list[dict]:
+        pass
+
+    async def _create(self, data):
+        pass
+
+    async def _delete(self, data):
+        pass
 
 
 class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoGroup
     _config_key = "secrets.cognito.accounts.groups"
     _identifying_keys = ["GroupName"]
-    _triggers = [synchronize_cognito_groups]
+
+    def _retrieve(self) -> list[dict]:
+        pass
+
+    async def _create(self, data):
+        pass
+
+    async def _delete(self, data):
+        pass
