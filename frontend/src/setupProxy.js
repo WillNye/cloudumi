@@ -23,12 +23,6 @@ module.exports = function (app) {
     })
   )
   app.use(
-    proxy('/noauth', {
-      target: 'http://localhost:8092',
-      changeOrigin: false,
-    })
-  )
-  app.use(
     proxy('/api', {
       target: 'http://localhost:8092',
       changeOrigin: false,

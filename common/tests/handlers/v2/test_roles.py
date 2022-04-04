@@ -322,7 +322,7 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
             "action_results": [
                 {
                     "status": "success",
-                    "message": "Role arn:aws:iam::012345678901:role/testing_dest_role successfully created",
+                    "message": "Role arn:aws:iam::0123456789012:role/testing_dest_role successfully created",
                 },
                 {
                     "status": "success",
