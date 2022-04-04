@@ -1851,16 +1851,16 @@ async def remove_temp_policies(
     }
     log.info(log_data)
 
+    current_dateint = datetime.today().strftime("%Y%m%d")
+
+    if not change.expiration_date:
+        return
+
+    if str(extended_request.expiration_date) > current_dateint:
+        return
+
     for change in extended_request.changes.changes:
         if change.status != Status.applied:
-            continue
-
-        current_dateint = datetime.today().strftime("%Y%m%d")
-
-        if not change.expiration_date:
-            continue
-
-        if str(change.expiration_date) > current_dateint:
             continue
 
         principal_arn = change.principal.principal_arn

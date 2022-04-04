@@ -184,11 +184,6 @@ class ManagedPolicyChangeModel(ChangeModel):
     )
     change_type: Optional[constr(regex=r"managed_policy")] = None
     action: Action
-    expiration_date: Optional[int] = Field(
-        None,
-        description="Date to expire requested policy, in the format of YYYYmmdd",
-        example=20210905,
-    )
 
 
 class PermissionsBoundaryChangeModel(ChangeModel):
@@ -422,10 +417,19 @@ class Command(Enum):
     update_change = "update_change"
     cancel_change = "cancel_change"
     move_back_to_pending = "move_back_to_pending"
+    update_expiration_date = "update_expiration_date"
 
 
 class RequestModificationBaseModel(BaseModel):
     command: Command
+
+
+class ExpirationDateRequestModificationModel(RequestModificationBaseModel):
+    expiration_date: int = Field(
+        ...,
+        description="Date to expire requested policy, in the format of YYYYmmdd",
+        example=20210905,
+    )
 
 
 class CommentRequestModificationModel(RequestModificationBaseModel):
@@ -435,7 +439,6 @@ class CommentRequestModificationModel(RequestModificationBaseModel):
 class UpdateChangeModificationModel(RequestModificationBaseModel):
     policy_document: Dict[str, Any]
     change_id: str
-    expiration_date: Optional[int] = None
 
 
 class ApplyChangeModificationModel(RequestModificationBaseModel):
@@ -892,11 +895,6 @@ class ChangeGeneratorModel(BaseModel):
         description="An array with a list of extra actions the user wants appended to the policy",
         example=["*", "s3:getobject", "s3:list*"],
     )
-    expiration_date: Optional[int] = Field(
-        None,
-        description="Date to expire requested policy, in the format of YYYYmmdd",
-        example=20210905,
-    )
 
 
 class AdvancedChangeGeneratorModel(ChangeGeneratorModel):
@@ -957,11 +955,6 @@ class InlinePolicyChangeModel(ChangeModel):
     new: Optional[bool] = True
     action: Optional[Action] = None
     change_type: Optional[constr(regex=r"inline_policy")] = None
-    expiration_date: Optional[int] = Field(
-        None,
-        description="Date to expire requested policy, in the format of YYYYmmdd",
-        example=20210905,
-    )
     policy: Optional[PolicyModel] = None
     old_policy: Optional[PolicyModel] = None
 
@@ -1034,6 +1027,11 @@ class RequestCreationModel(BaseModel):
     justification: Optional[str] = None
     dry_run: Optional[bool] = False
     admin_auto_approve: Optional[bool] = False
+    expiration_date: Optional[int] = Field(
+        None,
+        description="Date to expire requested policy, in the format of YYYYmmdd",
+        example=20210905,
+    )
 
 
 class ExtendedRequestModel(RequestModel):
@@ -1041,6 +1039,11 @@ class ExtendedRequestModel(RequestModel):
     requester_info: UserModel
     reviewer: Optional[str] = None
     comments: Optional[List[CommentModel]] = None
+    expiration_date: Optional[int] = Field(
+        None,
+        description="Date to expire requested policy, in the format of YYYYmmdd",
+        example=20210905,
+    )
 
 
 class ChangeGeneratorModelArray(BaseModel):

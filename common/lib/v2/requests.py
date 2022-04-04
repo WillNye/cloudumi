@@ -70,6 +70,7 @@ from common.models import (
     Command,
     CommentModel,
     CommentRequestModificationModel,
+    ExpirationDateRequestModificationModel,
     ExtendedAwsPrincipalModel,
     ExtendedRequestModel,
     GenericFileChangeModel,
@@ -347,7 +348,7 @@ async def generate_request_from_change_model_array(
                     inline_policy_change.policy_name,
                     user,
                     host,
-                    inline_policy_change.expiration_date,
+                    request_creation.expiration_date,
                 )
                 await validate_inline_policy_change(
                     inline_policy_change, user, principal_details
@@ -387,6 +388,7 @@ async def generate_request_from_change_model_array(
         )
         extended_request = ExtendedRequestModel(
             admin_auto_approve=request_creation.admin_auto_approve,
+            expiration_date=request_creation.expiration_date,
             id=extended_request_uuid,
             principal=primary_principal,
             timestamp=int(time.time()),
@@ -2590,6 +2592,7 @@ async def parse_and_apply_policy_request_modification(
     ] and request_changes.command not in [
         Command.add_comment,
         Command.move_back_to_pending,
+        Command.update_expiration_date,
     ]:
         raise InvalidRequestParameter(
             f"Cannot perform {request_changes.command.value} on "
@@ -2639,6 +2642,23 @@ async def parse_and_apply_policy_request_modification(
                 to_addresses=[extended_request.requester_email],
             )
 
+    elif request_changes.command == Command.update_expiration_date:
+        expiration_date_model = ExpirationDateRequestModificationModel.parse_obj(
+            request_changes
+        )
+        extended_request.expiration_date = expiration_date_model.expiration_date
+        success_message = "Successfully updated expiration date"
+        error_message = "Error occurred updating expiration date"
+        response = await _update_dynamo_with_change(
+            user,
+            host,
+            extended_request,
+            log_data,
+            response,
+            success_message,
+            error_message,
+        )
+
     elif request_changes.command == Command.update_change:
         update_change_model = UpdateChangeModificationModel.parse_obj(request_changes)
         specific_change = await _get_specific_change(
@@ -2659,11 +2679,11 @@ async def parse_and_apply_policy_request_modification(
             and specific_change.status == Status.not_applied
         ):
             specific_change.policy.policy_document = update_change_model.policy_document
-            if specific_change.expiration_date != update_change_model.expiration_date:
-                specific_change.policy_name = await generate_policy_name(
-                    None, user, host, update_change_model.expiration_date
-                )
-                specific_change.expiration_date = update_change_model.expiration_date
+            # if specific_change.expiration_date != update_change_model.expiration_date:
+            #     specific_change.policy_name = await generate_policy_name(
+            #         None, user, host, update_change_model.expiration_date
+            #     )
+            #     specific_change.expiration_date = update_change_model.expiration_date
             if (
                 specific_change.change_type == "resource_policy"
                 or specific_change.change_type == "sts_resource_policy"

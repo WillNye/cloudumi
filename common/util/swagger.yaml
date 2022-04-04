@@ -646,6 +646,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/CommentModel"
+            expiration_date:
+              type: integer
+              example: 20210905
+              description: Date to expire requested policy, in the format of YYYYmmdd
     ChangeGeneratorModelArray:
       type: object
       required:
@@ -794,10 +798,6 @@ components:
             An array with a list of extra actions the user wants appended to the policy
           items:
             type: string
-        expiration_date:
-          type: integer
-          example: 20210905
-          description: Date to expire requested policy, in the format of YYYYmmdd
     AdvancedChangeGeneratorModel:
       allOf:
         - $ref: "#/components/schemas/ChangeGeneratorModel"
@@ -1141,10 +1141,6 @@ components:
             change_type:
               type: string
               pattern: "inline_policy"
-            expiration_date:
-              type: integer
-              example: 20210905
-              description: Date to expire requested policy, in the format of YYYYmmdd
             policy:
               $ref: "#/components/schemas/PolicyModel"
             old_policy:
@@ -1237,10 +1233,6 @@ components:
               pattern: "managed_policy"
             action:
               $ref: "#/components/schemas/Action"
-            expiration_date:
-              type: integer
-              example: 20210905
-              description: Date to expire requested policy, in the format of YYYYmmdd
     ManagedPolicyResourceChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1700,6 +1692,10 @@ components:
         admin_auto_approve:
           type: boolean
           default: False
+        expiration_date:
+          type: integer
+          example: 20210905
+          description: Date to expire requested policy, in the format of YYYYmmdd
     RequestCreationResponse:
       type: object
       properties:
@@ -1733,6 +1729,18 @@ components:
             - update_change
             - cancel_change
             - move_back_to_pending
+            - update_expiration_date
+    ExpirationDateRequestModificationModel:
+      allOf:
+        - $ref: "#/components/schemas/RequestModificationBaseModel"
+        - type: integer
+          required:
+            - expiration_date
+          properties:
+            expiration_date:
+              type: integer
+              example: 20210905
+              description: Date to expire requested policy, in the format of YYYYmmdd
     CommentRequestModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
@@ -1754,8 +1762,6 @@ components:
               type: object
             change_id:
               type: string
-            expiration_date:
-              type: integer
     ApplyChangeModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"

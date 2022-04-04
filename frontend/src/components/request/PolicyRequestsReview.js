@@ -18,6 +18,7 @@ import PermissionsBoundaryChangeComponent from '../blocks/PermissionsBoundaryCha
 import AssumeRolePolicyChangeComponent from '../blocks/AssumeRolePolicyChangeComponent'
 import ResourcePolicyChangeComponent from '../blocks/ResourcePolicyChangeComponent'
 import ResourceTagChangeComponent from '../blocks/ResourceTagChangeComponent'
+import ExpirationDateBlockComponent from 'components/blocks/ExpirationDateBlockComponent'
 
 class PolicyRequestReview extends Component {
   constructor(props) {
@@ -398,6 +399,15 @@ class PolicyRequestReview extends Component {
       />
     ) : null
 
+    const expirationDateContent = (
+      <ExpirationDateBlockComponent
+        expiration_date={extendedRequest.expiration_date || null}
+        reloadDataFromBackend={this.reloadDataFromBackend}
+        requestID={requestID}
+        sendRequestCommon={this.props.sendRequestCommon}
+      />
+    )
+
     const requestReadOnly =
       extendedRequest.request_status === 'rejected' ||
       extendedRequest.request_status === 'cancelled'
@@ -585,6 +595,7 @@ class PolicyRequestReview extends Component {
           {requestDetails}
           {templateContent}
           {descriptionContent}
+          {expirationDateContent}
           {changesContent}
           {commentsContent}
           {requestButtonsContent}

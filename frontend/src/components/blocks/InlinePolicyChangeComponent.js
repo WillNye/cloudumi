@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import { DateTime } from 'luxon'
 import {
   Button,
   Dimmer,
@@ -9,11 +8,9 @@ import {
   Loader,
   Message,
   Segment,
-  Form,
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import { sortAndStringifyNestedJSONObject } from '../../helpers/utils'
-import SemanticDatepicker from 'react-semantic-ui-datepickers'
 
 class InlinePolicyChangeComponent extends Component {
   constructor(props) {
@@ -41,14 +38,12 @@ class InlinePolicyChangeComponent extends Component {
       config,
       requestReadOnly,
       requestID,
-      newExpirationDate: change.expiration_date,
       isLoading: false,
     }
 
     this.onLintError = this.onLintError.bind(this)
     this.onValueChange = this.onValueChange.bind(this)
     this.onSubmitChange = this.onSubmitChange.bind(this)
-    this.handleSetPolicyExpiration = this.handleSetPolicyExpiration.bind(this)
     this.updatePolicyDocument = props.updatePolicyDocument
     this.reloadDataFromBackend = props.reloadDataFromBackend
   }
@@ -111,17 +106,6 @@ class InlinePolicyChangeComponent extends Component {
     this.updatePolicyDocument(change.id, newValue)
   }
 
-  handleSetPolicyExpiration(event, data) {
-    if (!data?.value) {
-      return
-    }
-    const dateObj = DateTime.fromJSDate(data.value)
-    const dateString = dateObj.toFormat('yyyyMMdd')
-    this.setState({
-      newExpirationDate: parseInt(dateString),
-    })
-  }
-
   onSubmitChange() {
     const applyChange = this.props.sendProposedPolicy.bind(this, 'apply_change')
     applyChange()
@@ -139,7 +123,6 @@ class InlinePolicyChangeComponent extends Component {
       lastSavedStatement,
       isLoading,
       buttonResponseMessage,
-      newExpirationDate,
     } = this.state
 
     const newPolicy = change.new ? (
@@ -173,9 +156,7 @@ class InlinePolicyChangeComponent extends Component {
         </Grid.Column>
       ) : null
 
-    const noChangesDetected =
-      lastSavedStatement === newStatement &&
-      newExpirationDate === change.expiration_date
+    const noChangesDetected = lastSavedStatement === newStatement
 
     const updateChangesButton =
       config.can_update_cancel &&
@@ -323,38 +304,12 @@ class InlinePolicyChangeComponent extends Component {
       </Grid>
     ) : null
 
-    let expirationDate = null
-    if (change.expiration_date) {
-      expirationDate = DateTime.fromFormat(
-        `${change.expiration_date}`,
-        'yyyyMMdd'
-      ).toJSDate()
-    }
-
     return (
       <Segment>
         <Dimmer active={isLoading} inverted>
           <Loader />
         </Dimmer>
         {headerContent()}
-        <Form.Field>
-          <Header as='h1'>
-            <Header.Subheader>
-              Set or update the expiration date for the requested permissions.
-              If no date is set, the permissions will not expire.
-            </Header.Subheader>
-          </Header>
-          <SemanticDatepicker
-            filterDate={(date) => {
-              const now = new Date()
-              return date >= now
-            }}
-            onChange={this.handleSetPolicyExpiration}
-            type='basic'
-            value={expirationDate}
-            compact
-          />
-        </Form.Field>
         <Divider hidden />
         {policyChangeContent}
       </Segment>
