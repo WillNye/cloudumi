@@ -51,6 +51,7 @@ class RequestStatus(Enum):
     cancelled = "cancelled"
     approved = "approved"
     rejected = "rejected"
+    expired = "expired"
 
 
 class GeneratorType(Enum):
@@ -114,6 +115,7 @@ class Status(Enum):
     applied = "applied"
     not_applied = "not_applied"
     cancelled = "cancelled"
+    expired = "expired"
 
 
 class ChangeModel(BaseModel):

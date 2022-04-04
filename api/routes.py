@@ -127,7 +127,7 @@ log = config.get_logger()
 def make_app(jwt_validator=None):
     """make_app."""
 
-    path = os.getenv("FRONTEND_PATH") or config.get(
+    frontend_path = os.getenv("FRONTEND_PATH") or config.get(
         "_global_.web.path", pkg_resources.resource_filename("api", "templates")
     )
 
@@ -334,7 +334,7 @@ def make_app(jwt_validator=None):
         Rule(
             PathMatches(r"/(.*)"),
             FrontendHandler,
-            dict(path=path, default_filename="index.html"),
+            dict(path=frontend_path, default_filename="index.html"),
         ),
     )
 

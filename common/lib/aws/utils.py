@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pytz
 import sentry_sdk
-from asgiref.sync import sync_to_async
+from asgiref.sync import async_to_sync, sync_to_async
 from botocore.exceptions import ClientError, ParamValidationError
 from dateutil.parser import parse
 from deepdiff import DeepDiff
@@ -44,15 +44,19 @@ from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
+from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import sort_dict
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
 from common.models import (
     CloneRoleRequestModel,
+    ExtendedRequestModel,
+    RequestStatus,
     RoleCreationRequestModel,
     ServiceControlPolicyArrayModel,
     ServiceControlPolicyModel,
     SpokeAccount,
+    Status,
 )
 
 log = config.get_logger(__name__)
@@ -1828,66 +1832,188 @@ def allowed_to_sync_role(
     return False
 
 
-def remove_temp_policies(role, iam_client, host) -> bool:
+async def remove_temp_policies(
+    extended_request: ExtendedRequestModel, host: str
+) -> None:
     """
-    If this feature is enabled, it will look at inline role policies and remove expired policies if they have been
-    designated as temporary. Policies can be designated as temporary through a certain prefix in the policy name.
+    If this feature is enabled, it will look at created policies and remove expired policies if they have been
+    designated as temporary. Policies can be designated as temporary through a certain prefix in the policy name and an expiration date.
     In the future, we may allow specifying temporary policies by `Sid` or other means.
-    :param role: A single AWS IAM role entry in dictionary format as returned by the `get_account_authorization_details`
-        call
-    :return: bool: Whether policies were removed or not
+    :param extended_request: A single extended policy
     """
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
 
-    if not config.get_host_specific_key("policies.temp_policy_support", host, True):
-        return False
+    should_update_policy_request = False
 
-    temp_policy_prefix = config.get_host_specific_key(
-        "policies.temp_policy_prefix", host, "noq_delete_on"
-    )
-    if not temp_policy_prefix:
-        return False
-    current_dateint = datetime.today().strftime("%Y%m%d")
-
-    log_data = {
-        "function": function,
-        "temp_policy_prefix": temp_policy_prefix,
-        "role_arn": role["Arn"],
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "message": "Checking for expired policies",
+        "policy_request_id": extended_request.id,
     }
-    policies_removed = False
-    for policy in role["RolePolicyList"]:
-        try:
-            policy_name = policy["PolicyName"]
-            if not policy_name.startswith(temp_policy_prefix):
-                continue
-            expiration_date = policy_name.replace(temp_policy_prefix, "", 1).split("_")[
-                1
-            ]
-            if not current_dateint >= expiration_date:
-                continue
-            log.debug(
-                {
-                    **log_data,
-                    "message": "Deleting temporary policy",
-                    "policy_name": policy_name,
-                }
-            )
-            iam_client.delete_role_policy(
-                RoleName=role["RoleName"], PolicyName=policy_name
-            )
-            policies_removed = True
-        except Exception as e:
-            log.error(
-                {
-                    **log_data,
-                    "message": "Error deleting temporary IAM policy",
-                    "error": str(e),
-                },
-                exc_info=True,
-            )
-            sentry_sdk.capture_exception()
+    log.info(log_data)
 
-    return policies_removed
+    for change in extended_request.changes.changes:
+        if change.status != Status.applied:
+            continue
+
+        current_dateint = datetime.today().strftime("%Y%m%d")
+
+        if not change.expiration_date:
+            continue
+
+        if str(change.expiration_date) > current_dateint:
+            continue
+
+        principal_arn = change.principal.principal_arn
+
+        if change.change_type in ["managed_resource", "resource_policy"]:
+            principal_arn = change.arn
+
+        arn_parsed = parse_arn(principal_arn)
+        principal_name = arn_parsed["resource_path"].split("/")[-1]
+
+        resource_type = arn_parsed["service"]
+        resource_name = arn_parsed["resource"]
+        resource_region = arn_parsed["region"]
+        resource_account = arn_parsed["account"]
+
+        if not resource_account:
+            resource_account = await get_resource_account(principal_arn, host)
+
+        if resource_type == "s3" and not resource_region:
+            resource_region = await get_bucket_location_with_fallback(
+                resource_name, resource_account, host
+            )
+
+        if not resource_account:
+            # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
+            # we can't revoke this change
+            log_data["message"] = "Resource account not found"
+            log.warning(log_data)
+            continue
+
+        iam_client = boto3_cached_conn(
+            resource_type,
+            host,
+            service_type="client",
+            future_expiration_minutes=15,
+            account_number=resource_account,
+            assume_role=config.get_host_specific_key("policies.role_name", host),
+            region=resource_region or config.region,
+            session_name=sanitize_session_name("revoke-expired-policies"),
+            arn_partition="aws",
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            retry_max_attempts=2,
+        )
+
+        if change.change_type == "inline_policy":
+            try:
+                if resource_name == "role":
+                    iam_client.delete_role_policy(
+                        RoleName=principal_name, PolicyName=change.policy_name
+                    )
+                elif resource_name == "user":
+                    iam_client.delete_user_policy(
+                        UserName=principal_name, PolicyName=change.policy_name
+                    )
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except Exception as e:
+                log_data["message"] = "Exception occurred deleting inline policy"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+        elif change.change_type == "permissions_boundary":
+            try:
+                if resource_name == "role":
+                    iam_client.delete_role_permissions_boundary(RoleName=principal_name)
+                elif resource_name == "user":
+                    iam_client.delete_user_permissions_boundary(UserName=principal_name)
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except Exception as e:
+                log_data[
+                    "message"
+                ] = "Exception occurred detaching permissions boundary"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+        elif change.change_type == "managed_policy":
+            try:
+                if resource_name == "role":
+                    iam_client.detach_role_policy(
+                        RoleName=principal_name, PolicyArn=change.arn
+                    )
+                elif resource_name == "user":
+                    iam_client.detach_user_policy(
+                        UserName=principal_name, PolicyArn=change.arn
+                    )
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except Exception as e:
+                log_data["message"] = "Exception occurred detaching managed policy"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+        elif change.change_type == "resource_tag":
+            try:
+                if resource_name == "role":
+                    iam_client.untag_role(RoleName=principal_name, TagKeys=[change.key])
+                elif resource_name == "user":
+                    iam_client.untag_user(UserName=principal_name, TagKeys=[change.key])
+                change.status = Status.expired
+                should_update_policy_request = True
+            except Exception as e:
+                log_data["message"] = "Exception occurred deleting tag"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+        else:
+            if change.autogenerated:
+                # TODO : https://perimy.atlassian.net/browse/SAAS-347
+                pass
+
+    if should_update_policy_request:
+        try:
+            dynamo_handler = UserDynamoHandler(host=host)
+            extended_request.request_status = RequestStatus.expired
+            async_to_sync(dynamo_handler.write_policy_request_v2)(
+                extended_request, host
+            )
+
+            if resource_name == "role":
+                await fetch_iam_role(
+                    resource_account,
+                    principal_arn,
+                    host,
+                    force_refresh=True,
+                    run_sync=True,
+                )
+
+            elif resource_name == "user":
+                await fetch_iam_user(
+                    resource_account,
+                    principal_arn,
+                    host,
+                    force_refresh=True,
+                    run_sync=True,
+                )
+
+        except Exception as e:
+            log_data["message"] = "Exception unable to update policy status to expired"
+            log_data["error"] = str(e)
+            log.error(log_data, exc_info=True)
+            sentry_sdk.capture_exception()
 
 
 def get_aws_principal_owner(role_details: Dict[str, Any], host: str) -> Optional[str]:
