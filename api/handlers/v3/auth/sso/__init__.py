@@ -40,7 +40,7 @@ class SsoIdpProviderConfigurationCrudHandler(ConfigurationCrudHandler):
 
 class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoUser
-    _config_key = None
+    _config_key = "Unused"
     _identifying_keys = ["Username"]
 
     @property
