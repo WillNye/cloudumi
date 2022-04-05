@@ -517,9 +517,12 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
             "_add_role_to_redis.error",
             tags={"redis_key": redis_key, "error": str(e), "role_entry": role_entry},
         )
+        account_id = role_entry.get("account_id")
+        if not account_id:
+            account_id = role_entry.get("accountId")
         log_data = {
             "message": "Error syncing Account's IAM roles to Redis",
-            "account_id": role_entry["account_id"],
+            "account_id": account_id,
             "host": host,
             "arn": role_entry["arn"],
             "role_entry": role_entry,
