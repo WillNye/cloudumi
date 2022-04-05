@@ -35,7 +35,7 @@ class TestModel(BaseModel):
 
 test_model_dict = {
     "name": "test_model",
-    "account_id": "123456789012",
+    "account_id": "123456789013",
     "role_arn": "iam:aws:something:::yes",
     "external_id": "test_external_id",
     "hub_account_arn": "iam:aws:hub:account:this",
@@ -299,6 +299,34 @@ class TestModels(TestCase):
         )
         items = model_adapter.with_query({"account_id": "123456789012"}).last
         assert items.name == "test_model_two"
+
+    def test_query_multiple_accounts_find_right_one(self):
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .from_list(test_model_list_dict)
+        )
+        assert async_to_sync(model_adapter.store_list)()
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .from_dict(
+                {
+                    "name": "test_model_three",
+                    "account_id": "012345678901",
+                    "role_arn": "iam:aws:something:::yes",
+                    "external_id": "test_external_id",
+                    "hub_account_arn": "iam:aws:hub:account:this",
+                    "master_for_account": True,
+                }
+            )
+        )
+        assert async_to_sync(model_adapter.store_item_in_list)()
+        model_adapter = ModelAdapter(TestModel).load_config(
+            self.test_key_list, __name__
+        )
+        items = model_adapter.with_query({"account_id": "012345678901"}).first
+        assert items.name == "test_model_three"
 
     def test_store_with_specific_key_overwrite_in_list(self):
         model_adapter = (
