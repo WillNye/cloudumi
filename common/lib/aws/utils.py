@@ -16,6 +16,7 @@ from parliament import analyze_policy_string, enhance_finding
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
     BackgroundCheckNotPassedException,
     InvalidInvocationArgument,
@@ -50,6 +51,7 @@ from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsete
 from common.models import (
     CloneRoleRequestModel,
     ExtendedRequestModel,
+    OrgAccount,
     RequestStatus,
     RoleCreationRequestModel,
     ServiceControlPolicyArrayModel,
@@ -1380,14 +1382,11 @@ async def get_all_scps(
 async def cache_all_scps(host) -> Dict[str, Any]:
     """Store a dictionary of all Service Control Policies across organizations in the cache"""
     all_scps = {}
-    for organization in config.get_host_specific_key(
-        "cache_accounts_from_aws_organizations", host, []
+    for organization in (
+        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
-        org_account_id = organization.get("organizations_master_account_id")
-        role_to_assume = organization.get(
-            "organizations_master_role_to_assume",
-            config.get_host_specific_key("policies.role_name", host),
-        )
+        org_account_id = organization.account_id
+        role_to_assume = organization.org_id
         if not org_account_id:
             raise MissingConfigurationValue(
                 "Your AWS Organizations Master Account ID is not specified in configuration. "
@@ -1463,14 +1462,11 @@ async def get_org_structure(host, force_sync=False) -> Dict[str, Any]:
 async def cache_org_structure(host: str) -> Dict[str, Any]:
     """Store a dictionary of the organization structure in the cache"""
     all_org_structure = {}
-    for organization in config.get_host_specific_key(
-        "cache_accounts_from_aws_organizations", host, []
+    for organization in (
+        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
-        org_account_id = organization.get("organizations_master_account_id")
-        role_to_assume = organization.get(
-            "organizations_master_role_to_assume",
-            config.get_host_specific_key("policies.role_name", host),
-        )
+        org_account_id = organization.account_id
+        role_to_assume = organization.org_id
         if not org_account_id:
             raise MissingConfigurationValue(
                 "Your AWS Organizations Master Account ID is not specified in configuration. "

@@ -4,12 +4,14 @@ from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import ConsoleMeCloudAux, boto3_cached_conn
 from common.lib.aws.aws_paginate import aws_paginated
 from common.models import (
     CloudAccountModel,
     CloudAccountModelArray,
+    OrgAccount,
     ServiceControlPolicyDetailsModel,
     ServiceControlPolicyModel,
     ServiceControlPolicyTargetModel,
@@ -24,33 +26,28 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
     """
 
     cloud_accounts = []
-    for organization in config.get_host_specific_key(
-        "cache_accounts_from_aws_organizations", host, []
+    for organization in (
+        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
-        organizations_master_account_id = organization.get(
-            "organizations_master_account_id"
-        )
-        role_to_assume = organization.get(
-            "organizations_master_role_to_assume",
-            config.get_host_specific_key("policies.role_name", host),
-        )
-        if not organizations_master_account_id:
-            raise MissingConfigurationValue(
-                "Your AWS Organizations Master Account ID is not specified in configuration. "
-                "Unable to sync accounts from "
-                "AWS Organizations"
-            )
-
+        role_to_assume = organization.org_id
         # Not recommended, but people can run this on their org master account and just not assume a role
         # if not role_to_assume:
         #     raise MissingConfigurationValue(
         #         "ConsoleMe doesn't know what role to assume to retrieve account information "
         #         "from AWS Organizations. please set the appropriate configuration value."
         #     )
+        if (
+            not organization.account_id
+        ):  # Consider making this a required field in swagger
+            raise MissingConfigurationValue(
+                "Your AWS Organizations Master Account ID is not specified in configuration. "
+                "Unable to sync accounts from "
+                "AWS Organizations"
+            )
         client = await sync_to_async(boto3_cached_conn)(
             "organizations",
             host,
-            account_number=organizations_master_account_id,
+            account_number=organization.account_id,
             assume_role=role_to_assume,
             session_name="ConsoleMeOrganizationsSync",
         )
