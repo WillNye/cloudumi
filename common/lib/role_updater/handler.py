@@ -6,10 +6,12 @@ from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.plugins import get_plugin_by_name
 from common.lib.role_updater.schemas import RoleUpdaterRequest
+from common.models import SpokeAccount
 
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -69,9 +71,10 @@ async def update_role(event, host):
             "iam",
             host,
             account_number=account_number,
-            assume_role=config.get_host_specific_key(
-                "policies.role_name", host, "ConsoleMe"
-            ),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_number})
+            .first.name,
             session_name=sanitize_session_name(aws_session_name),
             retry_max_attempts=2,
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),

@@ -5,7 +5,7 @@ import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 
 export const IPRestrictionToggle = () => {
-  const { get, post } = useApi('services/aws/ip-access/origin')
+  const { get, post } = useApi('services/aws/ip-access')
 
   const { toast, success } = useToast()
 

@@ -8,22 +8,22 @@ export const services = [
     label: 'AWS',
     Component: ServiceAWS,
   },
-  {
-    name: 'jira',
-    label: 'Jira',
-  },
-  {
-    name: 'service-now',
-    label: 'Service Now',
-  },
-  {
-    name: 'pagerduty',
-    label: 'Pagerduty',
-  },
-  {
-    name: 'git',
-    label: 'Git',
-  },
+  // {
+  //   name: 'jira',
+  //   label: 'Jira',
+  // },
+  // {
+  //   name: 'service-now',
+  //   label: 'Service Now',
+  // },
+  // {
+  //   name: 'pagerduty',
+  //   label: 'Pagerduty',
+  // },
+  // {
+  //   name: 'git',
+  //   label: 'Git',
+  // },
 ]
 
 export const general = [
@@ -37,8 +37,8 @@ export const general = [
     label: 'Users and Groups',
     Component: GeneralUsers,
   },
-  {
-    name: 'integrations',
-    label: 'Integrations',
-  },
+  // {
+  //   name: 'integrations',
+  //   label: 'Integrations',
+  // },
 ]

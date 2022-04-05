@@ -4,15 +4,18 @@ from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import ConsoleMeCloudAux, boto3_cached_conn
 from common.lib.aws.aws_paginate import aws_paginated
 from common.models import (
     CloudAccountModel,
     CloudAccountModelArray,
+    OrgAccount,
     ServiceControlPolicyDetailsModel,
     ServiceControlPolicyModel,
     ServiceControlPolicyTargetModel,
+    SpokeAccount,
 )
 
 
@@ -24,33 +27,32 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
     """
 
     cloud_accounts = []
-    for organization in config.get_host_specific_key(
-        "cache_accounts_from_aws_organizations", host, []
+    for organization in (
+        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
-        organizations_master_account_id = organization.get(
-            "organizations_master_account_id"
+        role_to_assume = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": organization.account_id})
+            .first.name
         )
-        role_to_assume = organization.get(
-            "organizations_master_role_to_assume",
-            config.get_host_specific_key("policies.role_name", host),
-        )
-        if not organizations_master_account_id:
+        if not role_to_assume:
+            raise MissingConfigurationValue(
+                "Noq doesn't know what role to assume to retrieve account information "
+                "from AWS Organizations. please set the appropriate configuration value."
+            )
+        if (
+            not organization.account_id
+        ):  # Consider making this a required field in swagger
             raise MissingConfigurationValue(
                 "Your AWS Organizations Master Account ID is not specified in configuration. "
                 "Unable to sync accounts from "
                 "AWS Organizations"
             )
-
-        # Not recommended, but people can run this on their org master account and just not assume a role
-        # if not role_to_assume:
-        #     raise MissingConfigurationValue(
-        #         "ConsoleMe doesn't know what role to assume to retrieve account information "
-        #         "from AWS Organizations. please set the appropriate configuration value."
-        #     )
         client = await sync_to_async(boto3_cached_conn)(
             "organizations",
             host,
-            account_number=organizations_master_account_id,
+            account_number=organization.account_id,
             assume_role=role_to_assume,
             session_name="ConsoleMeOrganizationsSync",
         )
@@ -243,7 +245,7 @@ def _get_children_for_ou(ca: ConsoleMeCloudAux, root_id: str) -> Dict[str, Any]:
 async def retrieve_org_structure(
     org_account_id: str,
     host,
-    role_to_assume: str = "ConsoleMe",
+    role_to_assume: str = "NoqSpokeRole",
     region: str = "us-east-1",
 ) -> Dict[str, Any]:
     """Retrieve org roots then recursively build a dict of child OUs and accounts.
