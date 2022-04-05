@@ -2098,7 +2098,6 @@ components:
       type: object
       required:
         - org_id
-        - account_id
       properties:
         org_id:
           type: string
