@@ -3131,5 +3131,3 @@ app.autodiscover_tasks(
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
-
-# check_expired_policies('localhost')
