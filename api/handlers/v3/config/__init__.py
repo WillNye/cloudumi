@@ -1,9 +1,10 @@
 import tornado.escape
 
-from common.config import account, config
+from common.config import config, models
+from common.config.models import ModelAdapter
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
-from common.models import WebResponse
+from common.models import HubAccount, SpokeAccount, WebResponse
 
 
 class ConfigHandler(BaseHandler):
@@ -158,9 +159,9 @@ class ConfigHandler(BaseHandler):
                     "tenant_details.external_id", host
                 ),
                 "cluster_role": noq_cluster_role,
-                "spoke_role_name": config.get_host_specific_key(
-                    "policies.role_name", host
-                ),
+                "spoke_role_name": ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .list,
                 "central_role_name": config.get(
                     "_global_.integrations.aws.central_role_name", "NoqCentralRole"
                 ),
@@ -170,7 +171,9 @@ class ConfigHandler(BaseHandler):
             },
         }
 
-        hub_account = await account.get_hub_account(host)
+        hub_account = (
+            models.ModelAdapter(HubAccount).load_config("hub_account", host).model
+        )
         if hub_account:
             config_to_return["aws"]["central_role_arn"] = hub_account.role_arn
             config_to_return["aws"]["spoke_role_trust_policy"] = {

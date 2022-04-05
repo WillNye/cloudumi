@@ -6,8 +6,8 @@ from collections import defaultdict
 from asgiref.sync import sync_to_async
 from joblib import Parallel, delayed
 
-from common.config import config
-from common.config.account import get_hub_account
+from common.config import config, models
+from common.config.models import ModelAdapter
 from common.lib.assume_role import (
     ConsoleMeCloudAux,
     boto3_cached_conn,
@@ -18,6 +18,7 @@ from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import RedisHandler
+from common.models import HubAccount, SpokeAccount
 
 log = config.get_logger(__name__)
 
@@ -355,7 +356,10 @@ async def update_assume_role_policy_trust_noq(host, role_name, account_id):
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -369,8 +373,7 @@ async def update_assume_role_policy_trust_noq(host, role_name, account_id):
     assume_role_trust_policy = role.get("Role", {}).get("AssumeRolePolicyDocument", {})
     if not assume_role_trust_policy:
         return False
-
-    hub_account = await get_hub_account(host)
+    hub_account = models.ModelAdapter(HubAccount).load_config("hub_account", host).model
     if not hub_account:
         return False
 

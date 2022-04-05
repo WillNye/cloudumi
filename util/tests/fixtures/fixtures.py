@@ -787,7 +787,7 @@ def tenant_static_configs_table(dynamodb):
     yield dynamodb
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def with_test_configuration_tenant_static_config_data(tenant_static_configs_table):
     from common.lib import dynamo
 

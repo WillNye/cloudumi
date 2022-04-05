@@ -17,10 +17,7 @@ def synchronize_account_ids_to_name(context: dict) -> bool:
     static_config = config.get_tenant_static_config_from_dynamo(host)
     spoke_accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list
     static_config["account_ids_to_name"] = {
-        y.get("account_id"): y.get("name")
-        for d in spoke_accounts
-        for x, y in d.items()
-        if x == "name"
+        y.get("account_id"): y.get("name") for y in spoke_accounts
     }
     ddb = RestrictedDynamoHandler()
     async_to_sync(ddb.update_static_config_for_host)(

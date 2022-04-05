@@ -59,7 +59,7 @@ class ConfigurationCrudHandler(BaseHandler):
                 ModelAdapter(self._model_class).load_config(self._config_key, host).dict
             )
             res = WebResponse(
-                success="success" if get_data else "failure",
+                success="success" if get_data else "error",
                 status_code=200,
                 message="Success" if get_data else "Unable to retrieve data",
                 count=1 if get_data else 0,
@@ -67,7 +67,7 @@ class ConfigurationCrudHandler(BaseHandler):
         except ValueError:
             get_data = None
             res = WebResponse(
-                success="failure",
+                success="error",
                 status_code=404,
                 message=f"Desired entry {self._config_key} not found",
                 count=0,
@@ -75,7 +75,7 @@ class ConfigurationCrudHandler(BaseHandler):
         except Exception as exc:
             get_data = None
             res = WebResponse(
-                success="failure",
+                success="error",
                 status_code=500,
                 message=f"Something went wrong {str(exc)}",
                 count=0,
@@ -125,7 +125,7 @@ class ConfigurationCrudHandler(BaseHandler):
                 self._config_key, host
             ).from_dict(data).with_object_key(self._identifying_keys).store_item()
         except Exception as exc:
-            log.error(exc)
+            log.error(exc, exc_info=True)
             res = WebResponse(
                 success="error",
                 status_code=400,
@@ -181,7 +181,7 @@ class ConfigurationCrudHandler(BaseHandler):
                 .delete_key()
             )
         except KeyError as exc:
-            log.error(exc)
+            log.error(exc, exc_info=True)
             res = WebResponse(
                 success="error",
                 status_code=400,
@@ -280,7 +280,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         get_data = self._retrieve()
         # hub_account_data is a special structure, so we unroll it
         res = WebResponse(
-            success="success" if get_data else "failure",
+            success="success" if get_data else "error",
             status_code=200,
             message="Success" if get_data else "Unable to retrieve data",
             count=len(get_data) if get_data else 0,
@@ -328,7 +328,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         try:
             await self._create(data)
         except Exception as exc:
-            log.error(exc)
+            log.error(exc, exc_info=True)
             res = WebResponse(
                 success="error",
                 status_code=400,
@@ -383,9 +383,15 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         # multiple items posted at a time
         deleted = False
         try:
-            deleted = await self._delete(data)
+            deleted = (
+                await ModelAdapter(self._model_class)
+                .load_config(self._config_key, host)
+                .from_dict(data)
+                .with_object_key(self._identifying_keys)
+                .delete_item_from_list()
+            )
         except KeyError as exc:
-            log.error(exc)
+            log.error(exc, exc_info=True)
             res = WebResponse(
                 success="error",
                 status_code=400,
