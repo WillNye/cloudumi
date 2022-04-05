@@ -23,7 +23,8 @@ export const useModal = (title, onOpen) => {
     forceTitle // TODO: Update all modals to use only the title in prop.
   }) => (
     <Modal open={isOpen}>
-      <Modal.Header>{forceTitle || title}</Modal.Header>
+    {console.log(forceTitle)}
+      <Modal.Header>{forceTitle}</Modal.Header>
       <Modal.Content>{children}</Modal.Content>
       <Modal.Actions>
         <Button onClick={() => closeModal(onClose)}>Close</Button>
