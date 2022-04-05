@@ -1,3 +1,5 @@
+import boto3
+
 from api.handlers.model_handlers import (
     ConfigurationCrudHandler,
     MultiItemConfigurationCrudHandler,
@@ -42,15 +44,20 @@ class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoUser
     _config_key = "Unused"
     _identifying_keys = ["Username"]
+    _user_pool_id = None
 
     @property
     def user_pool_id(self) -> str:
+        if user_pool_id := getattr(self, "_user_pool_id"):
+            return user_pool_id
+
         user_pool_id = config.get_host_specific_key(
             "secrets.cognito.config.user_pool_id", self.ctx.host
         )
         if not user_pool_id:
             raise ValueError("Cognito user pool id not configured")
 
+        self._user_pool_id = user_pool_id
         return user_pool_id
 
     def _retrieve(self) -> list[dict]:
@@ -63,9 +70,21 @@ class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
         return users
 
     async def _create(self, data) -> CognitoUser:
-        return identity.create_identity_user(
-            self.user_pool_id, self._model_class(**data)
-        )
+        cognito_idp = boto3.client("cognito-idp", region_name=config.region)
+
+        try:
+            cognito_user = self._model_class(**data)
+            cognito_user.Groups = [
+                x
+                for x in identity.get_identity_user_groups(
+                    self.user_pool_id, cognito_user
+                )
+            ]
+            identity.upsert_identity_user_group(self.user_pool_id, cognito_user)
+        except cognito_idp.exceptions.UserNotFoundException:
+            return identity.create_identity_user(
+                self.user_pool_id, self._model_class(**data)
+            )
 
     async def _delete(self, data) -> bool:
         return identity.delete_identity_user(
