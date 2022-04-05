@@ -1,6 +1,7 @@
 import ujson as json
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.account_indexers.aws_organizations import (
     retrieve_accounts_from_aws_organizations,
 )
@@ -10,7 +11,7 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.plugins import get_plugin_by_name
-from common.models import CloudAccountModelArray
+from common.models import CloudAccountModelArray, SpokeAccount
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -109,36 +110,5 @@ async def get_cloud_account_model_array(
 async def get_account_id_to_name_mapping(
     host, status="active", environment=None, force_sync=False
 ):
-    redis_key = config.get_host_specific_key(
-        "cache_cloud_accounts.redis.key.all_accounts_key",
-        host,
-        f"{host}_ALL_AWS_ACCOUNTS",
-    )
-    accounts = await retrieve_json_data_from_redis_or_s3(
-        redis_key, default={}, host=host
-    )
-    if force_sync or not accounts or not accounts.get("accounts"):
-        # Force a re-sync and then retry
-        await cache_cloud_accounts(host)
-        accounts = await retrieve_json_data_from_redis_or_s3(
-            redis_key,
-            s3_bucket=config.get_host_specific_key(
-                "cache_cloud_accounts.s3.bucket", host
-            ),
-            s3_key=config.get_host_specific_key(
-                "cache_cloud_accounts.s3.file",
-                host,
-                "cache_cloud_accounts/accounts_v1.json.gz",
-            ),
-            default={},
-            host=host,
-        )
-
-    account_id_to_name = {}
-    for account in accounts.get("accounts", []):
-        if status and account.get("status") != status:
-            continue
-        if environment and account.get("environment") != environment:
-            continue
-        account_id_to_name[account["id"]] = account["name"]
-    return account_id_to_name
+    accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).models
+    return {account.account_id: account.account_name for account in accounts}

@@ -2053,7 +2053,10 @@ components:
       properties:
         name:
           type: string
-          description: Customer-specified or default hub account name (NoqCentralRole)
+          description: Customer-specified or default hub role name (NoqCentralRole)
+        account_name:
+          type: string
+          description: Account name
         account_id:
           type: string
           description: AWS account id
@@ -2071,7 +2074,10 @@ components:
       properties:
         name:
           type: string
-          description: Customer-specified or default spoke account name (NoqSpokeRole); note this must be unique for each account
+          description: Customer-specified or default spoke role name (NoqSpokeRole)
+        account_name:
+          type: string
+          description: Account name
         account_id:
           type: string
           description: AWS account id
@@ -2092,7 +2098,6 @@ components:
       type: object
       required:
         - org_id
-        - account_id
       properties:
         org_id:
           type: string

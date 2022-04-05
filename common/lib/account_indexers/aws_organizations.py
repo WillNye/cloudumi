@@ -4,6 +4,7 @@ from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import ConsoleMeCloudAux, boto3_cached_conn
 from common.lib.aws.aws_paginate import aws_paginated
@@ -13,6 +14,7 @@ from common.models import (
     ServiceControlPolicyDetailsModel,
     ServiceControlPolicyModel,
     ServiceControlPolicyTargetModel,
+    SpokeAccount,
 )
 
 
@@ -32,7 +34,10 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
         )
         role_to_assume = organization.get(
             "organizations_master_role_to_assume",
-            config.get_host_specific_key("policies.role_name", host),
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": organizations_master_account_id})
+            .first.name,
         )
         if not organizations_master_account_id:
             raise MissingConfigurationValue(
