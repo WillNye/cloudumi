@@ -176,23 +176,29 @@ export const PolicyMonacoEditor = ({
     }
   }
 
-  const handlePolicyAdminSave = useCallback(() => {
-    updatePolicy({
-      ...policy,
-      PolicyDocument: JSON.parse(policyDocument),
-    })
-    setModalWithAdminAutoApprove(true)
-    setShowExpirationDate(true)
-  }, [policyDocument, policy])
+  const handlePolicyAdminSave = useCallback(
+    () => {
+      updatePolicy({
+        ...policy,
+        PolicyDocument: JSON.parse(policyDocument),
+      })
+      setModalWithAdminAutoApprove(true)
+      setShowExpirationDate(true)
+    },
+    [policyDocument, policy] // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
-  const handlePolicySubmit = useCallback(() => {
-    updatePolicy({
-      ...policy,
-      PolicyDocument: JSON.parse(policyDocument),
-    })
-    setModalWithAdminAutoApprove(false)
-    setShowExpirationDate(true)
-  }, [policyDocument, policy])
+  const handlePolicySubmit = useCallback(
+    () => {
+      updatePolicy({
+        ...policy,
+        PolicyDocument: JSON.parse(policyDocument),
+      })
+      setModalWithAdminAutoApprove(false)
+      setShowExpirationDate(true)
+    },
+    [policyDocument, policy] // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   const handleDelete = () => {
     deletePolicy({
@@ -370,23 +376,29 @@ export const NewPolicyMonacoEditor = ({ addPolicy, setIsNewPolicy }) => {
     setNewPolicyName(policyName)
   }
 
-  const handlePolicyAdminSave = useCallback(() => {
-    addPolicy({
-      PolicyName: newPolicyName,
-      PolicyDocument: JSON.parse(policyDocument),
-    })
-    setModalWithAdminAutoApprove(true)
-    setShowExpirationDate(true)
-  }, [newPolicyName, policyDocument])
+  const handlePolicyAdminSave = useCallback(
+    () => {
+      addPolicy({
+        PolicyName: newPolicyName,
+        PolicyDocument: JSON.parse(policyDocument),
+      })
+      setModalWithAdminAutoApprove(true)
+      setShowExpirationDate(true)
+    },
+    [newPolicyName, policyDocument] // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
-  const handlePolicySubmit = useCallback(() => {
-    addPolicy({
-      PolicyName: newPolicyName,
-      PolicyDocument: JSON.parse(policyDocument),
-    })
-    setModalWithAdminAutoApprove(false)
-    setShowExpirationDate(true)
-  }, [newPolicyName, policyDocument])
+  const handlePolicySubmit = useCallback(
+    () => {
+      addPolicy({
+        PolicyName: newPolicyName,
+        PolicyDocument: JSON.parse(policyDocument),
+      })
+      setModalWithAdminAutoApprove(false)
+      setShowExpirationDate(true)
+    },
+    [newPolicyName, policyDocument] // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   const onTemplateChange = (e, { value }) => {
     clearTimeout(timeout)
