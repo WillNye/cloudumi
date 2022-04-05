@@ -2047,6 +2047,7 @@ components:
       type: object
       required:
         - name
+        - account_name
         - account_id
         - role_arn
         - external_id
@@ -2059,6 +2060,7 @@ components:
           description: Account name
         account_id:
           type: string
+          pattern: '^\d{12}$'
           description: AWS account id
         role_arn:
           type: string
@@ -2070,7 +2072,10 @@ components:
       type: object
       required:
         - name
+        - account_name
         - account_id
+        - role_arn
+        - hub_account_arn
       properties:
         name:
           type: string
@@ -2080,6 +2085,7 @@ components:
           description: Account name
         account_id:
           type: string
+          pattern: '^\d{12}$'
           description: AWS account id
         role_arn:
           type: string
@@ -2104,6 +2110,7 @@ components:
           description: A unique identifier designating the identity of the organization
         account_id:
           type: string
+          pattern: '^\d{12}$'
           description: AWS account id
         account_name:
           type: string
