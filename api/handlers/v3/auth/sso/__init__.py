@@ -16,6 +16,8 @@ from common.models import (
     SSOIDPProviders,
 )
 
+LOG = config.get_logger()
+
 
 class GoogleOidcIdpConfigurationCrudHandler(ConfigurationCrudHandler):
     _model_class = GoogleOIDCSSOIDPProvider
@@ -73,6 +75,7 @@ class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
         cognito_idp = boto3.client("cognito-idp", region_name=config.region)
 
         try:
+            # Update the resource
             cognito_user = self._model_class(**data)
             cognito_user.Groups = [
                 x
@@ -82,6 +85,7 @@ class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
             ]
             identity.upsert_identity_user_group(self.user_pool_id, cognito_user)
         except cognito_idp.exceptions.UserNotFoundException:
+            # Resource doesn't exist, so create it
             return identity.create_identity_user(
                 self.user_pool_id, self._model_class(**data)
             )
@@ -96,15 +100,20 @@ class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = CognitoGroup
     _config_key = "Unused"
     _identifying_keys = ["GroupName"]
+    _user_pool_id = None
 
     @property
     def user_pool_id(self) -> str:
+        if user_pool_id := getattr(self, "_user_pool_id"):
+            return user_pool_id
+
         user_pool_id = config.get_host_specific_key(
             "secrets.cognito.config.user_pool_id", self.ctx.host
         )
         if not user_pool_id:
             raise ValueError("Cognito user pool id not configured")
 
+        self._user_pool_id = user_pool_id
         return user_pool_id
 
     def _retrieve(self) -> list[dict]:
@@ -113,9 +122,23 @@ class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
         ]
 
     async def _create(self, data) -> CognitoGroup:
-        return identity.create_identity_group(
-            self.user_pool_id, self._model_class(**data)
-        )
+        cognito_idp = boto3.client("cognito-idp", region_name=config.region)
+        try:
+            # Update the resource
+            cognito_group = identity.get_identity_group(
+                self.user_pool_id, data["GroupName"]
+            )
+            if (
+                description := data.get("Description")
+            ) and description != cognito_group.Description:
+                cognito_group.Description = description
+                return identity.update_identity_group(self.user_pool_id, cognito_group)
+
+        except cognito_idp.exceptions.ResourceNotFoundException:
+            # Resource doesn't exist, so create it
+            return identity.create_identity_group(
+                self.user_pool_id, self._model_class(**data)
+            )
 
     async def _delete(self, data) -> bool:
         return identity.delete_identity_group(
