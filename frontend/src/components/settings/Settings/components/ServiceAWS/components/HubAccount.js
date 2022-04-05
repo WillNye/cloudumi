@@ -95,7 +95,11 @@ export const HubAccount = () => {
         />
       </DatatableWrapper>
 
-      <ModalComponent onClose={handleClose} hideConfirm forceTitle={defaultValues ? 'Edit Hub Account' : 'Add Hub Account'}>
+      <ModalComponent
+        onClose={handleClose}
+        hideConfirm
+        forceTitle={defaultValues ? 'Edit Hub Account' : 'Add Hub Account'}
+      >
         <NewHubAccount
           closeModal={closeModal}
           onFinish={handleFinish}

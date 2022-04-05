@@ -5,9 +5,7 @@ import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 
 export const ChallengeURLConfig = () => {
-  const { get, post } = useApi(
-    'auth/challenge_url'
-  )
+  const { get, post } = useApi('auth/challenge_url')
 
   const { toast, success } = useToast()
 
