@@ -35,7 +35,7 @@ class TestModel(BaseModel):
 
 test_model_dict = {
     "name": "test_model",
-    "account_id": "123456789",
+    "account_id": "123456789012",
     "role_arn": "iam:aws:something:::yes",
     "external_id": "test_external_id",
     "hub_account_arn": "iam:aws:hub:account:this",
@@ -45,7 +45,7 @@ test_model_dict = {
 test_model_list_dict = [
     {
         "name": "test_model_one",
-        "account_id": "12345678",
+        "account_id": "123456789012",
         "role_arn": "iam:aws:something:::yes",
         "external_id": "test_external_id",
         "hub_account_arn": "iam:aws:hub:account:this",
@@ -53,7 +53,7 @@ test_model_list_dict = [
     },
     {
         "name": "test_model_two",
-        "account_id": "12345678",
+        "account_id": "123456789012",
         "role_arn": "iam:aws:something:::yes",
         "external_id": "test_external_id",
         "hub_account_arn": "iam:aws:hub:account:this",
@@ -115,7 +115,7 @@ class TestModels(TestCase):
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
             "name": "test_model_before",
-            "account_id": "123456789_before",
+            "account_id": "123456789012_before",
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
@@ -159,7 +159,7 @@ class TestModels(TestCase):
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
             "name": "test_model_before",
-            "account_id": "123456789_before",
+            "account_id": "123456789012_before",
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
@@ -189,7 +189,7 @@ class TestModels(TestCase):
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
             "name": "test_model_before",
-            "account_id": "123456789_before",
+            "account_id": "123456789012_before",
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
@@ -284,7 +284,7 @@ class TestModels(TestCase):
         model_adapter = ModelAdapter(TestModel).load_config(
             self.test_key_list, __name__
         )
-        items = model_adapter.with_query({"account_id": "12345678"}).first
+        items = model_adapter.with_query({"account_id": "123456789012"}).first
         assert items.name == "test_model_one"
 
     def test_query_return_last(self):
@@ -297,7 +297,7 @@ class TestModels(TestCase):
         model_adapter = ModelAdapter(TestModel).load_config(
             self.test_key_list, __name__
         )
-        items = model_adapter.with_query({"account_id": "12345678"}).last
+        items = model_adapter.with_query({"account_id": "123456789012"}).last
         assert items.name == "test_model_two"
 
     def test_store_with_specific_key_overwrite_in_list(self):
@@ -315,7 +315,7 @@ class TestModels(TestCase):
             .from_dict(
                 {
                     "name": "test_model_one",
-                    "account_id": "123456789",
+                    "account_id": "123456789012",
                     "role_arn": "iam:aws:something:::no",
                     "external_id": "_test_update_",
                     "hub_account_arn": "iam:aws:hub:account:that",
