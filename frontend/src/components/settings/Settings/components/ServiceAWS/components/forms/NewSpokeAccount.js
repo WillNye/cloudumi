@@ -53,8 +53,8 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
 
         <Form onSubmit={handleSubmit(onSubmit)}>
           <Form.Field>
-            <label>Role Name</label>
-            <input {...register('name', { required: true })} />
+            <label>Account Name</label>
+            <input {...register('account_name', { required: true })} />
           </Form.Field>
 
           <Bar>
