@@ -28,6 +28,26 @@ class ConfigurationCrudHandler(BaseHandler):
         if not cls._model_class or not cls._config_key:
             raise RuntimeError(f"{cls.__name__} is not properly configured")
 
+    def _retrieve(self) -> dict:
+        return (
+            ModelAdapter(self._model_class)
+            .load_config(self._config_key, self.ctx.host)
+            .dict
+        )
+
+    async def _create(self, data):
+        ModelAdapter(self._model_class).load_config(
+            self._config_key, self.ctx.host
+        ).from_dict(data).with_object_key(self._identifying_keys).store_item()
+
+    async def _delete(self) -> bool:
+        return (
+            await ModelAdapter(self._model_class)
+            .load_config(self._config_key, self.ctx.host)
+            .with_object_key(self._identifying_keys)
+            .delete_key()
+        )
+
     async def get(self):
         host = self.ctx.host
         self.__validate_class_vars()
@@ -55,9 +75,7 @@ class ConfigurationCrudHandler(BaseHandler):
         log.debug(log_data)
 
         try:
-            get_data = (
-                ModelAdapter(self._model_class).load_config(self._config_key, host).dict
-            )
+            get_data = self._retrieve()
             res = WebResponse(
                 success="success" if get_data else "error",
                 status_code=200,
@@ -121,9 +139,7 @@ class ConfigurationCrudHandler(BaseHandler):
         data["external_id"] = external_id
 
         try:
-            await ModelAdapter(self._model_class).load_config(
-                self._config_key, host
-            ).from_dict(data).with_object_key(self._identifying_keys).store_item()
+            await self._create(data)
         except Exception as exc:
             log.error(exc, exc_info=True)
             res = WebResponse(
@@ -172,14 +188,21 @@ class ConfigurationCrudHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        deleted = False
         try:
-            deleted = (
-                await ModelAdapter(self._model_class)
-                .load_config(self._config_key, host)
-                .with_object_key(self._identifying_keys)
-                .delete_key()
+            deleted = await self._delete()
+            res = WebResponse(
+                status="success" if deleted else "error",
+                status_code=200 if deleted else 400,
+                message="Successfully deleted data."
+                if deleted
+                else "Unable to delete data.",
             )
+
+            if deleted:
+                for trigger in self._triggers:
+                    log.info(f"Applying trigger {trigger.name}")
+                    trigger.apply_async((self.ctx.__dict__,))
+
         except KeyError as exc:
             log.error(exc, exc_info=True)
             res = WebResponse(
@@ -188,18 +211,6 @@ class ConfigurationCrudHandler(BaseHandler):
                 message="Unable to delete data",
                 errors=[f"Unable to find {self._config_key}"],
             )
-
-        res = WebResponse(
-            status="success" if deleted else "error",
-            status_code=200 if deleted else 400,
-            message="Successfully deleted data."
-            if deleted
-            else "Unable to delete data.",
-        )
-
-        for trigger in self._triggers:
-            log.info(f"Applying trigger {trigger.name}")
-            trigger.apply_async((self.ctx.__dict__,))
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -381,7 +392,6 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time
-        deleted = False
         try:
             deleted = (
                 await ModelAdapter(self._model_class)
@@ -390,6 +400,17 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 .with_object_key(self._identifying_keys)
                 .delete_item_from_list()
             )
+            res = WebResponse(
+                status="success" if deleted else "error",
+                status_code=200 if deleted else 400,
+                message="Successfully deleted data."
+                if deleted
+                else "Unable to delete data.",
+            )
+            if deleted:
+                for trigger in self._triggers:
+                    log.info(f"Applying trigger {trigger.name}")
+                    trigger.apply_async((self.ctx.__dict__,))
         except KeyError as exc:
             log.error(exc, exc_info=True)
             res = WebResponse(
@@ -406,18 +427,6 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 errors=str(exc).split("\n"),
             )
             sentry_sdk.capture_exception()
-        finally:
-            res = WebResponse(
-                status="success" if deleted else "error",
-                status_code=200 if deleted else 400,
-                message="Successfully deleted data."
-                if deleted
-                else "Unable to delete data.",
-            )
-            if deleted:
-                for trigger in self._triggers:
-                    log.info(f"Applying trigger {trigger.name}")
-                    trigger.apply_async((self.ctx.__dict__,))
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
