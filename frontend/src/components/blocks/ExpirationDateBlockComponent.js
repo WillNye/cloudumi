@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { DateTime } from 'luxon'
 import { Button, Header, Icon, Message, Segment, Form } from 'semantic-ui-react'
 import SemanticDatepicker from 'react-semantic-ui-datepickers'
@@ -9,17 +9,17 @@ const ExpirationDateBlockComponent = ({
   expiration_date,
   sendRequestCommon,
 }) => {
-  const [expirationDate, setExpirationDate] = useState(null)
+  const [expirationDate, setExpirationDate] = useState(expiration_date)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessages, setErrorMessages] = useState([])
 
-  useEffect(function onMount() {
+  const parseDate = (expDate) => {
     let date = null
-    if (expiration_date) {
-      date = DateTime.fromFormat(`${expiration_date}`, 'yyyyMMdd').toJSDate()
+    if (expDate) {
+      date = DateTime.fromFormat(`${expDate}`, 'yyyyMMdd').toJSDate()
     }
-    setExpirationDate(date)
-  }, [])
+    return date
+  }
 
   const handleSetPolicyExpiration = (event, data) => {
     if (!data?.value) {
@@ -100,7 +100,7 @@ const ExpirationDateBlockComponent = ({
           disabled={isLoading}
           onChange={handleSetPolicyExpiration}
           type='basic'
-          value={expirationDate}
+          value={parseDate(expirationDate)}
           compact
         />
       </Form.Field>

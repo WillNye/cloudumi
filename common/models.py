@@ -471,6 +471,7 @@ class ApproveRequestModificationModel(RequestModificationBaseModel):
 class PolicyRequestModificationRequestModel(BaseModel):
     modification_model: Union[
         CommentRequestModificationModel,
+        ExpirationDateRequestModificationModel,
         UpdateChangeModificationModel,
         ApplyChangeModificationModel,
         ApproveRequestModificationModel,

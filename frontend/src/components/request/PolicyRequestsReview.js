@@ -399,13 +399,15 @@ class PolicyRequestReview extends Component {
       />
     ) : null
 
-    const expirationDateContent = (
+    const expirationDateContent = extendedRequest.id ? (
       <ExpirationDateBlockComponent
         expiration_date={extendedRequest.expiration_date || null}
         reloadDataFromBackend={this.reloadDataFromBackend}
         requestID={requestID}
         sendRequestCommon={this.props.sendRequestCommon}
       />
+    ) : (
+      <></>
     )
 
     const requestReadOnly =
