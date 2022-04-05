@@ -8,13 +8,13 @@ from common.models import HubAccount, OrgAccount, SpokeAccount
 class HubAccountConfigurationCrudHandler(ConfigurationCrudHandler):
     _model_class = HubAccount
     _config_key = "hub_account"
-    _identifying_keys = ["name"]
+    _identifying_keys = ["uuid"]
 
 
 class SpokeAccountConfigurationCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = SpokeAccount
     _config_key = "spoke_accounts"
-    _identifying_keys = ["name", "account_id"]
+    _identifying_keys = ["uuid"]
 
 
 class OrgAccountConfigurationCrudHandler(MultiItemConfigurationCrudHandler):

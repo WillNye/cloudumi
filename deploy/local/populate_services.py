@@ -19,6 +19,7 @@ challenge_url:
   enabled: true
 environment: dev
 hub_account:
+  uuid: 4e62919d-a021-462e-902c-30e9b0722592
   name: NoqCentralRoleLocalDev
   account_id: '759357822767'
   account_name: 'development'
@@ -28,6 +29,7 @@ policies:
   role_name: NoqSpokeRoleLocalDev
 spoke_accounts:
   - name: NoqSpokeRoleLocalDev
+    uuid: '0a8e23e8-9b41-4d66-85f2-3d60cb2b3c43'
     account_name: 'development'
     account_id: '759357822767'
     role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev
@@ -36,6 +38,7 @@ spoke_accounts:
     master_for_account: false
 org_accounts:
   - org_id: test_org
+    uuid:
     account_id: 123456789
     account_name: test_account
     owner: user
