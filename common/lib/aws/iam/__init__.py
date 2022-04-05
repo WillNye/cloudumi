@@ -373,9 +373,7 @@ async def update_assume_role_policy_trust_noq(host, role_name, account_id):
     assume_role_trust_policy = role.get("Role", {}).get("AssumeRolePolicyDocument", {})
     if not assume_role_trust_policy:
         return False
-    hub_account = (
-        await models.ModelAdapter(HubAccount).load_config("hub_account", host).model
-    )
+    hub_account = models.ModelAdapter(HubAccount).load_config("hub_account", host).model
     if not hub_account:
         return False
 
