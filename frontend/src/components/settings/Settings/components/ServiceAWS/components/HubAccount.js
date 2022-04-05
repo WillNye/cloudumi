@@ -97,6 +97,7 @@ export const HubAccount = () => {
 
       <ModalComponent onClose={handleClose} hideConfirm>
         <NewHubAccount
+          forceTitle={defaultValues ? 'Edit Spoke Account' : null}
           closeModal={closeModal}
           onFinish={handleFinish}
           defaultValues={defaultValues}

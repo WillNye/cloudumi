@@ -90,6 +90,7 @@ export const SpokeAccounts = () => {
 
       <ModalComponent onClose={handleClose} hideConfirm>
         <NewSpokeAccount
+          forceTitle={defaultValues ? 'Edit Spoke Account' : null}
           closeModal={closeModal}
           onFinish={handleFinish}
           defaultValues={defaultValues}

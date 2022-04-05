@@ -6,7 +6,7 @@ import { useToast } from 'lib/Toast'
 
 export const ChallengeURLConfig = () => {
   const { get, post } = useApi(
-    'services/aws/ip-access/originauth/challenge_url'
+    'auth/challenge_url'
   )
 
   const { toast, success } = useToast()
@@ -14,13 +14,13 @@ export const ChallengeURLConfig = () => {
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    // get.do('enabled').then((data) => setChecked(data?.enabled))
+    get.do().then((data) => setChecked(data?.enabled))
   }, [])
 
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'
     toast(`Please wait, we are working to ${action} Challenge URL Config`)
-    post.do(null, action).then(() => {
+    post.do(null, { enabled: checked }).then(() => {
       setChecked(checked)
       success(`Challenge URL Config is ${action}d`)
     })

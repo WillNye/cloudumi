@@ -16,6 +16,8 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
     post.do(data).then(() => {
       closeModal()
       onFinish()
+    }).catch((error) => {
+      console.log(error)
     })
   }
 
