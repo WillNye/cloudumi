@@ -521,6 +521,19 @@ def upsert_identity_user_group(user_pool_id: str, user: CognitoUser) -> bool:
     )
 
 
+def get_identity_group(user_pool_id: str, group_name: str) -> CognitoGroup:
+    """Retrieve a single Cognito group.
+
+    :param user_pool_id: the id of the user pool
+    :param group_name: the name of the group to retrieve
+    :return: The requested CognitoGroup object
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
+    response = client.get_group(UserPoolId=user_pool_id, GroupName=group_name)
+    return CognitoGroup(**response.get("Group", {}))
+
+
 def get_identity_groups(user_pool_id: str) -> List[CognitoGroup]:
     """Get Cognito groups.
 
@@ -559,6 +572,23 @@ def create_identity_group(user_pool_id: str, group: CognitoGroup) -> CognitoGrou
     )
     group_update = CognitoGroup(**response.get("Group", {}))
     return group_update
+
+
+def update_identity_group(user_pool_id: str, group: CognitoGroup) -> CognitoGroup:
+    """Update a Cognito group
+
+    :param user_pool_id: the id of the user pool that contains the group to be updated
+    :param group: a CognitoGroup object that describes the group
+    :return: The updated cognito group
+    """
+    client = boto3.client("cognito-idp", region_name=config.region)
+    LOG.info(f"{__name__} using boto3 client in region {config.region}")
+    response = client.update_group(
+        UserPoolId=user_pool_id,
+        GroupName=group.GroupName,
+        Description=group.Description,
+    )
+    return CognitoGroup(**response.get("Group", {}))
 
 
 def delete_identity_group(user_pool_id: str, group: CognitoGroup) -> bool:
