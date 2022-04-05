@@ -25,6 +25,11 @@ class TestIdentity(TestCase):
         self.pool_name = "test_pool"
         self.pool_response = self.client.create_user_pool(PoolName=self.pool_name)
         self.pool_id = self.pool_response.get("UserPool", {}).get("Id")
+        self.user_pool_client = self.client.create_user_pool_client(
+            UserPoolId=self.pool_id,
+            ClientName="test_client",
+        ).get("UserPoolClient", {})
+
         self.username = "test_user"
         self.temp_pass = "test123"
         self.groupname = "test_group"
@@ -63,7 +68,9 @@ class TestIdentity(TestCase):
         sso_provider = SSOIDPProviders(
             google=google_provider,
         )
-        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
+        assert identity.upsert_identity_provider(
+            self.pool_id, self.user_pool_client["ClientId"], sso_provider
+        )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.google
         assert providers.google.provider_name == "GoogleIDP"
@@ -78,7 +85,9 @@ class TestIdentity(TestCase):
         sso_provider = SSOIDPProviders(
             saml=saml_provider,
         )
-        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
+        assert identity.upsert_identity_provider(
+            self.pool_id, self.user_pool_client["ClientId"], sso_provider
+        )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.saml
         assert providers.saml.provider_name == "test_provider"
@@ -97,7 +106,9 @@ class TestIdentity(TestCase):
         sso_provider = SSOIDPProviders(
             oidc=oidc_provider,
         )
-        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
+        assert identity.upsert_identity_provider(
+            self.pool_id, self.user_pool_client["ClientId"], sso_provider
+        )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.oidc
         assert providers.oidc.provider_name == "OIDCIDP_Minimal"
@@ -121,7 +132,9 @@ class TestIdentity(TestCase):
         sso_provider = SSOIDPProviders(
             oidc=oidc_provider,
         )
-        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
+        assert identity.upsert_identity_provider(
+            self.pool_id, self.user_pool_client["ClientId"], sso_provider
+        )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.oidc
         assert providers.oidc.provider_name == "OIDCIDP_Complete"
@@ -134,7 +147,9 @@ class TestIdentity(TestCase):
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
-        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
+        assert identity.upsert_identity_provider(
+            self.pool_id, self.user_pool_client["ClientId"], sso_provider
+        )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.saml
         assert identity.delete_identity_provider(self.pool_id, saml_provider)
@@ -142,55 +157,50 @@ class TestIdentity(TestCase):
         assert not providers.saml
 
     def test_connect_idp_to_app_client(self):
-        client = boto3.client("cognito-idp", region_name="us-east-1")
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
             provider_name="SamlIDP",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
-        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
-        app_client = client.create_user_pool_client(
-            UserPoolId=self.pool_id,
-            ClientName="test_client",
-        ).get("UserPoolClient")
+        assert identity.upsert_identity_provider(
+            self.pool_id, self.user_pool_client["ClientId"], sso_provider
+        )
+
         assert identity.connect_idp_to_app_client(
-            self.pool_id, app_client.get("ClientId"), saml_provider
+            self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
         app_clients = identity.get_user_pool_client(
-            self.pool_id, app_client["ClientId"]
+            self.pool_id, self.user_pool_client["ClientId"]
         )
         assert app_clients.get("UserPoolClient", {}).get(
             "SupportedIdentityProviders", []
         ) == ["SamlIDP"]
 
     def test_disconnect_idp_from_app_client(self):
-        client = boto3.client("cognito-idp", region_name="us-east-1")
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
             provider_name="SamlIDP",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
-        assert identity.upsert_identity_provider(self.pool_id, sso_provider)
-        app_client = client.create_user_pool_client(
-            UserPoolId=self.pool_id,
-            ClientName="test_client",
-        ).get("UserPoolClient")
+        assert identity.upsert_identity_provider(
+            self.pool_id, self.user_pool_client["ClientId"], sso_provider
+        )
         assert identity.connect_idp_to_app_client(
-            self.pool_id, app_client.get("ClientId"), saml_provider
+            self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
         app_clients = identity.get_user_pool_client(
-            self.pool_id, app_client.get("ClientId")
+            self.pool_id, self.user_pool_client.get("ClientId")
         )
         assert app_clients.get("UserPoolClient", {}).get(
             "SupportedIdentityProviders", []
         ) == ["SamlIDP"]
         assert identity.disconnect_idp_from_app_client(
-            self.pool_id, app_client.get("ClientId"), saml_provider
+            self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
         app_clients = identity.get_user_pool_client(
-            self.pool_id, app_client.get("ClientId")
+            self.pool_id, self.user_pool_client.get("ClientId")
         )
         assert (
             app_clients.get("UserPoolClient", {}).get("SupportedIdentityProviders", [])
