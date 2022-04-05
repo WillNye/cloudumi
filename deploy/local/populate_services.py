@@ -10,11 +10,11 @@ tenant_config = f"""
 _development_user_override: user@noq.dev
 cloud_credential_authorization_mapping:
   role_tags:
-    enabled: true
-    authorized_groups_tags:
-      - noq_authorized
     authorized_groups_cli_only_tags:
-      - noq_authorized_cli
+      - noq-authorized-cli-only
+    authorized_groups_tags:
+      - noq-authorized
+    enabled: true
 challenge_url:
   enabled: true
 environment: dev
