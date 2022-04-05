@@ -79,6 +79,10 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
                     "audit": {"enabled": False},
                     "config": {"enabled": False},
                 },
-                "accounts": {"123456789012": "default_account"},
+                "accounts": {
+                    "123456789012": "default_account",
+                    "123456789013": "default_account",
+                    "012345678901": "default_account",
+                },
             },
         )

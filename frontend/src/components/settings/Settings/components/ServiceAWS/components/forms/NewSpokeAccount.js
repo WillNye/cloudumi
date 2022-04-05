@@ -61,7 +61,7 @@ export const NewSpokeAccount = ({ closeModal }) => {
               Execute CloudFormation
             </Button>
             <CopyButton
-              value={aws.data?.central_account_role?.cloudformation_url}
+              value={aws.data?.spoke_account_role?.cloudformation_url}
             />
           </Bar>
         </>

@@ -15,6 +15,7 @@ from common.models import (
     ServiceControlPolicyDetailsModel,
     ServiceControlPolicyModel,
     ServiceControlPolicyTargetModel,
+    SpokeAccount,
 )
 
 
@@ -29,13 +30,17 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
     for organization in (
         ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
-        role_to_assume = organization.org_id
-        # Not recommended, but people can run this on their org master account and just not assume a role
-        # if not role_to_assume:
-        #     raise MissingConfigurationValue(
-        #         "ConsoleMe doesn't know what role to assume to retrieve account information "
-        #         "from AWS Organizations. please set the appropriate configuration value."
-        #     )
+        role_to_assume = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": organization.account_id})
+            .first.name
+        )
+        if not role_to_assume:
+            raise MissingConfigurationValue(
+                "Noq doesn't know what role to assume to retrieve account information "
+                "from AWS Organizations. please set the appropriate configuration value."
+            )
         if (
             not organization.account_id
         ):  # Consider making this a required field in swagger
@@ -240,7 +245,7 @@ def _get_children_for_ou(ca: ConsoleMeCloudAux, root_id: str) -> Dict[str, Any]:
 async def retrieve_org_structure(
     org_account_id: str,
     host,
-    role_to_assume: str = "ConsoleMe",
+    role_to_assume: str = "NoqSpokeRole",
     region: str = "us-east-1",
 ) -> Dict[str, Any]:
     """Retrieve org roots then recursively build a dict of child OUs and accounts.

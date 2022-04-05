@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 from retrying import retry
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.iam import (
     get_role_inline_policies,
@@ -22,6 +23,7 @@ from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.dynamo import IAMRoleDynamoHandler
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
+from common.models import SpokeAccount
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger(__name__)
@@ -123,7 +125,10 @@ def _get_iam_role_sync(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         read_only=True,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -148,7 +153,10 @@ async def _get_iam_role_async(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         read_only=True,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -291,7 +299,10 @@ async def fetch_iam_role(
             role_name = role_arn.split("/")[-1]
             conn = {
                 "account_number": account_id,
-                "assume_role": config.get_host_specific_key("policies.role_name", host),
+                "assume_role": ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name,
                 "region": config.region,
                 "client_kwargs": config.get_host_specific_key(
                     "boto3.client_kwargs", host, {}
@@ -381,7 +392,10 @@ def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, 
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         read_only=True,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -403,7 +417,10 @@ async def _get_iam_user_async(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         read_only=True,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -471,7 +488,10 @@ async def fetch_iam_user(
         user_name = user_arn.split("/")[-1]
         conn = {
             "account_number": account_id,
-            "assume_role": config.get_host_specific_key("policies.role_name", host),
+            "assume_role": ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             "region": config.region,
             "client_kwargs": config.get_host_specific_key(
                 "boto3.client_kwargs", host, {}

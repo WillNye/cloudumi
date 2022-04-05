@@ -10,23 +10,25 @@ tenant_config = f"""
 _development_user_override: user@noq.dev
 cloud_credential_authorization_mapping:
   role_tags:
-    enabled: true
-    authorized_groups_tags:
-      - noq_authorized
     authorized_groups_cli_only_tags:
-      - noq_authorized_cli
+      - noq-authorized-cli-only
+    authorized_groups_tags:
+      - noq-authorized
+    enabled: true
 challenge_url:
   enabled: true
 environment: dev
 hub_account:
   name: NoqCentralRoleLocalDev
   account_id: '759357822767'
+  account_name: 'development'
   role_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
 policies:
   role_name: NoqSpokeRoleLocalDev
 spoke_accounts:
   - name: NoqSpokeRoleLocalDev
+    account_name: 'development'
     account_id: '759357822767'
     role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43

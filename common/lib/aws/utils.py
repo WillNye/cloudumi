@@ -56,6 +56,7 @@ from common.models import (
     RoleCreationRequestModel,
     ServiceControlPolicyArrayModel,
     ServiceControlPolicyModel,
+    SpokeAccount,
     Status,
 )
 
@@ -183,7 +184,10 @@ async def fetch_managed_policy_details(
     result["Policy"] = await sync_to_async(get_managed_policy_document)(
         policy_arn=policy_arn,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -192,7 +196,10 @@ async def fetch_managed_policy_details(
     policy_details = await sync_to_async(get_policy)(
         policy_arn=policy_arn,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -243,7 +250,10 @@ async def fetch_sns_topic(
         "sns",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -255,7 +265,10 @@ async def fetch_sns_topic(
 
     result: Dict = await sync_to_async(get_topic_attributes)(
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         TopicArn=arn,
         region=region,
         sts_client_kwargs=dict(
@@ -296,7 +309,10 @@ async def fetch_sqs_queue(
 
     queue_url: str = await sync_to_async(get_queue_url)(
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         QueueName=resource_name,
         sts_client_kwargs=dict(
@@ -310,7 +326,10 @@ async def fetch_sqs_queue(
 
     result: Dict = await sync_to_async(get_queue_attributes)(
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         QueueUrl=queue_url,
         AttributeNames=["All"],
@@ -325,7 +344,10 @@ async def fetch_sqs_queue(
 
     tags: Dict = await sync_to_async(list_queue_tags)(
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         QueueUrl=queue_url,
         sts_client_kwargs=dict(
@@ -371,7 +393,10 @@ async def get_bucket_location_with_fallback(
         bucket_location_res = await sync_to_async(get_bucket_location)(
             Bucket=bucket_name,
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -418,7 +443,10 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
         bucket_resource = await sync_to_async(get_bucket_resource)(
             bucket_name,
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -439,7 +467,10 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
         )
         policy: Dict = await sync_to_async(get_bucket_policy)(
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=bucket_location,
             Bucket=bucket_name,
             sts_client_kwargs=dict(
@@ -458,7 +489,10 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
     try:
         tags: Dict = await sync_to_async(get_bucket_tagging)(
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=bucket_location,
             Bucket=bucket_name,
             sts_client_kwargs=dict(
@@ -544,7 +578,10 @@ def apply_managed_policy_to_role(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         session_name=sanitize_session_name(session_name),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -684,7 +721,10 @@ async def fetch_role_details(account_id, role_name, host):
         service_type="resource",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         session_name=sanitize_session_name("fetch_role_details"),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -702,7 +742,7 @@ async def fetch_role_details(account_id, role_name, host):
 
 async def fetch_iam_user_details(account_id, iam_user_name, host):
     """
-    Fetches details about an IAM user from AWS. If `policies.role_name` configuration
+    Fetches details about an IAM user from AWS. If spoke_accounts configuration
     is set, the hub (central) account ConsoleMeInstanceProfile role will assume the
     configured role to perform the action.
 
@@ -724,7 +764,10 @@ async def fetch_iam_user_details(account_id, iam_user_name, host):
         service_type="resource",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         session_name=sanitize_session_name("fetch_iam_user_details"),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -792,7 +835,10 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
         service_type="client",
         account_number=create_model.account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": create_model.account_id})
+        .first.name,
         session_name=sanitize_session_name("create_role_" + username),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -970,7 +1016,10 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         service_type="client",
         account_number=clone_model.dest_account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": clone_model.dest_account_id})
+        .first.name,
         session_name=sanitize_session_name("clone_role_" + username),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -1255,7 +1304,10 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
         "ec2",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         read_only=True,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -1386,7 +1438,13 @@ async def cache_all_scps(host) -> Dict[str, Any]:
         ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
         org_account_id = organization.account_id
-        role_to_assume = organization.org_id
+        role_to_assume = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": org_account_id})
+            .first.name
+        )
+
         if not org_account_id:
             raise MissingConfigurationValue(
                 "Your AWS Organizations Master Account ID is not specified in configuration. "
@@ -1396,7 +1454,7 @@ async def cache_all_scps(host) -> Dict[str, Any]:
 
         if not role_to_assume:
             raise MissingConfigurationValue(
-                "ConsoleMe doesn't know what role to assume to retrieve account information "
+                "Noq doesn't know what role to assume to retrieve account information "
                 "from AWS Organizations. please set the appropriate configuration value."
             )
         org_scps = await retrieve_scps_for_organization(
@@ -1466,7 +1524,12 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
         ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
         org_account_id = organization.account_id
-        role_to_assume = organization.org_id
+        role_to_assume = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": org_account_id})
+            .first.name
+        )
         if not org_account_id:
             raise MissingConfigurationValue(
                 "Your AWS Organizations Master Account ID is not specified in configuration. "
@@ -1476,7 +1539,7 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
 
         if not role_to_assume:
             raise MissingConfigurationValue(
-                "ConsoleMe doesn't know what role to assume to retrieve account information "
+                "Noq doesn't know what role to assume to retrieve account information "
                 "from AWS Organizations. please set the appropriate configuration value."
             )
         org_structure = await retrieve_org_structure(
@@ -2104,7 +2167,10 @@ async def simulate_iam_principal_action(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",

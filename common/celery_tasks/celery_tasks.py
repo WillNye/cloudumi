@@ -45,6 +45,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.account_indexers import (
     cache_cloud_accounts,
@@ -93,7 +94,7 @@ from common.lib.tenants import get_all_hosts
 from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
-from common.models import ExtendedRequestModel
+from common.models import ExtendedRequestModel, SpokeAccount
 from identity.lib.groups.groups import (
     cache_identity_groups_for_host,
     cache_identity_requests_for_host,
@@ -997,7 +998,10 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             "iam",
             host,
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -1477,7 +1481,10 @@ def cache_managed_policies_for_account(
     managed_policies: List[Dict] = get_all_managed_policies(
         host=host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
@@ -1866,7 +1873,10 @@ def cache_sqs_queues_for_account(
                 "sqs",
                 host,
                 account_number=account_id,
-                assume_role=config.get_host_specific_key("policies.role_name", host),
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name,
                 region=region,
                 read_only=True,
                 sts_client_kwargs=dict(
@@ -1960,7 +1970,10 @@ def cache_sns_topics_for_account(
             topics = list_topics(
                 host=host,
                 account_number=account_id,
-                assume_role=config.get_host_specific_key("policies.role_name", host),
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name,
                 region=region,
                 read_only=True,
                 sts_client_kwargs=dict(
@@ -2034,7 +2047,10 @@ def cache_s3_buckets_for_account(
     s3_buckets: List = list_buckets(
         host=host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         read_only=True,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
