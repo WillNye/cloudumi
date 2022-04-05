@@ -135,7 +135,7 @@ const DataTableRowsComponent = ({
               style={column.style}
             >
               <Button
-                as="a"
+                as='a'
                 href={entry[column.key] + window.location.search || ''}
                 content={entry[column.content] || column.content}
                 fluid
@@ -143,7 +143,7 @@ const DataTableRowsComponent = ({
                 icon={column.icon}
                 primary
                 style={{
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
                 size='mini'
               />

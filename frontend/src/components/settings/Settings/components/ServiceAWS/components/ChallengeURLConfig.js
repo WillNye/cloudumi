@@ -5,14 +5,18 @@ import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 
 export const ChallengeURLConfig = () => {
-  const { get, post } = useApi('services/aws/ip-access/originauth/challenge_url')
+  const { get, post } = useApi(
+    'services/aws/ip-access/originauth/challenge_url'
+  )
 
   const { toast, success } = useToast()
 
   const [checked, setChecked] = useState(false)
 
   useEffect(
-    () => get.do('enabled').then((data) => setChecked(data?.enabled)),
+    () => {
+      // get.do('enabled').then((data) => setChecked(data?.enabled))
+    },
     []
   )
 

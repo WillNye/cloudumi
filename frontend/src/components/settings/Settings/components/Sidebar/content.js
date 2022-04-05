@@ -36,7 +36,7 @@ export const general = [
   {
     name: 'slack',
     label: 'Slack',
-    Component: IntegrationSlack
+    Component: IntegrationSlack,
   },
   {
     name: 'users',

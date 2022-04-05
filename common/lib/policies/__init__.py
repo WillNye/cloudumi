@@ -602,9 +602,7 @@ async def get_url_for_resource(
         resource_name = arn.split("/")[-1]
         url = f"/policies/edit/{account_id}/iamrole/{resource_name}"
     elif (
-        resource_type == "iam"
-        and resource_sub_type == "policy"
-        and account_id != "aws"
+        resource_type == "iam" and resource_sub_type == "policy" and account_id != "aws"
     ):
         url = f"/policies/edit/{account_id}/managed_policy/{resource_name}"
     elif resource_type in ["s3", "AWS::S3::Bucket"]:
