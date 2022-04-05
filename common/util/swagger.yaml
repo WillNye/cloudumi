@@ -2046,10 +2046,7 @@ components:
     HubAccount:
       type: object
       required:
-        - name
         - account_id
-        - role_arn
-        - external_id
       properties:
         name:
           type: string
@@ -2059,6 +2056,7 @@ components:
           description: Account name
         account_id:
           type: string
+          pattern: '^\d{12}$'
           description: AWS account id
         role_arn:
           type: string
@@ -2069,7 +2067,6 @@ components:
     SpokeAccount:
       type: object
       required:
-        - name
         - account_id
       properties:
         name:
@@ -2080,6 +2077,7 @@ components:
           description: Account name
         account_id:
           type: string
+          pattern: '^\d{12}$'
           description: AWS account id
         role_arn:
           type: string
@@ -2104,6 +2102,7 @@ components:
           description: A unique identifier designating the identity of the organization
         account_id:
           type: string
+          pattern: '^\d{12}$'
           description: AWS account id
         account_name:
           type: string
