@@ -393,13 +393,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time
         try:
-            deleted = (
-                await ModelAdapter(self._model_class)
-                .load_config(self._config_key, host)
-                .from_dict(data)
-                .with_object_key(self._identifying_keys)
-                .delete_item_from_list()
-            )
+            deleted = await self._delete(data)
             res = WebResponse(
                 status="success" if deleted else "error",
                 status_code=200 if deleted else 400,
