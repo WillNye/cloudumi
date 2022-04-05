@@ -8,6 +8,8 @@ from common.lib.dynamo import RestrictedDynamoHandler
 
 tenant_config = f"""
 _development_user_override: user@noq.dev
+_development_groups_override:
+  - engineering@noq.dev
 cloud_credential_authorization_mapping:
   role_tags:
     authorized_groups_cli_only_tags:
@@ -30,7 +32,6 @@ spoke_accounts:
   - name: NoqSpokeRoleLocalDev
     account_name: 'development'
     account_id: '759357822767'
-    account_name: 'development'
     role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
