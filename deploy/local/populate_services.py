@@ -28,6 +28,7 @@ policies:
 spoke_accounts:
   - name: NoqSpokeRoleLocalDev
     account_id: '759357822767'
+    account_name: 'development'
     role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
