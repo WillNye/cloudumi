@@ -176,22 +176,23 @@ export const PolicyMonacoEditor = ({
     }
   }
 
-  const handlePolicyAdminSave = () => {
+  const handlePolicyAdminSave = useCallback(() => {
     updatePolicy({
       ...policy,
       PolicyDocument: JSON.parse(policyDocument),
     })
+    setModalWithAdminAutoApprove(true)
     setShowExpirationDate(true)
-  }
+  }, [policyDocument, policy])
 
-  const handlePolicySubmit = () => {
+  const handlePolicySubmit = useCallback(() => {
     updatePolicy({
       ...policy,
       PolicyDocument: JSON.parse(policyDocument),
     })
     setModalWithAdminAutoApprove(false)
     setShowExpirationDate(true)
-  }
+  }, [policyDocument, policy])
 
   const handleDelete = () => {
     deletePolicy({
@@ -369,23 +370,23 @@ export const NewPolicyMonacoEditor = ({ addPolicy, setIsNewPolicy }) => {
     setNewPolicyName(policyName)
   }
 
-  const handlePolicyAdminSave = () => {
+  const handlePolicyAdminSave = useCallback(() => {
     addPolicy({
       PolicyName: newPolicyName,
       PolicyDocument: JSON.parse(policyDocument),
     })
     setModalWithAdminAutoApprove(true)
     setShowExpirationDate(true)
-  }
+  }, [newPolicyName, policyDocument])
 
-  const handlePolicySubmit = () => {
+  const handlePolicySubmit = useCallback(() => {
     addPolicy({
       PolicyName: newPolicyName,
       PolicyDocument: JSON.parse(policyDocument),
     })
     setModalWithAdminAutoApprove(false)
     setShowExpirationDate(true)
-  }
+  }, [newPolicyName, policyDocument])
 
   const onTemplateChange = (e, { value }) => {
     clearTimeout(timeout)
