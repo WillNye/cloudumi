@@ -381,15 +381,19 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time
-        deleted = False
         try:
-            deleted = (
-                await ModelAdapter(self._model_class)
-                .load_config(self._config_key, host)
-                .from_dict(data)
-                .with_object_key(self._identifying_keys)
-                .delete_item_from_list()
+            deleted = await self._delete(data)
+            res = WebResponse(
+                status="success" if deleted else "error",
+                status_code=200 if deleted else 400,
+                message="Successfully deleted data."
+                if deleted
+                else "Unable to delete data.",
             )
+            if deleted:
+                for trigger in self._triggers:
+                    log.info(f"Applying trigger {trigger.name}")
+                    trigger.apply_async((self.ctx.__dict__,))
         except KeyError as exc:
             log.error(exc, exc_info=True)
             res = WebResponse(
@@ -406,18 +410,6 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 errors=str(exc).split("\n"),
             )
             sentry_sdk.capture_exception()
-        finally:
-            res = WebResponse(
-                status="success" if deleted else "error",
-                status_code=200 if deleted else 400,
-                message="Successfully deleted data."
-                if deleted
-                else "Unable to delete data.",
-            )
-            if deleted:
-                for trigger in self._triggers:
-                    log.info(f"Applying trigger {trigger.name}")
-                    trigger.apply_async((self.ctx.__dict__,))
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
