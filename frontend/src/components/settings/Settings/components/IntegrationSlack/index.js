@@ -10,7 +10,7 @@ import { Bar, Fill } from 'lib/Misc'
 import { useToast } from 'lib/Toast'
 
 export const IntegrationSlack = () => {
-  const { register, handleSubmit, watch } = useForm()
+  const { register, watch } = useForm()
 
   const { get, post } = useApi('slack')
 
@@ -26,20 +26,21 @@ export const IntegrationSlack = () => {
     []
   )
 
-  const onSubmit = (data) => {
-    post
-      .do(data)
-      .then(() => {
-        success(`Slack Webhook URL configured`)
-      })
-      .catch(() => {
-        error(`Error when trying to configure Slack Webhook URL`)
-      })
-  }
-
   const fields = watch()
 
-  const isReady = fields.webhook_url !== ''
+  const onSubmit = (data) => {
+    post
+      .do({
+        webhook_url: fields.webhook_url,
+        enabled: fields.webhook_url ? true : false,
+      })
+      .then(() => {
+        success(`Slack Webhook URL configuration is up to date`)
+      })
+      .catch(({ message }) => {
+        error(message)
+      })
+  }
 
   const isWorking = post?.status === 'working'
 
@@ -57,7 +58,7 @@ export const IntegrationSlack = () => {
           message={'Something went wrong, try again!'}
         />
 
-        <Form onSubmit={handleSubmit(onSubmit)}>
+        <Form onSubmit={onSubmit}>
           <Form.Field>
             <label>Webhook URL</label>
             <input
@@ -68,7 +69,7 @@ export const IntegrationSlack = () => {
 
           <Bar>
             <Fill />
-            <Button type='submit' disabled={!isReady} positive>
+            <Button type='submit' positive>
               Save
             </Button>
           </Bar>

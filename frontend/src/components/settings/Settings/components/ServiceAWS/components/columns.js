@@ -43,8 +43,8 @@ export const awsOrganizationColumns = ({ handleClick }) => [
 
 export const spokeAccountsColumns = ({ handleClick }) => [
   {
-    Header: 'Role Name',
-    accessor: 'name',
+    Header: 'Account Name',
+    accessor: 'account_name',
     width: 80,
   },
   {
@@ -87,8 +87,8 @@ export const spokeAccountsColumns = ({ handleClick }) => [
 
 export const hubAccountColumns = ({ handleClick }) => [
   {
-    Header: 'Role Name',
-    accessor: 'name',
+    Header: 'Account Name',
+    accessor: 'account_name',
     width: 80,
   },
   {

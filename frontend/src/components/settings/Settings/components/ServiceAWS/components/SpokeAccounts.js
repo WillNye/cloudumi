@@ -18,8 +18,7 @@ export const SpokeAccounts = () => {
 
   const { error, success } = useToast()
 
-  const { openModal, closeModal, ModalComponent } =
-    useModal('Add Spoke Account')
+  const { openModal, closeModal, ModalComponent } = useModal()
 
   useEffect(() => get.do(), [])
 
@@ -88,7 +87,11 @@ export const SpokeAccounts = () => {
         />
       </DatatableWrapper>
 
-      <ModalComponent onClose={handleClose} hideConfirm>
+      <ModalComponent
+        onClose={handleClose}
+        hideConfirm
+        forceTitle={defaultValues ? 'Edit Spoke Account' : 'Add Spoke Account'}
+      >
         <NewSpokeAccount
           closeModal={closeModal}
           onFinish={handleFinish}

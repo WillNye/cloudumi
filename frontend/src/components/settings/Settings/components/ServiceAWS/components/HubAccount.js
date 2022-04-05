@@ -17,7 +17,7 @@ export const HubAccount = () => {
 
   const { error, success } = useToast()
 
-  const { openModal, closeModal, ModalComponent } = useModal('Add Hub Account')
+  const { openModal, closeModal, ModalComponent } = useModal()
 
   useEffect(() => get.do(), [])
 
@@ -95,7 +95,11 @@ export const HubAccount = () => {
         />
       </DatatableWrapper>
 
-      <ModalComponent onClose={handleClose} hideConfirm>
+      <ModalComponent
+        onClose={handleClose}
+        hideConfirm
+        forceTitle={defaultValues ? 'Edit Hub Account' : 'Add Hub Account'}
+      >
         <NewHubAccount
           closeModal={closeModal}
           onFinish={handleFinish}
