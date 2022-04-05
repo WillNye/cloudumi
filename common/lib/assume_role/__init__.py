@@ -64,7 +64,7 @@ class ConsoleMeCloudAux:
 # client = boto3_cached_conn(
 #             "iam",
 #             account_number=account_id,
-#             assume_role=config.get_host_specific_key("policies.role_name", host),
+#             assume_role=ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).with_query({"account_id": account_id}).first.name,
 #             region=config.region,
 #             sts_client_kwargs=dict(
 #                 region_name=config.region,

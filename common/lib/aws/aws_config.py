@@ -6,10 +6,12 @@ import ujson as json
 from botocore.exceptions import ClientError
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
+from common.models import SpokeAccount
 
 log = config.get_logger()
 
@@ -59,7 +61,10 @@ def query(
                 "config",
                 host,
                 account_number=account_id,
-                assume_role=config.get_host_specific_key("policies.role_name", host),
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name,
                 region=region,
                 sts_client_kwargs=dict(
                     region_name=config.region,

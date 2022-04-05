@@ -1,3 +1,5 @@
+import ipaddress
+
 import tornado.escape
 
 from common.config import config, ip_restrictions
@@ -75,9 +77,20 @@ class IpRestrictionsHandler(BaseHandler):
 
         if not cidr:
             res = WebResponse(
-                status="failure",
+                status="error",
                 status_code=400,
                 message="The required body parameter `cidr` was not found in the request",
+            )
+            self.write(res.json(exclude_unset=True, exclude_none=True))
+            return
+
+        try:
+            ipaddress.ip_network(cidr)
+        except ValueError as e:
+            res = WebResponse(
+                status="error",
+                status_code=400,
+                message=f"The required body parameter `cidr` is not a valid IP CIDR: {str(e)}",
             )
             self.write(res.json(exclude_unset=True, exclude_none=True))
             return
@@ -169,6 +182,8 @@ class IpRestrictionsToggleHandler(BaseHandler):
     async def post(self, _enabled):
         host = self.ctx.host
 
+        enabled = _enabled == "enable"
+
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
             "user": self.user,
@@ -189,12 +204,12 @@ class IpRestrictionsToggleHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        await ip_restrictions.toggle_ip_restrictions(host, _enabled)
+        await ip_restrictions.toggle_ip_restrictions(host, enabled)
 
         res = WebResponse(
             status="success",
             status_code=200,
-            message=f"Successfully toggled ip restrictions {_enabled}.",
+            message=f"Successfully toggled ip restrictions to: {enabled}.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -241,13 +256,15 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
     async def post(self, _enabled):
         host = self.ctx.host
 
+        enabled = _enabled == "enable"
+
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
             "user": self.user,
             "message": f"Toggling ip restrictions on requester {self.ip}",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "enabled": _enabled,
+            "enabled": enabled,
             "host": host,
         }
 
@@ -268,7 +285,7 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
         res = WebResponse(
             status="success",
             status_code=200,
-            message=f"Successfully toggled ip restrictions {_enabled}.",
+            message=f"Successfully toggled ip restrictions {enabled}.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

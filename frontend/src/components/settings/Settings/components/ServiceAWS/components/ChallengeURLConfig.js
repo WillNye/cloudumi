@@ -13,12 +13,9 @@ export const ChallengeURLConfig = () => {
 
   const [checked, setChecked] = useState(false)
 
-  useEffect(
-    () => {
-      // get.do('enabled').then((data) => setChecked(data?.enabled))
-    },
-    []
-  )
+  useEffect(() => {
+    // get.do('enabled').then((data) => setChecked(data?.enabled))
+  }, [])
 
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'

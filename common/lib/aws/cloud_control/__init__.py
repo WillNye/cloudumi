@@ -5,8 +5,10 @@ import sentry_sdk
 from asgiref.sync import sync_to_async
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
+from common.models import SpokeAccount
 
 log = config.get_logger()
 
@@ -41,7 +43,10 @@ async def list_resource_type(host, account_id, region, resource_type):
         "cloudcontrol",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         sts_client_kwargs=dict(
             region_name=config.region,

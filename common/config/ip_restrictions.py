@@ -68,7 +68,7 @@ async def get_ip_restrictions_toggle(host: str) -> bool:
         host_config["policies"] = dict()
     if "ip_restrictions" not in host_config["policies"]:
         return False
-    return host_config["policies"]["ip_restrictions"] == "enable"
+    return host_config.get("policies", {}).get("ip_restrictions", False)
 
 
 async def toggle_ip_restrictions_on_requester_ip_only(
@@ -91,4 +91,6 @@ async def get_ip_restrictions_on_requester_ip_only_toggle(host: str) -> bool:
         host_config["policies"] = dict()
     if "ip_restrictions_on_requesters_ip" not in host_config["policies"]:
         return False
-    return host_config["policies"]["ip_restrictions_on_requesters_ip"] == "enable"
+    return host_config.get("policies", {}).get(
+        "ip_restrictions_on_requesters_ip", False
+    )

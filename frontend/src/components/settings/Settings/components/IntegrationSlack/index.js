@@ -10,7 +10,6 @@ import { Bar, Fill } from 'lib/Misc'
 import { useToast } from 'lib/Toast'
 
 export const IntegrationSlack = () => {
-
   const { register, handleSubmit, watch } = useForm()
 
   const { get, post } = useApi('slack')
@@ -19,16 +18,23 @@ export const IntegrationSlack = () => {
 
   const { error, success } = useToast()
 
-  useEffect(() => get.do().then((data) => {
-    setDefaultValues(data?.webhook_url)
-  }), [])
+  useEffect(
+    () =>
+      get.do().then((data) => {
+        setDefaultValues(data?.webhook_url)
+      }),
+    []
+  )
 
   const onSubmit = (data) => {
-    post.do(data).then(() => {
-      success(`Slack Webhook URL configured`)
-    }).catch(() => {
-      error(`Error when trying to configure Slack Webhook URL`)
-    })
+    post
+      .do(data)
+      .then(() => {
+        success(`Slack Webhook URL configured`)
+      })
+      .catch(() => {
+        error(`Error when trying to configure Slack Webhook URL`)
+      })
   }
 
   const fields = watch()
@@ -44,8 +50,7 @@ export const IntegrationSlack = () => {
   return (
     <Section title={<SectionTitle title='Slack' helpHandler='slack' />}>
       <Segment basic vertical>
-
-      <DimmerWithStates
+        <DimmerWithStates
           loading={isWorking}
           showMessage={hasError}
           messageType={isSuccess ? 'success' : 'warning'}
@@ -55,7 +60,10 @@ export const IntegrationSlack = () => {
         <Form onSubmit={handleSubmit(onSubmit)}>
           <Form.Field>
             <label>Webhook URL</label>
-            <input defaultValue={defaultValue} {...register('webhook_url', { required: true })} />
+            <input
+              defaultValue={defaultValue}
+              {...register('webhook_url', { required: true })}
+            />
           </Form.Field>
 
           <Bar>
@@ -65,7 +73,6 @@ export const IntegrationSlack = () => {
             </Button>
           </Bar>
         </Form>
-
       </Segment>
     </Section>
   )

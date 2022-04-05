@@ -173,7 +173,7 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
 
         if not tag_name:
             res = WebResponse(
-                status="failure",
+                status="error",
                 status_code=400,
                 message="The required body parameter `tag_name` was not found in the request",
             )
