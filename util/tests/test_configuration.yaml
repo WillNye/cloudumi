@@ -24,6 +24,12 @@ site_configs:
         external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
         hub_account_arn: arn:aws:iam::123456789012:role/NoqCentralRoleLocalDev
         master_for_account: false
+      - name: NoqSpokeRoleLocalDev
+        account_id: "123456789013"
+        role_arn: arn:aws:iam::123456789013:role/NoqSpokeRoleLocalDev
+        external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+        hub_account_arn: arn:aws:iam::123456789013:role/NoqCentralRoleLocalDev
+        master_for_account: false
     org_accounts:
       - org_id: test_org
         account_id: 123456789
