@@ -18,7 +18,7 @@ export const ChallengeURLConfig = () => {
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'
     toast(`Please wait, we are working to ${action} Challenge URL Config`)
-    post.do(null, { enabled: checked }).then(() => {
+    post.do({ enabled: checked }).then(() => {
       setChecked(checked)
       success(`Challenge URL Config is ${action}d`)
     })
@@ -37,7 +37,7 @@ export const ChallengeURLConfig = () => {
           name='challengeURLConfig'
           onChange={handleChange}
           label={{
-            children: `Enabled Challenge URL Authentication`,
+            children: `Enable Challenge URL Authentication`,
           }}
         />
       </Message>
