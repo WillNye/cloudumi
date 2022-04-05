@@ -355,7 +355,9 @@ def delete_identity_provider(
     return True
 
 
-def __get_group_assignments(user_pool_id: str, user: CognitoUser) -> List[CognitoGroup]:
+def get_identity_user_groups(
+    user_pool_id: str, user: CognitoUser
+) -> List[CognitoGroup]:
     """Get the group assignments for a user pool.
 
     :param user_pool_id: the user pool ID
@@ -400,7 +402,7 @@ def get_identity_users(user_pool_id: str) -> List[CognitoUser]:
     cognito_users = [CognitoUser(**x) for x in users]
     for cognito_user in cognito_users:
         cognito_user.Groups = [
-            x.GroupName for x in __get_group_assignments(user_pool_id, cognito_user)
+            x.GroupName for x in get_identity_user_groups(user_pool_id, cognito_user)
         ]
     return cognito_users
 
@@ -438,7 +440,7 @@ def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
     user_update = CognitoUser(**response.get("User", {}))
     if user.Groups:
         LOG.info(f"Adding groups {user.Groups} to user {user.Username}")
-        assign_identity_user(
+        create_identity_user_groups(
             user_pool_id, user_update, [CognitoGroup(GroupName=x) for x in user.Groups]
         )
     return user_update
@@ -460,7 +462,7 @@ def delete_identity_user(user_pool_id: str, user: CognitoUser) -> bool:
     return True
 
 
-def assign_identity_user(
+def create_identity_user_groups(
     user_pool_id: str, user: CognitoUser, groups: List[CognitoGroup]
 ) -> bool:
     """Assign a user to a group.
@@ -496,6 +498,27 @@ def assign_identity_user(
             )
             return False
     return True
+
+
+def upsert_identity_user_group(user_pool_id: str, user: CognitoUser) -> bool:
+    """Removes old identity groups and creates ones that don't exist for the provided cognito user
+
+    :param user_pool_id: the id of the user pool from which to delete the user
+    :param user: a CognitoUser object that describes the user
+    :param request_groups: a list of CognitoGroup objects that describe the groups to which the user should be added
+    :return: true if successful
+    """
+    existing_groups = get_identity_user_groups(user_pool_id, user)
+
+    for group in existing_groups:
+        if group not in user.Groups:
+            delete_identity_group(user_pool_id, group)
+
+    return create_identity_user_groups(
+        user_pool_id,
+        user,
+        [group for group in user.Groups if group not in existing_groups],
+    )
 
 
 def get_identity_groups(user_pool_id: str) -> List[CognitoGroup]:
