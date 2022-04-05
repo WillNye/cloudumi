@@ -182,7 +182,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         expected = {
             "status": 500,
             "title": "Internal Server Error",
-            "message": "Error occurred deleting role: ModelAdapter(<class 'common.models.SpokeAccount'>) did not find any items with the given query: {'account_id': '012345678901'}",
+            "message": "Error occurred deleting role: An error occurred (NoSuchEntity) when calling the GetRole operation: Role fake_account_admin not found",
         }
         mock_can_delete_iam_principals.return_value = True
         response = self.fetch(

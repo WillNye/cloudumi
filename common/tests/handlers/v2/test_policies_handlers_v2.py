@@ -40,7 +40,7 @@ class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         response_j = json.loads(response.body)
         self.assertEqual(len(response_j), 3)
-        self.assertEqual(len(response_j["data"]), 19)
+        self.assertEqual(len(response_j["data"]), 21)
         first_entity = response_j["data"][0]
         self.assertEqual(first_entity["account_id"], "123456789012")
         self.assertEqual(first_entity["account_name"], "default_account")
