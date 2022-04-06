@@ -51,7 +51,7 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
 
         <SelectGroup
           label='Groups'
-          defaultValues={defaultValues?.Groups}
+          defaultValues={defaultValues?.Groups || []}
           register={{ ...register('Groups') }}
         />
 

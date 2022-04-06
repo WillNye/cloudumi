@@ -36,7 +36,7 @@ spoke_accounts:
     master_for_account: false
 org_accounts:
   - org_id: test_org
-    account_id: 123456789
+    account_id: 123456789012
     account_name: test_account
     owner: user
 tenant_details:
@@ -54,6 +54,15 @@ url: https://localhost
 application_admin: user@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
+  auth:
+    oidc:
+      client_id: j14h62of81s6s5f2ivfkdfe3v
+      client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
+  cognito:
+    config:
+      user_pool_id: us-east-1_CNoZribID
+      user_pool_client_id: j14h62of81s6s5f2ivfkdfe3v
+      user_pool_client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
 account_ids_to_name:
   "759357822767": "development"
 """
