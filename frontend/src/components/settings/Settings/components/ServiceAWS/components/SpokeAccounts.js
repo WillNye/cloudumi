@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
@@ -14,10 +14,11 @@ import { TableTopBar } from '../../utils'
 export const SpokeAccounts = () => {
   const { get, post, remove } = useApi('services/aws/account/spoke')
 
+  const [defaultValues, setDefaultValues] = useState()
+
   const { error, success } = useToast()
 
-  const { openModal, closeModal, ModalComponent } =
-    useModal('Add Spoke Account')
+  const { openModal, closeModal, ModalComponent } = useModal()
 
   useEffect(() => get.do(), [])
 
@@ -31,9 +32,21 @@ export const SpokeAccounts = () => {
         })
         .catch(() => error(str.toastErrorMsg))
     }
+    if (action === 'edit') {
+      setDefaultValues(rowValues)
+      openModal()
+    }
   }
 
-  const handleClose = post.reset
+  const handleFinish = () => {
+    success('Spoke Account edited successfully!')
+    get.do()
+  }
+
+  const handleClose = () => {
+    setDefaultValues(null)
+    post.reset()
+  }
 
   const columns = spokeAccountsColumns({ handleClick })
 
@@ -74,8 +87,16 @@ export const SpokeAccounts = () => {
         />
       </DatatableWrapper>
 
-      <ModalComponent onClose={handleClose} hideConfirm>
-        <NewSpokeAccount closeModal={closeModal} />
+      <ModalComponent
+        onClose={handleClose}
+        hideConfirm
+        forceTitle={defaultValues ? 'Edit Spoke Account' : 'Add Spoke Account'}
+      >
+        <NewSpokeAccount
+          closeModal={closeModal}
+          onFinish={handleFinish}
+          defaultValues={defaultValues}
+        />
       </ModalComponent>
     </>
   )

@@ -13,10 +13,15 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
   const { post } = useApi('services/aws/ip-access')
 
   const onSubmit = (data) => {
-    post.do(data).then(() => {
-      closeModal()
-      onFinish()
-    })
+    post
+      .do(data)
+      .then(() => {
+        closeModal()
+        onFinish()
+      })
+      .catch((error) => {
+        console.log(error)
+      })
   }
 
   const fields = watch()

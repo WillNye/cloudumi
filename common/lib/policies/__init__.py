@@ -597,14 +597,12 @@ async def get_url_for_resource(
         raise ResourceNotFound("The account for the given ARN could not be determined")
     url = ""
     if (
-        resource_type == "managed_policies" and resource_sub_type == "role"
+        resource_type == "iam" and resource_sub_type == "role"
     ) or resource_type == "AWS::IAM::Role":
         resource_name = arn.split("/")[-1]
         url = f"/policies/edit/{account_id}/iamrole/{resource_name}"
     elif (
-        resource_type == "managed_policies"
-        and resource_sub_type == "policy"
-        and account_id != "aws"
+        resource_type == "iam" and resource_sub_type == "policy" and account_id != "aws"
     ):
         url = f"/policies/edit/{account_id}/managed_policy/{resource_name}"
     elif resource_type in ["s3", "AWS::S3::Bucket"]:
