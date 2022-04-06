@@ -1853,7 +1853,7 @@ async def remove_temp_policies(
 
     current_dateint = datetime.today().strftime("%Y%m%d")
 
-    if not change.expiration_date:
+    if not extended_request.expiration_date:
         return
 
     if str(extended_request.expiration_date) > current_dateint:
@@ -1897,7 +1897,10 @@ async def remove_temp_policies(
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": resource_account})
+            .first.name,
             region=resource_region or config.region,
             session_name=sanitize_session_name("revoke-expired-policies"),
             arn_partition="aws",
