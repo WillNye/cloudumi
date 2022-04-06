@@ -2654,6 +2654,21 @@ def cache_terraform_resources_task(host=None) -> Dict:
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
+def cache_terraform_resources_task_for_all_hosts() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    hosts = get_all_hosts()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_hosts": len(hosts),
+    }
+    log.debug(log_data)
+    for host in hosts:
+        cache_terraform_resources_task.apply_async((host,))
+    return log_data
+
+
+@app.task(soft_time_limit=1800, **default_retry_kwargs)
 def cache_self_service_typeahead_task_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
@@ -3115,6 +3130,11 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
         "options": {"expires": 180},
         "schedule": schedule_minute,
+    },
+    "cache_terraform_resources_task_for_all_hosts": {
+        "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_hosts",
+        "options": {"expires": 180},
+        "schedule": schedule_1_hour,
     },
 }
 
