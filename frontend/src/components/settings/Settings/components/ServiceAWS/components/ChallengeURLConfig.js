@@ -12,7 +12,9 @@ export const ChallengeURLConfig = () => {
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    get.do().then((data) => setChecked(data?.enabled))
+    get.do().then((data) => {
+      setChecked(data?.enabled)
+    })
   }, [])
 
   const handleChange = (event, { name, checked }) => {
@@ -32,7 +34,7 @@ export const ChallengeURLConfig = () => {
         <Checkbox
           size='mini'
           toggle
-          defaultChecked={checked}
+          checked={checked}
           disabled={isWorking}
           name='challengeURLConfig'
           onChange={handleChange}

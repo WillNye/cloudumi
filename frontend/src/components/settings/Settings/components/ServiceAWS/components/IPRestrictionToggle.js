@@ -33,7 +33,7 @@ export const IPRestrictionToggle = () => {
         <Checkbox
           size='mini'
           toggle
-          defaultChecked={checked}
+          checked={checked}
           disabled={isWorking}
           name='IpRanges'
           onChange={handleChange}
