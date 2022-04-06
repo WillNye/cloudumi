@@ -81,25 +81,54 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
         )
 
     async def _delete(self) -> bool:
-        pass
+        cognito_idp = boto3.client("cognito-idp", region_name=config.region)
+
+        try:
+            sso_idp_provider = identity.get_identity_providers(self.user_pool_id)
+        except cognito_idp.exceptions.ResourceNotFoundException:
+            raise ValueError
+
+        if (
+            self._sso_idp_attr
+        ):  # If a specific identity provider was specified only delete that one
+            provider = getattr(sso_idp_provider, self._sso_idp_attr, None)
+            identity.disconnect_idp_from_app_client(
+                self.user_pool_id, self.user_pool_client_id, provider
+            )
+            return identity.delete_identity_provider(self.user_pool_id, provider)
+        else:  # Delete all supported providers
+            supported_providers = list(SSOIDPProviders.__dict__["__fields__"].keys())
+            deleted = True  # Have an all or nothing id on deleted so we don't exit on first bad delete
+            for provider_type in supported_providers:
+                # If a request is being made to set an already defined provider, remove the existing provider
+                if provider := getattr(sso_idp_provider, provider_type):
+                    identity.disconnect_idp_from_app_client(
+                        self.user_pool_id, self.user_pool_client_id, provider
+                    )
+                    if not identity.delete_identity_provider(
+                        self.user_pool_id, provider
+                    ):
+                        deleted = False
+
+        return deleted
 
 
-class GoogleOidcIdpConfigurationCrudHandler(ConfigurationCrudHandler):
+class GoogleOidcIdpConfigurationCrudHandler(IdpConfigurationCrudHandler):
     _model_class = GoogleOIDCSSOIDPProvider
     _sso_idp_attr = "google"
 
 
-class SamlOidcIdpConfigurationCrudHandler(ConfigurationCrudHandler):
+class SamlOidcIdpConfigurationCrudHandler(IdpConfigurationCrudHandler):
     _model_class = SamlOIDCSSOIDPProvider
     _sso_idp_attr = "saml"
 
 
-class OidcIdpConfigurationCrudHandler(ConfigurationCrudHandler):
+class OidcIdpConfigurationCrudHandler(IdpConfigurationCrudHandler):
     _model_class = OIDCSSOIDPProvider
     _sso_idp_attr = "oidc"
 
 
-class SsoIdpProviderConfigurationCrudHandler(ConfigurationCrudHandler):
+class SsoIdpProviderConfigurationCrudHandler(IdpConfigurationCrudHandler):
     _model_class = SSOIDPProviders
 
 
