@@ -1491,6 +1491,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         # passed in from AWS Secrets Manager or something else
         """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
         # Validate that config loads as yaml, raises exception if not
+
+        if "." in host:
+            raise ValueError("`host` cannot contain a period")
         new_config_d = yaml.load(new_config)
         stats.count(
             "update_static_config", tags={"updated_by": updated_by, "host": host}
