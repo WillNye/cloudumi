@@ -985,7 +985,14 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "test",
     ]:
         client = async_to_sync(get_boto3_instance)(
-            "iam", host, account_id, session_name="cache_iam_resources_for_account"
+            "iam",
+            host,
+            account_id,
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
+            session_name="cache_iam_resources_for_account",
         )
         paginator = client.get_paginator("get_account_authorization_details")
         response_iterator = paginator.paginate()
@@ -1905,6 +1912,10 @@ def cache_sqs_queues_for_account(
                 host,
                 account_id,
                 "cache_sqs_queues_for_account",
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name,
                 region_name=region,
                 read_only=True,
             )

@@ -6,12 +6,14 @@ from typing import Any, Dict, List, Optional, Tuple
 from blinker import Signal
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.assume_role import get_boto3_instance, rate_limited
 from common.lib.aws.cached_resources.iam import (
     get_identity_arns_for_account,
     retrieve_iam_managed_policies_for_host,
 )
 from common.lib.cache import store_json_results_in_redis_and_s3
+from common.models import SpokeAccount
 
 log = config.get_logger()
 
@@ -99,7 +101,14 @@ class AccessAdvisor:
         :return: Access Advisor data for identities across a single AWS account
         """
         client = await get_boto3_instance(
-            "iam", host, account_id, session_name="cache_access_advisor"
+            "iam",
+            host,
+            account_id,
+            session_name="cache_access_advisor",
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
         )
         arns = await get_identity_arns_for_account(host, account_id)
         jobs = self._generate_job_ids(client, arns)

@@ -240,7 +240,7 @@ def make_app(jwt_validator=None):
             AuthorizedGroupsTagsDeleteHandler,
         ),
         (
-            r"/api/v3/services/aws/policies/effective/role/(?P<_account_id>[^\/]+)/(?P<_role_name>[^\/]+)/?",
+            r"/api/v3/services/aws/policies/effective/role/(?P<_account_id>\d{12})/(?P<_role_name>[\w-]+)/?",
             EffectiveUnusedRolePolicyHandler,
         ),
         (
