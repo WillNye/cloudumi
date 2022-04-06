@@ -4,7 +4,7 @@ pytest := PYTHONDONTWRITEBYTECODE=1 \
 	CONFIG_LOCATION=util/tests/test_configuration.yaml \
 	pytest --tb short \
 	--cov-config .coveragerc --cov common --cov api \
-	--async-test-timeout=300 --timeout=300 -n auto \
+	--async-test-timeout=600 --timeout=600 -n auto \
 	--asyncio-mode=auto --dist loadscope \
     --ignore-glob 'bazel*' .
 
