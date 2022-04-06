@@ -8,6 +8,22 @@ from common.lib.dynamo import RestrictedDynamoHandler
 
 tenant_config = f"""
 _development_user_override: user@noq.dev
+cache_self_service_typeahead:
+  cache_resource_templates: true
+cache_resource_templates:
+  repositories:
+    - type: git
+      main_branch_name: master
+      name: consoleme
+      repo_url: https://github.com/Netflix/consoleme
+      web_path: https://github.com/Netflix/consoleme
+      resource_formats:
+        - terraform
+      authentication_settings:
+        email: "terraform@noq.dev"
+      resource_type_parser: null
+      terraform:
+        path_suffix: .tf
 cloud_credential_authorization_mapping:
   role_tags:
     authorized_groups_cli_only_tags:
