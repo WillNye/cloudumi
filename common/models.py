@@ -425,8 +425,8 @@ class RequestModificationBaseModel(BaseModel):
 
 
 class ExpirationDateRequestModificationModel(RequestModificationBaseModel):
-    expiration_date: int = Field(
-        ...,
+    expiration_date: Optional[int] = Field(
+        None,
         description="Date to expire requested policy, in the format of YYYYmmdd",
         example=20210905,
     )

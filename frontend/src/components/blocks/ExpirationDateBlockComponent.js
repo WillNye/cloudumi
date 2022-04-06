@@ -23,9 +23,17 @@ const ExpirationDateBlockComponent = ({
   }
 
   const handleSetPolicyExpiration = (event, data) => {
+    const currentDate = new Date()
     if (!data?.value) {
+      setExpirationDate(null)
       return
     }
+
+    if (currentDate.getTime() >= data.value.getTime()) {
+      setExpirationDate(expiration_date)
+      return
+    }
+
     const dateObj = DateTime.fromJSDate(data.value)
     const dateString = dateObj.toFormat('yyyyMMdd')
     setExpirationDate(parseInt(dateString))
