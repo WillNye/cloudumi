@@ -234,7 +234,7 @@ class TestIdentity(TestCase):
     def test_assigning_identity_user(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username=self.username)
         group = CognitoGroup(GroupName=self.groupname, UserPoolId=self.pool_id)
-        assert identity.assign_identity_user(self.pool_id, user, [group])
+        assert identity.create_identity_user_groups(self.pool_id, user, [group])
         users = identity.get_identity_users(self.pool_id)
         updated_user = [x for x in users if x.Username == self.username][0]
         assert updated_user

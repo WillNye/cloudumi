@@ -2,7 +2,7 @@ from common.celery_tasks.celery_tasks import app
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.cognito import identity
-from common.models import CognitoGroup, CognitoUser, SSOIDPProviders
+from common.models import SSOIDPProviders
 
 LOG = config.get_logger()
 
@@ -57,81 +57,3 @@ def synchronize_cognito_sso(context: dict) -> bool:
             user_pool_id, client_id, configured_providers.oidc
         )
     return True
-
-
-@app.task
-def synchronize_cognito_users(context: dict) -> bool:
-    LOG.info("Synchronizing Cognito Users")
-    host = context.get("host")
-    static_config = config.get_tenant_static_config_from_dynamo(host)
-    user_pool_id = (
-        static_config.get("secrets", {})
-        .get("cognito", {})
-        .get("config", {})
-        .get("user_pool_id")
-    )
-    if not user_pool_id:
-        LOG.error("Cognito user pool id not configured")
-        return False
-    cognito_users = identity.get_identity_users(user_pool_id)
-    noq_users = (
-        ModelAdapter(CognitoUser)
-        .load_config("secrets.cognito.accounts.users", host)
-        .models
-    )
-    delete_users = [x for x in cognito_users if x not in [y for y in noq_users]]
-    result = False not in [
-        identity.delete_identity_user(user_pool_id, x) for x in delete_users
-    ]
-    if result is False:
-        LOG.warning("Unable to synchronize users in Cognito - pruning Cognito failed")
-    add_users = [x for x in noq_users if x not in [y for y in cognito_users]]
-    result = False not in [
-        identity.create_identity_user(user_pool_id, x) for x in add_users
-    ]
-    if result is False:
-        LOG.warning(
-            "Unable to synchronize users in Cognito - create operation in Cognito failed"
-        )
-    LOG.info(
-        f"Pruned {len(delete_users)} users from Cognito and created {len(add_users)} users"
-    )
-
-
-@app.task
-def synchronize_cognito_groups(context: dict) -> bool:
-    LOG.info("Synchronizing Cognito Groups")
-    host = context.get("host")
-    static_config = config.get_tenant_static_config_from_dynamo(host)
-    user_pool_id = (
-        static_config.get("secrets", {})
-        .get("cognito", {})
-        .get("config", {})
-        .get("user_pool_id")
-    )
-    if not user_pool_id:
-        LOG.error("Cognito user pool id not configured")
-        return False
-    cognito_groups = identity.get_identity_groups(user_pool_id)
-    noq_groups = (
-        ModelAdapter(CognitoGroup)
-        .load_config("secrets.cognito.accounts.groups", host)
-        .models
-    )
-    delete_groups = [x for x in cognito_groups if x not in [y for y in noq_groups]]
-    result = False not in [
-        identity.delete_identity_group(user_pool_id, x) for x in delete_groups
-    ]
-    if result is False:
-        LOG.warning("Unable to synchronize groups in Cognito - pruning Cognito failed")
-    add_groups = [x for x in noq_groups if x not in [y for y in cognito_groups]]
-    result = False not in [
-        identity.create_identity_group(user_pool_id, x) for x in add_groups
-    ]
-    if result is False:
-        LOG.warning(
-            "Unable to synchronize groups in Cognito - create operation in Cognito failed"
-        )
-    LOG.info(
-        f"Pruned {len(delete_groups)} groups from Cognito and created {len(add_groups)} groups"
-    )

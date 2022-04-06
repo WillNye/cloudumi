@@ -15,7 +15,7 @@ import { Section } from 'lib/Section'
 export const IntegrationSSO = () => {
   const { get, post, remove } = useApi('auth/sso')
 
-  const [defaultValues, setDefaultValues] = useState()
+  const [defaultValues, setDefaultValues] = useState([])
 
   const { error, success } = useToast()
 
