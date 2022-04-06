@@ -1,4 +1,8 @@
-pytest := PYTHONDONTWRITEBYTECODE=1 pytest --tb short \
+pytest := PYTHONDONTWRITEBYTECODE=1 \
+	PYTEST_PLUGINS=util.tests.fixtures.fixtures \
+	PYTHONPATH=$(PWD) \
+	CONFIG_LOCATION=util/tests/test_configuration.yaml \
+	pytest --tb short \
 	--cov-config .coveragerc --cov common --cov api \
 	--async-test-timeout=300 --timeout=300 -n auto \
 	--asyncio-mode=auto --dist loadscope \
@@ -26,7 +30,7 @@ test: clean
 
 .PHONY: testhtml
 testhtml: clean
-	ASYNC_TEST_TIMEOUT=60 PYTEST_PLUGINS=util.tests.fixtures.fixtures PYTHONPATH=$(PWD) CONFIG_LOCATION=util/tests/test_configuration.yaml $(pytest) $(html_report) && echo "View coverage results in htmlcov/index.html"
+	ASYNC_TEST_TIMEOUT=60 $(pytest) $(html_report) && echo "View coverage results in htmlcov/index.html"
 
 .PHONY: test-lint
 test-lint: test lint
