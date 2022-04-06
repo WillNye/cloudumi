@@ -881,8 +881,6 @@ def cache_policies_table_details(host=None) -> bool:
         if resources_from_aws_config:
             for arn, value in resources_from_aws_config.items():
                 resource = json.loads(value)
-                if not resource.get("resourceType"):
-                    raise Exception(f"Resource {arn}: {value}")
                 technology = resource["resourceType"]
                 # Skip technologies that we retrieve directly
                 if technology in [
