@@ -1,6 +1,7 @@
 import urllib.parse
 
 from common.config import config, models
+from common.config.models import ModelAdapter
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
 from common.models import HubAccount, WebResponse
@@ -67,12 +68,20 @@ class AwsIntegrationHandler(BaseHandler):
             "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
         )
 
-        central_role_name = config.get(
-            "_global_.integrations.aws.central_role_name", "NoqCentralRole"
-        )
-        spoke_role_name = config.get(
-            "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
-        )
+        central_role = ModelAdapter.load_config("hub_account", host).model
+        if central_role:
+            central_role_name = ModelAdapter.load_config("hub_account", host).model.name
+        else:
+            central_role_name = config.get(
+                "_global_.integrations.aws.central_role_name", "NoqCentralRole"
+            )
+        spoke_roles = ModelAdapter.load_config("spoke_accounts", host).models
+        if spoke_roles:
+            spoke_role_name = spoke_roles.first.name
+        else:
+            spoke_role_name = config.get(
+                "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
+            )
         central_role_parameters = [
             {"ParameterKey": "ExternalIDParameter", "ParameterValue": external_id},
             {"ParameterKey": "HostParameter", "ParameterValue": host},
@@ -177,9 +186,3 @@ class AwsIntegrationHandler(BaseHandler):
                 "external_id": external_id,
             }
         self.write(res.json(exclude_unset=True, exclude_none=True))
-
-    async def post(self):
-        """
-        Create AWS Integration
-        """
-        pass
