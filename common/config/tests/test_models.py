@@ -2,7 +2,6 @@ from typing import Optional
 from unittest import TestCase
 
 import pytest
-import yaml
 from asgiref.sync import async_to_sync
 from pydantic import Field
 from tornado.httpclient import AsyncHTTPClient
@@ -11,6 +10,7 @@ from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.pydantic import BaseModel
+from common.lib.yaml import yaml
 
 
 class TestModel(BaseModel):
@@ -35,7 +35,7 @@ class TestModel(BaseModel):
 
 test_model_dict = {
     "name": "test_model",
-    "account_id": "123456789",
+    "account_id": "123456789013",
     "role_arn": "iam:aws:something:::yes",
     "external_id": "test_external_id",
     "hub_account_arn": "iam:aws:hub:account:this",
@@ -45,7 +45,7 @@ test_model_dict = {
 test_model_list_dict = [
     {
         "name": "test_model_one",
-        "account_id": "123456789",
+        "account_id": "123456789012",
         "role_arn": "iam:aws:something:::yes",
         "external_id": "test_external_id",
         "hub_account_arn": "iam:aws:hub:account:this",
@@ -53,7 +53,7 @@ test_model_list_dict = [
     },
     {
         "name": "test_model_two",
-        "account_id": "123456789",
+        "account_id": "123456789012",
         "role_arn": "iam:aws:something:::yes",
         "external_id": "test_external_id",
         "hub_account_arn": "iam:aws:hub:account:this",
@@ -115,7 +115,7 @@ class TestModels(TestCase):
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
             "name": "test_model_before",
-            "account_id": "123456789_before",
+            "account_id": "123456789012_before",
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
@@ -159,7 +159,7 @@ class TestModels(TestCase):
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
             "name": "test_model_before",
-            "account_id": "123456789_before",
+            "account_id": "123456789012_before",
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
@@ -189,7 +189,7 @@ class TestModels(TestCase):
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
             "name": "test_model_before",
-            "account_id": "123456789_before",
+            "account_id": "123456789012_before",
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
@@ -244,8 +244,8 @@ class TestModels(TestCase):
         host_config = config.get_tenant_static_config_from_dynamo(__name__)
         assert self.test_key_list in host_config
         spoke_accounts = host_config.get(self.test_key_list, [])
-        assert spoke_accounts[0].get("name") == "test_model_one"
-        assert spoke_accounts[1].get("name") == "test_model_two"
+        assert any(x for x in spoke_accounts if x.get("name") == "test_model_one")
+        assert any(x for x in spoke_accounts if x.get("name") == "test_model_two")
         assert async_to_sync(model_adapter.delete_list)()
 
     def test_store_with_single_item_into_array(self):
@@ -260,6 +260,73 @@ class TestModels(TestCase):
         spoke_accounts = host_config.get(self.test_key_list, [])
         assert spoke_accounts[0].get("name") == "test_model"
         assert async_to_sync(model_adapter.delete_list)()
+
+    def test_query(self):
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .from_dict(test_model_dict)
+        )
+        assert async_to_sync(model_adapter.store_item_in_list)()
+        model_adapter = ModelAdapter(TestModel).load_config(
+            self.test_key_list, __name__
+        )
+        items = model_adapter.query({"name": "test_model"})
+        assert len(items) == 1
+
+    def test_query_return_first(self):
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .from_list(test_model_list_dict)
+        )
+        assert async_to_sync(model_adapter.store_list)()
+        model_adapter = ModelAdapter(TestModel).load_config(
+            self.test_key_list, __name__
+        )
+        items = model_adapter.with_query({"account_id": "123456789012"}).first
+        assert items.name == "test_model_one"
+
+    def test_query_return_last(self):
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .from_list(test_model_list_dict)
+        )
+        assert async_to_sync(model_adapter.store_list)()
+        model_adapter = ModelAdapter(TestModel).load_config(
+            self.test_key_list, __name__
+        )
+        items = model_adapter.with_query({"account_id": "123456789012"}).last
+        assert items.name == "test_model_two"
+
+    def test_query_multiple_accounts_find_right_one(self):
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .from_list(test_model_list_dict)
+        )
+        assert async_to_sync(model_adapter.store_list)()
+        model_adapter = (
+            ModelAdapter(TestModel)
+            .load_config(self.test_key_list, __name__)
+            .from_dict(
+                {
+                    "name": "test_model_three",
+                    "account_id": "012345678901",
+                    "role_arn": "iam:aws:something:::yes",
+                    "external_id": "test_external_id",
+                    "hub_account_arn": "iam:aws:hub:account:this",
+                    "master_for_account": True,
+                }
+            )
+        )
+        assert async_to_sync(model_adapter.store_item_in_list)()
+        model_adapter = ModelAdapter(TestModel).load_config(
+            self.test_key_list, __name__
+        )
+        items = model_adapter.with_query({"account_id": "012345678901"}).first
+        assert items.name == "test_model_three"
 
     def test_store_with_specific_key_overwrite_in_list(self):
         model_adapter = (
@@ -276,7 +343,7 @@ class TestModels(TestCase):
             .from_dict(
                 {
                     "name": "test_model_one",
-                    "account_id": "123456789",
+                    "account_id": "123456789012",
                     "role_arn": "iam:aws:something:::no",
                     "external_id": "_test_update_",
                     "hub_account_arn": "iam:aws:hub:account:that",

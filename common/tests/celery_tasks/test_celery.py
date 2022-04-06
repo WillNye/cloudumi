@@ -16,6 +16,7 @@ sys.path.append(os.path.join(APP_ROOT, ".."))
 
 @pytest.mark.usefixtures("aws_credentials")
 @pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("sts")
 class TestCelerySync(TestCase):
     def setUp(self):
         from common.celery_tasks import celery_tasks as celery

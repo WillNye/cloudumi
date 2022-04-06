@@ -1,9 +1,9 @@
 import urllib.parse
 
-from common.config import account, config
+from common.config import config, models
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all
-from common.models import WebResponse
+from common.models import HubAccount, WebResponse
 
 
 class AwsIntegrationHandler(BaseHandler):
@@ -124,7 +124,9 @@ class AwsIntegrationHandler(BaseHandler):
             },
         )
 
-        hub_account = await account.get_hub_account(host)
+        hub_account = (
+            models.ModelAdapter(HubAccount).load_config("hub_account", host).model
+        )
         if hub_account:
             customer_central_account_role = hub_account.role_arn
             spoke_role_parameters = [

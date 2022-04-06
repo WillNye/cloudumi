@@ -1,7 +1,6 @@
 {
   "name": "frontend",
   "version": "0.1.0",
-  "type": "module",
   "private": false,
   "dependencies": {
     "@monaco-editor/react": "^4.3.1",
@@ -43,8 +42,8 @@
     "eject": "react-scripts eject",
     "lint": "prettier --check './src/**/*.{jsx,js}'",
     "lint:fix": "prettier --write './src/**/*.{jsx,js}'",
-    "copy": "cp -a build/ ../api/templates",
-    "clean": "rm -rf build && rm -rf ../api/templates",
+    "copy": "cp -a dist/ ../api/templates",
+    "clean": "rm -rf dist && rm -rf ../api/templates",
     "build_template": "yarn run clean && yarn build && yarn run copy"
   },
   "eslintConfig": {

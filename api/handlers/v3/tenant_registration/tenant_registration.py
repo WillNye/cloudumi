@@ -233,7 +233,7 @@ async def create_user_pool(noq_subdomain):
         # ],
         UserPoolTags={"tenant": noq_subdomain},
         AdminCreateUserConfig={
-            "AllowAdminCreateUserOnly": False,
+            "AllowAdminCreateUserOnly": True,
             "UnusedAccountValidityDays": 7,
         },
         # TODO: Enable advanced security mode
@@ -273,37 +273,21 @@ async def get_external_id(host, username):
 
 
 async def create_user_pool_user(
-    user_pool_client_id, client_secret, email, password, noq_subdomain
+    user_pool_id, user_pool_client_id, client_secret, email, password, noq_subdomain
 ):
     cognito = boto3.client("cognito-idp", region_name=config.region)
 
-    user = cognito.sign_up(
-        ClientId=user_pool_client_id,
-        SecretHash=await get_secret_hash(email, user_pool_client_id, client_secret),
+    user = cognito.admin_create_user(
+        UserPoolId=user_pool_id,
         Username=email,
-        Password=password,
         UserAttributes=[
             {"Name": "email", "Value": email},
         ],
+        DesiredDeliveryMediums=[
+            "EMAIL",
+        ],
     )
 
-    # user = cognito.admin_create_user(
-    #     UserPoolId=user_pool_id,
-    #     Username=email,
-    #     UserAttributes=[
-    #         {
-    #             'Name': 'email',
-    #             'Value': email
-    #         },
-    #         # {
-    #         #     'Name': 'email_verified',
-    #         #     'Value': "true"
-    #         # }
-    #         ],
-    #     DesiredDeliveryMediums=[
-    #         'EMAIL',
-    #     ],
-    # )
     return user
 
 
@@ -600,6 +584,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         ) = await create_user_pool_client(user_pool_id, dev_domain_url)
         try:
             await create_user_pool_user(
+                user_pool_id,
                 cognito_client_id,
                 cognito_user_pool_client_secret,
                 tenant.email,

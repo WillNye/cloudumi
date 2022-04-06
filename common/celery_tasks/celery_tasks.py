@@ -45,6 +45,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.account_indexers import (
     cache_cloud_accounts,
@@ -98,6 +99,7 @@ from common.lib.tenants import get_all_hosts
 from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
+from common.models import ExtendedRequestModel, SpokeAccount
 from identity.lib.groups.groups import (
     cache_identity_groups_for_host,
     cache_identity_requests_for_host,
@@ -520,9 +522,12 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
             "_add_role_to_redis.error",
             tags={"redis_key": redis_key, "error": str(e), "role_entry": role_entry},
         )
+        account_id = role_entry.get("account_id")
+        if not account_id:
+            account_id = role_entry.get("accountId")
         log_data = {
             "message": "Error syncing Account's IAM roles to Redis",
-            "account_id": role_entry["account_id"],
+            "account_id": account_id,
             "host": host,
             "arn": role_entry["arn"],
             "role_entry": role_entry,
@@ -1091,11 +1096,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         ttl: int = int((datetime.utcnow() + timedelta(hours=36)).timestamp())
         # Save them:
         for role in iam_roles:
-            if remove_temp_policies(role, client, host):
-                role = aws.get_iam_role_sync(
-                    account_id, role.get("RoleName"), client, host
-                )
-                async_to_sync(aws.cloudaux_to_aws)(role)
 
             role_entry = {
                 "arn": role.get("Arn"),
@@ -1512,7 +1512,10 @@ def cache_managed_policies_for_account(
     managed_policies: List[Dict] = get_all_managed_policies(
         host=host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
@@ -1985,7 +1988,10 @@ def cache_sns_topics_for_account(
             topics = list_topics(
                 host=host,
                 account_number=account_id,
-                assume_role=config.get_host_specific_key("policies.role_name", host),
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name,
                 region=region,
                 read_only=True,
                 sts_client_kwargs=dict(
@@ -2059,7 +2065,10 @@ def cache_s3_buckets_for_account(
     s3_buckets: List = list_buckets(
         host=host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         read_only=True,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -2968,6 +2977,27 @@ def get_current_celery_tasks(host: str = None, status: str = None) -> List[Any]:
     return filtered_tasks
 
 
+@app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
+def check_expired_policies(self, host: str) -> Dict[str, Any]:
+    from common.lib.dynamo import UserDynamoHandler
+
+    if not host:
+        raise Exception("`host` must be passed to this task.")
+
+    dynamo_handler = UserDynamoHandler(host=host)
+
+    all_policy_requests = async_to_sync(dynamo_handler.get_all_policy_requests)(
+        host, status="approved"
+    )
+
+    if not all_policy_requests:
+        return
+
+    for request in all_policy_requests:
+        extended_request = ExtendedRequestModel.parse_obj(request["extended_request"])
+        async_to_sync(remove_temp_policies)(extended_request, host)
+
+
 schedule_30_minute = timedelta(seconds=1800)
 schedule_45_minute = timedelta(seconds=2700)
 schedule_6_hours = timedelta(hours=6)
@@ -3114,6 +3144,13 @@ if internal_celery_tasks and isinstance(internal_celery_tasks, dict):
 
 if config.get("_global_.celery.clear_tasks_for_development", False):
     schedule = {}
+
+app.autodiscover_tasks(
+    [
+        "common.celery_tasks.auth",
+        "common.celery_tasks.settings",
+    ]
+)
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"

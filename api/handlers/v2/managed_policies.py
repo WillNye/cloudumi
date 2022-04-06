@@ -4,6 +4,7 @@ import ujson as json
 from asgiref.sync import sync_to_async
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MustBeFte
 from common.handlers.base import BaseAPIV2Handler
 from common.lib.aws.iam import (
@@ -12,7 +13,7 @@ from common.lib.aws.iam import (
     get_role_managed_policy_documents,
     get_user_managed_policy_documents,
 )
-from common.models import Status2, WebResponse
+from common.models import SpokeAccount, Status2, WebResponse
 
 log = config.get_logger()
 
@@ -89,7 +90,10 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
             )(
                 {"RoleName": principal_name},
                 account_number=account_id,
-                assume_role=config.get_host_specific_key("policies.role_name", host),
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name,
                 region=config.region,
                 retry_max_attempts=2,
                 client_kwargs=config.get_host_specific_key(
@@ -103,7 +107,10 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
             )(
                 {"UserName": principal_name},
                 account_number=account_id,
-                assume_role=config.get_host_specific_key("policies.role_name", host),
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name,
                 region=config.region,
                 retry_max_attempts=2,
                 client_kwargs=config.get_host_specific_key(
@@ -162,7 +169,10 @@ class ManagedPoliciesHandler(BaseAPIV2Handler):
         managed_policy_details = await sync_to_async(get_managed_policy_document)(
             policy_arn=policy_arn,
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=config.region,
             retry_max_attempts=2,
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),

@@ -97,11 +97,9 @@ from api.handlers.v3.auth.sso import (
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
 from api.handlers.v3.services.aws.account import (
-    HubAccountHandler,
-    OrgDeleteHandler,
-    OrgHandler,
-    SpokeDeleteHandler,
-    SpokeHandler,
+    HubAccountConfigurationCrudHandler,
+    OrgAccountConfigurationCrudHandler,
+    SpokeAccountConfigurationCrudHandler,
 )
 from api.handlers.v3.services.aws.ip_restrictions import (
     IpRestrictionsHandler,
@@ -132,7 +130,7 @@ log = config.get_logger()
 def make_app(jwt_validator=None):
     """make_app."""
 
-    path = os.getenv("FRONTEND_PATH") or config.get(
+    frontend_path = os.getenv("FRONTEND_PATH") or config.get(
         "_global_.web.path", pkg_resources.resource_filename("api", "templates")
     )
 
@@ -141,7 +139,7 @@ def make_app(jwt_validator=None):
     )
 
     routes = [
-        (r"/auth", AuthHandler),  # /auth is still used by OIDC callback
+        (r"/auth/?", AuthHandler),  # /auth is still used by OIDC callback
         (r"/saml/(.*)", SamlHandler),
         (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
@@ -216,18 +214,15 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
-        (r"/api/v3/services/aws/account/hub", HubAccountHandler),
+        (r"/api/v3/services/aws/account/hub/?", HubAccountConfigurationCrudHandler),
         (
-            # (?P<param1>[^\/]+)/?(?P<param2>[^\/]+)?/?(?P<param3>[^\/]+)?
-            r"/api/v3/services/aws/account/spoke/(?P<_name>[^\/]+)/(?P<_account_id>[^\/]+)/?",
-            SpokeDeleteHandler,
+            r"/api/v3/services/aws/account/spoke/?",
+            SpokeAccountConfigurationCrudHandler,
         ),
-        (r"/api/v3/services/aws/account/spoke", SpokeHandler),
         (
-            r"/api/v3/services/aws/account/org/(?P<_org_id>[a-zA-Z0-9_-]+)/?",
-            OrgDeleteHandler,
+            r"/api/v3/services/aws/account/org/?",
+            OrgAccountConfigurationCrudHandler,
         ),
-        (r"/api/v3/services/aws/account/org", OrgHandler),
         (
             r"/api/v3/services/aws/role-access/credential-brokering",
             CredentialBrokeringCurrentStateHandler,
@@ -346,7 +341,7 @@ def make_app(jwt_validator=None):
         Rule(
             PathMatches(r"/(.*)"),
             FrontendHandler,
-            dict(path=path, default_filename="index.html"),
+            dict(path=frontend_path, default_filename="index.html"),
         ),
     )
 

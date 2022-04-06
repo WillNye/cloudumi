@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pytz
 import sentry_sdk
-from asgiref.sync import sync_to_async
+from asgiref.sync import async_to_sync, sync_to_async
 from botocore.exceptions import ClientError, ParamValidationError
 from dateutil.parser import parse
 from deepdiff import DeepDiff
@@ -17,6 +17,7 @@ from parliament import analyze_policy_string, enhance_finding
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
     BackgroundCheckNotPassedException,
     InvalidInvocationArgument,
@@ -44,14 +45,20 @@ from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
+from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import sort_dict
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
 from common.models import (
     CloneRoleRequestModel,
+    ExtendedRequestModel,
+    OrgAccount,
+    RequestStatus,
     RoleCreationRequestModel,
     ServiceControlPolicyArrayModel,
     ServiceControlPolicyModel,
+    SpokeAccount,
+    Status,
 )
 
 log = config.get_logger(__name__)
@@ -180,7 +187,10 @@ async def fetch_managed_policy_details(
     result["Policy"] = await sync_to_async(get_managed_policy_document)(
         policy_arn=policy_arn,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -189,7 +199,10 @@ async def fetch_managed_policy_details(
     policy_details = await sync_to_async(get_policy)(
         policy_arn=policy_arn,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=config.region,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -240,7 +253,10 @@ async def fetch_sns_topic(
         "sns",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -252,7 +268,10 @@ async def fetch_sns_topic(
 
     result: Dict = await sync_to_async(get_topic_attributes)(
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         TopicArn=arn,
         region=region,
         sts_client_kwargs=dict(
@@ -293,7 +312,10 @@ async def fetch_sqs_queue(
 
     queue_url: str = await sync_to_async(get_queue_url)(
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         QueueName=resource_name,
         sts_client_kwargs=dict(
@@ -307,7 +329,10 @@ async def fetch_sqs_queue(
 
     result: Dict = await sync_to_async(get_queue_attributes)(
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         QueueUrl=queue_url,
         AttributeNames=["All"],
@@ -322,7 +347,10 @@ async def fetch_sqs_queue(
 
     tags: Dict = await sync_to_async(list_queue_tags)(
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         QueueUrl=queue_url,
         sts_client_kwargs=dict(
@@ -368,7 +396,10 @@ async def get_bucket_location_with_fallback(
         bucket_location_res = await sync_to_async(get_bucket_location)(
             Bucket=bucket_name,
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -415,7 +446,10 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
         bucket_resource = await sync_to_async(get_bucket_resource)(
             bucket_name,
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -436,7 +470,10 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
         )
         policy: Dict = await sync_to_async(get_bucket_policy)(
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=bucket_location,
             Bucket=bucket_name,
             sts_client_kwargs=dict(
@@ -455,7 +492,10 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
     try:
         tags: Dict = await sync_to_async(get_bucket_tagging)(
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
             region=bucket_location,
             Bucket=bucket_name,
             sts_client_kwargs=dict(
@@ -541,7 +581,10 @@ def apply_managed_policy_to_role(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         session_name=sanitize_session_name(session_name),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -681,7 +724,10 @@ async def fetch_role_details(account_id, role_name, host):
         service_type="resource",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         session_name=sanitize_session_name("fetch_role_details"),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -699,7 +745,7 @@ async def fetch_role_details(account_id, role_name, host):
 
 async def fetch_iam_user_details(account_id, iam_user_name, host):
     """
-    Fetches details about an IAM user from AWS. If `policies.role_name` configuration
+    Fetches details about an IAM user from AWS. If spoke_accounts configuration
     is set, the hub (central) account ConsoleMeInstanceProfile role will assume the
     configured role to perform the action.
 
@@ -721,7 +767,10 @@ async def fetch_iam_user_details(account_id, iam_user_name, host):
         service_type="resource",
         account_number=account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         session_name=sanitize_session_name("fetch_iam_user_details"),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -794,7 +843,10 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
         service_type="client",
         account_number=create_model.account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": create_model.account_id})
+        .first.name,
         session_name=sanitize_session_name("create_role_" + username),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -983,7 +1035,10 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         service_type="client",
         account_number=clone_model.dest_account_id,
         region=config.region,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": clone_model.dest_account_id})
+        .first.name,
         session_name=sanitize_session_name("clone_role_" + username),
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -1269,7 +1324,10 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
         "ec2",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         read_only=True,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -1396,14 +1454,17 @@ async def get_all_scps(
 async def cache_all_scps(host) -> Dict[str, Any]:
     """Store a dictionary of all Service Control Policies across organizations in the cache"""
     all_scps = {}
-    for organization in config.get_host_specific_key(
-        "cache_accounts_from_aws_organizations", host, []
+    for organization in (
+        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
-        org_account_id = organization.get("organizations_master_account_id")
-        role_to_assume = organization.get(
-            "organizations_master_role_to_assume",
-            config.get_host_specific_key("policies.role_name", host),
+        org_account_id = organization.account_id
+        role_to_assume = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": org_account_id})
+            .first.name
         )
+
         if not org_account_id:
             raise MissingConfigurationValue(
                 "Your AWS Organizations Master Account ID is not specified in configuration. "
@@ -1413,7 +1474,7 @@ async def cache_all_scps(host) -> Dict[str, Any]:
 
         if not role_to_assume:
             raise MissingConfigurationValue(
-                "ConsoleMe doesn't know what role to assume to retrieve account information "
+                "Noq doesn't know what role to assume to retrieve account information "
                 "from AWS Organizations. please set the appropriate configuration value."
             )
         org_scps = await retrieve_scps_for_organization(
@@ -1479,13 +1540,15 @@ async def get_org_structure(host, force_sync=False) -> Dict[str, Any]:
 async def cache_org_structure(host: str) -> Dict[str, Any]:
     """Store a dictionary of the organization structure in the cache"""
     all_org_structure = {}
-    for organization in config.get_host_specific_key(
-        "cache_accounts_from_aws_organizations", host, []
+    for organization in (
+        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
     ):
-        org_account_id = organization.get("organizations_master_account_id")
-        role_to_assume = organization.get(
-            "organizations_master_role_to_assume",
-            config.get_host_specific_key("policies.role_name", host),
+        org_account_id = organization.account_id
+        role_to_assume = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": org_account_id})
+            .first.name
         )
         if not org_account_id:
             raise MissingConfigurationValue(
@@ -1496,7 +1559,7 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
 
         if not role_to_assume:
             raise MissingConfigurationValue(
-                "ConsoleMe doesn't know what role to assume to retrieve account information "
+                "Noq doesn't know what role to assume to retrieve account information "
                 "from AWS Organizations. please set the appropriate configuration value."
             )
         org_structure = await retrieve_org_structure(
@@ -1789,66 +1852,188 @@ def allowed_to_sync_role(
     return False
 
 
-def remove_temp_policies(role, iam_client, host) -> bool:
+async def remove_temp_policies(
+    extended_request: ExtendedRequestModel, host: str
+) -> None:
     """
-    If this feature is enabled, it will look at inline role policies and remove expired policies if they have been
-    designated as temporary. Policies can be designated as temporary through a certain prefix in the policy name.
+    If this feature is enabled, it will look at created policies and remove expired policies if they have been
+    designated as temporary. Policies can be designated as temporary through a certain prefix in the policy name and an expiration date.
     In the future, we may allow specifying temporary policies by `Sid` or other means.
-    :param role: A single AWS IAM role entry in dictionary format as returned by the `get_account_authorization_details`
-        call
-    :return: bool: Whether policies were removed or not
+    :param extended_request: A single extended policy
     """
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
 
-    if not config.get_host_specific_key("policies.temp_policy_support", host, True):
-        return False
+    should_update_policy_request = False
 
-    temp_policy_prefix = config.get_host_specific_key(
-        "policies.temp_policy_prefix", host, "noq_delete_on"
-    )
-    if not temp_policy_prefix:
-        return False
-    current_dateint = datetime.today().strftime("%Y%m%d")
-
-    log_data = {
-        "function": function,
-        "temp_policy_prefix": temp_policy_prefix,
-        "role_arn": role["Arn"],
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "message": "Checking for expired policies",
+        "policy_request_id": extended_request.id,
     }
-    policies_removed = False
-    for policy in role["RolePolicyList"]:
-        try:
-            policy_name = policy["PolicyName"]
-            if not policy_name.startswith(temp_policy_prefix):
-                continue
-            expiration_date = policy_name.replace(temp_policy_prefix, "", 1).split("_")[
-                1
-            ]
-            if not current_dateint >= expiration_date:
-                continue
-            log.debug(
-                {
-                    **log_data,
-                    "message": "Deleting temporary policy",
-                    "policy_name": policy_name,
-                }
-            )
-            iam_client.delete_role_policy(
-                RoleName=role["RoleName"], PolicyName=policy_name
-            )
-            policies_removed = True
-        except Exception as e:
-            log.error(
-                {
-                    **log_data,
-                    "message": "Error deleting temporary IAM policy",
-                    "error": str(e),
-                },
-                exc_info=True,
-            )
-            sentry_sdk.capture_exception()
+    log.info(log_data)
 
-    return policies_removed
+    for change in extended_request.changes.changes:
+        if change.status != Status.applied:
+            continue
+
+        current_dateint = datetime.today().strftime("%Y%m%d")
+
+        if not change.expiration_date:
+            continue
+
+        if str(change.expiration_date) > current_dateint:
+            continue
+
+        principal_arn = change.principal.principal_arn
+
+        if change.change_type in ["managed_resource", "resource_policy"]:
+            principal_arn = change.arn
+
+        arn_parsed = parse_arn(principal_arn)
+        principal_name = arn_parsed["resource_path"].split("/")[-1]
+
+        resource_type = arn_parsed["service"]
+        resource_name = arn_parsed["resource"]
+        resource_region = arn_parsed["region"]
+        resource_account = arn_parsed["account"]
+
+        if not resource_account:
+            resource_account = await get_resource_account(principal_arn, host)
+
+        if resource_type == "s3" and not resource_region:
+            resource_region = await get_bucket_location_with_fallback(
+                resource_name, resource_account, host
+            )
+
+        if not resource_account:
+            # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
+            # we can't revoke this change
+            log_data["message"] = "Resource account not found"
+            log.warning(log_data)
+            continue
+
+        iam_client = boto3_cached_conn(
+            resource_type,
+            host,
+            service_type="client",
+            future_expiration_minutes=15,
+            account_number=resource_account,
+            assume_role=config.get_host_specific_key("policies.role_name", host),
+            region=resource_region or config.region,
+            session_name=sanitize_session_name("revoke-expired-policies"),
+            arn_partition="aws",
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            retry_max_attempts=2,
+        )
+
+        if change.change_type == "inline_policy":
+            try:
+                if resource_name == "role":
+                    iam_client.delete_role_policy(
+                        RoleName=principal_name, PolicyName=change.policy_name
+                    )
+                elif resource_name == "user":
+                    iam_client.delete_user_policy(
+                        UserName=principal_name, PolicyName=change.policy_name
+                    )
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except Exception as e:
+                log_data["message"] = "Exception occurred deleting inline policy"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+        elif change.change_type == "permissions_boundary":
+            try:
+                if resource_name == "role":
+                    iam_client.delete_role_permissions_boundary(RoleName=principal_name)
+                elif resource_name == "user":
+                    iam_client.delete_user_permissions_boundary(UserName=principal_name)
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except Exception as e:
+                log_data[
+                    "message"
+                ] = "Exception occurred detaching permissions boundary"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+        elif change.change_type == "managed_policy":
+            try:
+                if resource_name == "role":
+                    iam_client.detach_role_policy(
+                        RoleName=principal_name, PolicyArn=change.arn
+                    )
+                elif resource_name == "user":
+                    iam_client.detach_user_policy(
+                        UserName=principal_name, PolicyArn=change.arn
+                    )
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except Exception as e:
+                log_data["message"] = "Exception occurred detaching managed policy"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+        elif change.change_type == "resource_tag":
+            try:
+                if resource_name == "role":
+                    iam_client.untag_role(RoleName=principal_name, TagKeys=[change.key])
+                elif resource_name == "user":
+                    iam_client.untag_user(UserName=principal_name, TagKeys=[change.key])
+                change.status = Status.expired
+                should_update_policy_request = True
+            except Exception as e:
+                log_data["message"] = "Exception occurred deleting tag"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+        else:
+            if change.autogenerated:
+                # TODO : https://perimy.atlassian.net/browse/SAAS-347
+                pass
+
+    if should_update_policy_request:
+        try:
+            dynamo_handler = UserDynamoHandler(host=host)
+            extended_request.request_status = RequestStatus.expired
+            async_to_sync(dynamo_handler.write_policy_request_v2)(
+                extended_request, host
+            )
+
+            if resource_name == "role":
+                await fetch_iam_role(
+                    resource_account,
+                    principal_arn,
+                    host,
+                    force_refresh=True,
+                    run_sync=True,
+                )
+
+            elif resource_name == "user":
+                await fetch_iam_user(
+                    resource_account,
+                    principal_arn,
+                    host,
+                    force_refresh=True,
+                    run_sync=True,
+                )
+
+        except Exception as e:
+            log_data["message"] = "Exception unable to update policy status to expired"
+            log_data["error"] = str(e)
+            log.error(log_data, exc_info=True)
+            sentry_sdk.capture_exception()
 
 
 def get_aws_principal_owner(role_details: Dict[str, Any], host: str) -> Optional[str]:
@@ -2002,7 +2187,10 @@ async def simulate_iam_principal_action(
         "iam",
         host,
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         sts_client_kwargs=dict(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",

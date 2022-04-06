@@ -57,11 +57,6 @@ export const spokeAccountsColumns = ({ handleClick }) => [
     accessor: 'role_arn',
   },
   {
-    Header: 'External ID',
-    accessor: 'external_id',
-    width: 60,
-  },
-  {
     Header: 'Status',
     accessor: 'active',
     width: 60,

@@ -12,9 +12,11 @@ from botocore.config import Config
 from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
 from common.config import config as consoleme_config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import TenantNoCentralRoleConfigured
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
+from common.models import SpokeAccount
 
 CACHE = {}
 
@@ -156,7 +158,10 @@ async def get_boto3_instance(
         service_type=service_type,
         account_number=account_id,
         # TODO: Make it possible to use a separate role per account
-        assume_role=consoleme_config.get_host_specific_key("policies.role_name", host),
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
         region=region,
         read_only=read_only,
         sts_client_kwargs=dict(

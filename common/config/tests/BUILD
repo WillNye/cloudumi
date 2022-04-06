@@ -12,16 +12,6 @@ pytest_test(
 )
 
 pytest_test(
-    name = "test_account",
-    srcs = [
-        "test_account.py",
-    ],
-    deps = [
-        "//util/tests:test_dependencies_lib",
-    ],
-)
-
-pytest_test(
     name = "test_role_access",
     srcs = [
         "test_role_access.py",

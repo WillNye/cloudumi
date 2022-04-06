@@ -78,7 +78,7 @@ jobs:
           pip install checkov
 
           # tfsec - Terraform security scanning
-          go install github.com/aquasecurity/tfsec/cmd/tfsec@latest
+          go install github.com/aquasecurity/tfsec/cmd/tfsec@v1.15.4
 
           # terrascan - Moar Terraform security scanning
           curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz

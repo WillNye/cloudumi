@@ -1,12 +1,12 @@
 from unittest import TestCase
 
 import pytest
-import yaml
 from asgiref.sync import async_to_sync
 from tornado.httpclient import AsyncHTTPClient
 
 from common.config import config, role_access
 from common.lib.dynamo import RestrictedDynamoHandler
+from common.lib.yaml import yaml
 
 
 def get_host_config():

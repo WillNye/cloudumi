@@ -9,6 +9,7 @@ from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
@@ -104,6 +105,7 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
 
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
@@ -137,6 +139,7 @@ class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
 
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
@@ -179,8 +182,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         expected = {
             "status": 500,
             "title": "Internal Server Error",
-            "message": "Error occurred deleting role: An error occurred (NoSuchEntity) when calling the GetRole "
-            "operation: Role fake_account_admin not found",
+            "message": "Error occurred deleting role: An error occurred (NoSuchEntity) when calling the GetRole operation: Role fake_account_admin not found",
         }
         mock_can_delete_iam_principals.return_value = True
         response = self.fetch(
@@ -223,6 +225,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
 
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
@@ -243,6 +246,7 @@ class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
 
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
@@ -276,9 +280,9 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
 
         mock_can_create_roles.return_value = True
         input_body = {
-            "dest_account_id": "012345678901",
+            "dest_account_id": "123456789012",
             "dest_role_name": "testing_dest_role",
-            "account_id": "012345678901",
+            "account_id": "123456789012",
             "options": {
                 "tags": "False",
                 "inline_policies": "True",
@@ -322,7 +326,7 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
             "action_results": [
                 {
                     "status": "success",
-                    "message": "Role arn:aws:iam::012345678901:role/testing_dest_role successfully created",
+                    "message": "Role arn:aws:iam::123456789012:role/testing_dest_role successfully created",
                 },
                 {
                     "status": "success",
