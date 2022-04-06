@@ -259,6 +259,11 @@ class PolicyRequestReview extends Component {
         <span>{extendedRequest.requester_email}</span>
       )
 
+    const requestReadOnly =
+      extendedRequest.request_status === 'rejected' ||
+      extendedRequest.request_status === 'cancelled' ||
+      extendedRequest.request_status === 'expired'
+
     const messagesToShow =
       messages.length > 0 ? (
         <Message negative>
@@ -405,14 +410,11 @@ class PolicyRequestReview extends Component {
         reloadDataFromBackend={this.reloadDataFromBackend}
         requestID={requestID}
         sendRequestCommon={this.props.sendRequestCommon}
+        requestReadOnly={requestReadOnly}
       />
     ) : (
       <></>
     )
-
-    const requestReadOnly =
-      extendedRequest.request_status === 'rejected' ||
-      extendedRequest.request_status === 'cancelled'
 
     const templateContent = template ? (
       <Message negative>

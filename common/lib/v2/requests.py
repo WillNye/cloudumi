@@ -2647,6 +2647,13 @@ async def parse_and_apply_policy_request_modification(
             request_changes
         )
         extended_request.expiration_date = expiration_date_model.expiration_date
+
+        for policy in extended_request.changes.changes:
+            if policy.change_type in ["inline_policy"]:
+                policy.policy_name = await generate_policy_name(
+                    None, user, host, expiration_date_model.expiration_date
+                )
+
         success_message = "Successfully updated expiration date"
         error_message = "Error occurred updating expiration date"
         response = await _update_dynamo_with_change(
@@ -2679,11 +2686,7 @@ async def parse_and_apply_policy_request_modification(
             and specific_change.status == Status.not_applied
         ):
             specific_change.policy.policy_document = update_change_model.policy_document
-            # if specific_change.expiration_date != update_change_model.expiration_date:
-            #     specific_change.policy_name = await generate_policy_name(
-            #         None, user, host, update_change_model.expiration_date
-            #     )
-            #     specific_change.expiration_date = update_change_model.expiration_date
+
             if (
                 specific_change.change_type == "resource_policy"
                 or specific_change.change_type == "sts_resource_policy"

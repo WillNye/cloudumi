@@ -8,6 +8,7 @@ const ExpirationDateBlockComponent = ({
   requestID,
   expiration_date,
   sendRequestCommon,
+  requestReadOnly,
 }) => {
   const [expirationDate, setExpirationDate] = useState(expiration_date)
   const [isLoading, setIsLoading] = useState(false)
@@ -97,7 +98,7 @@ const ExpirationDateBlockComponent = ({
             const now = new Date()
             return date >= now
           }}
-          disabled={isLoading}
+          disabled={isLoading || requestReadOnly}
           onChange={handleSetPolicyExpiration}
           type='basic'
           value={parseDate(expirationDate)}
