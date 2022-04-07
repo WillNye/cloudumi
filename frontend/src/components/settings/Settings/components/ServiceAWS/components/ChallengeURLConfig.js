@@ -7,7 +7,7 @@ import { useToast } from 'lib/Toast'
 export const ChallengeURLConfig = () => {
   const { get, post } = useApi('auth/challenge_url')
 
-  const { toast, success } = useToast()
+  const { error, toast, success } = useToast()
 
   const [checked, setChecked] = useState(false)
 
@@ -23,6 +23,9 @@ export const ChallengeURLConfig = () => {
     post.do({ enabled: checked }).then(() => {
       setChecked(checked)
       success(`Challenge URL Config is ${action}d`)
+    })
+    .catch(({ errorsMap, message }) => {
+      error(errorsMap || message)
     })
   }
 

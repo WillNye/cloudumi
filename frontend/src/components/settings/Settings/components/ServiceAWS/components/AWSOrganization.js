@@ -27,8 +27,10 @@ export const AWSOrganization = () => {
           success('Organization removed')
           get.do()
         })
-        .catch(() => error(str.toastErrorMsg))
-    }
+        .catch(({ errorsMap, message }) => {
+          error(errorsMap || message)
+        })
+      }
   }
 
   const handleFinish = () => {

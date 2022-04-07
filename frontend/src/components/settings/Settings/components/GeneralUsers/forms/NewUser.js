@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useApi } from 'hooks/useApi'
 
 import { useForm } from 'react-hook-form'
@@ -13,10 +13,15 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
 
   const { post } = useApi('auth/cognito/users')
 
+  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+
   const onSubmit = (data) => {
     post.do(data).then(() => {
       closeModal()
       onFinish()
+    })
+    .catch(({ errorsMap, message }) => {
+      setErrorMessage(errorsMap || message)
     })
   }
 
@@ -33,19 +38,19 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
   const isSuccess = post?.status === 'done' && !post?.error
 
   const hasError = post?.error && post?.status === 'done'
-
+console.log(defaultValues)
   return (
     <Segment basic>
       <DimmerWithStates
         loading={isWorking}
         showMessage={hasError}
         messageType={isSuccess ? 'success' : 'warning'}
-        message={'Something went wrong, try again!'}
+        message={errorMessage}
       />
 
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Form.Field>
-          <label>Username</label>
+          <label>Username (Email)</label>
           <input {...register('Username', { required: true })} />
         </Form.Field>
 

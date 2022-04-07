@@ -19,6 +19,8 @@ export const NewProvider = ({
 
   const { post } = useApi('auth/sso')
 
+  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+
   const onSubmit = (data) => {
     let provider = ''
     switch (data?.provider_type) {
@@ -40,10 +42,11 @@ export const NewProvider = ({
         closeModal()
         onFinish({ success: true })
       })
-      .catch((error) => {
-        onFinish({ success: false, message: error.message })
+      .catch(({ errorsMap, message }) => {
+        console.log(errorsMap, message)
+        setErrorMessage(errorsMap || message)
       })
-  }
+    }
 
   const [type, setType] = useState()
 
@@ -65,6 +68,8 @@ export const NewProvider = ({
 
   const hasDefault = defaultValues?.provider_type
 
+  const hasError = post?.error && post?.status === 'done'
+
   useEffect(() => {
     if (hasDefault) setType(defaultValues?.provider_type)
   }, [defaultValues?.provider_type])
@@ -73,8 +78,9 @@ export const NewProvider = ({
     <Segment basic>
       <DimmerWithStates
         loading={isWorking}
+        showMessage={hasError}
         messageType={isSuccess ? 'success' : 'warning'}
-        message={'Something went wrong, try again!'}
+        message={errorMessage}
       />
 
       <Form onSubmit={handleSubmit(onSubmit)}>

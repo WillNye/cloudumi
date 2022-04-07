@@ -33,8 +33,10 @@ export const RoleAccessAuth = () => {
           success('Tag removed')
           get.do()
         })
-        .catch(() => error(str.toastErrorMsg))
-    }
+        .catch(({ errorsMap, message }) => {
+          error(errorsMap || message)
+        })
+      }
   }
 
   const handleFinish = () => {

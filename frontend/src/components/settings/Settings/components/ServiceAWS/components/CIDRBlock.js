@@ -30,8 +30,10 @@ export const CIDRBlock = () => {
           success('CIDR removed')
           get.do()
         })
-        .catch(() => error(str.toastErrorMsg))
-    }
+        .catch(({ errorsMap, message }) => {
+          error(errorsMap || message)
+        })
+      }
   }
 
   const handleFinish = () => {

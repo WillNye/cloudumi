@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { ApiContext, useApi } from 'hooks/useApi'
 
 import { Button, Form, Segment } from 'semantic-ui-react'
@@ -13,10 +13,15 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
 
   const { post } = useApi('services/aws/account/spoke')
 
+  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+
   const onSubmit = (data) => {
     post.do(data).then(() => {
       closeModal()
       onFinish()
+    })
+    .catch(({ errorsMap, message }) => {
+      setErrorMessage(errorsMap || message)
     })
   }
 
@@ -48,7 +53,7 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
           loading={isWorking}
           showMessage={hasError}
           messageType={isSuccess ? 'success' : 'warning'}
-          message={'Something went wrong, try again!'}
+          message={errorMessage}
         />
 
         <Form onSubmit={handleSubmit(onSubmit)}>

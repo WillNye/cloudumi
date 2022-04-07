@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useApi } from 'hooks/useApi'
 
 import { useForm } from 'react-hook-form'
@@ -13,6 +13,8 @@ export const NewOrganization = ({ closeModal, onFinish }) => {
 
   const { post } = useApi('services/aws/account/org')
 
+  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+
   const onSubmit = (data) => {
     const name = data.account_name.split(' - ')
     data.account_name = name[0]
@@ -20,6 +22,9 @@ export const NewOrganization = ({ closeModal, onFinish }) => {
     post.do(data).then(() => {
       closeModal()
       onFinish()
+    })
+    .catch(({ errorsMap, message }) => {
+      setErrorMessage(errorsMap || message)
     })
   }
 
@@ -45,7 +50,7 @@ export const NewOrganization = ({ closeModal, onFinish }) => {
         loading={isWorking}
         showMessage={hasError}
         messageType={isSuccess ? 'success' : 'warning'}
-        message={'Something went wrong, try again!'}
+        message={errorMessage}
       />
 
       <Form onSubmit={handleSubmit(onSubmit)}>

@@ -29,8 +29,10 @@ export const HubAccount = () => {
           success('Hub Account removed')
           get.do()
         })
-        .catch(() => error(str.toastErrorMsg))
-    }
+        .catch(({ errorsMap, message }) => {
+          error(errorsMap || message)
+        })
+      }
     if (action === 'edit') {
       setDefaultValues(rowValues)
       openModal()
