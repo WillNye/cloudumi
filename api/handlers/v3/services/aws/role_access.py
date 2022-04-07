@@ -232,7 +232,7 @@ class AuthorizedGroupsTagsDeleteHandler(BaseHandler):
         return
 
 
-class AutomaticPolicyUpdateHandler(BaseHandler):
+class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
     """
     Provides a toggle to enable and disable automatic policy updates if NOQ does not have required permissions
     """

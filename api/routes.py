@@ -109,7 +109,7 @@ from api.handlers.v3.services.aws.ip_restrictions import (
 from api.handlers.v3.services.aws.role_access import (
     AuthorizedGroupsTagsDeleteHandler,
     AuthorizedGroupsTagsHandler,
-    AutomaticPolicyUpdateHandler,
+    AutomaticRoleTrustPolicyUpdateHandler,
     CredentialBrokeringCurrentStateHandler,
     CredentialBrokeringHandler,
 )
@@ -238,11 +238,11 @@ def make_app(jwt_validator=None):
         ),
         (
             r"/api/v3/services/aws/role-access/automatic-update/enabled/?",
-            AutomaticPolicyUpdateHandler,
+            AutomaticRoleTrustPolicyUpdateHandler,
         ),
         (
             r"/api/v3/services/aws/role-access/automatic-update/(?P<_enabled>enable|disable)/?",
-            AutomaticPolicyUpdateHandler,
+            AutomaticRoleTrustPolicyUpdateHandler,
         ),
         (
             r"/api/v3/services/aws/ip-access/?",
