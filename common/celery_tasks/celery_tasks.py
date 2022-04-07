@@ -955,36 +955,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "account_id": account_id,
         "host": host,
     }
-    cache_keys = {
-        "iam_roles": {
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamroles_redis_key_temp",
-                host,
-                f"{host}_IAM_ROLE_CACHE_TEMP",
-            )
-        },
-        "iam_users": {
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamusers_redis_key_temp",
-                host,
-                f"{host}_IAM_USER_CACHE_TEMP",
-            )
-        },
-        "iam_groups": {
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamgroups_redis_key_temp",
-                host,
-                f"{host}_IAM_GROUP_CACHE_TEMP",
-            )
-        },
-        "iam_policies": {
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iampolicies_redis_key_temp",
-                host,
-                f"{host}_IAM_POLICIES_CACHE_TEMP",
-            )
-        },
-    }
     # Get the DynamoDB handler:
     dynamo = IAMRoleDynamoHandler(host)
     cache_key = config.get_host_specific_key(
@@ -1176,11 +1146,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "policy": dynamo.convert_iam_resource_to_json(user),
                 "templated": False,  # Templates not supported for IAM users at this time
             }
-            red.hset(
-                cache_keys["iam_users"]["temp_cache_key"],
-                str(user_entry["arn"]),
-                str(json.dumps(user_entry)),
-            )
 
         for g in iam_groups:
             group_entry = {
@@ -1193,11 +1158,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "policy": dynamo.convert_iam_resource_to_json(g),
                 "templated": False,  # Templates not supported for IAM groups at this time
             }
-            red.hset(
-                cache_keys["iam_groups"]["temp_cache_key"],
-                str(group_entry["arn"]),
-                str(json.dumps(group_entry)),
-            )
 
         for policy in iam_policies:
             group_entry = {
@@ -1210,11 +1170,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "policy": dynamo.convert_iam_resource_to_json(policy),
                 "templated": False,  # Templates not supported for IAM policies at this time
             }
-            red.hset(
-                cache_keys["iam_policies"]["temp_cache_key"],
-                str(group_entry["arn"]),
-                str(json.dumps(group_entry)),
-            )
 
         # Maybe store all resources in git
         if config.get_host_specific_key(
@@ -1265,22 +1220,12 @@ def cache_iam_resources_across_accounts(
                 host,
                 f"{host}_IAM_ROLE_CACHE",
             ),
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamroles_redis_key_temp",
-                host,
-                f"{host}_IAM_ROLE_CACHE_TEMP",
-            ),
         },
         "iam_users": {
             "cache_key": config.get_host_specific_key(
                 "aws.iamusers_redis_key",
                 host,
                 f"{host}_IAM_USER_CACHE",
-            ),
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamusers_redis_key_temp",
-                host,
-                f"{host}_IAM_USER_CACHE_TEMP",
             ),
         },
         "iam_groups": {
@@ -1289,22 +1234,12 @@ def cache_iam_resources_across_accounts(
                 host,
                 f"{host}_IAM_GROUP_CACHE",
             ),
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamgroups_redis_key_temp",
-                host,
-                f"{host}_IAM_GROUP_CACHE_TEMP",
-            ),
         },
         "iam_policies": {
             "cache_key": config.get_host_specific_key(
                 "aws.iampolicies_redis_key",
                 host,
                 f"{host}_IAM_POLICY_CACHE",
-            ),
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iampolicies_redis_key_temp",
-                host,
-                f"{host}_IAM_POLICIES_CACHE_TEMP",
             ),
         },
     }
@@ -1314,14 +1249,6 @@ def cache_iam_resources_across_accounts(
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
         return log_data
-
-    # Remove stale temporary cache keys to ensure we receive fresh results. Don't remove stale cache keys if we're
-    # running this as a part of `make redis` (`scripts/initialize_redis_oss.py`) because these cache keys are already
-    # populated appropriately
-    if run_subtasks and wait_for_subtask_completion:
-        for k, v in cache_keys.items():
-            temp_cache_key = v["temp_cache_key"]
-            red.delete(temp_cache_key)
 
     accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(host)
     tasks = []
@@ -1367,6 +1294,23 @@ def cache_iam_resources_across_accounts(
         roles = dynamo.fetch_all_roles(host)
         for role_entry in roles:
             _add_role_to_redis(cache_keys["iam_roles"]["cache_key"], role_entry, host)
+
+    all_iam_resources = {}
+    for account_id in accounts_d.keys():
+        all_iam_resources[account_id] = async_to_sync(
+            retrieve_json_data_from_redis_or_s3
+        )(
+            s3_bucket=config.get_host_specific_key(
+                "cache_iam_resources_for_account.s3.bucket", host
+            ),
+            s3_key=config.get_host_specific_key(
+                "cache_iam_resources_for_account.s3.file",
+                host,
+                "get_account_authorization_details/get_account_authorization_details_{account_id}_v1.json.gz",
+            ).format(account_id=account_id),
+            host=host,
+        )
+        print("here")
 
     # Delete roles in Redis cache with expired TTL
     all_roles = red.hgetall(cache_keys["iam_roles"]["cache_key"])
@@ -3154,3 +3098,7 @@ app.autodiscover_tasks(
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
+
+cache_iam_resources_across_accounts(
+    "localhost", run_subtasks=False, wait_for_subtask_completion=False
+)

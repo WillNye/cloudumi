@@ -1,4 +1,7 @@
 from typing import Dict
+from urllib.parse import urlparse
+
+import sentry_sdk
 
 from common.config import config
 from common.handlers.base import BaseAPIV1Handler
@@ -25,6 +28,22 @@ class UserProfileHandler(BaseAPIV1Handler):
         """
         host = self.ctx.host
         is_contractor = False  # TODO: Support other option
+
+        security_logo = (config.get_host_specific_key("security_logo.image", host),)
+        if security_logo:
+            try:
+                urlparse(security_logo)
+            except:
+                security_logo = None
+                sentry_sdk.capture_exception()
+        favicon = config.get_host_specific_key("favicon.image", host)
+        if favicon:
+            try:
+                urlparse(favicon)
+            except:
+                favicon = None
+                sentry_sdk.capture_exception()
+
         site_config = {
             "consoleme_logo": await get_random_security_logo(host),
             "google_analytics": {
@@ -46,8 +65,9 @@ class UserProfileHandler(BaseAPIV1Handler):
                 host,
                 "https://communityinviter.com/apps/noqcommunity/noq",
             ),
-            "security_logo": config.get_host_specific_key("security_logo.image", host),
-            "security_url": config.get_host_specific_key("security_logo.url", host),
+            "security_logo": security_logo,
+            "favicon": favicon,
+            "security_url": None,
             # If site_config.landing_url is set, users will be redirected to the landing URL after authenticating
             # on the frontend.
             "landing_url": config.get_host_specific_key(
@@ -71,6 +91,7 @@ class UserProfileHandler(BaseAPIV1Handler):
         custom_page_header: Dict[str, str] = await get_custom_page_header(
             self.user, self.groups, host
         )
+
         user_profile = {
             "site_config": site_config,
             "user": self.user,
