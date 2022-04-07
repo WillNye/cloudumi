@@ -1,6 +1,7 @@
 import { IntegrationSSO } from '../IntegrationSSO'
 import { GeneralUsers } from '../GeneralUsers'
 import { ServiceAWS } from '../ServiceAWS'
+import { IntegrationSlack } from '../IntegrationSlack'
 
 export const services = [
   {
@@ -33,12 +34,13 @@ export const general = [
     Component: IntegrationSSO,
   },
   {
+    name: 'slack',
+    label: 'Slack',
+    Component: IntegrationSlack,
+  },
+  {
     name: 'users',
     label: 'Users and Groups',
     Component: GeneralUsers,
   },
-  // {
-  //   name: 'integrations',
-  //   label: 'Integrations',
-  // },
 ]

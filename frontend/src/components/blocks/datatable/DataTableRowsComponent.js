@@ -127,6 +127,28 @@ const DataTableRowsComponent = ({
               />
             </Table.Cell>
           )
+        } else if (column.type === 'abutton') {
+          cells.push(
+            <Table.Cell
+              key={`cell-${ridx}-${cidx}`}
+              collapsing
+              style={column.style}
+            >
+              <Button
+                as='a'
+                href={entry[column.key] + window.location.search || ''}
+                content={entry[column.content] || column.content}
+                fluid
+                labelPosition='right'
+                icon={column.icon}
+                primary
+                style={{
+                  cursor: 'pointer',
+                }}
+                size='mini'
+              />
+            </Table.Cell>
+          )
         } else if (column.type === 'icon') {
           cells.push(
             <Table.Cell

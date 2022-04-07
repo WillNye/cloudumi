@@ -132,10 +132,8 @@ class SsoIdpProviderConfigurationCrudHandler(IdpConfigurationCrudHandler):
     _model_class = SSOIDPProviders
 
 
-class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
-    _model_class = CognitoUser
+class CognitoCrudHandler(MultiItemConfigurationCrudHandler):
     _config_key = "Unused"
-    _identifying_keys = ["Username"]
     _user_pool_id = None
 
     @property
@@ -152,11 +150,21 @@ class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
         self._user_pool_id = user_pool_id
         return user_pool_id
 
+
+class CognitoUserCrudHandler(CognitoCrudHandler):
+    _model_class = CognitoUser
+    _identifying_keys = ["Username"]
+
     def _retrieve(self) -> list[dict]:
         users = list()
         for user in identity.get_identity_users(self.user_pool_id):
             user_dict: dict = user.dict()
             user_dict.pop("TemporaryPassword")
+            for attr in user_dict.get("Attributes", []):
+                if attr["Name"] == "email":
+                    user_dict["Username"] = attr["Value"]
+                    break
+
             users.append(user_dict)
 
         return users
@@ -186,25 +194,9 @@ class CognitoUserCrudHandler(MultiItemConfigurationCrudHandler):
         )
 
 
-class CognitoGroupCrudHandler(MultiItemConfigurationCrudHandler):
+class CognitoGroupCrudHandler(CognitoCrudHandler):
     _model_class = CognitoGroup
-    _config_key = "Unused"
     _identifying_keys = ["GroupName"]
-    _user_pool_id = None
-
-    @property
-    def user_pool_id(self) -> str:
-        if user_pool_id := getattr(self, "_user_pool_id"):
-            return user_pool_id
-
-        user_pool_id = config.get_host_specific_key(
-            "secrets.cognito.config.user_pool_id", self.ctx.host
-        )
-        if not user_pool_id:
-            raise ValueError("Cognito user pool id not configured")
-
-        self._user_pool_id = user_pool_id
-        return user_pool_id
 
     def _retrieve(self) -> list[dict]:
         return [

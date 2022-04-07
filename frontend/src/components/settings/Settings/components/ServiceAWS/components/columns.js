@@ -1,5 +1,5 @@
 import React from 'react'
-import { RowStatusIndicator } from 'lib/Misc'
+import { Bar, RowStatusIndicator } from 'lib/Misc'
 
 import { Button, Checkbox } from 'semantic-ui-react'
 
@@ -43,8 +43,8 @@ export const awsOrganizationColumns = ({ handleClick }) => [
 
 export const spokeAccountsColumns = ({ handleClick }) => [
   {
-    Header: 'Role Name',
-    accessor: 'name',
+    Header: 'Account Name',
+    accessor: 'account_name',
     width: 80,
   },
   {
@@ -70,17 +70,25 @@ export const spokeAccountsColumns = ({ handleClick }) => [
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
-        Remove
-      </Button>
+      <Bar>
+        <Button size='mini' onClick={() => handleClick('edit', row?.original)}>
+          Edit
+        </Button>
+        <Button
+          size='mini'
+          onClick={() => handleClick('remove', row?.original)}
+        >
+          Remove
+        </Button>
+      </Bar>
     ),
   },
 ]
 
 export const hubAccountColumns = ({ handleClick }) => [
   {
-    Header: 'Role Name',
-    accessor: 'name',
+    Header: 'Account Name',
+    accessor: 'account_name',
     width: 80,
   },
   {

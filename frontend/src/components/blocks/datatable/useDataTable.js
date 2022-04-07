@@ -4,7 +4,7 @@ import { useAuth } from '../../../auth/AuthProviderDefault'
 import _ from 'lodash'
 import qs from 'qs'
 
-const useDataTable = (config) => {
+const useDataTable = (config, mock) => {
   const { sendRequestCommon } = useAuth()
   const [state, dispatch] = useReducer(reducer, initialState)
   const { data, totalCount, debounceWait, filters, tableConfig } = state
@@ -145,12 +145,14 @@ const useDataTable = (config) => {
         data = []
       }
 
+      if (data.data?.length <= 0) data.data = mock || []
+
       dispatch({
         type: 'SET_DATA',
-        data: data || [],
+        data: data,
       })
     })(tableConfig)
-  }, [tableConfig, sendRequestCommon])
+  }, [tableConfig, sendRequestCommon, mock])
 
   // This useEffect handles the filtering from the url search query. Depends on how the table
   // is configured, it will either apply the filter from the backend or do the filtering from client side.

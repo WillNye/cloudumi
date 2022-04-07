@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
@@ -13,9 +13,11 @@ import { TableTopBar } from '../../utils'
 export const HubAccount = () => {
   const { get, post, remove } = useApi('services/aws/account/hub')
 
+  const [defaultValues, setDefaultValues] = useState()
+
   const { error, success } = useToast()
 
-  const { openModal, closeModal, ModalComponent } = useModal('Add Hub Account')
+  const { openModal, closeModal, ModalComponent } = useModal()
 
   useEffect(() => get.do(), [])
 
@@ -29,9 +31,21 @@ export const HubAccount = () => {
         })
         .catch(() => error(str.toastErrorMsg))
     }
+    if (action === 'edit') {
+      setDefaultValues(rowValues)
+      openModal()
+    }
   }
 
-  const handleClose = post.reset
+  const handleFinish = () => {
+    success('Spoke Account edited successfully!')
+    get.do()
+  }
+
+  const handleClose = () => {
+    setDefaultValues(null)
+    post.reset()
+  }
 
   const columns = hubAccountColumns({ handleClick })
 
@@ -81,8 +95,16 @@ export const HubAccount = () => {
         />
       </DatatableWrapper>
 
-      <ModalComponent onClose={handleClose} hideConfirm>
-        <NewHubAccount closeModal={closeModal} />
+      <ModalComponent
+        onClose={handleClose}
+        hideConfirm
+        forceTitle={defaultValues ? 'Edit Hub Account' : 'Add Hub Account'}
+      >
+        <NewHubAccount
+          closeModal={closeModal}
+          onFinish={handleFinish}
+          defaultValues={defaultValues}
+        />
       </ModalComponent>
     </>
   )

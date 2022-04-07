@@ -517,9 +517,12 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
             "_add_role_to_redis.error",
             tags={"redis_key": redis_key, "error": str(e), "role_entry": role_entry},
         )
+        account_id = role_entry.get("account_id")
+        if not account_id:
+            account_id = role_entry.get("accountId")
         log_data = {
             "message": "Error syncing Account's IAM roles to Redis",
-            "account_id": role_entry["account_id"],
+            "account_id": account_id,
             "host": host,
             "arn": role_entry["arn"],
             "role_entry": role_entry,
@@ -2651,6 +2654,21 @@ def cache_terraform_resources_task(host=None) -> Dict:
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
+def cache_terraform_resources_task_for_all_hosts() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    hosts = get_all_hosts()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_hosts": len(hosts),
+    }
+    log.debug(log_data)
+    for host in hosts:
+        cache_terraform_resources_task.apply_async((host,))
+    return log_data
+
+
+@app.task(soft_time_limit=1800, **default_retry_kwargs)
 def cache_self_service_typeahead_task_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
@@ -3112,6 +3130,11 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
         "options": {"expires": 180},
         "schedule": schedule_minute,
+    },
+    "cache_terraform_resources_task_for_all_hosts": {
+        "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_hosts",
+        "options": {"expires": 180},
+        "schedule": schedule_1_hour,
     },
 }
 

@@ -2,21 +2,18 @@ import React, { useState } from 'react'
 import { Screen } from 'lib/Screen'
 import { ServiceAWS } from './components/ServiceAWS'
 import { Sidebar } from './components/Sidebar'
-import { useHistory } from 'react-router-dom'
+// import { useHistory } from 'react-router-dom'
 
 export const Settings = () => {
   const defaultActiveItem = { name: 'aws', Component: ServiceAWS }
 
-  const history = useHistory()
-
-  console.log(history)
+  // const history = useHistory()
 
   const [{ name: activeItem, Component }, setActiveItem] =
     useState(defaultActiveItem)
 
   const handleItemChange = (active) => {
     // Update route pathname
-    console.log(active)
   }
 
   const renderComponent = Component ? <Component /> : null

@@ -794,7 +794,7 @@ def with_test_configuration_tenant_static_config_data(tenant_static_configs_tabl
     ddb = dynamo.RestrictedDynamoHandler()
     with open("util/tests/test_configuration.yaml", "r") as fp:
         async_to_sync(ddb.update_static_config_for_host)(
-            fp, "test@noq.dev", "test.noq.dev"
+            fp, "test@noq.dev", "test.noq.dev".replace(".", "_")
         )
 
 

@@ -375,7 +375,6 @@ def get_identity_users(user_pool_id: str) -> List[CognitoUser]:
     :return: a list of CognitoUser objects
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     users = list()
     response = client.list_users(UserPoolId=user_pool_id)
     users.extend(response.get("Users", []))
@@ -403,7 +402,6 @@ def create_identity_user(user_pool_id: str, user: CognitoUser) -> CognitoUser:
     :return: an updated CognitoUser object that may contain additional info from AWS
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     current_users = get_identity_users(user_pool_id)
     if user in [x for x in current_users]:
         delete_identity_user(user_pool_id, user)
@@ -442,7 +440,6 @@ def delete_identity_user(user_pool_id: str, user: CognitoUser) -> bool:
     :return: true if successful
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     client.admin_delete_user(UserPoolId=user_pool_id, Username=user.Username)
     return True
 
@@ -458,7 +455,6 @@ def create_identity_user_groups(
     :return: true if successful
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     for group in groups:
         try:
             client.admin_add_user_to_group(
@@ -514,7 +510,6 @@ def get_identity_group(user_pool_id: str, group_name: str) -> CognitoGroup:
     :return: The requested CognitoGroup object
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     response = client.get_group(UserPoolId=user_pool_id, GroupName=group_name)
     return CognitoGroup(**response.get("Group", {}))
 
@@ -526,7 +521,6 @@ def get_identity_groups(user_pool_id: str) -> List[CognitoGroup]:
     :return: a list of CognitoGroup objects
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     groups = list()
     response = client.list_groups(UserPoolId=user_pool_id)
     groups.extend(response.get("Groups", []))
@@ -546,7 +540,6 @@ def create_identity_group(user_pool_id: str, group: CognitoGroup) -> CognitoGrou
     :return: an updated group object that may contain additional information from AWS
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     current_groups = get_identity_groups(user_pool_id)
     if group in [x for x in current_groups]:
         delete_identity_group(user_pool_id, group)
@@ -567,7 +560,6 @@ def update_identity_group(user_pool_id: str, group: CognitoGroup) -> CognitoGrou
     :return: The updated cognito group
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     response = client.update_group(
         UserPoolId=user_pool_id,
         GroupName=group.GroupName,
@@ -584,6 +576,5 @@ def delete_identity_group(user_pool_id: str, group: CognitoGroup) -> bool:
     :return: true if successful
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    LOG.info(f"{__name__} using boto3 client in region {config.region}")
     client.delete_group(UserPoolId=user_pool_id, GroupName=group.GroupName)
     return True
