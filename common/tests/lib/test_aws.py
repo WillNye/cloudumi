@@ -416,7 +416,6 @@ class TestAwsLib(TestCase):
         mock_fetch_iam_role.return_value = create_future(None)
 
         account_id = "123456789012"
-        user = None
         current_dateint = datetime.today().strftime("%Y%m%d")
         past_dateint = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
         future_dateint = (datetime.today() + timedelta(days=1)).strftime("%Y%m%d")

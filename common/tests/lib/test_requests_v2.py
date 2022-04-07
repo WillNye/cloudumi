@@ -2249,7 +2249,12 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
         extended_request = await get_extended_request_helper()
-        input_body = {"modification_model": {"command": Command.update_expiration_date}}
+        input_body = {
+            "modification_model": {
+                "command": Command.update_expiration_date,
+                "expiration_date": None,
+            }
+        }
 
         policy_request_model = PolicyRequestModificationRequestModel.parse_obj(
             input_body
@@ -2257,6 +2262,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         last_updated = extended_request.timestamp
         mock_dynamo_write.return_value = create_future(None)
         mock_send_comment.return_value = create_future(None)
+
         # Trying to set an empty expiration_date
         response = await parse_and_apply_policy_request_modification(
             extended_request,

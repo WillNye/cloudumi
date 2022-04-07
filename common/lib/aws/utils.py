@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pytz
 import sentry_sdk
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError, ParamValidationError
 from dateutil.parser import parse
 from deepdiff import DeepDiff
