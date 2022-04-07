@@ -1814,8 +1814,8 @@ components:
           type: object
           oneOf:
             - $ref: "#/components/schemas/CommentRequestModificationModel"
-            - $ref: "#/components/schemas/ExpirationDateRequestModificationModel"
             - $ref: "#/components/schemas/UpdateChangeModificationModel"
+            - $ref: "#/components/schemas/ExpirationDateRequestModificationModel"
             - $ref: "#/components/schemas/ApplyChangeModificationModel"
             - $ref: "#/components/schemas/ApproveRequestModificationModel"
             - $ref: "#/components/schemas/MoveToPendingRequestModificationModel"
@@ -1824,8 +1824,8 @@ components:
             propertyName: command
             mapping:
               add_comment: "#/components/schemas/CommentRequestModificationModel"
-              update_expiration_date: "#/components/schemas/ExpirationDateRequestModificationModel"
               update_change: "#/components/schemas/UpdateChangeModificationModel"
+              # update_expiration_date: "#/components/schemas/ExpirationDateRequestModificationModel"
     PolicyRequestModificationResponseModel:
       type: object
       properties:

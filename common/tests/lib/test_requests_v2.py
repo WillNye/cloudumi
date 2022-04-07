@@ -2239,6 +2239,51 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(comment.user_email, "user2@example.com")
         self.assertEqual(comment.text, "Sample comment")
 
+    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("populate_caches")
+    @patch("common.lib.v2.requests.send_communications_new_comment")
+    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    async def test_parse_and_apply_policy_request_modification_update_expiration_date(
+        self, mock_dynamo_write, mock_send_comment
+    ):
+        from common.lib.v2.requests import parse_and_apply_policy_request_modification
+
+        extended_request = await get_extended_request_helper()
+        input_body = {"modification_model": {"command": Command.update_expiration_date}}
+
+        policy_request_model = PolicyRequestModificationRequestModel.parse_obj(
+            input_body
+        )
+        last_updated = extended_request.timestamp
+        mock_dynamo_write.return_value = create_future(None)
+        mock_send_comment.return_value = create_future(None)
+        # Trying to set an empty expiration_date
+        response = await parse_and_apply_policy_request_modification(
+            extended_request,
+            policy_request_model,
+            "user2@example.com",
+            [],
+            last_updated,
+            host,
+        )
+        self.assertEqual(0, response.errors)
+        self.assertEqual(extended_request.expiration_date, None)
+
+        input_body["modification_model"]["expiration_date"] = 20220407
+        policy_request_model = PolicyRequestModificationRequestModel.parse_obj(
+            input_body
+        )
+        response = await parse_and_apply_policy_request_modification(
+            extended_request,
+            policy_request_model,
+            "user2@example.com",
+            [],
+            last_updated,
+            host,
+        )
+        self.assertEqual(0, response.errors)
+        self.assertEqual(extended_request.expiration_date, 20220407)
+
     @pytest.mark.usefixtures("populate_caches")
     @pytest.mark.usefixtures("dynamodb")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")

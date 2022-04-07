@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import time
 from datetime import datetime, timedelta
 from unittest import TestCase
 
@@ -7,8 +8,17 @@ import boto3
 import pytest
 import pytz
 import ujson as json
+from asgiref.sync import async_to_sync
 from mock import patch
 
+from common.models import (
+    ChangeModelArray,
+    ExtendedRequestModel,
+    InlinePolicyChangeModel,
+    RequestStatus,
+    Status,
+    UserModel,
+)
 from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import host
 
@@ -395,3 +405,95 @@ class TestAwsLib(TestCase):
         )
 
         CONFIG.config = old_config
+
+    @pytest.mark.usefixtures("dynamodb")
+    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    @patch("common.lib.aws.fetch_iam_principal.fetch_iam_role")
+    def test_remove_temp_policies(self, mock_dynamo_write, mock_fetch_iam_role):
+        from common.lib.aws.utils import remove_temp_policies
+
+        mock_dynamo_write.return_value = create_future(None)
+        mock_fetch_iam_role.return_value = create_future(None)
+
+        account_id = "123456789012"
+        user = None
+        current_dateint = datetime.today().strftime("%Y%m%d")
+        past_dateint = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
+        future_dateint = (datetime.today() + timedelta(days=1)).strftime("%Y%m%d")
+
+        test_role_name = "TestRequestsLibV2RoleName"
+        policy_name = "test_inline_policy_change"
+        test_role_arn = f"arn:aws:iam::{account_id}:role/{test_role_name}"
+
+        inline_policy_change = {
+            "principal": {
+                "principal_arn": test_role_arn,
+                "principal_type": "AwsResource",
+            },
+            "change_type": "inline_policy",
+            "resources": [],
+            "version": 2.0,
+            "status": "applied",
+            "policy_name": policy_name,
+            "id": "1234_0",
+            "new": False,
+            "action": "attach",
+            "policy": {
+                "version": None,
+                "policy_document": {},
+                "policy_sha256": "55d03ad7a2a447e6e883c520edcd8e5e3083c2f83fa1c390cee3f7dbedf28533",
+            },
+            "old_policy": None,
+            "expiration_date": current_dateint,
+        }
+        inline_policy_change_model = InlinePolicyChangeModel.parse_obj(
+            inline_policy_change
+        )
+
+        extended_request = ExtendedRequestModel(
+            id="1234",
+            principal=dict(
+                principal_type="AwsResource",
+                principal_arn=test_role_arn,
+            ),
+            timestamp=int(time.time()),
+            justification="Test justification",
+            requester_email="user@example.com",
+            approvers=[],
+            request_status="pending",
+            changes=ChangeModelArray(changes=[inline_policy_change_model]),
+            requester_info=UserModel(email="user@example.com"),
+            comments=[],
+        )
+
+        # Should be deleted if date is current date
+        extended_request.request_status = RequestStatus.approved
+        extended_request.expiration_date = current_dateint
+        extended_request.changes.changes[0].status = Status.applied
+        async_to_sync(remove_temp_policies)(extended_request, host)
+        self.assertEqual(extended_request.request_status, RequestStatus.expired)
+        self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
+
+        # Should be deleted if date is past date
+        extended_request.request_status = RequestStatus.approved
+        extended_request.expiration_date = past_dateint
+        extended_request.changes.changes[0].status = Status.applied
+        async_to_sync(remove_temp_policies)(extended_request, host)
+        self.assertEqual(extended_request.request_status, RequestStatus.expired)
+        self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
+
+        # Should not be deleted if date is future date
+        extended_request.expiration_date = future_dateint
+        extended_request.request_status = RequestStatus.approved
+        extended_request.changes.changes[0].status = Status.applied
+        async_to_sync(remove_temp_policies)(extended_request, host)
+        self.assertEqual(extended_request.request_status, RequestStatus.approved)
+        self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
+
+        # Should not be deleted if date is invalid date
+        extended_request.expiration_date = None
+        extended_request.request_status = RequestStatus.approved
+        extended_request.changes.changes[0].status = Status.applied
+        async_to_sync(remove_temp_policies)(extended_request, host)
+        self.assertEqual(extended_request.request_status, RequestStatus.approved)
+        self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
