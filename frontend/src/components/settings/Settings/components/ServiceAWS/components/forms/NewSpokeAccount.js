@@ -1,12 +1,27 @@
 /* eslint-disable max-len */
 import React, { useContext } from 'react'
-import { ApiContext } from 'hooks/useApi'
+import { ApiContext, useApi } from 'hooks/useApi'
 
-import { Button, Segment } from 'semantic-ui-react'
-import { Bar } from 'lib/Misc'
+import { Button, Form, Segment } from 'semantic-ui-react'
+import { Bar, Fill } from 'lib/Misc'
 import { useCopyToClipboard } from 'hooks/useCopyToClipboard'
+import { useForm } from 'react-hook-form'
+import { DimmerWithStates } from 'lib/DimmerWithStates'
 
-export const NewSpokeAccount = ({ closeModal }) => {
+export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
+  const { register, handleSubmit, watch } = useForm({ defaultValues })
+
+  const { post } = useApi('services/aws/account/spoke')
+
+  const onSubmit = (data) => {
+    post.do(data).then(() => {
+      closeModal()
+      onFinish()
+    })
+  }
+
+  const fields = watch()
+
   const { CopyButton } = useCopyToClipboard()
 
   const aws = useContext(ApiContext)
@@ -17,6 +32,40 @@ export const NewSpokeAccount = ({ closeModal }) => {
   }
 
   const isIneligible = aws.data?.spoke_account_role?.status === 'ineligible'
+
+  const isReady = fields.name !== ''
+
+  const isWorking = post?.status === 'working'
+
+  const isSuccess = post?.status === 'done' && !post?.error
+
+  const hasError = post?.error && post?.status === 'done'
+
+  if (defaultValues)
+    return (
+      <Segment basic>
+        <DimmerWithStates
+          loading={isWorking}
+          showMessage={hasError}
+          messageType={isSuccess ? 'success' : 'warning'}
+          message={'Something went wrong, try again!'}
+        />
+
+        <Form onSubmit={handleSubmit(onSubmit)}>
+          <Form.Field>
+            <label>Account Name</label>
+            <input {...register('account_name', { required: true })} />
+          </Form.Field>
+
+          <Bar>
+            <Fill />
+            <Button type='submit' disabled={!isReady} positive>
+              Submit
+            </Button>
+          </Bar>
+        </Form>
+      </Segment>
+    )
 
   return (
     <Segment basic>

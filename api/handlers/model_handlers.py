@@ -230,6 +230,27 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         if not cls._model_class or not cls._config_key:
             raise RuntimeError(f"{cls.__name__} is not properly configured")
 
+    def _retrieve(self) -> list[dict]:
+        return (
+            ModelAdapter(self._model_class)
+            .load_config(self._config_key, self.ctx.host)
+            .list
+        )
+
+    async def _create(self, data):
+        await ModelAdapter(self._model_class).load_config(
+            self._config_key, self.ctx.host
+        ).from_dict(data).with_object_key(self._identifying_keys).store_item_in_list()
+
+    async def _delete(self, data):
+        return (
+            await ModelAdapter(self._model_class)
+            .load_config(self._config_key, self.ctx.host)
+            .from_dict(data)
+            .with_object_key(self._identifying_keys)
+            .delete_list()
+        )
+
     async def get(self):
         host = self.ctx.host
         self.__validate_class_vars()
@@ -256,9 +277,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        get_data = (
-            ModelAdapter(self._model_class).load_config(self._config_key, host).list
-        )
+        get_data = self._retrieve()
         # hub_account_data is a special structure, so we unroll it
         res = WebResponse(
             success="success" if get_data else "error",
@@ -307,11 +326,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time
         try:
-            await ModelAdapter(self._model_class).load_config(
-                self._config_key, host
-            ).from_dict(data).with_object_key(
-                self._identifying_keys
-            ).store_item_in_list()
+            await self._create(data)
         except Exception as exc:
             log.error(exc, exc_info=True)
             res = WebResponse(
@@ -366,15 +381,19 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time
-        deleted = False
         try:
-            deleted = (
-                await ModelAdapter(self._model_class)
-                .load_config(self._config_key, host)
-                .from_dict(data)
-                .with_object_key(self._identifying_keys)
-                .delete_item_from_list()
+            deleted = await self._delete(data)
+            res = WebResponse(
+                status="success" if deleted else "error",
+                status_code=200 if deleted else 400,
+                message="Successfully deleted data."
+                if deleted
+                else "Unable to delete data.",
             )
+            if deleted:
+                for trigger in self._triggers:
+                    log.info(f"Applying trigger {trigger.name}")
+                    trigger.apply_async((self.ctx.__dict__,))
         except KeyError as exc:
             log.error(exc, exc_info=True)
             res = WebResponse(
@@ -383,18 +402,14 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 message="Unable to delete data",
                 errors=[f"Unable to find {self._config_key}"],
             )
-
-        res = WebResponse(
-            status="success" if deleted else "error",
-            status_code=200 if deleted else 400,
-            message="Successfully deleted data."
-            if deleted
-            else "Unable to delete data.",
-        )
-
-        for trigger in self._triggers:
-            log.info(f"Applying trigger {trigger.name}")
-            trigger.apply_async((self.ctx.__dict__,))
+        except Exception as exc:
+            res = WebResponse(
+                success="error",
+                status_code=400,
+                message="Invalid body data received",
+                errors=str(exc).split("\n"),
+            )
+            sentry_sdk.capture_exception()
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

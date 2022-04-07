@@ -158,7 +158,7 @@ class EligibleRolePageConfigHandler(BaseHandler):
                     {
                         "placeholder": "AWS Console Sign-In",
                         "key": "redirect_uri",
-                        "type": "button",
+                        "type": "abutton",
                         "icon": "sign-in",
                         "content": "Sign-In",
                         "onClick": {"action": "redirect"},

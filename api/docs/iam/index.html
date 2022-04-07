@@ -1,1501 +1,1647 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en" class="no-js">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    <link rel="canonical" href="https://docs.noq.dev/docs/iam/" />
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
 
-    <link rel="icon" href="../assets/images/favicon.png" />
-    <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.6" />
 
-    <title>IAM Permissions - Noq Docs</title>
 
-    <link rel="stylesheet" href="../assets/stylesheets/main.9d5733d3.min.css" />
+        <link rel="canonical" href="https://docs.noq.dev/docs/iam/">
 
-    <link
-      rel="stylesheet"
-      href="../assets/stylesheets/palette.e6a45f82.min.css"
-    />
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.8">
 
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback"
-    />
-    <style>
-      :root {
-        --md-text-font: "Roboto";
-        --md-code-font: "Roboto Mono";
-      }
-    </style>
 
-    <script>
-      (__md_scope = new URL("..", location)),
-        (__md_get = (e, _ = localStorage, t = __md_scope) =>
-          JSON.parse(_.getItem(t.pathname + "." + e))),
-        (__md_set = (e, _, t = localStorage, a = __md_scope) => {
-          try {
-            t.setItem(a.pathname + "." + e, JSON.stringify(_));
-          } catch (e) {}
-        });
-    </script>
 
-    <script>
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      (window.dataLayer = window.dataLayer || []),
-        gtag("js", new Date()),
-        gtag("config", "G-8YGKPGY2JG"),
-        document.addEventListener("DOMContentLoaded", function () {
-          document.forms.search &&
-            document.forms.search.query.addEventListener("blur", function () {
-              this.value &&
-                gtag("event", "search", { search_term: this.value });
-            }),
-            "undefined" != typeof location$ &&
-              location$.subscribe(function (e) {
-                gtag("config", "G-8YGKPGY2JG", { page_path: e.pathname });
-              });
-        });
-    </script>
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-8YGKPGY2JG"
-    ></script>
+        <title>IAM Permissions - Noq Docs</title>
+
+
+
+      <link rel="stylesheet" href="../assets/stylesheets/main.644de097.min.css">
+
+
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+
+
+
+
+
+
+
+
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+
+
+
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+
+
+
+
+
+
+
+
+
+  <script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-8YGKPGY2JG"),document.addEventListener("DOMContentLoaded",function(){document.forms.search&&document.forms.search.query.addEventListener("blur",function(){this.value&&gtag("event","search",{search_term:this.value})}),"undefined"!=typeof location$&&location$.subscribe(function(e){gtag("config","G-8YGKPGY2JG",{page_path:e.pathname})})})</script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8YGKPGY2JG"></script>
+
+
+
+
   </head>
 
-  <body
-    dir="ltr"
-    data-md-color-scheme="default"
-    data-md-color-primary=""
-    data-md-color-accent=""
-  >
-    <script>
-      var palette = __md_get("__palette");
-      if (palette && "object" == typeof palette.color)
-        for (var key of Object.keys(palette.color))
-          document.body.setAttribute(
-            "data-md-color-" + key,
-            palette.color[key]
-          );
-    </script>
 
-    <input
-      class="md-toggle"
-      data-md-toggle="drawer"
-      type="checkbox"
-      id="__drawer"
-      autocomplete="off"
-    />
-    <input
-      class="md-toggle"
-      data-md-toggle="search"
-      type="checkbox"
-      id="__search"
-      autocomplete="off"
-    />
+
+
+
+
+
+
+
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+
+
+
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
-    <div data-md-component="skip"></div>
-    <div data-md-component="announce"></div>
+    <div data-md-component="skip">
 
-    <header class="md-header" data-md-component="header">
-      <nav class="md-header__inner md-grid" aria-label="Header">
-        <a
-          href=".."
-          title="Noq Docs"
-          class="md-header__button md-logo"
-          aria-label="Noq Docs"
-          data-md-component="logo"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path
-              d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"
-            />
-          </svg>
-        </a>
-        <label class="md-header__button md-icon" for="__drawer">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z" />
-          </svg>
-        </label>
-        <div class="md-header__title" data-md-component="header-title">
-          <div class="md-header__ellipsis">
-            <div class="md-header__topic">
-              <span class="md-ellipsis"> Noq Docs </span>
-            </div>
-            <div class="md-header__topic" data-md-component="header-topic">
-              <span class="md-ellipsis"> IAM Permissions </span>
-            </div>
-          </div>
+    </div>
+    <div data-md-component="announce">
+
+    </div>
+
+
+
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Noq Docs" class="md-header__button md-logo" aria-label="Noq Docs" data-md-component="logo">
+
+
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Noq Docs
+          </span>
         </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
 
-        <form class="md-header__option" data-md-component="palette">
-          <input
-            class="md-option"
-            data-md-color-media=""
-            data-md-color-scheme="default"
-            data-md-color-primary=""
-            data-md-color-accent=""
-            aria-label="Switch to dark mode"
-            type="radio"
-            name="__palette"
-            id="__palette_1"
-          />
+              IAM Permissions
 
-          <label
-            class="md-header__button md-icon"
-            title="Switch to dark mode"
-            for="__palette_2"
-            hidden
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path
-                d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6zm0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4zM7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-              />
-            </svg>
-          </label>
-
-          <input
-            class="md-option"
-            data-md-color-media=""
-            data-md-color-scheme="slate"
-            data-md-color-primary=""
-            data-md-color-accent=""
-            aria-label="Switch to light mode"
-            type="radio"
-            name="__palette"
-            id="__palette_2"
-          />
-
-          <label
-            class="md-header__button md-icon"
-            title="Switch to light mode"
-            for="__palette_1"
-            hidden
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path
-                d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"
-              />
-            </svg>
-          </label>
-        </form>
-
-        <label class="md-header__button md-icon" for="__search">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path
-              d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"
-            />
-          </svg>
-        </label>
-        <div class="md-search" data-md-component="search" role="dialog">
-          <label class="md-search__overlay" for="__search"></label>
-          <div class="md-search__inner" role="search">
-            <form class="md-search__form" name="search">
-              <input
-                type="text"
-                class="md-search__input"
-                name="query"
-                aria-label="Search"
-                placeholder="Search"
-                autocapitalize="off"
-                autocorrect="off"
-                autocomplete="off"
-                spellcheck="false"
-                data-md-component="search-query"
-                required
-              />
-              <label class="md-search__icon md-icon" for="__search">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path
-                    d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"
-                  />
-                </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path
-                    d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"
-                  />
-                </svg>
-              </label>
-              <nav class="md-search__options" aria-label="Search">
-                <a
-                  href="javascript:void(0)"
-                  class="md-search__icon md-icon"
-                  aria-label="Share"
-                  data-clipboard
-                  data-clipboard-text=""
-                  data-md-component="search-share"
-                  tabindex="-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08z"
-                    />
-                  </svg>
-                </a>
-
-                <button
-                  type="reset"
-                  class="md-search__icon md-icon"
-                  aria-label="Clear"
-                  tabindex="-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
-                    />
-                  </svg>
-                </button>
-              </nav>
-
-              <div
-                class="md-search__suggest"
-                data-md-component="search-suggest"
-              ></div>
-            </form>
-            <div class="md-search__output">
-              <div class="md-search__scrollwrap" data-md-scrollfix>
-                <div class="md-search-result" data-md-component="search-result">
-                  <div class="md-search-result__meta">Initializing search</div>
-                  <ol class="md-search-result__list"></ol>
-                </div>
-              </div>
-            </div>
-          </div>
+          </span>
         </div>
+      </div>
+    </div>
+
+      <form class="md-header__option" data-md-component="palette">
+
+
+
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6zm0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4zM7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </label>
+
+
+
+
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="" data-md-color-accent=""  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"/></svg>
+            </label>
+
+
+      </form>
+
+
+
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+
+          <a href="javascript:void(0)" class="md-search__icon md-icon" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08z"/></svg>
+          </a>
+
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
       </nav>
-    </header>
+
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  </nav>
+
+</header>
 
     <div class="md-container" data-md-component="container">
+
+
+
+
+
+
       <main class="md-main" data-md-component="main">
         <div class="md-main__inner md-grid">
-          <div
-            class="md-sidebar md-sidebar--primary"
-            data-md-component="sidebar"
-            data-md-type="navigation"
-          >
-            <div class="md-sidebar__scrollwrap">
-              <div class="md-sidebar__inner">
-                <nav
-                  class="md-nav md-nav--primary"
-                  aria-label="Navigation"
-                  data-md-level="0"
-                >
-                  <label class="md-nav__title" for="__drawer">
-                    <a
-                      href=".."
-                      title="Noq Docs"
-                      class="md-nav__button md-logo"
-                      aria-label="Noq Docs"
-                      data-md-component="logo"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"
-                        />
-                      </svg>
-                    </a>
-                    Noq Docs
-                  </label>
 
-                  <ul class="md-nav__list" data-md-scrollfix>
-                    <li class="md-nav__item">
-                      <a href=".." class="md-nav__link"> Home </a>
-                    </li>
 
-                    <li class="md-nav__item md-nav__item--nested">
-                      <input
-                        class="md-nav__toggle md-toggle"
-                        data-md-toggle="__nav_2"
-                        type="checkbox"
-                        id="__nav_2"
-                      />
 
-                      <div class="md-nav__link md-nav__link--index">
-                        <a href="../getting_started/">Getting Started</a>
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
 
-                        <label for="__nav_2">
-                          <span class="md-nav__icon md-icon"></span>
-                        </label>
-                      </div>
 
-                      <nav
-                        class="md-nav"
-                        aria-label="Getting Started"
-                        data-md-level="1"
-                      >
-                        <label class="md-nav__title" for="__nav_2">
-                          <span class="md-nav__icon md-icon"></span>
-                          Getting Started
-                        </label>
-                        <ul class="md-nav__list" data-md-scrollfix>
-                          <li class="md-nav__item">
-                            <a
-                              href="../getting_started/1_connect_central_account/"
-                              class="md-nav__link"
-                            >
-                              Connect your AWS Central Account
-                            </a>
-                          </li>
 
-                          <li class="md-nav__item">
-                            <a
-                              href="../getting_started/2_self_service_wizard/"
-                              class="md-nav__link"
-                            >
-                              (Optional) Step Through Self-Service Wizard
-                            </a>
-                          </li>
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Noq Docs" class="md-nav__button md-logo" aria-label="Noq Docs" data-md-component="logo">
 
-                          <li class="md-nav__item">
-                            <a
-                              href="../getting_started/3_connect_spoke_accounts/"
-                              class="md-nav__link"
-                            >
-                              Connect Spoke Accounts
-                            </a>
-                          </li>
 
-                          <li class="md-nav__item">
-                            <a
-                              href="../getting_started/4_update_account_names/"
-                              class="md-nav__link"
-                            >
-                              Update Account Names
-                            </a>
-                          </li>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
 
-                          <li class="md-nav__item">
-                            <a
-                              href="../getting_started/5_enable_credential_brokering/"
-                              class="md-nav__link"
-                            >
-                              Enable Credential Brokering
-                            </a>
-                          </li>
+    </a>
+    Noq Docs
+  </label>
 
-                          <li class="md-nav__item">
-                            <a
-                              href="../getting_started/6_automatically_update_trust_policies/"
-                              class="md-nav__link"
-                            >
-                              Automatically Update Trust Policies
-                            </a>
-                          </li>
+  <ul class="md-nav__list" data-md-scrollfix>
 
-                          <li class="md-nav__item">
-                            <a
-                              href="../getting_started/7_enable_ip_restrictions/"
-                              class="md-nav__link"
-                            >
-                              Enable IP Restrictions
-                            </a>
-                          </li>
 
-                          <li class="md-nav__item">
-                            <a
-                              href="../getting_started/8_configure_weep/"
-                              class="md-nav__link"
-                            >
-                              Configure Weep (CLI)
-                            </a>
-                          </li>
-                        </ul>
-                      </nav>
-                    </li>
 
-                    <li class="md-nav__item md-nav__item--active">
-                      <input
-                        class="md-nav__toggle md-toggle"
-                        data-md-toggle="toc"
-                        type="checkbox"
-                        id="__toc"
-                      />
 
-                      <a href="./" class="md-nav__link md-nav__link--active">
-                        IAM Permissions
-                      </a>
-                    </li>
 
-                    <li class="md-nav__item">
-                      <a href="../tasks/" class="md-nav__link"> Tasks </a>
-                    </li>
 
-                    <li class="md-nav__item md-nav__item--nested">
-                      <input
-                        class="md-nav__toggle md-toggle"
-                        data-md-toggle="__nav_5"
-                        type="checkbox"
-                        id="__nav_5"
-                      />
 
-                      <label class="md-nav__link" for="__nav_5">
-                        Features
-                        <span class="md-nav__icon md-icon"></span>
-                      </label>
 
-                      <nav
-                        class="md-nav"
-                        aria-label="Features"
-                        data-md-level="1"
-                      >
-                        <label class="md-nav__title" for="__nav_5">
-                          <span class="md-nav__icon md-icon"></span>
-                          Features
-                        </label>
-                        <ul class="md-nav__list" data-md-scrollfix>
-                          <li class="md-nav__item md-nav__item--nested">
-                            <input
-                              class="md-nav__toggle md-toggle"
-                              data-md-toggle="__nav_5_1"
-                              type="checkbox"
-                              id="__nav_5_1"
-                            />
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Home
+      </a>
+    </li>
 
-                            <label class="md-nav__link" for="__nav_5_1">
-                              Credential Management
-                              <span class="md-nav__icon md-icon"></span>
-                            </label>
 
-                            <nav
-                              class="md-nav"
-                              aria-label="Credential Management"
-                              data-md-level="2"
-                            >
-                              <label class="md-nav__title" for="__nav_5_1">
-                                <span class="md-nav__icon md-icon"></span>
-                                Credential Management
-                              </label>
-                              <ul class="md-nav__list" data-md-scrollfix>
-                                <li class="md-nav__item md-nav__item--nested">
-                                  <input
-                                    class="md-nav__toggle md-toggle"
-                                    data-md-toggle="__nav_5_1_1"
-                                    type="checkbox"
-                                    id="__nav_5_1_1"
-                                  />
 
-                                  <label class="md-nav__link" for="__nav_5_1_1">
-                                    AWS Console Credentials
-                                    <span class="md-nav__icon md-icon"></span>
-                                  </label>
 
-                                  <nav
-                                    class="md-nav"
-                                    aria-label="AWS Console Credentials"
-                                    data-md-level="3"
-                                  >
-                                    <label
-                                      class="md-nav__title"
-                                      for="__nav_5_1_1"
-                                    >
-                                      <span class="md-nav__icon md-icon"></span>
-                                      AWS Console Credentials
-                                    </label>
-                                    <ul class="md-nav__list" data-md-scrollfix>
-                                      <li class="md-nav__item">
-                                        <a
-                                          href="../features/credential_management/aws_console_temporary_credentials/"
-                                          class="md-nav__link"
-                                        >
-                                          Overview
-                                        </a>
-                                      </li>
 
-                                      <li class="md-nav__item">
-                                        <a
-                                          href="../features/credential_management/chrome_integration/"
-                                          class="md-nav__link"
-                                        >
-                                          Chrome Integration
-                                        </a>
-                                      </li>
 
-                                      <li class="md-nav__item">
-                                        <a
-                                          href="../features/credential_management/alfred_integration/"
-                                          class="md-nav__link"
-                                        >
-                                          Alfred Integration
-                                        </a>
-                                      </li>
-                                    </ul>
-                                  </nav>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/credential_management/aws_cli_credentials/"
-                                    class="md-nav__link"
-                                  >
-                                    AWS CLI Credentials
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/credential_management/2fa_step_up/"
-                                    class="md-nav__link"
-                                  >
-                                    2-Factor Step-Up
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/credential_management/ip_restricted_credentials/"
-                                    class="md-nav__link"
-                                  >
-                                    IP Restrictions
-                                  </a>
-                                </li>
-                              </ul>
-                            </nav>
-                          </li>
 
-                          <li class="md-nav__item md-nav__item--nested">
-                            <input
-                              class="md-nav__toggle md-toggle"
-                              data-md-toggle="__nav_5_2"
-                              type="checkbox"
-                              id="__nav_5_2"
-                            />
 
-                            <label class="md-nav__link" for="__nav_5_2">
-                              Permissions Management and Request Framework
-                              <span class="md-nav__icon md-icon"></span>
-                            </label>
+    <li class="md-nav__item md-nav__item--nested">
 
-                            <nav
-                              class="md-nav"
-                              aria-label="Permissions Management and Request Framework"
-                              data-md-level="2"
-                            >
-                              <label class="md-nav__title" for="__nav_5_2">
-                                <span class="md-nav__icon md-icon"></span>
-                                Permissions Management and Request Framework
-                              </label>
-                              <ul class="md-nav__list" data-md-scrollfix>
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/permissions_management_and_request_framework/autogenerate_x_account_permissions/"
-                                    class="md-nav__link"
-                                  >
-                                    Autogenerate Cross Account Requests
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/permissions_management_and_request_framework/automatically_approve_low_risk_requests/"
-                                    class="md-nav__link"
-                                  >
-                                    Automatically Approve Low-Risk Requests
-                                  </a>
-                                </li>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/permissions_management_and_request_framework/customizable_policy_requests/"
-                                    class="md-nav__link"
-                                  >
-                                    Customize Policy Requests Before Approving
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/permissions_management_and_request_framework/permissions_are_crud/"
-                                    class="md-nav__link"
-                                  >
-                                    Customizable CRUD Mapping for Permissions
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/permissions_management_and_request_framework/self_service_permissions/"
-                                    class="md-nav__link"
-                                  >
-                                    Self-Service Permissions
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/permissions_management_and_request_framework/typeaheads_across_known_resources/"
-                                    class="md-nav__link"
-                                  >
-                                    Typeaheads across all known resources
-                                  </a>
-                                </li>
-                              </ul>
-                            </nav>
-                          </li>
 
-                          <li class="md-nav__item md-nav__item--nested">
-                            <input
-                              class="md-nav__toggle md-toggle"
-                              data-md-toggle="__nav_5_3"
-                              type="checkbox"
-                              id="__nav_5_3"
-                            />
 
-                            <label class="md-nav__link" for="__nav_5_3">
-                              Resource Management
-                              <span class="md-nav__icon md-icon"></span>
-                            </label>
 
-                            <nav
-                              class="md-nav"
-                              aria-label="Resource Management"
-                              data-md-level="2"
-                            >
-                              <label class="md-nav__title" for="__nav_5_3">
-                                <span class="md-nav__icon md-icon"></span>
-                                Resource Management
-                              </label>
-                              <ul class="md-nav__list" data-md-scrollfix>
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/resource_management/create_role/"
-                                    class="md-nav__link"
-                                  >
-                                    Create Role
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/resource_management/clone_role/"
-                                    class="md-nav__link"
-                                  >
-                                    Clone Role
-                                  </a>
-                                </li>
-                              </ul>
-                            </nav>
-                          </li>
 
-                          <li class="md-nav__item md-nav__item--nested">
-                            <input
-                              class="md-nav__toggle md-toggle"
-                              data-md-toggle="__nav_5_4"
-                              type="checkbox"
-                              id="__nav_5_4"
-                            />
 
-                            <label class="md-nav__link" for="__nav_5_4">
-                              Planned
-                              <span class="md-nav__icon md-icon"></span>
-                            </label>
 
-                            <nav
-                              class="md-nav"
-                              aria-label="Planned"
-                              data-md-level="2"
-                            >
-                              <label class="md-nav__title" for="__nav_5_4">
-                                <span class="md-nav__icon md-icon"></span>
-                                Planned
-                              </label>
-                              <ul class="md-nav__list" data-md-scrollfix>
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/planned/automatic_permissions_generation/"
-                                    class="md-nav__link"
-                                  >
-                                    Automatic Permissions Generation
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/planned/unused_permissions_removal/"
-                                    class="md-nav__link"
-                                  >
-                                    Unused Permissions Removal
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/planned/breakglass_role_access/"
-                                    class="md-nav__link"
-                                  >
-                                    Breakglass Role Access
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/planned/decentralized_request_management/"
-                                    class="md-nav__link"
-                                  >
-                                    Decentralized Request Management
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/planned/multi_role_wizard_selection/"
-                                    class="md-nav__link"
-                                  >
-                                    Multi-Role Self-Service
-                                  </a>
-                                </li>
 
-                                <li class="md-nav__item">
-                                  <a
-                                    href="../features/planned/multi_tag_wizard_request/"
-                                    class="md-nav__link"
-                                  >
-                                    Self-Service Wizard for Tagging
-                                  </a>
-                                </li>
-                              </ul>
-                            </nav>
-                          </li>
-                        </ul>
-                      </nav>
-                    </li>
-                  </ul>
-                </nav>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../getting_started/">Getting Started</a>
+
+            <label for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+
+        </div>
+
+      <nav class="md-nav" aria-label="Getting Started" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Getting Started
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/1_connect_central_account/" class="md-nav__link">
+        Connect your AWS Central Account
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/2_self_service_wizard/" class="md-nav__link">
+        (Optional) Step Through Self-Service Wizard
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/3_connect_spoke_accounts/" class="md-nav__link">
+        Connect Spoke Accounts
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/4_update_account_names/" class="md-nav__link">
+        Update Account Names
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/5_enable_credential_brokering/" class="md-nav__link">
+        Enable Credential Brokering
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/6_automatically_update_trust_policies/" class="md-nav__link">
+        Automatically Update Trust Policies
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/7_enable_ip_restrictions/" class="md-nav__link">
+        Enable IP Restrictions
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/8_configure_weep/" class="md-nav__link">
+        Configure Weep (CLI)
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../getting_started/9_connect_eventbridge/" class="md-nav__link">
+        Configure AWS Event Bridge
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--active">
+
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+
+
+
+      <a href="./" class="md-nav__link md-nav__link--active">
+        IAM Permissions
+      </a>
+
+    </li>
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../tasks/" class="md-nav__link">
+        Tasks
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_5">
+          Features
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Features" data-md-level="1">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Features
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_1" type="checkbox" id="__nav_5_1" >
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_5_1">
+          Credential Management
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Credential Management" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_1">
+          <span class="md-nav__icon md-icon"></span>
+          Credential Management
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_1_1" type="checkbox" id="__nav_5_1_1" >
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_5_1_1">
+          AWS Console Credentials
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="AWS Console Credentials" data-md-level="3">
+        <label class="md-nav__title" for="__nav_5_1_1">
+          <span class="md-nav__icon md-icon"></span>
+          AWS Console Credentials
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/credential_management/aws_console_temporary_credentials/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/credential_management/chrome_integration/" class="md-nav__link">
+        Chrome Integration
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/credential_management/alfred_integration/" class="md-nav__link">
+        Alfred Integration
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/credential_management/aws_cli_credentials/" class="md-nav__link">
+        AWS CLI Credentials
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/credential_management/ip_restricted_credentials/" class="md-nav__link">
+        IP Restrictions
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_2" type="checkbox" id="__nav_5_2" >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_5_2">
+          Permissions Management and Request Framework
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Permissions Management and Request Framework" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_2">
+          <span class="md-nav__icon md-icon"></span>
+          Permissions Management and Request Framework
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/permissions_management_and_request_framework/autogenerate_x_account_permissions/" class="md-nav__link">
+        Autogenerate Cross Account Requests
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/permissions_management_and_request_framework/automatically_approve_low_risk_requests/" class="md-nav__link">
+        Automatically Approve Low-Risk Requests
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/permissions_management_and_request_framework/customizable_policy_requests/" class="md-nav__link">
+        Customize Policy Requests Before Approving
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/permissions_management_and_request_framework/permissions_are_crud/" class="md-nav__link">
+        Customizable CRUD Mapping for Permissions
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/permissions_management_and_request_framework/self_service_permissions/" class="md-nav__link">
+        Self-Service Permissions
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/permissions_management_and_request_framework/typeaheads_across_known_resources/" class="md-nav__link">
+        Typeaheads across all known resources
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/permissions_management_and_request_framework/temporary_policy_requests/" class="md-nav__link">
+        Temporary Policy Requests
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_3" type="checkbox" id="__nav_5_3" >
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_5_3">
+          Resource Management
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Resource Management" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_3">
+          <span class="md-nav__icon md-icon"></span>
+          Resource Management
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/resource_management/create_role/" class="md-nav__link">
+        Create Role
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/resource_management/clone_role/" class="md-nav__link">
+        Clone Role
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_4" type="checkbox" id="__nav_5_4" >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_5_4">
+          Planned
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Planned" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_4">
+          <span class="md-nav__icon md-icon"></span>
+          Planned
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/planned/automatic_permissions_generation/" class="md-nav__link">
+        Automatic Permissions Generation
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/planned/unused_permissions_removal/" class="md-nav__link">
+        Unused Permissions Removal
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/planned/breakglass_role_access/" class="md-nav__link">
+        Breakglass Role Access
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/planned/decentralized_request_management/" class="md-nav__link">
+        Decentralized Request Management
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/planned/multi_role_wizard_selection/" class="md-nav__link">
+        Multi-Role Self-Service
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/planned/multi_tag_wizard_request/" class="md-nav__link">
+        Self-Service Wizard for Tagging
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../features/planned/2fa_step_up/" class="md-nav__link">
+        2-Factor Step-Up
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+  </ul>
+</nav>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+
+
 
           <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
-              <h1>IAM Permissions</h1>
 
-              <p><strong>Central Account Role Permissions</strong></p>
-              <p>
-                Noq will always assume in to your central account role in order
-                to access your environment. This is Noq's entrypoint in to your
-                environment. As a security precaution, Noq assigns a random
-                ExternalID to your tenant on Noq. We will always pass this
-                ExternalId when assuming a role. If the ExternalId does not
-                match, the assume role connection will not be permitted.
-              </p>
-              <p>
-                Noq also has the capability to broker credentials to authorized
-                users or groups for all other roles within your environment. To
-                allow this, please enable credential brokering in the Settings
-                page, and specify tags that Noq can use to identify the
-                authorized users and groups allowed to access each role.
-              </p>
-              <p>The Central Role requires the following permissions:</p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Permission</th>
-                    <th>Resource</th>
-                    <th>Purpose</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>sts:AssumeRole</td>
-                    <td>**</td>
-                    <td>
-                      Assume all Noq spoke roles across the customer's accounts.
-                      Assume all roles for the purpose of credential brokering
-                      (Note: This only works if the target roles allow the
-                      Central Role to call sts:AssumeRole and sts:TagSession
-                      within their Trust Policy.)
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>sts:TagSession</td>
-                    <td>**</td>
-                    <td>
-                      Allow Noq to pass session tags when performing a role
-                      assumption.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <p><strong>Spoke Role Account Permissions</strong></p>
-              <p>
-                Noq's spoke roles are assumed by the Noq central role to cache
-                information about your accounts and cloud resources, and to
-                update identity and resource policies. One spoke role should
-                exist on each of your accounts, including the account that your
-                central role resides on.
-              </p>
-              <p>
-                Noq performs the following steps to cache IAM resources across
-                your account:
-              </p>
-              <ol>
-                <li>
-                  <p>Assume Central Role with unique ExternalID</p>
-                </li>
-                <li>
-                  <p>Assume Spoke Role on the target account</p>
-                </li>
-                <li>
-                  <p>
-                    Use Spoke Role credentials to call IAM APIs to determine
-                    resources
-                  </p>
-                </li>
-              </ol>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Permission</th>
-                    <th>Resource</th>
-                    <th>Purpose</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>config:BatchGet*</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve AWS Config details for your resources ; Will
-                      allow policy rollback
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>config:List*</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve information about AWS resources to list in a
-                      single source of truth
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>config:Select*</td>
-                    <td>**</td>
-                    <td>Query AWS Config</td>
-                  </tr>
-                  <tr>
-                    <td>ec2:describeregions</td>
-                    <td>**</td>
-                    <td>Retrieve active regions for your AWS environment</td>
-                  </tr>
-                  <tr>
-                    <td>iam:AttachRolePolicy</td>
-                    <td>**</td>
-                    <td>Attach managed policies to IAM roles</td>
-                  </tr>
-                  <tr>
-                    <td>iam:AttachUserPolicy</td>
-                    <td>**</td>
-                    <td>Attach managed policies to IAM users</td>
-                  </tr>
-                  <tr>
-                    <td>iam:CreateInstanceProfile</td>
-                    <td>**</td>
-                    <td>
-                      Create an instance profile (We do this when creating or
-                      cloning roles)
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:CreateRole</td>
-                    <td>**</td>
-                    <td>Create or clone an IAM role</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteAccessKey</td>
-                    <td>**</td>
-                    <td>Delete an IAM access key during IAM user deletion</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteInstanceProfile</td>
-                    <td>**</td>
-                    <td>Delete instance profiles during role deletion</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteRole</td>
-                    <td>**</td>
-                    <td>Allows Noq to delete roles</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeletePolicy</td>
-                    <td>**</td>
-                    <td>Delete managed policies</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeletePolicyVersion</td>
-                    <td>**</td>
-                    <td>
-                      Delete a managed policy version, used when updating
-                      managed policies
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteRolePermissionsBoundary</td>
-                    <td>**</td>
-                    <td>Remove a permissions boundary from a role</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteRolePolicy</td>
-                    <td>**</td>
-                    <td>Remove an inline policy from a role</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteUser</td>
-                    <td>**</td>
-                    <td>Allows Noq to delete users</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteUserPermissionsBoundary</td>
-                    <td>**</td>
-                    <td>Allows Noq to remove a user's permission boundary</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteUserPolicy</td>
-                    <td>**</td>
-                    <td>Allow Noq to delete User inline policies</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DeleteVirtualMFADevice</td>
-                    <td>**</td>
-                    <td>Used by Noq when deleting IAM users</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DetachRolePolicy</td>
-                    <td>**</td>
-                    <td>Allow Noq to remove managed policies from IAM roles</td>
-                  </tr>
-                  <tr>
-                    <td>iam:DetachUserPolicy</td>
-                    <td>**</td>
-                    <td>Allow Noq to remove managed policies from IAM users</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GenerateCredentialReport</td>
-                    <td>**</td>
-                    <td>Generate credential usage report</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GenerateOrganizationsAccessReport</td>
-                    <td>**</td>
-                    <td>
-                      Generates a report for service last accessed data for
-                      Organizations.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:GenerateServiceLastAccessedDetails</td>
-                    <td>**</td>
-                    <td>
-                      Use Access Advisor to determine unused services for IAM
-                      roles and users
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetAccessKeyLastUsed</td>
-                    <td>**</td>
-                    <td>Determine when an IAM access key was last used</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetAccountAuthorizationDetails</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve context about all IAM resources on the account.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetAccountSummary</td>
-                    <td>**</td>
-                    <td>Retrieves account status and quota details</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetCredentialReport</td>
-                    <td>**</td>
-                    <td>Determine status of IAM credentials on an account</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetGroup</td>
-                    <td>**</td>
-                    <td>Get an IAM group</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetGroupPolicy</td>
-                    <td>**</td>
-                    <td>Get the policy for an IAM group</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetInstanceProfile</td>
-                    <td>**</td>
-                    <td>Get details about an instance profile</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetPolicy</td>
-                    <td>**</td>
-                    <td>Retrieve information about a manged policy</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetPolicyVersion</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve a specific version of an IAM managed policy
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetRole</td>
-                    <td>**</td>
-                    <td>
-                      Get a role (Used for policy editing and self-service)
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetRolePolicy</td>
-                    <td>**</td>
-                    <td>
-                      Get a role's inline policy (Used for policy editing and
-                      self-service)
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetServiceLastAccessedDetails</td>
-                    <td>**</td>
-                    <td>Used for removing unused service permissions</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetServiceLastAccessedDetailsWithEntities</td>
-                    <td>**</td>
-                    <td>Used for removing unused service permissions</td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetUser</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve an IAM user for policy editing and self-service
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:GetUserPolicy</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve an IAM user inline policy for policy editing and
-                      self-service
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListAccessKeys</td>
-                    <td>**</td>
-                    <td>List IAM user access keys</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListAccountAliases</td>
-                    <td>**</td>
-                    <td>List account aliases for determining account name</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListAttachedRolePolicies</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListAttachedUserPolicies</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListEntitiesForPolicy</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListGroupPolicies</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListGroups</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListGroupsForUser</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListInstanceProfileTags</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListInstanceProfiles</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListInstanceProfilesForRole</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListPolicies</td>
-                    <td>**</td>
-                    <td>Used to cache managed policy names</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListPolicyTags</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListPolicyVersions</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListRolePolicies</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListRoleTags</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListRoles</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListUserPolicies</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListUserTags</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:ListUsers</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:PutRolePermissionsBoundary</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:PutRolePolicy</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:PutUserPermissionsBoundary</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:PutUserPolicy</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:RemoveRoleFromInstanceProfile</td>
-                    <td>**</td>
-                    <td>Used when deleting roles</td>
-                  </tr>
-                  <tr>
-                    <td>iam:RemoveUserFromGroup</td>
-                    <td>**</td>
-                    <td>Used when deleting users</td>
-                  </tr>
-                  <tr>
-                    <td>iam:SetDefaultPolicyVersion</td>
-                    <td>**</td>
-                    <td>Used when updating managed policies</td>
-                  </tr>
-                  <tr>
-                    <td>iam:SimulateCustomPolicy</td>
-                    <td>**</td>
-                    <td>Used when determining if an action is allowed</td>
-                  </tr>
-                  <tr>
-                    <td>iam:SimulatePrincipalPolicy</td>
-                    <td>**</td>
-                    <td>Used when determining if an action is allowed</td>
-                  </tr>
-                  <tr>
-                    <td>iam:TagInstanceProfile</td>
-                    <td>**</td>
-                    <td>Used when creating a role</td>
-                  </tr>
-                  <tr>
-                    <td>iam:TagPolicy</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:TagRole</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:TagUser</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:UntagInstanceProfile</td>
-                    <td>**</td>
-                    <td>Used when deleting a role</td>
-                  </tr>
-                  <tr>
-                    <td>iam:UntagPolicy</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:UntagRole</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:UntagUser</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:UpdateAssumeRolePolicy</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:UpdateRole</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:UpdateRoleDescription</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>iam:UpdateUser</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>s3:GetBucketPolicy</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve information about your S3 buckets ; Enable
-                      modifying buckets
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>s3:GetBucketTagging</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>s3:ListAllMyBuckets</td>
-                    <td>**</td>
-                    <td>
-                      Cache all bucket ARNs for typeahead and policy editing
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>s3:ListBucket</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>s3:PutBucketPolicy</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>s3:PutBucketTagging</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>sns:GetTopicAttributes</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve information about your SNS topics ; Enable
-                      modifying topics
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>sns:ListTagsForResource</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>sns:ListTopics</td>
-                    <td>**</td>
-                    <td>Policy editing, and global view of all SNs topics</td>
-                  </tr>
-                  <tr>
-                    <td>sns:SetTopicAttributes</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>sns:TagResource</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>sns:UnTagResource</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>sqs:GetQueueAttributes</td>
-                    <td>**</td>
-                    <td>
-                      Retrieve information about your SQS queues ; Enable
-                      modifying queues
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>sqs:GetQueueUrl</td>
-                    <td>**</td>
-                    <td>Used in SNS policy editor</td>
-                  </tr>
-                  <tr>
-                    <td>sqs:ListQueues</td>
-                    <td>**</td>
-                    <td>Used to provide global view of all SQS queues</td>
-                  </tr>
-                  <tr>
-                    <td>sqs:ListQueueTags</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>sqs:SetQueueAttributes</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>sqs:TagQueue</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                  <tr>
-                    <td>sqs:UntagQueue</td>
-                    <td>**</td>
-                    <td>Used for policy editing / self-service</td>
-                  </tr>
-                </tbody>
-              </table>
+
+
+
+  <h1>IAM Permissions</h1>
+
+<p><strong>Central Account Role Permissions</strong></p>
+<p>Noq will always assume in to your central account role in order to access your environment. This is Noq's entrypoint in to your environment. As a security precaution, Noq assigns a random ExternalID to your tenant on Noq. We will always pass this ExternalId when assuming a role. If the ExternalId does not match, the assume role connection will not be permitted.</p>
+<p>Noq also has the capability to broker credentials to authorized users or groups for all other roles within your environment. To allow this, please enable credential brokering in the Settings page, and specify tags that Noq can use to identify the authorized users and groups allowed to access each role.</p>
+<p>The Central Role requires the following permissions:</p>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Resource</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sts:AssumeRole</td>
+<td>**</td>
+<td>Assume all Noq spoke roles across the customer's accounts. Assume all roles for the purpose of credential brokering (Note: This only works if the target roles allow the Central Role to call sts:AssumeRole and sts:TagSession within their Trust Policy.)</td>
+</tr>
+<tr>
+<td>sts:TagSession</td>
+<td>**</td>
+<td>Allow Noq to pass session tags when performing a role assumption.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Spoke Role Account Permissions</strong></p>
+<p>Noq's spoke roles are assumed by the Noq central role to cache information about your accounts and cloud resources, and to update identity and resource policies. One spoke role should exist on each of your accounts, including the account that your central role resides on.</p>
+<p>Noq performs the following steps to cache IAM resources across your account:</p>
+<ol>
+<li>
+<p>Assume Central Role with unique ExternalID</p>
+</li>
+<li>
+<p>Assume Spoke Role on the target account</p>
+</li>
+<li>
+<p>Use Spoke Role credentials to call IAM APIs to determine resources</p>
+</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Resource</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>config:BatchGet*</td>
+<td>**</td>
+<td>Retrieve AWS Config details for your resources ; Will allow policy rollback</td>
+</tr>
+<tr>
+<td>config:List*</td>
+<td>**</td>
+<td>Retrieve information about AWS resources to list in a single source of truth</td>
+</tr>
+<tr>
+<td>config:Select*</td>
+<td>**</td>
+<td>Query AWS Config</td>
+</tr>
+<tr>
+<td>ec2:describeregions</td>
+<td>**</td>
+<td>Retrieve active regions for your AWS environment</td>
+</tr>
+<tr>
+<td>iam:AttachRolePolicy</td>
+<td>**</td>
+<td>Attach managed policies to IAM roles</td>
+</tr>
+<tr>
+<td>iam:AttachUserPolicy</td>
+<td>**</td>
+<td>Attach managed policies to IAM users</td>
+</tr>
+<tr>
+<td>iam:CreateInstanceProfile</td>
+<td>**</td>
+<td>Create an instance profile (We do this when creating or cloning roles)</td>
+</tr>
+<tr>
+<td>iam:CreateRole</td>
+<td>**</td>
+<td>Create or clone an IAM role</td>
+</tr>
+<tr>
+<td>iam:DeleteAccessKey</td>
+<td>**</td>
+<td>Delete an IAM access key during IAM user deletion</td>
+</tr>
+<tr>
+<td>iam:DeleteInstanceProfile</td>
+<td>**</td>
+<td>Delete instance profiles during role deletion</td>
+</tr>
+<tr>
+<td>iam:DeleteRole</td>
+<td>**</td>
+<td>Allows Noq to delete roles</td>
+</tr>
+<tr>
+<td>iam:DeletePolicy</td>
+<td>**</td>
+<td>Delete managed policies</td>
+</tr>
+<tr>
+<td>iam:DeletePolicyVersion</td>
+<td>**</td>
+<td>Delete a managed policy version, used when updating managed policies</td>
+</tr>
+<tr>
+<td>iam:DeleteRolePermissionsBoundary</td>
+<td>**</td>
+<td>Remove a permissions boundary from a role</td>
+</tr>
+<tr>
+<td>iam:DeleteRolePolicy</td>
+<td>**</td>
+<td>Remove an inline policy from a role</td>
+</tr>
+<tr>
+<td>iam:DeleteUser</td>
+<td>**</td>
+<td>Allows Noq to delete users</td>
+</tr>
+<tr>
+<td>iam:DeleteUserPermissionsBoundary</td>
+<td>**</td>
+<td>Allows Noq to remove a user's permission boundary</td>
+</tr>
+<tr>
+<td>iam:DeleteUserPolicy</td>
+<td>**</td>
+<td>Allow Noq to delete User inline policies</td>
+</tr>
+<tr>
+<td>iam:DeleteVirtualMFADevice</td>
+<td>**</td>
+<td>Used by Noq when deleting IAM users</td>
+</tr>
+<tr>
+<td>iam:DetachRolePolicy</td>
+<td>**</td>
+<td>Allow Noq to remove managed policies from IAM roles</td>
+</tr>
+<tr>
+<td>iam:DetachUserPolicy</td>
+<td>**</td>
+<td>Allow Noq to remove managed policies from IAM users</td>
+</tr>
+<tr>
+<td>iam:GenerateCredentialReport</td>
+<td>**</td>
+<td>Generate credential usage report</td>
+</tr>
+<tr>
+<td>iam:GenerateOrganizationsAccessReport</td>
+<td>**</td>
+<td>Generates a report for service last accessed data for Organizations.</td>
+</tr>
+<tr>
+<td>iam:GenerateServiceLastAccessedDetails</td>
+<td>**</td>
+<td>Use Access Advisor to determine unused services for IAM roles and users</td>
+</tr>
+<tr>
+<td>iam:GetAccessKeyLastUsed</td>
+<td>**</td>
+<td>Determine when an IAM access key was last used</td>
+</tr>
+<tr>
+<td>iam:GetAccountAuthorizationDetails</td>
+<td>**</td>
+<td>Retrieve context about all IAM resources on the account.</td>
+</tr>
+<tr>
+<td>iam:GetAccountSummary</td>
+<td>**</td>
+<td>Retrieves account status and quota details</td>
+</tr>
+<tr>
+<td>iam:GetCredentialReport</td>
+<td>**</td>
+<td>Determine status of IAM credentials on an account</td>
+</tr>
+<tr>
+<td>iam:GetGroup</td>
+<td>**</td>
+<td>Get an IAM group</td>
+</tr>
+<tr>
+<td>iam:GetGroupPolicy</td>
+<td>**</td>
+<td>Get the policy for an IAM group</td>
+</tr>
+<tr>
+<td>iam:GetInstanceProfile</td>
+<td>**</td>
+<td>Get details about an instance profile</td>
+</tr>
+<tr>
+<td>iam:GetPolicy</td>
+<td>**</td>
+<td>Retrieve information about a manged policy</td>
+</tr>
+<tr>
+<td>iam:GetPolicyVersion</td>
+<td>**</td>
+<td>Retrieve a specific version of an IAM managed policy</td>
+</tr>
+<tr>
+<td>iam:GetRole</td>
+<td>**</td>
+<td>Get a role (Used for policy editing and self-service)</td>
+</tr>
+<tr>
+<td>iam:GetRolePolicy</td>
+<td>**</td>
+<td>Get a role's inline policy (Used for policy editing and self-service)</td>
+</tr>
+<tr>
+<td>iam:GetServiceLastAccessedDetails</td>
+<td>**</td>
+<td>Used for removing unused service permissions</td>
+</tr>
+<tr>
+<td>iam:GetServiceLastAccessedDetailsWithEntities</td>
+<td>**</td>
+<td>Used for removing unused service permissions</td>
+</tr>
+<tr>
+<td>iam:GetUser</td>
+<td>**</td>
+<td>Retrieve an IAM user for policy editing and self-service</td>
+</tr>
+<tr>
+<td>iam:GetUserPolicy</td>
+<td>**</td>
+<td>Retrieve an IAM user inline policy for policy editing and self-service</td>
+</tr>
+<tr>
+<td>iam:ListAccessKeys</td>
+<td>**</td>
+<td>List IAM user access keys</td>
+</tr>
+<tr>
+<td>iam:ListAccountAliases</td>
+<td>**</td>
+<td>List account aliases for determining account name</td>
+</tr>
+<tr>
+<td>iam:ListAttachedRolePolicies</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListAttachedUserPolicies</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListEntitiesForPolicy</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListGroupPolicies</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListGroups</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListGroupsForUser</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListInstanceProfileTags</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListInstanceProfiles</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListInstanceProfilesForRole</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListPolicies</td>
+<td>**</td>
+<td>Used to cache managed policy names</td>
+</tr>
+<tr>
+<td>iam:ListPolicyTags</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListPolicyVersions</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListRolePolicies</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListRoleTags</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListRoles</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListUserPolicies</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListUserTags</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:ListUsers</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:PutRolePermissionsBoundary</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:PutRolePolicy</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:PutUserPermissionsBoundary</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:PutUserPolicy</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:RemoveRoleFromInstanceProfile</td>
+<td>**</td>
+<td>Used when deleting roles</td>
+</tr>
+<tr>
+<td>iam:RemoveUserFromGroup</td>
+<td>**</td>
+<td>Used when deleting users</td>
+</tr>
+<tr>
+<td>iam:SetDefaultPolicyVersion</td>
+<td>**</td>
+<td>Used when updating managed policies</td>
+</tr>
+<tr>
+<td>iam:SimulateCustomPolicy</td>
+<td>**</td>
+<td>Used when determining if an action is allowed</td>
+</tr>
+<tr>
+<td>iam:SimulatePrincipalPolicy</td>
+<td>**</td>
+<td>Used when determining if an action is allowed</td>
+</tr>
+<tr>
+<td>iam:TagInstanceProfile</td>
+<td>**</td>
+<td>Used when creating a role</td>
+</tr>
+<tr>
+<td>iam:TagPolicy</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:TagRole</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:TagUser</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:UntagInstanceProfile</td>
+<td>**</td>
+<td>Used when deleting a role</td>
+</tr>
+<tr>
+<td>iam:UntagPolicy</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:UntagRole</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:UntagUser</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:UpdateAssumeRolePolicy</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:UpdateRole</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:UpdateRoleDescription</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>iam:UpdateUser</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>s3:GetBucketPolicy</td>
+<td>**</td>
+<td>Retrieve information about your S3 buckets ; Enable modifying buckets</td>
+</tr>
+<tr>
+<td>s3:GetBucketTagging</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>s3:ListAllMyBuckets</td>
+<td>**</td>
+<td>Cache all bucket ARNs for typeahead and policy editing</td>
+</tr>
+<tr>
+<td>s3:ListBucket</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>s3:PutBucketPolicy</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>s3:PutBucketTagging</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>sns:GetTopicAttributes</td>
+<td>**</td>
+<td>Retrieve information about your SNS topics ; Enable modifying topics</td>
+</tr>
+<tr>
+<td>sns:ListTagsForResource</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>sns:ListTopics</td>
+<td>**</td>
+<td>Policy editing, and global view of all SNs topics</td>
+</tr>
+<tr>
+<td>sns:SetTopicAttributes</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>sns:TagResource</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>sns:UnTagResource</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>sqs:GetQueueAttributes</td>
+<td>**</td>
+<td>Retrieve information about your SQS queues ; Enable modifying queues</td>
+</tr>
+<tr>
+<td>sqs:GetQueueUrl</td>
+<td>**</td>
+<td>Used in SNS policy editor</td>
+</tr>
+<tr>
+<td>sqs:ListQueues</td>
+<td>**</td>
+<td>Used to provide global view of all SQS queues</td>
+</tr>
+<tr>
+<td>sqs:ListQueueTags</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>sqs:SetQueueAttributes</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>sqs:TagQueue</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+<tr>
+<td>sqs:UntagQueue</td>
+<td>**</td>
+<td>Used for policy editing / self-service</td>
+</tr>
+</tbody>
+</table>
+
+
             </article>
           </div>
         </div>
+
       </main>
 
-      <footer class="md-footer">
-        <nav class="md-footer__inner md-grid" aria-label="Footer">
-          <a
-            href="../getting_started/8_configure_weep/"
-            class="md-footer__link md-footer__link--prev"
-            aria-label="Previous: Configure Weep (CLI)"
-            rel="prev"
-          >
-            <div class="md-footer__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path
-                  d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"
-                />
-              </svg>
-            </div>
-            <div class="md-footer__title">
-              <div class="md-ellipsis">
-                <span class="md-footer__direction"> Previous </span>
-                Configure Weep (CLI)
-              </div>
-            </div>
-          </a>
+        <footer class="md-footer">
 
-          <a
-            href="../tasks/"
-            class="md-footer__link md-footer__link--next"
-            aria-label="Next: Tasks"
-            rel="next"
-          >
-            <div class="md-footer__title">
-              <div class="md-ellipsis">
-                <span class="md-footer__direction"> Next </span>
-                Tasks
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path
-                  d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"
-                />
-              </svg>
-            </div>
-          </a>
-        </nav>
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
 
-        <div class="md-footer-meta md-typeset">
-          <div class="md-footer-meta__inner md-grid">
-            <div class="md-copyright">
-              Made with
-              <a
-                href="https://squidfunk.github.io/mkdocs-material/"
-                target="_blank"
-                rel="noopener"
-              >
-                Material for MkDocs
-              </a>
+
+        <a href="../getting_started/9_connect_eventbridge/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Configure AWS Event Bridge" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Configure AWS Event Bridge
             </div>
           </div>
-        </div>
-      </footer>
+        </a>
+
+
+
+        <a href="../tasks/" class="md-footer__link md-footer__link--next" aria-label="Next: Tasks" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Tasks
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+
+    </nav>
+
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+
+
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+
+</div>
+
+    </div>
+  </div>
+</footer>
+
     </div>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">
-      {
-        "base": "..",
-        "features": [
-          "navigation.instant",
-          "navigation.indexes",
-          "navigation.tracking",
-          "search.highlight",
-          "search.share",
-          "search.suggest"
-        ],
-        "translations": {
-          "clipboard.copy": "Copy to clipboard",
-          "clipboard.copied": "Copied to clipboard",
-          "search.config.lang": "en",
-          "search.config.pipeline": "trimmer, stopWordFilter",
-          "search.config.separator": "[\\s\\-]+",
-          "search.placeholder": "Search",
-          "search.result.placeholder": "Type to start searching",
-          "search.result.none": "No matching documents",
-          "search.result.one": "1 matching document",
-          "search.result.other": "# matching documents",
-          "search.result.more.one": "1 more on this page",
-          "search.result.more.other": "# more on this page",
-          "search.result.term.missing": "Missing",
-          "select.version.title": "Select version"
-        },
-        "search": "../assets/javascripts/workers/search.5e67fbfe.min.js"
-      }
-    </script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.5e67fbfe.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
 
-    <script src="../assets/javascripts/bundle.e87a5f81.min.js"></script>
+
+      <script src="../assets/javascripts/bundle.c44cc438.min.js"></script>
+
+
   </body>
 </html>
