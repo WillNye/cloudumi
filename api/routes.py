@@ -237,6 +237,10 @@ def make_app(jwt_validator=None):
             AuthorizedGroupsTagsDeleteHandler,
         ),
         (
+            r"/api/v3/services/aws/role-access/automatic-update/enabled/?",
+            AutomaticPolicyUpdateHandler,
+        ),
+        (
             r"/api/v3/services/aws/role-access/automatic-update/(?P<_enabled>enable|disable)/?",
             AutomaticPolicyUpdateHandler,
         ),

@@ -237,6 +237,39 @@ class AutomaticPolicyUpdateHandler(BaseHandler):
     Provides a toggle to enable and disable automatic policy updates if NOQ does not have required permissions
     """
 
+    async def get(self):
+        host = self.ctx.host
+
+        log_data = {
+            "function": "AutomaticPolicyUpdateHandler.get",
+            "user": self.user,
+            "message": "Retrieving automatic policy update handler state",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "host": host,
+        }
+        log.debug(log_data)
+
+        generic_error_message = "Cannot access automatic policy update handler state"
+        if not can_admin_all(self.user, self.groups, host):
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 403, "unauthorized", log_data
+            )
+            return
+        log.debug(log_data)
+
+        automatic_update = await role_access.get_role_access_automatic_policy_update(
+            host
+        )
+        res = WebResponse(
+            status="success",
+            status_code=200,
+            message="Successfully retrieved automatic policy update handler state.",
+            data={"enabled": automatic_update},
+        )
+        self.write(res.json(exclude_unset=True, exclude_none=True))
+
     async def post(self, _enabled: str):
         host = self.ctx.host
         enabled = True if _enabled == "enable" else False
