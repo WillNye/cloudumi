@@ -315,7 +315,8 @@ def upsert_identity_provider(
         return response
 
     for provider_type in supported_providers:
-        responses.append(set_provider(getattr(id_provider, provider_type)))
+        if provider := getattr(id_provider, provider_type):
+            responses.append(set_provider(provider))
 
     LOG.info(f"Created {len(responses)} IDP: {responses}")
     return True
