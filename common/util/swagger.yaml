@@ -2047,10 +2047,7 @@ components:
       type: object
       required:
         - name
-        - account_name
         - account_id
-        - role_arn
-        - external_id
       properties:
         name:
           type: string
@@ -2072,10 +2069,7 @@ components:
       type: object
       required:
         - name
-        - account_name
         - account_id
-        - role_arn
-        - hub_account_arn
       properties:
         name:
           type: string
