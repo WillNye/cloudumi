@@ -102,4 +102,4 @@ jobs:
       - name: Run tests
         run: |
           source /tmp/env/bin/activate
-          make testhtml
+          bazel test $(bazel query 'kind(".*_test rule", //...)')
