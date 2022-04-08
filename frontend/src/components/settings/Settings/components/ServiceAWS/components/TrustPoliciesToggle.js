@@ -12,10 +12,10 @@ export const TrustPoliciesToggle = () => {
   const [checked, setChecked] = useState(false)
 
   // TODO: Uncomment when the endpoint is available
-  // useEffect(
-  //   () => get.do('enabled').then((data) => setChecked(data?.enabled)),
-  //   []
-  // )
+  useEffect(
+    () => get.do('enabled').then((data) => setChecked(data?.enabled)),
+    []
+  )
 
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'
