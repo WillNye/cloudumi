@@ -356,7 +356,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                     "approvers": [],
                     "request_status": "pending",
                     "cross_account": False,
-                    "arn_url": "/role/123456789012?redirect=https://console.aws.amazon.com/iam/home?%23/policies/arn:aws:iam::123456789012:policy/testpolicy$serviceLevelSummary",
+                    "arn_url": "/policies/edit/123456789012/managed_policy/testpolicy",
                     "admin_auto_approve": False,
                     "changes": {
                         "changes": [
