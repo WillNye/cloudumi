@@ -2241,10 +2241,10 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
     @pytest.mark.usefixtures("dynamodb")
     @pytest.mark.usefixtures("populate_caches")
-    @patch("common.lib.v2.requests.send_communications_new_comment")
-    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
+    @pytest.mark.usefixtures("iam")
+    # @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_update_expiration_date(
-        self, mock_dynamo_write, mock_send_comment
+        self,
     ):
         from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
@@ -2260,8 +2260,6 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             input_body
         )
         last_updated = extended_request.timestamp
-        mock_dynamo_write.return_value = create_future(None)
-        mock_send_comment.return_value = create_future(None)
 
         # Trying to set an empty expiration_date
         response = await parse_and_apply_policy_request_modification(

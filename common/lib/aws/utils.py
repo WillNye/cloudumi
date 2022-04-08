@@ -1927,7 +1927,9 @@ async def remove_temp_policies(
 
             except iam_client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
-                # log_data["error"] = str(e)
+                log_data[
+                    "error"
+                ] = f"{change.policy_name} was not attached to {resource_name}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1955,7 +1957,9 @@ async def remove_temp_policies(
 
             except iam_client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
-                # log_data["error"] = str(e)
+                log_data[
+                    "error"
+                ] = f"permission boundary was not attached to {resource_name}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1985,7 +1989,7 @@ async def remove_temp_policies(
 
             except iam_client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
-                # log_data["error"] = str(e)
+                log_data["error"] = f"{change.arn} was not attached to {resource_name}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -2013,7 +2017,7 @@ async def remove_temp_policies(
 
             except iam_client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
-                # log_data["error"] = str(e)
+                log_data["error"] = f"{change.key} was not attached to {resource_name}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 

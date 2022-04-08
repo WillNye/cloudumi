@@ -407,13 +407,9 @@ class TestAwsLib(TestCase):
         CONFIG.config = old_config
 
     @pytest.mark.usefixtures("dynamodb")
-    @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
-    @patch("common.lib.aws.fetch_iam_principal.fetch_iam_role")
-    def test_remove_temp_policies(self, mock_dynamo_write, mock_fetch_iam_role):
+    @pytest.mark.usefixtures("iam")
+    def test_remove_temp_policies(self):
         from common.lib.aws.utils import remove_temp_policies
-
-        mock_dynamo_write.return_value = create_future(None)
-        mock_fetch_iam_role.return_value = create_future(None)
 
         account_id = "123456789012"
         current_dateint = datetime.today().strftime("%Y%m%d")
