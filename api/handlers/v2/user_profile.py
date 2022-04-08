@@ -1,7 +1,8 @@
 from typing import Dict
-from urllib.parse import urlparse
 
 import sentry_sdk
+import validators
+from validators.utils import ValidationFailure
 
 from common.config import config
 from common.handlers.base import BaseAPIV1Handler
@@ -29,18 +30,18 @@ class UserProfileHandler(BaseAPIV1Handler):
         host = self.ctx.host
         is_contractor = False  # TODO: Support other option
 
-        security_logo = (config.get_host_specific_key("security_logo.image", host),)
+        security_logo = config.get_host_specific_key("security_logo.image", host)
         if security_logo:
             try:
-                urlparse(security_logo)
-            except:
+                validators.url(security_logo)
+            except ValidationFailure:
                 security_logo = None
                 sentry_sdk.capture_exception()
         favicon = config.get_host_specific_key("favicon.image", host)
         if favicon:
             try:
-                urlparse(favicon)
-            except:
+                validators.url(favicon)
+            except ValidationFailure:
                 favicon = None
                 sentry_sdk.capture_exception()
 
