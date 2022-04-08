@@ -955,41 +955,10 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "account_id": account_id,
         "host": host,
     }
-    cache_keys = {
-        "iam_roles": {
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamroles_redis_key_temp",
-                host,
-                f"{host}_IAM_ROLE_CACHE_TEMP",
-            )
-        },
-        "iam_users": {
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamusers_redis_key_temp",
-                host,
-                f"{host}_IAM_USER_CACHE_TEMP",
-            )
-        },
-        "iam_groups": {
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamgroups_redis_key_temp",
-                host,
-                f"{host}_IAM_GROUP_CACHE_TEMP",
-            )
-        },
-        "iam_policies": {
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iampolicies_redis_key_temp",
-                host,
-                f"{host}_IAM_POLICIES_CACHE_TEMP",
-            )
-        },
-    }
     # Get the DynamoDB handler:
     dynamo = IAMRoleDynamoHandler(host)
-    cache_key = config.get_host_specific_key(
-        "aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
-    )
+    iam_role_cache_key = f"{host}_IAM_ROLE_CACHE"
+    iam_user_cache_key = f"{host}_IAM_USER_CACHE"
     # Only query IAM and put data in Dynamo if we're in the active region
     if config.region == config.get_host_specific_key(
         "celery.active_region", host, config.region
@@ -997,14 +966,20 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "dev",
         "test",
     ]:
+        spoke_role_name = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name
+        )
+        if not spoke_role_name:
+            log.error({**log_data, "message": "No spoke role name found"})
+            return
         client = boto3_cached_conn(
             "iam",
             host,
             account_number=account_id,
-            assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
-            .with_query({"account_id": account_id})
-            .first.name,
+            assume_role=spoke_role_name,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -1053,10 +1028,8 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             host=host,
         )
 
-        iam_roles = all_iam_resources["RoleDetailList"]
         iam_users = all_iam_resources["UserDetailList"]
-        iam_groups = all_iam_resources["GroupDetailList"]
-        iam_policies = all_iam_resources["Policies"]
+        iam_roles = all_iam_resources["RoleDetailList"]
 
         # Make sure these roles satisfy config -> roles.allowed_*
         filtered_iam_roles = []
@@ -1068,74 +1041,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
 
         iam_roles = filtered_iam_roles
 
-        if iam_roles:
-            async_to_sync(store_json_results_in_redis_and_s3)(
-                iam_roles,
-                s3_bucket=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_roles.s3.bucket",
-                    host,
-                ),
-                s3_key=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_roles.s3.file",
-                    host,
-                    "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
-                ).format(resource_type="iam_roles", account_id=account_id),
-                host=host,
-            )
-            log_data["num_iam_roles"] = len(iam_roles)
+        last_updated: int = int((datetime.utcnow()).timestamp())
 
-        if iam_users:
-            async_to_sync(store_json_results_in_redis_and_s3)(
-                iam_users,
-                s3_bucket=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_users.s3.bucket",
-                    host,
-                ),
-                s3_key=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_users.s3.file",
-                    host,
-                    "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
-                ).format(resource_type="iam_users", account_id=account_id),
-                host=host,
-            )
-            log_data["num_iam_users"] = len(iam_users)
-
-        if iam_groups:
-            async_to_sync(store_json_results_in_redis_and_s3)(
-                iam_groups,
-                s3_bucket=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_groups.s3.bucket",
-                    host,
-                ),
-                s3_key=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_groups.s3.file",
-                    host,
-                    "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
-                ).format(resource_type="iam_groups", account_id=account_id),
-                host=host,
-            )
-            log_data["num_iam_groups"] = len(iam_groups)
-
-        if iam_policies:
-            async_to_sync(store_json_results_in_redis_and_s3)(
-                iam_policies,
-                s3_bucket=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_policies.s3.bucket",
-                    host,
-                ),
-                s3_key=config.get_host_specific_key(
-                    "cache_iam_resources_for_account.iam_policies.s3.file",
-                    host,
-                    "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
-                ).format(resource_type="iam_policies", account_id=account_id),
-                host=host,
-            )
-            log_data["num_iam_policies"] = len(iam_policies)
-
-        ttl: int = int((datetime.utcnow() + timedelta(hours=36)).timestamp())
+        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
         # Save them:
         for role in iam_roles:
-
             role_entry = {
                 "arn": role.get("Arn"),
                 "host": host,
@@ -1145,6 +1055,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "ttl": ttl,
                 "owner": get_aws_principal_owner(role, host),
                 "policy": dynamo.convert_iam_resource_to_json(role),
+                "last_updated": last_updated,
                 "templated": red.hget(
                     config.get_host_specific_key(
                         "templated_roles.redis_key",
@@ -1159,7 +1070,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             dynamo.sync_iam_role_for_account(role_entry)
 
             # Redis:
-            _add_role_to_redis(cache_key, role_entry, host)
+            _add_role_to_redis(iam_role_cache_key, role_entry, host)
 
             # Run internal function on role. This can be used to inspect roles, add managed policies, or other actions
             aws.handle_detected_role(role)
@@ -1172,49 +1083,13 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "resourceId": user.get("UserId"),
                 "accountId": account_id,
                 "ttl": ttl,
+                "last_updated": last_updated,
                 "owner": get_aws_principal_owner(user, host),
                 "policy": dynamo.convert_iam_resource_to_json(user),
                 "templated": False,  # Templates not supported for IAM users at this time
             }
-            red.hset(
-                cache_keys["iam_users"]["temp_cache_key"],
-                str(user_entry["arn"]),
-                str(json.dumps(user_entry)),
-            )
-
-        for g in iam_groups:
-            group_entry = {
-                "arn": g.get("Arn"),
-                "host": host,
-                "name": g.get("GroupName"),
-                "resourceId": g.get("GroupId"),
-                "accountId": account_id,
-                "ttl": ttl,
-                "policy": dynamo.convert_iam_resource_to_json(g),
-                "templated": False,  # Templates not supported for IAM groups at this time
-            }
-            red.hset(
-                cache_keys["iam_groups"]["temp_cache_key"],
-                str(group_entry["arn"]),
-                str(json.dumps(group_entry)),
-            )
-
-        for policy in iam_policies:
-            group_entry = {
-                "arn": policy.get("Arn"),
-                "host": host,
-                "name": policy.get("PolicyName"),
-                "resourceId": policy.get("PolicyId"),
-                "accountId": account_id,
-                "ttl": ttl,
-                "policy": dynamo.convert_iam_resource_to_json(policy),
-                "templated": False,  # Templates not supported for IAM policies at this time
-            }
-            red.hset(
-                cache_keys["iam_policies"]["temp_cache_key"],
-                str(group_entry["arn"]),
-                str(json.dumps(group_entry)),
-            )
+            # Redis:
+            _add_role_to_redis(iam_user_cache_key, user_entry, host)
 
         # Maybe store all resources in git
         if config.get_host_specific_key(
@@ -1260,52 +1135,10 @@ def cache_iam_resources_across_accounts(
     red = RedisHandler().redis_sync(host)
     cache_keys = {
         "iam_roles": {
-            "cache_key": config.get_host_specific_key(
-                "aws.iamroles_redis_key",
-                host,
-                f"{host}_IAM_ROLE_CACHE",
-            ),
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamroles_redis_key_temp",
-                host,
-                f"{host}_IAM_ROLE_CACHE_TEMP",
-            ),
+            "cache_key": f"{host}_IAM_ROLE_CACHE",
         },
         "iam_users": {
-            "cache_key": config.get_host_specific_key(
-                "aws.iamusers_redis_key",
-                host,
-                f"{host}_IAM_USER_CACHE",
-            ),
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamusers_redis_key_temp",
-                host,
-                f"{host}_IAM_USER_CACHE_TEMP",
-            ),
-        },
-        "iam_groups": {
-            "cache_key": config.get_host_specific_key(
-                "aws.iamgroups_redis_key",
-                host,
-                f"{host}_IAM_GROUP_CACHE",
-            ),
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iamgroups_redis_key_temp",
-                host,
-                f"{host}_IAM_GROUP_CACHE_TEMP",
-            ),
-        },
-        "iam_policies": {
-            "cache_key": config.get_host_specific_key(
-                "aws.iampolicies_redis_key",
-                host,
-                f"{host}_IAM_POLICY_CACHE",
-            ),
-            "temp_cache_key": config.get_host_specific_key(
-                "aws.iampolicies_redis_key_temp",
-                host,
-                f"{host}_IAM_POLICIES_CACHE_TEMP",
-            ),
+            "cache_key": f"{host}_IAM_USER_CACHE",
         },
     }
 
@@ -1314,14 +1147,6 @@ def cache_iam_resources_across_accounts(
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
         return log_data
-
-    # Remove stale temporary cache keys to ensure we receive fresh results. Don't remove stale cache keys if we're
-    # running this as a part of `make redis` (`scripts/initialize_redis_oss.py`) because these cache keys are already
-    # populated appropriately
-    if run_subtasks and wait_for_subtask_completion:
-        for k, v in cache_keys.items():
-            temp_cache_key = v["temp_cache_key"]
-            red.delete(temp_cache_key)
 
     accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(host)
     tasks = []
@@ -1379,8 +1204,6 @@ def cache_iam_resources_across_accounts(
         red.hdel(cache_keys["iam_roles"]["cache_key"], *roles_to_delete_from_cache)
         for arn in roles_to_delete_from_cache:
             all_roles.pop(arn, None)
-    log_data["num_iam_roles"] = len(all_roles)
-    # Store full list of roles in a single place. This list will be ~30 minutes out of date.
     if all_roles:
         async_to_sync(store_json_results_in_redis_and_s3)(
             all_roles,
@@ -1399,12 +1222,20 @@ def cache_iam_resources_across_accounts(
         )
         cache_aws_resource_details(all_roles, host)
 
-    all_iam_users = red.hgetall(cache_keys["iam_users"]["temp_cache_key"])
-    log_data["num_iam_users"] = len(all_iam_users)
-
-    if all_iam_users:
+    # Delete users in Redis cache with expired TTL
+    all_users = red.hgetall(cache_keys["iam_users"]["cache_key"])
+    users_to_delete_from_cache = []
+    for arn, user_entry_j in all_users.items():
+        user_entry = json.loads(user_entry_j)
+        if datetime.fromtimestamp(user_entry["ttl"]) < datetime.utcnow():
+            users_to_delete_from_cache.append(arn)
+    if users_to_delete_from_cache:
+        red.hdel(cache_keys["iam_users"]["cache_key"], *users_to_delete_from_cache)
+        for arn in users_to_delete_from_cache:
+            all_users.pop(arn, None)
+    if all_users:
         async_to_sync(store_json_results_in_redis_and_s3)(
-            all_iam_users,
+            all_users,
             redis_key=cache_keys["iam_users"]["cache_key"],
             redis_data_type="hash",
             s3_bucket=config.get_host_specific_key(
@@ -1418,57 +1249,10 @@ def cache_iam_resources_across_accounts(
             ),
             host=host,
         )
-        cache_aws_resource_details(all_iam_users, host)
+        cache_aws_resource_details(all_users, host)
 
-    # IAM Groups
-    all_iam_groups = red.hgetall(cache_keys["iam_groups"]["temp_cache_key"])
-    log_data["num_iam_groups"] = len(all_iam_groups)
-
-    if all_iam_groups:
-        async_to_sync(store_json_results_in_redis_and_s3)(
-            all_iam_groups,
-            redis_key=cache_keys["iam_groups"]["cache_key"],
-            redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_groups_combined.s3.bucket",
-                host,
-            ),
-            s3_key=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_groups_combined.s3.file",
-                host,
-                "account_resource_cache/cache_all_groups_v1.json.gz",
-            ),
-            host=host,
-        )
-        cache_aws_resource_details(all_iam_groups, host)
-
-    # IAM Policies
-    all_iam_policies = red.hgetall(cache_keys["iam_policies"]["temp_cache_key"])
-    log_data["num_iam_policies"] = len(all_iam_groups)
-
-    if all_iam_policies:
-        async_to_sync(store_json_results_in_redis_and_s3)(
-            all_iam_policies,
-            redis_key=cache_keys["iam_policies"]["cache_key"],
-            redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_policies_combined.s3.bucket",
-                host,
-            ),
-            s3_key=config.get_host_specific_key(
-                "cache_iam_resources_across_accounts.all_policies_combined.s3.file",
-                host,
-                "account_resource_cache/cache_all_policies_v1.json.gz",
-            ),
-            host=host,
-        )
-        cache_aws_resource_details(all_iam_policies, host)
-
-    # Remove temporary cache keys that were populated by the `cache_iam_resources_for_account(account_id)` tasks
-    for k, v in cache_keys.items():
-        temp_cache_key = v["temp_cache_key"]
-        red.delete(temp_cache_key)
-
+    log_data["num_iam_roles"] = len(all_roles)
+    log_data["num_iam_users"] = len(all_users)
     stats.count(f"{function}.success")
     log_data["num_accounts"] = len(accounts_d)
     log.debug(log_data)
@@ -1481,13 +1265,25 @@ def cache_managed_policies_for_account(
 ) -> Dict[str, Union[str, int]]:
     if not host:
         raise Exception("`host` must be passed to this task.")
+
+    log_data = {
+        "function": "cache_managed_policies_for_account",
+        "account_id": account_id,
+        "host": host,
+    }
+    spoke_role_name = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name
+    )
+    if not spoke_role_name:
+        log.error({**log_data, "message": "No spoke role name found"})
+        return
     managed_policies: List[Dict] = get_all_managed_policies(
         host=host,
         account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
+        assume_role=spoke_role_name,
         region=config.region,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
@@ -1872,14 +1668,20 @@ def cache_sqs_queues_for_account(
     enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, host)
     for region in enabled_regions:
         try:
+            spoke_role_name = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name
+            )
+            if not spoke_role_name:
+                log.error({**log_data, "message": "No spoke role name found"})
+                return
             client = boto3_cached_conn(
                 "sqs",
                 host,
                 account_number=account_id,
-                assume_role=ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
-                .with_query({"account_id": account_id})
-                .first.name,
+                assume_role=spoke_role_name,
                 region=region,
                 read_only=True,
                 sts_client_kwargs=dict(
@@ -1970,13 +1772,19 @@ def cache_sns_topics_for_account(
     enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, host)
     for region in enabled_regions:
         try:
+            spoke_role_name = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": account_id})
+                .first.name
+            )
+            if not spoke_role_name:
+                log.error({**log_data, "message": "No spoke role name found"})
+                return
             topics = list_topics(
                 host=host,
                 account_number=account_id,
-                assume_role=ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
-                .with_query({"account_id": account_id})
-                .first.name,
+                assume_role=spoke_role_name,
                 region=region,
                 read_only=True,
                 sts_client_kwargs=dict(
@@ -2046,14 +1854,25 @@ def cache_s3_buckets_for_account(
 ) -> Dict[str, Union[str, int]]:
     if not host:
         raise Exception("`host` must be passed to this task.")
+    log_data = {
+        "function": "cache_s3_buckets_for_account",
+        "account_id": account_id,
+        "host": host,
+    }
     red = RedisHandler().redis_sync(host)
+    spoke_role_name = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name
+    )
+    if not spoke_role_name:
+        log.error({**log_data, "message": "No spoke role name found"})
+        return
     s3_buckets: List = list_buckets(
         host=host,
         account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
+        assume_role=spoke_role_name,
         region=config.region,
         read_only=True,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
@@ -2246,7 +2065,7 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
             account_id=account_id,
         )
 
-        ttl: int = int((datetime.utcnow() + timedelta(hours=36)).timestamp())
+        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
         redis_result_set = {}
         for result in results:
             result["ttl"] = ttl
