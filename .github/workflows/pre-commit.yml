@@ -102,4 +102,5 @@ jobs:
       - name: Run tests
         run: |
           source /tmp/env/bin/activate
+          bazel clean --expunge
           bazel test $(bazel query 'kind(".*_test rule", //...)')

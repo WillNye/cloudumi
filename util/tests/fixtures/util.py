@@ -18,6 +18,7 @@ def generate_jwt_token_for_testing(
 
 class ConsoleMeAsyncHTTPTestCase(AsyncHTTPTestCase):
     def __init__(self, *args, **kwargs):
+        self.maxDiff = None
         super(ConsoleMeAsyncHTTPTestCase, self).__init__(*args, **kwargs)
 
     def fetch(self, *args, **kwargs):
