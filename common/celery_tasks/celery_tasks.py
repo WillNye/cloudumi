@@ -76,9 +76,7 @@ from common.lib.cloud_credential_authorization_mapping import (
     generate_and_store_credential_authorization_mapping,
     generate_and_store_reverse_authorization_mapping,
 )
-from common.lib.event_bridge.access_denies import (
-    detect_cloudtrail_denies_and_update_cache,
-)
+from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update_cache
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git

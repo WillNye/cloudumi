@@ -21,6 +21,7 @@ INT_DEPS = [
 ]
 
 EXT_DEPS = [
+    requirement("access-undenied-aws"),
     requirement("aiohttp"),
     requirement("asgiref"),
     requirement("billiard"),
@@ -32,6 +33,7 @@ EXT_DEPS = [
 ]
 
 REQUIRES = [
+    "access-undenied-aws",
     "aiohttp",
     "asgiref",
     "billiard",
