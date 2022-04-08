@@ -72,6 +72,7 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
     async def _create(self, data):
         if not self._sso_idp_attr:  # Upsert all the things
             sso_idp_provider = self._model_class(**data)
+            sso_idp_provider.provider_name = sso_idp_provider.provider_type
         else:
             sso_idp_provider = SSOIDPProviders()
             setattr(sso_idp_provider, self._sso_idp_attr, self._model_class(**data))

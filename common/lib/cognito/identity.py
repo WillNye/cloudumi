@@ -290,8 +290,7 @@ def upsert_identity_provider(
             f"Storing {identity_provider.provider_type} Identity Provider in Cognito in user pool {user_pool_id}"
         )
         provider_dict = identity_provider.dict()
-        provider_name = provider_dict.pop("provider_name")
-        provider_type = provider_dict.pop("provider_type")
+        identity_provider_type = provider_dict.pop("provider_type")
         required = [
             k
             for k in identity_provider.required_fields()
@@ -303,8 +302,8 @@ def upsert_identity_provider(
 
         response = client.create_identity_provider(
             UserPoolId=user_pool_id,
-            ProviderName=provider_name,
-            ProviderType=provider_type,
+            ProviderName=identity_provider_type,
+            ProviderType=identity_provider_type,
             ProviderDetails={
                 field: provider_dict.get(field)
                 for field in required
