@@ -1,5 +1,4 @@
 """Configuration handling library."""
-import collections
 import copy
 import datetime
 import logging
@@ -9,6 +8,8 @@ import socket
 import sys
 import threading
 import time
+from collections import defaultdict
+from collections.abc import Mapping
 from logging import LoggerAdapter, LogRecord
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
@@ -47,11 +48,7 @@ def dict_merge(dct: dict, merge_dct: dict):
     """Recursively merge two dictionaries, including nested dicts"""
     for k, v in merge_dct.items():
 
-        if (
-            k in dct
-            and isinstance(dct[k], dict)
-            and isinstance(merge_dct[k], collections.Mapping)
-        ):
+        if k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping):
             dict_merge(dct[k], merge_dct[k])
         else:
             # Prefer original dict values over merged dict values if they already exist
@@ -68,7 +65,7 @@ class Configuration(metaclass=Singleton):
         """Initialize empty configuration."""
         self.config = {}
         self.log = None
-        self.tenant_configs = collections.defaultdict(dict)
+        self.tenant_configs = defaultdict(dict)
 
     def raise_if_invalid_aws_credentials(self):
         try:

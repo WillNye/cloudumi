@@ -250,8 +250,10 @@ def get_identity_providers(user_pool_id: str) -> SSOIDPProviders:
     )
 
 
-def upsert_identity_provider(user_pool_id: str, id_provider: SSOIDPProviders) -> bool:
-    """Inserts or updates a identity provider.
+def upsert_identity_provider(
+    user_pool_id: str, user_pool_client_id: str, id_provider: SSOIDPProviders
+) -> bool:
+    """Inserts or updates an identity provider.
 
     Some identity providers, such as SAML and possibly OIDC, can have multiple provider names, while
     Google seems to be limited to one as per experiments on the AWS UI
@@ -264,73 +266,56 @@ def upsert_identity_provider(user_pool_id: str, id_provider: SSOIDPProviders) ->
     to avoid weird bugs later.
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name!
+    :param user_pool_client_id: ensure this is the user pool client ID
     :param id_provider: the pydantic model SSOIDPProviders with one of the groups filled out (either google, saml or oidc)
     :return: True if the operation is successful - currently always returns true or raises an exception
     """
     client = boto3.client("cognito-idp", region_name=config.region)
-    identity_provider_dict = dict()
-    identity_provider_type = ""
     responses = list()
 
     current_providers = get_identity_providers(user_pool_id)
-    if id_provider.google and current_providers.google:
-        disconnect_idp_from_app_client(
-            user_pool_id,
-        )
-        delete_identity_provider(user_pool_id, current_providers.google)
-    if id_provider.saml and current_providers.saml:
-        delete_identity_provider(user_pool_id, current_providers.saml)
-    if id_provider.oidc and current_providers.oidc:
-        delete_identity_provider(user_pool_id, current_providers.oidc)
+    supported_providers = list(SSOIDPProviders.__dict__["__fields__"].keys())
+    for provider_type in supported_providers:
+        # If a request is being made to set an already defined provider, remove the existing provider
+        if getattr(id_provider, provider_type) and (
+            current_provider := getattr(current_providers, provider_type)
+        ):
+            disconnect_idp_from_app_client(
+                user_pool_id, user_pool_client_id, current_provider
+            )
+            delete_identity_provider(user_pool_id, current_provider)
 
-    def set_provider():
+    def set_provider(identity_provider):
         LOG.info(
-            f"Storing {identity_provider_type} Identity Provider in Cognito in user pool {user_pool_id}"
+            f"Storing {identity_provider.provider_type} Identity Provider in Cognito in user pool {user_pool_id}"
         )
-        provider_name = identity_provider_dict.get("provider_name")
-        provider_type = identity_provider_dict.get("provider_type")
+        provider_dict = identity_provider.dict()
+        identity_provider_type = provider_dict.pop("provider_type")
+        required = [
+            k
+            for k in identity_provider.required_fields()
+            if k not in ["provider_name", "provider_type"]
+        ]
         LOG.info(
-            f"Using {provider_required} to create_identity_provider in Cognito with type {identity_provider_type}"
+            f"Using {required} to create_identity_provider in Cognito with type {provider_type}"
         )
 
         response = client.create_identity_provider(
             UserPoolId=user_pool_id,
-            ProviderName=provider_name,
-            ProviderType=provider_type,
+            ProviderName=identity_provider_type,
+            ProviderType=identity_provider_type,
             ProviderDetails={
-                x: y
-                for x, y in identity_provider_dict.items()
-                if x in provider_required and y is not None
+                field: provider_dict.get(field)
+                for field in required
+                if provider_dict.get(field)
             },
         )
+        connect_idp_to_app_client(user_pool_id, user_pool_client_id, identity_provider)
         return response
 
-    if id_provider.google:
-        identity_provider_dict = id_provider.google.dict()
-        identity_provider_type = "Google"
-        provider_required = ["client_id", "client_secret", "authorize_scopes"]
-        responses.append(set_provider())
-    if id_provider.saml:
-        identity_provider_dict = id_provider.saml.dict()
-        identity_provider_type = "SAML"
-        provider_required = ["MetadataURL"]
-        responses.append(set_provider())
-    if id_provider.oidc:
-        identity_provider_dict = id_provider.oidc.dict()
-        identity_provider_type = "OIDC"
-        provider_required = [
-            "client_id",
-            "client_secret",
-            "attributes_request_method",
-            "oidc_issuer",
-            "authorize_scopes",
-            "authorize_url",
-            "token_url",
-            "attributes_url",
-            "jwks_uri",
-            "attributes_url_add_attributes",
-        ]
-        responses.append(set_provider())
+    for provider_type in supported_providers:
+        if provider := getattr(id_provider, provider_type):
+            responses.append(set_provider(provider))
 
     LOG.info(f"Created {len(responses)} IDP: {responses}")
     return True

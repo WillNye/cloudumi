@@ -70,7 +70,6 @@ class SelfServiceStep3 extends Component {
             change_type: this.state.change_type,
             action: 'attach',
             policy: parsed_policy,
-            expiration_date: this.props.expiration_date,
           },
         ],
       },
@@ -189,6 +188,7 @@ class SelfServiceStep3 extends Component {
     const requestV2 = {
       justification,
       admin_auto_approve,
+      expiration_date: this.props.expiration_date,
       changes: {
         changes: [
           {
@@ -196,7 +196,6 @@ class SelfServiceStep3 extends Component {
             change_type: this.state.change_type,
             action: 'attach',
             policy: parsed_policy,
-            expiration_date: this.props.expiration_date,
           },
         ],
       },
