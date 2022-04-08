@@ -17,7 +17,6 @@ def cache_aws_resource_details(items, host):
     """
     Store all resource ARNs in Redis/S3. Items must have a TTL entry Used by typeahead endpoint.
     """
-    # TODO: Use a DDB table for this?
     redis_key = config.get_host_specific_key(
         "store_all_aws_resource_details.redis_key",
         host,

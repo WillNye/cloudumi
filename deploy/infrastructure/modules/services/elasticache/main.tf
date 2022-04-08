@@ -49,27 +49,6 @@
 #   )
 # }
 
-module "redis-cluster" {
-  source                      = "clouddrove/elasticache/aws"
-  version                     = "0.15.0"
-  name                        = "cluster"
-  environment                 = "test"
-  label_order                 = ["environment", "name"]
-  cluster_replication_enabled = true
-  engine                      = "redis"
-  engine_version              = "5.0.0"
-  family                      = "redis5.0"
-  port                        = 6379
-  node_type                   = "cache.t2.micro"
-  subnet_ids                  = module.subnets.public_subnet_id
-  security_group_ids          = [module.redis-sg.security_group_ids]
-  availability_zones          = ["eu-west-1a", "eu-west-1b"]
-  auto_minor_version_upgrade  = true
-  replicas_per_node_group     = 2
-  num_node_groups             = 1
-  automatic_failover_enabled  = true
-}
-
 resource "aws_elasticache_cluster" "redis" {
   cluster_id               = "${var.cluster_id}-redis-service"
   engine                   = "redis"
