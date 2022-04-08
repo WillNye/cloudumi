@@ -27,7 +27,7 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
 
     @property
     def user_pool_id(self) -> str:
-        if user_pool_id := getattr(self, "_user_pool_id"):
+        if user_pool_id := self._user_pool_id:
             return user_pool_id
 
         user_pool_id = config.get_host_specific_key(
@@ -41,7 +41,7 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
 
     @property
     def user_pool_client_id(self) -> str:
-        if user_pool_client_id := getattr(self, "_user_pool_client_id"):
+        if user_pool_client_id := self._user_pool_client_id:
             return user_pool_client_id
 
         user_pool_client_id = config.get_host_specific_key(
