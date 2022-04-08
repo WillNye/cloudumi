@@ -22,7 +22,7 @@ const GoogleFields = ({ register }) => (
     </Form.Field>
     <input
       type='hidden'
-      value='google'
+      value='Google'
       {...register('provider_name', { required: true })}
     />
     <input
