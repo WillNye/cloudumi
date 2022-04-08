@@ -2817,6 +2817,21 @@ def check_expired_policies(self, host: str) -> Dict[str, Any]:
         async_to_sync(remove_temp_policies)(extended_request, host)
 
 
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def check_expired_policies_for_all_hosts() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    hosts = get_all_hosts()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_hosts": len(hosts),
+    }
+    log.debug(log_data)
+    for host in hosts:
+        check_expired_policies.apply_async((host,))
+    return log_data
+
+
 schedule_30_minute = timedelta(seconds=1800)
 schedule_45_minute = timedelta(seconds=2700)
 schedule_6_hours = timedelta(hours=6)
@@ -2954,6 +2969,11 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
+    },
+    "check_expired_policies_for_all_hosts": {
+        "task": "common.celery_tasks.celery_tasks.check_expired_policies_for_all_hosts",
+        "options": {"expires": 180},
+        "schedule": schedule_6_hours,
     },
 }
 
