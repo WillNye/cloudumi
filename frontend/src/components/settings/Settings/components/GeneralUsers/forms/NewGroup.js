@@ -12,16 +12,20 @@ export const NewGroup = ({ closeModal, onFinish, defaultValues }) => {
 
   const { post } = useApi('auth/cognito/groups')
 
-  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+  const [errorMessage, setErrorMessage] = useState(
+    'Something went wrong, try again!'
+  )
 
   const onSubmit = (data) => {
-    post.do(data).then(() => {
-      closeModal()
-      onFinish()
-    })
-    .catch(({ errorsMap, message }) => {
-      setErrorMessage(errorsMap || message)
-    })
+    post
+      .do(data)
+      .then(() => {
+        closeModal()
+        onFinish()
+      })
+      .catch(({ errorsMap, message }) => {
+        setErrorMessage(errorsMap || message)
+      })
   }
 
   const fields = watch()

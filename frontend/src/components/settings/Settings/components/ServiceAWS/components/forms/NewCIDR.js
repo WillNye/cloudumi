@@ -12,7 +12,9 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
 
   const { post } = useApi('services/aws/ip-access')
 
-  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+  const [errorMessage, setErrorMessage] = useState(
+    'Something went wrong, try again!'
+  )
 
   const onSubmit = (data) => {
     post
@@ -24,7 +26,7 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
       .catch(({ errorsMap, message }) => {
         setErrorMessage(errorsMap || message)
       })
-    }
+  }
 
   const fields = watch()
 

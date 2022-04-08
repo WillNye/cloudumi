@@ -23,14 +23,15 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
   const handleChange = (event, { checked }) => {
     const action = checked ? 'enable' : 'disable'
     toast(`Please wait, we are working to ${action} Role Access Authorization`)
-    post.do(null, action).then(() => {
-      success(`Role Access Authorization is ${action}d`)
-      onChange(checked)
-    })
-    .catch(({ errorsMap, message }) => {
-      error(errorsMap || message)
-    })
-
+    post
+      .do(null, action)
+      .then(() => {
+        success(`Role Access Authorization is ${action}d`)
+        onChange(checked)
+      })
+      .catch(({ errorsMap, message }) => {
+        error(errorsMap || message)
+      })
   }
 
   const isWorking = get?.status !== 'done' || post?.status === 'working'

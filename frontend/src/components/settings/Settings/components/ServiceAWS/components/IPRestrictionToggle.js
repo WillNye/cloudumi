@@ -19,14 +19,15 @@ export const IPRestrictionToggle = () => {
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'
     toast(`Please wait, we are working to ${action} IP configuration`)
-    post.do(null, action).then(() => {
-      setChecked(checked)
-      success(`IP configuration is ${action}d`)
-    })
-    .catch(({ errorsMap, message }) => {
-      error(errorsMap || message)
-    })
-
+    post
+      .do(null, action)
+      .then(() => {
+        setChecked(checked)
+        success(`IP configuration is ${action}d`)
+      })
+      .catch(({ errorsMap, message }) => {
+        error(errorsMap || message)
+      })
   }
 
   const isWorking = get?.status !== 'done' || post?.status === 'working'

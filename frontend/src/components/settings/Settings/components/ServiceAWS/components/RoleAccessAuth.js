@@ -5,7 +5,6 @@ import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
-import { str } from 'components/settings/Settings/strings'
 import { TableTopBar } from '../../utils'
 import { Segment } from 'semantic-ui-react'
 import { roleAccessAuthColumns } from './columns'
@@ -36,7 +35,7 @@ export const RoleAccessAuth = () => {
         .catch(({ errorsMap, message }) => {
           error(errorsMap || message)
         })
-      }
+    }
   }
 
   const handleFinish = () => {

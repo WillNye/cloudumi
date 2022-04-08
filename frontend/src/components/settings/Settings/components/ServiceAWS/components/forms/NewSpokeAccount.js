@@ -13,16 +13,20 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
 
   const { post } = useApi('services/aws/account/spoke')
 
-  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+  const [errorMessage, setErrorMessage] = useState(
+    'Something went wrong, try again!'
+  )
 
   const onSubmit = (data) => {
-    post.do(data).then(() => {
-      closeModal()
-      onFinish()
-    })
-    .catch(({ errorsMap, message }) => {
-      setErrorMessage(errorsMap || message)
-    })
+    post
+      .do(data)
+      .then(() => {
+        closeModal()
+        onFinish()
+      })
+      .catch(({ errorsMap, message }) => {
+        setErrorMessage(errorsMap || message)
+      })
   }
 
   const fields = watch()
@@ -75,10 +79,21 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
   return (
     <Segment basic>
       {isIneligible ? (
-        <p style={{ textAlign: 'center' }}>
-          You cannot connect your Spoke Accounts before having a Hub Account
-          connected.
-        </p>
+        <>
+          <p style={{ textAlign: 'center' }}>
+            You cannot connect your Spoke Accounts before having a Hub Account
+            connected.
+            <br />
+            <strong>
+              If you already did, please try to refresh the screen.
+            </strong>
+          </p>
+          <p style={{ textAlign: 'center' }}>
+            <Button onClick={() => aws.get()} positive>
+              Refresh Screen
+            </Button>
+          </p>
+        </>
       ) : (
         <>
           <p style={{ textAlign: 'center' }}>

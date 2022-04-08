@@ -13,17 +13,21 @@ export const NewHubAccount = ({ closeModal, onFinish, defaultValues }) => {
 
   const { post } = useApi('services/aws/account/hub')
 
-  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+  const [errorMessage, setErrorMessage] = useState(
+    'Something went wrong, try again!'
+  )
 
   const onSubmit = (data) => {
-    post.do(data).then(() => {
-      closeModal()
-      onFinish()
-    })
-    .catch(({ errorsMap, message }) => {
-      setErrorMessage(errorsMap || message)
-    })
-}
+    post
+      .do(data)
+      .then(() => {
+        closeModal()
+        onFinish()
+      })
+      .catch(({ errorsMap, message }) => {
+        setErrorMessage(errorsMap || message)
+      })
+  }
 
   const fields = watch()
 

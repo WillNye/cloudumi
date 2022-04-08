@@ -20,13 +20,15 @@ export const ChallengeURLConfig = () => {
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'
     toast(`Please wait, we are working to ${action} Challenge URL Config`)
-    post.do({ enabled: checked }).then(() => {
-      setChecked(checked)
-      success(`Challenge URL Config is ${action}d`)
-    })
-    .catch(({ errorsMap, message }) => {
-      error(errorsMap || message)
-    })
+    post
+      .do({ enabled: checked })
+      .then(() => {
+        setChecked(checked)
+        success(`Challenge URL Config is ${action}d`)
+      })
+      .catch(({ errorsMap, message }) => {
+        error(errorsMap || message)
+      })
   }
 
   const isWorking = get?.status !== 'done' || post?.status === 'working'

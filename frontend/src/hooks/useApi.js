@@ -94,11 +94,12 @@ const usePost = (commonPathname, { url }) => {
       )
       return handleResponse(res)
     } catch (error) {
-      const errorsHandler = (errors) => (
+      const errorsHandler = (errors) =>
         errors.map((err) => (
-          <p style={{ margin: 0, textAlign: 'center' }}><small>{err}</small></p>
+          <p style={{ margin: 0, textAlign: 'center' }}>
+            <small>{err}</small>
+          </p>
         ))
-      )
       const formattedError = {
         message: error?.message,
         errorsMap: error?.errors ? errorsHandler(error?.errors) : null,
@@ -162,6 +163,7 @@ export const ApiGetProvider = ({ children, pathname }) => {
   return (
     <ApiContext.Provider
       value={{
+        get: get.do,
         status: get?.status,
         data: get?.data,
         error: get?.status,

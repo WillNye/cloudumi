@@ -6,7 +6,6 @@ import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
 import { NewSpokeAccount } from './forms/NewSpokeAccount'
-import { str } from 'components/settings/Settings/strings'
 
 import { spokeAccountsColumns } from './columns'
 import { TableTopBar } from '../../utils'
@@ -33,7 +32,7 @@ export const SpokeAccounts = () => {
         .catch(({ errorsMap, message }) => {
           error(errorsMap || message)
         })
-        }
+    }
     if (action === 'edit') {
       setDefaultValues(rowValues)
       openModal()

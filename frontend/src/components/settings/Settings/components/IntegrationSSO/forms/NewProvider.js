@@ -19,7 +19,9 @@ export const NewProvider = ({
 
   const { post } = useApi('auth/sso')
 
-  const [errorMessage, setErrorMessage] = useState('Something went wrong, try again!')
+  const [errorMessage, setErrorMessage] = useState(
+    'Something went wrong, try again!'
+  )
 
   const onSubmit = (data) => {
     let provider = ''
@@ -46,7 +48,7 @@ export const NewProvider = ({
         console.log(errorsMap, message)
         setErrorMessage(errorsMap || message)
       })
-    }
+  }
 
   const [type, setType] = useState()
 
