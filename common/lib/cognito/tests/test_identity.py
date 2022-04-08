@@ -62,7 +62,7 @@ class TestIdentity(TestCase):
             client_id="test_id",
             client_secret="1234",
             authorize_scopes="scope1",
-            provider_name="GoogleIDP",
+            provider_name="Google",
             provider_type="Google",
         )
         sso_provider = SSOIDPProviders(
@@ -73,13 +73,13 @@ class TestIdentity(TestCase):
         )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.google
-        assert providers.google.provider_name == "GoogleIDP"
+        assert providers.google.provider_name == "Google"
         assert providers.google.client_id == "test_id"
 
     def test_upsert_identity_provider_saml(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
-            provider_name="test_provider",
+            provider_name="SAML",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(
@@ -90,7 +90,7 @@ class TestIdentity(TestCase):
         )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.saml
-        assert providers.saml.provider_name == "test_provider"
+        assert providers.saml.provider_name == "SAML"
         assert providers.saml.MetadataURL == "http://somewhere.over.the.rainbow"
 
     def test_upsert_identity_provider_oidc_minimum(self):
@@ -100,7 +100,7 @@ class TestIdentity(TestCase):
             attributes_request_method="test_request_method",
             oidc_issuer="test_oidc_sissuer",
             authorize_scopes="scope1",
-            provider_name="OIDCIDP_Minimal",
+            provider_name="OIDC",
             provider_type="OIDC",
         )
         sso_provider = SSOIDPProviders(
@@ -111,7 +111,7 @@ class TestIdentity(TestCase):
         )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.oidc
-        assert providers.oidc.provider_name == "OIDCIDP_Minimal"
+        assert providers.oidc.provider_name == "OIDC"
         assert providers.oidc.client_id == "test_id"
 
     def test_upsert_identity_provider_oidc_complete(self):
@@ -126,7 +126,7 @@ class TestIdentity(TestCase):
             attributes_url="attributes...",
             jwks_uri="jwks://do.this",
             attributes_url_add_attributes="what.is.this?",
-            provider_name="OIDCIDP_Complete",
+            provider_name="OIDC",
             provider_type="OIDC",
         )
         sso_provider = SSOIDPProviders(
@@ -137,13 +137,13 @@ class TestIdentity(TestCase):
         )
         providers = identity.get_identity_providers(self.pool_id)
         assert providers.oidc
-        assert providers.oidc.provider_name == "OIDCIDP_Complete"
+        assert providers.oidc.provider_name == "OIDC"
         assert providers.oidc.jwks_uri == "jwks://do.this"
 
     def test_delete_identity_provider(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
-            provider_name="SamlIDP",
+            provider_name="SAML",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
@@ -159,7 +159,7 @@ class TestIdentity(TestCase):
     def test_connect_idp_to_app_client(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
-            provider_name="SamlIDP",
+            provider_name="Saml",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
@@ -175,12 +175,12 @@ class TestIdentity(TestCase):
         )
         assert app_clients.get("UserPoolClient", {}).get(
             "SupportedIdentityProviders", []
-        ) == ["SamlIDP"]
+        ) == ["Saml"]
 
     def test_disconnect_idp_from_app_client(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
-            provider_name="SamlIDP",
+            provider_name="Saml",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
@@ -195,7 +195,7 @@ class TestIdentity(TestCase):
         )
         assert app_clients.get("UserPoolClient", {}).get(
             "SupportedIdentityProviders", []
-        ) == ["SamlIDP"]
+        ) == ["Saml"]
         assert identity.disconnect_idp_from_app_client(
             self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
