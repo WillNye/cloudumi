@@ -15,6 +15,8 @@ def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
         main = "//util/tests:wrapper.py",
         args = [
             "--capture=no",
+            "--async-test-timeout=600",
+            "--timeout=600"
             # "--black",
             # "--pylint",
             # "--mypy",
