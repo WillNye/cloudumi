@@ -2103,6 +2103,28 @@ components:
           type: boolean
           description: Optional value (defaults to false) to indicate whether this spoke role has master access rights on the account
           default: false
+        owners:
+          type: array
+          description: Optional user or group that owns the account
+          items:
+            type: string
+        viewers:
+          type: array
+          description: Optional list of users or groups that can view resources for the account
+          items:
+            type: string
+        delegate_admin_to_owner:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether the owner should be delegated admin rights for policy requests
+            on this account. If this is set, the delegated admin will be able to approve policy requests pertaining to this account.
+          default: false
+        restrict_viewers_of_account_resources:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether to restrict who can view resources from this account in Noq.
+            If this is set, viewers will be restricted to the list of users or groups provided in the `viewers` field.
+          default: false
     OrgAccount:
       type: object
       required:
