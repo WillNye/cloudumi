@@ -18,7 +18,12 @@ from common.config.models import ModelAdapter
 from common.exceptions.exceptions import DataNotRetrievable
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.dynamo import UserDynamoHandler
-from common.models import CloudTrailDetailsModel, CloudtrailDetection, CloudtrailDetectionConfiguration, SpokeAccount
+from common.models import (
+    CloudTrailDetailsModel,
+    CloudtrailDetection,
+    CloudtrailDetectionConfiguration,
+    SpokeAccount,
+)
 
 log = config.get_logger()
 
@@ -89,15 +94,17 @@ def detect_cloudtrail_denies_and_update_cache(
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "host": host,
     }
-    configuration = ModelAdapter(CloudtrailDetectionConfiguration).load_config("cloudtrail", host).model
+    configuration = (
+        ModelAdapter(CloudtrailDetectionConfiguration)
+        .load_config("cloudtrail", host)
+        .model
+    )
     if not configuration:
         log_data["message"] = "CloudTrail configuration not found"
         return log_data
     enabled = configuration.enabled
     if not enabled:
-        log_data[
-            "message"
-        ] = "Cloudtrail detection is disabled for this account." 
+        log_data["message"] = "Cloudtrail detection is disabled for this account."
     event_ttl = configuration.event_ttl
     max_num_messages_to_process = configuration.max_messages_to_process
     dynamo = UserDynamoHandler(host=host)
@@ -213,7 +220,9 @@ def detect_cloudtrail_denies_and_update_cache(
             event.request_id = (
                 f"{principal_arn}-{session_name}-{event_call}-{event.resource}"
             )
-            generated_policy = process_event(decoded_message, queue_account_number, host)
+            generated_policy = process_event(
+                decoded_message, queue_account_number, host
+            )
 
             if generated_policy.assessment_result != AccessDeniedReason.ALLOWED:
                 if all_cloudtrail_denies.get(event.request_id):
