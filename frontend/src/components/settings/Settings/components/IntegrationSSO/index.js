@@ -63,7 +63,7 @@ export const IntegrationSSO = () => {
 
   const preparedData = []
 
-  data?.google && preparedData.push(data?.google)
+  data?.Google && preparedData.push(data?.Google)
   data?.saml && preparedData.push(data?.saml)
   data?.oidc && preparedData.push(data?.oidc)
 
