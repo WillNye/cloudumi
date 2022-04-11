@@ -69,7 +69,8 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
         ) : (
           <p>
             <strong>
-              A temporary password will be generated automatically
+              A temporary password will be generated automatically and e-mailed
+              to the user.
             </strong>
           </p>
         )}
