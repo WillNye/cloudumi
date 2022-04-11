@@ -184,8 +184,8 @@ def detect_cloudtrail_denies_and_update_cache(
             utc_time = datetime.strptime(event_time, "%Y-%m-%dT%H:%M:%SZ")
             epoch_event_time = int((utc_time - datetime(1970, 1, 1)).total_seconds())
             # Skip entries older than a day
-            if int(time.time()) - 86400 > epoch_event_time:
-                continue
+            # if int(time.time()) - 86400 > epoch_event_time:
+            #     continue
             try:
                 session_name = decoded_message["userIdentity"]["arn"].split("/")[-1]
             except (
@@ -239,10 +239,10 @@ def detect_cloudtrail_denies_and_update_cache(
                         "ReceiptHandle": message["ReceiptHandle"],
                     }
                 )
-        if processed_messages:
-            sqs_client.delete_message_batch(
-                QueueUrl=queue_url, Entries=processed_messages
-            )
+        # if processed_messages:
+        #     sqs_client.delete_message_batch(
+        #         QueueUrl=queue_url, Entries=processed_messages
+        #     )
 
         dynamo.batch_write_cloudtrail_events(
             all_cloudtrail_denies.values(),
