@@ -5,7 +5,6 @@ import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
-import { str } from 'components/settings/Settings/strings'
 import { TableTopBar } from '../../utils'
 import { Segment } from 'semantic-ui-react'
 import { CIDRBlockColumns } from './columns'
@@ -30,7 +29,9 @@ export const CIDRBlock = () => {
           success('CIDR removed')
           get.do()
         })
-        .catch(() => error(str.toastErrorMsg))
+        .catch(({ errorsMap, message }) => {
+          error(errorsMap || message)
+        })
     }
   }
 

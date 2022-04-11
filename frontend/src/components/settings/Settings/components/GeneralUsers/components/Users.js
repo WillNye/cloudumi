@@ -44,7 +44,7 @@ export const Users = () => {
   }
 
   const handleClose = () => {
-    setDefaultValues([])
+    setDefaultValues(null)
     post.reset()
   }
 

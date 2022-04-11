@@ -37,8 +37,8 @@ export const IntegrationSlack = () => {
       .then(() => {
         success(`Slack Webhook URL configuration is up to date`)
       })
-      .catch(({ message }) => {
-        error(message)
+      .catch(({ errorsJoin, message }) => {
+        error(errorsJoin || message)
       })
   }
 

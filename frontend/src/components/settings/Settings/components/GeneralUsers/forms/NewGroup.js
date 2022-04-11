@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useApi } from 'hooks/useApi'
 
 import { useForm } from 'react-hook-form'
@@ -12,11 +12,20 @@ export const NewGroup = ({ closeModal, onFinish, defaultValues }) => {
 
   const { post } = useApi('auth/cognito/groups')
 
+  const [errorMessage, setErrorMessage] = useState(
+    'Something went wrong, try again!'
+  )
+
   const onSubmit = (data) => {
-    post.do(data).then(() => {
-      closeModal()
-      onFinish()
-    })
+    post
+      .do(data)
+      .then(() => {
+        closeModal()
+        onFinish()
+      })
+      .catch(({ errorsMap, message }) => {
+        setErrorMessage(errorsMap || message)
+      })
   }
 
   const fields = watch()
@@ -41,7 +50,7 @@ export const NewGroup = ({ closeModal, onFinish, defaultValues }) => {
         loading={isWorking}
         showMessage={hasError}
         messageType={isSuccess ? 'success' : 'warning'}
-        message={'Something went wrong, try again!'}
+        message={errorMessage}
       />
 
       <Form onSubmit={handleSubmit(onSubmit)}>
