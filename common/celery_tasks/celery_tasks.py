@@ -2786,7 +2786,7 @@ def cache_cloudtrail_denies(host=None):
             "function": function,
             "message": "Not running Celery task in inactive region",
         }
-    events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(app, host)
+    events = detect_cloudtrail_denies_and_update_cache(app, host)
     if events["new_events"] > 0:
         # Spawn off a task to cache errors by ARN for the UI
         cache_cloudtrail_errors_by_arn.delay(host=host)
@@ -3152,3 +3152,5 @@ app.autodiscover_tasks(
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
+
+cache_cloudtrail_denies.delay("localhost")
