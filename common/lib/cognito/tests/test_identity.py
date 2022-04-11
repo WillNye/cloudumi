@@ -36,7 +36,6 @@ class TestIdentity(IsolatedAsyncioTestCase):
         ).get("UserPoolClient", {})
 
         self.username = "test_user"
-        self.temp_pass = "test123"
         self.groupname = "test_group"
         self.client.create_identity_provider(
             UserPoolId=self.pool_id,
@@ -49,7 +48,6 @@ class TestIdentity(IsolatedAsyncioTestCase):
         self.client.admin_create_user(
             UserPoolId=self.pool_id,
             Username=self.username,
-            TemporaryPassword=self.temp_pass,
         )
         self.client.create_group(
             UserPoolId=self.pool_id,
@@ -236,7 +234,6 @@ class TestIdentity(IsolatedAsyncioTestCase):
                 },
             ],
             Enabled=True,
-            TemporaryPassword=self.temp_pass,
             MFAOptions=[{"DeliveryMedium": "SMS"}],
             UserStatus="COMPROMISED",
         )

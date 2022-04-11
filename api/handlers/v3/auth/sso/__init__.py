@@ -209,7 +209,7 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
             self.user_pool_id, client=cognito_idp
         ):
             user_dict: dict = user.dict()
-            user_dict.pop("TemporaryPassword")
+            user_dict.pop("TemporaryPassword", None)
             for attr in user_dict.get("Attributes", []):
                 if attr["Name"] == "email":
                     user_dict["Username"] = attr["Value"]
