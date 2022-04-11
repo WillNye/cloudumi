@@ -1782,6 +1782,22 @@ async def normalize_policies(policies: List[Any]) -> List[Any]:
                 matched = False
                 # Sorry for the magic. this is iterating through all elements of a list that aren't the current element
                 for compare_value in policy[element][:i] + policy[element][(i + 1) :]:
+                    if compare_value == policy[element][i]:
+                        matched = True
+                        break
+                    if compare_value == "*":
+                        matched = True
+                        break
+                    if (
+                        "*" not in compare_value
+                        and ":" in policy[element][i]
+                        and ":" in compare_value
+                    ):
+                        if (
+                            compare_value.split(":")[0]
+                            != policy[element][i].split(":")[0]
+                        ):
+                            continue
                     if fnmatch.fnmatch(policy[element][i], compare_value):
                         matched = True
                         break
