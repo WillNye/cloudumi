@@ -7,12 +7,15 @@
       <env name="PYTHONUNBUFFERED" value="1" />
       <env name="CONFIG_LOCATION" value="configs/development_account/saas_development.yaml" />
       <env name="AWS_PROFILE" value="noq_cluster_dev" />
+      <env name="AWS_CONTAINER_CREDENTIALS_FULL_URI" value="http://localhost:9091/ecs/arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev" />
+      <env name="AWS_REGION" value="us-east-1" />
     </envs>
     <option name="SDK_HOME" value="$PROJECT_DIR$/env/bin/python" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/" />
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
+    <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/api/__main__.py" />
     <option name="PARAMETERS" value="" />
     <option name="SHOW_COMMAND_LINE" value="false" />

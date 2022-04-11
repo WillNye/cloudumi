@@ -7,19 +7,22 @@ const GoogleFields = ({ register }) => (
   <>
     <Form.Field>
       <label>Client ID</label>
-      <input {...register('client_id', { required: true })} />
+      <input type='text' {...register('client_id', { required: true })} />
     </Form.Field>
     <Form.Field>
       <label>Client Secret</label>
-      <input {...register('client_secret', { required: true })} />
+      <input type='text' {...register('client_secret', { required: true })} />
     </Form.Field>
     <Form.Field>
       <label>Authorize Scopes</label>
-      <input {...register('authorize_scopes', { required: true })} />
+      <input
+        type='text'
+        {...register('authorize_scopes', { required: true })}
+      />
     </Form.Field>
     <input
       type='hidden'
-      value='google'
+      value='Google'
       {...register('provider_name', { required: true })}
     />
     <input
@@ -34,7 +37,7 @@ const SAMLFields = ({ register }) => (
   <>
     <Form.Field>
       <label>Metadata URL</label>
-      <input {...register('MetadataURL', { required: true })} />
+      <input type='text' {...register('MetadataURL', { required: true })} />
     </Form.Field>
     <input
       type='hidden'
@@ -53,35 +56,41 @@ const OIDCFields = ({ register }) => (
   <>
     <Form.Field>
       <label>Client ID</label>
-      <input {...register('client_id', { required: true })} />
+      <input type='text' {...register('client_id', { required: true })} />
     </Form.Field>
     <Form.Field>
       <label>Client Secret</label>
-      <input {...register('client_secret', { required: true })} />
+      <input type='text' {...register('client_secret', { required: true })} />
     </Form.Field>
     <Form.Field>
       <label>Attributes Request Method</label>
-      <input {...register('attributes_request_method', { required: true })} />
+      <input
+        type='text'
+        {...register('attributes_request_method', { required: true })}
+      />
     </Form.Field>
     <Form.Field>
       <label>OIDC Issuer</label>
-      <input {...register('oidc_issuer', { required: true })} />
+      <input type='text' {...register('oidc_issuer', { required: true })} />
     </Form.Field>
     <Form.Field>
       <label>Authorize Scopes</label>
-      <input {...register('authorize_scopes', { required: true })} />
+      <input
+        type='text'
+        {...register('authorize_scopes', { required: true })}
+      />
     </Form.Field>
     <Form.Field>
       <label>Token URL</label>
-      <input {...register('token_url', { required: true })} />
+      <input type='text' {...register('token_url', { required: true })} />
     </Form.Field>
     <Form.Field>
       <label>Attributes URL</label>
-      <input {...register('attributes_url', { required: true })} />
+      <input type='text' {...register('attributes_url', { required: true })} />
     </Form.Field>
     <Form.Field>
       <label>JWKS URI</label>
-      <input {...register('jwks_uri', { required: true })} />
+      <input type='text' {...register('jwks_uri', { required: true })} />
     </Form.Field>
     <input
       type='hidden'

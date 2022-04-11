@@ -30,7 +30,7 @@ const useInnerUtils = () => {
     }
     if (res?.status_code === 400) {
       setState({ error: res?.message, status: 'done' })
-      throw new Error(res?.message)
+      throw res
     }
     let response = res?.data
     setState({ data: response, status: 'done' })
@@ -94,7 +94,19 @@ const usePost = (commonPathname, { url }) => {
       )
       return handleResponse(res)
     } catch (error) {
-      throw new Error(error)
+      const errorsHandler = (errors) =>
+        errors.map((err) => (
+          <p style={{ margin: 0, textAlign: 'center' }}>
+            <small>{err}</small>
+          </p>
+        ))
+      const formattedError = {
+        message: error?.message,
+        errorsMap: error?.errors ? errorsHandler(error?.errors) : null,
+        errorsJoin: error?.errors ? error?.errors.join(',') : null,
+        errors: error?.errors,
+      }
+      throw formattedError
     }
   }
 
@@ -151,6 +163,7 @@ export const ApiGetProvider = ({ children, pathname }) => {
   return (
     <ApiContext.Provider
       value={{
+        get: get.do,
         status: get?.status,
         data: get?.data,
         error: get?.status,

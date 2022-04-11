@@ -18,6 +18,7 @@ import PermissionsBoundaryChangeComponent from '../blocks/PermissionsBoundaryCha
 import AssumeRolePolicyChangeComponent from '../blocks/AssumeRolePolicyChangeComponent'
 import ResourcePolicyChangeComponent from '../blocks/ResourcePolicyChangeComponent'
 import ResourceTagChangeComponent from '../blocks/ResourceTagChangeComponent'
+import ExpirationDateBlockComponent from 'components/blocks/ExpirationDateBlockComponent'
 
 class PolicyRequestReview extends Component {
   constructor(props) {
@@ -258,6 +259,11 @@ class PolicyRequestReview extends Component {
         <span>{extendedRequest.requester_email}</span>
       )
 
+    const requestReadOnly =
+      extendedRequest.request_status === 'rejected' ||
+      extendedRequest.request_status === 'cancelled' ||
+      extendedRequest.request_status === 'expired'
+
     const messagesToShow =
       messages.length > 0 ? (
         <Message negative>
@@ -398,9 +404,17 @@ class PolicyRequestReview extends Component {
       />
     ) : null
 
-    const requestReadOnly =
-      extendedRequest.request_status === 'rejected' ||
-      extendedRequest.request_status === 'cancelled'
+    const expirationDateContent = extendedRequest.id ? (
+      <ExpirationDateBlockComponent
+        expiration_date={extendedRequest.expiration_date || null}
+        reloadDataFromBackend={this.reloadDataFromBackend}
+        requestID={requestID}
+        sendRequestCommon={this.props.sendRequestCommon}
+        requestReadOnly={requestReadOnly}
+      />
+    ) : (
+      <></>
+    )
 
     const templateContent = template ? (
       <Message negative>
@@ -585,6 +599,7 @@ class PolicyRequestReview extends Component {
           {requestDetails}
           {templateContent}
           {descriptionContent}
+          {expirationDateContent}
           {changesContent}
           {commentsContent}
           {requestButtonsContent}

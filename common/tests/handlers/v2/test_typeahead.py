@@ -46,10 +46,26 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         red.hmset(
             f"{host}_AWSCONFIG_RESOURCE_CACHE",
             {
-                "arn:aws:ec2:us-west-2:123456789013:security-group/12345": "{}",
-                "arn:aws:sqs:us-east-1:123456789012:rolequeue": "{}",
-                "arn:aws:sns:us-east-1:123456789012:roletopic": "{}",
-                "arn:aws:iam::123456789012:role/role": "{}",
+                "arn:aws:ec2:us-west-2:123456789013:security-group/12345": json.dumps(
+                    {
+                        "resourceType": "AWS::EC2::SecurityGroup",
+                    }
+                ),
+                "arn:aws:sqs:us-east-1:123456789012:rolequeue": json.dumps(
+                    {
+                        "resourceType": "AWS::SQS::Queue",
+                    }
+                ),
+                "arn:aws:sns:us-east-1:123456789012:roletopic": json.dumps(
+                    {
+                        "resourceType": "AWS::SNS::Topic",
+                    }
+                ),
+                "arn:aws:iam::123456789012:role/role": json.dumps(
+                    {
+                        "resourceType": "AWS::IAM::Role",
+                    }
+                ),
             },
         )
         # Return all the things
