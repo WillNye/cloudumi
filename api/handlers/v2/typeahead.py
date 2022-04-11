@@ -7,6 +7,7 @@ from asgiref.sync import sync_to_async
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable
 from common.handlers.base import BaseAPIV2Handler
+from common.lib.auth import get_accounts_user_can_view_resources_for
 from common.lib.aws.typeahead_cache import get_all_resource_arns
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import RedisHandler
@@ -92,10 +93,16 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
         if not all_resource_arns:
             all_resource_arns = await get_all_resource_arns(host)
 
+        allowed_accounts_for_viewing_resources = (
+            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+        )
+
         matching = set()
         for arn in all_resource_arns:
             if len(matching) >= limit:
                 break
+            if arn.split(":")[4] not in allowed_accounts_for_viewing_resources:
+                continue
             # ARN format: 'arn:aws:sqs:us-east-1:123456789012:resource_name'
             if resource_type and resource_type != arn.split(":")[2]:
                 continue
@@ -161,9 +168,20 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
             host=host,
             default={},
         )
-        matching = []
 
+        allowed_accounts_for_viewing_resources = (
+            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+        )
+
+        matching = []
         for entry in typehead_data.get("typeahead_entries", []):
+            principal_arn = entry.get("principal", "").get("principal_arn", "")
+            if (
+                principal_arn
+                and principal_arn.split(":")[4]
+                not in allowed_accounts_for_viewing_resources
+            ):
+                continue
             if len(matching) >= limit:
                 break
             if (

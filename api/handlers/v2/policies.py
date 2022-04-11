@@ -6,6 +6,7 @@ import ujson as json
 from common.config import config
 from common.exceptions.exceptions import ResourceNotFound
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
+from common.lib.auth import get_accounts_user_can_view_resources_for
 from common.lib.aws.utils import validate_iam_policy
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.generic import filter_table
@@ -112,7 +113,7 @@ class PoliciesHandler(BaseAPIV2Handler):
             "host": host,
         }
         log.debug(log_data)
-        policies = await retrieve_json_data_from_redis_or_s3(
+        all_policies = await retrieve_json_data_from_redis_or_s3(
             redis_key=config.get_host_specific_key(
                 "policies.redis_policies_key",
                 host,
@@ -130,7 +131,15 @@ class PoliciesHandler(BaseAPIV2Handler):
             host=host,
         )
 
-        total_count = len(policies)
+        allowed_accounts_for_viewing_resources = (
+            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+        )
+
+        total_count = len(all_policies)
+        policies = []
+        for policy in all_policies:
+            if policy.get("account_id") in allowed_accounts_for_viewing_resources:
+                policies.append(policy)
 
         if filters:
             try:
