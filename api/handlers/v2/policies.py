@@ -138,9 +138,8 @@ class PoliciesHandler(BaseAPIV2Handler):
         total_count = len(all_policies)
         policies = []
         for policy in all_policies:
-            if not policy.get("account_id") in allowed_accounts_for_viewing_resources:
-                continue
-            policies.append(policy)
+            if policy.get("account_id") in allowed_accounts_for_viewing_resources:
+                policies.append(policy)
 
         if filters:
             try:
