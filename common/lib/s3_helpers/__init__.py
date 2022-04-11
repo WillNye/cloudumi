@@ -158,6 +158,7 @@ def get_object(**kwargs):
             session = get_session_for_tenant(host)
             client = session.client(
                 "s3",
+                region_name=kwargs.get("region", config.region),
                 **config.get_host_specific_key("boto3.client_kwargs", host, {}),
             )
     return client.get_object(Bucket=kwargs.get("Bucket"), Key=kwargs.get("Key"))

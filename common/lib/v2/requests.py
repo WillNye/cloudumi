@@ -535,7 +535,7 @@ async def generate_resource_policies(
             log.debug(log_data)
             return extended_request
 
-        resource_policy = {"Version": "2012-10-17", "Statement": []}
+        resource_policy = {"Version": "2012-10-17", "Statement": [], "Sid": ""}
         resource_policy_sha = sha256(
             json.dumps(resource_policy, escape_forward_slashes=False).encode()
         ).hexdigest()
@@ -1649,6 +1649,7 @@ async def populate_cross_account_resource_policy_for_change(
         # Have to grab the actions from the source inline change for resource policy changes
         actions = []
         resource_arns = []
+        resource_Sid = ""
         for source_change in extended_request.changes.changes:
             # Find the specific inline policy associated with this change
             if (
@@ -1659,6 +1660,12 @@ async def populate_cross_account_resource_policy_for_change(
                     "Statement", []
                 ):
                     # Find the specific statement within the inline policy associated with this resource
+
+                    if extended_request.expiration_date:
+                        resource_Sid = (
+                            f"noq_delate_on_{extended_request.expiration_date}"
+                        )
+
                     if change.arn in statement.get("Resource"):
                         statement_actions = statement.get("Action", [])
                         statement_actions = (
@@ -1695,6 +1702,7 @@ async def populate_cross_account_resource_policy_for_change(
             principal_arn=extended_request.principal.principal_arn,
             resource_arns=list(set(resource_arns)),
             actions=actions,
+            policy_Sid=resource_Sid,
             # since iam assume role policy documents can't include resources
             include_resources=change.change_type == "resource_policy",
         )
@@ -2699,11 +2707,16 @@ async def parse_and_apply_policy_request_modification(
         )
         extended_request.expiration_date = expiration_date_model.expiration_date
 
-        for policy in extended_request.changes.changes:
-            if policy.change_type in ["inline_policy"]:
-                policy.policy_name = await generate_policy_name(
+        for change in extended_request.changes.changes:
+            if change.change_type in ["inline_policy"]:
+                change.policy_name = await generate_policy_name(
                     None, user, host, expiration_date_model.expiration_date
                 )
+
+            if change.change_type in ["resource_policy", "sts_resource_policy"]:
+                change.policy.policy_document["Statement"][0][
+                    "Sid"
+                ] = f"noq_delete_on_{expiration_date_model.expiration_date}"
 
         success_message = "Successfully updated expiration date"
         error_message = "Error occurred updating expiration date"
