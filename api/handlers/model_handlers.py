@@ -28,7 +28,7 @@ class ConfigurationCrudHandler(BaseHandler):
         if not cls._model_class or not cls._config_key:
             raise RuntimeError(f"{cls.__name__} is not properly configured")
 
-    def _retrieve(self) -> dict:
+    async def _retrieve(self) -> dict:
         return (
             ModelAdapter(self._model_class)
             .load_config(self._config_key, self.ctx.host)
@@ -75,7 +75,7 @@ class ConfigurationCrudHandler(BaseHandler):
         log.debug(log_data)
 
         try:
-            get_data = self._retrieve()
+            get_data = await self._retrieve()
             res = WebResponse(
                 success="success" if get_data else "error",
                 status_code=200,
@@ -241,7 +241,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         if not cls._model_class or not cls._config_key:
             raise RuntimeError(f"{cls.__name__} is not properly configured")
 
-    def _retrieve(self) -> list[dict]:
+    async def _retrieve(self) -> list[dict]:
         return (
             ModelAdapter(self._model_class)
             .load_config(self._config_key, self.ctx.host)
@@ -288,7 +288,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        get_data = self._retrieve()
+        get_data = await self._retrieve()
         # hub_account_data is a special structure, so we unroll it
         res = WebResponse(
             success="success" if get_data else "error",
