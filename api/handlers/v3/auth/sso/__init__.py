@@ -49,7 +49,7 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
             "secrets.cognito.config.user_pool_region", self.ctx.host, config.region
         )
         if not user_pool_region:
-            raise ValueError("Cognito user pool id not configured")
+            raise ValueError("Cognito user pool region not configured")
 
         self._user_pool_region = user_pool_region
         return user_pool_region
