@@ -167,6 +167,7 @@ class SsoIdpProviderConfigurationCrudHandler(IdpConfigurationCrudHandler):
 class CognitoCrudHandler(MultiItemConfigurationCrudHandler):
     _config_key = "Unused"
     _user_pool_id = None
+    _user_pool_region = None
 
     @property
     def user_pool_id(self) -> str:
@@ -181,6 +182,20 @@ class CognitoCrudHandler(MultiItemConfigurationCrudHandler):
 
         self._user_pool_id = user_pool_id
         return user_pool_id
+
+    @property
+    def user_pool_region(self) -> str:
+        if user_pool_region := self._user_pool_region:
+            return user_pool_region
+
+        user_pool_region = config.get_host_specific_key(
+            "secrets.cognito.config.user_pool_region", self.ctx.host, config.region
+        )
+        if not user_pool_region:
+            raise ValueError("Cognito user pool region not configured")
+
+        self._user_pool_region = user_pool_region
+        return user_pool_region
 
 
 class CognitoUserCrudHandler(CognitoCrudHandler):
