@@ -48,12 +48,8 @@ class UserProfileHandler(BaseAPIV1Handler):
         site_config = {
             "consoleme_logo": await get_random_security_logo(host),
             "google_analytics": {
-                "tracking_id": config.get_host_specific_key(
-                    "google_analytics.tracking_id", host
-                ),
-                "options": config.get_host_specific_key(
-                    "google_analytics.options", host, {}
-                ),
+                "tracking_id": config.get("_global_.google_analytics.tracking_id"),
+                "options": config.get("_global_.google_analytics.options", {}),
             },
             "documentation_url": config.get_host_specific_key(
                 "documentation_page",

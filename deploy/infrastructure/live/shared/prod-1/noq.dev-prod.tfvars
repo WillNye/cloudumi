@@ -45,3 +45,5 @@ sentry_dsn = "https://b56872bca2c548cb9200121ae436b87d@o1134078.ingest.sentry.io
 s3_access_log_bucket = "s3-access-logs.940552945933.us-west-2"
 
 elasticache_node_type = "cache.t2.medium"
+
+google_analytics_tracking_id = "G-P5K1SQF3P6"

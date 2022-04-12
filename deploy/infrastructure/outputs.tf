@@ -206,3 +206,8 @@ output "kms_key_id" {
   description = "The configured KMS key ID"
   value       = module.tenant_container_service.kms_key_id
 }
+
+output "google_analytics_tracking_id" {
+  description = "The configured Google Analytics tracking ID"
+  value       = var.google_analytics_tracking_id
+}
