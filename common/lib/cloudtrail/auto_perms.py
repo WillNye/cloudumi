@@ -1,7 +1,6 @@
 import json
 import re
 import sys
-import time
 from datetime import datetime
 from typing import Any, Dict
 
@@ -9,10 +8,10 @@ import access_undenied_aws
 import access_undenied_aws.analysis
 import access_undenied_aws.cli
 import access_undenied_aws.common
-from access_undenied_aws.common import AccessDeniedReason
 import access_undenied_aws.organizations
 import boto3
 import sentry_sdk
+from access_undenied_aws.common import AccessDeniedReason
 
 from common.config import config
 from common.config.models import ModelAdapter
@@ -20,7 +19,6 @@ from common.exceptions.exceptions import DataNotRetrievable
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.dynamo import UserDynamoHandler
 from common.models import (
-    CloudTrailDetailsModel,
     CloudtrailDetection,
     CloudtrailDetectionConfiguration,
     SpokeAccount,
@@ -226,12 +224,13 @@ def detect_cloudtrail_denies_and_update_cache(
             )
 
             if generated_policy.assessment_result != AccessDeniedReason.ALLOWED:
+                event.generated_policies = generated_policy.result_details.policies
                 if all_cloudtrail_denies.get(event.request_id):
                     existing_count = all_cloudtrail_denies[event.request_id].count
                     event["count"] += existing_count
-                    all_cloudtrail_denies[event.request_id] = event
+                    all_cloudtrail_denies[event.request_id] = event.dict()
                 else:
-                    all_cloudtrail_denies[event.request_id] = event
+                    all_cloudtrail_denies[event.request_id] = event.dict()
                     new_events += 1
                 num_events += 1
                 processed_messages.append(
@@ -240,10 +239,10 @@ def detect_cloudtrail_denies_and_update_cache(
                         "ReceiptHandle": message["ReceiptHandle"],
                     }
                 )
-        # if processed_messages:
-        #     sqs_client.delete_message_batch(
-        #         QueueUrl=queue_url, Entries=processed_messages
-        #     )
+        if processed_messages:
+            sqs_client.delete_message_batch(
+                QueueUrl=queue_url, Entries=processed_messages
+            )
 
         dynamo.batch_write_cloudtrail_events(
             all_cloudtrail_denies.values(),

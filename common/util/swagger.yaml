@@ -2353,6 +2353,12 @@ components:
         request_id:
           type: string
           description: TODO
+        generated_policies:
+          type: array
+          description: TODO
+          items:
+            $ref: "#/components/schemas/PolicyModel"
+
     CloudtrailDetectionConfiguration:
       type: object
       required:
