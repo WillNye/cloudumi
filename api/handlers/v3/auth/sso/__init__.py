@@ -1,3 +1,5 @@
+import asyncio
+
 import boto3
 
 from api.handlers.model_handlers import (
@@ -225,12 +227,14 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
         try:
             # Update the resource
             cognito_user = self._model_class(**data)
-            cognito_user.Groups = [
-                x
-                for x in await identity.get_identity_user_groups(
-                    self.user_pool_id, cognito_user, client=cognito_idp
-                )
-            ]
+            cognito_user.Groups = await asyncio.gather(
+                *[
+                    identity.get_identity_group(
+                        self.user_pool_id, group, client=cognito_idp
+                    )
+                    for group in cognito_user.Groups
+                ]
+            )
             await identity.upsert_identity_user_group(
                 self.user_pool_id, cognito_user, client=cognito_idp
             )
