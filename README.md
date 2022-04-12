@@ -107,7 +107,7 @@ To setup the test environment, make sure you have `docker-compose` accessible in
 - Launch dependency services: `bazelisk run //deploy/local:deps-only`
 - `bazelisk run //api:bin`: to run the API in the local environment
 - `bazelisk run //common/celery_tasks:bin`: to run the Celery workers in the local environment
-- Navigate to http://cloudumidev.com
+- Navigate to https://cloudumidev.com
 
 ## Container environment run
 
