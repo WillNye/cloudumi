@@ -8,7 +8,7 @@
       <env name="CONFIG_LOCATION" value="configs/development_account/saas_development.yaml" />
       <env name="AWS_PROFILE" value="noq_cluster_dev" />
       <env name="AWS_CONTAINER_CREDENTIALS_FULL_URI" value="http://localhost:9091/ecs/arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev" />
-      <env name="AWS_REGION" value="us-west-1" />
+      <env name="AWS_REGION" value="us-west-2" />
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/" />
