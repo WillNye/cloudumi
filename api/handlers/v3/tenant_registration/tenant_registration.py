@@ -543,6 +543,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 break
             dev_domain = await generate_dev_domain(dev_mode)
 
+        dev_domain = "unusual_noq_dev"
         # User pool domain names cannot have underscores
         user_pool_domain_name = dev_domain.replace("_", "-")
 
@@ -639,6 +640,7 @@ secrets:
         user_pool_id: {user_pool_id}
         user_pool_client_id: {cognito_client_id}
         user_pool_client_secret: {cognito_user_pool_client_secret}
+        user_pool_region: {config.region}
 get_user_by_oidc_settings:
   client_scopes:
     - email
@@ -647,7 +649,7 @@ get_user_by_oidc_settings:
   metadata_url: https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration
   jwt_verify: true
   jwt_email_key: email
-  jwt_groups_key: "cognito:groups"
+  jwt_groups_key: 'cognito:groups'
   grant_type: authorization_code
   id_token_response_key: id_token
   access_token_response_key: access_token
