@@ -85,18 +85,8 @@ To setup the test environment, make sure you have `docker-compose` accessible in
 - `bazelisk run //common/scripts:initialize_dynamodb`: to initialize the dynamo tables
 - `bazelisk run //common/scripts:initialize_redis`: to initialize the redis cache
 
-* To setup an account in the local dynamo instance, browse to `localhost:8001` and find the table `dev_cloudumi_tenant_static_configs`. In the top right corner, there is a "Create Item" button, click it.
-* In the entry screen, add this:
-
-```json
-{
-  "host": "cloudumidev_com",
-  "updated_by": "user@noq.dev",
-  "id": "master",
-  "updated_at": "1649774554",
-  "config": "_development_user_override: user@noq.dev\n_development_groups_override:\n  - engineering@noq.dev\ncloud_credential_authorization_mapping:\n  role_tags:\n    authorized_groups_cli_only_tags:\n      - noq-authorized-cli-only\n    authorized_groups_tags:\n      - noq-authorized\n    enabled: true\nchallenge_url:\n  enabled: true\nenvironment: dev\nhub_account:\n  name: NoqCentralRoleLocalDev\n  account_id: '759357822767'\n  account_name: 'development'\n  role_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev\n  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43\npolicies:\n  role_name: NoqSpokeRoleLocalDev\n  ip_restrictions: false\nspoke_accounts:\n  - name: NoqSpokeRoleLocalDev\n    account_name: 'development'\n    account_id: '759357822767'\n    role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev\n    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43\n    hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev\n    master_for_account: false\norg_accounts:\n  - org_id: test_org\n    account_id: 123456789012\n    account_name: test_account\n    owner: user\ntenant_details:\n  external_id: localhost\n  creator: user@noq.dev\n  creation_time: 1649259401\nsite_config:\n  landing_url: /\nheaders:\n  identity:\n    enabled: false\n  role_login:\n    enabled: true\nurl: https://cloudumidev.com\napplication_admin: user@noq.dev\nsecrets:\n  jwt_secret: 'UZP_k8KP7eG6epr8eUEYkbVZnKf-SWpcvsc807B4i9g'\n  auth:\n    oidc:\n      client_id: 'j14h62of81s6s5f2ivfkdfe3v'\n      client_secret: '1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh'\n  cognito:\n    config:\n      user_pool_id: 'us-east-1_CNoZribID'\n      user_pool_client_id: 'j14h62of81s6s5f2ivfkdfe3v'\n      user_pool_client_secret: '1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh'\n      user_pool_region: 'us-east-1'\naccount_ids_to_name:\n  \"759357822767\": \"development\"\nauth:\n  challenge_url:\n    enabled: true\n  get_user_by_oidc: true\nget_user_by_oidc_settings:\n  client_scopes:\n    - email\n    - openid\n  resource: noq_tenant\n  metadata_url: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_CNoZribID/.well-known/openid-configuration\n  jwt_verify: true\n  jwt_email_key: email\n  jwt_groups_key: \"cognito:groups\"\n  grant_type: authorization_code\n  id_token_response_key: id_token\n  access_token_response_key: access_token\n  access_token_audience: null\naws:\n  automatically_update_role_trust_policies: false\n"
-}
-```
+* To setup an account in the local dynamo instance run the following command:
+  `python -m deploy.local.populate_services` or `bazelisk run //deploy/local:populate_services`
 
 - Make any adjustments as needed
 - Once you decide which way to run the NOQ services, do either of the following
@@ -112,6 +102,12 @@ To setup the test environment, make sure you have `docker-compose` accessible in
 ## Container environment run
 
 - Launch all services: `bazelisk run //deploy/local:containers-dev`
+
+## Finding raw config
+
+Configs are stored in dynamo which you can access at `localhost:8001`
+The table containing raw configs is `dev_cloudumi_tenant_static_configs`
+Within the UI you can perform all CRUD operations on your configs
 
 ### OR:
 
