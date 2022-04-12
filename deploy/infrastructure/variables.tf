@@ -130,6 +130,11 @@ variable "sentry_dsn" {
   type        = string
 }
 
+variable "google_analytics_tracking_id" {
+  description = "The Google Analytics tracking ID to use for logging interactions"
+  type        = string
+}
+
 variable "celery_log_level" {
   description = "The log level for Celery"
   type        = string
