@@ -1,7 +1,8 @@
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 
 import boto3
 import moto
+import pytest
 
 from common.config import config
 from common.lib.cognito import identity
@@ -16,7 +17,11 @@ from common.models import (
 
 
 @moto.mock_cognitoidp
-class TestIdentity(TestCase):
+@pytest.mark.usefixtures("redis")
+@pytest.mark.usefixtures("s3")
+@pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("sts")
+class TestIdentity(IsolatedAsyncioTestCase):
     """Docstring in public class."""
 
     def setUp(self):
@@ -31,7 +36,6 @@ class TestIdentity(TestCase):
         ).get("UserPoolClient", {})
 
         self.username = "test_user"
-        self.temp_pass = "test123"
         self.groupname = "test_group"
         self.client.create_identity_provider(
             UserPoolId=self.pool_id,
@@ -44,7 +48,6 @@ class TestIdentity(TestCase):
         self.client.admin_create_user(
             UserPoolId=self.pool_id,
             Username=self.username,
-            TemporaryPassword=self.temp_pass,
         )
         self.client.create_group(
             UserPoolId=self.pool_id,
@@ -52,12 +55,12 @@ class TestIdentity(TestCase):
             Description="test description",
         )
 
-    def test_get_identity(self):
-        providers = identity.get_identity_providers(self.pool_id)
+    async def test_get_identity(self):
+        providers = await identity.get_identity_providers(self.pool_id)
         assert providers.saml
         assert providers.saml.provider_name == "test_provider"
 
-    def test_upsert_identity_provider_google(self):
+    async def test_upsert_identity_provider_google(self):
         google_provider = GoogleOIDCSSOIDPProvider(
             client_id="test_id",
             client_secret="1234",
@@ -68,15 +71,15 @@ class TestIdentity(TestCase):
         sso_provider = SSOIDPProviders(
             google=google_provider,
         )
-        assert identity.upsert_identity_provider(
+        assert await identity.upsert_identity_provider(
             self.pool_id, self.user_pool_client["ClientId"], sso_provider
         )
-        providers = identity.get_identity_providers(self.pool_id)
+        providers = await identity.get_identity_providers(self.pool_id)
         assert providers.google
         assert providers.google.provider_name == "Google"
         assert providers.google.client_id == "test_id"
 
-    def test_upsert_identity_provider_saml(self):
+    async def test_upsert_identity_provider_saml(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
             provider_name="SAML",
@@ -85,15 +88,15 @@ class TestIdentity(TestCase):
         sso_provider = SSOIDPProviders(
             saml=saml_provider,
         )
-        assert identity.upsert_identity_provider(
+        assert await identity.upsert_identity_provider(
             self.pool_id, self.user_pool_client["ClientId"], sso_provider
         )
-        providers = identity.get_identity_providers(self.pool_id)
+        providers = await identity.get_identity_providers(self.pool_id)
         assert providers.saml
         assert providers.saml.provider_name == "SAML"
         assert providers.saml.MetadataURL == "http://somewhere.over.the.rainbow"
 
-    def test_upsert_identity_provider_oidc_minimum(self):
+    async def test_upsert_identity_provider_oidc_minimum(self):
         oidc_provider = OIDCSSOIDPProvider(
             client_id="test_id",
             client_secret="1234",
@@ -106,15 +109,15 @@ class TestIdentity(TestCase):
         sso_provider = SSOIDPProviders(
             oidc=oidc_provider,
         )
-        assert identity.upsert_identity_provider(
+        assert await identity.upsert_identity_provider(
             self.pool_id, self.user_pool_client["ClientId"], sso_provider
         )
-        providers = identity.get_identity_providers(self.pool_id)
+        providers = await identity.get_identity_providers(self.pool_id)
         assert providers.oidc
         assert providers.oidc.provider_name == "OIDC"
         assert providers.oidc.client_id == "test_id"
 
-    def test_upsert_identity_provider_oidc_complete(self):
+    async def test_upsert_identity_provider_oidc_complete(self):
         oidc_provider = OIDCSSOIDPProvider(
             client_id="test_id",
             client_secret="1234",
@@ -132,74 +135,74 @@ class TestIdentity(TestCase):
         sso_provider = SSOIDPProviders(
             oidc=oidc_provider,
         )
-        assert identity.upsert_identity_provider(
+        assert await identity.upsert_identity_provider(
             self.pool_id, self.user_pool_client["ClientId"], sso_provider
         )
-        providers = identity.get_identity_providers(self.pool_id)
+        providers = await identity.get_identity_providers(self.pool_id)
         assert providers.oidc
         assert providers.oidc.provider_name == "OIDC"
         assert providers.oidc.jwks_uri == "jwks://do.this"
 
-    def test_delete_identity_provider(self):
+    async def test_delete_identity_provider(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
             provider_name="SAML",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
-        assert identity.upsert_identity_provider(
+        assert await identity.upsert_identity_provider(
             self.pool_id, self.user_pool_client["ClientId"], sso_provider
         )
-        providers = identity.get_identity_providers(self.pool_id)
+        providers = await identity.get_identity_providers(self.pool_id)
         assert providers.saml
-        assert identity.delete_identity_provider(self.pool_id, saml_provider)
-        providers = identity.get_identity_providers(self.pool_id)
+        assert await identity.delete_identity_provider(self.pool_id, saml_provider)
+        providers = await identity.get_identity_providers(self.pool_id)
         assert not providers.saml
 
-    def test_connect_idp_to_app_client(self):
+    async def test_connect_idp_to_app_client(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
             provider_name="Saml",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
-        assert identity.upsert_identity_provider(
+        assert await identity.upsert_identity_provider(
             self.pool_id, self.user_pool_client["ClientId"], sso_provider
         )
 
-        assert identity.connect_idp_to_app_client(
+        assert await identity.connect_idp_to_app_client(
             self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
-        app_clients = identity.get_user_pool_client(
+        app_clients = await identity.get_user_pool_client(
             self.pool_id, self.user_pool_client["ClientId"]
         )
         assert app_clients.get("UserPoolClient", {}).get(
             "SupportedIdentityProviders", []
         ) == ["Saml"]
 
-    def test_disconnect_idp_from_app_client(self):
+    async def test_disconnect_idp_from_app_client(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
             provider_name="Saml",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
-        assert identity.upsert_identity_provider(
+        assert await identity.upsert_identity_provider(
             self.pool_id, self.user_pool_client["ClientId"], sso_provider
         )
-        assert identity.connect_idp_to_app_client(
+        assert await identity.connect_idp_to_app_client(
             self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
-        app_clients = identity.get_user_pool_client(
+        app_clients = await identity.get_user_pool_client(
             self.pool_id, self.user_pool_client.get("ClientId")
         )
         assert app_clients.get("UserPoolClient", {}).get(
             "SupportedIdentityProviders", []
         ) == ["Saml"]
-        assert identity.disconnect_idp_from_app_client(
+        assert await identity.disconnect_idp_from_app_client(
             self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
-        app_clients = identity.get_user_pool_client(
+        app_clients = await identity.get_user_pool_client(
             self.pool_id, self.user_pool_client.get("ClientId")
         )
         assert (
@@ -207,19 +210,20 @@ class TestIdentity(TestCase):
             == []
         )
 
-    def test_get_identity_users(self):
-        assert identity.get_identity_users(self.pool_id)[0].Username == self.username
+    async def test_get_identity_users(self):
+        cognito_user = await identity.get_identity_users(self.pool_id)
+        self.assertEqual(cognito_user[0].Username, self.username)
 
-    def test_create_identity_user_sparse(self):
+    async def test_create_identity_user_sparse(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username="new_user")
-        user_update = identity.create_identity_user(self.pool_id, user)
-        assert len(identity.get_identity_users(self.pool_id)) == 2
+        user_update = await identity.create_identity_user(self.pool_id, user)
+        assert len(await identity.get_identity_users(self.pool_id)) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
         )
-        assert len(identity.get_identity_users(self.pool_id)) == 1
+        assert len(await identity.get_identity_users(self.pool_id)) == 1
 
-    def test_create_identity_user_complete(self):
+    async def test_create_identity_user_complete(self):
         user = CognitoUser(
             UserPoolId=self.pool_id,
             Username="new_user",
@@ -230,89 +234,89 @@ class TestIdentity(TestCase):
                 },
             ],
             Enabled=True,
-            TemporaryPassword=self.temp_pass,
             MFAOptions=[{"DeliveryMedium": "SMS"}],
             UserStatus="COMPROMISED",
         )
-        user_update = identity.create_identity_user(self.pool_id, user)
-        assert len(identity.get_identity_users(self.pool_id)) == 2
+        user_update = await identity.create_identity_user(self.pool_id, user)
+        assert len(await identity.get_identity_users(self.pool_id)) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
         )
-        assert len(identity.get_identity_users(self.pool_id)) == 1
+        assert len(await identity.get_identity_users(self.pool_id)) == 1
 
-    def test_assigning_identity_user(self):
+    async def test_assigning_identity_user(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username=self.username)
         group = CognitoGroup(GroupName=self.groupname, UserPoolId=self.pool_id)
-        assert identity.create_identity_user_groups(self.pool_id, user, [group])
-        users = identity.get_identity_users(self.pool_id)
+        assert await identity.create_identity_user_groups(self.pool_id, user, [group])
+        users = await identity.get_identity_users(self.pool_id)
         updated_user = [x for x in users if x.Username == self.username][0]
         assert updated_user
         assert updated_user.Groups
         assert len(updated_user.Groups) == 1
         assert updated_user.Groups[0] == self.groupname
 
-    def test_create_identity_user_with_groups(self):
+    async def test_create_identity_user_with_groups(self):
         groups = ["group1", "group2"]
         user = CognitoUser(UserPoolId=self.pool_id, Username="new_user", Groups=groups)
         for group in groups:
-            assert identity.create_identity_group(
+            assert await identity.create_identity_group(
                 self.pool_id, CognitoGroup(GroupName=group)
             )
-        assert identity.create_identity_user(self.pool_id, user)
+        assert await identity.create_identity_user(self.pool_id, user)
         user_update = [
             x
-            for x in identity.get_identity_users(self.pool_id)
+            for x in await identity.get_identity_users(self.pool_id)
             if x.Username == "new_user"
         ][0]
         assert user_update.Groups
         assert len([x for x in user_update.Groups if x in groups]) == len(groups)
-        assert len(identity.get_identity_users(self.pool_id)) == 2
+        assert len(await identity.get_identity_users(self.pool_id)) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
         )
         for group in groups:
-            assert identity.delete_identity_group(
+            assert await identity.delete_identity_group(
                 self.pool_id, CognitoGroup(GroupName=group)
             )
-        assert len(identity.get_identity_users(self.pool_id)) == 1
+        assert len(await identity.get_identity_users(self.pool_id)) == 1
 
-    def test_delete_identity_user(self):
+    async def test_delete_identity_user(self):
         user = CognitoUser(UserPoolId=self.pool_id, Username="delete_user")
-        _ = identity.create_identity_user(self.pool_id, user)
-        assert len(identity.get_identity_users(self.pool_id)) == 2
-        identity.delete_identity_user(self.pool_id, user)
-        assert len(identity.get_identity_users(self.pool_id)) == 1
+        _ = await identity.create_identity_user(self.pool_id, user)
+        assert len(await identity.get_identity_users(self.pool_id)) == 2
+        await identity.delete_identity_user(self.pool_id, user)
+        assert len(await identity.get_identity_users(self.pool_id)) == 1
 
-    def test_get_identity_groups(self):
-        assert identity.get_identity_groups(self.pool_id)[0].GroupName == self.groupname
+    async def test_get_identity_groups(self):
+        get_identity_groups_call = await identity.get_identity_groups(self.pool_id)
+        assert get_identity_groups_call[0].GroupName == self.groupname
 
-    def test_create_identity_group_sparse(self):
+    async def test_create_identity_group_sparse(self):
         group = CognitoGroup(UserPoolId=self.pool_id, GroupName="new_group")
-        group_update = identity.create_identity_group(self.pool_id, group)
-        assert len(identity.get_identity_groups(self.pool_id)) == 2
+        group_update = await identity.create_identity_group(self.pool_id, group)
+        assert len(await identity.get_identity_groups(self.pool_id)) == 2
         self.client.delete_group(
             UserPoolId=self.pool_id, GroupName=group_update.GroupName
         )
-        assert len(identity.get_identity_groups(self.pool_id)) == 1
+        assert len(await identity.get_identity_groups(self.pool_id)) == 1
 
-    def test_create_identity_group_complete(self):
+    async def test_create_identity_group_complete(self):
         group = CognitoGroup(
             UserPoolId=self.pool_id,
             GroupName="new_group",
             Description="a new group",
             RoleArn="aws:iam:::::",
         )
-        group_update = identity.create_identity_group(self.pool_id, group)
-        assert len(identity.get_identity_groups(self.pool_id)) == 2
+        group_update = await identity.create_identity_group(self.pool_id, group)
+        assert len(await identity.get_identity_groups(self.pool_id)) == 2
         self.client.delete_group(
             UserPoolId=self.pool_id, GroupName=group_update.GroupName
         )
-        assert len(identity.get_identity_groups(self.pool_id)) == 1
+        assert len(await identity.get_identity_groups(self.pool_id)) == 1
 
-    def test_delete_identity_group(self):
+    async def test_delete_identity_group(self):
         group = CognitoGroup(UserPoolId=self.pool_id, GroupName="delete_user")
-        _ = identity.create_identity_group(self.pool_id, group)
-        assert len(identity.get_identity_groups(self.pool_id)) == 2
-        identity.delete_identity_group(self.pool_id, group)
-        assert len(identity.get_identity_groups(self.pool_id)) == 1
+        _ = await identity.create_identity_group(self.pool_id, group)
+        assert len(await identity.get_identity_groups(self.pool_id)) == 2
+        await identity.delete_identity_group(self.pool_id, group)
+        assert len(await identity.get_identity_groups(self.pool_id)) == 1

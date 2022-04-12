@@ -1,13 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from 'react'
-import { useApi } from 'hooks/useApi'
+import React, { useContext, useEffect, useState } from 'react'
+import { ApiContext, useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
 import { hubAccountColumns } from './columns'
 import { NewHubAccount } from './forms/NewHubAccount'
-import { str } from 'components/settings/Settings/strings'
 import { TableTopBar } from '../../utils'
 
 export const HubAccount = () => {
@@ -19,6 +18,8 @@ export const HubAccount = () => {
 
   const { openModal, closeModal, ModalComponent } = useModal()
 
+  const aws = useContext(ApiContext)
+
   useEffect(() => get.do(), [])
 
   const handleClick = (action, rowValues) => {
@@ -29,7 +30,9 @@ export const HubAccount = () => {
           success('Hub Account removed')
           get.do()
         })
-        .catch(() => error(str.toastErrorMsg))
+        .catch(({ errorsMap, message }) => {
+          error(errorsMap || message)
+        })
     }
     if (action === 'edit') {
       setDefaultValues(rowValues)
@@ -38,7 +41,7 @@ export const HubAccount = () => {
   }
 
   const handleFinish = () => {
-    success('Spoke Account edited successfully!')
+    success('Hub Account edited successfully!')
     get.do()
   }
 
@@ -55,7 +58,6 @@ export const HubAccount = () => {
 
   let data = get.data
 
-  // TODO: Remove after fixed in the API
   if (
     !Array.isArray(data) &&
     get.status === 'done' &&
@@ -69,7 +71,9 @@ export const HubAccount = () => {
 
   const isWorking = get.status === 'working'
 
-  const handleRefresh = () => get.do()
+  const handleRefresh = () => {
+    get.do().then(() => aws.get())
+  }
 
   return (
     <>

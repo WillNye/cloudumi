@@ -9,7 +9,7 @@ from common.config import config
 from common.exceptions.exceptions import MustBeFte, ResourceNotFound
 from common.handlers.base import BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.account_indexers import get_account_id_to_name_mapping
-from common.lib.auth import can_admin_policies
+from common.lib.auth import can_admin_policies, get_accounts_user_can_view_resources_for
 from common.lib.aws.utils import fetch_resource_details
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.plugins import get_plugin_by_name
@@ -75,6 +75,15 @@ class ResourceDetailHandler(BaseAPIV2Handler):
         error = ""
 
         try:
+            allowed_accounts_for_viewing_resources = (
+                await get_accounts_user_can_view_resources_for(
+                    self.user, self.groups, host
+                )
+            )
+            if account_id not in allowed_accounts_for_viewing_resources:
+                raise Exception(
+                    f"User does not have permission to view resources for account {account_id}"
+                )
             resource_details = await fetch_resource_details(
                 account_id, resource_type, resource_name, region, host, path=path
             )

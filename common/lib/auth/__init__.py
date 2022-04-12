@@ -9,9 +9,11 @@ import ujson as json
 from cryptography.hazmat.backends.openssl.rsa import _RSAPublicKey
 
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.crypto import CryptoSign
 from common.lib.generic import is_in_group
 from common.lib.plugins import get_plugin_by_name
+from common.models import SpokeAccount
 
 log = config.get_logger()
 
@@ -170,6 +172,28 @@ def can_admin_all(user: str, user_groups: List[str], host: str):
     ):
         return True
     return False
+
+
+async def get_accounts_user_can_view_resources_for(user, groups, host) -> set[str]:
+    spoke_roles = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list
+    allowed = set()
+    for spoke_role in spoke_roles:
+        if can_admin_all(user, groups, host):
+            allowed.add(spoke_role.get("account_id"))
+            continue
+        if not spoke_role.get("restrict_viewers_of_account_resources"):
+            allowed.add(spoke_role.get("account_id"))
+            continue
+        if user in spoke_role.get("viewers_of_account_resources", []):
+            allowed.add(spoke_role.get("account_id"))
+            continue
+        for group in groups:
+            if group in spoke_role.get(
+                "viewers_of_account_resources", []
+            ) or group in spoke_role.get("owners", []):
+                allowed.add(spoke_role.get("account_id"))
+                break
+    return allowed
 
 
 def can_admin_identity(user: str, user_groups: List[str], host: str):

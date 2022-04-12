@@ -2,6 +2,7 @@ import React from 'react'
 import { CIDRBlock } from './CIDRBlock'
 import { IPRestrictionToggle } from './IPRestrictionToggle'
 import { ChallengeURLConfig } from './ChallengeURLConfig'
+import { TrustPoliciesToggle } from './TrustPoliciesToggle'
 
 export const General = () => {
   return (
@@ -9,6 +10,7 @@ export const General = () => {
       <ChallengeURLConfig />
       <IPRestrictionToggle />
       <CIDRBlock />
+      <TrustPoliciesToggle />
     </>
   )
 }
