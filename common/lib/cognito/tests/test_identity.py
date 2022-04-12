@@ -39,7 +39,7 @@ class TestIdentity(IsolatedAsyncioTestCase):
         self.groupname = "test_group"
         self.client.create_identity_provider(
             UserPoolId=self.pool_id,
-            ProviderName="test_provider",
+            ProviderName="SAML",
             ProviderType="SAML",
             ProviderDetails={
                 "MetadataURL": "http://somewhere.yo.dawgs",
@@ -58,7 +58,7 @@ class TestIdentity(IsolatedAsyncioTestCase):
     async def test_get_identity(self):
         providers = await identity.get_identity_providers(self.pool_id)
         assert providers.saml
-        assert providers.saml.provider_name == "test_provider"
+        assert providers.saml.provider_name == "SAML"
 
     async def test_upsert_identity_provider_google(self):
         google_provider = GoogleOIDCSSOIDPProvider(
@@ -162,7 +162,7 @@ class TestIdentity(IsolatedAsyncioTestCase):
     async def test_connect_idp_to_app_client(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
-            provider_name="Saml",
+            provider_name="SAML",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
@@ -178,12 +178,12 @@ class TestIdentity(IsolatedAsyncioTestCase):
         )
         assert app_clients.get("UserPoolClient", {}).get(
             "SupportedIdentityProviders", []
-        ) == ["Saml"]
+        ) == ["SAML"]
 
     async def test_disconnect_idp_from_app_client(self):
         saml_provider = SamlOIDCSSOIDPProvider(
             MetadataURL="http://somewhere.over.the.rainbow",
-            provider_name="Saml",
+            provider_name="SAML",
             provider_type="SAML",
         )
         sso_provider = SSOIDPProviders(saml=saml_provider)
@@ -198,7 +198,7 @@ class TestIdentity(IsolatedAsyncioTestCase):
         )
         assert app_clients.get("UserPoolClient", {}).get(
             "SupportedIdentityProviders", []
-        ) == ["Saml"]
+        ) == ["SAML"]
         assert await identity.disconnect_idp_from_app_client(
             self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
