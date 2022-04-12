@@ -142,6 +142,11 @@ async def get_role_access_credential_brokering(host: str) -> bool:
     return host_config.get("role_tags", {}).get("enabled", False)
 
 
+async def get_role_access_automatic_policy_update(host: str) -> bool:
+    host_config = config.get_host_specific_key("aws", host, {})
+    return host_config.get("automatically_update_role_trust_policies", False)
+
+
 async def toggle_role_access_automatic_policy_update(host: str, enabled: bool) -> bool:
     ddb = RestrictedDynamoHandler()
     host_config = config.get_tenant_static_config_from_dynamo(host)

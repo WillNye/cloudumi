@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pytz
 import sentry_sdk
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError, ParamValidationError
 from dateutil.parser import parse
 from deepdiff import DeepDiff
@@ -1871,16 +1871,16 @@ async def remove_temp_policies(
     }
     log.info(log_data)
 
+    current_dateint = datetime.today().strftime("%Y%m%d")
+
+    if not extended_request.expiration_date:
+        return
+
+    if str(extended_request.expiration_date) > current_dateint:
+        return
+
     for change in extended_request.changes.changes:
         if change.status != Status.applied:
-            continue
-
-        current_dateint = datetime.today().strftime("%Y%m%d")
-
-        if not change.expiration_date:
-            continue
-
-        if str(change.expiration_date) > current_dateint:
             continue
 
         principal_arn = change.principal.principal_arn
@@ -1917,7 +1917,10 @@ async def remove_temp_policies(
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": resource_account})
+            .first.name,
             region=resource_region or config.region,
             session_name=sanitize_session_name("revoke-expired-policies"),
             arn_partition="aws",
@@ -1932,13 +1935,24 @@ async def remove_temp_policies(
         if change.change_type == "inline_policy":
             try:
                 if resource_name == "role":
-                    iam_client.delete_role_policy(
+                    await sync_to_async(iam_client.delete_role_policy)(
                         RoleName=principal_name, PolicyName=change.policy_name
                     )
                 elif resource_name == "user":
-                    iam_client.delete_user_policy(
+                    await sync_to_async(iam_client.delete_user_policy)(
                         UserName=principal_name, PolicyName=change.policy_name
                     )
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except iam_client.exceptions.NoSuchEntityException:
+                log_data["message"] = "Policy was not found"
+                log_data[
+                    "error"
+                ] = f"{change.policy_name} was not attached to {resource_name}"
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
                 change.status = Status.expired
                 should_update_policy_request = True
 
@@ -1951,9 +1965,24 @@ async def remove_temp_policies(
         elif change.change_type == "permissions_boundary":
             try:
                 if resource_name == "role":
-                    iam_client.delete_role_permissions_boundary(RoleName=principal_name)
+                    await sync_to_async(iam_client.delete_role_permissions_boundary)(
+                        RoleName=principal_name
+                    )
                 elif resource_name == "user":
-                    iam_client.delete_user_permissions_boundary(UserName=principal_name)
+                    await sync_to_async(iam_client.delete_user_permissions_boundary)(
+                        UserName=principal_name
+                    )
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except iam_client.exceptions.NoSuchEntityException:
+                log_data["message"] = "Policy was not found"
+                log_data[
+                    "error"
+                ] = f"permission boundary was not attached to {resource_name}"
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
                 change.status = Status.expired
                 should_update_policy_request = True
 
@@ -1968,13 +1997,22 @@ async def remove_temp_policies(
         elif change.change_type == "managed_policy":
             try:
                 if resource_name == "role":
-                    iam_client.detach_role_policy(
+                    await sync_to_async(iam_client.detach_role_policy)(
                         RoleName=principal_name, PolicyArn=change.arn
                     )
                 elif resource_name == "user":
-                    iam_client.detach_user_policy(
+                    await sync_to_async(iam_client.detach_user_policy)(
                         UserName=principal_name, PolicyArn=change.arn
                     )
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except iam_client.exceptions.NoSuchEntityException:
+                log_data["message"] = "Policy was not found"
+                log_data["error"] = f"{change.arn} was not attached to {resource_name}"
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
                 change.status = Status.expired
                 should_update_policy_request = True
 
@@ -1987,11 +2025,25 @@ async def remove_temp_policies(
         elif change.change_type == "resource_tag":
             try:
                 if resource_name == "role":
-                    iam_client.untag_role(RoleName=principal_name, TagKeys=[change.key])
+                    await sync_to_async(iam_client.untag_role)(
+                        RoleName=principal_name, TagKeys=[change.key]
+                    )
                 elif resource_name == "user":
-                    iam_client.untag_user(UserName=principal_name, TagKeys=[change.key])
+                    await sync_to_async(iam_client.untag_user)(
+                        UserName=principal_name, TagKeys=[change.key]
+                    )
                 change.status = Status.expired
                 should_update_policy_request = True
+
+            except iam_client.exceptions.NoSuchEntityException:
+                log_data["message"] = "Policy was not found"
+                log_data["error"] = f"{change.key} was not attached to {resource_name}"
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+                change.status = Status.expired
+                should_update_policy_request = True
+
             except Exception as e:
                 log_data["message"] = "Exception occurred deleting tag"
                 log_data["error"] = str(e)
@@ -2007,9 +2059,7 @@ async def remove_temp_policies(
         try:
             dynamo_handler = UserDynamoHandler(host=host)
             extended_request.request_status = RequestStatus.expired
-            async_to_sync(dynamo_handler.write_policy_request_v2)(
-                extended_request, host
-            )
+            await dynamo_handler.write_policy_request_v2(extended_request, host)
 
             if resource_name == "role":
                 await fetch_iam_role(

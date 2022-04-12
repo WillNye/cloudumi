@@ -23,6 +23,7 @@ const useInlinePolicy = () => {
     return sendRequestV2({
       justification,
       admin_auto_approve: adminAutoApprove,
+      expiration_date: expirationDate,
       changes: {
         changes: [
           {
@@ -37,7 +38,6 @@ const useInlinePolicy = () => {
             policy: {
               policy_document: state.newPolicy.PolicyDocument,
             },
-            expiration_date: expirationDate,
           },
         ],
       },

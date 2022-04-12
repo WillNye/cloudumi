@@ -2,7 +2,7 @@ import tornado.web
 import ujson as json
 
 from common.config import config
-from common.handlers.base import BaseHandler, StaticFileHandler
+from common.handlers.base import AuthenticatedStaticFileHandler, BaseHandler
 from common.lib.aws.utils import get_account_id_from_arn
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
@@ -184,7 +184,7 @@ class EligibleRolePageConfigHandler(BaseHandler):
         self.write(table_configuration)
 
 
-class FrontendHandler(StaticFileHandler):
+class FrontendHandler(AuthenticatedStaticFileHandler):
     def set_extra_headers(self, path):
         # Disable cache for index.html
         if self.request.path in ["/", "/index.html"]:

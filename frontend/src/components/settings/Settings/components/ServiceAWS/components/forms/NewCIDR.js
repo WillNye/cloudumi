@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useApi } from 'hooks/useApi'
 
 import { useForm } from 'react-hook-form'
@@ -12,6 +12,10 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
 
   const { post } = useApi('services/aws/ip-access')
 
+  const [errorMessage, setErrorMessage] = useState(
+    'Something went wrong, try again!'
+  )
+
   const onSubmit = (data) => {
     post
       .do(data)
@@ -19,8 +23,8 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
         closeModal()
         onFinish()
       })
-      .catch((error) => {
-        console.log(error)
+      .catch(({ errorsMap, message }) => {
+        setErrorMessage(errorsMap || message)
       })
   }
 
@@ -46,7 +50,7 @@ export const NewCIDR = ({ closeModal, onFinish }) => {
         loading={isWorking}
         showMessage={hasError}
         messageType={isSuccess ? 'success' : 'warning'}
-        message={'Something went wrong, try again!'}
+        message={errorMessage}
       />
 
       <Form onSubmit={handleSubmit(onSubmit)}>

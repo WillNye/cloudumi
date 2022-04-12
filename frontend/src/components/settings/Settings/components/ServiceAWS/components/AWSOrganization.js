@@ -7,7 +7,6 @@ import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
 import { awsOrganizationColumns } from './columns'
 import { NewOrganization } from './forms/NewOrganization'
-import { str } from 'components/settings/Settings/strings'
 import { TableTopBar } from '../../utils'
 
 export const AWSOrganization = () => {
@@ -27,7 +26,9 @@ export const AWSOrganization = () => {
           success('Organization removed')
           get.do()
         })
-        .catch(() => error(str.toastErrorMsg))
+        .catch(({ errorsMap, message }) => {
+          error(errorsMap || message)
+        })
     }
   }
 

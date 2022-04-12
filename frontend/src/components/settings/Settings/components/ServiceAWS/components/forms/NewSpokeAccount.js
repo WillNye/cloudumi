@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { ApiContext, useApi } from 'hooks/useApi'
 
 import { Button, Form, Segment } from 'semantic-ui-react'
@@ -13,11 +13,20 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
 
   const { post } = useApi('services/aws/account/spoke')
 
+  const [errorMessage, setErrorMessage] = useState(
+    'Something went wrong, try again!'
+  )
+
   const onSubmit = (data) => {
-    post.do(data).then(() => {
-      closeModal()
-      onFinish()
-    })
+    post
+      .do(data)
+      .then(() => {
+        closeModal()
+        onFinish()
+      })
+      .catch(({ errorsMap, message }) => {
+        setErrorMessage(errorsMap || message)
+      })
   }
 
   const fields = watch()
@@ -48,7 +57,7 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
           loading={isWorking}
           showMessage={hasError}
           messageType={isSuccess ? 'success' : 'warning'}
-          message={'Something went wrong, try again!'}
+          message={errorMessage}
         />
 
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -70,10 +79,21 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
   return (
     <Segment basic>
       {isIneligible ? (
-        <p style={{ textAlign: 'center' }}>
-          You cannot connect your Spoke Accounts before having a Hub Account
-          connected.
-        </p>
+        <>
+          <p style={{ textAlign: 'center' }}>
+            You cannot connect your Spoke Accounts before having a Hub Account
+            connected.
+            <br />
+            <strong>
+              If you already did, please try to refresh the screen.
+            </strong>
+          </p>
+          <p style={{ textAlign: 'center' }}>
+            <Button onClick={() => aws.get()} positive>
+              Refresh Screen
+            </Button>
+          </p>
+        </>
       ) : (
         <>
           <p style={{ textAlign: 'center' }}>
