@@ -9,6 +9,7 @@ import access_undenied_aws
 import access_undenied_aws.analysis
 import access_undenied_aws.cli
 import access_undenied_aws.common
+from access_undenied_aws.common import AccessDeniedReason
 import access_undenied_aws.organizations
 import boto3
 import sentry_sdk
