@@ -90,11 +90,11 @@ To setup the test environment, make sure you have `docker-compose` accessible in
 
 ```json
 {
-  "host": "localhost",
-  "updated_by": "curtis@noq.dev",
+  "host": "cloudumidev_com",
+  "updated_by": "noq_automated_account_management",
   "id": "master",
-  "updated_at": "1642358978",
-  "config": "_development_groups_override:\n- noq_admins@noq.dev\n_development_user_override: matt@noq.dev\naccount_ids_to_name:\n  '259868150464': '259868150464'\napplication_admin: noq_admins@noq.dev\nauth:\n  force_redirect_to_identity_provider: false\n  get_groups_from_google: false\n  get_user_by_oidc: false\ncache_resource_templates:\n  repositories:\n  - authentication_settings:\n      email: terraform@noq.dev\n    main_branch_name: master\n    name: consoleme\n    repo_url: https://github.com/Netflix/consoleme\n    resource_formats:\n    - terraform\n    resource_type_parser: null\n    terraform:\n      path_suffix: .tf\n    type: git\n    web_path: https://github.com/Netflix/consoleme\ncache_self_service_typeahead:\n  cache_resource_templates: true\nchallenge_url:\n  enabled: true\ncloud_credential_authorization_mapping:\n  role_tags:\n    authorized_groups_cli_only_tags:\n    - noq-authorized-cli-only\n    authorized_groups_tags:\n    - noq-authorized\n    - consoleme-authorized\ndevelopment: true\nenvironment: test\nget_user_by_oidc_settings:\n  access_token_audience: noq\n  access_token_response_key: access_token\n  client_scopes:\n  - email\n  - openid\n  grant_type: authorization_code\n  id_token_response_key: id_token\n  jwt_email_key: email\n  jwt_groups_key: groups\n  jwt_verify: true\n  metadata_url: https://accounts.google.com/.well-known/openid-configuration\n  resource: noq_tenant\ngoogle:\n  credential_subject:\n    noq.dev: curtis@noq.dev\nheaders:\n  identity:\n    enabled: false\n  role_login:\n    enabled: true\npolicies:\n  pre_role_arns_to_assume:\n  - external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43\n    role_arn: arn:aws:iam::259868150464:role/ConsoleMeCentralRole\n  role_name: ConsoleMeSpokeRole\nsecrets:\n  jwt_secret: 0oti94rDtoGaiTnU4cxhNsylIaVB6EOLC-CVNBFlwYo\nsite_config:\n  landing_url: /\ntenant_details:\n  creation_time: '2021-12-17T15:55:43.960096'\n  creator: curtis@noq.dev\n  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43\nurl: http://localhost:8092\n"
+  "updated_at": "1649449291",
+  "config": "_development_user_override: user@noq.dev\n_development_groups_override:\n  - engineering@noq.dev\ncloud_credential_authorization_mapping:\n  role_tags:\n    authorized_groups_cli_only_tags:\n      - noq-authorized-cli-only\n    authorized_groups_tags:\n      - noq-authorized\n    enabled: true\nchallenge_url:\n  enabled: true\nenvironment: dev\nhub_account:\n  name: NoqCentralRoleLocalDev\n  account_id: '759357822767'\n  account_name: 'development'\n  role_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev\n  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43\npolicies:\n  role_name: NoqSpokeRoleLocalDev\n  ip_restrictions: false\nspoke_accounts:\n  - name: NoqSpokeRoleLocalDev\n    account_name: 'development'\n    account_id: '759357822767'\n    role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev\n    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43\n    hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev\n    master_for_account: false\norg_accounts:\n  - org_id: test_org\n    account_id: 123456789012\n    account_name: test_account\n    owner: user\ntenant_details:\n  external_id: localhost\n  creator: user@noq.dev\n  creation_time: 1649259401\nsite_config:\n  landing_url: /\nheaders:\n  identity:\n    enabled: false\n  role_login:\n    enabled: true\nurl: https://cloudumidev.com\napplication_admin: user@noq.dev\nsecrets:\n  jwt_secret: 'UZP_k8KP7eG6epr8eUEYkbVZnKf-SWpcvsc807B4i9g'\n  auth:\n    oidc:\n      client_id: 'j14h62of81s6s5f2ivfkdfe3v'\n      client_secret: '1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh'\n  cognito:\n    config:\n      user_pool_id: 'us-east-1_CNoZribID'\n      user_pool_client_id: 'j14h62of81s6s5f2ivfkdfe3v'\n      user_pool_client_secret: '1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh'\naccount_ids_to_name:\n  \"759357822767\": \"development\"\nauth:\n  challenge_url:\n    enabled: true\n  get_user_by_oidc: true\nget_user_by_oidc_settings:\n  client_scopes:\n    - email\n    - openid\n  resource: noq_tenant\n  metadata_url: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_CNoZribID/.well-known/openid-configuration\n  jwt_verify: true\n  jwt_email_key: email\n  jwt_groups_key: \"cognito:groups\"\n  grant_type: authorization_code\n  id_token_response_key: id_token\n  access_token_response_key: access_token\n  access_token_audience: null\naws:\n  automatically_update_role_trust_policies: false\n"
 }
 ```
 
@@ -103,14 +103,11 @@ To setup the test environment, make sure you have `docker-compose` accessible in
 
 ## Local environment run
 
-- Make sure the following entries are in your `/etc/hosts` file:
-
-  127.0.0.1 cloudumi-dynamodb
-  127.0.0.1 cloudumi-redis
-
+- Make sure you've [setup your environment](https://perimy.atlassian.net/wiki/spaces/MAIN/pages/41648129/Development+Environment+Setup)
 - Launch dependency services: `bazelisk run //deploy/local:deps-only`
 - `bazelisk run //api:bin`: to run the API in the local environment
 - `bazelisk run //common/celery_tasks:bin`: to run the Celery workers in the local environment
+- Navigate to http://cloudumidev.com
 
 ## Container environment run
 
