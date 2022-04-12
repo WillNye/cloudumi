@@ -1,7 +1,11 @@
 from common.config import config
 from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
 from common.lib.aws.iam import get_role_managed_policy_documents
-from common.lib.aws.utils import condense_statements
+from common.lib.aws.utils import (
+    condense_statements,
+    get_account_id_from_arn,
+    get_identity_type_from_arn,
+)
 
 
 async def calculate_effective_policy_for_identity(
@@ -10,8 +14,8 @@ async def calculate_effective_policy_for_identity(
     """
     Calculate the effective policy for a given host and arn
     """
-    account_id = arn.split(":")[4]
-    identity_type = arn.split(":")[5].split("/")[0]
+    account_id = await get_account_id_from_arn(arn)
+    identity_type = await get_identity_type_from_arn(arn)
     if identity_type == "role":
         identity = await fetch_iam_role(
             account_id, arn, host, force_refresh=force_refresh, run_sync=True
