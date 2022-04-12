@@ -1,3 +1,5 @@
+import asyncio
+
 import boto3
 
 from api.handlers.model_handlers import (
@@ -167,6 +169,7 @@ class SsoIdpProviderConfigurationCrudHandler(IdpConfigurationCrudHandler):
 class CognitoCrudHandler(MultiItemConfigurationCrudHandler):
     _config_key = "Unused"
     _user_pool_id = None
+    _user_pool_region = None
 
     @property
     def user_pool_id(self) -> str:
@@ -182,6 +185,20 @@ class CognitoCrudHandler(MultiItemConfigurationCrudHandler):
         self._user_pool_id = user_pool_id
         return user_pool_id
 
+    @property
+    def user_pool_region(self) -> str:
+        if user_pool_region := self._user_pool_region:
+            return user_pool_region
+
+        user_pool_region = config.get_host_specific_key(
+            "secrets.cognito.config.user_pool_region", self.ctx.host, config.region
+        )
+        if not user_pool_region:
+            raise ValueError("Cognito user pool region not configured")
+
+        self._user_pool_region = user_pool_region
+        return user_pool_region
+
 
 class CognitoUserCrudHandler(CognitoCrudHandler):
     _model_class = CognitoUser
@@ -194,7 +211,7 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
             self.user_pool_id, client=cognito_idp
         ):
             user_dict: dict = user.dict()
-            user_dict.pop("TemporaryPassword")
+            user_dict.pop("TemporaryPassword", None)
             for attr in user_dict.get("Attributes", []):
                 if attr["Name"] == "email":
                     user_dict["Username"] = attr["Value"]
@@ -210,12 +227,14 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
         try:
             # Update the resource
             cognito_user = self._model_class(**data)
-            cognito_user.Groups = [
-                x
-                for x in await identity.get_identity_user_groups(
-                    self.user_pool_id, cognito_user, client=cognito_idp
-                )
-            ]
+            cognito_user.Groups = await asyncio.gather(
+                *[
+                    identity.get_identity_group(
+                        self.user_pool_id, group, client=cognito_idp
+                    )
+                    for group in cognito_user.Groups
+                ]
+            )
             await identity.upsert_identity_user_group(
                 self.user_pool_id, cognito_user, client=cognito_idp
             )

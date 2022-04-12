@@ -73,3 +73,5 @@ _global_:
             port: 6379
   sentry:
     dsn: https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191
+  google_analytics:
+    tracking_id: G-P5K1SQF3P6

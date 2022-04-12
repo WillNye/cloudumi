@@ -458,7 +458,6 @@ async def create_identity_user(
         UserPoolId=user_pool_id,
         Username=user.Username,
         UserAttributes=user_attributes,
-        TemporaryPassword=user.TemporaryPassword,
         DesiredDeliveryMediums=delivery_mediums,
     )
     user_update = CognitoUser(**response.get("User", {}))

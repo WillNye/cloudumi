@@ -2176,6 +2176,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^Google$"
         provider_type:
           type: string
           description: The identity provider type.
@@ -2193,6 +2194,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^SAML$"
         provider_type:
           type: string
           description: The identity provider type.
@@ -2241,6 +2243,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^OIDC$"
         provider_type:
           type: string
           description: The identity provider type.
@@ -2273,10 +2276,6 @@ components:
               Value:
                 type: string
                 description: attribute value - reference https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html#CognitoIdentityProvider.Client.admin_create_user
-        TemporaryPassword:
-          type: string
-          description: A temporary password to set on the account after creation
-          default: T3mpP@ss!
         Enabled:
           type: boolean
         MFAOptions:
