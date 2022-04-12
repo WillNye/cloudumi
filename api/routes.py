@@ -1,5 +1,8 @@
 import os
 
+from api.handlers.v3.automatic_policy_request_handler.aws import (
+    AutomaticPolicyRequestHandler,
+)
 from common.handlers.base import AuthenticatedStaticFileHandler
 
 """Web routes."""
@@ -211,6 +214,10 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
+        (
+            r"/api/v3/automatic_policy_request_handler/aws/?",
+            AutomaticPolicyRequestHandler,
+        ),
         (r"/api/v3/services/aws/account/hub/?", HubAccountConfigurationCrudHandler),
         (
             r"/api/v3/services/aws/account/spoke/?",
