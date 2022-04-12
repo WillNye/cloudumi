@@ -1,2 +1,2 @@
 build --disk_cache=~/.bazel/cache
-test --test_output streamed
+test --test_output errors

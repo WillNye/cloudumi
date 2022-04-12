@@ -14,6 +14,7 @@ from common.lib.auth import (
     can_create_roles,
     can_delete_iam_principals,
     can_delete_iam_principals_app,
+    get_accounts_user_can_view_resources_for,
 )
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.utils import (
@@ -363,12 +364,19 @@ class RoleDetailHandler(BaseAPIV2Handler):
         error = ""
 
         try:
+            allowed_accounts_for_viewing_resources = (
+                await get_accounts_user_can_view_resources_for(
+                    self.user, self.groups, host
+                )
+            )
+            if account_id not in allowed_accounts_for_viewing_resources:
+                raise Exception(
+                    f"User is not authorized to view resources for account {account_id}"
+                )
             role_details = await get_role_details(
                 account_id, role_name, host, extended=True, force_refresh=force_refresh
             )
         except Exception as e:
-            # TODO remove
-            raise
             sentry_sdk.capture_exception()
             log.error({**log_data, "error": e}, exc_info=True)
             role_details = None
@@ -422,9 +430,14 @@ class RoleDetailHandler(BaseAPIV2Handler):
             "account": account_id,
             "role": role_name,
         }
-
+        allowed_accounts_for_viewing_resources = (
+            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+        )
         can_delete_role = can_delete_iam_principals(self.user, self.groups, host)
-        if not can_delete_role:
+        if (
+            account_id not in allowed_accounts_for_viewing_resources
+            or not can_delete_role
+        ):
             stats.count(
                 f"{log_data['function']}.unauthorized",
                 tags={
@@ -507,9 +520,15 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             return
 
         app_name = self.requester.get("name")
+        allowed_accounts_for_viewing_resources = (
+            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+        )
         can_delete_role = can_delete_iam_principals_app(app_name, host)
 
-        if not can_delete_role:
+        if (
+            account_id not in allowed_accounts_for_viewing_resources
+            or not can_delete_role
+        ):
             stats.count(
                 f"{log_data['function']}.unauthorized",
                 tags={
@@ -585,6 +604,13 @@ class RoleDetailAppHandler(BaseMtlsHandler):
         error = ""
 
         try:
+            allowed_accounts_for_viewing_resources = (
+                await get_accounts_user_can_view_resources_for(
+                    self.user, self.groups, host
+                )
+            )
+            if account_id not in allowed_accounts_for_viewing_resources:
+                raise Exception("User is not authorized to view this resource")
             role_details = await get_role_details(
                 account_id, role_name, host, extended=True, force_refresh=force_refresh
             )
@@ -621,6 +647,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
             "ip": self.ip,
             "host": host,
         }
+
         can_create_role = can_create_roles(self.user, self.groups, host)
         if not can_create_role:
             stats.count(
@@ -684,7 +711,7 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
 
     async def get(self):
         """
-        GET /api/v2/get_roles - Endpoint used to get details of eligible roles. Used by weep and newt.
+        GET /api/v2/get_roles - Endpoint used to get details of eligible roles. Used by weep.
         ---
         get:
             description: Returns a json-encoded list of objects of eligible roles for the user.

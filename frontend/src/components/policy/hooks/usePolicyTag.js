@@ -82,16 +82,15 @@ const usePolicyTag = () => {
   const handleTagSave = async ({
     adminAutoApprove,
     justification,
-    // expirationDate,
+    expirationDate,
   }) => {
     return sendRequestV2({
       justification,
       admin_auto_approve: adminAutoApprove,
+      expiration_date: expirationDate,
       changes: {
         changes: state.tagChanges,
       },
-      //TODO: https://perimy.atlassian.net/browse/SAAS-365
-      // expiration_date: expirationDate,
     })
   }
 

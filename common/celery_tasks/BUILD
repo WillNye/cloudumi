@@ -51,7 +51,6 @@ filegroup(
         "auth.py",
         "celery_tasks.py",
         "run.py",
-        "settings.py",
     ),
 )
 

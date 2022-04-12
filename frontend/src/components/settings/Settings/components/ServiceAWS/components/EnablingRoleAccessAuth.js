@@ -8,7 +8,7 @@ import { useHelpModal } from 'lib/hooks/useHelpModal'
 export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
   const { get, post } = useApi('services/aws/role-access/credential-brokering')
 
-  const { toast, success } = useToast()
+  const { error, toast, success } = useToast()
 
   const { QuestionMark } = useHelpModal()
 
@@ -23,10 +23,15 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
   const handleChange = (event, { checked }) => {
     const action = checked ? 'enable' : 'disable'
     toast(`Please wait, we are working to ${action} Role Access Authorization`)
-    post.do(null, action).then(() => {
-      success(`Role Access Authorization is ${action}d`)
-      onChange(checked)
-    })
+    post
+      .do(null, action)
+      .then(() => {
+        success(`Role Access Authorization is ${action}d`)
+        onChange(checked)
+      })
+      .catch(({ errorsMap, message }) => {
+        error(errorsMap || message)
+      })
   }
 
   const isWorking = get?.status !== 'done' || post?.status === 'working'

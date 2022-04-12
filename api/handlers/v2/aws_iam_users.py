@@ -6,7 +6,10 @@ import tornado.escape
 
 from common.config import config
 from common.handlers.base import BaseAPIV2Handler
-from common.lib.auth import can_delete_iam_principals
+from common.lib.auth import (
+    can_delete_iam_principals,
+    get_accounts_user_can_view_resources_for,
+)
 from common.lib.aws.fetch_iam_principal import fetch_iam_user
 from common.lib.aws.utils import delete_iam_user
 from common.lib.generic import str2bool
@@ -57,6 +60,15 @@ class UserDetailHandler(BaseAPIV2Handler):
         error = ""
 
         try:
+            allowed_accounts_for_viewing_resources = (
+                await get_accounts_user_can_view_resources_for(
+                    self.user, self.groups, host
+                )
+            )
+            if account_id not in allowed_accounts_for_viewing_resources:
+                raise Exception(
+                    f"User does not have permission to view resources for account {account_id}"
+                )
             user_details = await get_user_details(
                 account_id, user_name, host, extended=True, force_refresh=force_refresh
             )
@@ -96,9 +108,15 @@ class UserDetailHandler(BaseAPIV2Handler):
             "iam_user_name": iam_user_name,
             "host": host,
         }
+        allowed_accounts_for_viewing_resources = (
+            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+        )
 
         can_delete_principal = can_delete_iam_principals(self.user, self.groups, host)
-        if not can_delete_principal:
+        if (
+            account_id not in allowed_accounts_for_viewing_resources
+            or not can_delete_principal
+        ):
             stats.count(
                 f"{log_data['function']}.unauthorized",
                 tags={

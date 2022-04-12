@@ -646,6 +646,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/CommentModel"
+            expiration_date:
+              type: integer
+              example: 20210905
+              description: Date to expire requested policy, in the format of YYYYmmdd
     ChangeGeneratorModelArray:
       type: object
       required:
@@ -794,10 +798,6 @@ components:
             An array with a list of extra actions the user wants appended to the policy
           items:
             type: string
-        expiration_date:
-          type: integer
-          example: 20210905
-          description: Date to expire requested policy, in the format of YYYYmmdd
     AdvancedChangeGeneratorModel:
       allOf:
         - $ref: "#/components/schemas/ChangeGeneratorModel"
@@ -1141,10 +1141,6 @@ components:
             change_type:
               type: string
               pattern: "inline_policy"
-            expiration_date:
-              type: integer
-              example: 20210905
-              description: Date to expire requested policy, in the format of YYYYmmdd
             policy:
               $ref: "#/components/schemas/PolicyModel"
             old_policy:
@@ -1237,10 +1233,6 @@ components:
               pattern: "managed_policy"
             action:
               $ref: "#/components/schemas/Action"
-            expiration_date:
-              type: integer
-              example: 20210905
-              description: Date to expire requested policy, in the format of YYYYmmdd
     ManagedPolicyResourceChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1700,6 +1692,10 @@ components:
         admin_auto_approve:
           type: boolean
           default: False
+        expiration_date:
+          type: integer
+          example: 20210905
+          description: Date to expire requested policy, in the format of YYYYmmdd
     RequestCreationResponse:
       type: object
       properties:
@@ -1733,6 +1729,19 @@ components:
             - update_change
             - cancel_change
             - move_back_to_pending
+            - update_expiration_date
+    ExpirationDateRequestModificationModel:
+      allOf:
+        - $ref: "#/components/schemas/RequestModificationBaseModel"
+        - type: object
+          required:
+            - expiration_date
+          properties:
+            expiration_date:
+              type: ["integer", "null"]
+              default: null
+              example: 20210905
+              description: Date to expire requested policy, in the format of YYYYmmdd
     CommentRequestModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
@@ -1754,8 +1763,6 @@ components:
               type: object
             change_id:
               type: string
-            expiration_date:
-              type: integer
     ApplyChangeModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
@@ -1811,6 +1818,7 @@ components:
           oneOf:
             - $ref: "#/components/schemas/CommentRequestModificationModel"
             - $ref: "#/components/schemas/UpdateChangeModificationModel"
+            - $ref: "#/components/schemas/ExpirationDateRequestModificationModel"
             - $ref: "#/components/schemas/ApplyChangeModificationModel"
             - $ref: "#/components/schemas/ApproveRequestModificationModel"
             - $ref: "#/components/schemas/MoveToPendingRequestModificationModel"
@@ -1820,6 +1828,7 @@ components:
             mapping:
               add_comment: "#/components/schemas/CommentRequestModificationModel"
               update_change: "#/components/schemas/UpdateChangeModificationModel"
+              update_expiration_date: "#/components/schemas/ExpirationDateRequestModificationModel"
     PolicyRequestModificationResponseModel:
       type: object
       properties:
@@ -2047,10 +2056,7 @@ components:
       type: object
       required:
         - name
-        - account_name
         - account_id
-        - role_arn
-        - external_id
       properties:
         name:
           type: string
@@ -2072,10 +2078,7 @@ components:
       type: object
       required:
         - name
-        - account_name
         - account_id
-        - role_arn
-        - hub_account_arn
       properties:
         name:
           type: string
@@ -2099,6 +2102,28 @@ components:
         master_for_account:
           type: boolean
           description: Optional value (defaults to false) to indicate whether this spoke role has master access rights on the account
+          default: false
+        owners:
+          type: array
+          description: Optional user or group that owns the account
+          items:
+            type: string
+        viewers:
+          type: array
+          description: Optional list of users or groups that can view resources for the account
+          items:
+            type: string
+        delegate_admin_to_owner:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether the owner should be delegated admin rights for policy requests
+            on this account. If this is set, the delegated admin will be able to approve policy requests pertaining to this account.
+          default: false
+        restrict_viewers_of_account_resources:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether to restrict who can view resources from this account in Noq.
+            If this is set, viewers will be restricted to the list of users or groups provided in the `viewers` field.
           default: false
     OrgAccount:
       type: object
@@ -2139,6 +2164,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^Google$"
         provider_type:
           type: string
           description: The identity provider type.
@@ -2156,6 +2182,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^SAML$"
         provider_type:
           type: string
           description: The identity provider type.
@@ -2204,6 +2231,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^OIDC$"
         provider_type:
           type: string
           description: The identity provider type.
@@ -2236,10 +2264,6 @@ components:
               Value:
                 type: string
                 description: attribute value - reference https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html#CognitoIdentityProvider.Client.admin_create_user
-        TemporaryPassword:
-          type: string
-          description: A temporary password to set on the account after creation
-          default: T3mpP@ss!
         Enabled:
           type: boolean
         MFAOptions:
