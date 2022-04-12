@@ -3,7 +3,6 @@ import copy
 import fnmatch
 import json
 import re
-import stat
 import sys
 from collections import defaultdict
 from copy import deepcopy
@@ -2122,17 +2121,27 @@ async def remove_temp_policies(
                 expiration_indicator = (
                     f"noq_delete_on_{extended_request.expiration_date}"
                 )
-                for statement in change.policy.policy_document.get("Statement", []):
+
+                existing_policy = await get_resource_policy(
+                    resource_account,
+                    resource_type,
+                    resource_name,
+                    resource_region,
+                    host,
+                )
+
+                for statement in existing_policy.get("Statement", []):
                     if statement.get("Sid", "") == expiration_indicator:
                         continue
                     new_policy_statement.append(statement)
 
-                change.policy.policy_document.Statement = new_policy_statement
+                existing_policy["Statement"] = new_policy_statement
+
                 if resource_type == "s3":
                     await sync_to_async(iam_client.put_bucket_policy)(
                         Bucket=resource_name,
                         Policy=json.dumps(
-                            change.policy.policy_document, escape_forward_slashes=False
+                            existing_policy, escape_forward_slashes=False
                         ),
                     )
                 elif resource_type == "sns":
@@ -2140,7 +2149,7 @@ async def remove_temp_policies(
                         TopicArn=change.arn,
                         AttributeName="Policy",
                         AttributeValue=json.dumps(
-                            change.policy.policy_document, escape_forward_slashes=False
+                            existing_policy, escape_forward_slashes=False
                         ),
                     )
                 elif resource_type == "sqs":
@@ -2151,7 +2160,7 @@ async def remove_temp_policies(
                         QueueUrl=queue_url.get("QueueUrl"),
                         Attributes={
                             "Policy": json.dumps(
-                                change.policy.policy_document,
+                                existing_policy,
                                 escape_forward_slashes=False,
                             )
                         },
@@ -2160,22 +2169,9 @@ async def remove_temp_policies(
                     await sync_to_async(iam_client.update_assume_role_policy)(
                         RoleName=principal_name,
                         PolicyDocument=json.dumps(
-                            change.policy.policy_document, escape_forward_slashes=False
+                            existing_policy, escape_forward_slashes=False
                         ),
                     )
-                    # force refresh the role for which we just changed the assume role policy doc
-                    await fetch_iam_role(
-                        resource_account, change.arn, host, force_refresh=True
-                    )
-
-                change.status = Status.expired
-                should_update_policy_request = True
-
-            except iam_client.exceptions.NoSuchEntityException:
-                log_data["message"] = "Policy was not found"
-                log_data["error"] = f"{change.arn} was not attached to {resource_name}"
-                log.error(log_data, exc_info=True)
-                sentry_sdk.capture_exception()
 
                 change.status = Status.expired
                 should_update_policy_request = True

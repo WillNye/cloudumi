@@ -2705,18 +2705,28 @@ async def parse_and_apply_policy_request_modification(
         expiration_date_model = ExpirationDateRequestModificationModel.parse_obj(
             request_changes
         )
-        extended_request.expiration_date = expiration_date_model.expiration_date
+        expiration_date = expiration_date_model.expiration_date
+        extended_request.expiration_date = expiration_date
 
         for change in extended_request.changes.changes:
             if change.change_type in ["inline_policy"]:
                 change.policy_name = await generate_policy_name(
-                    None, user, host, expiration_date_model.expiration_date
+                    None, user, host, expiration_date
                 )
 
             if change.change_type in ["resource_policy", "sts_resource_policy"]:
-                change.policy.policy_document["Statement"][0][
-                    "Sid"
-                ] = f"noq_delete_on_{expiration_date_model.expiration_date}"
+                new_statement = []
+                Statements = change.policy.policy_document.get("Statement", [])
+
+                for statement in Statements:
+                    statement["Sid"] = (
+                        "noq_generated_statement"
+                        if not expiration_date
+                        else f"noq_delete_on_{expiration_date}"
+                    )
+                    new_statement.append(statement)
+
+                change.policy.policy_document["Statement"] = new_statement
 
         success_message = "Successfully updated expiration date"
         error_message = "Error occurred updating expiration date"
