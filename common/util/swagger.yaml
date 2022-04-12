@@ -2164,6 +2164,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^Google$"
         provider_type:
           type: string
           description: The identity provider type.
@@ -2181,6 +2182,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^SAML$"
         provider_type:
           type: string
           description: The identity provider type.
@@ -2229,6 +2231,7 @@ components:
         provider_name:
           type: string
           description: The identity provider name.
+          pattern: "^OIDC$"
         provider_type:
           type: string
           description: The identity provider type.
