@@ -675,7 +675,9 @@ class GoogleOIDCSSOIDPProvider(BaseModel):
         ...,
         description="OpenID Connect Clients use scope values as defined in 3.3 of OAuth 2.0 [RFC6749] to specify what access privileges are being requested for Access Tokens. The scopes associated with Access Tokens determine what resources will be available when they are used to access OAuth 2.0 protected endpoints. For OpenID Connect, scopes can be used to request that specific sets of information be made available as Claim Values. This document describes only the scope values used by OpenID Connect.",
     )
-    provider_name: str = Field(..., description="The identity provider name.")
+    provider_name: constr(regex=r"^Google$") = Field(
+        ..., description="The identity provider name."
+    )
     provider_type: constr(regex=r"^Google$") = Field(
         ..., description="The identity provider type."
     )
@@ -685,7 +687,9 @@ class SamlOIDCSSOIDPProvider(BaseModel):
     MetadataURL: str = Field(
         ..., description="The metadata defining the SAML authentication"
     )
-    provider_name: str = Field(..., description="The identity provider name.")
+    provider_name: constr(regex=r"^SAML$") = Field(
+        ..., description="The identity provider name."
+    )
     provider_type: constr(regex=r"^SAML$") = Field(
         ..., description="The identity provider type."
     )
@@ -731,7 +735,9 @@ class OIDCSSOIDPProvider(BaseModel):
     attributes_url_add_attributes: Optional[str] = Field(
         None, description="a read-only property that is set automatically"
     )
-    provider_name: str = Field(..., description="The identity provider name.")
+    provider_name: constr(regex=r"^OIDC$") = Field(
+        ..., description="The identity provider name."
+    )
     provider_type: constr(regex=r"^OIDC$") = Field(
         ..., description="The identity provider type."
     )
