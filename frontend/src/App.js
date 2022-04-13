@@ -147,7 +147,7 @@ function App() {
           component={Settings}
         />
         <ProtectedRoute
-          // key='settings'
+          key='settings'
           exact
           path='/settings/:tabName'
           component={Settings}

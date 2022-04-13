@@ -140,25 +140,30 @@ export const AuthProvider = ({ children }) => {
       body: body,
     })
       .then((response) => {
+        console.log('opa', response)
         if (
           response.status === 403 &&
           response?.type === 'redirect' &&
           response?.reason === 'unauthenticated'
         ) {
-          fetch('/api/v1/auth?redirect_url=' + window.location.href, {
+          console.log('eita')
+        fetch('/api/v1/auth?redirect_url=' + window.location.href, {
             headers: {
               'X-Requested-With': 'XMLHttpRequest',
               Accept: 'application/json',
             },
-          }).then((resp) => {
+          })
+          .then((resp) => {
+            console.log('resp?.type', resp?.type)
             if (resp?.type === 'redirect') {
               window.location.href = resp.redirect_url
             }
           })
         } else if (response?.status === 401) {
+          console.log('response?.status === 401')
           setIsSessionExpired(true)
         }
-
+        console.log('bar')
         try {
           return response.json()
         } catch {
@@ -166,14 +171,18 @@ export const AuthProvider = ({ children }) => {
             `Status: ${response.status}, Reason: ${response.statusText}`
           )
         }
+
+console.log('foooo')
       })
       .then((data) => {
+        console.log('asasas')
+
         return data
       })
       .catch((error) => {
         // fetch will raise an exception if it fetches an data that is not json such as html showing re-authentication
         // is required. This is to handle such case where ALB type of authentication is being used.
-        console.error(error)
+        console.error('foo', error, location, method, json, state.isSessionExpired)
         setIsSessionExpired(true)
         return null
       })
