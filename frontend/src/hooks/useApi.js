@@ -35,7 +35,7 @@ const usePersistence = create(
   )
 )
 
-export const url = 'api/v3'
+export const url = '/api/v3'
 
 const useInnerUtils = (persistedState) => {
   const [state, setState] = useState({
