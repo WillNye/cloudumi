@@ -101,36 +101,6 @@ class Configuration(metaclass=Singleton):
                 "https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials"
             )
 
-    # def raise_if_invalid_aws_credentials(self):
-    #     try:
-    #         session_kwargs = self.get("_global_.boto3.session_kwargs", {})
-    #         session = boto3.Session(**session_kwargs)
-    #         identity = session.client(
-    #             "sts", **self.get("_global_.boto3.client_kwargs", {})
-    #         ).get_caller_identity()
-    #         identity_arn_with_session_name = (
-    #             identity["Arn"]
-    #             .replace(":sts:", ":iam:")
-    #             .replace("assumed-role", "role")
-    #         )
-    #         identity_arn = "/".join(identity_arn_with_session_name.split("/")[0:2])
-    #         node_role_arn = self.get("_global_.integrations.aws.node_role", {})
-    #         if identity_arn != node_role_arn:
-    #             raise Exception(
-    #                 f"AWS credentials are not set to the correct role. Expected {node_role_arn}, got {identity_arn}"
-    #             )
-    #     except botocore.exceptions.NoCredentialsError:
-    #         raise Exception(
-    #             "We were unable to detect valid AWS credentials. Noq needs valid AWS credentials to "
-    #             "run.\n\n"
-    #             "For local development: Provide credentials via environment variables, in your "
-    #             "~/.aws/credentials file, or via Weep EC2 IMDS / ECS credential provider emulation.\n\n"
-    #             "For a production configuration, please attach an IAM role to your instance(s) or container(s) through"
-    #             "AWS.\n\n"
-    #             "For more information, see how the Python AWS SDK retrieves credentials here: "
-    #             "https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials"
-    #         )
-
     def load_dynamic_config_from_redis(
         self, log_data: Dict[str, Any], host: str, red=None
     ):
