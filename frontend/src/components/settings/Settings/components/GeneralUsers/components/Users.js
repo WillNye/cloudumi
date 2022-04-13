@@ -12,7 +12,9 @@ import { TableTopBar } from '../../utils'
 import { NewUser } from '../forms/NewUser'
 
 export const Users = () => {
-  const { get, post, remove } = useApi('auth/cognito/users')
+  const { get, post, remove } = useApi('auth/cognito/users', {
+    shouldPersist: true,
+  })
 
   const [defaultValues, setDefaultValues] = useState()
 
@@ -20,7 +22,9 @@ export const Users = () => {
 
   const { openModal, closeModal, ModalComponent } = useModal('Add User')
 
-  useEffect(() => get.do(), [])
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) get.do()
+  }, [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {

@@ -6,19 +6,24 @@ import { useToast } from 'lib/Toast'
 import { useHelpModal } from 'lib/hooks/useHelpModal'
 
 export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
-  const { get, post } = useApi('services/aws/role-access/credential-brokering')
+  const { get, post } = useApi(
+    'services/aws/role-access/credential-brokering',
+    { shouldPersist: true }
+  )
 
   const { error, toast, success } = useToast()
 
   const { QuestionMark } = useHelpModal()
 
-  useEffect(
-    () =>
-      get.do().then((res) => {
-        onChange(res?.state)
-      }),
-    []
-  )
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) {
+      get.do().then((data) => {
+        onChange(data?.state)
+      })
+    } else {
+      onChange(get?.data?.state)
+    }
+  }, [])
 
   const handleChange = (event, { checked }) => {
     const action = checked ? 'enable' : 'disable'
@@ -26,8 +31,9 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
     post
       .do(null, action)
       .then(() => {
-        success(`Role Access Authorization is ${action}d`)
         onChange(checked)
+        success(`Role Access Authorization is ${action}d`)
+        get.do()
       })
       .catch(({ errorsMap, message }) => {
         error(errorsMap || message)

@@ -29,6 +29,7 @@ py_library(
         requirement("sentry_sdk"),
         requirement("aiohttp"),
         requirement("ujson"),
+        requirement("validators"),
     ],
     visibility = ["//visibility:public"],
 )

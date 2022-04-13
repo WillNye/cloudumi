@@ -149,6 +149,7 @@ const ConsoleMeHeader = () => {
     return (
       <Dropdown
         inline
+        text={user.user}
         options={dropdownOptions}
         defaultValue={dropdownOptions[0].value}
         icon={null}
