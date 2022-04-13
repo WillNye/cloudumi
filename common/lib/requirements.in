@@ -1,9 +1,11 @@
 bcrypt
+blinker
 boto
 cloudaux
 cryptography
 deepdiff
 ed25519
+Jinja2
 parliament
 policy_sentry
 pyjwt

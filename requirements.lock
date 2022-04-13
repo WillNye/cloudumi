@@ -65,7 +65,11 @@ billiard==3.6.4.0
     #   -r ./common/celery_tasks/requirements.in
     #   celery
 bleach==4.1.0
-    # via -r ./common/util/requirements.in
+    # via
+    #   -r ./common/util/requirements.in
+    #   readme-renderer
+blinker==1.4
+    # via -r ./common/lib/requirements.in
 boto==2.49.0
     # via
     #   -r ./api/requirements.in
@@ -275,6 +279,7 @@ isodate==0.6.1
     # via python3-saml
 jinja2==3.0.3
     # via
+    #   -r ./common/lib/requirements.in
     #   -r ./util/terraform_config_parser/requirements.in
     #   cloudsplaining
     #   mkdocs

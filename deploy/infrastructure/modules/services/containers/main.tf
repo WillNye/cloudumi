@@ -175,6 +175,7 @@ resource "aws_iam_role" "ecs_task_role" {
       "Statement" : [
         {
           "Action" : [
+            "access-analyzer:ValidatePolicy",
             "ssmmessages:CreateControlChannel",
             "ssmmessages:CreateDataChannel",
             "ssmmessages:OpenControlChannel",

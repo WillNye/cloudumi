@@ -1558,6 +1558,15 @@ components:
               type: array
               items:
                 type: object # TODO: make tags schema
+            effective_policy:
+              type: object
+              description: |-
+                "The minified effective policy for the principal. This is effectively a combination "
+                "of the inline policies and managed policies of the principal. "
+            effective_policy_repoed:
+              type: object
+              description: |-
+                "The minified effective policy for the principal, with unused permissions removed."
             config_timeline_url:
               type: string
               description: A link to the role's AWS Config Timeline
@@ -1647,6 +1656,9 @@ components:
               type: boolean
               default: False
             managed_policies:
+              type: boolean
+              default: False
+            max_session_duration:
               type: boolean
               default: False
     CreateCloneRequestResponse:

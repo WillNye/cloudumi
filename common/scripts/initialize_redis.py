@@ -47,6 +47,7 @@ if args.use_celery:
     celery.cache_managed_policies_across_accounts_for_all_hosts()
     celery.cache_resources_from_aws_config_across_accounts_for_all_hosts()
     celery.cache_policies_table_details_for_all_hosts.apply_async(countdown=180)
+    celery.cache_access_advior_across_accounts_for_all_hosts()
     celery.cache_policy_requests_for_all_hosts()
     celery.cache_credential_authorization_mapping_for_all_hosts.apply_async(
         countdown=180
@@ -81,6 +82,9 @@ else:
                             celery.cache_managed_policies_for_account, account_id, host
                         ),
                         executor.submit(
+                            celery.cache_access_advisor_for_account, host, account_id
+                        ),
+                        executor.submit(
                             celery.cache_resources_from_aws_config_for_account,
                             account_id,
                             host,
@@ -99,6 +103,7 @@ else:
                 celery.cache_sns_topics_for_account(account_id, host)
                 celery.cache_sqs_queues_for_account(account_id, host)
                 celery.cache_managed_policies_for_account(account_id, host)
+                celery.cache_access_advisor_for_account(host, account_id)
                 celery.cache_resources_from_aws_config_for_account(account_id, host)
         # Forces writing config to S3
         celery.cache_iam_resources_across_accounts(

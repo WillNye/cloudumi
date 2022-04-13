@@ -1,0 +1,53 @@
+import boto3
+
+client = boto3.client('iam')
+identity_name = "{{ identity_name }}"
+new_policy_name = "{{ new_policy_name }}"
+new_policy_document = '''{{ new_policy_document }}'''
+
+# Attach new inline policy
+{% if identity_type == "role" -%}
+client.put_role_policy(
+    RoleName=identity_name,
+    PolicyName=new_policy_name,
+    PolicyDocument=new_policy_document
+)
+
+{% elif identity_type == "user" -%}
+client.put_user_policy(
+    UserName=identity_name,
+    PolicyName=new_policy_name,
+    PolicyDocument=new_policy_document
+)
+{% endif -%}
+
+{% for managed_policy_arn in managed_policy_arns -%}
+# Detach existing managed policies
+{% if identity_type == "role" -%}
+client.detach_role_policy(
+    RoleName=identity_name,
+    PolicyArn='{{ managed_policy_arn}}'
+)
+{% elif identity_type == "user" -%}
+client.detach_user_policy(
+    UserName=identity_name,
+    PolicyArn='{{ managed_policy_arn}}'
+)
+{% endif -%}
+{% endfor -%}
+{% for policy_name in inline_policy_names -%}
+{%- if policy_name == new_policy_name -%}
+{% continue -%}
+{% endif -%}
+{% if identity_type == "role" -%}
+client.delete_role_policy(
+    RoleName=identity_name,
+    PolicyName='{{ policy_name }}'
+)
+{% elif identity_type == "user" -%}
+client.delete_user_policy(
+    UserName=identity_name,
+    PolicyName='{{ policy_name }}'
+)
+{% endif -%}
+{% endfor -%}

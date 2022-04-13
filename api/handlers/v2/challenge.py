@@ -296,7 +296,9 @@ class ChallengeValidatorHandler(BaseHandler):
             requested_challenge_token,
             json.dumps(valid_user_challenge),
         )
-        message = "You've successfully authenticated to ConsoleMe and may now close this page."
+        message = (
+            "You've successfully authenticated to Noq and may now close this page."
+        )
         self.write({"message": message})
 
 

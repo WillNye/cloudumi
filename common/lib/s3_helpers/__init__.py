@@ -28,7 +28,7 @@ async def get_s3_bucket_for_host(host):
 
 
 async def is_object_older_than_seconds(
-    key: str,
+    s3_key: str,
     older_than_seconds: int,
     host: str,
     bucket: Optional[str] = None,
@@ -45,6 +45,11 @@ async def is_object_older_than_seconds(
             "`bucket` not defined, and we can't find the default bucket in "
             "the configuration key `s3_cache_bucket`."
         )
+
+    # Force prefixing by host
+    if s3_key:
+        s3_key = f"{host}/{s3_key}"
+
     now = datetime.utcnow().replace(tzinfo=pytz.utc)
     if not s3_client:
         session = get_session_for_tenant(host)
@@ -53,7 +58,7 @@ async def is_object_older_than_seconds(
             **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
     try:
-        res = await sync_to_async(s3_client.head_object)(Bucket=bucket, Key=key)
+        res = await sync_to_async(s3_client.head_object)(Bucket=bucket, Key=s3_key)
     except ClientError as e:
         # If file is not found, we'll tell the user it's older than the specified time
         if e.response.get("Error", {}).get("Code") == "404":
