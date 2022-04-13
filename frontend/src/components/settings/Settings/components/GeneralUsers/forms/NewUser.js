@@ -42,7 +42,7 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
   const isSuccess = post?.status === 'done' && !post?.error
 
   const hasError = post?.error && post?.status === 'done'
-  console.log(defaultValues)
+
   return (
     <Segment basic>
       <DimmerWithStates
