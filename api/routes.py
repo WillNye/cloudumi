@@ -244,10 +244,6 @@ def make_app(jwt_validator=None):
             EffectiveUnusedRolePolicyHandler,
         ),
         (
-            r"/api/v3/services/aws/role-access/automatic-update/enabled/?",
-            AutomaticRoleTrustPolicyUpdateHandler,
-        ),
-        (
             r"/api/v3/services/aws/role-access/automatic-update/(?P<_enabled>enable|disable)/?",
             AutomaticRoleTrustPolicyUpdateHandler,
         ),

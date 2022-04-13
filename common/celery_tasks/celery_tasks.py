@@ -926,6 +926,7 @@ def cache_policies_table_details(host=None) -> bool:
 
 
 @app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
+@app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
 def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[str, Any]:
     if not host:
         raise Exception("`host` must be passed to this task.")
@@ -1738,6 +1739,16 @@ def cache_sqs_queues_for_account(
                 assume_role=spoke_role_name,
                 region=region,
                 read_only=True,
+                sts_client_kwargs=dict(
+                    region_name=config.region,
+                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                ),
+                client_kwargs=config.get_host_specific_key(
+                    "boto3.client_kwargs", host, {}
+                ),
+                session_name=sanitize_session_name(
+                    "consoleme_cache_sqs_queues_for_account"
+                ),
             )
 
             paginator = client.get_paginator("list_queues")
