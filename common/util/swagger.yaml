@@ -2108,11 +2108,13 @@ components:
           description: Optional user or group that owns the account
           items:
             type: string
+          default: []
         viewers:
           type: array
           description: Optional list of users or groups that can view resources for the account
           items:
             type: string
+          default: []
         delegate_admin_to_owner:
           type: boolean
           description: |-

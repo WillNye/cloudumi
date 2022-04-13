@@ -3,7 +3,6 @@ import random
 import string
 
 import tornado.escape
-import ujson as json
 from asgiref.sync import sync_to_async
 
 from common.config import config
@@ -49,7 +48,7 @@ class AutomaticPolicyRequestHandler(BaseHandler):
             session_name=sanitize_session_name("noq_automatic_policy_request_handler"),
         )
         letters = string.ascii_lowercase
-        policy_name = "".join(random.choice(letters) for i in range(10))
+        policy_name = "generated_policy"
         # TODO: Need to ask the policy the question if it already can do what is in the permission
         # TODO: Generate formal permission request / audit trail
         # TODO: Generate more meaningful policy name
@@ -57,9 +56,6 @@ class AutomaticPolicyRequestHandler(BaseHandler):
         await sync_to_async(iam_client.put_role_policy)(
             RoleName=principal_name,
             PolicyName=policy_name,
-            PolicyDocument=json.dumps(
-                data["policy"],
-                escape_forward_slashes=False,
-            ),
+            PolicyDocument=data["policy"],
         )
-        await asyncio.sleep(5)
+        self.write({"applied": True})
