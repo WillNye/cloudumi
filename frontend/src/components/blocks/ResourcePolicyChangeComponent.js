@@ -244,6 +244,7 @@ class ResourcePolicyChangeComponent extends Component {
             <Message.Header>Change cancelled</Message.Header>
             <p>This change has been cancelled and cannot be modified.</p>
           </Message>
+          ``
         </Grid.Column>
       ) : null
 

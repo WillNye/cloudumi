@@ -14,7 +14,8 @@
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         "AWS_REGION": "us-west-2",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev"
+        "AWS_PROFILE": "noq_cluster_dev",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}"
       }
     },
     {
@@ -82,7 +83,8 @@
       "env": {
         // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev"
+        "AWS_PROFILE": "noq_cluster_dev",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}"
       }
     },
     {
@@ -96,6 +98,18 @@
         "PARENT_ENVS": true,
         "PYTHONUNBUFFERED": "1",
         "PYTHONASYNCIODEBUG": "1"
+      }
+    },
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "noq_dev",
+        "PYTHONPATH": "${workspaceFolder}/"
       }
     },
     {

@@ -2,6 +2,7 @@
 #   filename:  swagger.yaml
 #   timestamp: 2022-04-13T15:35:54+00:00
 
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -348,6 +349,14 @@ class ExtendedAwsPrincipalModel(AwsPrincipalModel):
     managed_policies: List[Dict[str, Any]]
     permissions_boundary: Optional[Dict[str, Any]] = None
     tags: List[Dict[str, Any]]
+    effective_policy: Optional[Dict[str, Any]] = Field(
+        None,
+        description='"The minified effective policy for the principal. This is effectively a combination "\n"of the inline policies and managed policies of the principal. "',
+    )
+    effective_policy_repoed: Optional[Dict[str, Any]] = Field(
+        None,
+        description='"The minified effective policy for the principal, with unused permissions removed."',
+    )
     config_timeline_url: Optional[str] = Field(
         None, description="A link to the role's AWS Config Timeline"
     )
@@ -385,6 +394,7 @@ class Options(BaseModel):
     description: Optional[str] = None
     inline_policies: Optional[bool] = False
     managed_policies: Optional[bool] = False
+    max_session_duration: Optional[bool] = False
 
 
 class CloneRoleRequestModel(BaseModel):

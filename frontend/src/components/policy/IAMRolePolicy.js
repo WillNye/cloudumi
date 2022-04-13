@@ -5,12 +5,15 @@ import AssumeRolePolicy from './AssumeRolePolicy'
 import ManagedPolicy from './ManagedPolicy'
 import PermissionsBoundary from './PermissionsBoundary'
 import ServiceControlPolicy from './ServiceControlPolicy'
+import EffectivePermissions from './EffectivePermissions'
 import InlinePolicy from './InlinePolicy'
 import Issues from './Issues'
 import Tags from './Tags'
 
 const IAMRolePolicy = () => {
-  const { resource = {} } = usePolicyContext()
+  const all = usePolicyContext()
+
+  const { resource = {}, resourceEffecivePermissions = {} } = all
 
   const {
     cloudtrail_details = {},
@@ -160,6 +163,22 @@ const IAMRolePolicy = () => {
       },
     },
   ])
+
+  if (resourceEffecivePermissions) {
+    tabs.push({
+      menuItem: {
+        key: 'effective_permissions',
+        content: <>Effective Policy and Unused Permissions</>,
+      },
+      render: () => {
+        return (
+          <Tab.Pane>
+            <EffectivePermissions />
+          </Tab.Pane>
+        )
+      },
+    })
+  }
 
   return (
     <Tab

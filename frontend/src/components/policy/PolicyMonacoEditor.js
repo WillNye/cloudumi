@@ -18,6 +18,7 @@ const editorOptions = {
   },
   scrollBeyondLastLine: false,
   automaticLayout: true,
+  wordWrap: 'wordWrapColumn',
 }
 
 const lintingErrorMapping = {
@@ -484,12 +485,22 @@ export const NewPolicyMonacoEditor = ({ addPolicy, setIsNewPolicy }) => {
   )
 }
 
-export const ReadOnlyPolicyMonacoEditor = ({ policy }) => {
+export const ReadOnlyPolicyMonacoEditor = ({
+  policy,
+  defaultLanguage = 'json',
+  json = true,
+}) => {
   const readOnlyEditorOptions = {
     ...editorOptions,
     readOnly: true,
+    json: json,
+    defaultLanguage: defaultLanguage,
   }
   const editorTheme = getLocalStorageSettings('editorTheme')
+  let policyValue = policy
+  if (json) {
+    policyValue = JSON.stringify(policy, null, '\t')
+  }
   return (
     <>
       <Segment
@@ -503,7 +514,7 @@ export const ReadOnlyPolicyMonacoEditor = ({ policy }) => {
           height='540px'
           defaultLanguage='json'
           theme={editorTheme}
-          value={JSON.stringify(policy, null, '\t')}
+          value={policyValue}
           options={readOnlyEditorOptions}
           onMount={editorDidMount}
           textAlign='center'

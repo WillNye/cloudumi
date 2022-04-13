@@ -99,6 +99,20 @@ To setup the test environment, make sure you have `docker-compose` accessible in
 - `bazelisk run //common/celery_tasks:bin`: to run the Celery workers in the local environment
 - Navigate to https://cloudumidev.com
 
+## Profiling
+
+To profile a function all you have to do is `pip install pyinstrument` and drop in this snippet.
+
+```python
+import pyinstrument
+
+p = pyinstrument.Profiler()
+p.start()
+# function or code snippet to profile
+p.stop()
+p.print(show_all=True)
+```
+
 ## Container environment run
 
 - Launch all services: `bazelisk run //deploy/local:containers-dev`

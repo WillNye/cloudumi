@@ -12,19 +12,21 @@ import { useToast } from 'lib/Toast'
 export const IntegrationSlack = () => {
   const { register, watch } = useForm()
 
-  const { get, post } = useApi('slack')
+  const { get, post } = useApi('slack', { shouldPersist: true })
 
   const [defaultValue, setDefaultValues] = useState('')
 
   const { error, success } = useToast()
 
-  useEffect(
-    () =>
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) {
       get.do().then((data) => {
         setDefaultValues(data?.webhook_url)
-      }),
-    []
-  )
+      })
+    } else {
+      setDefaultValues(get?.data?.webhook_url)
+    }
+  }, [])
 
   const fields = watch()
 

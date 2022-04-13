@@ -116,6 +116,9 @@ from api.handlers.v3.services.aws.role_access import (
     CredentialBrokeringCurrentStateHandler,
     CredentialBrokeringHandler,
 )
+from api.handlers.v3.services.effective_role_policy import (
+    EffectiveUnusedRolePolicyHandler,
+)
 from api.handlers.v3.slack import SlackIntegrationConfigurationCrudHandler
 from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
@@ -244,8 +247,8 @@ def make_app(jwt_validator=None):
             AuthorizedGroupsTagsDeleteHandler,
         ),
         (
-            r"/api/v3/services/aws/role-access/automatic-update/enabled/?",
-            AutomaticRoleTrustPolicyUpdateHandler,
+            r"/api/v3/services/aws/policies/effective/role/(?P<_account_id>\d{12})/(?P<_role_name>[\w-]+)/?",
+            EffectiveUnusedRolePolicyHandler,
         ),
         (
             r"/api/v3/services/aws/role-access/automatic-update/(?P<_enabled>enable|disable)/?",

@@ -69,7 +69,6 @@ const SettingsModal = (props) => {
             <Input
               fluid
               placeholder='Default AWS Console Region'
-              selection
               onChange={updateDefaultAwsConsoleRegion}
               defaultValue={currentSettings.defaultAwsConsoleRegion}
             />
