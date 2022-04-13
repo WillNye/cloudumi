@@ -2606,16 +2606,16 @@ def cache_cloudtrail_denies(host=None):
             "message": "Not running Celery task in inactive region",
         }
     events = detect_cloudtrail_denies_and_update_cache(app, host)
-    if events["new_events"] > 0:
+    if events.get("new_events", 0) > 0:
         # Spawn off a task to cache errors by ARN for the UI
         cache_cloudtrail_errors_by_arn.delay(host=host)
     log_data = {
         "function": function,
         "message": "Successfully cached cloudtrail denies",
         # Total CT denies
-        "num_cloudtrail_denies": events["num_events"],
+        "num_cloudtrail_denies": events.get("num_events", 0),
         # "New" CT messages that we don't already have cached in Dynamo DB. Not a "repeated" error
-        "num_new_cloudtrail_denies": events["new_events"],
+        "num_new_cloudtrail_denies": events.get("new_events", 0),
         "host": host,
     }
     log.debug(log_data)
