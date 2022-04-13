@@ -12,7 +12,9 @@ import { TableTopBar } from '../../utils'
 import { NewUser } from '../forms/NewUser'
 
 export const Users = () => {
-  const { get, post, remove } = useApi('auth/cognito/users', { shouldPersist: true })
+  const { get, post, remove } = useApi('auth/cognito/users', {
+    shouldPersist: true,
+  })
 
   const [defaultValues, setDefaultValues] = useState()
 

@@ -12,7 +12,9 @@ import { NewCIDR } from './forms/NewCIDR'
 import { Bar, Fill } from 'lib/Misc'
 
 export const CIDRBlock = () => {
-  const { get, post, remove } = useApi('services/aws/ip-access', { shouldPersist: true })
+  const { get, post, remove } = useApi('services/aws/ip-access', {
+    shouldPersist: true,
+  })
 
   const { error, success } = useToast()
 
@@ -69,7 +71,12 @@ export const CIDRBlock = () => {
             extras={
               <Bar>
                 <Fill />
-                {get.timestamp.current() && <small><em>Last update: {get.timestamp.current()} </em>&nbsp;&nbsp;&nbsp;</small>}
+                {get.timestamp.current() && (
+                  <small>
+                    <em>Last update: {get.timestamp.current()} </em>
+                    &nbsp;&nbsp;&nbsp;
+                  </small>
+                )}
                 <RefreshButton disabled={isWorking} onClick={handleRefresh} />
               </Bar>
             }

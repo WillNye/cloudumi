@@ -76,7 +76,12 @@ export const RoleAccessAuth = () => {
               extras={
                 <Bar>
                   <Fill />
-                  {get.timestamp.current() && <small><em>Last update: {get.timestamp.current()} </em>&nbsp;&nbsp;&nbsp;</small>}
+                  {get.timestamp.current() && (
+                    <small>
+                      <em>Last update: {get.timestamp.current()} </em>
+                      &nbsp;&nbsp;&nbsp;
+                    </small>
+                  )}
                   <RefreshButton disabled={isWorking} onClick={handleRefresh} />
                 </Bar>
               }

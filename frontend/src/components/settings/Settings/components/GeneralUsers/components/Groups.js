@@ -12,7 +12,9 @@ import { TableTopBar } from '../../utils'
 import { NewGroup } from '../forms/NewGroup'
 
 export const Groups = () => {
-  const { get, post, remove } = useApi('auth/cognito/groups', { shouldPersist: true })
+  const { get, post, remove } = useApi('auth/cognito/groups', {
+    shouldPersist: true,
+  })
 
   const [defaultValues, setDefaultValues] = useState()
 

@@ -146,12 +146,12 @@ function App() {
           path='/settings'
           component={Settings}
         />
-        <ProtectedRoute
+        {/* <ProtectedRoute
           key='settings'
           exact
           path='/settings/:tabName'
           component={Settings}
-        />
+        /> */}
         <ProtectedRoute
           key='downloads'
           exact

@@ -10,34 +10,39 @@ const initialState = {
   status: 'waiting', // waiting/working/done
   error: null,
   empty: true,
-  persisted: false
+  persisted: false,
 }
 
-const usePersistence = create(persist((set, get) => ({
-  update: (key, data) => set({
-    ...get(),
-    [key]: data
-  }),
-  delete: (key) => {
-    const store = { ...get() };
-    delete store[key];
-    set(store);
-  },
-  clear: () => set({})
-}), {
-  name: 'persistence',
-  getStorage: () => sessionStorage,
-}))
+const usePersistence = create(
+  persist(
+    (set, get) => ({
+      update: (key, data) =>
+        set({
+          ...get(),
+          [key]: data,
+        }),
+      delete: (key) => {
+        const store = { ...get() }
+        delete store[key]
+        set(store)
+      },
+      clear: () => set({}),
+    }),
+    {
+      name: 'persistence',
+      getStorage: () => sessionStorage,
+    }
+  )
+)
 
 export const url = 'api/v3'
 
 const useInnerUtils = (persistedState) => {
-
   const [state, setState] = useState({
     ...initialState,
     data: persistedState?.data || null,
     empty: !persistedState?.data,
-    persisted: !!persistedState?.data
+    persisted: !!persistedState?.data,
   })
 
   const buildPath = (pathname = '', customUrl) =>
@@ -75,10 +80,9 @@ const useInnerUtils = (persistedState) => {
 }
 
 const useGet = (commonPathname, options) => {
-
   const { sendRequestCommon } = useAuth()
 
-  const persistedState = usePersistence?.getState()?.[commonPathname];
+  const persistedState = usePersistence?.getState()?.[commonPathname]
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
     useInnerUtils(persistedState)
@@ -88,7 +92,7 @@ const useGet = (commonPathname, options) => {
     reset: resetTimestamp,
     remove,
     current,
-    compare
+    compare,
   } = useTimestamp(commonPathname)
 
   const get = async (pathname) => {
@@ -96,7 +100,10 @@ const useGet = (commonPathname, options) => {
     try {
       const res = await sendRequestCommon(
         null,
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, options?.url),
+        buildPath(
+          `${commonPathname}${pathname ? '/' + pathname : ''}`,
+          options?.url
+        ),
         'get'
       )
       if (options?.shouldPersist) {
@@ -104,8 +111,8 @@ const useGet = (commonPathname, options) => {
           ...usePersistence.getState(),
           [commonPathname]: {
             data: res?.data,
-            timestamp: init()
-          }
+            timestamp: init(),
+          },
         })
       }
       return handleResponse(res)
@@ -124,8 +131,8 @@ const useGet = (commonPathname, options) => {
       reset: () => resetTimestamp(),
       remove: () => remove(),
       current: () => current(undefined, true),
-      compare: () => compare()
-    }
+      compare: () => compare(),
+    },
   }
 }
 
@@ -140,7 +147,10 @@ const usePost = (commonPathname, options) => {
     try {
       const res = await sendRequestCommon(
         body || {},
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, options?.url),
+        buildPath(
+          `${commonPathname}${pathname ? '/' + pathname : ''}`,
+          options?.url
+        ),
         'post'
       )
       return handleResponse(res)
@@ -180,7 +190,10 @@ const useRemove = (commonPathname, options) => {
     try {
       const res = await sendRequestCommon(
         body || {},
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, options?.url),
+        buildPath(
+          `${commonPathname}${pathname ? '/' + pathname : ''}`,
+          options?.url
+        ),
         'delete'
       )
       return handleResponse(res)
@@ -209,20 +222,18 @@ export const ApiContext = createContext()
 export const ApiGetProvider = ({ children, pathname }) => {
   const { get } = useApi(pathname)
 
-  const {
-    init,
-    reset,
-    remove,
-    current,
-    compare
-  } = useTimestamp(pathname)
+  const { init, reset, remove, current, compare } = useTimestamp(pathname)
 
-  useEffect(() => get.do().then(() => {
-    init()
-    return () => {
-      remove()
-    }
-  }), [])
+  useEffect(
+    () =>
+      get.do().then(() => {
+        init()
+        return () => {
+          remove()
+        }
+      }),
+    []
+  )
 
   return (
     <ApiContext.Provider
@@ -236,8 +247,8 @@ export const ApiGetProvider = ({ children, pathname }) => {
           reset: () => reset(),
           remove: () => remove(),
           current: () => current(undefined, true),
-          compare: () => compare()
-        }
+          compare: () => compare(),
+        },
       }}
     >
       {children}

@@ -5,21 +5,21 @@ import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 
 export const IPRestrictionToggle = () => {
-  const { get, post } = useApi('services/aws/ip-access', { shouldPersist: true })
+  const { get, post } = useApi('services/aws/ip-access', {
+    shouldPersist: true,
+  })
 
   const { error, toast, success } = useToast()
 
   const [checked, setChecked] = useState(false)
 
-  useEffect(
-    () => {
-      if (get.timestamp.compare().minutes >= 1 || get.empty) {
-        get.do('enabled').then((data) => setChecked(data?.enabled))
-      } else {
-        setChecked(get?.data?.enabled)
-      }
-    }, []
-  )
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) {
+      get.do('enabled').then((data) => setChecked(data?.enabled))
+    } else {
+      setChecked(get?.data?.enabled)
+    }
+  }, [])
 
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'

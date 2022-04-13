@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
-import { Password, SelectGroup } from '../../utils'
+import { SelectGroup } from '../../utils'
 
 export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
   const { register, handleSubmit, watch } = useForm({ defaultValues })

@@ -12,7 +12,9 @@ import { TableTopBar } from '../../utils'
 import { Bar, Fill } from 'lib/Misc'
 
 export const SpokeAccounts = () => {
-  const { get, post, remove } = useApi('services/aws/account/spoke', { shouldPersist: true })
+  const { get, post, remove } = useApi('services/aws/account/spoke', {
+    shouldPersist: true,
+  })
 
   const [defaultValues, setDefaultValues] = useState()
 
@@ -76,7 +78,12 @@ export const SpokeAccounts = () => {
             extras={
               <Bar>
                 <Fill />
-                {get.timestamp.current() && <small><em>Last update: {get.timestamp.current()} </em>&nbsp;&nbsp;&nbsp;</small>}
+                {get.timestamp.current() && (
+                  <small>
+                    <em>Last update: {get.timestamp.current()} </em>
+                    &nbsp;&nbsp;&nbsp;
+                  </small>
+                )}
                 <RefreshButton disabled={isWorking} onClick={handleRefresh} />
               </Bar>
             }

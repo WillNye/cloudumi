@@ -18,7 +18,7 @@ export const ChallengeURLConfig = () => {
       })
     } else {
       setChecked(get?.data?.enabled)
-    }  
+    }
   }, [])
 
   const handleChange = (event, { name, checked }) => {

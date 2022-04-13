@@ -11,7 +11,9 @@ import { TableTopBar } from '../../utils'
 import { Bar, Fill } from 'lib/Misc'
 
 export const AWSOrganization = () => {
-  const { get, post, remove } = useApi('services/aws/account/org', { shouldPersist: true })
+  const { get, post, remove } = useApi('services/aws/account/org', {
+    shouldPersist: true,
+  })
 
   const { error, success } = useToast()
 
@@ -66,7 +68,12 @@ export const AWSOrganization = () => {
             extras={
               <Bar>
                 <Fill />
-                {get.timestamp.current() && <small><em>Last update: {get.timestamp.current()} </em>&nbsp;&nbsp;&nbsp;</small>}
+                {get.timestamp.current() && (
+                  <small>
+                    <em>Last update: {get.timestamp.current()} </em>
+                    &nbsp;&nbsp;&nbsp;
+                  </small>
+                )}
                 <RefreshButton disabled={isWorking} onClick={handleRefresh} />
               </Bar>
             }
