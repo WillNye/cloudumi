@@ -108,6 +108,7 @@ def put_object(**kwargs):
     host = kwargs.pop("host")
     client = kwargs.pop("client", None)
     assume_role = kwargs.pop("assume_role", None)
+    region = kwargs.pop("region", config.region)
 
     if not client:
         if assume_role:
@@ -117,7 +118,7 @@ def put_object(**kwargs):
                 account_number=kwargs.get("account_number"),
                 assume_role=assume_role,
                 session_name=sanitize_session_name("consoleme_s3_put_object"),
-                region=kwargs.get("region", config.region),
+                region=region,
                 retry_max_attempts=2,
                 client_kwargs=config.get_host_specific_key(
                     "boto3.client_kwargs", host, {}
@@ -129,10 +130,11 @@ def put_object(**kwargs):
             session = get_session_for_tenant(host)
             client = session.client(
                 "s3",
+                region_name=region,
                 **config.get_host_specific_key("boto3.client_kwargs", host, {}),
             )
         else:
-            client = boto3.client("s3")
+            client = boto3.client("s3", region_name=region)
     return client.put_object(**kwargs)
 
 
