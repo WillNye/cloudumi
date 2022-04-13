@@ -8,15 +8,18 @@ import { useToast } from 'lib/Toast'
 import { awsOrganizationColumns } from './columns'
 import { NewOrganization } from './forms/NewOrganization'
 import { TableTopBar } from '../../utils'
+import { Bar, Fill } from 'lib/Misc'
 
 export const AWSOrganization = () => {
-  const { get, post, remove } = useApi('services/aws/account/org')
+  const { get, post, remove } = useApi('services/aws/account/org', { shouldPersist: true })
 
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add Organization')
 
-  useEffect(() => get.do(), [])
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) get.do()
+  }, [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -61,7 +64,11 @@ export const AWSOrganization = () => {
           <TableTopBar
             onClick={hasData ? openModal : null}
             extras={
-              <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              <Bar>
+                <Fill />
+                {get.timestamp.current() && <small><em>Last update: {get.timestamp.current()} </em>&nbsp;&nbsp;&nbsp;</small>}
+                <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              </Bar>
             }
           />
         }

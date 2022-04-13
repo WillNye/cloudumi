@@ -21,5 +21,6 @@ export const useCopyToClipboard = () => {
 
   return {
     CopyButton: Component,
+    isCopied
   }
 }

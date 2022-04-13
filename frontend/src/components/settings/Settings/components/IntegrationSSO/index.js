@@ -13,7 +13,7 @@ import { NewProvider } from './forms/NewProvider'
 import { Section } from 'lib/Section'
 
 export const IntegrationSSO = () => {
-  const { get, post, remove } = useApi('auth/sso')
+  const { get, post, remove } = useApi('auth/sso', { shouldPersist: true })
 
   const [defaultValues, setDefaultValues] = useState()
 
@@ -21,7 +21,9 @@ export const IntegrationSSO = () => {
 
   const { openModal, closeModal, ModalComponent } = useModal('Add Provider')
 
-  useEffect(() => get.do(), [])
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) get.do()
+  }, [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -63,7 +65,7 @@ export const IntegrationSSO = () => {
 
   const preparedData = []
 
-  data?.Google && preparedData.push(data?.Google)
+  data?.google && preparedData.push(data?.google)
   data?.saml && preparedData.push(data?.saml)
   data?.oidc && preparedData.push(data?.oidc)
 

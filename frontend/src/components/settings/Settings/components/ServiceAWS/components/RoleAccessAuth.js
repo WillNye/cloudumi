@@ -10,19 +10,23 @@ import { Segment } from 'semantic-ui-react'
 import { roleAccessAuthColumns } from './columns'
 import { EnablingRoleAccessAuth } from './EnablingRoleAccessAuth'
 import { NewTag } from './forms/NewTag'
+import { Bar, Fill } from 'lib/Misc'
 
 export const RoleAccessAuth = () => {
   const [allowTags, setAllowTags] = useState(false)
 
   const { get, post, remove } = useApi(
-    'services/aws/role-access/credential-brokering/auth-tags'
+    'services/aws/role-access/credential-brokering/auth-tags',
+    { shouldPersist: true }
   )
 
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add Tag')
 
-  useEffect(() => get.do(), [])
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) get.do()
+  }, [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -70,7 +74,11 @@ export const RoleAccessAuth = () => {
             <TableTopBar
               onClick={hasData ? openModal : null}
               extras={
-                <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+                <Bar>
+                  <Fill />
+                  {get.timestamp.current() && <small><em>Last update: {get.timestamp.current()} </em>&nbsp;&nbsp;&nbsp;</small>}
+                  <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+                </Bar>
               }
             />
           }

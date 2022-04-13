@@ -9,9 +9,10 @@ import { NewSpokeAccount } from './forms/NewSpokeAccount'
 
 import { spokeAccountsColumns } from './columns'
 import { TableTopBar } from '../../utils'
+import { Bar, Fill } from 'lib/Misc'
 
 export const SpokeAccounts = () => {
-  const { get, post, remove } = useApi('services/aws/account/spoke')
+  const { get, post, remove } = useApi('services/aws/account/spoke', { shouldPersist: true })
 
   const [defaultValues, setDefaultValues] = useState()
 
@@ -19,7 +20,9 @@ export const SpokeAccounts = () => {
 
   const { openModal, closeModal, ModalComponent } = useModal()
 
-  useEffect(() => get.do(), [])
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) get.do()
+  }, [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -71,7 +74,11 @@ export const SpokeAccounts = () => {
           <TableTopBar
             onClick={hasData ? openModal : null}
             extras={
-              <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              <Bar>
+                <Fill />
+                {get.timestamp.current() && <small><em>Last update: {get.timestamp.current()} </em>&nbsp;&nbsp;&nbsp;</small>}
+                <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              </Bar>
             }
           />
         }

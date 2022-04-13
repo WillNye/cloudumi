@@ -64,9 +64,7 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
           register={{ ...register('Groups') }}
         />
 
-        {defaultValues ? (
-          <Password defaultValue={defaultValues?.TemporaryPassword} />
-        ) : (
+        {!defaultValues && (
           <p>
             <strong>
               A temporary password will be generated automatically and e-mailed

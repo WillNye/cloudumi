@@ -9,15 +9,18 @@ import { TableTopBar } from '../../utils'
 import { Segment } from 'semantic-ui-react'
 import { CIDRBlockColumns } from './columns'
 import { NewCIDR } from './forms/NewCIDR'
+import { Bar, Fill } from 'lib/Misc'
 
 export const CIDRBlock = () => {
-  const { get, post, remove } = useApi('services/aws/ip-access')
+  const { get, post, remove } = useApi('services/aws/ip-access', { shouldPersist: true })
 
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add CIDR')
 
-  useEffect(() => get.do(), [])
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) get.do()
+  }, [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -64,7 +67,11 @@ export const CIDRBlock = () => {
           <TableTopBar
             onClick={hasData ? openModal : null}
             extras={
-              <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              <Bar>
+                <Fill />
+                {get.timestamp.current() && <small><em>Last update: {get.timestamp.current()} </em>&nbsp;&nbsp;&nbsp;</small>}
+                <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              </Bar>
             }
           />
         }

@@ -1,19 +1,43 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { createContext, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProviderDefault'
+import { useTimestamp } from './useTimestamp'
+import create from 'zustand'
+import { persist } from 'zustand/middleware'
 
 const initialState = {
   data: null,
   status: 'waiting', // waiting/working/done
   error: null,
   empty: true,
+  persisted: false
 }
+
+const usePersistence = create(persist((set, get) => ({
+  update: (key, data) => set({
+    ...get(),
+    [key]: data
+  }),
+  delete: (key) => {
+    const store = { ...get() };
+    delete store[key];
+    set(store);
+  },
+  clear: () => set({})
+}), {
+  name: 'persistence',
+  getStorage: () => sessionStorage,
+}))
 
 export const url = 'api/v3'
 
-const useInnerUtils = () => {
+const useInnerUtils = (persistedState) => {
+
   const [state, setState] = useState({
     ...initialState,
+    data: persistedState?.data || null,
+    empty: !persistedState?.data,
+    persisted: !!persistedState?.data
   })
 
   const buildPath = (pathname = '', customUrl) =>
@@ -50,20 +74,40 @@ const useInnerUtils = () => {
   }
 }
 
-const useGet = (commonPathname, { url }) => {
+const useGet = (commonPathname, options) => {
+
   const { sendRequestCommon } = useAuth()
 
+  const persistedState = usePersistence?.getState()?.[commonPathname];
+
   const { state, buildPath, handleWorking, handleResponse, reset } =
-    useInnerUtils()
+    useInnerUtils(persistedState)
+
+  const {
+    init,
+    reset: resetTimestamp,
+    remove,
+    current,
+    compare
+  } = useTimestamp(commonPathname)
 
   const get = async (pathname) => {
     handleWorking()
     try {
       const res = await sendRequestCommon(
         null,
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, url),
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, options?.url),
         'get'
       )
+      if (options?.shouldPersist) {
+        usePersistence.setState({
+          ...usePersistence.getState(),
+          [commonPathname]: {
+            data: res?.data,
+            timestamp: init()
+          }
+        })
+      }
       return handleResponse(res)
     } catch (error) {
       throw new Error(error)
@@ -73,12 +117,19 @@ const useGet = (commonPathname, { url }) => {
   return {
     ...state,
     empty: !state?.data,
+    status: state?.data ? 'done' : state.status,
     reset,
     do: get,
+    timestamp: {
+      reset: () => resetTimestamp(),
+      remove: () => remove(),
+      current: () => current(undefined, true),
+      compare: () => compare()
+    }
   }
 }
 
-const usePost = (commonPathname, { url }) => {
+const usePost = (commonPathname, options) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
@@ -89,7 +140,7 @@ const usePost = (commonPathname, { url }) => {
     try {
       const res = await sendRequestCommon(
         body || {},
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, url),
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, options?.url),
         'post'
       )
       return handleResponse(res)
@@ -118,7 +169,7 @@ const usePost = (commonPathname, { url }) => {
   }
 }
 
-const useRemove = (commonPathname, { url }) => {
+const useRemove = (commonPathname, options) => {
   const { sendRequestCommon } = useAuth()
 
   const { state, buildPath, handleWorking, handleResponse, reset } =
@@ -129,7 +180,7 @@ const useRemove = (commonPathname, { url }) => {
     try {
       const res = await sendRequestCommon(
         body || {},
-        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, url),
+        buildPath(`${commonPathname}${pathname ? '/' + pathname : ''}`, options?.url),
         'delete'
       )
       return handleResponse(res)
@@ -145,7 +196,7 @@ const useRemove = (commonPathname, { url }) => {
   }
 }
 
-export const useApi = (commonPathname, options = {}) => {
+export const useApi = (commonPathname, options) => {
   return {
     get: useGet(commonPathname, options),
     post: usePost(commonPathname, options),
@@ -158,7 +209,20 @@ export const ApiContext = createContext()
 export const ApiGetProvider = ({ children, pathname }) => {
   const { get } = useApi(pathname)
 
-  useEffect(() => get.do(), [])
+  const {
+    init,
+    reset,
+    remove,
+    current,
+    compare
+  } = useTimestamp(pathname)
+
+  useEffect(() => get.do().then(() => {
+    init()
+    return () => {
+      remove()
+    }
+  }), [])
 
   return (
     <ApiContext.Provider
@@ -168,6 +232,12 @@ export const ApiGetProvider = ({ children, pathname }) => {
         data: get?.data,
         error: get?.status,
         empty: get?.empty,
+        timestamp: {
+          reset: () => reset(),
+          remove: () => remove(),
+          current: () => current(undefined, true),
+          compare: () => compare()
+        }
       }}
     >
       {children}
