@@ -132,7 +132,7 @@ async def generate_updated_resource_policy(
     principal_arn: str,
     resource_arns: List[str],
     actions: List[str],
-    policy_Sid: str,
+    policy_sid: str,
     include_resources: bool = True,
 ) -> Dict:
     """
@@ -149,7 +149,7 @@ async def generate_updated_resource_policy(
         "Effect": "Allow",
         "Principal": {"AWS": [principal_arn]},
         "Action": list(set(actions)),
-        "Sid": policy_Sid,
+        "Sid": policy_sid,
     }
     if include_resources:
         new_statement["Resource"] = resource_arns
@@ -2138,12 +2138,17 @@ async def remove_temp_policies(
                 existing_policy["Statement"] = new_policy_statement
 
                 if resource_type == "s3":
-                    await sync_to_async(iam_client.put_bucket_policy)(
-                        Bucket=resource_name,
-                        Policy=json.dumps(
-                            existing_policy, escape_forward_slashes=False
-                        ),
-                    )
+                    if len(new_policy_statement) == 0:
+                        await sync_to_async(iam_client.delete_bucket_policy)(
+                            Bucket=resource_name, ExpectedBucketOwner=resource_account
+                        )
+                    else:
+                        await sync_to_async(iam_client.put_bucket_policy)(
+                            Bucket=resource_name,
+                            Policy=json.dumps(
+                                existing_policy, escape_forward_slashes=False
+                            ),
+                        )
                 elif resource_type == "sns":
                     await sync_to_async(iam_client.set_topic_attributes)(
                         TopicArn=change.arn,
@@ -2156,15 +2161,23 @@ async def remove_temp_policies(
                     queue_url: dict = await sync_to_async(iam_client.get_queue_url)(
                         QueueName=resource_name
                     )
-                    await sync_to_async(iam_client.set_queue_attributes)(
-                        QueueUrl=queue_url.get("QueueUrl"),
-                        Attributes={
-                            "Policy": json.dumps(
-                                existing_policy,
-                                escape_forward_slashes=False,
-                            )
-                        },
-                    )
+
+                    if len(new_policy_statement) == 0:
+                        await sync_to_async(iam_client.set_queue_attributes)(
+                            QueueUrl=queue_url.get("QueueUrl"),
+                            Attributes={"Policy": ""},
+                        )
+
+                    else:
+                        await sync_to_async(iam_client.set_queue_attributes)(
+                            QueueUrl=queue_url.get("QueueUrl"),
+                            Attributes={
+                                "Policy": json.dumps(
+                                    existing_policy,
+                                    escape_forward_slashes=False,
+                                )
+                            },
+                        )
                 elif resource_type == "iam":
                     await sync_to_async(iam_client.update_assume_role_policy)(
                         RoleName=principal_name,

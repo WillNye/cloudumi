@@ -1649,7 +1649,7 @@ async def populate_cross_account_resource_policy_for_change(
         # Have to grab the actions from the source inline change for resource policy changes
         actions = []
         resource_arns = []
-        resource_Sid = ""
+        resource_sid = ""
         for source_change in extended_request.changes.changes:
             # Find the specific inline policy associated with this change
             if (
@@ -1662,8 +1662,8 @@ async def populate_cross_account_resource_policy_for_change(
                     # Find the specific statement within the inline policy associated with this resource
 
                     if extended_request.expiration_date:
-                        resource_Sid = (
-                            f"noq_delate_on_{extended_request.expiration_date}"
+                        resource_sid = (
+                            f"noq_delete_on_{extended_request.expiration_date}"
                         )
 
                     if change.arn in statement.get("Resource"):
@@ -1702,7 +1702,7 @@ async def populate_cross_account_resource_policy_for_change(
             principal_arn=extended_request.principal.principal_arn,
             resource_arns=list(set(resource_arns)),
             actions=actions,
-            policy_Sid=resource_Sid,
+            policy_sid=resource_sid,
             # since iam assume role policy documents can't include resources
             include_resources=change.change_type == "resource_policy",
         )
