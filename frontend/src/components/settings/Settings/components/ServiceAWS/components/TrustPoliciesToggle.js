@@ -15,7 +15,7 @@ export const TrustPoliciesToggle = () => {
 
   useEffect(() => {
     if (get.timestamp.compare().minutes >= 1 || get.empty) {
-      get.do('enabled').then((data) => setChecked(data?.enabled))
+      get.do().then((data) => setChecked(data?.enabled))
     } else {
       setChecked(get?.data?.enabled)
     }
@@ -29,7 +29,7 @@ export const TrustPoliciesToggle = () => {
       .then(() => {
         setChecked(checked)
         success(`Trust Policies is ${action}d`)
-        get.do('enabled')
+        get.do()
       })
       .catch(({ errorsMap, message }) => {
         error(errorsMap || message)
