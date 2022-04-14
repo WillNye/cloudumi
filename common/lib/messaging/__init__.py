@@ -60,15 +60,6 @@ def send_email_via_ses(
         )
         return
 
-    if config.get("_global_.development") and config.get(
-        "_global_.ses.override_receivers_for_dev"
-    ):
-        log_data["original_to_addresses"] = to_addresses
-        log_data["message"] = "Overriding to_address"
-        to_addresses = config.get("_global_.ses.override_receivers_for_dev")
-        log_data["new_to_addresses"] = to_addresses
-        log.debug(log_data)
-
     try:
         response = client.send_email(
             Destination={"ToAddresses": to_addresses},  # This should be a list
@@ -101,7 +92,8 @@ def send_email_via_sendgrid(
     host: str = "",
     charset: str = "UTF-8",
 ):
-    sender = ""
+    key_space = "_global_.secrets.sendgrid"
+    sender = config.get(f"{key_space}.from_address")
     log_data = {
         "to_user": to_addresses,
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -112,7 +104,9 @@ def send_email_via_sendgrid(
 
     server = smtplib.SMTP_SSL("smtp.sendgrid.net", 465)
     server.ehlo(host)
-    server.login("", "")
+    server.login(
+        config.get(f"{key_space}.username"), config.get(f"{key_space}.password")
+    )
 
     msg = MIMEMultipart()
     msg["Subject"] = subject
@@ -144,6 +138,14 @@ async def send_email(
     # Handle non-list recipients
     if not isinstance(to_addresses, list):
         to_addresses = [to_addresses]
+
+    if config.get("_global_.development") and config.get(
+        "_global_.ses.override_receivers_for_dev"
+    ):
+        to_addresses = config.get("_global_.ses.override_receivers_for_dev")
+        log.debug(
+            {"message": "Overriding to_address", "new_to_addresses": to_addresses}
+        )
 
     # Once we know under what conditions to use which provider we can update to support sending via ses
     send_email_via_sendgrid(to_addresses, subject, body, host, charset)
