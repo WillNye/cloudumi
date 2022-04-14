@@ -3,8 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, Sequence
 
 import boto3
-from access_undenied_aws import event, event_permission_data, logger
 from aws_error_utils import ClientError
+
+from common.lib.aws.access_undenied.access_undenied_aws import (
+    event,
+    event_permission_data,
+    logger,
+)
 
 if TYPE_CHECKING:
     from mypy_boto3_iam.type_defs import ContextEntryTypeDef

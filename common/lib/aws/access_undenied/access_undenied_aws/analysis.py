@@ -1,7 +1,9 @@
 import json
 from typing import Any, Dict, Optional, TextIO, Union
 
-from access_undenied_aws import (
+from aws_error_utils import ClientError, errors
+
+from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event,
     event_permission_data,
@@ -12,8 +14,7 @@ from access_undenied_aws import (
     simulate_custom_policy_context_generator,
     simulate_custom_policy_helper,
 )
-from access_undenied_aws.results import AnalysisResult
-from aws_error_utils import ClientError, errors
+from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
 
 
 def _write_to_file(output_file: TextIO, output_json: Dict[str, Any]) -> None:

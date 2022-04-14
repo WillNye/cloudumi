@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Union
 
 import boto3
 import cachetools
-from access_undenied_aws import common, logger
 from aws_error_utils import ClientError
 from cachetools import keys
+
+from common.lib.aws.access_undenied.access_undenied_aws import common, logger
 
 if TYPE_CHECKING:
     from mypy_boto3_iam import IAMClient

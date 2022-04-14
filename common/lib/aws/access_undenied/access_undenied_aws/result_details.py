@@ -1,7 +1,7 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from access_undenied_aws import common, logger
+from common.lib.aws.access_undenied.access_undenied_aws import common, logger
 
 if TYPE_CHECKING:
     from mypy_boto3_iam.type_defs import EvaluationResultTypeDef

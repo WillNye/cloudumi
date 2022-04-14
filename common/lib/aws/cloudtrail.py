@@ -107,7 +107,7 @@ class CloudTrail:
                         "principal_arn": arn,
                     },
                 },
-                "updated_policy": json.dumps(cloudtrail_error["generated_policy"]),
+                "updated_policy": json.dumps(cloudtrail_error["generated_policies"]),
             }
             encoded_request = base64.b64encode(
                 json.dumps(generated_request).encode()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from access_undenied_aws import (
+from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event_permission_data,
     iam_utils,

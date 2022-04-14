@@ -1,7 +1,7 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 
-from access_undenied_aws import (
+from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event,
     event_permission_data,

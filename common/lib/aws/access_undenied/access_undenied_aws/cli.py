@@ -8,7 +8,13 @@ import boto3
 import click
 import click_log
 import colorlog
-from access_undenied_aws import analysis, common, logger, organizations
+
+from common.lib.aws.access_undenied.access_undenied_aws import (
+    analysis,
+    common,
+    logger,
+    organizations,
+)
 
 
 def _initialize_logger() -> None:

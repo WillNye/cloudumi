@@ -3,7 +3,9 @@ import json
 import re
 from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence, Set
 
-from access_undenied_aws import (
+from access_undenied_aws.iam_policy_data import IamPolicyData
+
+from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event,
     event_permission_data,
@@ -14,7 +16,6 @@ from access_undenied_aws import (
     simulate_custom_policy_result_analyzer,
     utils,
 )
-from access_undenied_aws.iam_policy_data import IamPolicyData
 
 if TYPE_CHECKING:
     from mypy_boto3_iam import IAMClient

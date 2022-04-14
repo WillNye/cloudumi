@@ -4,15 +4,10 @@ import sys
 from datetime import datetime
 from typing import Any, Dict
 
-import access_undenied_aws
-import access_undenied_aws.analysis
-import access_undenied_aws.cli
-import access_undenied_aws.common
-import access_undenied_aws.organizations
 import boto3
 import sentry_sdk
-from access_undenied_aws.common import AccessDeniedReason
 
+import common.lib.aws.access_undenied as access_undenied
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import DataNotRetrievable
@@ -28,7 +23,7 @@ log = config.get_logger()
 
 
 def process_event(event: Dict[str, Any], account_id: str, host: object):
-    config = access_undenied_aws.common.Config()
+    config = access_undenied.common.Config()
     config.session = boto3.Session()
     config.account_id = config.session.client("sts").get_caller_identity()["Account"]
     config.iam_client = config.session.client("iam")
@@ -38,7 +33,7 @@ def process_event(event: Dict[str, Any], account_id: str, host: object):
         .with_query({"account_id": account_id})
         .first.name
     )
-    access_undenied_aws.cli.initialize_config_from_user_input(
+    access_undenied.cli.initialize_config_from_user_input(
         config=config,
         cross_account_role_name=(spoke_account_name),
         management_account_role_arn=(
@@ -47,7 +42,7 @@ def process_event(event: Dict[str, Any], account_id: str, host: object):
         output_file=sys.stdout,
         suppress_output=True,
     )
-    return access_undenied_aws.analysis.analyze(config, event)
+    return access_undenied.analysis.analyze(config, event)
 
 
 def get_resource_from_cloudtrail_deny(
@@ -223,11 +218,21 @@ def detect_cloudtrail_denies_and_update_cache(
                 decoded_message, queue_account_number, host
             )
 
-            if generated_policy.assessment_result != AccessDeniedReason.ALLOWED:
+            if (
+                generated_policy.assessment_result
+                != access_undenied.common.AccessDeniedReason.ALLOWED
+            ):
+                if not hasattr(generated_policy, "result_details"):
+                    log.warning(
+                        "TODO/TECH-DEBT: deal with errors when result_details is not defined"
+                    )
+                    continue
                 event.generated_policies = generated_policy.result_details.policies
                 if all_cloudtrail_denies.get(event.request_id):
-                    existing_count = all_cloudtrail_denies[event.request_id].count
-                    event["count"] += existing_count
+                    existing_event = CloudtrailDetection.parse_obj(
+                        all_cloudtrail_denies[event.request_id]
+                    )
+                    event.count += existing_event.count
                     all_cloudtrail_denies[event.request_id] = event.dict()
                 else:
                     all_cloudtrail_denies[event.request_id] = event.dict()

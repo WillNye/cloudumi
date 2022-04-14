@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from access_undenied_aws import common, result_details
+from common.lib.aws.access_undenied.access_undenied_aws import common, result_details
 
 
 class Result(object):

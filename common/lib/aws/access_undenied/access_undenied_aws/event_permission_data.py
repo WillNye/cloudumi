@@ -6,8 +6,14 @@ from typing import Optional
 
 import boto3
 import pkg_resources
-from access_undenied_aws import common, event, logger, utils
 from aws_error_utils import ClientError
+
+from common.lib.aws.access_undenied.access_undenied_aws import (
+    common,
+    event,
+    logger,
+    utils,
+)
 
 ACCESS_DENIED_MESSAGES = json.load(
     open(

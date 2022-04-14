@@ -3,8 +3,13 @@ import re
 from typing import Optional
 
 import boto3
-from access_undenied_aws import common, event_permission_data, logger
 from aws_error_utils import ClientError, errors
+
+from common.lib.aws.access_undenied.access_undenied_aws import (
+    common,
+    event_permission_data,
+    logger,
+)
 
 
 def _get_ecr_resource_policy(
