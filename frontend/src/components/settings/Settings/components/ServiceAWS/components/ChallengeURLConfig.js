@@ -5,16 +5,20 @@ import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 
 export const ChallengeURLConfig = () => {
-  const { get, post } = useApi('auth/challenge_url')
+  const { get, post } = useApi('auth/challenge_url', { shouldPersist: true })
 
   const { error, toast, success } = useToast()
 
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    get.do().then((data) => {
-      setChecked(data?.enabled)
-    })
+    if (get.timestamp.compare().minutes >= 1 || get.empty) {
+      get.do().then((data) => {
+        setChecked(data?.enabled)
+      })
+    } else {
+      setChecked(get?.data?.enabled)
+    }
   }, [])
 
   const handleChange = (event, { name, checked }) => {
@@ -25,6 +29,7 @@ export const ChallengeURLConfig = () => {
       .then(() => {
         setChecked(checked)
         success(`Challenge URL Config is ${action}d`)
+        get.do()
       })
       .catch(({ errorsMap, message }) => {
         error(errorsMap || message)

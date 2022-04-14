@@ -36,7 +36,7 @@ class ConfigurationCrudHandler(BaseHandler):
         )
 
     async def _create(self, data):
-        ModelAdapter(self._model_class).load_config(
+        await ModelAdapter(self._model_class).load_config(
             self._config_key, self.ctx.host
         ).from_dict(data).with_object_key(self._identifying_keys).store_item()
 

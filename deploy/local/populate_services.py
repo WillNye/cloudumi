@@ -85,6 +85,7 @@ secrets:
   cognito:
     config:
       user_pool_id: us-east-1_CNoZribID
+      user_pool_region: us-east-1
       user_pool_client_id: j14h62of81s6s5f2ivfkdfe3v
       user_pool_client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
 account_ids_to_name:

@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
-import { Password, SelectGroup } from '../../utils'
+import { SelectGroup } from '../../utils'
 
 export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
   const { register, handleSubmit, watch } = useForm({ defaultValues })
@@ -42,7 +42,7 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
   const isSuccess = post?.status === 'done' && !post?.error
 
   const hasError = post?.error && post?.status === 'done'
-  console.log(defaultValues)
+
   return (
     <Segment basic>
       <DimmerWithStates
@@ -64,9 +64,7 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
           register={{ ...register('Groups') }}
         />
 
-        {defaultValues ? (
-          <Password defaultValue={defaultValues?.TemporaryPassword} />
-        ) : (
+        {!defaultValues && (
           <p>
             <strong>
               A temporary password will be generated automatically and e-mailed

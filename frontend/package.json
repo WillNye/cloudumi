@@ -32,7 +32,8 @@
     "semantic-ui-react": "^2.1.2",
     "styled-components": "^5.3.3",
     "survey-react": "^1.9.19",
-    "yaml": "^1.10.2"
+    "yaml": "^1.10.2",
+    "zustand": "^3.7.2"
   },
   "scripts": {
     "start": "react-scripts start",
