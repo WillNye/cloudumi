@@ -220,6 +220,20 @@ def detect_cloudtrail_denies_and_update_cache(
 
             if (
                 generated_policy.assessment_result
+                == access_undenied.common.AccessDeniedReason.ERROR
+            ):
+                log.warning(
+                    f"Unable to process cloudtrail deny event: {generated_policy.error_message}"
+                )
+                processed_messages.append(
+                    {
+                        "Id": message["MessageId"],
+                        "ReceiptHandle": message["ReceiptHandle"],
+                    }
+                )
+
+            elif (
+                generated_policy.assessment_result
                 != access_undenied.common.AccessDeniedReason.ALLOWED
             ):
                 if not hasattr(generated_policy, "result_details"):
@@ -244,6 +258,9 @@ def detect_cloudtrail_denies_and_update_cache(
                         "ReceiptHandle": message["ReceiptHandle"],
                     }
                 )
+
+            else:
+                log.info("Allowing event")
         if processed_messages:
             sqs_client.delete_message_batch(
                 QueueUrl=queue_url, Entries=processed_messages
