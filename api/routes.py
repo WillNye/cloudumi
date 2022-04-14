@@ -255,6 +255,10 @@ def make_app(jwt_validator=None):
             AutomaticRoleTrustPolicyUpdateHandler,
         ),
         (
+            r"/api/v3/services/aws/role-access/automatic-update/?",
+            AutomaticRoleTrustPolicyUpdateHandler,
+        ),
+        (
             r"/api/v3/services/aws/ip-access/?",
             IpRestrictionsHandler,
         ),
