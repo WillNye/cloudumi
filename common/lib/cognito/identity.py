@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Dict, List, Union
 
 import boto3
@@ -155,6 +156,7 @@ async def get_user_pool_client(user_pool_id: str, client_id: str, client=None) -
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name
     :param client_id: the client ID to get
+    :param client: The boto3 client to use when interfacing with AWS
     :return: the client object
     """
     if not client:
@@ -175,6 +177,7 @@ async def connect_idp_to_app_client(
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name
     :param client_id: the client ID of the app client
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful, currently always returns true
     """
     if not client:
@@ -208,6 +211,7 @@ async def disconnect_idp_from_app_client(
     :param user_pool_id: ensure this is the user pool ID not the user pool name
     :param client_id: the client ID of the app client
     :param idp: one of the NOQ internal identity provider objects
+    :param client: The boto3 client to use when interfacing with AWS
     :return: reflects that the desired state is reached, meaning that the idp is not connected to the app client
     """
     if not client:
@@ -239,6 +243,7 @@ async def get_identity_providers(user_pool_id: str, client=None) -> SSOIDPProvid
     to retain consistency within NOQ.
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name!
+    :param client: The boto3 client to use when interfacing with AWS
     :return: SSOIDPProviders - to standardize on input output paradigms, we'll convert the raw dict to a pydantic model
     [
         {
@@ -292,6 +297,7 @@ async def upsert_identity_provider(
     :param user_pool_id: ensure this is the user pool ID not the user pool name!
     :param user_pool_client_id: ensure this is the user pool client ID
     :param id_provider: the pydantic model SSOIDPProviders with one of the groups filled out (either google, saml or oidc)
+    :param client: The boto3 client to use when interfacing with AWS
     :return: True if the operation is successful - currently always returns true or raises an exception
     """
     if not client:
@@ -361,6 +367,7 @@ async def delete_identity_provider(
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name
     :param id_provider: any id provider model object - see union typing hint
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful, currently always returns true
     """
     if not client:
@@ -378,6 +385,7 @@ async def get_identity_user_groups(
 
     :param user_pool_id: the user pool ID
     :param user: the user for which to extract group assignments
+    :param client: The boto3 client to use when interfacing with AWS
     :return: a list of dictionaries representing the group assignments
     """
     if not client:
@@ -404,6 +412,7 @@ async def get_identity_users(user_pool_id: str, client=None) -> List[CognitoUser
     objects.
 
     :param user_pool_id: the current user pool id
+    :param client: The boto3 client to use when interfacing with AWS
     :return: a list of CognitoUser objects
     """
     if not client:
@@ -438,7 +447,8 @@ async def create_identity_user(
     uses the admin_create_user functionality, side-stepping the user sign up process.
 
     :param user_pool_id: the id of the user pool that should have the new user
-    :param user: a CognitoUser object that is validated and describes the new user
+    :param user: a CognitoUser object that is validated and describes the new use
+    :param client: The boto3 client to use when interfacing with AWSr
     :return: an updated CognitoUser object that may contain additional info from AWS
     """
     if not client:
@@ -479,6 +489,7 @@ async def delete_identity_user(
 
     :param user_pool_id: the id of the user pool from which to delete the user
     :param user: a CognitoUser object that describes the user
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful
     """
     if not client:
@@ -527,6 +538,58 @@ async def create_identity_user_groups(
     return True
 
 
+async def remove_identity_user_group(
+    user_pool_id: str, user: CognitoUser, group: CognitoGroup, client=None
+) -> bool:
+    """Remove a user from a group.
+
+    :param user_pool_id: the id of the user pool
+    :param user: a CognitoUser object that describes the user
+    :param group: A CognitoGroup object that describe the group to which the user should be removed
+    :param client: The boto3 client to use when interfacing with AWS
+    :return: true if successful
+    """
+    if not client:
+        client = boto3.client("cognito-idp", region_name=config.region)
+
+    try:
+        await sync_to_async(client.admin_remove_user_from_group)(
+            UserPoolId=user_pool_id,
+            Username=user.Username,
+            GroupName=group.GroupName,
+        )
+    except client.exceptions.UserNotFoundException:
+        LOG.warning(
+            {
+                "message": "User not found when attempting to remove user from group",
+                "user": user.Username,
+                "group": group.GroupName,
+            }
+        )
+        return False
+    except client.exceptions.ResourceNotFoundException:
+        LOG.warning(
+            {
+                "message": "User is not assigned to group",
+                "user": user.Username,
+                "group": group.GroupName,
+            }
+        )
+        return False
+    except Exception as err:
+        LOG.exception(
+            {
+                "message": "Error removing user from group",
+                "user": user.Username,
+                "group": group.GroupName,
+                "error": repr(err),
+            }
+        )
+        return False
+    else:
+        return True
+
+
 async def upsert_identity_user_group(
     user_pool_id: str, user: CognitoUser, client=None
 ) -> bool:
@@ -534,14 +597,18 @@ async def upsert_identity_user_group(
 
     :param user_pool_id: the id of the user pool from which to delete the user
     :param user: a CognitoUser object that describes the user
-    :param request_groups: a list of CognitoGroup objects that describe the groups to which the user should be added
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful
     """
     existing_groups = await get_identity_user_groups(user_pool_id, user, client=client)
 
-    for group in existing_groups:
-        if group not in user.Groups:
-            await delete_identity_group(user_pool_id, group, client=client)
+    await asyncio.gather(
+        *[
+            remove_identity_user_group(user_pool_id, user, group, client=client)
+            for group in existing_groups
+            if group not in user.Groups
+        ]
+    )
 
     return await create_identity_user_groups(
         user_pool_id,
@@ -558,6 +625,7 @@ async def get_identity_group(
 
     :param user_pool_id: the id of the user pool
     :param group_name: the name of the group to retrieve
+    :param client: The boto3 client to use when interfacing with AWS
     :return: The requested CognitoGroup object
     """
     if not client:
@@ -572,6 +640,7 @@ async def get_identity_groups(user_pool_id: str, client=None) -> List[CognitoGro
     """Get Cognito groups.
 
     :param user_pool_id: the id of the user pool from which to get groups
+    :param client: The boto3 client to use when interfacing with AWS
     :return: a list of CognitoGroup objects
     """
     if not client:
@@ -596,6 +665,7 @@ async def create_identity_group(
 
     :param user_pool_id: the id of the user pool in which to create the group
     :param group: a CognitoGroup object that describes the group
+    :param client: The boto3 client to use when interfacing with AWS
     :return: an updated group object that may contain additional information from AWS
     """
     if not client:
@@ -619,6 +689,7 @@ async def update_identity_group(
 
     :param user_pool_id: the id of the user pool that contains the group to be updated
     :param group: a CognitoGroup object that describes the group
+    :param client: The boto3 client to use when interfacing with AWS
     :return: The updated cognito group
     """
     if not client:
@@ -638,6 +709,7 @@ async def delete_identity_group(
 
     :param user_pool_id: the id of the user pool that contains the group to be deleted
     :param group: a CognitoGroup object that describes the group
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful
     """
     if not client:
