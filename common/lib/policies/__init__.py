@@ -23,12 +23,12 @@ from common.lib.aws.utils import (
     get_resource_from_arn,
     get_service_from_arn,
 )
-from common.lib.plugins import get_plugin_by_name
-from common.lib.role_updater.handler import update_role
-from common.lib.ses import (
+from common.lib.messaging import (
     send_new_comment_notification,
     send_policy_request_status_update_v2,
 )
+from common.lib.plugins import get_plugin_by_name
+from common.lib.role_updater.handler import update_role
 from common.models import ExtendedRequestModel, RequestStatus
 
 log = config.get_logger()

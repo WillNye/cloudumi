@@ -1,7 +1,8 @@
+import smtplib
 import sys
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import List
-
-from asgiref.sync import sync_to_async
 
 from common.config import config
 from common.lib.aws.session import get_session_for_tenant
@@ -14,8 +15,8 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger()
 
 
-async def send_email(
-    to_addresses: List[str],
+def send_email_via_ses(
+    to_addresses: list[str],
     subject: str,
     body: str,
     host: str,
@@ -30,6 +31,8 @@ async def send_email(
         **config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     sender = config.get(f"_global_.ses.{sending_app}.sender")
+    ses_arn = config.get_host_specific_key("ses.arn", host)
+
     log_data = {
         "to_user": to_addresses,
         "region": region,
@@ -39,7 +42,7 @@ async def send_email(
         "host": host,
     }
 
-    if not config.get_host_specific_key("ses.arn", host):
+    if not ses_arn:
         log.error(
             {
                 **log_data,
@@ -66,12 +69,8 @@ async def send_email(
         log_data["new_to_addresses"] = to_addresses
         log.debug(log_data)
 
-    # Handle non-list recipients
-    if not isinstance(to_addresses, list):
-        to_addresses = [to_addresses]
-
     try:
-        response = await sync_to_async(client.send_email)(
+        response = client.send_email(
             Destination={"ToAddresses": to_addresses},  # This should be a list
             Message={
                 "Body": {
@@ -81,7 +80,7 @@ async def send_email(
                 "Subject": {"Charset": charset, "Data": subject},
             },
             Source=sender,
-            SourceArn=config.get_host_specific_key("ses.arn", host),
+            SourceArn=ses_arn,
         )
     # Display an error if something goes wrong.
     except Exception:
@@ -93,6 +92,61 @@ async def send_email(
         log_data["message"] = "Email sent successfully"
         log_data["response"] = response["MessageId"]
         log.debug(log_data)
+
+
+def send_email_via_sendgrid(
+    to_addresses: list[str],
+    subject: str,
+    body: str,
+    host: str = "",
+    charset: str = "UTF-8",
+):
+    sender = ""
+    log_data = {
+        "to_user": to_addresses,
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "sender": sender,
+        "subject": subject,
+        "host": host,
+    }
+
+    server = smtplib.SMTP_SSL("smtp.sendgrid.net", 465)
+    server.ehlo(host)
+    server.login("", "")
+
+    msg = MIMEMultipart()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = ";".join(to_addresses)
+    msg.attach(MIMEText(body, "html", _charset=charset))
+
+    try:
+        server.send_message(msg)
+        server.close()
+    except Exception:
+        stats.count("lib.ses.error")
+        log_data["message"] = "Exception sending email"
+        log.error(log_data, exc_info=True)
+    else:
+        stats.count("lib.ses.success")
+        log_data["message"] = "Email sent successfully"
+        log.debug(log_data)
+
+
+async def send_email(
+    to_addresses: List[str],
+    subject: str,
+    body: str,
+    host: str,
+    sending_app: str = "consoleme",
+    charset: str = "UTF-8",
+) -> None:
+    # Handle non-list recipients
+    if not isinstance(to_addresses, list):
+        to_addresses = [to_addresses]
+
+    # Once we know under what conditions to use which provider we can update to support sending via ses
+    send_email_via_sendgrid(to_addresses, subject, body, host, charset)
 
 
 async def send_access_email_to_user(
