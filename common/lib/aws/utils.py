@@ -2118,10 +2118,6 @@ async def remove_temp_policies(
             try:
                 new_policy_statement = []
 
-                expiration_indicator = (
-                    f"noq_delete_on_{extended_request.expiration_date}"
-                )
-
                 existing_policy = await get_resource_policy(
                     resource_account,
                     resource_type,
@@ -2131,7 +2127,7 @@ async def remove_temp_policies(
                 )
 
                 for statement in existing_policy.get("Statement", []):
-                    if statement.get("Sid", "") == expiration_indicator:
+                    if extended_request.expiration_date in statement.get("Sid", ""):
                         continue
                     new_policy_statement.append(statement)
 

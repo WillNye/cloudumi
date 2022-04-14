@@ -41,7 +41,7 @@ from common.lib.aws.utils import (
     get_resource_policy,
     get_service_from_arn,
 )
-from common.lib.change_request import generate_policy_name
+from common.lib.change_request import generate_policy_name, generate_policy_sid
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
@@ -1537,7 +1537,7 @@ async def populate_old_managed_policies(
 
 
 async def populate_cross_account_resource_policy_for_change(
-    change, extended_request, log_data, host: str
+    change, extended_request, log_data, host: str, user
 ):
     resource_policies_changed = False
     supported_resource_policies = config.get_host_specific_key(
@@ -1649,7 +1649,7 @@ async def populate_cross_account_resource_policy_for_change(
         # Have to grab the actions from the source inline change for resource policy changes
         actions = []
         resource_arns = []
-        resource_sid = ""
+
         for source_change in extended_request.changes.changes:
             # Find the specific inline policy associated with this change
             if (
@@ -1660,11 +1660,6 @@ async def populate_cross_account_resource_policy_for_change(
                     "Statement", []
                 ):
                     # Find the specific statement within the inline policy associated with this resource
-
-                    if extended_request.expiration_date:
-                        resource_sid = (
-                            f"noq_delete_on_{extended_request.expiration_date}"
-                        )
 
                     if change.arn in statement.get("Resource"):
                         statement_actions = statement.get("Action", [])
@@ -1697,6 +1692,7 @@ async def populate_cross_account_resource_policy_for_change(
                             if change.arn in resource:
                                 resource_arns.append(resource)
 
+        resource_sid = await generate_policy_sid(user, extended_request.expiration_date)
         new_policy = await generate_updated_resource_policy(
             existing=old_policy,
             principal_arn=extended_request.principal.principal_arn,
@@ -1741,7 +1737,7 @@ async def populate_cross_account_resource_policies(
     for change in extended_request.changes.changes:
         concurrent_tasks.append(
             populate_cross_account_resource_policy_for_change(
-                change, extended_request, log_data, host
+                change, extended_request, log_data, host, user
             )
         )
     concurrent_tasks_results = await asyncio.gather(*concurrent_tasks)
@@ -2719,11 +2715,7 @@ async def parse_and_apply_policy_request_modification(
                 Statements = change.policy.policy_document.get("Statement", [])
 
                 for statement in Statements:
-                    statement["Sid"] = (
-                        "noq_generated_statement"
-                        if not expiration_date
-                        else f"noq_delete_on_{expiration_date}"
-                    )
+                    statement["Sid"] = await generate_policy_sid(user, expiration_date)
                     new_statement.append(statement)
 
                 change.policy.policy_document["Statement"] = new_statement

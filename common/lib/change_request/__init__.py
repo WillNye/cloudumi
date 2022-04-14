@@ -53,7 +53,7 @@ async def _generate_policy_statement(
     return policy_statement
 
 
-async def _generate_policy_sid(user: str) -> str:
+async def generate_policy_sid(user: str, expiration_date: Optional[int] = None) -> str:
     """
     Generate a unique SID identifying the user and time of the change request.
 
@@ -64,7 +64,11 @@ async def _generate_policy_sid(user: str) -> str:
     # Strip out any special characters from username
     user_stripped = "".join(e for e in user_stripped if e.isalnum())
     random_string = await generate_random_string()
-    return f"cm{user_stripped}{int(time.time())}{random_string}"
+
+    if expiration_date:
+        return f"noq_delete_on_{expiration_date}_{user_stripped}_{int(time.time())}"
+
+    return f"noq_{user_stripped}_{int(time.time())}_{random_string}"
 
 
 async def generate_policy_name(
@@ -360,7 +364,7 @@ async def _attach_sids_to_policy_statements(
     """
     for statement in inline_iam_policy_statements:
         if not statement.get("Sid"):
-            statement["Sid"] = await _generate_policy_sid(user)
+            statement["Sid"] = await generate_policy_sid(user)
     return inline_iam_policy_statements
 
 
