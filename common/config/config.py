@@ -178,12 +178,8 @@ class Configuration(metaclass=Singleton):
             extend_config = {}
             # This decode and YAML-load a string stored in AWS Secrets Manager
             if s.startswith("AWS_SECRETS_MANAGER:"):
-                secret_name = "".join(s.split("AWS_SECRETS_MANAGER:")[1:])
-                extend_config = yaml.load(
-                    get_aws_secret(
-                        secret_name, os.environ.get("EC2_REGION", "us-east-1")
-                    )
-                )
+                secret_arn = "".join(s.split("AWS_SECRETS_MANAGER:")[1:])
+                extend_config = yaml.load(get_aws_secret(secret_arn))
 
             elif s.startswith("AWS_S3:s3://"):
                 # TODO: Support restricting what keys are allowed to exist in this configuration. For tenant configs,
