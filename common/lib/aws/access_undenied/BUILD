@@ -23,6 +23,13 @@ REQUIRES = [
 ]
 
 filegroup(
+    name = "definitions",
+    srcs = glob([
+        "access_undenied_aws/definitions/*.json",
+    ]),
+)
+
+filegroup(
     name = "src_files",
     srcs = glob([
         "**/*.py",
@@ -31,7 +38,9 @@ filegroup(
 
 py_library(
     name = "lib",
-    data = [],
+    data = [
+        ":definitions",
+    ],
     srcs_version = "PY3",
     srcs = [
         ":src_files",

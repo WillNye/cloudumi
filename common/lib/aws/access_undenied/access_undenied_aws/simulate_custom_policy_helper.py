@@ -3,8 +3,6 @@ import json
 import re
 from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence, Set
 
-from access_undenied_aws.iam_policy_data import IamPolicyData
-
 from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event,
@@ -15,6 +13,9 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     results,
     simulate_custom_policy_result_analyzer,
     utils,
+)
+from common.lib.aws.access_undenied.access_undenied_aws.iam_policy_data import (
+    IamPolicyData,
 )
 
 if TYPE_CHECKING:
