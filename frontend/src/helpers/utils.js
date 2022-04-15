@@ -207,6 +207,26 @@ export const getResourceEndpoint = (
   return endpoint
 }
 
+export const getResourceEffectivePolicyEndpoint = (
+  accountID,
+  serviceType,
+  region,
+  resourceName
+) => {
+  const endpoint = ((accountID, serviceType, region, resourceName) => {
+    switch (serviceType) {
+      case 'iamrole': {
+        return `/api/v3/services/aws/policies/effective/role/${accountID}/${resourceName}`
+      }
+      default: {
+        return null
+      }
+    }
+  })(accountID, serviceType, region, resourceName)
+
+  return endpoint
+}
+
 export const parseLocalStorageCache = (key, default_return = []) => {
   const value = window.localStorage.getItem(key)
   if (value == null) {

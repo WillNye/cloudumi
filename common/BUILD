@@ -11,16 +11,26 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "template_files",
+    srcs = glob([
+        "templates/*.py.j2"
+    ]),
+    visibility = ["//visibility:public"],
+)
+
 exports_files(
     ["models.py"],
 )
 
 py_library(
     name = "lib",
-    data = [],
+    data = [
+         ":template_files",
+    ],
     srcs_version = "PY3",
     srcs = [
-        ":src_files",
+        ":src_files"
     ],
     deps = [
         "//common/lib",

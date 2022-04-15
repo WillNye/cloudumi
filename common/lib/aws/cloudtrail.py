@@ -7,7 +7,13 @@ import simplejson as json
 from boto3.dynamodb.types import Binary  # noqa
 
 from common.config import config
-from common.lib.aws.utils import get_iam_principal_owner, simulate_iam_principal_action
+from common.lib.aws.utils import (
+    get_account_id_from_arn,
+    get_iam_principal_owner,
+    get_identity_name_from_arn,
+    get_identity_type_from_arn,
+    simulate_iam_principal_action,
+)
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.json_encoder import SetEncoder
@@ -64,9 +70,9 @@ class CloudTrail:
             arn = cloudtrail_error.get("arn", "")
             principal_owner = await get_iam_principal_owner(arn, aws, host)
             session_name = cloudtrail_error.get("session_name", "")
-            principal_type = "iam" + arn.split(":")[-1].split("/")[0]
-            account_id = arn.split(":")[4]
-            principal_name = arn.split("/")[-1]
+            principal_type = "iam" + await get_identity_type_from_arn(arn)
+            account_id = await get_account_id_from_arn(arn)
+            principal_name = await get_identity_name_from_arn(arn)
             url_role_path = (
                 f"/policies/edit/{account_id}/{principal_type}/{principal_name}"
             )

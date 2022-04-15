@@ -79,6 +79,8 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
                 ],
                 "permissions_boundary": {},
                 "tags": [],
+                "effective_policy": None,
+                "effective_policy_repoed": None,
                 "config_timeline_url": None,
                 "templated": False,
                 "template_link": None,

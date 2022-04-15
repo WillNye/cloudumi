@@ -211,3 +211,8 @@ output "google_analytics_tracking_id" {
   description = "The configured Google Analytics tracking ID"
   value       = var.google_analytics_tracking_id
 }
+
+output "aws_secrets_manager_arn" {
+  description = "The configured AWS Secrets Manager ARN"
+  value       = module.tenant_container_service.aws_secrets_manager_arn
+}
