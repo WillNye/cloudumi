@@ -93,7 +93,7 @@ def publish_msg_sns_name(region: str, name: str, msg: dict) -> dict:
     client = boto3.client("sns", region_name=region)
     resp = client.create_topic(Name=name)
     topic_arn = resp.get("TopicArn")
-    return publish_msg_to_sns_via_topic_arn(topic_arn, msg)
+    return publish_msg_to_sns_via_topic_arn(region, topic_arn, msg)
 
 
 def publish_msg_sqs_name(
