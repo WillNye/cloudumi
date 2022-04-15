@@ -543,7 +543,6 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 break
             dev_domain = await generate_dev_domain(dev_mode)
 
-        dev_domain = "unusual_noq_dev"
         # User pool domain names cannot have underscores
         user_pool_domain_name = dev_domain.replace("_", "-")
 
