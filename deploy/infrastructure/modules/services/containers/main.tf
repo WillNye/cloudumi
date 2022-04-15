@@ -84,13 +84,7 @@ resource "aws_secretsmanager_secret" "noq_secrets" {
 }
 
 resource "aws_secretsmanager_secret_version" "noq_secrets" {
-  secret_id     = aws_secretsmanager_secret.noq_secrets.id
-  secret_string = <<EOF
-_global_:
-  secrets:
-    test: secret
-EOF
-#tfsec:ignore:general-secrets-no-plaintext-exposure
+  secret_id = aws_secretsmanager_secret.noq_secrets.id
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
