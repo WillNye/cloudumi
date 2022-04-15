@@ -42,3 +42,8 @@ output "kms_key_id" {
   description = "The KMS key ID for the ECS cluster"
   value       = aws_kms_key.noq_ecs_kms_key.arn
 }
+
+output "aws_secrets_manager_arn" {
+  description = "The ARN of the AWS Secrets Manager"
+  value       = aws_secretsmanager_secret.noq_secrets.arn
+}
