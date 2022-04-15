@@ -5,7 +5,6 @@ import bleach
 import requests as requests_sync
 import tenacity
 import ujson as json
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient
 from tornado.httputil import url_concat
@@ -16,6 +15,7 @@ from common.exceptions.exceptions import (
     UserRoleNotAssumableYet,
 )
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.iam import update_assume_role_policy_trust_noq
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import (
@@ -122,7 +122,8 @@ class Aws:
                     )
                 )
 
-                credentials = await sync_to_async(client.assume_role)(
+                credentials = await aio_wrapper(
+                    client.assume_role,
                     RoleArn=role,
                     RoleSessionName=user.lower(),
                     Policy=policy,
@@ -169,7 +170,8 @@ class Aws:
                     )
                 )
 
-                credentials = await sync_to_async(client.assume_role)(
+                credentials = await aio_wrapper(
+                    client.assume_role,
                     RoleArn=role,
                     RoleSessionName=user.lower(),
                     Policy=policy,
@@ -188,7 +190,8 @@ class Aws:
                 )
                 return credentials
 
-            credentials = await sync_to_async(client.assume_role)(
+            credentials = await aio_wrapper(
+                client.assume_role,
                 RoleArn=role,
                 RoleSessionName=user.lower(),
                 DurationSeconds=config.get_host_specific_key(

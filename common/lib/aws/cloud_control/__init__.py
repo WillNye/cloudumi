@@ -2,11 +2,11 @@ from typing import Set
 
 import boto3
 import sentry_sdk
-from asgiref.sync import sync_to_async
 
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.models import SpokeAccount
 
@@ -15,7 +15,7 @@ log = config.get_logger()
 
 async def get_supported_resource_types() -> Set[str]:
     valid_resource_types = set()
-    cf_client = await sync_to_async(boto3.client)("cloudformation")
+    cf_client = await aio_wrapper(boto3.client, "cloudformation")
 
     next_token = None
     while True:
@@ -28,7 +28,7 @@ async def get_supported_resource_types() -> Set[str]:
         )
         if next_token:
             args["NextToken"] = next_token
-        response = await sync_to_async(cf_client.list_types)(**args)
+        response = await aio_wrapper(cf_client.list_types, **args)
         for type_summary in response["TypeSummaries"]:
             valid_resource_types.add(type_summary["TypeName"])
         next_token = response.get("NextToken")

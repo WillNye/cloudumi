@@ -2693,10 +2693,9 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         mock_fetch_iam_role,
         mock_send_email,
     ):
-        from asgiref.sync import sync_to_async
-
         from common.config import config
         from common.exceptions.exceptions import Unauthorized
+        from common.lib.asyncio import aio_wrapper
         from common.lib.redis import RedisHandler
         from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
@@ -2710,7 +2709,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             },
         )
 
-        s3_client = await sync_to_async(boto3_cached_conn)(
+        s3_client = await aio_wrapper(
+            boto3_cached_conn,
             "s3",
             host,
             service_type="client",

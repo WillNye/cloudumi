@@ -5,10 +5,10 @@ from hashlib import sha256
 import sentry_sdk
 import tornado.escape
 import tornado.web
-from asgiref.sync import sync_to_async
 
 from common.config import config
 from common.handlers.base import BaseHandler
+from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_edit_dynamic_config
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.json_encoder import SetEncoder
@@ -54,7 +54,8 @@ class DynamicConfigApiHandler(BaseHandler):
                 403, "Only application admins are authorized to view this page."
             )
         ddb = RestrictedDynamoHandler()
-        dynamic_config = await sync_to_async(ddb.get_static_config_for_host_sync)(
+        dynamic_config = await aio_wrapper(
+            ddb.get_static_config_for_host_sync,
             host,
             return_format="bytes",
             filter_secrets=True,
@@ -87,8 +88,8 @@ class DynamicConfigApiHandler(BaseHandler):
                 403, "Only application admins are authorized to view this page."
             )
         ddb = RestrictedDynamoHandler()
-        existing_config = await sync_to_async(ddb.get_static_config_for_host_sync)(
-            host, return_format="bytes"
+        existing_config = await aio_wrapper(
+            ddb.get_static_config_for_host_sync, host, return_format="bytes"
         )
         if existing_config:
             existing_dynamic_config_sha256 = sha256(existing_config).hexdigest()

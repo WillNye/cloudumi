@@ -2,7 +2,6 @@ import copy
 import sys
 
 import tornado.httputil
-from asgiref.sync import sync_to_async
 from furl import furl
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.errors import OneLogin_Saml2_Error
@@ -11,6 +10,7 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 from common.config import config
 from common.config.config import dict_merge
 from common.exceptions.exceptions import WebAuthNError
+from common.lib.asyncio import aio_wrapper
 from common.lib.generic import should_force_redirect
 
 log = config.get_logger()
@@ -28,7 +28,8 @@ async def init_saml_auth(request, host):
     if idp_metadata_url:
         idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(idp_metadata_url)
         saml_config = dict_merge(saml_config, idp_metadata)
-    auth = await sync_to_async(OneLogin_Saml2_Auth)(
+    auth = await aio_wrapper(
+        OneLogin_Saml2_Auth,
         request,
         saml_config,
         custom_base_path=config.get_host_specific_key(
@@ -82,7 +83,7 @@ async def authenticate_user_by_saml(request):
     saml_auth = await init_saml_auth(saml_req, host)
     force_redirect = await should_force_redirect(request.request)
     try:
-        await sync_to_async(saml_auth.process_response)()
+        await aio_wrapper(saml_auth.process_response)
     except OneLogin_Saml2_Error as e:
         log_data["error"] = e
         log.error(log_data)
@@ -105,14 +106,14 @@ async def authenticate_user_by_saml(request):
             request.finish()
             return
 
-    saml_errors = await sync_to_async(saml_auth.get_errors)()
+    saml_errors = await aio_wrapper(saml_auth.get_errors)
     if saml_errors:
         log_data["error"] = saml_errors
         log.error(log_data)
         raise WebAuthNError(reason=saml_errors)
 
     # We redirect the user to the login page if they are still not authenticated by this point
-    not_auth_warn = not await sync_to_async(saml_auth.is_authenticated)()
+    not_auth_warn = not await aio_wrapper(saml_auth.is_authenticated)
     if not_auth_warn:
         login_endpoint = get_saml_login_endpoint(saml_auth.login(), host)
         if force_redirect:

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 
 import jwt
-from asgiref.sync import sync_to_async
 
 from common.config import config
+from common.lib.asyncio import aio_wrapper
 
 log = config.get_logger()
 
@@ -32,8 +32,8 @@ async def generate_jwt_token(
         "host": host,
     }
 
-    encoded_cookie = await sync_to_async(jwt.encode)(
-        session, jwt_secret, algorithm="HS256"
+    encoded_cookie = await aio_wrapper(
+        jwt.encode, session, jwt_secret, algorithm="HS256"
     )
 
     return encoded_cookie
