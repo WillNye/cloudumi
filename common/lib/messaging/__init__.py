@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 from typing import List
 
 from common.config import config
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.session import get_session_for_tenant
 from common.lib.generic import generate_html, get_principal_friendly_name
 from common.lib.groups import get_group_url
@@ -15,7 +16,7 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger()
 
 
-def send_email_via_ses(
+async def send_email_via_ses(
     to_addresses: list[str],
     subject: str,
     body: str,
@@ -61,7 +62,8 @@ def send_email_via_ses(
         return
 
     try:
-        response = client.send_email(
+        response = aio_wrapper(
+            client.send_email,
             Destination={"ToAddresses": to_addresses},  # This should be a list
             Message={
                 "Body": {
@@ -85,7 +87,7 @@ def send_email_via_ses(
         log.debug(log_data)
 
 
-def send_email_via_sendgrid(
+async def send_email_via_sendgrid(
     to_addresses: list[str],
     subject: str,
     body: str,
@@ -104,8 +106,10 @@ def send_email_via_sendgrid(
 
     server = smtplib.SMTP_SSL("smtp.sendgrid.net", 465)
     server.ehlo(host)
-    server.login(
-        config.get(f"{key_space}.username"), config.get(f"{key_space}.password")
+    await aio_wrapper(
+        server.login,
+        config.get(f"{key_space}.username"),
+        config.get(f"{key_space}.password"),
     )
 
     msg = MIMEMultipart()
@@ -115,7 +119,7 @@ def send_email_via_sendgrid(
     msg.attach(MIMEText(body, "html", _charset=charset))
 
     try:
-        server.send_message(msg)
+        await aio_wrapper(server.send_message, msg)
         server.close()
     except Exception:
         stats.count("lib.ses.error")
@@ -148,7 +152,7 @@ async def send_email(
         )
 
     # Once we know under what conditions to use which provider we can update to support sending via ses
-    send_email_via_sendgrid(to_addresses, subject, body, host, charset)
+    await send_email_via_sendgrid(to_addresses, subject, body, host, charset)
 
 
 async def send_access_email_to_user(
