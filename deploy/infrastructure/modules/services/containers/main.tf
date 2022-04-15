@@ -78,6 +78,20 @@ resource "aws_ecr_repository" "noq_ecr_repository-celery" {
   )
 }
 
+resource "aws_secretsmanager_secret" "noq_secrets" {
+  name       = "${var.namespace}-${var.stage}-noq_secrets"
+  kms_key_id = aws_kms_key.noq_ecs_kms_key.key_id
+}
+
+resource "aws_secretsmanager_secret_version" "noq_secrets" {
+  secret_id     = aws_secretsmanager_secret.noq_secrets.id
+  secret_string = <<EOF
+_global_:
+  secrets:
+    test: secret
+EOF
+}
+
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
   name                 = "${var.namespace}-${var.stage}-registry-frontend"
   image_tag_mutability = "MUTABLE"
@@ -173,6 +187,18 @@ resource "aws_iam_role" "ecs_task_role" {
     name = "ecs_task_role_policy"
     policy = jsonencode({
       "Statement" : [
+        {
+          "Action" : [
+            "secretsmanager:describesecret",
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:listsecrets",
+            "secretsmanager:listsecretversionids"
+          ],
+          "Effect" : "Allow",
+          "Resource" : [
+            "${aws_secretsmanager_secret.noq_secrets.arn}"
+          ]
+        },
         {
           "Action" : [
             "access-analyzer:ValidatePolicy",
