@@ -1,448 +1,109 @@
-import smtplib
-import sys
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from typing import List
+import json
+import logging
+from typing import Dict, Generator, List
 
-from common.config import config
-from common.lib.asyncio import aio_wrapper
-from common.lib.aws.session import get_session_for_tenant
-from common.lib.generic import generate_html, get_principal_friendly_name
-from common.lib.groups import get_group_url
-from common.lib.plugins import get_plugin_by_name
-from common.models import ExtendedRequestModel, RequestStatus
+import boto3
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+logger = logging.getLogger(__name__)
 
 
-async def send_email_via_ses(
-    to_addresses: list[str],
-    subject: str,
-    body: str,
-    host: str,
-    sending_app: str = "consoleme",
-    charset: str = "UTF-8",
-) -> None:
-    region: str = config.get_host_specific_key("ses.region", host, config.region)
-    session = get_session_for_tenant(host)
-    client = session.client(
-        "ses",
-        region_name=region,
-        **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+def __get_queue_name_from_arn(event_source_arn: str) -> str:
+    """Return the name of the queue, given an arn"""
+    return event_source_arn.split(":")[-1]
+
+
+def delete_msg_on_sqs(region: str, receipt_handle: str, event_source_arn: str) -> dict:
+    client = boto3.client("sqs", region_name=region)
+    response = client.get_queue_url(
+        QueueName=__get_queue_name_from_arn(event_source_arn)
     )
-    sender = config.get(f"_global_.ses.{sending_app}.sender")
-    ses_arn = config.get_host_specific_key("ses.arn", host)
+    queue_url = response.get("QueueUrl")
+    response = client.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
+    return response
 
-    log_data = {
-        "to_user": to_addresses,
-        "region": region,
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "sender": sender,
-        "subject": subject,
-        "host": host,
+
+def __build_event_message(
+    message_id: str, receipt_handle: str, queue_arn: str, body: dict
+) -> dict:
+    return {
+        "message_id": message_id,
+        "receipt_handle": receipt_handle,
+        "queue_arn": queue_arn,
+        "body": body,
     }
 
-    if not ses_arn:
-        log.error(
-            {
-                **log_data,
-                "error": "Configuration value for `ses.arn` is not defined. Unable to send e-mail.",
-            }
-        )
-        return
 
-    if not sender:
-        log.error(
-            {
-                **log_data,
-                "error": f"Configuration value for `_global_.ses.{sending_app}.sender` is not defined. Unable to send e-mail.",
-            }
-        )
-        return
-
-    try:
-        response = await aio_wrapper(
-            client.send_email,
-            Destination={"ToAddresses": to_addresses},  # This should be a list
-            Message={
-                "Body": {
-                    "Html": {"Charset": charset, "Data": body},
-                    "Text": {"Charset": charset, "Data": body},
-                },
-                "Subject": {"Charset": charset, "Data": subject},
-            },
-            Source=sender,
-            SourceArn=ses_arn,
-        )
-    # Display an error if something goes wrong.
-    except Exception:
-        stats.count("lib.ses.error")
-        log_data["message"] = "Exception sending email"
-        log.error(log_data, exc_info=True)
-    else:
-        stats.count("lib.ses.success")
-        log_data["message"] = "Email sent successfully"
-        log_data["response"] = response["MessageId"]
-        log.debug(log_data)
+def __is_payload_subscription_notification(payload: dict) -> bool:
+    return payload.get("Type") == "Notification"
 
 
-async def send_email_via_sendgrid(
-    to_addresses: list[str],
-    subject: str,
-    body: str,
-    host: str = "",
-    charset: str = "UTF-8",
-):
-    key_space = "_global_.secrets.sendgrid"
-    sender = config.get(f"{key_space}.from_address")
-    log_data = {
-        "to_user": to_addresses,
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "sender": sender,
-        "subject": subject,
-        "host": host,
-    }
-
-    server = smtplib.SMTP_SSL("smtp.sendgrid.net", 465)
-    server.ehlo(host)
-    await aio_wrapper(
-        server.login,
-        config.get(f"{key_space}.username"),
-        config.get(f"{key_space}.password"),
-    )
-
-    msg = MIMEMultipart()
-    msg["Subject"] = subject
-    msg["From"] = sender
-    msg["To"] = ";".join(to_addresses)
-    msg.attach(MIMEText(body, "html", _charset=charset))
-
-    try:
-        await aio_wrapper(server.send_message, msg)
-        server.close()
-    except Exception:
-        stats.count("lib.ses.error")
-        log_data["message"] = "Exception sending email"
-        log.error(log_data, exc_info=True)
-    else:
-        stats.count("lib.ses.success")
-        log_data["message"] = "Email sent successfully"
-        log.debug(log_data)
+def __extract_subscription_notification_message_body(payload: dict) -> dict:
+    return json.loads(payload.get("Message", ""))
 
 
-async def send_email(
-    to_addresses: List[str],
-    subject: str,
-    body: str,
-    host: str,
-    sending_app: str = "consoleme",
-    charset: str = "UTF-8",
-) -> None:
-    # Handle non-list recipients
-    if not isinstance(to_addresses, list):
-        to_addresses = [to_addresses]
+def iterate_event_messages(
+    region: str, queue_name: str, messages: List[Dict[str, str]]
+) -> Generator[dict, None, None]:
+    """Return iterator of messages with the following structure:
+    - message_id
+    - receipt handle
+    - queue_arn
+    - body
 
-    if config.get("_global_.development") and config.get(
-        "_global_.ses.override_receivers_for_dev"
-    ):
-        to_addresses = config.get("_global_.ses.override_receivers_for_dev")
-        log.debug(
-            {"message": "Overriding to_address", "new_to_addresses": to_addresses}
-        )
-
-    # Once we know under what conditions to use which provider we can update to support sending via ses
-    await send_email_via_sendgrid(to_addresses, subject, body, host, charset)
-
-
-async def send_access_email_to_user(
-    user: str,
-    group: str,
-    updated_by: str,
-    status: str,
-    request_url: str,
-    group_url: str,
-    host: str,
-    reviewer_comments: None = None,
-    sending_app: str = "consoleme",
-) -> None:
-    app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    subject = f"{app_name}: Request for group {group} has been {status}"
-    to_addresses = [user, updated_by]
-    group_link = f"<a href={group_url}>{group}</a>"
-    message = f"Your request for group {group_link} has been {status} by {updated_by}."
-    if status == "approved":
-        message += " Please allow up to 30 minutes for your group to propagate. "
-
-    reviewer_comments_section = ""
-    if reviewer_comments:
-        reviewer_comments_section = f"Reviewer Comments: {reviewer_comments}"
-    body = f"""<html>
-    <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <title>Request Status</title>
-    </head>
-    <body>
-    {message} <br>
-    {reviewer_comments_section} <br>
-    See your request here: {request_url}.<br>
-    <br>
-    {config.get_host_specific_key('ses.support_reference', host, '')}
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    </body>
-    </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
-
-
-async def send_request_created_to_user(
-    user, group, updated_by, status, request_url, host, sending_app="consoleme"
-):
-    app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    subject = f"{app_name}: Request for group {group} has been created"
-    to_addresses = [user, updated_by]
-    message = f"Your request for group {group} has been created."
-    if status == "approved":
-        message += " Please allow up to 30 minutes for your group to propagate. "
-    body = f"""<html>
-    <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <title>Request Status</title>
-    </head>
-    <body>
-    {message} <br>
-    <br>
-    See your request here: {request_url}.<br>
-    <br>
-    {config.get_host_specific_key('ses.support_reference', host, '')}
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    </body>
-    </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
-
-
-async def send_request_to_secondary_approvers(
-    secondary_approvers,
-    group,
-    request_url,
-    pending_requests_url,
-    host: str,
-    sending_app="consoleme",
-):
-    app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    subject = f"{app_name}: A request for group {group} requires your approval"
-    to_addresses = secondary_approvers
-    message = f"A request for group {group} requires your approval."
-    body = f"""<html>
-        <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        <title>Request Status</title>
-        </head>
-        <body>
-        {message} <br>
-        <br>
-        See the request here: {request_url}.<br>
-        <br>
-        You can find all pending requests waiting your approval here: {pending_requests_url}. <br>
-        <br>
-        {config.get_host_specific_key('ses.support_reference', host, '')}
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        </body>
-        </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
-
-
-async def send_group_modification_notification(
-    groups, to_address, host, sending_app="consoleme"
-):
+    Handles SQS events or SNS -> SQS subscription notification events the same
     """
-    Send an email containing group changes to a notification address
+    client = boto3.client("sqs", region_name=region)
+    resp = client.get_queue_url(QueueName=queue_name)
+    queue_url = resp.get("QueueUrl")
+    if not queue_url:
+        raise RuntimeError(f"Invalid queue name: {queue_name}")
+    resp = client.get_queue_attributes(QueueUrl=queue_url, AttributeNames=["QueueArn"])
+    queue_arn = resp.get("Attributes", {}).get("QueueArn")
 
-    Example of `groups` dict:
-    {
-        "awesome_group_1@netflix.com": [
-            {"name": "tswift@netflix.com", "type": "USER"},
-            {"name": "agrande@netflix.com", "type": "USER"},
-        ],
-        "awesome_group_2@netflix.com": [
-            {"name": "lizzo@netflix.com", "type": "USER"},
-            {"name": "beilish@netflix.com", "type": "USER"},
-        ],
-    }
-
-    :param groups: map of groups and added members
-    :type groups: dict
-    :param to_address: recipient of notification email
-    :type to_address: str
-    :param sending_app: name of application
-    :type sending_app: str
-    """
-    app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    subject = f"{app_name}: Groups modified"
-    message = f"""Groups modified in {app_name}.<br>
-    You or a group you belong to are configured to receive a notification when new members are added to this group.<br>
-    Admins may click the group link below to view and modify this configuration."""
-    added_members_snippet = ""
-    for group, added_members in groups.items():
-        group_url = get_group_url(group, host)
-        group_link = f"<a href={group_url}>{group}</a>"
-        if added_members:
-            added_members_snippet += f"""<b>Users added to {group_link}</a></b>: <br>
-            {generate_html(added_members)}<br>
-            """
-    body = f"""<html>
-        <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        </head>
-        <body>
-         {message}<br>
-         <br>
-         {added_members_snippet}<br>
-        <br>
-        <br>
-        {config.get_host_specific_key('ses.support_reference', host, '')}
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        </body>
-        </html>"""
-    await send_email(to_address, subject, body, host, sending_app=sending_app)
+    for message in messages:
+        receipt_handle = message.get("ReceiptHandle")
+        if not receipt_handle:
+            raise RuntimeError(
+                f"Non-standard event message, does not have a b|ReceiptHandle: {message}"
+            )
+        message_id = message.get("MessageId", "unset")
+        body = json.loads(message.get("Body", "{}"))
+        if not body:
+            raise RuntimeError(
+                f"Non-standard event message, does not have a b|Body: {message}"
+            )
+        if __is_payload_subscription_notification(body):
+            body = __extract_subscription_notification_message_body(body)
+        yield __build_event_message(message_id, receipt_handle, queue_arn, body)
 
 
-async def send_new_aws_groups_notification(
-    to_addresses, new_aws_groups, host, sending_app="consoleme"
-):
-    app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    subject = f"{app_name}: New AWS groups detected"
-    message = """New AWS login groups were created.<br>
-    ConsoleMe is configured to send notifications when new AWS-related google groups are detected.
-    This is to detect any accidentally or maliciously created google groups.<br>"""
-    added_groups_snippet = ""
-    if new_aws_groups:
-        added_groups_snippet = f"""<b>New groups</b>: <br>
-        {generate_html({"New Groups": new_aws_groups})}<br>
-        """
-    body = f"""<html>
-        <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        </head>
-        <body>
-         {message}<br>
-         <br>
-         {added_groups_snippet}<br>
-        <br>
-        <br>
-        {config.get_host_specific_key('ses.support_reference', host, '')}
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        </body>
-        </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
-
-
-async def send_policy_request_status_update(
-    request, policy_change_uri, host: str, sending_app="consoleme"
-):
-    app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    subject = f"{app_name}: Policy change request for {request['arn']} has been {request['status']}"
-    if request["status"] == "pending":
-        subject = (
-            f"{app_name}: Policy change request for {request['arn']} has been created"
-        )
-    to_addresses = [request.get("username")]
-    message = (
-        f"A policy change request for {request['arn']} has been {request['status']}"
+def publish_msg_to_sns_via_topic_arn(region: str, arn: str, msg: dict) -> dict:
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sns.html#SNS.Client.publish
+    client = boto3.client("sns", region_name=region)
+    json_msg = json.dumps(msg)
+    response = client.publish(
+        TargetArn=arn,
+        Message=json.dumps({"default": json_msg}),
+        MessageStructure="json",
     )
-    if request["status"] == "pending":
-        message = f"A policy change request for {request['arn']} has been created."
-    if {request["status"]} == "approved":
-        message += " and committed"
-        subject += " and committed"
-    body = f"""<html>
-            <head>
-            <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-            <title>Policy Change Request Status Change</title>
-            </head>
-            <body>
-            {message} <br>
-            <br>
-            See the request here: {policy_change_uri}.<br>
-            <br>
-            <br>
-            {config.get_host_specific_key('ses.support_reference', host, '')}
-            <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-            </body>
-            </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+    return response
 
 
-async def send_policy_request_status_update_v2(
-    extended_request: ExtendedRequestModel,
-    policy_change_uri,
-    host,
-    sending_app="consoleme",
-):
-    app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    to_addresses = [extended_request.requester_email]
-    principal = await get_principal_friendly_name(extended_request.principal)
-
-    if extended_request.request_status == RequestStatus.pending:
-        subject = f"{app_name}: Policy change request for {principal} has been created"
-        message = f"A policy change request for {principal} has been created."
-        # This is a new request, also send email to application admins
-        to_addresses.append(config.get_host_specific_key("application_admin", host))
-    else:
-        subject = (
-            f"{app_name}: Policy change request for {principal} has been "
-            f"updated to {extended_request.request_status.value}"
-        )
-        message = (
-            f"A policy change request for {principal} "
-            f"has been updated to {extended_request.request_status.value}"
-        )
-
-    if extended_request.request_status == RequestStatus.approved:
-        message += " and committed"
-        subject += " and committed"
-    body = f"""<html>
-            <head>
-            <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-            <title>Policy Change Request Status Change</title>
-            </head>
-            <body>
-            {message} <br>
-            <br>
-            See the request here: {policy_change_uri}.<br>
-            <br>
-            <br>
-            {config.get_host_specific_key('ses.support_reference', host, '')}
-            <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-            </body>
-            </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+def publish_msg_sns_name(region: str, name: str, msg: dict) -> dict:
+    client = boto3.client("sns", region_name=region)
+    resp = client.create_topic(Name=name)
+    topic_arn = resp.get("TopicArn")
+    return publish_msg_to_sns_via_topic_arn(region, topic_arn, msg)
 
 
-async def send_new_comment_notification(
-    extended_request: ExtendedRequestModel,
-    to_addresses,
-    user,
-    policy_change_uri,
-    host,
-    sending_app="consoleme",
-):
-    app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    principal = await get_principal_friendly_name(extended_request.principal)
-    subject = f"{app_name}: A new comment has been added to Policy Change request for {principal}"
-    message = f"A new comment has been added to the policy change request for {principal} by {user}"
-    body = f"""<html>
-                <head>
-                <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-                <title>Policy Change Request Comment Notification</title>
-                </head>
-                <body>
-                {message} <br>
-                <br>
-                See the request here: {policy_change_uri}.<br>
-                <br>
-                <br>
-                {config.get_host_specific_key('ses.support_reference', host, '')}
-                <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-                </body>
-                </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+def publish_msg_sqs_name(
+    region: str, queue_name: str, msg: dict, delay: int = 0
+) -> dict:
+    client = boto3.client("sqs", region_name=region)
+    response = client.get_queue_url(QueueName=queue_name)
+    queue_url = response.get("QueueUrl")
+    json_msg = json.dumps(msg)
+    response = client.send_message(
+        QueueUrl=queue_url, MessageBody=json_msg, DelaySeconds=delay
+    )
+    return response

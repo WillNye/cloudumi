@@ -23,7 +23,7 @@ from common.lib.aws.utils import (
     get_resource_from_arn,
     get_service_from_arn,
 )
-from common.lib.messaging import (
+from common.lib.notifications import (
     send_new_comment_notification,
     send_policy_request_status_update_v2,
 )
