@@ -1,4 +1,4 @@
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 import ujson as json
@@ -18,6 +18,10 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         from common.config import config
 
         self.config = config
+
+        from common.lib.notifications import smtplib
+
+        smtplib.SMTP_SSL = MagicMock()
 
         from api.routes import make_app
 
