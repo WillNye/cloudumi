@@ -62,7 +62,7 @@ async def send_email_via_ses(
         return
 
     try:
-        response = aio_wrapper(
+        response = await aio_wrapper(
             client.send_email,
             Destination={"ToAddresses": to_addresses},  # This should be a list
             Message={
