@@ -1,3 +1,5 @@
+extends:
+  AWS_SECRETS_MANAGER:{{ aws_secrets_manager_arn }}
 _global_:
   landing_page_domains:
     - {{ domain_name }}
