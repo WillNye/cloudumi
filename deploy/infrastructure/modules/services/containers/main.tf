@@ -90,6 +90,7 @@ _global_:
   secrets:
     test: secret
 EOF
+#tfsec:ignore:general-secrets-no-plaintext-exposure
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
