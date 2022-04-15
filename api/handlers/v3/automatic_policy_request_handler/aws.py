@@ -24,7 +24,6 @@ class AutomaticPolicyRequestHandler(BaseHandler):
         # TODO: Log all requests and actions taken during the session. eg: Google analytics for IAM
         account_id = role_arn.split(":")[4]
         principal_name = role_arn.split("/")[-1]
-        # TODO: Support draft policies, we keep updating the draft with new changes until the user wants to submit it? Not as "aha!"
         # TODO: Normalize the policy, make sure the identity doesn't already have the allowance, and send the request. In our case, make the change.
         spoke_role_name = (
             ModelAdapter(SpokeAccount)
@@ -51,8 +50,8 @@ class AutomaticPolicyRequestHandler(BaseHandler):
         policy_name = "generated_policy"
         # TODO: Need to ask the policy the question if it already can do what is in the permission
         # TODO: Generate formal permission request / audit trail
-        # TODO: Generate more meaningful policy name
-        # TODO: Generate cross-account resources as well
+        # TODO: Don't overwrite existing policies
+        # TODO: Generate cross-account resource policies as well, turn into a formal policy request
         await sync_to_async(iam_client.put_role_policy)(
             RoleName=principal_name,
             PolicyName=policy_name,
