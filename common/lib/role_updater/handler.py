@@ -2,12 +2,12 @@ import sys
 import traceback
 
 import ujson as json
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.plugins import get_plugin_by_name
 from common.lib.role_updater.schemas import RoleUpdaterRequest
@@ -126,14 +126,17 @@ async def update_inline_policy(client, role_name, policy):
         {"message": "Updating inline policy", "role_name": role_name, "policy": policy}
     )
     if policy.get("action") == "attach":
-        response = await sync_to_async(client.put_role_policy)(
+        response = await aio_wrapper(
+            client.put_role_policy,
             RoleName=role_name,
             PolicyName=policy["policy_name"],
             PolicyDocument=policy["policy_document"],
         )
     elif policy.get("action") == "detach":
-        response = await sync_to_async(client.delete_role_policy)(
-            RoleName=role_name, PolicyName=policy["policy_name"]
+        response = await aio_wrapper(
+            client.delete_role_policy,
+            RoleName=role_name,
+            PolicyName=policy["policy_name"],
         )
     else:
         raise Exception("Unable to update managed policy")
@@ -145,12 +148,12 @@ async def update_managed_policy(client, role_name, policy):
         {"message": "Updating managed policy", "role_name": role_name, "policy": policy}
     )
     if policy.get("action") == "attach":
-        response = await sync_to_async(client.attach_role_policy)(
-            PolicyArn=policy["arn"], RoleName=role_name
+        response = await aio_wrapper(
+            client.attach_role_policy, PolicyArn=policy["arn"], RoleName=role_name
         )
     elif policy.get("action") == "detach":
-        response = await sync_to_async(client.detach_role_policy)(
-            PolicyArn=policy["arn"], RoleName=role_name
+        response = await aio_wrapper(
+            client.detach_role_policy, PolicyArn=policy["arn"], RoleName=role_name
         )
     else:
         raise Exception("Unable to update managed policy.")
@@ -167,7 +170,8 @@ async def update_assume_role_document(client, role_name, assume_role_doc):
     )
     response = None
     if assume_role_doc.get("action", "") in ["create", "update"]:
-        response = await sync_to_async(client.update_assume_role_policy)(
+        response = await aio_wrapper(
+            client.update_assume_role_policy,
             RoleName=role_name,
             PolicyDocument=assume_role_doc["assume_role_policy_document"],
         )
@@ -178,12 +182,14 @@ async def update_assume_role_document(client, role_name, assume_role_doc):
 async def update_tags(client, role_name, tag):
     log.debug({"message": "Updating tag", "role_name": role_name, "tag": tag})
     if tag.get("action") == "add":
-        response = await sync_to_async(client.tag_role)(
-            RoleName=role_name, Tags=[{"Key": tag["key"], "Value": tag["value"]}]
+        response = await aio_wrapper(
+            client.tag_role,
+            RoleName=role_name,
+            Tags=[{"Key": tag["key"], "Value": tag["value"]}],
         )
     elif tag.get("action") == "remove":
-        response = await sync_to_async(client.untag_role)(
-            RoleName=role_name, TagKeys=[tag["key"]]
+        response = await aio_wrapper(
+            client.untag_role, RoleName=role_name, TagKeys=[tag["key"]]
         )
     else:
         raise Exception("Unable to update tags.")

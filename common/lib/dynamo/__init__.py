@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import bcrypt
 import simplejson as json
-from asgiref.sync import sync_to_async
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import Binary  # noqa
 from cloudaux import get_iso_string
@@ -29,6 +28,7 @@ from common.exceptions.exceptions import (
     PendingRequestAlreadyExists,
 )
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import (
     get_session_for_tenant,
@@ -526,14 +526,15 @@ class UserDynamoHandler(BaseDynamoHandler):
         hashed_api_key = await hash_api_key(api_key, user, host)
 
         # Store hashed API Key in Dynamo
-        await sync_to_async(self.noq_api_keys.put_item)(
+        await aio_wrapper(
+            self.noq_api_keys.put_item,
             Item={
                 "host": host,
                 "user": user,
                 "api_key": hashed_api_key,
                 "id": str(uuid.uuid4()),
                 "ttl": ttl,
-            }
+            },
         )
 
         return api_key
@@ -548,8 +549,8 @@ class UserDynamoHandler(BaseDynamoHandler):
         """
         hashed_api_key = await hash_api_key(api_key, user, host)
         # Get the hashed API key
-        hashed_api_entry = await sync_to_async(self.noq_api_keys.get_item)(
-            Key={"host": host, "api_key": hashed_api_key}
+        hashed_api_entry = await aio_wrapper(
+            self.noq_api_keys.get_item, Key={"host": host, "api_key": hashed_api_key}
         )
 
         # Verify the API key
@@ -570,7 +571,8 @@ class UserDynamoHandler(BaseDynamoHandler):
             )
             return True
         elif api_key_id:
-            res = await sync_to_async(self.cloudtrail_table.query)(
+            res = await aio_wrapper(
+                self.cloudtrail_table.query,
                 IndexName="host_id_index",
                 KeyConditionExpression="id = :id AND host = :h",
                 ExpressionAttributeValues={":id": api_key_id, ":h": host},
@@ -626,8 +628,9 @@ class UserDynamoHandler(BaseDynamoHandler):
         log.debug(log_data)
 
         try:
-            await sync_to_async(self.policy_requests_table.put_item)(
-                Item=self._data_to_dynamo_replace(new_request)
+            await aio_wrapper(
+                self.policy_requests_table.put_item,
+                Item=self._data_to_dynamo_replace(new_request),
             )
             log_data[
                 "message"
@@ -671,8 +674,8 @@ class UserDynamoHandler(BaseDynamoHandler):
         :return:
         """
         # TODO: Index by host instead of scanning
-        requests = await sync_to_async(self.parallel_scan_table)(
-            self.policy_requests_table
+        requests = await aio_wrapper(
+            self.parallel_scan_table, self.policy_requests_table
         )
 
         return_value = []
@@ -711,7 +714,8 @@ class UserDynamoHandler(BaseDynamoHandler):
             "after_redirect_uri": login_attempt.after_redirect_uri,
             "host": host,
         }
-        user_entry = await sync_to_async(self.users_table.query)(
+        user_entry = await aio_wrapper(
+            self.users_table.query,
             KeyConditionExpression="username = :un AND host = :h",
             ExpressionAttributeValues={":un": login_attempt.username, ":h": host},
         )
@@ -1035,7 +1039,8 @@ class UserDynamoHandler(BaseDynamoHandler):
         return new_request
 
     async def get_identity_group_request_by_id(self, host, request_id):
-        response: Dict = await sync_to_async(self.identity_requests_table.query)(
+        response: Dict = await aio_wrapper(
+            self.identity_requests_table.query,
             KeyConditionExpression="request_id = :ri AND host = :h",
             ExpressionAttributeValues={":ri": request_id, ":h": host},
         )
@@ -1051,8 +1056,8 @@ class UserDynamoHandler(BaseDynamoHandler):
         :param status:
         :return:
         """
-        items = await sync_to_async(self.parallel_scan_table)(
-            self.identity_requests_table
+        items = await aio_wrapper(
+            self.parallel_scan_table, self.identity_requests_table
         )
 
         return_value = []
@@ -1307,7 +1312,8 @@ class UserDynamoHandler(BaseDynamoHandler):
         return True
 
     async def get_top_cloudtrail_errors_by_arn(self, arn, host, n=5):
-        response: dict = await sync_to_async(self.cloudtrail_table.query)(
+        response: dict = await aio_wrapper(
+            self.cloudtrail_table.query,
             IndexName="host-arn-index",
             KeyConditionExpression="arn = :arn AND host = :h",
             ExpressionAttributeValues={":arn": arn, ":h": host},
@@ -1498,8 +1504,8 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         stats.count(
             "update_static_config", tags={"updated_by": updated_by, "host": host}
         )
-        current_config_entry = await sync_to_async(self.tenant_static_configs.get_item)(
-            Key={"host": host, "id": "master"}
+        current_config_entry = await aio_wrapper(
+            self.tenant_static_configs.get_item, Key={"host": host, "id": "master"}
         )
         current_config_entry = current_config_entry.get("Item", {})
         if current_config_entry:

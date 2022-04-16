@@ -2,13 +2,13 @@ import sentry_sdk
 import tornado.escape
 import tornado.web
 import ujson as json
-from asgiref.sync import sync_to_async
 from marshmallow import Schema, ValidationError, fields, validates_schema
 
 from common.config import config
 from common.exceptions.exceptions import CertTooOldException
 from common.handlers.base import BaseMtlsHandler
 from common.lib.account_indexers import get_cloud_account_model_array
+from common.lib.asyncio import aio_wrapper
 from common.lib.duo import duo_mfa_user
 from common.lib.plugins import get_plugin_by_name
 from common.models import Environment
@@ -319,7 +319,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
         # Validate the input:
         data = tornado.escape.json_decode(self.request.body)
         try:
-            request = await sync_to_async(credentials_schema.load)(data)
+            request = await aio_wrapper(credentials_schema.load, data)
         except ValidationError as ve:
             stats.count(
                 "GetCredentialsHandler.post",

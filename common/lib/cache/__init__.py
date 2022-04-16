@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
@@ -14,7 +13,7 @@ from common.exceptions.exceptions import (
     ExpiredData,
     UnsupportedRedisDataType,
 )
-from common.lib.asyncio import run_in_parallel
+from common.lib.asyncio import aio_wrapper, run_in_parallel
 from common.lib.json_encoder import SetEncoder
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
@@ -221,7 +220,7 @@ async def retrieve_json_data_from_redis_or_s3(
                 if default is not None:
                     return default
             raise
-        s3_object_content = await sync_to_async(s3_object["Body"].read)()
+        s3_object_content = await aio_wrapper(s3_object["Body"].read)
         if not s3_object_content and default is not None:
             return default
         if s3_key.endswith(".gz"):

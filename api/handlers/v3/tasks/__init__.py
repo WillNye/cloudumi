@@ -1,6 +1,5 @@
-from asgiref.sync import sync_to_async
-
 from common.handlers.base import BaseHandler
+from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_all
 
 
@@ -34,9 +33,9 @@ class TasksHandler(BaseHandler):
         )
         self.write(
             {
-                "active": await sync_to_async(active.get)(),
-                "scheduled": await sync_to_async(scheduled.get)(),
-                "revoked": await sync_to_async(revoked.get)(),
+                "active": await aio_wrapper(active.get),
+                "scheduled": await aio_wrapper(scheduled.get),
+                "revoked": await aio_wrapper(revoked.get),
             }
         )
 

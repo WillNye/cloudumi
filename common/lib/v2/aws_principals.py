@@ -2,11 +2,11 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Union
 
 import ujson as json
-from asgiref.sync import sync_to_async
 from policy_sentry.util.arns import parse_arn
 
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
@@ -142,7 +142,8 @@ async def get_app_details_for_role(arn: str, host: str):
 
 async def get_role_template(arn: str, host: str):
     red = RedisHandler().redis_sync(host)
-    return await sync_to_async(red.hget)(
+    return await aio_wrapper(
+        red.hget,
         config.get_host_specific_key(
             "templated_roles.redis_key",
             host,

@@ -1,12 +1,12 @@
 import sentry_sdk
 import tornado.escape
 import ujson as json
-from asgiref.sync import sync_to_async
 
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MustBeFte
 from common.handlers.base import BaseAPIV2Handler
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.iam import (
     get_all_iam_managed_policies_for_account,
     get_managed_policy_document,
@@ -85,9 +85,8 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
             return
 
         if principal_type == "role":
-            managed_policy_details = await sync_to_async(
-                get_role_managed_policy_documents
-            )(
+            managed_policy_details = await aio_wrapper(
+                get_role_managed_policy_documents,
                 {"RoleName": principal_name},
                 account_number=account_id,
                 assume_role=ModelAdapter(SpokeAccount)
@@ -102,9 +101,8 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
                 host=host,
             )
         elif principal_type == "user":
-            managed_policy_details = await sync_to_async(
-                get_user_managed_policy_documents
-            )(
+            managed_policy_details = await aio_wrapper(
+                get_user_managed_policy_documents,
                 {"UserName": principal_name},
                 account_number=account_id,
                 assume_role=ModelAdapter(SpokeAccount)
@@ -166,7 +164,8 @@ class ManagedPoliciesHandler(BaseAPIV2Handler):
 
         log.debug(log_data)
 
-        managed_policy_details = await sync_to_async(get_managed_policy_document)(
+        managed_policy_details = await aio_wrapper(
+            get_managed_policy_document,
             policy_arn=policy_arn,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
