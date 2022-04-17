@@ -296,7 +296,7 @@ class RequestHandler(BaseAPIV2Handler):
                 if changes.admin_auto_approve:
                     # make sure user is allowed to use admin_auto_approve
                     can_manage_policy_request = (
-                        can_admin_policies(self.user, self.groups, host),
+                        await can_admin_policies(self.user, self.groups, host),
                     )
                     if can_manage_policy_request:
                         extended_request.request_status = RequestStatus.approved
@@ -714,7 +714,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             )
             last_updated = updated_request.get("last_updated")
 
-        can_approve_reject = can_admin_policies(self.user, self.groups, host)
+        can_approve_reject = await can_admin_policies(self.user, self.groups, host)
         can_update_cancel = await can_update_cancel_requests_v2(
             extended_request.requester_email, self.user, self.groups, host
         )

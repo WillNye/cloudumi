@@ -184,14 +184,33 @@ async def get_accounts_user_can_view_resources_for(user, groups, host) -> set[st
         if not spoke_role.get("restrict_viewers_of_account_resources"):
             allowed.add(spoke_role.get("account_id"))
             continue
-        if user in spoke_role.get("viewers_of_account_resources", []):
+        if user in spoke_role.get("viewers", []):
             allowed.add(spoke_role.get("account_id"))
             continue
         for group in groups:
-            if group in spoke_role.get(
-                "viewers_of_account_resources", []
-            ) or group in spoke_role.get("owners", []):
+            if group in spoke_role.get("viewers", []) or group in spoke_role.get(
+                "owners", []
+            ):
                 allowed.add(spoke_role.get("account_id"))
+                break
+    return allowed
+
+
+async def user_can_edit_resources(user, groups, host) -> bool:
+    spoke_roles = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list
+    allowed = False
+    for spoke_role in spoke_roles:
+        if can_admin_all(user, groups, host) and spoke_role.get(
+            "delegate_admin_to_owner", False
+        ):
+            allowed = True
+            break
+        if user in spoke_role.get("owners", []):
+            allowed = True
+            break
+        for group in groups:
+            if group in spoke_role.get("owners", []):
+                allowed = True
                 break
     return allowed
 
@@ -232,8 +251,9 @@ def can_create_roles(user: str, user_groups: List[str], host: str) -> bool:
     return False
 
 
-def can_admin_policies(user: str, user_groups: List[str], host: str) -> bool:
-    if can_admin_all(user, user_groups, host):
+async def can_admin_policies(user: str, user_groups: List[str], host: str) -> bool:
+    is_owner = await user_can_edit_resources(user, user_groups, host)
+    if is_owner:
         return True
     if is_in_group(
         user,

@@ -2618,7 +2618,7 @@ async def parse_and_apply_policy_request_modification(
         Command.approve_request,
         Command.reject_request,
     ]:
-        can_manage_policy_request = can_admin_policies(user, user_groups, host)
+        can_manage_policy_request = await can_admin_policies(user, user_groups, host)
         # Authorization required if the policy wasn't approved by an auto-approval probe.
         should_apply_because_auto_approved = (
             request_changes.command == Command.apply_change and approval_probe_approved

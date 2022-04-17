@@ -222,7 +222,8 @@ async def can_move_back_to_pending(request, current_user, groups, host):
         if request.get("last_updated", 0) < int(time.time()) - 86400:
             return False
         # Allow admins to return requests back to pending state
-        if can_admin_policies(current_user, groups, host):
+        is_owner = await can_admin_policies(current_user, groups, host)
+        if is_owner:
             return True
     return False
 
@@ -238,7 +239,8 @@ async def can_move_back_to_pending_v2(
         if last_updated < int(time.time()) - 86400:
             return False
         # Allow admins to return requests back to pending state
-        if can_admin_policies(current_user, groups, host):
+        is_owner = await can_admin_policies(current_user, groups, host)
+        if is_owner:
             return True
     return False
 
@@ -249,7 +251,8 @@ async def can_update_requests(request, user, groups, host):
 
     # Allow admins to return requests back to pending state
     if not can_update:
-        if can_admin_policies(user, groups, host):
+        is_owner = await can_admin_policies(user, groups, host)
+        if is_owner:
             return True
 
     return can_update
@@ -261,7 +264,8 @@ async def can_update_cancel_requests_v2(requester_username, user, groups, host):
 
     # Allow admins to update / cancel requests
     if not can_update:
-        if can_admin_policies(user, groups, host):
+        is_owner = await can_admin_policies(user, groups, host)
+        if is_owner:
             return True
 
     return can_update
