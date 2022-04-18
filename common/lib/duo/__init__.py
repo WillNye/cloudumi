@@ -1,10 +1,10 @@
 import sys
 
 import ujson as json
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.session import get_session_for_tenant
 from common.lib.plugins import get_plugin_by_name
 
@@ -30,7 +30,8 @@ async def duo_mfa_user(username, host, message="ConsoleMe Authorization Request"
     if lambda_arn:
         try:
             # Invoke the Lambda Function that will send a DUO Push to the user
-            response = await sync_to_async(client.invoke)(
+            response = await aio_wrapper(
+                client.invoke,
                 FunctionName=lambda_arn.format(config.region),
                 InvocationType="RequestResponse",
                 Payload=bytes(json.dumps(payload), "utf-8"),

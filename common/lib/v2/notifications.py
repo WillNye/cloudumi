@@ -6,9 +6,9 @@ from typing import Dict
 
 import sentry_sdk
 import ujson as json
-from asgiref.sync import sync_to_async
 
 from common.config import config
+from common.lib.asyncio import aio_wrapper
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -142,8 +142,9 @@ async def get_notifications_for_user(
 
 async def fetch_notification(notification_id: str, host: str):
     ddb = UserDynamoHandler(host=host)
-    notification = await sync_to_async(ddb.notifications_table.get_item)(
-        Key={"host": host, "predictable_id": notification_id}
+    notification = await aio_wrapper(
+        ddb.notifications_table.get_item,
+        Key={"host": host, "predictable_id": notification_id},
     )
     if notification.get("Item"):
         return ConsoleMeUserNotification.parse_obj(notification["Item"])
@@ -200,8 +201,9 @@ async def cache_notifications_to_redis_s3(host) -> Dict[str, int]:
 
 async def write_notification(notification: ConsoleMeUserNotification, host):
     ddb = UserDynamoHandler(host=host)
-    await sync_to_async(ddb.notifications_table.put_item)(
-        Item=ddb._data_to_dynamo_replace(notification.dict())
+    await aio_wrapper(
+        ddb.notifications_table.put_item,
+        Item=ddb._data_to_dynamo_replace(notification.dict()),
     )
     await cache_notifications_to_redis_s3(host)
     return True

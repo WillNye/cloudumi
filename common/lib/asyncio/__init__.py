@@ -6,6 +6,10 @@ from typing import List
 from asgiref.sync import sync_to_async
 
 
+async def aio_wrapper(fnc, *args, **kwargs):
+    return await sync_to_async(fnc, thread_sensitive=False)(*args, **kwargs)
+
+
 async def bound_fetch(sem, fn, args, kwargs):
     # Getter function with semaphore.
     async with sem:
@@ -24,7 +28,7 @@ async def bound_fetch_sync(sem, fn, args, kwargs):
             "fn": fn,
             "args": args,
             "kwargs": kwargs,
-            "result": await sync_to_async(fn)(*args, **kwargs),
+            "result": await sync_to_async(fn, thread_sensitive=False)(*args, **kwargs),
         }
 
 

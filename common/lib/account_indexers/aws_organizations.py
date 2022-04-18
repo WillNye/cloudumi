@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Literal
 
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import ConsoleMeCloudAux, boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
 from common.models import (
     CloudAccountModel,
@@ -49,15 +49,16 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
                 "Unable to sync accounts from "
                 "AWS Organizations"
             )
-        client = await sync_to_async(boto3_cached_conn)(
+        client = await aio_wrapper(
+            boto3_cached_conn,
             "organizations",
             host,
             account_number=organization.account_id,
             assume_role=role_to_assume,
             session_name="ConsoleMeOrganizationsSync",
         )
-        paginator = await sync_to_async(client.get_paginator)("list_accounts")
-        page_iterator = await sync_to_async(paginator.paginate)()
+        paginator = await aio_wrapper(client.get_paginator, "list_accounts")
+        page_iterator = await aio_wrapper(paginator.paginate)
         accounts = []
         for page in page_iterator:
             accounts.extend(page["Accounts"])
@@ -116,8 +117,8 @@ async def _get_service_control_policy(ca: ConsoleMeCloudAux, policy_id: str) -> 
         policy_id: Service Control Policy ID
     """
     try:
-        result = await sync_to_async(ca.call)(
-            "organizations.client.describe_policy", PolicyId=policy_id
+        result = await aio_wrapper(
+            ca.call, "organizations.client.describe_policy", PolicyId=policy_id
         )
     except ClientError as e:
         if (
@@ -295,10 +296,10 @@ async def retrieve_scps_for_organization(
         "client_kwargs": config.get_host_specific_key("boto3.client_kwargs", host, {}),
     }
     ca = ConsoleMeCloudAux(**conn_details)
-    all_scp_metadata = await sync_to_async(_list_service_control_policies)(ca)
+    all_scp_metadata = await aio_wrapper(_list_service_control_policies, ca)
     all_scp_objects = []
     for scp_metadata in all_scp_metadata:
-        targets = await sync_to_async(_list_targets_for_policy)(ca, scp_metadata["Id"])
+        targets = await aio_wrapper(_list_targets_for_policy, ca, scp_metadata["Id"])
         policy = await _get_service_control_policy(ca, scp_metadata["Id"])
         target_models = [ServiceControlPolicyTargetModel(**t) for t in targets]
         scp_object = ServiceControlPolicyModel(

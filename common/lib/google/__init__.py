@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import googleapiclient.discovery
 import ujson as json
-from asgiref.sync import sync_to_async
 from google.oauth2 import service_account
 from googleapiclient.discovery import Resource
 from googleapiclient.errors import HttpError
@@ -25,6 +24,7 @@ from common.exceptions.exceptions import (
     UnauthorizedToAccess,
     UserAlreadyAMemberOfGroupException,
 )
+from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_modify_members
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.groups import does_group_require_bg_check
@@ -277,14 +277,17 @@ async def get_service(
         )
 
     admin_delegated_credentials = admin_credentials.with_subject(credential_subject)
-    service = await sync_to_async(googleapiclient.discovery.build)(
-        service_name, service_path, credentials=admin_delegated_credentials
+    service = await aio_wrapper(
+        googleapiclient.discovery.build,
+        service_name,
+        service_path,
+        credentials=admin_delegated_credentials,
     )
 
     return service
 
 
-@sync_to_async
+@aio_wrapper
 def list_group_members_call(service, email):
     return service.members().list(groupKey=email).execute()
 
@@ -317,7 +320,7 @@ async def list_group_members(
     return []
 
 
-@sync_to_async
+@aio_wrapper
 def list_user_groups_call(service, user_email, page_token=None):
     if page_token:
         results = (
@@ -479,7 +482,7 @@ async def raise_if_bulk_add_disabled_and_no_request(
         raise BulkAddPrevented(error)
 
 
-@sync_to_async
+@aio_wrapper
 def insert_group_members_call(service, google_group_email, user_email, role):
     return (
         service.members()
@@ -582,7 +585,7 @@ async def api_add_user_to_group_or_raise(host, group_name, member_name, actor):
     return "ADDED"
 
 
-@sync_to_async
+@aio_wrapper
 def delete_group_members_call(service, google_group_email, user_email):
     return (
         service.members()

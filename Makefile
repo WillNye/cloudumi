@@ -13,13 +13,13 @@ test_args := --cov-report term-missing
 
 .PHONY: clean
 clean:
-	rm -rf dist/
-	rm -rf build/
-	rm -rf *.egg-info
-	rm -f celerybeat-schedule.db
-	rm -f celerybeat-schedule
-	rm -rf consoleme.tar.gz
-	rm -rf ui/.npmrc ui/.yarnrc
+	rm -rf dist/ || echo $?
+	rm -rf build/ || echo $?
+	rm -rf *.egg-info || echo $?
+	rm -f celerybeat-schedule.db || echo $?
+	rm -f celerybeat-schedule || echo $?
+	rm -rf consoleme.tar.gz || echo $?
+	rm -rf ui/.npmrc ui/.yarnrc || echo $?
 	find . -name '*.pyc' -delete
 	find . -name '*.pyo' -delete
 	find . -name '*.egg-link' -delete

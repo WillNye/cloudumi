@@ -8,7 +8,6 @@ from typing import Dict, List, Optional, Union
 
 import sentry_sdk
 import ujson as json
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
@@ -24,6 +23,7 @@ from common.exceptions.exceptions import (
 )
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_policies
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import (
@@ -281,9 +281,8 @@ async def generate_request_from_change_model_array(
             policy_name = arn_parsed["resource_path"].split("/")[-1]
             managed_policy_resource = None
             try:
-                managed_policy_resource = await sync_to_async(
-                    get_managed_policy_document
-                )(
+                managed_policy_resource = await aio_wrapper(
+                    get_managed_policy_document,
                     host=host,
                     policy_arn=primary_principal.principal_arn,
                     account_number=account_id,
@@ -921,7 +920,8 @@ async def apply_changes_to_role(
     account_id = await get_resource_account(
         extended_request.principal.principal_arn, host
     )
-    iam_client = await sync_to_async(boto3_cached_conn)(
+    iam_client = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         service_type="client",
@@ -957,7 +957,8 @@ async def apply_changes_to_role(
             if change.action == Action.attach:
                 try:
                     if arn_parsed["resource"] == "role":
-                        await sync_to_async(iam_client.put_role_policy)(
+                        await aio_wrapper(
+                            iam_client.put_role_policy,
                             RoleName=principal_name,
                             PolicyName=change.policy_name,
                             PolicyDocument=json.dumps(
@@ -966,7 +967,8 @@ async def apply_changes_to_role(
                             ),
                         )
                     elif arn_parsed["resource"] == "user":
-                        await sync_to_async(iam_client.put_user_policy)(
+                        await aio_wrapper(
+                            iam_client.put_user_policy,
                             UserName=principal_name,
                             PolicyName=change.policy_name,
                             PolicyDocument=json.dumps(
@@ -1002,12 +1004,16 @@ async def apply_changes_to_role(
             elif change.action == Action.detach:
                 try:
                     if arn_parsed["resource"] == "role":
-                        await sync_to_async(iam_client.delete_role_policy)(
-                            RoleName=principal_name, PolicyName=change.policy_name
+                        await aio_wrapper(
+                            iam_client.delete_role_policy,
+                            RoleName=principal_name,
+                            PolicyName=change.policy_name,
                         )
                     elif arn_parsed["resource"] == "user":
-                        await sync_to_async(iam_client.delete_user_policy)(
-                            UserName=principal_name, PolicyName=change.policy_name
+                        await aio_wrapper(
+                            iam_client.delete_user_policy,
+                            UserName=principal_name,
+                            PolicyName=change.policy_name,
                         )
                     response.action_results.append(
                         ActionResult(
@@ -1038,12 +1044,16 @@ async def apply_changes_to_role(
             if change.action == Action.attach:
                 try:
                     if arn_parsed["resource"] == "role":
-                        await sync_to_async(iam_client.put_role_permissions_boundary)(
-                            RoleName=principal_name, PermissionsBoundary=change.arn
+                        await aio_wrapper(
+                            iam_client.put_role_permissions_boundary,
+                            RoleName=principal_name,
+                            PermissionsBoundary=change.arn,
                         )
                     elif arn_parsed["resource"] == "user":
-                        await sync_to_async(iam_client.put_user_permissions_boundary)(
-                            UserName=principal_name, PermissionsBoundary=change.arn
+                        await aio_wrapper(
+                            iam_client.put_user_permissions_boundary,
+                            UserName=principal_name,
+                            PermissionsBoundary=change.arn,
                         )
                     response.action_results.append(
                         ActionResult(
@@ -1075,13 +1085,15 @@ async def apply_changes_to_role(
             elif change.action == Action.detach:
                 try:
                     if arn_parsed["resource"] == "role":
-                        await sync_to_async(
-                            iam_client.delete_role_permissions_boundary
-                        )(RoleName=principal_name)
+                        await aio_wrapper(
+                            iam_client.delete_role_permissions_boundary,
+                            RoleName=principal_name,
+                        )
                     elif arn_parsed["resource"] == "user":
-                        await sync_to_async(
-                            iam_client.delete_user_permissions_boundary
-                        )(UserName=principal_name)
+                        await aio_wrapper(
+                            iam_client.delete_user_permissions_boundary,
+                            UserName=principal_name,
+                        )
                     response.action_results.append(
                         ActionResult(
                             status="success",
@@ -1113,12 +1125,16 @@ async def apply_changes_to_role(
             if change.action == Action.attach:
                 try:
                     if arn_parsed["resource"] == "role":
-                        await sync_to_async(iam_client.attach_role_policy)(
-                            RoleName=principal_name, PolicyArn=change.arn
+                        await aio_wrapper(
+                            iam_client.attach_role_policy,
+                            RoleName=principal_name,
+                            PolicyArn=change.arn,
                         )
                     elif arn_parsed["resource"] == "user":
-                        await sync_to_async(iam_client.attach_user_policy)(
-                            UserName=principal_name, PolicyArn=change.arn
+                        await aio_wrapper(
+                            iam_client.attach_user_policy,
+                            UserName=principal_name,
+                            PolicyArn=change.arn,
                         )
                     response.action_results.append(
                         ActionResult(
@@ -1147,12 +1163,16 @@ async def apply_changes_to_role(
             elif change.action == Action.detach:
                 try:
                     if arn_parsed["resource"] == "role":
-                        await sync_to_async(iam_client.detach_role_policy)(
-                            RoleName=principal_name, PolicyArn=change.arn
+                        await aio_wrapper(
+                            iam_client.detach_role_policy,
+                            RoleName=principal_name,
+                            PolicyArn=change.arn,
                         )
                     elif arn_parsed["resource"] == "user":
-                        await sync_to_async(iam_client.detach_user_policy)(
-                            UserName=principal_name, PolicyArn=change.arn
+                        await aio_wrapper(
+                            iam_client.detach_user_policy,
+                            UserName=principal_name,
+                            PolicyArn=change.arn,
                         )
                     response.action_results.append(
                         ActionResult(
@@ -1184,7 +1204,8 @@ async def apply_changes_to_role(
                     "IAM users don't have assume role policies. Unable to process request."
                 )
             try:
-                await sync_to_async(iam_client.update_assume_role_policy)(
+                await aio_wrapper(
+                    iam_client.update_assume_role_policy,
                     RoleName=principal_name,
                     PolicyDocument=json.dumps(
                         change.policy.policy_document, escape_forward_slashes=False
@@ -1220,12 +1241,14 @@ async def apply_changes_to_role(
                     change.value = change.original_value
                 try:
                     if arn_parsed["resource"] == "role":
-                        await sync_to_async(iam_client.tag_role)(
+                        await aio_wrapper(
+                            iam_client.tag_role,
                             RoleName=principal_name,
                             Tags=[{"Key": change.key, "Value": change.value}],
                         )
                     elif arn_parsed["resource"] == "user":
-                        await sync_to_async(iam_client.tag_user)(
+                        await aio_wrapper(
+                            iam_client.tag_user,
                             UserName=principal_name,
                             Tags=[{"Key": change.key, "Value": change.value}],
                         )
@@ -1237,12 +1260,16 @@ async def apply_changes_to_role(
                     )
                     if change.original_key and change.original_key != change.key:
                         if arn_parsed["resource"] == "role":
-                            await sync_to_async(iam_client.untag_role)(
-                                RoleName=principal_name, TagKeys=[change.original_key]
+                            await aio_wrapper(
+                                iam_client.untag_role,
+                                RoleName=principal_name,
+                                TagKeys=[change.original_key],
                             )
                         elif arn_parsed["resource"] == "user":
-                            await sync_to_async(iam_client.untag_user)(
-                                UserName=principal_name, TagKeys=[change.original_key]
+                            await aio_wrapper(
+                                iam_client.untag_user,
+                                UserName=principal_name,
+                                TagKeys=[change.original_key],
                             )
                         response.action_results.append(
                             ActionResult(
@@ -1267,12 +1294,16 @@ async def apply_changes_to_role(
             if change.tag_action == TagAction.delete:
                 try:
                     if arn_parsed["resource"] == "role":
-                        await sync_to_async(iam_client.untag_role)(
-                            RoleName=principal_name, TagKeys=[change.key]
+                        await aio_wrapper(
+                            iam_client.untag_role,
+                            RoleName=principal_name,
+                            TagKeys=[change.key],
                         )
                     elif arn_parsed["resource"] == "user":
-                        await sync_to_async(iam_client.untag_user)(
-                            UserName=principal_name, TagKeys=[change.key]
+                        await aio_wrapper(
+                            iam_client.untag_user,
+                            UserName=principal_name,
+                            TagKeys=[change.key],
                         )
                     response.action_results.append(
                         ActionResult(
@@ -1447,7 +1478,8 @@ async def populate_old_managed_policies(
             return result
 
         try:
-            managed_policy_resource = await sync_to_async(get_managed_policy_document)(
+            managed_policy_resource = await aio_wrapper(
+                get_managed_policy_document,
                 host=host,
                 policy_arn=principal_arn,
                 account_number=arn_parsed["account"],
@@ -1775,7 +1807,8 @@ async def apply_managed_policy_resource_tag_change(
             )
         )
         return response
-    iam_client = await sync_to_async(boto3_cached_conn)(
+    iam_client = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         service_type="client",
@@ -1800,7 +1833,8 @@ async def apply_managed_policy_resource_tag_change(
         if change.original_value and not change.value:
             change.value = change.original_value
         try:
-            await sync_to_async(iam_client.tag_policy)(
+            await aio_wrapper(
+                iam_client.tag_policy,
                 PolicyArn=principal_arn,
                 Tags=[{"Key": change.key, "Value": change.value}],
             )
@@ -1811,8 +1845,10 @@ async def apply_managed_policy_resource_tag_change(
                 )
             )
             if change.original_key and change.original_key != change.key:
-                await sync_to_async(iam_client.untag_policy)(
-                    PolicyArn=principal_arn, TagKeys=[change.original_key]
+                await aio_wrapper(
+                    iam_client.untag_policy,
+                    PolicyArn=principal_arn,
+                    TagKeys=[change.original_key],
                 )
                 response.action_results.append(
                     ActionResult(
@@ -1836,8 +1872,8 @@ async def apply_managed_policy_resource_tag_change(
             )
     elif change.tag_action == TagAction.delete:
         try:
-            await sync_to_async(iam_client.untag_policy)(
-                PolicyArn=principal_arn, TagKeys=[change.key]
+            await aio_wrapper(
+                iam_client.untag_policy, PolicyArn=principal_arn, TagKeys=[change.key]
             )
             response.action_results.append(
                 ActionResult(
@@ -1944,7 +1980,8 @@ async def apply_non_iam_resource_tag_change(
         return response
 
     try:
-        client = await sync_to_async(boto3_cached_conn)(
+        client = await aio_wrapper(
+            boto3_cached_conn,
             resource_type,
             host,
             service_type="client",
@@ -2001,7 +2038,8 @@ async def apply_non_iam_resource_tag_change(
                 if not tag_key_preexists:
                     resulting_tagset.append({"Key": change.key, "Value": change.value})
 
-                await sync_to_async(client.put_bucket_tagging)(
+                await aio_wrapper(
+                    client.put_bucket_tagging,
                     Bucket=resource_name,
                     Tagging={"TagSet": resulting_tagset},
                 )
@@ -2014,42 +2052,50 @@ async def apply_non_iam_resource_tag_change(
                         resulting_tagset.append(tag)
 
                 resource_details["TagSet"] = resulting_tagset
-                await sync_to_async(client.put_bucket_tagging)(
+                await aio_wrapper(
+                    client.put_bucket_tagging,
                     Bucket=resource_name,
                     Tagging={"TagSet": resource_details["TagSet"]},
                 )
         elif resource_type == "sns":
             if change.tag_action in [TagAction.create, TagAction.update]:
-                await sync_to_async(client.tag_resource)(
+                await aio_wrapper(
+                    client.tag_resource,
                     ResourceArn=change.principal.principal_arn,
                     Tags=[{"Key": change.key, "Value": change.value}],
                 )
                 # Renaming a key
                 if change.original_key and change.original_key != change.key:
-                    await sync_to_async(client.untag_resource)(
+                    await aio_wrapper(
+                        client.untag_resource,
                         ResourceArn=change.principal.principal_arn,
                         TagKeys=[change.original_key],
                     )
             elif change.tag_action == TagAction.delete:
-                await sync_to_async(client.untag_resource)(
+                await aio_wrapper(
+                    client.untag_resource,
                     ResourceArn=change.principal.principal_arn,
                     TagKeys=[change.key],
                 )
         elif resource_type == "sqs":
             if change.tag_action in [TagAction.create, TagAction.update]:
-                await sync_to_async(client.tag_queue)(
+                await aio_wrapper(
+                    client.tag_queue,
                     QueueUrl=resource_details["QueueUrl"],
                     Tags={change.key: change.value},
                 )
                 # Renaming a key
                 if change.original_key and change.original_key != change.key:
-                    await sync_to_async(client.untag_queue)(
+                    await aio_wrapper(
+                        client.untag_queue,
                         QueueUrl=resource_details["QueueUrl"],
                         TagKeys=[change.original_key],
                     )
             elif change.tag_action == TagAction.delete:
-                await sync_to_async(client.untag_queue)(
-                    QueueUrl=resource_details["QueueUrl"], TagKeys=[change.key]
+                await aio_wrapper(
+                    client.untag_queue,
+                    QueueUrl=resource_details["QueueUrl"],
+                    TagKeys=[change.key],
                 )
         response.action_results.append(
             ActionResult(
@@ -2314,7 +2360,8 @@ async def apply_resource_policy_change(
         return response
 
     try:
-        client = await sync_to_async(boto3_cached_conn)(
+        client = await aio_wrapper(
+            boto3_cached_conn,
             resource_type,
             host,
             service_type="client",
@@ -2335,14 +2382,16 @@ async def apply_resource_policy_change(
             retry_max_attempts=2,
         )
         if resource_type == "s3":
-            await sync_to_async(client.put_bucket_policy)(
+            await aio_wrapper(
+                client.put_bucket_policy,
                 Bucket=resource_name,
                 Policy=json.dumps(
                     change.policy.policy_document, escape_forward_slashes=False
                 ),
             )
         elif resource_type == "sns":
-            await sync_to_async(client.set_topic_attributes)(
+            await aio_wrapper(
+                client.set_topic_attributes,
                 TopicArn=change.arn,
                 AttributeName="Policy",
                 AttributeValue=json.dumps(
@@ -2350,10 +2399,11 @@ async def apply_resource_policy_change(
                 ),
             )
         elif resource_type == "sqs":
-            queue_url: dict = await sync_to_async(client.get_queue_url)(
-                QueueName=resource_name
+            queue_url: dict = await aio_wrapper(
+                client.get_queue_url, QueueName=resource_name
             )
-            await sync_to_async(client.set_queue_attributes)(
+            await aio_wrapper(
+                client.set_queue_attributes,
                 QueueUrl=queue_url.get("QueueUrl"),
                 Attributes={
                     "Policy": json.dumps(
@@ -2363,7 +2413,8 @@ async def apply_resource_policy_change(
             )
         elif resource_type == "iam":
             role_name = resource_arn_parsed["resource_path"].split("/")[-1]
-            await sync_to_async(client.update_assume_role_policy)(
+            await aio_wrapper(
+                client.update_assume_role_policy,
                 RoleName=role_name,
                 PolicyDocument=json.dumps(
                     change.policy.policy_document, escape_forward_slashes=False

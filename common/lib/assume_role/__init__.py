@@ -7,12 +7,12 @@ import boto
 import boto3
 import botocore.exceptions
 import dateutil.tz
-from asgiref.sync import sync_to_async
 from botocore.config import Config
 from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
 from common.config import config as consoleme_config
 from common.exceptions.exceptions import TenantNoCentralRoleConfigured
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
 
@@ -151,7 +151,8 @@ async def get_boto3_instance(
     :param read_only: Should we prevent write operations through the assumed role credentials?, defaults to False
     :return: A Boto3 client or resource instance in a tenant's environment
     """
-    return await sync_to_async(boto3_cached_conn)(
+    return await aio_wrapper(
+        boto3_cached_conn,
         service,
         host,
         service_type=service_type,
