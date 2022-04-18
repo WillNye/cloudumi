@@ -58,13 +58,24 @@ spoke_accounts:
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
     master_for_account: false
+  - name: NoqSpokeRoleLocalDev
+    account_name: development_2
+    account_id: '350876197038'
+    role_arn: arn:aws:iam::350876197038:role/NoqSpokeRoleLocalDev
+    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+    hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+    master_for_account: false
+    owners: []
+    viewers: []
+    delegate_admin_to_owner: false
+    restrict_viewers_of_account_resources: false
 org_accounts:
   - org_id: test_org
     account_id: '123456789012'
     account_name: test_account
     owner: user
 tenant_details:
-  external_id: localhost
+  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: user@noq.dev
   creation_time: {int(time.time())}
 site_config:
@@ -147,13 +158,24 @@ spoke_accounts:
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
     master_for_account: false
+  - name: NoqSpokeRoleLocalDev
+    account_name: development_2
+    account_id: '350876197038'
+    role_arn: arn:aws:iam::350876197038:role/NoqSpokeRoleLocalDev
+    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+    hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+    master_for_account: false
+    owners: []
+    viewers: []
+    delegate_admin_to_owner: false
+    restrict_viewers_of_account_resources: false
 org_accounts:
   - org_id: test_org
     account_id: 123456789012
     account_name: test_account
     owner: user
 tenant_details:
-  external_id: localhost
+  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: user@noq.dev
   creation_time: {int(time.time())}
 site_config:
