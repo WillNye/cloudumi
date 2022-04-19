@@ -1,7 +1,3 @@
-import asyncio
-import random
-import string
-
 import tornado.escape
 from asgiref.sync import sync_to_async
 
@@ -46,7 +42,6 @@ class AutomaticPolicyRequestHandler(BaseHandler):
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             session_name=sanitize_session_name("noq_automatic_policy_request_handler"),
         )
-        letters = string.ascii_lowercase
         policy_name = "generated_policy"
         # TODO: Need to ask the policy the question if it already can do what is in the permission
         # TODO: Generate formal permission request / audit trail
