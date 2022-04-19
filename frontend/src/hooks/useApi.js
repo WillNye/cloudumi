@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { createContext, useEffect, useState } from 'react'
+import { useStateIfMounted } from 'use-state-if-mounted'
 import { useAuth } from '../auth/AuthProviderDefault'
 
 const initialState = {
@@ -9,15 +10,15 @@ const initialState = {
   empty: true,
 }
 
-export const url = 'api/v3'
+export const url = '/api/v3/'
 
 const useInnerUtils = () => {
-  const [state, setState] = useState({
+  const [state, setState] = useStateIfMounted({
     ...initialState,
   })
 
   const buildPath = (pathname = '', customUrl) =>
-    customUrl || url + (pathname ? '/' : '') + pathname
+    customUrl || url + (pathname ? '' : '') + pathname
 
   const handleWorking = () => {
     setState({ data: null, status: 'working', error: null })

@@ -1,34 +1,39 @@
 import React, { useState } from 'react'
 import { Screen } from 'lib/Screen'
-import { ServiceAWS } from './components/ServiceAWS'
 import { Sidebar } from './components/Sidebar'
-// import { useHistory } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
+import { ServiceAWS } from './components/ServiceAWS'
 
-export const Settings = () => {
+export const Settings = ({ computedMatch, origin }) => {
+
+  const { push } = useHistory()
+
+  const { tabName } = computedMatch?.params
+  
   const defaultActiveItem = { name: 'aws', Component: ServiceAWS }
-
-  // const history = useHistory()
-
-  const [{ name: activeItem, Component }, setActiveItem] =
-    useState(defaultActiveItem)
-
-  const handleItemChange = (active) => {
-    // Update route pathname
+  
+  const [{ Component }, setActiveItem] = useState(defaultActiveItem)
+  
+  const handleItemClick = ({ name }) => {
+    push(origin + '/' + name)
   }
-
-  const renderComponent = Component ? <Component /> : null
+  
+  const handleItemChange = ({ name, Component }) => {
+    setActiveItem({ name, Component })
+  }
 
   return (
     <Screen
       renderSidebar={
         <Sidebar
-          activeItem={activeItem}
-          setActiveItem={setActiveItem}
+          activeItem={tabName}
+          onClickItem={handleItemClick}
+          onItemChange={handleItemChange}
           handleItemChange={handleItemChange}
         />
       }
     >
-      {renderComponent}
+      {Component ? <Component /> : null}
     </Screen>
   )
 }
