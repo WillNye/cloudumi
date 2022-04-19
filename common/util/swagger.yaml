@@ -1457,9 +1457,19 @@ components:
           description: The AWS Role arn
           example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
         account:
-          type: string
-          description: The AWS account the request was made for
-          example: "development(111118675309)"
+          type: object
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: string
+              description: The account id
+              example: 111118675309
+            name:
+              type: string
+              description: The account name
+              example: "development"
         role_owner:
           type: string
           description: The owner of the AWS role

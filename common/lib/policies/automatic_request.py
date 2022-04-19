@@ -9,6 +9,7 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.redis import RedisHandler, redis_get
 from common.models import (
+    Account,
     AutomaticPolicyRequest,
     ExtendedAutomaticPolicyRequest,
     SpokeAccount,
@@ -112,6 +113,8 @@ async def create_policy_request(
     host, account_id, user, policy_request: AutomaticPolicyRequest
 ) -> ExtendedAutomaticPolicyRequest:
     red = await RedisHandler().redis(host)
+
+    # Generate hash to be used for id in a deterministic way
     policy_dict = dict(
         host=host, account_id=account_id, user=user, **json.loads(policy_request.policy)
     )
@@ -129,8 +132,19 @@ async def create_policy_request(
             **extended_policy_request
         )
     else:
+        account_name = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.account_name
+        )
+        account = Account(id=account_id, name=account_name)
         extended_policy_request = ExtendedAutomaticPolicyRequest(
-            id=policy_request_id, host=host, user=user, **policy_request.dict()
+            id=policy_request_id,
+            account=account,
+            host=host,
+            user=user,
+            **policy_request.dict(),
         )
         red.set(request_key, json.dumps(extended_policy_request.dict()))
 
