@@ -13,5 +13,4 @@ class AutomaticPolicyRequestHandler(BaseHandler):
             raise Exception("Role ARN not defined")
 
         applied = await automatic_request.create_policy(host, role_arn, data["policy"])
-
         self.write({"applied": applied})

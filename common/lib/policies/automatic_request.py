@@ -1,3 +1,4 @@
+import hashlib
 import json
 import sys
 
@@ -111,12 +112,28 @@ async def create_policy_request(
     host, account_id, user, policy_request: AutomaticPolicyRequest
 ) -> ExtendedAutomaticPolicyRequest:
     red = await RedisHandler().redis(host)
-    policy_request_id = ""
-    request_key = get_policy_request_key(host, account_id, policy_request_id)
-    extended_policy_request = ExtendedAutomaticPolicyRequest(
-        id=policy_request_id, host=host, user=user, **policy_request.dict()
+    policy_dict = dict(
+        host=host, account_id=account_id, user=user, **json.loads(policy_request.policy)
     )
-    red.set(request_key, json.dumps(extended_policy_request.dict()))
+    policy_request_id = hashlib.md5(
+        json.dumps(policy_dict, ensure_ascii=False, sort_keys=True, indent=None)
+    ).hexdigest()
+    request_key = get_policy_request_key(host, account_id, policy_request_id)
+
+    if extended_policy_request := await redis_get(request_key, host):
+        extended_policy_request = json.loads(extended_policy_request)
+        extended_policy_request["policy"] = json.loads(
+            extended_policy_request.get("policy", "[]")
+        )
+        extended_policy_request = ExtendedAutomaticPolicyRequest(
+            **extended_policy_request
+        )
+    else:
+        extended_policy_request = ExtendedAutomaticPolicyRequest(
+            id=policy_request_id, host=host, user=user, **policy_request.dict()
+        )
+        red.set(request_key, json.dumps(extended_policy_request.dict()))
+
     return extended_policy_request
 
 
