@@ -5,12 +5,12 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 import pytz
 import ujson as json
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
 from common.lib.plugins import get_plugin_by_name
@@ -28,7 +28,7 @@ async def get_s3_bucket_for_host(host):
 
 
 async def is_object_older_than_seconds(
-    key: str,
+    s3_key: str,
     older_than_seconds: int,
     host: str,
     bucket: Optional[str] = None,
@@ -45,6 +45,11 @@ async def is_object_older_than_seconds(
             "`bucket` not defined, and we can't find the default bucket in "
             "the configuration key `s3_cache_bucket`."
         )
+
+    # Force prefixing by host
+    if s3_key:
+        s3_key = f"{host}/{s3_key}"
+
     now = datetime.utcnow().replace(tzinfo=pytz.utc)
     if not s3_client:
         session = get_session_for_tenant(host)
@@ -53,7 +58,7 @@ async def is_object_older_than_seconds(
             **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
     try:
-        res = await sync_to_async(s3_client.head_object)(Bucket=bucket, Key=key)
+        res = await aio_wrapper(s3_client.head_object, Bucket=bucket, Key=s3_key)
     except ClientError as e:
         # If file is not found, we'll tell the user it's older than the specified time
         if e.response.get("Error", {}).get("Code") == "404":
@@ -76,7 +81,7 @@ async def does_object_exist(bucket: str, key: str, host: str, s3_client=None) ->
             **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
     try:
-        await sync_to_async(s3_client.head_object)(Bucket=bucket, Key=key)
+        await aio_wrapper(s3_client.head_object, Bucket=bucket, Key=key)
     except ClientError as e:
         # If file is not found, we'll tell the user it's older than the specified time
         if e.response.get("Error", {}).get("Code") == "404":
@@ -160,7 +165,7 @@ def get_object(**kwargs):
 
 async def get_object_async(**kwargs):
     """Get an S3 object Asynchronously"""
-    return await sync_to_async(get_object)(**kwargs)
+    return await aio_wrapper(get_object, **kwargs)
 
 
 async def fetch_json_object_from_s3(

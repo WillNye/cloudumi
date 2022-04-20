@@ -6,11 +6,11 @@ from typing import Any, Dict, Optional
 
 import sentry_sdk
 import ujson as json
-from asgiref.sync import sync_to_async
 
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.dynamo import UserDynamoHandler
 
 log = config.get_logger()
@@ -130,7 +130,8 @@ async def detect_cloudtrail_denies_and_update_cache(
     for cloudtrail_deny in all_cloudtrail_denies_l:
         all_cloudtrail_denies[cloudtrail_deny["request_id"]] = cloudtrail_deny
 
-    sqs_client = await sync_to_async(boto3_cached_conn)(
+    sqs_client = await aio_wrapper(
+        boto3_cached_conn,
         "sqs",
         host,
         service_type="client",
@@ -141,12 +142,12 @@ async def detect_cloudtrail_denies_and_update_cache(
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
 
-    queue_url_res = await sync_to_async(sqs_client.get_queue_url)(QueueName=queue_name)
+    queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)
     queue_url = queue_url_res.get("QueueUrl")
     if not queue_url:
         raise DataNotRetrievable(f"Unable to retrieve Queue URL for {queue_arn}")
-    messages_awaitable = await sync_to_async(sqs_client.receive_message)(
-        QueueUrl=queue_url, MaxNumberOfMessages=10
+    messages_awaitable = await aio_wrapper(
+        sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
     )
     new_events = 0
     messages = messages_awaitable.get("Messages", [])
@@ -250,16 +251,19 @@ async def detect_cloudtrail_denies_and_update_cache(
                 }
             )
         if processed_messages:
-            await sync_to_async(sqs_client.delete_message_batch)(
-                QueueUrl=queue_url, Entries=processed_messages
+            await aio_wrapper(
+                sqs_client.delete_message_batch,
+                QueueUrl=queue_url,
+                Entries=processed_messages,
             )
 
-        await sync_to_async(dynamo.batch_write_cloudtrail_events)(
+        await aio_wrapper(
+            dynamo.batch_write_cloudtrail_events,
             all_cloudtrail_denies.values(),
             host,
         )
-        messages_awaitable = await sync_to_async(sqs_client.receive_message)(
-            QueueUrl=queue_url, MaxNumberOfMessages=10
+        messages_awaitable = await aio_wrapper(
+            sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
         )
         messages = messages_awaitable.get("Messages", [])
     if reached_limit_on_num_messages_to_process:

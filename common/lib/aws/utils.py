@@ -1,14 +1,16 @@
+import asyncio
+import copy
 import fnmatch
 import json
 import re
 import sys
+from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pytz
 import sentry_sdk
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError, ParamValidationError
 from dateutil.parser import parse
 from deepdiff import DeepDiff
@@ -27,6 +29,7 @@ from common.lib.account_indexers.aws_organizations import (
     retrieve_scps_for_organization,
 )
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_config import query
 from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
 from common.lib.aws.iam import get_managed_policy_document, get_policy
@@ -62,6 +65,8 @@ from common.models import (
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+
+PERMISSIONS_SEPARATOR = "||"
 
 
 async def get_resource_policy(
@@ -181,7 +186,8 @@ async def fetch_managed_policy_details(
         resource_name = path + "/" + resource_name
     policy_arn: str = f"arn:aws:iam::{account_id}:policy/{resource_name}"
     result: Dict = {}
-    result["Policy"] = await sync_to_async(get_managed_policy_document)(
+    result["Policy"] = await aio_wrapper(
+        get_managed_policy_document,
         policy_arn=policy_arn,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
@@ -193,7 +199,8 @@ async def fetch_managed_policy_details(
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         host=host,
     )
-    policy_details = await sync_to_async(get_policy)(
+    policy_details = await aio_wrapper(
+        get_policy,
         policy_arn=policy_arn,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
@@ -246,7 +253,8 @@ async def fetch_sns_topic(
         )
 
     arn: str = f"arn:aws:sns:{region}:{account_id}:{resource_name}"
-    client = await sync_to_async(boto3_cached_conn)(
+    client = await aio_wrapper(
+        boto3_cached_conn,
         "sns",
         host,
         account_number=account_id,
@@ -263,7 +271,8 @@ async def fetch_sns_topic(
         retry_max_attempts=2,
     )
 
-    result: Dict = await sync_to_async(get_topic_attributes)(
+    result: Dict = await aio_wrapper(
+        get_topic_attributes,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -280,7 +289,7 @@ async def fetch_sns_topic(
         host=host,
     )
 
-    tags: Dict = await sync_to_async(client.list_tags_for_resource)(ResourceArn=arn)
+    tags: Dict = await aio_wrapper(client.list_tags_for_resource, ResourceArn=arn)
     result["TagSet"] = tags["Tags"]
     if not isinstance(result["Policy"], dict):
         result["Policy"] = json.loads(result["Policy"])
@@ -307,7 +316,8 @@ async def fetch_sqs_queue(
             f"Region '{region}' is not valid region on account '{account_id}'."
         )
 
-    queue_url: str = await sync_to_async(get_queue_url)(
+    queue_url: str = await aio_wrapper(
+        get_queue_url,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -324,7 +334,8 @@ async def fetch_sqs_queue(
         host=host,
     )
 
-    result: Dict = await sync_to_async(get_queue_attributes)(
+    result: Dict = await aio_wrapper(
+        get_queue_attributes,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -342,7 +353,8 @@ async def fetch_sqs_queue(
         host=host,
     )
 
-    tags: Dict = await sync_to_async(list_queue_tags)(
+    tags: Dict = await aio_wrapper(
+        list_queue_tags,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -390,7 +402,8 @@ async def get_bucket_location_with_fallback(
     bucket_name: str, account_id: str, host, fallback_region: str = config.region
 ) -> str:
     try:
-        bucket_location_res = await sync_to_async(get_bucket_location)(
+        bucket_location_res = await aio_wrapper(
+            get_bucket_location,
             Bucket=bucket_name,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
@@ -440,7 +453,8 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
     bucket_location = "us-east-1"
 
     try:
-        bucket_resource = await sync_to_async(get_bucket_resource)(
+        bucket_resource = await aio_wrapper(
+            get_bucket_resource,
             bucket_name,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
@@ -465,7 +479,8 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
         bucket_location = await get_bucket_location_with_fallback(
             bucket_name, account_id, host
         )
-        policy: Dict = await sync_to_async(get_bucket_policy)(
+        policy: Dict = await aio_wrapper(
+            get_bucket_policy,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
             .load_config("spoke_accounts", host)
@@ -487,7 +502,8 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
         else:
             raise
     try:
-        tags: Dict = await sync_to_async(get_bucket_tagging)(
+        tags: Dict = await aio_wrapper(
+            get_bucket_tagging,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
             .load_config("spoke_accounts", host)
@@ -618,8 +634,8 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
     iam_user = await fetch_iam_user_details(account_id, iam_user_name, host)
 
     # Detach managed policies
-    for policy in await sync_to_async(iam_user.attached_policies.all)():
-        await sync_to_async(policy.load)()
+    for policy in await aio_wrapper(iam_user.attached_policies.all):
+        await aio_wrapper(policy.load)
         log.info(
             {
                 **log_data,
@@ -627,11 +643,11 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
                 "policy_arn": policy.arn,
             }
         )
-        await sync_to_async(policy.detach_user)(UserName=iam_user)
+        await aio_wrapper(policy.detach_user, UserName=iam_user)
 
     # Delete Inline policies
-    for policy in await sync_to_async(iam_user.policies.all)():
-        await sync_to_async(policy.load)()
+    for policy in await aio_wrapper(iam_user.policies.all):
+        await aio_wrapper(policy.load)
         log.info(
             {
                 **log_data,
@@ -639,7 +655,7 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
                 "policy_name": policy.name,
             }
         )
-        await sync_to_async(policy.delete)()
+        await aio_wrapper(policy.delete)
 
     log.info({**log_data, "message": "Performing access key deletion"})
     access_keys = iam_user.access_keys.all()
@@ -647,7 +663,7 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
         access_key.delete()
 
     log.info({**log_data, "message": "Performing user deletion"})
-    await sync_to_async(iam_user.delete)()
+    await aio_wrapper(iam_user.delete)
     stats.count(
         f"{log_data['function']}.success", tags={"iam_user_name": iam_user_name}
     )
@@ -666,8 +682,8 @@ async def delete_iam_role(account_id, role_name, username, host) -> bool:
     log.info(log_data)
     role = await fetch_role_details(account_id, role_name, host)
 
-    for instance_profile in await sync_to_async(role.instance_profiles.all)():
-        await sync_to_async(instance_profile.load)()
+    for instance_profile in await aio_wrapper(role.instance_profiles.all):
+        await aio_wrapper(instance_profile.load)
         log.info(
             {
                 **log_data,
@@ -675,12 +691,12 @@ async def delete_iam_role(account_id, role_name, username, host) -> bool:
                 "instance_profile": instance_profile.name,
             }
         )
-        await sync_to_async(instance_profile.remove_role)(RoleName=role.name)
-        await sync_to_async(instance_profile.delete)()
+        await aio_wrapper(instance_profile.remove_role, RoleName=role.name)
+        await aio_wrapper(instance_profile.delete)
 
     # Detach managed policies
-    for policy in await sync_to_async(role.attached_policies.all)():
-        await sync_to_async(policy.load)()
+    for policy in await aio_wrapper(role.attached_policies.all):
+        await aio_wrapper(policy.load)
         log.info(
             {
                 **log_data,
@@ -688,11 +704,11 @@ async def delete_iam_role(account_id, role_name, username, host) -> bool:
                 "policy_arn": policy.arn,
             }
         )
-        await sync_to_async(policy.detach_role)(RoleName=role_name)
+        await aio_wrapper(policy.detach_role, RoleName=role_name)
 
     # Delete Inline policies
-    for policy in await sync_to_async(role.policies.all)():
-        await sync_to_async(policy.load)()
+    for policy in await aio_wrapper(role.policies.all):
+        await aio_wrapper(policy.load)
         log.info(
             {
                 **log_data,
@@ -700,10 +716,10 @@ async def delete_iam_role(account_id, role_name, username, host) -> bool:
                 "policy_name": policy.name,
             }
         )
-        await sync_to_async(policy.delete)()
+        await aio_wrapper(policy.delete)
 
     log.info({**log_data, "message": "Performing role deletion"})
-    await sync_to_async(role.delete)()
+    await aio_wrapper(role.delete)
     stats.count(f"{log_data['function']}.success", tags={"role_name": role_name})
 
 
@@ -715,7 +731,8 @@ async def fetch_role_details(account_id, role_name, host):
         "role": role_name,
     }
     log.info(log_data)
-    iam_resource = await sync_to_async(boto3_cached_conn)(
+    iam_resource = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         service_type="resource",
@@ -730,13 +747,13 @@ async def fetch_role_details(account_id, role_name, host):
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     try:
-        iam_role = await sync_to_async(iam_resource.Role)(role_name)
+        iam_role = await aio_wrapper(iam_resource.Role, role_name)
     except ClientError as ce:
         if ce.response["Error"]["Code"] == "NoSuchEntity":
             log_data["message"] = "Requested role doesn't exist"
             log.error(log_data)
         raise
-    await sync_to_async(iam_role.load)()
+    await aio_wrapper(iam_role.load)
     return iam_role
 
 
@@ -758,7 +775,8 @@ async def fetch_iam_user_details(account_id, iam_user_name, host):
         "host": host,
     }
     log.info(log_data)
-    iam_resource = await sync_to_async(boto3_cached_conn)(
+    iam_resource = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         service_type="resource",
@@ -773,13 +791,13 @@ async def fetch_iam_user_details(account_id, iam_user_name, host):
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     try:
-        iam_user = await sync_to_async(iam_resource.User)(iam_user_name)
+        iam_user = await aio_wrapper(iam_resource.User, iam_user_name)
     except ClientError as ce:
         if ce.response["Error"]["Code"] == "NoSuchEntity":
             log_data["message"] = "Requested user doesn't exist"
             log.error(log_data)
         raise
-    await sync_to_async(iam_user.load)()
+    await aio_wrapper(iam_user.load)
     return iam_user
 
 
@@ -824,12 +842,18 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
         raise MissingConfigurationValue(
             "Missing Default Assume Role Policy Configuration"
         )
+
+    default_max_session_duration = config.get_host_specific_key(
+        "user_role_creator.default_max_session_duration", host, 3600
+    )
+
     if create_model.description:
         description = create_model.description
     else:
         description = f"Role created by {username} through ConsoleMe"
 
-    iam_client = await sync_to_async(boto3_cached_conn)(
+    iam_client = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         service_type="client",
@@ -845,9 +869,11 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
     )
     results = {"errors": 0, "role_created": "false", "action_results": []}
     try:
-        await sync_to_async(iam_client.create_role)(
+        await aio_wrapper(
+            iam_client.create_role,
             RoleName=create_model.role_name,
             AssumeRolePolicyDocument=json.dumps(default_trust_policy),
+            MaxSessionDuration=default_max_session_duration,
             Description=description,
             Tags=[],
         )
@@ -892,10 +918,12 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
     # Create instance profile and attach if specified
     if create_model.instance_profile:
         try:
-            await sync_to_async(iam_client.create_instance_profile)(
-                InstanceProfileName=create_model.role_name
+            await aio_wrapper(
+                iam_client.create_instance_profile,
+                InstanceProfileName=create_model.role_name,
             )
-            await sync_to_async(iam_client.add_role_to_instance_profile)(
+            await aio_wrapper(
+                iam_client.add_role_to_instance_profile,
                 InstanceProfileName=create_model.role_name,
                 RoleName=create_model.role_name,
             )
@@ -994,6 +1022,16 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
             "Missing Default Assume Role Policy Configuration"
         )
 
+    default_max_session_duration = config.get_host_specific_key(
+        "user_role_creator.default_max_session_duration", host, 3600
+    )
+
+    max_session_duration = (
+        role.max_session_duration
+        if clone_model.options.max_session_duration
+        else default_max_session_duration
+    )
+
     if (
         clone_model.options.copy_description
         and role.description is not None
@@ -1010,7 +1048,8 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
 
     tags = role.tags if clone_model.options.tags and role.tags else []
 
-    iam_client = await sync_to_async(boto3_cached_conn)(
+    iam_client = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         service_type="client",
@@ -1026,9 +1065,11 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     )
     results = {"errors": 0, "role_created": "false", "action_results": []}
     try:
-        await sync_to_async(iam_client.create_role)(
+        await aio_wrapper(
+            iam_client.create_role,
             RoleName=clone_model.dest_role_name,
             AssumeRolePolicyDocument=json.dumps(trust_policy),
+            MaxSessionDuration=max_session_duration,
             Description=description,
             Tags=tags,
         )
@@ -1098,12 +1139,14 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
             }
         )
     # Create instance profile and attach if it exists in source role
-    if len(list(await sync_to_async(role.instance_profiles.all)())) > 0:
+    if len(list(await aio_wrapper(role.instance_profiles.all))) > 0:
         try:
-            await sync_to_async(iam_client.create_instance_profile)(
-                InstanceProfileName=clone_model.dest_role_name
+            await aio_wrapper(
+                iam_client.create_instance_profile,
+                InstanceProfileName=clone_model.dest_role_name,
             )
-            await sync_to_async(iam_client.add_role_to_instance_profile)(
+            await aio_wrapper(
+                iam_client.add_role_to_instance_profile,
                 InstanceProfileName=clone_model.dest_role_name,
                 RoleName=clone_model.dest_role_name,
             )
@@ -1138,12 +1181,13 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
 
     # Copy inline policies
     if clone_model.options.inline_policies:
-        for src_policy in await sync_to_async(role.policies.all)():
-            await sync_to_async(src_policy.load)()
+        for src_policy in await aio_wrapper(role.policies.all):
+            await aio_wrapper(src_policy.load)
             try:
-                dest_policy = await sync_to_async(cloned_role.Policy)(src_policy.name)
-                await sync_to_async(dest_policy.put)(
-                    PolicyDocument=json.dumps(src_policy.policy_document)
+                dest_policy = await aio_wrapper(cloned_role.Policy, src_policy.name)
+                await aio_wrapper(
+                    dest_policy.put,
+                    PolicyDocument=json.dumps(src_policy.policy_document),
                 )
                 results["action_results"].append(
                     {
@@ -1167,15 +1211,13 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
 
     # Copy managed policies
     if clone_model.options.managed_policies:
-        for src_policy in await sync_to_async(role.attached_policies.all)():
-            await sync_to_async(src_policy.load)()
+        for src_policy in await aio_wrapper(role.attached_policies.all):
+            await aio_wrapper(src_policy.load)
             dest_policy_arn = src_policy.arn.replace(
                 clone_model.account_id, clone_model.dest_account_id
             )
             try:
-                await sync_to_async(cloned_role.attach_policy)(
-                    PolicyArn=dest_policy_arn
-                )
+                await aio_wrapper(cloned_role.attach_policy, PolicyArn=dest_policy_arn)
                 results["action_results"].append(
                     {
                         "status": "success",
@@ -1300,7 +1342,8 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
     if celery_sync_regions:
         return celery_sync_regions
 
-    client = await sync_to_async(boto3_cached_conn)(
+    client = await aio_wrapper(
+        boto3_cached_conn,
         "ec2",
         host,
         account_number=account_id,
@@ -1313,7 +1356,7 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
 
-    regions = await sync_to_async(client.describe_regions)()
+    regions = await aio_wrapper(client.describe_regions)
     return {r["RegionName"] for r in regions["Regions"]}
 
 
@@ -1323,12 +1366,14 @@ async def access_analyzer_validate_policy(
     session = get_session_for_tenant(host)
     try:
         enhanced_findings = []
-        client = await sync_to_async(session.client)(
+        client = await aio_wrapper(
+            session.client,
             "accessanalyzer",
             region_name=config.region,
             **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
-        access_analyzer_response = await sync_to_async(client.validate_policy)(
+        access_analyzer_response = await aio_wrapper(
+            client.validate_policy,
             policyDocument=policy,
             policyType=policy_type,  # ConsoleMe only supports identity policy analysis currently
         )
@@ -1368,13 +1413,13 @@ async def access_analyzer_validate_policy(
 
 
 async def parliament_validate_iam_policy(policy: str) -> List[Dict[str, Any]]:
-    analyzed_policy = await sync_to_async(analyze_policy_string)(policy)
+    analyzed_policy = await aio_wrapper(analyze_policy_string, policy)
     findings = analyzed_policy.findings
 
     enhanced_findings = []
 
     for finding in findings:
-        enhanced_finding = await sync_to_async(enhance_finding)(finding)
+        enhanced_finding = await aio_wrapper(enhance_finding, finding)
         enhanced_findings.append(
             {
                 "issue": enhanced_finding.issue,
@@ -1762,6 +1807,22 @@ async def normalize_policies(policies: List[Any]) -> List[Any]:
                 matched = False
                 # Sorry for the magic. this is iterating through all elements of a list that aren't the current element
                 for compare_value in policy[element][:i] + policy[element][(i + 1) :]:
+                    if compare_value == policy[element][i]:
+                        matched = True
+                        break
+                    if compare_value == "*":
+                        matched = True
+                        break
+                    if (
+                        "*" not in compare_value
+                        and ":" in policy[element][i]
+                        and ":" in compare_value
+                    ):
+                        if (
+                            compare_value.split(":")[0]
+                            != policy[element][i].split(":")[0]
+                        ):
+                            continue
                     if fnmatch.fnmatch(policy[element][i], compare_value):
                         matched = True
                         break
@@ -1915,12 +1976,16 @@ async def remove_temp_policies(
         if change.change_type == "inline_policy":
             try:
                 if resource_name == "role":
-                    await sync_to_async(iam_client.delete_role_policy)(
-                        RoleName=principal_name, PolicyName=change.policy_name
+                    await aio_wrapper(
+                        iam_client.delete_role_policy,
+                        RoleName=principal_name,
+                        PolicyName=change.policy_name,
                     )
                 elif resource_name == "user":
-                    await sync_to_async(iam_client.delete_user_policy)(
-                        UserName=principal_name, PolicyName=change.policy_name
+                    await aio_wrapper(
+                        iam_client.delete_user_policy,
+                        UserName=principal_name,
+                        PolicyName=change.policy_name,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
@@ -1945,12 +2010,14 @@ async def remove_temp_policies(
         elif change.change_type == "permissions_boundary":
             try:
                 if resource_name == "role":
-                    await sync_to_async(iam_client.delete_role_permissions_boundary)(
-                        RoleName=principal_name
+                    await aio_wrapper(
+                        iam_client.delete_role_permissions_boundary,
+                        RoleName=principal_name,
                     )
                 elif resource_name == "user":
-                    await sync_to_async(iam_client.delete_user_permissions_boundary)(
-                        UserName=principal_name
+                    await aio_wrapper(
+                        iam_client.delete_user_permissions_boundary,
+                        UserName=principal_name,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
@@ -1977,12 +2044,16 @@ async def remove_temp_policies(
         elif change.change_type == "managed_policy":
             try:
                 if resource_name == "role":
-                    await sync_to_async(iam_client.detach_role_policy)(
-                        RoleName=principal_name, PolicyArn=change.arn
+                    await aio_wrapper(
+                        iam_client.detach_role_policy,
+                        RoleName=principal_name,
+                        PolicyArn=change.arn,
                     )
                 elif resource_name == "user":
-                    await sync_to_async(iam_client.detach_user_policy)(
-                        UserName=principal_name, PolicyArn=change.arn
+                    await aio_wrapper(
+                        iam_client.detach_user_policy,
+                        UserName=principal_name,
+                        PolicyArn=change.arn,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
@@ -2005,12 +2076,16 @@ async def remove_temp_policies(
         elif change.change_type == "resource_tag":
             try:
                 if resource_name == "role":
-                    await sync_to_async(iam_client.untag_role)(
-                        RoleName=principal_name, TagKeys=[change.key]
+                    await aio_wrapper(
+                        iam_client.untag_role,
+                        RoleName=principal_name,
+                        TagKeys=[change.key],
                     )
                 elif resource_name == "user":
-                    await sync_to_async(iam_client.untag_user)(
-                        UserName=principal_name, TagKeys=[change.key]
+                    await aio_wrapper(
+                        iam_client.untag_user,
+                        UserName=principal_name,
+                        TagKeys=[change.key],
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
@@ -2146,7 +2221,8 @@ async def resource_arn_known_in_aws_config(
     if not run_query:
         return False
 
-    r = await sync_to_async(query)(
+    r = await aio_wrapper(
+        query,
         f"select arn where arn = '{resource_arn}'",
         host,
         use_aggregator=run_query_with_aggregator,
@@ -2213,7 +2289,8 @@ async def simulate_iam_principal_action(
             }
         )
     account_id = principal_arn.split(":")[4]
-    client = await sync_to_async(boto3_cached_conn)(
+    client = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         account_number=account_id,
@@ -2228,7 +2305,8 @@ async def simulate_iam_principal_action(
         retry_max_attempts=2,
     )
     try:
-        response = await sync_to_async(client.simulate_principal_policy)(
+        response = await aio_wrapper(
+            client.simulate_principal_policy,
             PolicySourceArn=principal_arn,
             ActionNames=[
                 action,
@@ -2259,8 +2337,8 @@ async def simulate_iam_principal_action(
 
 async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str]:
     principal_details = {}
-    principal_type = arn.split(":")[-1].split("/")[0]
-    account_id = arn.split(":")[4]
+    principal_type = await get_identity_type_from_arn(arn)
+    account_id = await get_account_id_from_arn(arn)
     # trying to find principal for subsequent queries
     if principal_type == "role":
         principal_details = await fetch_iam_role(account_id, arn, host)
@@ -2323,3 +2401,378 @@ async def get_resource_account(arn: str, host: str) -> str:
             if search_bucket_name in buckets_j:
                 return bucket_account_id
     return ""
+
+
+async def should_exclude_policy_from_comparison(policy: Dict[str, Any]) -> bool:
+    """Ignores policies from comparison if we don't support them.
+
+    AWS IAM policies come in all shapes and sizes. We ignore policies that have Effect=Deny, or NotEffect (instead of Effect),
+    NotResource (instead of Resource), and NotAction (instead of Action).
+
+    :param policy: A policy dictionary, ie: {'Statement': [{'Action': 's3:*', 'Effect': 'Allow', 'Resource': '*'}]}
+    :return: Whether to exclude the policy from comparison or not.
+    """
+    if not policy.get("Effect") or policy["Effect"] == "Deny":
+        return True
+    if not policy.get("Resource"):
+        return True
+    if not policy.get("Action"):
+        return True
+    return False
+
+
+async def entry_in_entries(value: str, values_to_compare: List[str]) -> bool:
+    """Returns True if value is included in values_to_compare, using wildcard matching.
+
+    :param value: Some string. Usually a resource or IAM action. IE: s3:getbucketpolicy
+    :param values_to_compare: A list of strings, usually resources or actions. IE: ['s3:*', 's3:ListBucket']
+    :return: a boolean that specifies whether value is encommpassed in values_to_compare
+    """
+    for compare_to in values_to_compare:
+        if value == compare_to:
+            return True
+        if compare_to == "*":
+            return True
+        if "*" not in compare_to and ":" in value and ":" in compare_to:
+            if compare_to.split(":")[0] != value.split(":")[0]:
+                continue
+        if fnmatch.fnmatch(value, compare_to):
+            return True
+    return False
+
+
+async def includes_resources(resourceA: List[str], resourceB: List[str]) -> bool:
+    """Returns True if all of the resources in resourceA are included in resourceB, using fnmatch (wildcard) matching.
+
+    :param resourceA: A list of resource ARNs. For example: ['arn:aws:s3:::my-bucket/*', 'arn:aws:s3:::my-bucket/my-object']
+    :param resourceB: Another list of resource ARNs. For example: ['*']
+    :return: True if all of the resources in resourceA are included/encompassed in resourceB, otherwise False.
+    """
+    for resource in resourceA:
+        match = False
+        if await entry_in_entries(resource, resourceB):
+            match = True
+        if not match:
+            return False
+    return True
+
+
+async def is_already_allowed_by_other_policy(
+    inline_policy: Dict[str, Any], all_policies: List[Dict[str, Any]]
+) -> bool:
+    """Returns True if a list of policies (all_policies) has permissions that already encompass inline_policy.
+
+    A caveat: This function will ignore comparing equivalent policies. eg: If inline_policy matches a policy in all_policies, it
+    will be ignored and this function will continue comparing the inline_policy against all of the other policies in
+    all_policies. Why? Because normally we're comparing a single inline policy against a list of inline policies which
+    includes all policies (including the current)
+
+    :param inline_policy: A specific policy statement, ie: {'Action': ['s3:putbuckettagging'], 'Effect': 'Allow', 'Resource': ['*']}
+    :param all_policies: A list of policy documents to compare `inline_policy` to. IE: [{'Action': ['s3:putbuckettagging'], 'Effect': 'Allow', 'Resource': ['*']}, ...]
+    :raises Exception: Validation error if the policy is not supported for comparison.
+    :return: A boolean, whether the `inline_policy` is already allowed by a policy in the list of `all_policies`.
+    """
+    if await should_exclude_policy_from_comparison(inline_policy):
+        return False
+    if not isinstance(inline_policy["Resource"], list) or not isinstance(
+        inline_policy["Action"], list
+    ):
+        raise Exception("Please normalize actions and resources into lists first")
+    for compare_policy in all_policies:
+        if compare_policy == inline_policy:
+            continue
+        if await should_exclude_policy_from_comparison(compare_policy):
+            continue
+        if not isinstance(compare_policy["Resource"], list) or not isinstance(
+            compare_policy["Action"], list
+        ):
+            raise Exception("Please normalize actions and resources into lists first")
+        if not await includes_resources(
+            inline_policy["Resource"], compare_policy["Resource"]
+        ):
+            continue
+        for action in inline_policy["Action"]:
+            if not await entry_in_entries(action, compare_policy["Action"]):
+                continue
+            return True
+    return False
+
+
+async def combine_all_policy_statements(
+    policies: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """Takes a list of policies and combines them into a single list of policies. This is useful for combining inline
+    policies and managed policies into a single list of policies.
+
+    :param policies: A List of policies. IE: [{'Action': ['s3:*'], 'Effect': 'Allow', 'Resource': ['*']}, ...]
+    :return: a combined list of policies.
+    """
+    combined_policies = []
+    for policy in policies:
+        if isinstance(policy.get("Statement"), list):
+            for statement in policy["Statement"]:
+                combined_policies.append(statement)
+        else:
+            combined_policies.append(policy)
+    return combined_policies
+
+
+async def calculate_policy_changes(
+    identity: Dict[str, Any],
+    used_services: Set[str],
+    policy_type: str,
+    managed_policy_details: Dict[str, Any] = None,
+):
+    """Given the identity, the list of used_services (not permissions, but services like `s3`, `sqs`, etc), the policy type
+    (inline_policy or manage_policy), and the managed policy details (if applicable), this function will calculate the
+    changes that need to be made to the identity's policies to remove all unused services.
+
+    :param identity: Details about the AWS IAM Role or User.
+    :param used_services: A set or list of used services.
+    :param policy_type: Either inline_policy or manage_policy.
+    :param managed_policy_details: A dictionary of managed policy name to the default managed policy document, defaults to None.
+    :raises Exception: Raises an exception on validation error.
+    :return: Returns effective policy as-is, effective policy with unused services removed, and individual changes to a role's
+        list of internal policies.
+    """
+    if policy_type == "inline_policy":
+        identity_policy_list_name = "RolePolicyList"
+    elif policy_type == "managed_policy":
+        identity_policy_list_name = "AttachedManagedPolicies"
+    else:
+        raise Exception("Invalid policy type")
+    all_before_policy_statements = []
+    all_after_policy_statements = []
+    individual_role_policy_changes = []
+    for policy in identity["policy"].get(identity_policy_list_name, []):
+        if policy_type == "managed_policy":
+            before_policy_document = managed_policy_details[policy["PolicyName"]]
+        else:
+            before_policy_document = policy["PolicyDocument"]
+        computed_changes = {
+            "policy_type": policy_type,
+            "policy_name": policy["PolicyName"],
+            "before_policy_document": before_policy_document,
+        }
+        if policy_type == "managed_policy":
+            computed_changes["policy_arn"] = policy["PolicyArn"]
+        after_policy_statements = []
+        before_policy_document_copy = copy.deepcopy(before_policy_document)
+        for statement in before_policy_document_copy["Statement"]:
+            all_before_policy_statements.append(copy.deepcopy(statement))
+            new_actions = set()
+            new_resources = set()
+            if await should_exclude_policy_from_comparison(statement):
+                after_policy_statements.append(statement)
+                continue
+            if isinstance(statement["Action"], str):
+                statement["Action"] = [statement["Action"]]
+            for action in statement["Action"]:
+                if used_services and action == "*":
+                    for service in used_services:
+                        new_actions.add(f"{service}:*")
+                elif action.split(":")[0] in used_services:
+                    new_actions.add(action)
+            if isinstance(statement["Resource"], str):
+                statement["Resource"] = [statement["Resource"]]
+
+            for resource in statement["Resource"]:
+                if resource == "*":
+                    new_resources.add(resource)
+                elif resource.split(":")[2] in used_services:
+                    new_resources.add(resource)
+            if new_actions and new_resources:
+                statement["Action"] = list(new_actions)
+                statement["Resource"] = list(new_resources)
+                after_policy_statements.append(statement)
+                all_after_policy_statements.append(statement)
+                continue
+        if after_policy_statements:
+            computed_changes["after_policy_document"] = {
+                "Statement": after_policy_statements,
+            }
+            if before_policy_document.get("Version"):
+                computed_changes["after_policy_document"][
+                    "Version"
+                ] = before_policy_document["Version"]
+            individual_role_policy_changes.append(computed_changes)
+    return {
+        "all_before_policy_statements": all_before_policy_statements,
+        "all_after_policy_statements": all_after_policy_statements,
+        "individual_role_policy_changes": individual_role_policy_changes,
+    }
+
+
+def get_regex_resource_names(statement: dict) -> list:
+    """Generates a list of resource names for a statement that can be used for regex searches
+
+    :param statement: A statement, IE: {
+        'Action': ['s3:listbucket', 's3:list*'],
+        'Effect': 'Allow',
+        'Resource': ["arn:aws:dynamodb:*:*:table/TableOne", "arn:aws:dynamodb:*:*:table/TableTwo"]
+    }
+    :return: A list of resource names to be used for regex checks, IE: [
+        "Allow:arn:aws:dynamodb:.*:.*:table/Table", "Allow:arn:aws:dynamodb:.*:.*:table/Table"
+    ]
+    """
+    return [
+        f"{statement.get('Effect')}:{resource}".replace("*", ".*")
+        for resource in statement.get("Resource")
+    ]
+
+
+async def is_resource_match(regex_patterns, regex_strs) -> bool:
+    """Check if all provided strings (regex_strs) match on AT LEAST ONE regex pattern
+
+    :param regex_patterns: A list of regex patterns to search on
+    :param regex_strs: A list of strings to check against
+    """
+
+    async def _regex_check(regex_pattern) -> bool:
+        return any(re.match(regex_pattern, regex_str) for regex_str in regex_strs)
+
+    results = await asyncio.gather(
+        *[_regex_check(regex_pattern) for regex_pattern in regex_patterns]
+    )
+    return all(r for r in results)
+
+
+async def reduce_statement_actions(statement: dict) -> dict:
+    """Removes redundant actions from a statement that are already permitted by a different action.
+
+    :param statement: A statement, IE: {
+        'Action': ['s3:listbucket', 's3:list*'], 'Effect': 'Allow', 'Resource': ['*']
+    }
+    :return: A statement with all redundant actions removed, IE: {
+        'Action': ['s3:list*'], 'Effect': 'Allow', 'Resource': ['*']
+    }
+    """
+    actions = statement.get("Action", [])
+
+    if not isinstance(actions, list):
+        actions = [actions]
+    else:
+        actions = sorted(set(actions))
+
+    if "*" in actions:
+        # Not sure if we should really be allowing this but
+        #   if they've added a wildcard action there isn't any need to check what hits
+        statement["Action"] = ["*"]
+        return statement
+
+    # Create a map of actions grouped by resource to prevent unnecessary checks
+    resource_regex_map = defaultdict(list)
+    for action in actions:
+        # Represent the action as the regex lookup so this isn't being done on every iteration
+        if "*" in action:
+            resource_regex_map[action.split(":")[0]].append(action.replace("*", ".*"))
+
+    async def _regex_check(action_str) -> str:
+        # Check if the provided string hits on any other action for the same resource type
+        # If not, return the string to be used as part of the reduced set of actions
+        action_str_re = action_str.replace("*", ".*")
+        action_resource = action_str.split(":")[0]
+
+        resource_actions = resource_regex_map[action_resource]
+        if not any(
+            re.match(related_action, action_str_re, re.IGNORECASE)
+            for related_action in resource_actions
+            if related_action != action_str_re
+        ):
+            return action_str
+
+    reduced_actions = await asyncio.gather(
+        *[_regex_check(action_str) for action_str in actions]
+    )
+    statement["Action"] = [action.lower() for action in reduced_actions if action]
+
+    return statement
+
+
+async def condense_statements(
+    statements: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Removes redundant policies, and actions that are already permitted by a different wildcard / partial wildcard
+    statement.
+
+    :param statements: A list of statements, IE: [
+        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['*']},
+        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['arn:aws:s3:::bucket']},
+        ...
+    ]
+    :return: A list of statements with all redundant policies removed, IE: [
+        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['*']},
+        ...
+    ]
+    """
+    reduced_statements = list()
+
+    # Group statements that match on Resource
+    for statement in statements:
+        if not isinstance(statement["Resource"], list):
+            statement["Resource"] = [statement["Resource"]]
+
+        resource_ids = get_regex_resource_names(statement)
+        is_new = True
+        if not statement.get(
+            "Condition"
+        ):  # Don't mess with statements that have a condition
+            if (action := statement.get("Action")) and not isinstance(action, list):
+                statement["Action"] = [action]
+
+            for elem, rr in enumerate(reduced_statements):
+                rr_ids = get_regex_resource_names(rr)
+                if await is_resource_match(rr_ids, resource_ids):
+                    # Falls under existing resource, just append actions
+                    rr["Action"] = rr.get("Action", []) + statement.get("Action")
+                    reduced_statements[elem] = rr
+                    is_new = False
+                    break
+                elif await is_resource_match(resource_ids, rr_ids):
+                    # Falls under existing resource, just append actions
+                    statement["Action"] = rr.get("Action", []) + statement.get("Action")
+                    reduced_statements[elem] = statement
+                    is_new = False
+                    break
+
+        if (
+            is_new
+        ):  # Was either a Condition or the Resource didn't hit on an existing statement
+            reduced_statements.append(statement)
+
+    return await asyncio.gather(
+        *[reduce_statement_actions(statement) for statement in reduced_statements]
+    )
+
+
+async def get_identity_type_from_arn(arn: str) -> str:
+    """Returns identity type (`user` or `role`) from an ARN.
+
+    :param arn: Amazon Resource Name of an IAM user or role,
+        ex: arn:aws:iam::123456789012:role/role_name -> returns 'role'
+            arn:aws:iam::123456789012:user/user_name -> returns 'user'
+    :return: Identity type (`user` or `role`)
+    """
+    return arn.split(":")[-1].split("/")[0]
+
+
+async def get_identity_name_from_arn(arn: str) -> str:
+    """Returns identity name from an ARN.
+
+    :param arn: Amazon Resource Name of an IAM user or role,
+        ex: arn:aws:iam::123456789012:role/role_name -> returns 'role_name'
+            arn:aws:iam::123456789012:user/user_name -> returns 'user_name'
+    :return: Identity name
+    """
+    return arn.split("/")[-1]
+
+
+async def get_account_id_from_arn(arn: str) -> str:
+    """Returns account ID from an ARN.
+
+    :param arn: Amazon Resource Name of an IAM user or role,
+        ex: arn:aws:iam::123456789012:role/role_name -> returns '123456789012'
+            arn:aws:iam::123456789012:user/user_name -> returns '123456789012'
+    :return: Identity name
+    """
+    return arn.split(":")[4]

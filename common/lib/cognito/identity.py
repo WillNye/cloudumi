@@ -1,9 +1,10 @@
+import asyncio
 from typing import Any, Dict, List, Union
 
 import boto3
-from asgiref.sync import sync_to_async
 
 from common.config import config
+from common.lib.asyncio import aio_wrapper
 from common.models import (
     CognitoGroup,
     CognitoUser,
@@ -28,8 +29,10 @@ async def __get_google_provider(
         if x.get("ProviderType") == "Google"
     ]
     if google_provider_names:
-        identity_provider_call = await sync_to_async(client.describe_identity_provider)(
-            UserPoolId=user_pool_id, ProviderName=google_provider_names[0]
+        identity_provider_call = await aio_wrapper(
+            client.describe_identity_provider,
+            UserPoolId=user_pool_id,
+            ProviderName=google_provider_names[0],
         )
         identity_provider = identity_provider_call.get("IdentityProvider", {})
         if identity_provider:
@@ -59,8 +62,10 @@ async def __get_saml_provider(
         if x.get("ProviderType") == "SAML"
     ]
     if saml_provider_names:
-        identity_provider_call = await sync_to_async(client.describe_identity_provider)(
-            UserPoolId=user_pool_id, ProviderName=saml_provider_names[0]
+        identity_provider_call = await aio_wrapper(
+            client.describe_identity_provider,
+            UserPoolId=user_pool_id,
+            ProviderName=saml_provider_names[0],
         )
         identity_provider = identity_provider_call.get("IdentityProvider", {})
         if identity_provider:
@@ -77,7 +82,7 @@ async def __get_saml_provider(
 async def __get_oidc_provider(
     user_pool_id: str, identity_providers: Dict[str, List[Dict[str, Any]]], client=None
 ) -> Union[OIDCSSOIDPProvider, None]:
-    client = await sync_to_async(boto3.client)("cognito-idp", region_name=config.region)
+    client = await aio_wrapper(boto3.client, "cognito-idp", region_name=config.region)
     oidc_provider = None
     oidc_provider_names = [
         x.get("ProviderName")
@@ -85,8 +90,10 @@ async def __get_oidc_provider(
         if x.get("ProviderType") == "OIDC"
     ]
     if oidc_provider_names:
-        identity_provider_call = await sync_to_async(client.describe_identity_provider)(
-            UserPoolId=user_pool_id, ProviderName=oidc_provider_names[0]
+        identity_provider_call = await aio_wrapper(
+            client.describe_identity_provider,
+            UserPoolId=user_pool_id,
+            ProviderName=oidc_provider_names[0],
         )
         identity_provider = identity_provider_call.get("IdentityProvider", {})
         if identity_provider:
@@ -132,16 +139,14 @@ async def get_user_pool_client_id(
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    response = await sync_to_async(client.list_user_pool_clients)(
-        UserPoolId=user_pool_id
-    )
+    response = await aio_wrapper(client.list_user_pool_clients, UserPoolId=user_pool_id)
     for client in response.get("UserPoolClients", []):
         if client.get("ClientName") == client_name:
             return client.get("ClientId")
     next_token = response.get("NextToken")
     while next_token:
-        response = await sync_to_async(client.list_user_pool_clients)(
-            UserPoolId=user_pool_id, NextToken=next_token
+        response = await aio_wrapper(
+            client.list_user_pool_clients, UserPoolId=user_pool_id, NextToken=next_token
         )
         for client in response.get("UserPoolClients", []):
             if client.get("ClientName") == client_name:
@@ -155,12 +160,13 @@ async def get_user_pool_client(user_pool_id: str, client_id: str, client=None) -
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name
     :param client_id: the client ID to get
+    :param client: The boto3 client to use when interfacing with AWS
     :return: the client object
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    response = await sync_to_async(client.describe_user_pool_client)(
-        UserPoolId=user_pool_id, ClientId=client_id
+    response = await aio_wrapper(
+        client.describe_user_pool_client, UserPoolId=user_pool_id, ClientId=client_id
     )
     return response
 
@@ -175,6 +181,7 @@ async def connect_idp_to_app_client(
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name
     :param client_id: the client ID of the app client
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful, currently always returns true
     """
     if not client:
@@ -189,7 +196,8 @@ async def connect_idp_to_app_client(
         user_pool_supported_idp = list()
     if idp.provider_name not in user_pool_supported_idp:
         user_pool_supported_idp.append(idp.provider_name)
-        await sync_to_async(client.update_user_pool_client)(
+        await aio_wrapper(
+            client.update_user_pool_client,
             UserPoolId=user_pool_id,
             ClientId=client_id,
             SupportedIdentityProviders=user_pool_supported_idp,
@@ -208,6 +216,7 @@ async def disconnect_idp_from_app_client(
     :param user_pool_id: ensure this is the user pool ID not the user pool name
     :param client_id: the client ID of the app client
     :param idp: one of the NOQ internal identity provider objects
+    :param client: The boto3 client to use when interfacing with AWS
     :return: reflects that the desired state is reached, meaning that the idp is not connected to the app client
     """
     if not client:
@@ -222,7 +231,8 @@ async def disconnect_idp_from_app_client(
         return True
     if idp.provider_name in user_pool_supported_idp:
         user_pool_supported_idp.remove(idp.provider_name)
-        await sync_to_async(client.update_user_pool_client)(
+        await aio_wrapper(
+            client.update_user_pool_client,
             UserPoolId=user_pool_id,
             ClientId=client_id,
             SupportedIdentityProviders=user_pool_supported_idp,
@@ -239,6 +249,7 @@ async def get_identity_providers(user_pool_id: str, client=None) -> SSOIDPProvid
     to retain consistency within NOQ.
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name!
+    :param client: The boto3 client to use when interfacing with AWS
     :return: SSOIDPProviders - to standardize on input output paradigms, we'll convert the raw dict to a pydantic model
     [
         {
@@ -251,15 +262,17 @@ async def get_identity_providers(user_pool_id: str, client=None) -> SSOIDPProvid
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    response = await sync_to_async(client.list_identity_providers)(
-        UserPoolId=user_pool_id
+    response = await aio_wrapper(
+        client.list_identity_providers, UserPoolId=user_pool_id
     )
     identity_providers = list()
     identity_providers.extend(response.get("Providers", []))
     next_token = response.get("NextToken")
     while next_token:
-        response = await sync_to_async(client.list_identity_providers)(
-            UserPoolId=user_pool_id, NextToken=next_token
+        response = await aio_wrapper(
+            client.list_identity_providers,
+            UserPoolId=user_pool_id,
+            NextToken=next_token,
         )
         identity_providers.extend(response.get("Providers", []))
         next_token = response.get("NextToken")
@@ -292,6 +305,7 @@ async def upsert_identity_provider(
     :param user_pool_id: ensure this is the user pool ID not the user pool name!
     :param user_pool_client_id: ensure this is the user pool client ID
     :param id_provider: the pydantic model SSOIDPProviders with one of the groups filled out (either google, saml or oidc)
+    :param client: The boto3 client to use when interfacing with AWS
     :return: True if the operation is successful - currently always returns true or raises an exception
     """
     if not client:
@@ -327,7 +341,8 @@ async def upsert_identity_provider(
             f"Using {required} to create_identity_provider in Cognito with type {provider_type}"
         )
 
-        response = await sync_to_async(client.create_identity_provider)(
+        response = await aio_wrapper(
+            client.create_identity_provider,
             UserPoolId=user_pool_id,
             ProviderName=identity_provider_type,
             ProviderType=identity_provider_type,
@@ -361,12 +376,15 @@ async def delete_identity_provider(
 
     :param user_pool_id: ensure this is the user pool ID not the user pool name
     :param id_provider: any id provider model object - see union typing hint
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful, currently always returns true
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    await sync_to_async(client.delete_identity_provider)(
-        UserPoolId=user_pool_id, ProviderName=id_provider.provider_name
+    await aio_wrapper(
+        client.delete_identity_provider,
+        UserPoolId=user_pool_id,
+        ProviderName=id_provider.provider_name,
     )
     return True
 
@@ -378,19 +396,24 @@ async def get_identity_user_groups(
 
     :param user_pool_id: the user pool ID
     :param user: the user for which to extract group assignments
+    :param client: The boto3 client to use when interfacing with AWS
     :return: a list of dictionaries representing the group assignments
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
     groups = list()
-    response = await sync_to_async(client.admin_list_groups_for_user)(
-        Username=user.Username, UserPoolId=user_pool_id
+    response = await aio_wrapper(
+        client.admin_list_groups_for_user,
+        Username=user.Username,
+        UserPoolId=user_pool_id,
     )
     groups.extend([CognitoGroup(**x) for x in response.get("Groups", [])])
     next_token = response.get("NextToken")
     while next_token:
-        response = await sync_to_async(client.admin_list_groups_for_user)(
-            Username=user.Username, UserPoolId=user_pool_id
+        response = await aio_wrapper(
+            client.admin_list_groups_for_user,
+            Username=user.Username,
+            UserPoolId=user_pool_id,
         )
         groups.extend([CognitoGroup(**x) for x in response.get("Groups", [])])
         next_token = response.get("NextToken")
@@ -404,17 +427,18 @@ async def get_identity_users(user_pool_id: str, client=None) -> List[CognitoUser
     objects.
 
     :param user_pool_id: the current user pool id
+    :param client: The boto3 client to use when interfacing with AWS
     :return: a list of CognitoUser objects
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
     users = list()
-    response = await sync_to_async(client.list_users)(UserPoolId=user_pool_id)
+    response = await aio_wrapper(client.list_users, UserPoolId=user_pool_id)
     users.extend(response.get("Users", []))
     next_token = response.get("NextToken")
     while next_token:
-        response = await sync_to_async(client.list_users)(
-            UserPoolId=user_pool_id, NextToken=next_token
+        response = await aio_wrapper(
+            client.list_users, UserPoolId=user_pool_id, NextToken=next_token
         )
         users.extend(response.get("Users", []))
         next_token = response.get("NextToken")
@@ -438,7 +462,8 @@ async def create_identity_user(
     uses the admin_create_user functionality, side-stepping the user sign up process.
 
     :param user_pool_id: the id of the user pool that should have the new user
-    :param user: a CognitoUser object that is validated and describes the new user
+    :param user: a CognitoUser object that is validated and describes the new use
+    :param client: The boto3 client to use when interfacing with AWSr
     :return: an updated CognitoUser object that may contain additional info from AWS
     """
     if not client:
@@ -454,7 +479,8 @@ async def create_identity_user(
     user_attributes = list()
     if user.Attributes:
         user_attributes = [dict(x) for x in user.Attributes]
-    response = await sync_to_async(client.admin_create_user)(
+    response = await aio_wrapper(
+        client.admin_create_user,
         UserPoolId=user_pool_id,
         Username=user.Username,
         UserAttributes=user_attributes,
@@ -479,12 +505,13 @@ async def delete_identity_user(
 
     :param user_pool_id: the id of the user pool from which to delete the user
     :param user: a CognitoUser object that describes the user
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    await sync_to_async(client.admin_delete_user)(
-        UserPoolId=user_pool_id, Username=user.Username
+    await aio_wrapper(
+        client.admin_delete_user, UserPoolId=user_pool_id, Username=user.Username
     )
     return True
 
@@ -503,7 +530,8 @@ async def create_identity_user_groups(
         client = boto3.client("cognito-idp", region_name=config.region)
     for group in groups:
         try:
-            await sync_to_async(client.admin_add_user_to_group)(
+            await aio_wrapper(
+                client.admin_add_user_to_group,
                 UserPoolId=user_pool_id,
                 Username=user.Username,
                 GroupName=group.GroupName,
@@ -527,6 +555,59 @@ async def create_identity_user_groups(
     return True
 
 
+async def remove_identity_user_group(
+    user_pool_id: str, user: CognitoUser, group: CognitoGroup, client=None
+) -> bool:
+    """Remove a user from a group.
+
+    :param user_pool_id: the id of the user pool
+    :param user: a CognitoUser object that describes the user
+    :param group: A CognitoGroup object that describe the group to which the user should be removed
+    :param client: The boto3 client to use when interfacing with AWS
+    :return: true if successful
+    """
+    if not client:
+        client = boto3.client("cognito-idp", region_name=config.region)
+
+    try:
+        await aio_wrapper(
+            client.admin_remove_user_from_group,
+            UserPoolId=user_pool_id,
+            Username=user.Username,
+            GroupName=group.GroupName,
+        )
+    except client.exceptions.UserNotFoundException:
+        LOG.warning(
+            {
+                "message": "User not found when attempting to remove user from group",
+                "user": user.Username,
+                "group": group.GroupName,
+            }
+        )
+        return False
+    except client.exceptions.ResourceNotFoundException:
+        LOG.warning(
+            {
+                "message": "User is not assigned to group",
+                "user": user.Username,
+                "group": group.GroupName,
+            }
+        )
+        return False
+    except Exception as err:
+        LOG.exception(
+            {
+                "message": "Error removing user from group",
+                "user": user.Username,
+                "group": group.GroupName,
+                "error": repr(err),
+            }
+        )
+        return False
+    else:
+        return True
+
+
 async def upsert_identity_user_group(
     user_pool_id: str, user: CognitoUser, client=None
 ) -> bool:
@@ -534,14 +615,18 @@ async def upsert_identity_user_group(
 
     :param user_pool_id: the id of the user pool from which to delete the user
     :param user: a CognitoUser object that describes the user
-    :param request_groups: a list of CognitoGroup objects that describe the groups to which the user should be added
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful
     """
     existing_groups = await get_identity_user_groups(user_pool_id, user, client=client)
 
-    for group in existing_groups:
-        if group not in user.Groups:
-            await delete_identity_group(user_pool_id, group, client=client)
+    await asyncio.gather(
+        *[
+            remove_identity_user_group(user_pool_id, user, group, client=client)
+            for group in existing_groups
+            if group not in user.Groups
+        ]
+    )
 
     return await create_identity_user_groups(
         user_pool_id,
@@ -558,12 +643,13 @@ async def get_identity_group(
 
     :param user_pool_id: the id of the user pool
     :param group_name: the name of the group to retrieve
+    :param client: The boto3 client to use when interfacing with AWS
     :return: The requested CognitoGroup object
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    response = await sync_to_async(client.get_group)(
-        UserPoolId=user_pool_id, GroupName=group_name
+    response = await aio_wrapper(
+        client.get_group, UserPoolId=user_pool_id, GroupName=group_name
     )
     return CognitoGroup(**response.get("Group", {}))
 
@@ -572,17 +658,18 @@ async def get_identity_groups(user_pool_id: str, client=None) -> List[CognitoGro
     """Get Cognito groups.
 
     :param user_pool_id: the id of the user pool from which to get groups
+    :param client: The boto3 client to use when interfacing with AWS
     :return: a list of CognitoGroup objects
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
     groups = list()
-    response = await sync_to_async(client.list_groups)(UserPoolId=user_pool_id)
+    response = await aio_wrapper(client.list_groups, UserPoolId=user_pool_id)
     groups.extend(response.get("Groups", []))
     next_token = response.get("NextToken")
     while next_token:
-        response = await sync_to_async(client.list_groups)(
-            UserPoolId=user_pool_id, NextToken=next_token
+        response = await aio_wrapper(
+            client.list_groups, UserPoolId=user_pool_id, NextToken=next_token
         )
         groups.extend(response.get("Groups", []))
         next_token = response.get("NextToken")
@@ -596,6 +683,7 @@ async def create_identity_group(
 
     :param user_pool_id: the id of the user pool in which to create the group
     :param group: a CognitoGroup object that describes the group
+    :param client: The boto3 client to use when interfacing with AWS
     :return: an updated group object that may contain additional information from AWS
     """
     if not client:
@@ -603,7 +691,8 @@ async def create_identity_group(
     current_groups = await get_identity_groups(user_pool_id, client=client)
     if group in [x for x in current_groups]:
         await delete_identity_group(user_pool_id, group, client=client)
-    response = await sync_to_async(client.create_group)(
+    response = await aio_wrapper(
+        client.create_group,
         UserPoolId=user_pool_id,
         GroupName=group.GroupName,
         Description=group.Description,
@@ -619,11 +708,13 @@ async def update_identity_group(
 
     :param user_pool_id: the id of the user pool that contains the group to be updated
     :param group: a CognitoGroup object that describes the group
+    :param client: The boto3 client to use when interfacing with AWS
     :return: The updated cognito group
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    response = await sync_to_async(client.update_group)(
+    response = await aio_wrapper(
+        client.update_group,
         UserPoolId=user_pool_id,
         GroupName=group.GroupName,
         Description=group.Description,
@@ -638,11 +729,12 @@ async def delete_identity_group(
 
     :param user_pool_id: the id of the user pool that contains the group to be deleted
     :param group: a CognitoGroup object that describes the group
+    :param client: The boto3 client to use when interfacing with AWS
     :return: true if successful
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    await sync_to_async(client.delete_group)(
-        UserPoolId=user_pool_id, GroupName=group.GroupName
+    await aio_wrapper(
+        client.delete_group, UserPoolId=user_pool_id, GroupName=group.GroupName
     )
     return True

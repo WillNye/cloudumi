@@ -8,9 +8,12 @@ import { useToast } from 'lib/Toast'
 import { hubAccountColumns } from './columns'
 import { NewHubAccount } from './forms/NewHubAccount'
 import { TableTopBar } from '../../utils'
+import { Bar, Fill } from 'lib/Misc'
 
 export const HubAccount = () => {
-  const { get, post, remove } = useApi('services/aws/account/hub')
+  const { get, post, remove } = useApi('services/aws/account/hub', {
+    shouldPersist: true,
+  })
 
   const [defaultValues, setDefaultValues] = useState()
 
@@ -20,7 +23,9 @@ export const HubAccount = () => {
 
   const aws = useContext(ApiContext)
 
-  useEffect(() => get.do(), [])
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) get.do()
+  }, [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
@@ -58,13 +63,10 @@ export const HubAccount = () => {
 
   let data = get.data
 
-  if (
-    !Array.isArray(data) &&
-    get.status === 'done' &&
-    !get.empty &&
-    Object.keys(data)?.length > 0
-  ) {
-    data = [data]
+  const isDataReady = get.status === 'done' && !get.empty
+
+  if (isDataReady || get.persisted) {
+    data = data ? [data] : null
   } else {
     data = null
   }
@@ -82,7 +84,16 @@ export const HubAccount = () => {
         renderAction={
           <TableTopBar
             extras={
-              <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              <Bar>
+                <Fill />
+                {get.timestamp.current() && (
+                  <small>
+                    <em>Last update: {get.timestamp.current()} </em>
+                    &nbsp;&nbsp;&nbsp;
+                  </small>
+                )}
+                <RefreshButton disabled={isWorking} onClick={handleRefresh} />
+              </Bar>
             }
           />
         }

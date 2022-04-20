@@ -1,7 +1,10 @@
 import React, { useContext, useEffect, useReducer } from 'react'
 import { useParams } from 'react-router-dom'
 import { initialState, reducer } from './policyReducer'
-import { getResourceEndpoint } from '../../../helpers/utils'
+import {
+  getResourceEndpoint,
+  getResourceEffectivePolicyEndpoint,
+} from '../../../helpers/utils'
 import { useAuth } from '../../../auth/AuthProviderDefault'
 
 const PolicyContext = React.createContext(initialState)
@@ -38,6 +41,12 @@ export const PolicyProvider = ({ children }) => {
   const setIsSuccess = (isSuccess) =>
     dispatch({ type: 'SET_IS_SUCCESS', isSuccess })
 
+  const setResourceEffectivePermissions = (resourceEffectivePermissions) =>
+    dispatch({
+      type: 'SET_RESOURCE_EFFECTIVE_PERMISSIONS',
+      resourceEffectivePermissions,
+    })
+
   // Resource fetching happens only when location is changed and when a policy is added/updated/removed.
   useEffect(() => {
     ;(async () => {
@@ -59,6 +68,31 @@ export const PolicyProvider = ({ children }) => {
       }
       setResource(resource)
       setIsPolicyEditorLoading(false)
+    })()
+  }, [accountID, region, resourceName, serviceType, state.isSuccess]) //eslint-disable-line
+
+  // Effective Permissions fetching only happens when location is changed and when a policy is added/updated/removed.
+  useEffect(() => {
+    ;(async () => {
+      // store resource metadata from the url
+      setParams({ accountID, region, resourceName, serviceType })
+      // get the endpoint by corresponding service type e.g. s3, iamrole, sqs
+      const endpoint = getResourceEffectivePolicyEndpoint(
+        accountID,
+        serviceType,
+        region,
+        resourceName
+      )
+      // retrieve resource from the endpoint and set resource state
+      const resourceEffecivePermissions = await sendRequestCommon(
+        null,
+        endpoint,
+        'get'
+      )
+      if (!resourceEffecivePermissions) {
+        return
+      }
+      setResourceEffectivePermissions(resourceEffecivePermissions)
     })()
   }, [accountID, region, resourceName, serviceType, state.isSuccess]) //eslint-disable-line
 

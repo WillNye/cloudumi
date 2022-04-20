@@ -34,11 +34,14 @@ class TypeaheadBlockComponent extends Component {
   }
 
   handleSelectedValueDelete(value) {
+    const { defaultValues } = this.props
+    const selectedValues = (defaultValues || this.state.selectedValues)?.filter(
+      (item) => item !== value
+    )
     this.setState({
-      selectedValues: this.state.selectedValues.filter(
-        (item) => item !== value
-      ),
+      selectedValues
     })
+    this.props.handleInputUpdate(selectedValues)
   }
 
   handleResultSelect(e, { result }) {
@@ -56,7 +59,7 @@ class TypeaheadBlockComponent extends Component {
   }
 
   handleSearchChange(e, { value }) {
-    const { typeahead } = this.props
+    const { typeahead, noQuery, resultsFormatter, shouldTransformResults } = this.props
     this.setState(
       {
         isLoading: true,
@@ -84,13 +87,16 @@ class TypeaheadBlockComponent extends Component {
       const re = new RegExp(_.escapeRegExp(value), 'i')
       const isMatch = (result) => re.test(result.title)
 
-      const TYPEAHEAD_API = typeahead.replace('{query}', value)
+      const TYPEAHEAD_API = noQuery ? typeahead : typeahead.replace('{query}', value)
+
       this.props
         .sendRequestCommon(null, TYPEAHEAD_API, 'get')
-        .then((source) => {
+        .then((response) => {          
+          const source = shouldTransformResults ? resultsFormatter(response) : response
+          const results = _.filter(source, isMatch)
           this.setState({
             isLoading: false,
-            results: _.filter(source, isMatch),
+            results,
           })
         })
     }, 300)
@@ -98,11 +104,11 @@ class TypeaheadBlockComponent extends Component {
 
   render() {
     const { isLoading, results, value, selectedValues } = this.state
-    const { defaultValue, required, label } = this.props
+    const { defaultValue, required, label, defaultValues } = this.props
 
-    const selectedValueLabels = selectedValues.map((selectedValue) => {
+    const selectedValueLabels = (selectedValues.length === 0 ? defaultValues : selectedValues)?.map((selectedValue, index) => {
       return (
-        <Label basic color={'red'}>
+        <Label basic color={'red'} key={index}>
           {selectedValue}
           <Icon
             name='delete'
@@ -111,6 +117,8 @@ class TypeaheadBlockComponent extends Component {
         </Label>
       )
     })
+
+    let formattedResults = results;
 
     return (
       <Form.Field required={required || false}>
@@ -125,7 +133,7 @@ class TypeaheadBlockComponent extends Component {
             leading: true,
           })}
           onKeyDown={this._handleKeyDown}
-          results={results}
+          results={formattedResults}
           value={value}
           showNoResults={false}
         />

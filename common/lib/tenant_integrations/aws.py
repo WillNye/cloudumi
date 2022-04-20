@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 import boto3
 import sentry_sdk
 import ujson as json
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
@@ -12,6 +11,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 from common.config import config, models
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
 from common.models import HubAccount, SpokeAccount
 
@@ -168,10 +168,11 @@ async def handle_spoke_account_registration(body):
 
     # Assume role from noq_dev_central_role
     try:
-        sts_client = await sync_to_async(boto3_cached_conn)("sts", host)
+        sts_client = await aio_wrapper(boto3_cached_conn, "sts", host)
         for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
             with attempt:
-                central_role_credentials = await sync_to_async(sts_client.assume_role)(
+                central_role_credentials = await aio_wrapper(
+                    sts_client.assume_role,
                     RoleArn=hub_account.role_arn,
                     RoleSessionName="noq_registration_verification",
                     ExternalId=external_id,
@@ -195,7 +196,8 @@ async def handle_spoke_account_registration(body):
             "message": error_message,
         }
 
-    customer_central_role_sts_client = await sync_to_async(boto3.client)(
+    customer_central_role_sts_client = await aio_wrapper(
+        boto3.client,
         "sts",
         aws_access_key_id=central_role_credentials["Credentials"]["AccessKeyId"],
         aws_secret_access_key=central_role_credentials["Credentials"][
@@ -207,9 +209,8 @@ async def handle_spoke_account_registration(body):
     try:
         for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
             with attempt:
-                customer_spoke_role_credentials = await sync_to_async(
-                    customer_central_role_sts_client.assume_role
-                )(
+                customer_spoke_role_credentials = await aio_wrapper(
+                    customer_central_role_sts_client.assume_role,
                     RoleArn=spoke_role_arn,
                     RoleSessionName="noq_registration_verification",
                 )
@@ -231,7 +232,8 @@ async def handle_spoke_account_registration(body):
             "message": error_message,
         }
 
-    customer_spoke_role_iam_client = await sync_to_async(boto3.client)(
+    customer_spoke_role_iam_client = await aio_wrapper(
+        boto3.client,
         "iam",
         aws_access_key_id=customer_spoke_role_credentials["Credentials"]["AccessKeyId"],
         aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
@@ -242,9 +244,9 @@ async def handle_spoke_account_registration(body):
         ],
     )
 
-    account_aliases_co = await sync_to_async(
+    account_aliases_co = await aio_wrapper(
         customer_spoke_role_iam_client.list_account_aliases
-    )()
+    )
     account_aliases = account_aliases_co["AccountAliases"]
     master_account = True
     if account_aliases:
@@ -253,7 +255,8 @@ async def handle_spoke_account_registration(body):
     else:
         account_name = account_id_for_role
         # Try Organizations
-        customer_spoke_role_org_client = await sync_to_async(boto3.client)(
+        customer_spoke_role_org_client = await aio_wrapper(
+            boto3.client,
             "organizations",
             aws_access_key_id=customer_spoke_role_credentials["Credentials"][
                 "AccessKeyId"
@@ -266,9 +269,10 @@ async def handle_spoke_account_registration(body):
             ],
         )
         try:
-            account_details_call = await sync_to_async(
-                customer_spoke_role_org_client.describe_account
-            )(AccountId=account_id_for_role)
+            account_details_call = await aio_wrapper(
+                customer_spoke_role_org_client.describe_account,
+                AccountId=account_id_for_role,
+            )
             account_details = account_details_call.get("Account")
             if account_details and account_details.get("Name"):
                 account_name = account_details["Name"]
@@ -371,9 +375,8 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         sts_client = boto3.client("sts")
         for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
             with attempt:
-                customer_central_account_creds = await sync_to_async(
-                    sts_client.assume_role
-                )(
+                customer_central_account_creds = await aio_wrapper(
+                    sts_client.assume_role,
                     RoleArn=role_arn,
                     RoleSessionName="noq_registration_verification",
                     ExternalId=external_id,
@@ -398,7 +401,8 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         }
     spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
     try:
-        central_account_sts_client = await sync_to_async(boto3.client)(
+        central_account_sts_client = await aio_wrapper(
+            boto3.client,
             "sts",
             aws_access_key_id=customer_central_account_creds["Credentials"][
                 "AccessKeyId"
@@ -412,9 +416,8 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         )
         for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
             with attempt:
-                customer_spoke_role_credentials = await sync_to_async(
-                    central_account_sts_client.assume_role
-                )(
+                customer_spoke_role_credentials = await aio_wrapper(
+                    central_account_sts_client.assume_role,
                     RoleArn=spoke_role_arn,
                     RoleSessionName="noq_registration_verification",
                 )
@@ -437,7 +440,8 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "message": error_message,
         }
 
-    customer_spoke_role_iam_client = await sync_to_async(boto3.client)(
+    customer_spoke_role_iam_client = await aio_wrapper(
+        boto3.client,
         "iam",
         aws_access_key_id=customer_spoke_role_credentials["Credentials"]["AccessKeyId"],
         aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
@@ -448,16 +452,17 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         ],
     )
 
-    account_aliases_co = await sync_to_async(
+    account_aliases_co = await aio_wrapper(
         customer_spoke_role_iam_client.list_account_aliases
-    )()
+    )
     account_aliases = account_aliases_co["AccountAliases"]
     if account_aliases:
         account_name = account_aliases[0]
     else:
         account_name = account_id_for_role
         # Try Organizations
-        customer_spoke_role_org_client = await sync_to_async(boto3.client)(
+        customer_spoke_role_org_client = await aio_wrapper(
+            boto3.client,
             "organizations",
             aws_access_key_id=customer_spoke_role_credentials["Credentials"][
                 "AccessKeyId"
@@ -470,9 +475,10 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             ],
         )
         try:
-            account_details_call = await sync_to_async(
-                customer_spoke_role_org_client.describe_account
-            )(AccountId=account_id_for_role)
+            account_details_call = await aio_wrapper(
+                customer_spoke_role_org_client.describe_account,
+                AccountId=account_id_for_role,
+            )
             account_details = account_details_call.get("Account")
             if account_details and account_details.get("Name"):
                 account_name = account_details["Name"]
@@ -535,13 +541,13 @@ async def handle_tenant_integration_queue(
 
     sqs_client = boto3.client("sqs", region_name=queue_region)
 
-    queue_url_res = await sync_to_async(sqs_client.get_queue_url)(QueueName=queue_name)
+    queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)
     queue_url = queue_url_res.get("QueueUrl")
     if not queue_url:
         raise DataNotRetrievable(f"Unable to retrieve Queue URL for {queue_arn}")
 
-    messages_awaitable = await sync_to_async(sqs_client.receive_message)(
-        QueueUrl=queue_url, MaxNumberOfMessages=10
+    messages_awaitable = await aio_wrapper(
+        sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
     )
     messages = messages_awaitable.get("Messages", [])
     num_events = 0
@@ -764,11 +770,13 @@ async def handle_tenant_integration_queue(
             except Exception:
                 raise
         if processed_messages:
-            await sync_to_async(sqs_client.delete_message_batch)(
-                QueueUrl=queue_url, Entries=processed_messages
+            await aio_wrapper(
+                sqs_client.delete_message_batch,
+                QueueUrl=queue_url,
+                Entries=processed_messages,
             )
-        messages_awaitable = await sync_to_async(sqs_client.receive_message)(
-            QueueUrl=queue_url, MaxNumberOfMessages=10
+        messages_awaitable = await aio_wrapper(
+            sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
         )
         messages = messages_awaitable.get("Messages", [])
     return {"message": "Successfully processed all messages", "num_events": num_events}

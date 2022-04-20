@@ -33,7 +33,8 @@
     "styled-components": "^5.3.3",
     "survey-react": "^1.9.19",
     "use-state-if-mounted": "^1.0.4",
-    "yaml": "^1.10.2"
+    "yaml": "^1.10.2",
+    "zustand": "^4.0.0-rc.0"
   },
   "scripts": {
     "start": "react-scripts start",

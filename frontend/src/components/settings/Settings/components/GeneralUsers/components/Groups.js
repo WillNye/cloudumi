@@ -12,7 +12,9 @@ import { TableTopBar } from '../../utils'
 import { NewGroup } from '../forms/NewGroup'
 
 export const Groups = () => {
-  const { get, post, remove } = useApi('auth/cognito/groups')
+  const { get, post, remove } = useApi('auth/cognito/groups', {
+    shouldPersist: true,
+  })
 
   const [defaultValues, setDefaultValues] = useState()
 
@@ -20,7 +22,9 @@ export const Groups = () => {
 
   const { openModal, closeModal, ModalComponent } = useModal('Add Group')
 
-  useEffect(() => get.do(), [])
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) get.do()
+  }, [])
 
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {

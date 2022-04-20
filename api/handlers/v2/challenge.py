@@ -77,7 +77,13 @@ class ChallengeGeneratorHandler(TornadoRequestHandler):
             url=config.get_host_specific_key("url", host),
             token=token,
         )
-        self.write({"challenge_url": challenge_url, "polling_url": polling_url})
+        self.write(
+            {
+                "challenge_url": challenge_url,
+                "polling_url": polling_url,
+                "expiration": entry["ttl"],
+            }
+        )
 
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
@@ -296,7 +302,9 @@ class ChallengeValidatorHandler(BaseHandler):
             requested_challenge_token,
             json.dumps(valid_user_challenge),
         )
-        message = "You've successfully authenticated to ConsoleMe and may now close this page."
+        message = (
+            "You've successfully authenticated to Noq and may now close this page."
+        )
         self.write({"message": message})
 
 

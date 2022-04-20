@@ -58,13 +58,24 @@ spoke_accounts:
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
     master_for_account: false
+  - name: NoqSpokeRoleLocalDev
+    account_name: development_2
+    account_id: '350876197038'
+    role_arn: arn:aws:iam::350876197038:role/NoqSpokeRoleLocalDev
+    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+    hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+    master_for_account: false
+    owners: []
+    viewers: []
+    delegate_admin_to_owner: false
+    restrict_viewers_of_account_resources: false
 org_accounts:
   - org_id: test_org
     account_id: '123456789012'
     account_name: test_account
     owner: user
 tenant_details:
-  external_id: localhost
+  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: user@noq.dev
   creation_time: {int(time.time())}
 site_config:
@@ -85,6 +96,7 @@ secrets:
   cognito:
     config:
       user_pool_id: us-east-1_CNoZribID
+      user_pool_region: us-east-1
       user_pool_client_id: j14h62of81s6s5f2ivfkdfe3v
       user_pool_client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
 account_ids_to_name:
@@ -146,13 +158,24 @@ spoke_accounts:
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
     master_for_account: false
+  - name: NoqSpokeRoleLocalDev
+    account_name: development_2
+    account_id: '350876197038'
+    role_arn: arn:aws:iam::350876197038:role/NoqSpokeRoleLocalDev
+    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+    hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+    master_for_account: false
+    owners: []
+    viewers: []
+    delegate_admin_to_owner: false
+    restrict_viewers_of_account_resources: false
 org_accounts:
   - org_id: test_org
     account_id: 123456789012
     account_name: test_account
     owner: user
 tenant_details:
-  external_id: localhost
+  external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: user@noq.dev
   creation_time: {int(time.time())}
 site_config:

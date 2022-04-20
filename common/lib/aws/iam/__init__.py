@@ -3,7 +3,6 @@ import sys
 import time
 from collections import defaultdict
 
-from asgiref.sync import sync_to_async
 from joblib import Parallel, delayed
 
 from common.config import config, models
@@ -14,6 +13,7 @@ from common.lib.assume_role import (
     rate_limited,
     sts_conn,
 )
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
@@ -243,8 +243,8 @@ async def update_managed_policy(cloudaux, policy_name, new_policy, policy_arn):
 
     current_policy_versions = []
     default_policy_index = 0
-    versions = await sync_to_async(cloudaux.call)(
-        "iam.client.list_policy_versions", PolicyArn=policy_arn
+    versions = await aio_wrapper(
+        cloudaux.call, "iam.client.list_policy_versions", PolicyArn=policy_arn
     )
     oldest_policy_version = -1
     oldest_timestamp = None
@@ -262,13 +262,15 @@ async def update_managed_policy(cloudaux, policy_name, new_policy, policy_arn):
         # if default is also the oldest
         if default_policy_index == oldest_policy_version:
             pop_position = (oldest_policy_version + 1) % len(current_policy_versions)
-        await sync_to_async(cloudaux.call)(
+        await aio_wrapper(
+            cloudaux.call,
             "iam.client.delete_policy_version",
             PolicyArn=policy_arn,
             VersionId=current_policy_versions.pop(pop_position)["VersionId"],
         )
 
-    await sync_to_async(cloudaux.call)(
+    await aio_wrapper(
+        cloudaux.call,
         "iam.client.create_policy_version",
         PolicyArn=policy_arn,
         PolicyDocument=json.dumps(new_policy, indent=2),
@@ -298,13 +300,19 @@ async def create_or_update_managed_policy(
         "host": host,
     }
 
-    ca = await sync_to_async(ConsoleMeCloudAux)(**conn_details)
+    ca = await aio_wrapper(ConsoleMeCloudAux, **conn_details)
 
     if not existing_policy:
         log_data["message"] = "Policy does not exist. Creating"
         log.debug(log_data)
-        await sync_to_async(create_managed_policy)(
-            ca, policy_name, policy_path, new_policy, description, host
+        await aio_wrapper(
+            create_managed_policy,
+            ca,
+            policy_name,
+            policy_path,
+            new_policy,
+            description,
+            host,
         )
         return
 
@@ -325,9 +333,9 @@ async def get_all_iam_managed_policies_for_account(account_id, host):
     current_time = time.time()
     if current_time - ALL_IAM_MANAGED_POLICIES[host].get("last_update", 0) > 500:
         red = await RedisHandler().redis(host)
-        ALL_IAM_MANAGED_POLICIES[host]["managed_policies"] = await sync_to_async(
-            red.hgetall
-        )(policy_key)
+        ALL_IAM_MANAGED_POLICIES[host]["managed_policies"] = await aio_wrapper(
+            red.hgetall, policy_key
+        )
         ALL_IAM_MANAGED_POLICIES[host]["last_update"] = current_time
 
     if ALL_IAM_MANAGED_POLICIES[host].get("managed_policies"):
@@ -369,7 +377,7 @@ async def update_assume_role_policy_trust_noq(host, role_name, account_id):
         session_name=sanitize_session_name("noq_update_assume_role_policy_trust"),
     )
 
-    role = await sync_to_async(client.get_role)(RoleName=role_name)
+    role = await aio_wrapper(client.get_role, RoleName=role_name)
     assume_role_trust_policy = role.get("Role", {}).get("AssumeRolePolicyDocument", {})
     if not assume_role_trust_policy:
         return False

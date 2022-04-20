@@ -12,6 +12,8 @@ from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
 from common.config import config as consoleme_config
 from common.exceptions.exceptions import TenantNoCentralRoleConfigured
+from common.lib.asyncio import aio_wrapper
+from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
 
 CACHE = {}
@@ -59,19 +61,6 @@ class ConsoleMeCloudAux:
         if "tech" in kwargs:
             del kwargs["tech"]
         return wrapped_method(function_name, **kwargs)
-
-
-# client = boto3_cached_conn(
-#             "iam",
-#             account_number=account_id,
-#             assume_role=ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).with_query({"account_id": account_id}).first.name,
-#             region=config.region,
-#             sts_client_kwargs=dict(
-#                 region_name=config.region,
-#                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-#             ),
-#             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-#         )
 
 
 def _get_cached_creds(
@@ -135,6 +124,51 @@ def _resource(service, region, role, retry_config, client_kwargs, session=None):
         service,
         **_conn_kwargs(region, role, retry_config),
         **client_kwargs,
+    )
+
+
+async def get_boto3_instance(
+    service,
+    host,
+    account_id,
+    session_name,
+    assume_role,
+    region=consoleme_config.region,
+    service_type="client",
+    read_only=False,
+):
+    """Gets a boto3 instance for a given service on a specific tenant's account.
+
+    Noq/CloudUmi SaaS role will assume the customer's `hub role` with it's unique external ID, and from there,
+    assume the `spoke role` on the target `account_id`, then create the boto3 instance on the target account.
+
+    :param service: AWS service name (ie: iam, ec2, etc)
+    :param host: Tenant ID
+    :param account_id: AWS Account ID
+    :param session_name: Session Name to use when assuming role. This is logged to Cloudtrail
+    :param region: Region to create instance in, defaults to consoleme_config.region
+    :param service_type: Service of the boto3 instance, defaults to "client". Could also be "resource"
+    :param read_only: Should we prevent write operations through the assumed role credentials?, defaults to False
+    :return: A Boto3 client or resource instance in a tenant's environment
+    """
+    return await aio_wrapper(
+        boto3_cached_conn,
+        service,
+        host,
+        service_type=service_type,
+        account_number=account_id,
+        # TODO: Make it possible to use a separate role per account
+        assume_role=assume_role,
+        region=region,
+        read_only=read_only,
+        sts_client_kwargs=dict(
+            region_name=consoleme_config.region,
+            endpoint_url=f"https://sts.{consoleme_config.region}.amazonaws.com",
+        ),
+        client_kwargs=consoleme_config.get_host_specific_key(
+            "boto3.client_kwargs", host, {}
+        ),
+        session_name=sanitize_session_name(session_name),
     )
 
 

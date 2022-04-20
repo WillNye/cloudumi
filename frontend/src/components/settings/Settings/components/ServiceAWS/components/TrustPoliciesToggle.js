@@ -5,16 +5,21 @@ import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 
 export const TrustPoliciesToggle = () => {
-  const { get, post } = useApi('services/aws/role-access/automatic-update')
+  const { get, post } = useApi('services/aws/role-access/automatic-update', {
+    shouldPersist: true,
+  })
 
   const { error, toast, success } = useToast()
 
   const [checked, setChecked] = useState(false)
 
-  useEffect(
-    () => get.do('enabled').then((data) => setChecked(data?.enabled)),
-    []
-  )
+  useEffect(() => {
+    if (get.timestamp.compare().minutes >= 1 || get.empty) {
+      get.do().then((data) => setChecked(data?.enabled))
+    } else {
+      setChecked(get?.data?.enabled)
+    }
+  }, [])
 
   const handleChange = (event, { name, checked }) => {
     const action = checked ? 'enable' : 'disable'
@@ -24,6 +29,7 @@ export const TrustPoliciesToggle = () => {
       .then(() => {
         setChecked(checked)
         success(`Trust Policies is ${action}d`)
+        get.do()
       })
       .catch(({ errorsMap, message }) => {
         error(errorsMap || message)

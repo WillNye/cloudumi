@@ -5,13 +5,13 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 import ujson as json
-from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
 from retrying import retry
 
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.iam import (
     get_role_inline_policies,
     get_role_managed_policies,
@@ -149,7 +149,8 @@ async def _get_iam_role_async(
     account_id, role_name, conn, host: str
 ) -> Optional[Dict[str, Any]]:
     tasks = []
-    client = await sync_to_async(boto3_cached_conn)(
+    client = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         account_number=account_id,
@@ -162,7 +163,7 @@ async def _get_iam_role_async(
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     role_details = asyncio.ensure_future(
-        sync_to_async(client.get_role)(RoleName=role_name)
+        aio_wrapper(client.get_role, RoleName=role_name)
     )
     tasks.append(role_details)
     # executor = ThreadPoolExecutor(max_workers=os.cpu_count())
@@ -259,7 +260,7 @@ async def fetch_iam_role(
 
     if not force_refresh:
         # First check redis:
-        result: str = await sync_to_async(_fetch_role_from_redis)(role_arn, host)
+        result: str = await aio_wrapper(_fetch_role_from_redis, role_arn, host)
 
         if result:
             result: dict = json.loads(result)
@@ -278,7 +279,7 @@ async def fetch_iam_role(
                 return result
 
         # If not in Redis or it's older than an hour, proceed to DynamoDB:
-        result = await sync_to_async(dynamo.fetch_iam_role)(role_arn, host)
+        result = await aio_wrapper(dynamo.fetch_iam_role, role_arn, host)
 
     # If it's NOT in dynamo, or if we're forcing a refresh, we need to reach out to AWS and fetch:
     if force_refresh or not result.get("Item"):
@@ -355,7 +356,7 @@ async def fetch_iam_role(
         }
 
         # Sync with DDB:
-        await sync_to_async(dynamo.sync_iam_role_for_account)(result)
+        await aio_wrapper(dynamo.sync_iam_role_for_account, result)
         log_data["message"] = "Role fetched from AWS, and synced with DDB."
         stats.count(
             "aws.fetch_iam_role.fetched_from_aws",
@@ -378,7 +379,7 @@ async def fetch_iam_role(
         "aws.fetch_iam_role.in_dynamo",
         tags={"account_id": account_id, "role_arn": role_arn},
     )
-    await sync_to_async(_add_role_to_redis)(result, host)
+    await aio_wrapper(_add_role_to_redis, result, host)
 
     log_data["message"] += " Updated Redis."
     log.debug(log_data)
@@ -413,7 +414,8 @@ async def _get_iam_user_async(
     account_id, user_name, conn, host
 ) -> Optional[Dict[str, Any]]:
     tasks = []
-    client = await sync_to_async(boto3_cached_conn)(
+    client = await aio_wrapper(
+        boto3_cached_conn,
         "iam",
         host,
         account_number=account_id,
@@ -426,7 +428,7 @@ async def _get_iam_user_async(
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     user_details = asyncio.ensure_future(
-        sync_to_async(client.get_user)(UserName=user_name)
+        aio_wrapper(client.get_user, UserName=user_name)
     )
     tasks.append(user_details)
 
@@ -438,17 +440,17 @@ async def _get_iam_user_async(
     for t in all_tasks:
         tasks.append(
             asyncio.ensure_future(
-                sync_to_async(t)({"UserName": user_name}, host=host, **conn)
+                aio_wrapper(t, {"UserName": user_name}, host=host, **conn)
             )
         )
 
     user_tag_details = asyncio.ensure_future(
-        sync_to_async(client.list_user_tags)(UserName=user_name)
+        aio_wrapper(client.list_user_tags, UserName=user_name)
     )
     tasks.append(user_tag_details)
 
     user_group_details = asyncio.ensure_future(
-        sync_to_async(client.list_groups_for_user)(UserName=user_name)
+        aio_wrapper(client.list_groups_for_user, UserName=user_name)
     )
     tasks.append(user_group_details)
 
