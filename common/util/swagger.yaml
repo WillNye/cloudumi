@@ -294,8 +294,8 @@ paths:
             schema:
               type: object
               properties:
-                applied:
-                  type: boolean
+                status:
+                  type: string
                   description: Was the workflow triggered successfully
       responses:
         "201":
