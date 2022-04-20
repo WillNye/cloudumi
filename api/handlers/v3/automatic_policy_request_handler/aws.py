@@ -2,7 +2,7 @@ import tornado.escape
 
 from common.handlers.base import BaseHandler
 from common.lib.policies import automatic_request
-from common.models import AutomaticPolicyRequest, WebResponse
+from common.models import AutomaticPolicyRequest, Status3, WebResponse
 
 
 class AutomaticPolicyRequestHandler(BaseHandler):
@@ -24,7 +24,7 @@ class AutomaticPolicyRequestHandler(BaseHandler):
                 host, policy_request.account.account_id, self.user, policy_request.id
             )
 
-        self.write({"status": policy_request.status.value})
+        self.write(policy_request.dict())
 
     async def get(self):
         policy_requests = await automatic_request.get_policy_requests(
@@ -39,3 +39,32 @@ class AutomaticPolicyRequestHandler(BaseHandler):
                 count=len(policy_requests),
             ).json()
         )
+
+    async def patch(self, account_id, policy_request_id):
+        data = tornado.escape.json_decode(self.request.body)
+        allowed_statuses = [
+            Status3.applied_and_failure.value,
+            Status3.applied_and_success.value,
+        ]
+        policy_request = await automatic_request.get_policy_request(
+            self.ctx.host, account_id, self.user, policy_request_id
+        )
+        if not policy_request:
+            self.set_status(404, "Policy Request not found")
+            return
+        policy_request.event_time = policy_request.event_time.timestamp()
+
+        if not data["status"] in allowed_statuses:
+            self.set_status(400, f"Status must be one of {allowed_statuses}")
+        elif (
+            data["status"] == policy_request.status
+        ):  # No point in updating if it hasn't changed
+            self.write(policy_request.dict())
+        else:
+            policy_request.status = Status3[data["status"]]
+            if await automatic_request.update_policy_request(
+                self.ctx.host, policy_request
+            ):
+                self.write(policy_request.dict())
+            else:
+                self.set_status(500, "Unable to update the policy status")

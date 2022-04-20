@@ -221,6 +221,10 @@ def make_app(jwt_validator=None):
             r"/api/v3/automatic_policy_request_handler/aws/?",
             AutomaticPolicyRequestHandler,
         ),
+        (
+            r"/api/v3/automatic_policy_request_handler/aws/(?P<account_id>\d{12})/(?P<policy_request_id>[a-fA-F\d]{32})/?",
+            AutomaticPolicyRequestHandler,
+        ),
         (r"/api/v3/services/aws/account/hub/?", HubAccountConfigurationCrudHandler),
         (
             r"/api/v3/services/aws/account/spoke/?",

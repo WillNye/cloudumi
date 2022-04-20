@@ -88,7 +88,13 @@ def init_extended_policy_request(**policy_request) -> ExtendedAutomaticPolicyReq
     policy_request["event_time"] = datetime.utcfromtimestamp(
         policy_request["event_time"]
     )
-    return ExtendedAutomaticPolicyRequest(**policy_request)
+
+    if isinstance(policy_request["status"], str):
+        policy_request["status"] = Status3[policy_request["status"]]
+
+    policy_request = ExtendedAutomaticPolicyRequest(**policy_request)
+    policy_request.status = policy_request.status.value
+    return policy_request
 
 
 async def get_policy_requests(
@@ -176,6 +182,7 @@ async def update_policy_request(
     )
 
     try:
+        policy_request.status = policy_request.status.value
         await aio_wrapper(
             cache_conn.set,
             request_key,
@@ -231,14 +238,15 @@ async def approve_policy_request(
         log.info(log_data)
         raise KeyError(log_data["message"])
 
+    policy_request.status = Status3.approved
+    await update_policy_request(host, policy_request, red)
+
     try:
-        policy_request.status = Status3.approved
-        await update_policy_request(host, policy_request, red)
         policy_created = await create_policy(
             host, policy_request.role, json.dumps(policy_request.policy, cls=SetEncoder)
         )
         if policy_created:
-            policy_request.status = Status3.applied
+            policy_request.status = Status3.applied_awaiting_execution
             await update_policy_request(host, policy_request, red)
             log_data["message"] = "Successfully applied policy"
             log.debug(log_data)
