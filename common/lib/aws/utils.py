@@ -1959,28 +1959,25 @@ async def remove_temp_policies(
             continue
 
         client = await aio_wrapper(
-            boto3_cached_conn(
-                resource_type,
-                host,
-                service_type="client",
-                future_expiration_minutes=15,
-                account_number=resource_account,
-                assume_role=ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
-                .with_query({"account_id": resource_account})
-                .first.name,
-                region=resource_region or config.region,
-                session_name=sanitize_session_name("revoke-expired-policies"),
-                arn_partition="aws",
-                sts_client_kwargs=dict(
-                    region_name=config.region,
-                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-                ),
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
-                ),
-                retry_max_attempts=2,
-            )
+            boto3_cached_conn,
+            resource_type,
+            host,
+            service_type="client",
+            future_expiration_minutes=15,
+            account_number=resource_account,
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": resource_account})
+            .first.name,
+            region=resource_region or config.region,
+            session_name=sanitize_session_name("revoke-expired-policies"),
+            arn_partition="aws",
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            retry_max_attempts=2,
         )
 
         if change.change_type == "inline_policy":
@@ -2139,11 +2136,14 @@ async def remove_temp_policies(
 
                 if resource_type == "s3":
                     if len(new_policy_statement) == 0:
-                        await aio_wrapper(client.delete_bucket_policy)(
-                            Bucket=resource_name, ExpectedBucketOwner=resource_account
+                        await aio_wrapper(
+                            client.delete_bucket_policy,
+                            Bucket=resource_name,
+                            ExpectedBucketOwner=resource_account,
                         )
                     else:
-                        await aio_wrapper(client.put_bucket_policy)(
+                        await aio_wrapper(
+                            client.put_bucket_policy,
                             Bucket=resource_name,
                             Policy=json.dumps(
                                 existing_policy, escape_forward_slashes=False
@@ -2163,13 +2163,15 @@ async def remove_temp_policies(
                     )
 
                     if len(new_policy_statement) == 0:
-                        await aio_wrapper(client.set_queue_attributes)(
+                        await aio_wrapper(
+                            client.set_queue_attributes,
                             QueueUrl=queue_url.get("QueueUrl"),
                             Attributes={"Policy": ""},
                         )
 
                     else:
-                        await aio_wrapper(client.set_queue_attributes)(
+                        await aio_wrapper(
+                            client.set_queue_attributes,
                             QueueUrl=queue_url.get("QueueUrl"),
                             Attributes={
                                 "Policy": json.dumps(
@@ -2179,7 +2181,8 @@ async def remove_temp_policies(
                             },
                         )
                 elif resource_type == "iam":
-                    await aio_wrapper(client.update_assume_role_policy)(
+                    await aio_wrapper(
+                        client.update_assume_role_policy,
                         RoleName=principal_name,
                         PolicyDocument=json.dumps(
                             existing_policy, escape_forward_slashes=False
