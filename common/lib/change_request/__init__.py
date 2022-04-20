@@ -66,9 +66,9 @@ async def generate_policy_sid(user: str, expiration_date: Optional[int] = None) 
     random_string = await generate_random_string()
 
     if expiration_date:
-        return f"noq_delete_on_{expiration_date}_{user_stripped}_{int(time.time())}"
+        return f"noqdeleteon{expiration_date}{user_stripped}{int(time.time())}"
 
-    return f"noq_{user_stripped}_{int(time.time())}_{random_string}"
+    return f"noq{user_stripped}{int(time.time())}{random_string}"
 
 
 async def generate_policy_name(
