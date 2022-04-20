@@ -1,3 +1,14 @@
+# Access Undenied NOQ FORK
+
+`A little noq fork and pepper makes for a good meal`
+
+## To update
+
+`First of all: ask yourself if it's really necessary. We are editing the original files`
+
+- Copy files from the repo: https://github.com/ermetic/access-undenied-aws into this folder (maybe with something like `cp -r * ../cloudumi/common/lib/aws/access_undenied`)
+- Update `requirements.in` with any dep changes that were made in `requirements.txt`
+
 # Access Undenied on AWS
 
 Access Undenied parses AWS AccessDenied CloudTrail events, explains the reasons for them, and offers actionable fixes.
@@ -6,7 +17,9 @@ Access Undenied parses AWS AccessDenied CloudTrail events, explains the reasons 
 
 ![Gif demonstrating an example of using AccessUndenied](examples/example.gif)
 
-- [Access Undenied](#access-undenied)
+- [Access Undenied NOQ FORK](#access-undenied-noq-fork)
+  - [To update](#to-update)
+- [Access Undenied on AWS](#access-undenied-on-aws)
   - [Overview](#overview)
     - [Common use cases](#common-use-cases)
   - [Simple Startup](#simple-startup)
@@ -32,7 +45,7 @@ Access Undenied parses AWS AccessDenied CloudTrail events, explains the reasons 
     - [Running AccessUndenied from a Lambda function](#running-accessundenied-from-a-lambda-function)
     - [Setting up a venv](#setting-up-a-venv)
     - [Getting CloudTrail events via the LookupEvents API with the CLI](#getting-cloudtrail-events-via-the-lookupevents-api-with-the-cli)
-    - [Getting Cloudtrail events from the AWS Console's event history](#getting-cloudtrail-events-from-the-aws-consoles-event-history)
+    - [Getting CloudTrail events from the AWS Console's event history](#getting-cloudtrail-events-from-the-aws-consoles-event-history)
     - [Example Cloudtrail event](#example-cloudtrail-event)
     - [Least privilege AccessUndenied policy](#least-privilege-accessundenied-policy)
 
