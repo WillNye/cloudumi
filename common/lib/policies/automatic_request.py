@@ -88,7 +88,6 @@ def init_extended_policy_request(**policy_request) -> ExtendedAutomaticPolicyReq
     policy_request["event_time"] = datetime.utcfromtimestamp(
         policy_request["event_time"]
     )
-    policy_request["policy"] = json.loads(policy_request.get("policy", "[]"))
     return ExtendedAutomaticPolicyRequest(**policy_request)
 
 
@@ -218,7 +217,7 @@ async def remove_policy_request(host, account_id, user, policy_request_id: str) 
 
 async def approve_policy_request(
     host: str, account_id: str, user: str, policy_request_id: str
-) -> bool:
+) -> ExtendedAutomaticPolicyRequest:
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "policy_request_id": policy_request_id,
@@ -226,11 +225,13 @@ async def approve_policy_request(
         "host": host,
     }
     red = await RedisHandler().redis(host)
+    policy_request = await get_policy_request(host, account_id, user, policy_request_id)
+    if not policy_request:
+        log_data["message"] = "Policy Request not found"
+        log.info(log_data)
+        raise KeyError(log_data["message"])
 
     try:
-        policy_request = await get_policy_request(
-            host, account_id, user, policy_request_id
-        )
         policy_request.status = Status3.approved
         await update_policy_request(host, policy_request, red)
         policy_created = await create_policy(
@@ -241,9 +242,8 @@ async def approve_policy_request(
             await update_policy_request(host, policy_request, red)
             log_data["message"] = "Successfully applied policy"
             log.debug(log_data)
-        return policy_created
-
     except Exception as err:
         log_data["error"] = repr(err)
         log.warning(log_data)
-        return False
+    finally:
+        return policy_request
