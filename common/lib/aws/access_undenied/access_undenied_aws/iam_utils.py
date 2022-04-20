@@ -7,7 +7,8 @@ import cachetools
 from aws_error_utils import ClientError
 from cachetools import keys
 
-from common.lib.aws.access_undenied.access_undenied_aws import common, logger
+from common.lib.aws.access_undenied.access_undenied_aws import common
+from util.log import logger
 
 if TYPE_CHECKING:
     from mypy_boto3_iam import IAMClient

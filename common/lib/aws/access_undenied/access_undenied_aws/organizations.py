@@ -4,14 +4,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import boto3
 from aws_error_utils import errors
 
-from common.lib.aws.access_undenied.access_undenied_aws import (
-    common,
-    logger,
-    organization_node,
-)
+from common.lib.aws.access_undenied.access_undenied_aws import common, organization_node
 from common.lib.aws.access_undenied.access_undenied_aws.organization_node import (
     OrganizationNode,
 )
+from util.log import logger
 
 if TYPE_CHECKING:
     from mypy_boto3_organizations import OrganizationsClient

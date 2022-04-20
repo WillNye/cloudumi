@@ -4,10 +4,10 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event_permission_data,
     iam_utils,
-    logger,
     organization_node,
     resource_policy_utils,
 )
+from util.log import logger
 
 
 class IamPolicyData(object):

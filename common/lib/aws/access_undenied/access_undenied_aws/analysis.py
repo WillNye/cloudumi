@@ -8,13 +8,13 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     event,
     event_permission_data,
     iam_policy_data,
-    logger,
     result_details,
     results,
     simulate_custom_policy_context_generator,
     simulate_custom_policy_helper,
 )
 from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
+from util.log import logger
 
 
 def _write_to_file(output_file: TextIO, output_json: Dict[str, Any]) -> None:

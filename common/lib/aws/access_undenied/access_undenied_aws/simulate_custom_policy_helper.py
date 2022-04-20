@@ -9,7 +9,6 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     event_permission_data,
     iam_policy_data,
     iam_utils,
-    logger,
     results,
     simulate_custom_policy_result_analyzer,
     utils,
@@ -17,6 +16,7 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
 from common.lib.aws.access_undenied.access_undenied_aws.iam_policy_data import (
     IamPolicyData,
 )
+from util.log import logger
 
 if TYPE_CHECKING:
     from mypy_boto3_iam import IAMClient

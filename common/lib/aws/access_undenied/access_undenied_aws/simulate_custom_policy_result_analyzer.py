@@ -6,10 +6,10 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     event,
     event_permission_data,
     iam_policy_data,
-    logger,
     result_details,
     results,
 )
+from util.log import logger
 
 if TYPE_CHECKING:
     from mypy_boto3_iam.type_defs import (

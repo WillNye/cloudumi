@@ -17,3 +17,4 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     simulate_custom_policy_result_analyzer,
     utils,
 )
+from util.log import logger

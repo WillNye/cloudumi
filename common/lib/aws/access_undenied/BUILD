@@ -2,6 +2,7 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 INT_DEPS = [
+    "//util/log:lib",
 ]
 
 EXT_DEPS = [

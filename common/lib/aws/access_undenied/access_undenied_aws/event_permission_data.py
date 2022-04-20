@@ -8,12 +8,8 @@ import boto3
 import pkg_resources
 from aws_error_utils import ClientError
 
-from common.lib.aws.access_undenied.access_undenied_aws import (
-    common,
-    event,
-    logger,
-    utils,
-)
+from common.lib.aws.access_undenied.access_undenied_aws import common, event, utils
+from util.log import logger
 
 ACCESS_DENIED_MESSAGES = json.load(
     open(

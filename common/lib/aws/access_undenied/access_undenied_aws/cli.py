@@ -12,9 +12,9 @@ import colorlog
 from common.lib.aws.access_undenied.access_undenied_aws import (
     analysis,
     common,
-    logger,
     organizations,
 )
+from util.log import logger
 
 
 def _initialize_logger() -> None:
