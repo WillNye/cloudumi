@@ -9,7 +9,6 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.redis import RedisHandler, redis_get
 from common.models import (
-    Account,
     AutomaticPolicyRequest,
     ExtendedAutomaticPolicyRequest,
     SpokeAccount,
@@ -132,13 +131,15 @@ async def create_policy_request(
             **extended_policy_request
         )
     else:
-        account_name = (
+        account = (
             ModelAdapter(SpokeAccount)
             .load_config("spoke_accounts", host)
             .with_query({"account_id": account_id})
-            .first.account_name
+            .first
         )
-        account = Account(id=account_id, name=account_name)
+        account = SpokeAccount(
+            account_id=account_id, account_name=account.account_name, name=account.name
+        )
         extended_policy_request = ExtendedAutomaticPolicyRequest(
             id=policy_request_id,
             account=account,
