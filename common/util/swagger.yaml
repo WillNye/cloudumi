@@ -292,18 +292,39 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  description: Was the workflow triggered successfully
+              $ref: "#/components/schemas/AutomaticPolicyRequest"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExtendedAwsPrincipalModel"
+                $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
+  /api/v3/automatic_policy_request_handler/aws/{account_id}/{policy_request_id}:
+    patch:
+      summary: Update the status for a policy request
+      tags:
+        - roles
+      parameters:
+        - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/PolicyRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: The updated policy request status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
   /roles/{account_id}/{role_name}:
     get:
       summary: get details about a role
@@ -527,6 +548,11 @@ components:
       name: resource_type
       in: query
       example: sqs
+      schema:
+        type: string
+    PolicyRequestId:
+      name: policy_request_id
+      in: query
       schema:
         type: string
     LimitQueryString:
@@ -2445,6 +2471,8 @@ components:
           description: The policy request's status
           enum:
             - approved
-            - applied
             - pending
             - denied
+            - applied_awaiting_execution
+            - applied_and_success
+            - applied_and_failure
