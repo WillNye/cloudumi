@@ -65,13 +65,15 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
           required
           noQuery
           typeahead={`/api/v3/auth/cognito/groups`}
-          label="Groups"
+          label='Groups'
           defaultValues={fields?.Groups}
           sendRequestCommon={get.do}
           shouldTransformResults
-          resultsFormatter={(results) => results.map((item) => ({
-            title: item.GroupName
-          }))}
+          resultsFormatter={(results) =>
+            results.map((item) => ({
+              title: item.GroupName,
+            }))
+          }
         />
 
         {!defaultValues && (

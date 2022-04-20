@@ -9,7 +9,6 @@ export const SidebarMenu = ({
   onClickItem,
   onChangeActive,
 }) => {
-
   useEffect(() => {
     const active = menuItems?.filter(({ name }) => name === activeItem)?.[0]
     if (active) onChangeActive(active)

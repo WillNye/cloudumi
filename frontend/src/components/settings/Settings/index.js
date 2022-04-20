@@ -5,7 +5,6 @@ import { useHistory } from 'react-router-dom'
 import { ServiceAWS } from './components/ServiceAWS'
 
 export const Settings = ({ computedMatch, origin }) => {
-
   const { push } = useHistory()
 
   const { tabName } = computedMatch?.params
