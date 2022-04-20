@@ -2224,14 +2224,17 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         policy_request_model = PolicyRequestModificationRequestModel.parse_obj(
             input_body
         )
-        response = await parse_and_apply_policy_request_modification(
-            extended_request,
-            policy_request_model,
-            "user2@example.com",
-            [],
-            last_updated,
-            host,
-        )
+
+        # It fails when I try to add the patch as a decorator. This may have to do with the import inside the function.
+        with patch("smtplib.SMTP_SSL", autospec=True):
+            response = await parse_and_apply_policy_request_modification(
+                extended_request,
+                policy_request_model,
+                "user2@example.com",
+                [],
+                last_updated,
+                host,
+            )
         self.assertEqual(0, response.errors)
         # Make sure comment got added to the request
         self.assertEqual(1, len(extended_request.comments))
@@ -2451,15 +2454,19 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         policy_request_model.modification_model.change_id = (
             extended_request.changes.changes[0].id
         )
-        response = await parse_and_apply_policy_request_modification(
-            extended_request,
-            policy_request_model,
-            "user@example.com",
-            [],
-            last_updated,
-            host,
-            approval_probe_approved=True,
-        )
+
+        # It fails when I try to add the patch as a decorator. Possibly due to the import in this method.
+        with patch("smtplib.SMTP_SSL", autospec=True):
+            response = await parse_and_apply_policy_request_modification(
+                extended_request,
+                policy_request_model,
+                "user@example.com",
+                [],
+                last_updated,
+                host,
+                approval_probe_approved=True,
+            )
+
         self.assertEqual(0, response.errors)
         # Make sure change got updated in the request
         self.assertDictEqual(
@@ -2486,7 +2493,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     @patch("common.lib.v2.requests.send_communications_policy_change_request_v2")
     @patch("common.lib.dynamo.UserDynamoHandler.write_policy_request_v2")
     async def test_parse_and_apply_policy_request_modification_cancel_request(
-        self, mock_dynamo_write, mock_send_email
+        self, mock_dynamo_write, mock_write_policy
     ):
         from common.exceptions.exceptions import InvalidRequestParameter, Unauthorized
         from common.lib.v2.requests import parse_and_apply_policy_request_modification
@@ -2499,7 +2506,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
         last_updated = extended_request.timestamp
         mock_dynamo_write.return_value = create_future(None)
-        mock_send_email.return_value = create_future(None)
+        mock_write_policy.return_value = create_future(None)
         # Trying to cancel while not being authorized
         with pytest.raises(Unauthorized) as e:
             await parse_and_apply_policy_request_modification(
@@ -2513,26 +2520,11 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             self.assertIn("Unauthorized", str(e))
 
         extended_request.changes.changes[0].status = Status.applied
-        # Trying to cancel while at least one change is applied
-        res = await parse_and_apply_policy_request_modification(
-            extended_request,
-            policy_request_model,
-            "user@example.com",
-            [],
-            last_updated,
-            host,
-        )
-        self.assertIn(
-            res.action_results[0].message,
-            "Request cannot be cancelled because at least one change has been applied already. "
-            "Please apply or cancel the other changes.",
-        )
-        extended_request.changes.changes[0].status = Status.not_applied
 
-        # Trying to cancel an approved request
-        extended_request.request_status = RequestStatus.approved
-        with pytest.raises(InvalidRequestParameter) as e:
-            await parse_and_apply_policy_request_modification(
+        # It fails when I try to add the patch as a decorator.
+        with patch("smtplib.SMTP_SSL", autospec=True):
+            # Trying to cancel while at least one change is applied
+            res = await parse_and_apply_policy_request_modification(
                 extended_request,
                 policy_request_model,
                 "user@example.com",
@@ -2540,21 +2532,39 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 last_updated,
                 host,
             )
-            self.assertIn("cannot be cancelled", str(e))
+            self.assertIn(
+                res.action_results[0].message,
+                "Request cannot be cancelled because at least one change has been applied already. "
+                "Please apply or cancel the other changes.",
+            )
+            extended_request.changes.changes[0].status = Status.not_applied
 
-        # Cancelling valid request
-        extended_request.request_status = RequestStatus.pending
-        response = await parse_and_apply_policy_request_modification(
-            extended_request,
-            policy_request_model,
-            "user@example.com",
-            [],
-            last_updated,
-            host,
-        )
-        self.assertEqual(0, response.errors)
-        # Make sure request got cancelled
-        self.assertEqual(RequestStatus.cancelled, extended_request.request_status)
+            # Trying to cancel an approved request
+            extended_request.request_status = RequestStatus.approved
+            with pytest.raises(InvalidRequestParameter) as e:
+                await parse_and_apply_policy_request_modification(
+                    extended_request,
+                    policy_request_model,
+                    "user@example.com",
+                    [],
+                    last_updated,
+                    host,
+                )
+                self.assertIn("cannot be cancelled", str(e))
+
+            # Cancelling valid request
+            extended_request.request_status = RequestStatus.pending
+            response = await parse_and_apply_policy_request_modification(
+                extended_request,
+                policy_request_model,
+                "user@example.com",
+                [],
+                last_updated,
+                host,
+            )
+            self.assertEqual(0, response.errors)
+            # Make sure request got cancelled
+            self.assertEqual(RequestStatus.cancelled, extended_request.request_status)
 
     @pytest.mark.usefixtures("dynamodb")
     @pytest.mark.usefixtures("populate_caches")
@@ -2576,38 +2586,23 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         last_updated = int(extended_request.timestamp.timestamp())
         mock_dynamo_write.return_value = create_future(None)
         mock_send_email.return_value = create_future(None)
-        # Trying to reject while not being authorized
-        with pytest.raises(Unauthorized) as e:
-            await parse_and_apply_policy_request_modification(
-                extended_request,
-                policy_request_model,
-                "user2@example.com",
-                [],
-                last_updated,
-                host,
-            )
-            self.assertIn("Unauthorized", str(e))
-        extended_request.changes.changes[0].status = Status.applied
-        # Trying to reject while at least one change is applied
-        res = await parse_and_apply_policy_request_modification(
-            extended_request,
-            policy_request_model,
-            "consoleme_admins@example.com",
-            [],
-            last_updated,
-            host,
-        )
-        self.assertEqual(
-            res.action_results[0].message,
-            "Request cannot be rejected because at least one change has been applied already. "
-            "Please apply or cancel the other changes.",
-        )
-        extended_request.changes.changes[0].status = Status.not_applied
 
-        # Trying to cancel an approved request
-        extended_request.request_status = RequestStatus.approved
-        with pytest.raises(InvalidRequestParameter) as e:
-            await parse_and_apply_policy_request_modification(
+        # It fails when I try to add the patch as a decorator. Possibly due to the import in this method.
+        with patch("smtplib.SMTP_SSL", autospec=True):
+            # Trying to reject while not being authorized
+            with pytest.raises(Unauthorized) as e:
+                await parse_and_apply_policy_request_modification(
+                    extended_request,
+                    policy_request_model,
+                    "user2@example.com",
+                    [],
+                    last_updated,
+                    host,
+                )
+                self.assertIn("Unauthorized", str(e))
+            extended_request.changes.changes[0].status = Status.applied
+            # Trying to reject while at least one change is applied
+            res = await parse_and_apply_policy_request_modification(
                 extended_request,
                 policy_request_model,
                 "consoleme_admins@example.com",
@@ -2615,49 +2610,69 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 last_updated,
                 host,
             )
-            self.assertIn("cannot be rejected", str(e))
+            self.assertEqual(
+                res.action_results[0].message,
+                "Request cannot be rejected because at least one change has been applied already. "
+                "Please apply or cancel the other changes.",
+            )
+            extended_request.changes.changes[0].status = Status.not_applied
 
-        # Rejecting valid request
-        extended_request.request_status = RequestStatus.pending
-        response = await parse_and_apply_policy_request_modification(
-            extended_request,
-            policy_request_model,
-            "consoleme_admins@example.com",
-            [],
-            last_updated,
-            host,
-        )
-        self.assertEqual(0, response.errors)
-        # Make sure request got rejected
-        self.assertEqual(RequestStatus.rejected, extended_request.request_status)
+            # Trying to cancel an approved request
+            extended_request.request_status = RequestStatus.approved
+            with pytest.raises(InvalidRequestParameter) as e:
+                await parse_and_apply_policy_request_modification(
+                    extended_request,
+                    policy_request_model,
+                    "consoleme_admins@example.com",
+                    [],
+                    last_updated,
+                    host,
+                )
+                self.assertIn("cannot be rejected", str(e))
 
-        policy_request_model.modification_model.command = Command.move_back_to_pending
-        mock_move_back_to_pending.return_value = create_future(False)
-        # Trying to move back to pending request - not authorized
-        with pytest.raises(Unauthorized) as e:
-            await parse_and_apply_policy_request_modification(
+            # Rejecting valid request
+            extended_request.request_status = RequestStatus.pending
+            response = await parse_and_apply_policy_request_modification(
                 extended_request,
                 policy_request_model,
-                "user2@example.com",
+                "consoleme_admins@example.com",
                 [],
                 last_updated,
                 host,
             )
-            self.assertIn("Cannot move this request back to pending", str(e))
+            self.assertEqual(0, response.errors)
+            # Make sure request got rejected
+            self.assertEqual(RequestStatus.rejected, extended_request.request_status)
 
-        mock_move_back_to_pending.return_value = create_future(True)
-        # Trying to move back to pending request - authorized
-        response = await parse_and_apply_policy_request_modification(
-            extended_request,
-            policy_request_model,
-            "consoleme_admins@example.com",
-            [],
-            last_updated,
-            host,
-        )
-        self.assertEqual(0, response.errors)
-        # Make sure request got moved back
-        self.assertEqual(RequestStatus.pending, extended_request.request_status)
+            policy_request_model.modification_model.command = (
+                Command.move_back_to_pending
+            )
+            mock_move_back_to_pending.return_value = create_future(False)
+            # Trying to move back to pending request - not authorized
+            with pytest.raises(Unauthorized) as e:
+                await parse_and_apply_policy_request_modification(
+                    extended_request,
+                    policy_request_model,
+                    "user2@example.com",
+                    [],
+                    last_updated,
+                    host,
+                )
+                self.assertIn("Cannot move this request back to pending", str(e))
+
+            mock_move_back_to_pending.return_value = create_future(True)
+            # Trying to move back to pending request - authorized
+            response = await parse_and_apply_policy_request_modification(
+                extended_request,
+                policy_request_model,
+                "consoleme_admins@example.com",
+                [],
+                last_updated,
+                host,
+            )
+            self.assertEqual(0, response.errors)
+            # Make sure request got moved back
+            self.assertEqual(RequestStatus.pending, extended_request.request_status)
 
     @pytest.mark.usefixtures("dynamodb")
     @pytest.mark.usefixtures("populate_caches")
@@ -2678,10 +2693,9 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         mock_fetch_iam_role,
         mock_send_email,
     ):
-        from asgiref.sync import sync_to_async
-
         from common.config import config
         from common.exceptions.exceptions import Unauthorized
+        from common.lib.asyncio import aio_wrapper
         from common.lib.redis import RedisHandler
         from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
@@ -2695,7 +2709,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             },
         )
 
-        s3_client = await sync_to_async(boto3_cached_conn)(
+        s3_client = await aio_wrapper(
+            boto3_cached_conn,
             "s3",
             host,
             service_type="client",
@@ -2860,14 +2875,16 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             input_body
         )
 
-        response = await parse_and_apply_policy_request_modification(
-            extended_request,
-            policy_request_model,
-            "consoleme_admins@example.com",
-            [],
-            last_updated,
-            host,
-        )
+        # It fails when I try to add the patch as a decorator. Possibly due to the import in this method.
+        with patch("smtplib.SMTP_SSL", autospec=True):
+            response = await parse_and_apply_policy_request_modification(
+                extended_request,
+                policy_request_model,
+                "consoleme_admins@example.com",
+                [],
+                last_updated,
+                host,
+            )
 
         self.assertEqual(response.action_results[0].status, "success")
         self.assertEqual(

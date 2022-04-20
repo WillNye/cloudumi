@@ -7,12 +7,12 @@ from typing import Any, Optional
 import boto3
 import redis
 import ujson as json
-from asgiref.sync import sync_to_async
 from redis.client import Redis
 from rediscluster import RedisCluster
 from rediscluster.exceptions import ClusterDownError
 
 from common.config import config
+from common.lib.asyncio import aio_wrapper
 from common.lib.plugins import get_plugin_by_name
 
 if config.get("_global_.redis.use_redislite"):
@@ -412,14 +412,16 @@ class RedisHandler:
             )
             return redislite.StrictRedis(REDIS_DB_PATH, decode_responses=True)
         if cluster_mode:
-            self.red = await sync_to_async(ConsoleMeRedis)(
+            self.red = await aio_wrapper(
+                ConsoleMeRedis,
                 startup_nodes=cluster_mode_nodes,
                 decode_responses=True,
                 required_key_prefix=host,
                 skip_full_coverage_check=True,
             )
         else:
-            self.red = await sync_to_async(ConsoleMeRedis)(
+            self.red = await aio_wrapper(
+                ConsoleMeRedis,
                 host=self.host,
                 port=self.port,
                 db=self.db,
@@ -462,7 +464,7 @@ async def redis_get(
 ) -> Optional[str]:
     raise_if_key_doesnt_start_with_prefix(key, host)
     red = await RedisHandler().redis(host)
-    v = await sync_to_async(red.get)(key)
+    v = await aio_wrapper(red.get, key)
     if not v:
         return default
     return v
@@ -471,7 +473,7 @@ async def redis_get(
 async def redis_hgetall(key: str, host: str, default=None):
     raise_if_key_doesnt_start_with_prefix(key, host)
     red = await RedisHandler().redis(host)
-    v = await sync_to_async(red.hgetall)(key)
+    v = await aio_wrapper(red.hgetall, key)
     if not v:
         return default
     return v
@@ -480,7 +482,7 @@ async def redis_hgetall(key: str, host: str, default=None):
 async def redis_hget(name: str, key: str, host: str, default=None):
     raise_if_key_doesnt_start_with_prefix(name, host)
     red = await RedisHandler().redis(host)
-    v = await sync_to_async(red.hget)(name, key)
+    v = await aio_wrapper(red.hget, name, key)
     if not v:
         return default
     return v
@@ -514,8 +516,8 @@ async def redis_hsetex(
     raise_if_key_doesnt_start_with_prefix(name, host)
     expiration = int(time.time()) + expiration_seconds
     red = await RedisHandler().redis(host)
-    v = await sync_to_async(red.hset)(
-        name, key, json.dumps({"value": value, "ttl": expiration})
+    v = await aio_wrapper(
+        red.hset, name, key, json.dumps({"value": value, "ttl": expiration})
     )
     return v
 
@@ -533,7 +535,7 @@ async def redis_hgetex(name: str, key: str, host: str, default=None):
     red = await RedisHandler().redis(host)
     if not red.exists(name):
         return default
-    result_j = await sync_to_async(red.hget)(name, key)
+    result_j = await aio_wrapper(red.hget, name, key)
     if not result_j:
         return default
     result = json.loads(result_j)

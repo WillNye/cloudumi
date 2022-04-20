@@ -2,10 +2,9 @@ import asyncio
 import time
 from typing import Any
 
-from asgiref.sync import sync_to_async
-
 from common.config import config
 from common.exceptions.exceptions import NoMatchingRequest
+from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_all
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler
@@ -55,8 +54,8 @@ async def get_request_by_id(user, request_id, host):
     """Get request matching id and add the group's secondary approvers"""
     dynamo_handler = UserDynamoHandler(host=host, user=user)
     try:
-        requests = await sync_to_async(dynamo_handler.resolve_request_ids)(
-            [request_id], host
+        requests = await aio_wrapper(
+            dynamo_handler.resolve_request_ids, [request_id], host
         )
         for req in requests:
             group = req.get("group")
@@ -265,8 +264,8 @@ async def get_existing_pending_approved_request(
     user: str, group_info: Any, host: str
 ) -> None:
     dynamo_handler = UserDynamoHandler(host=host, user=user)
-    existing_requests = await sync_to_async(dynamo_handler.get_requests_by_user)(
-        user, host
+    existing_requests = await aio_wrapper(
+        dynamo_handler.get_requests_by_user, user, host
     )
     if existing_requests:
         for request in existing_requests:
@@ -279,8 +278,8 @@ async def get_existing_pending_approved_request(
 
 async def get_existing_pending_request(user: str, group_info: Any, host: str) -> None:
     dynamo_handler = UserDynamoHandler(host=host, user=user)
-    existing_requests = await sync_to_async(dynamo_handler.get_requests_by_user)(
-        user, host
+    existing_requests = await aio_wrapper(
+        dynamo_handler.get_requests_by_user, user, host
     )
     if existing_requests:
         for request in existing_requests:

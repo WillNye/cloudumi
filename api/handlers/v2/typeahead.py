@@ -2,11 +2,11 @@ from typing import Optional
 
 import sentry_sdk
 import ujson as json
-from asgiref.sync import sync_to_async
 
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable
 from common.handlers.base import BaseAPIV2Handler
+from common.lib.asyncio import aio_wrapper
 from common.lib.auth import get_accounts_user_can_view_resources_for
 from common.lib.aws.typeahead_cache import get_all_resource_arns
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
@@ -65,7 +65,7 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
             host,
             f"{host}_AWSCONFIG_RESOURCE_CACHE",
         )
-        all_resource_arns = await sync_to_async(red.hkeys)(resource_redis_cache_key)
+        all_resource_arns = await aio_wrapper(red.hkeys, resource_redis_cache_key)
         # Fall back to DynamoDB or S3?
         if not all_resource_arns:
             s3_bucket = config.get_host_specific_key(
@@ -82,8 +82,8 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
                 )
                 all_resource_arns = all_resources.keys()
                 if all_resources:
-                    await sync_to_async(red.hmset)(
-                        resource_redis_cache_key, all_resources
+                    await aio_wrapper(
+                        red.hmset, resource_redis_cache_key, all_resources
                     )
             except DataNotRetrievable:
                 sentry_sdk.capture_exception()

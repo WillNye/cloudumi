@@ -3,11 +3,11 @@ from typing import Any, Dict, List, Optional
 
 import sentry_sdk
 import ujson as json
-from asgiref.sync import sync_to_async
 from jinja2 import Environment, FileSystemLoader
 from jinja2.utils import select_autoescape
 
 from common.config import config
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.access_advisor import get_epoch_authenticated
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import get_role_managed_policy_documents
@@ -68,7 +68,8 @@ async def calculate_unused_policy_for_identity(
 
     identity_type_string = "RoleName" if identity_type == "role" else "UserName"
     try:
-        managed_policy_details = await sync_to_async(get_role_managed_policy_documents)(
+        managed_policy_details = await aio_wrapper(
+            get_role_managed_policy_documents,
             {identity_type_string: identity_name},
             account_number=account_id,
             assume_role=config.get_host_specific_key("policies.role_name", host),

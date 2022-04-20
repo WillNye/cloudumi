@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 
 import pytz
-from asgiref.sync import sync_to_async
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 from common.config import config
 from common.handlers.base import BaseHandler
+from common.lib.asyncio import aio_wrapper
 from common.lib.jwt import generate_jwt_token
 from common.lib.plugins import get_plugin_by_name
 from common.lib.saml import init_saml_auth, prepare_tornado_request_for_saml
@@ -28,14 +28,14 @@ class SamlHandler(BaseHandler):
         elif "acs" in endpoint:
             auth.process_response()
             errors = auth.get_errors()
-            not_auth_warn = not await sync_to_async(auth.is_authenticated)()
+            not_auth_warn = not await aio_wrapper(auth.is_authenticated)
             if not_auth_warn:
                 self.write("User is not authenticated")
                 await self.finish()
                 return
             if len(errors) == 0:
 
-                saml_attributes = await sync_to_async(auth.get_attributes)()
+                saml_attributes = await aio_wrapper(auth.get_attributes)
                 email = saml_attributes[
                     config.get_host_specific_key(
                         "get_user_by_saml_settings.attributes.email",
@@ -52,7 +52,7 @@ class SamlHandler(BaseHandler):
                     [],
                 )
 
-                self_url = await sync_to_async(OneLogin_Saml2_Utils.get_self_url)(req)
+                self_url = await aio_wrapper(OneLogin_Saml2_Utils.get_self_url, req)
                 expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                     minutes=config.get_host_specific_key(
                         "jwt.expiration_minutes", host, 1200

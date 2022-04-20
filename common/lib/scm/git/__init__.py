@@ -4,7 +4,8 @@ import tempfile
 from typing import Optional
 
 import git
-from asgiref.sync import sync_to_async
+
+from common.lib.asyncio import aio_wrapper
 
 
 class Repository:
@@ -24,7 +25,7 @@ class Repository:
         args.append(self.repo_url)
         if depth:
             kwargs["depth"] = depth
-        await sync_to_async(git.Git(self.tempdir).clone)(*args, **kwargs)
+        await aio_wrapper(git.Git(self.tempdir).clone, *args, **kwargs)
         self.repo = git.Repo(os.path.join(self.tempdir, self.repo_name))
         self.repo.config_writer().set_value("user", "name", "ConsoleMe").release()
         if self.git_email:
@@ -35,4 +36,4 @@ class Repository:
         return self.repo
 
     async def cleanup(self):
-        await sync_to_async(shutil.rmtree)(self.tempdir)
+        await aio_wrapper(shutil.rmtree, self.tempdir)
