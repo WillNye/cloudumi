@@ -1958,45 +1958,49 @@ async def remove_temp_policies(
             log.warning(log_data)
             continue
 
-        iam_client = boto3_cached_conn(
-            resource_type,
-            host,
-            service_type="client",
-            future_expiration_minutes=15,
-            account_number=resource_account,
-            assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
-            .with_query({"account_id": resource_account})
-            .first.name,
-            region=resource_region or config.region,
-            session_name=sanitize_session_name("revoke-expired-policies"),
-            arn_partition="aws",
-            sts_client_kwargs=dict(
-                region_name=config.region,
-                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-            ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-            retry_max_attempts=2,
+        client = await aio_wrapper(
+            boto3_cached_conn(
+                resource_type,
+                host,
+                service_type="client",
+                future_expiration_minutes=15,
+                account_number=resource_account,
+                assume_role=ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": resource_account})
+                .first.name,
+                region=resource_region or config.region,
+                session_name=sanitize_session_name("revoke-expired-policies"),
+                arn_partition="aws",
+                sts_client_kwargs=dict(
+                    region_name=config.region,
+                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                ),
+                client_kwargs=config.get_host_specific_key(
+                    "boto3.client_kwargs", host, {}
+                ),
+                retry_max_attempts=2,
+            )
         )
 
         if change.change_type == "inline_policy":
             try:
                 if resource_name == "role":
                     await aio_wrapper(
-                        iam_client.delete_role_policy,
+                        client.delete_role_policy,
                         RoleName=principal_name,
                         PolicyName=change.policy_name,
                     )
                 elif resource_name == "user":
                     await aio_wrapper(
-                        iam_client.delete_user_policy,
+                        client.delete_user_policy,
                         UserName=principal_name,
                         PolicyName=change.policy_name,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
 
-            except iam_client.exceptions.NoSuchEntityException:
+            except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data[
                     "error"
@@ -2017,18 +2021,18 @@ async def remove_temp_policies(
             try:
                 if resource_name == "role":
                     await aio_wrapper(
-                        iam_client.delete_role_permissions_boundary,
+                        client.delete_role_permissions_boundary,
                         RoleName=principal_name,
                     )
                 elif resource_name == "user":
                     await aio_wrapper(
-                        iam_client.delete_user_permissions_boundary,
+                        client.delete_user_permissions_boundary,
                         UserName=principal_name,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
 
-            except iam_client.exceptions.NoSuchEntityException:
+            except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data[
                     "error"
@@ -2051,20 +2055,20 @@ async def remove_temp_policies(
             try:
                 if resource_name == "role":
                     await aio_wrapper(
-                        iam_client.detach_role_policy,
+                        client.detach_role_policy,
                         RoleName=principal_name,
                         PolicyArn=change.arn,
                     )
                 elif resource_name == "user":
                     await aio_wrapper(
-                        iam_client.detach_user_policy,
+                        client.detach_user_policy,
                         UserName=principal_name,
                         PolicyArn=change.arn,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
 
-            except iam_client.exceptions.NoSuchEntityException:
+            except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data["error"] = f"{change.arn} was not attached to {resource_name}"
                 log.error(log_data, exc_info=True)
@@ -2083,20 +2087,20 @@ async def remove_temp_policies(
             try:
                 if resource_name == "role":
                     await aio_wrapper(
-                        iam_client.untag_role,
+                        client.untag_role,
                         RoleName=principal_name,
                         TagKeys=[change.key],
                     )
                 elif resource_name == "user":
                     await aio_wrapper(
-                        iam_client.untag_user,
+                        client.untag_user,
                         UserName=principal_name,
                         TagKeys=[change.key],
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
 
-            except iam_client.exceptions.NoSuchEntityException:
+            except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data["error"] = f"{change.key} was not attached to {resource_name}"
                 log.error(log_data, exc_info=True)
@@ -2135,18 +2139,18 @@ async def remove_temp_policies(
 
                 if resource_type == "s3":
                     if len(new_policy_statement) == 0:
-                        await sync_to_async(iam_client.delete_bucket_policy)(
+                        await aio_wrapper(client.delete_bucket_policy)(
                             Bucket=resource_name, ExpectedBucketOwner=resource_account
                         )
                     else:
-                        await sync_to_async(iam_client.put_bucket_policy)(
+                        await aio_wrapper(client.put_bucket_policy)(
                             Bucket=resource_name,
                             Policy=json.dumps(
                                 existing_policy, escape_forward_slashes=False
                             ),
                         )
                 elif resource_type == "sns":
-                    await sync_to_async(iam_client.set_topic_attributes)(
+                    await aio_wrapper(client.set_topic_attributes)(
                         TopicArn=change.arn,
                         AttributeName="Policy",
                         AttributeValue=json.dumps(
@@ -2154,18 +2158,18 @@ async def remove_temp_policies(
                         ),
                     )
                 elif resource_type == "sqs":
-                    queue_url: dict = await sync_to_async(iam_client.get_queue_url)(
+                    queue_url: dict = await aio_wrapper(client.get_queue_url)(
                         QueueName=resource_name
                     )
 
                     if len(new_policy_statement) == 0:
-                        await sync_to_async(iam_client.set_queue_attributes)(
+                        await aio_wrapper(client.set_queue_attributes)(
                             QueueUrl=queue_url.get("QueueUrl"),
                             Attributes={"Policy": ""},
                         )
 
                     else:
-                        await sync_to_async(iam_client.set_queue_attributes)(
+                        await aio_wrapper(client.set_queue_attributes)(
                             QueueUrl=queue_url.get("QueueUrl"),
                             Attributes={
                                 "Policy": json.dumps(
@@ -2175,7 +2179,7 @@ async def remove_temp_policies(
                             },
                         )
                 elif resource_type == "iam":
-                    await sync_to_async(iam_client.update_assume_role_policy)(
+                    await aio_wrapper(client.update_assume_role_policy)(
                         RoleName=principal_name,
                         PolicyDocument=json.dumps(
                             existing_policy, escape_forward_slashes=False
