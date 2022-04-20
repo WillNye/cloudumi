@@ -1426,60 +1426,6 @@ components:
           $ref: "#/components/schemas/UserModel"
         text:
           type: string
-    AutomaticPolicyRequest:
-      type: object
-      required:
-        - policy
-        - role
-      properties:
-        policy:
-          type: string
-          description: The json dumped policy requested for approval
-        role:
-          type: string
-          description: The AWS Role arn
-          example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
-    ExtendedAutomaticPolicyRequest:
-      type: object
-      required:
-        - policy
-        - role
-        - id
-        - account
-        - user
-        - event_time
-      properties:
-        id:
-          type: string
-          description: A sha256 hash that represents the policy request
-        role:
-          type: string
-          description: The AWS Role arn
-          example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
-        account:
-          $ref: "#/components/schemas/SpokeAccount"
-        role_owner:
-          type: string
-          description: The owner of the AWS role
-        user:
-          type: string
-          description: The AWS user requesting the generated policy
-        event_time:
-          type: string
-          format: date-time
-          description: The time the request was made
-        error:
-          type: string
-          description: The AWS response that caused the automatic policy request
-        system:
-          type: string
-          description: The information of the device the request was generated on
-        process:
-          type: string
-          description: Information about the running process that caused the automatic policy request to be generated
-        policy:
-          type: object
-          description: The json representation of the policy requested for approval
     AwsPrincipalModel:
       type: object
       required:
@@ -2439,3 +2385,66 @@ components:
         webhook_url:
           type: string
           description: The slack webhook URL to configure for the callback
+    AutomaticPolicyRequest:
+      type: object
+      required:
+        - policy
+        - role
+      properties:
+        policy:
+          type: string
+          description: The json dumped policy requested for approval
+        role:
+          type: string
+          description: The AWS Role arn
+          example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
+    ExtendedAutomaticPolicyRequest:
+      type: object
+      required:
+        - policy
+        - role
+        - id
+        - account
+        - user
+        - event_time
+      properties:
+        id:
+          type: string
+          description: A sha256 hash that represents the policy request
+        role:
+          type: string
+          description: The AWS Role arn
+          example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
+        account:
+          $ref: "#/components/schemas/SpokeAccount"
+        role_owner:
+          type: string
+          description: The owner of the AWS role
+        user:
+          type: string
+          description: The AWS user requesting the generated policy
+        event_time:
+          type: string
+          format: date-time
+          description: The time the request was made
+        error:
+          type: string
+          description: The AWS response that caused the automatic policy request
+        system:
+          type: string
+          description: The information of the device the request was generated on
+        process:
+          type: string
+          description: Information about the running process that caused the automatic policy request to be generated
+        policy:
+          type: object
+          description: The json representation of the policy requested for approval
+        status:
+          type: string
+          default: pending
+          description: The policy request's status
+          enum:
+            - approved
+            - applied
+            - pending
+            - denied
