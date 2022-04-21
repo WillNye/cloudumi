@@ -76,6 +76,9 @@ export const PolicyProvider = ({ children }) => {
     ;(async () => {
       // store resource metadata from the url
       setParams({ accountID, region, resourceName, serviceType })
+      if (serviceType !== 'iamrole') {
+        return
+      }
       // get the endpoint by corresponding service type e.g. s3, iamrole, sqs
       const endpoint = getResourceEffectivePolicyEndpoint(
         accountID,
