@@ -16,6 +16,11 @@ tenant_config = f"""
 _development_user_override: user@noq.dev
 _development_groups_override:
   - engineering@noq.dev
+notifications:
+  enabled: true
+cloudtrail:
+  enabled: true
+  queue_arn: arn:aws:sqs:us-west-2:759357822767:noq-cloudtrail-access-denies
 cache_self_service_typeahead:
   cache_resource_templates: true
 cache_resource_templates:
@@ -86,7 +91,7 @@ headers:
   role_login:
     enabled: true
 url: https://localhost
-application_admin: user@noq.dev
+application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
@@ -117,6 +122,11 @@ _development_groups_override:
   - engineering@noq.dev
 cache_self_service_typeahead:
   cache_resource_templates: true
+notifications:
+  enabled: true
+cloudtrail:
+  enabled: true
+  queue_arn: arn:aws:sqs:us-west-2:759357822767:noq-cloudtrail-access-denies
 cache_resource_templates:
   repositories:
     - type: git
@@ -186,7 +196,7 @@ headers:
   role_login:
     enabled: true
 url: https://cloudumidev.com
-application_admin: user@noq.dev
+application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:

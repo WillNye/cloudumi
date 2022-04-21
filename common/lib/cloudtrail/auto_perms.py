@@ -236,12 +236,24 @@ def detect_cloudtrail_denies_and_update_cache(
                 generated_policy.assessment_result
                 != access_undenied.common.AccessDeniedReason.ALLOWED
             ):
-                if not hasattr(generated_policy, "result_details"):
+                if (
+                    not hasattr(generated_policy, "result_details")
+                    or not generated_policy.result_details.policies
+                    or len(generated_policy.result_details.policies) == 0
+                ):
                     log.warning(
                         "TODO/TECH-DEBT: deal with errors when result_details is not defined"
                     )
+                    processed_messages.append(
+                        {
+                            "Id": message["MessageId"],
+                            "ReceiptHandle": message["ReceiptHandle"],
+                        }
+                    )
                     continue
-                event.generated_policies = generated_policy.result_details.policies
+                event.generated_policies = generated_policy.result_details.policies[0][
+                    "Policy"
+                ]
                 if all_cloudtrail_denies.get(event.request_id):
                     existing_event = CloudtrailDetection.parse_obj(
                         all_cloudtrail_denies[event.request_id]
