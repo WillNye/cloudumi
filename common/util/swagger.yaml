@@ -2392,10 +2392,8 @@ components:
           type: string
           description: TODO
         generated_policies:
-          type: array
+          type: object
           description: TODO
-          items:
-            $ref: "#/components/schemas/PolicyModel"
 
     CloudtrailDetectionConfiguration:
       type: object
