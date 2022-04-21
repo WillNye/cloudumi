@@ -401,7 +401,7 @@ async def fetch_sqs_queue(
 
 
 async def get_bucket_location_with_fallback(
-    bucket_name: str, account_id: str, host, fallback_region: str = config.region
+    bucket_name: str, account_id: str, host, fallback_region: str = "us-east-1"
 ) -> str:
     try:
         bucket_location_res = await aio_wrapper(
