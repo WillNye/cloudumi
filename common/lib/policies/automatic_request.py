@@ -21,6 +21,7 @@ log = config.get_logger(__name__)
 
 
 async def create_policy(host: str, role: str, policy_document: str) -> bool:
+    """Creates the policy an AWS"""
     # TODO: If role_arn, check to see if role_arn is flagged as in_development, and if self.user is authorized for this role
     # TODO: Log all requests and actions taken during the session. eg: Google analytics for IAM
     account_id = role.split(":")[4]
@@ -85,6 +86,7 @@ def get_policy_request_key(
 
 
 def init_extended_policy_request(**policy_request) -> ExtendedAutomaticPolicyRequest:
+    """Takes the json.loads output and translates them to the correct type"""
     policy_request["event_time"] = datetime.utcfromtimestamp(
         policy_request["event_time"]
     )
@@ -93,7 +95,19 @@ def init_extended_policy_request(**policy_request) -> ExtendedAutomaticPolicyReq
         policy_request["status"] = Status3[policy_request["status"]]
 
     policy_request = ExtendedAutomaticPolicyRequest(**policy_request)
-    policy_request.status = policy_request.status.value
+    return policy_request
+
+
+def format_extended_policy_request(
+    policy_request: ExtendedAutomaticPolicyRequest,
+) -> ExtendedAutomaticPolicyRequest:
+    """Update variables that can't be json encoded to a json supported format."""
+    if not isinstance(policy_request.event_time, float):
+        policy_request.event_time = policy_request.event_time.timestamp()
+
+    if not isinstance(policy_request.status, str):
+        policy_request.status = policy_request.status.value
+
     return policy_request
 
 
@@ -162,10 +176,12 @@ async def create_policy_request(
             policy=policy_dict["policy"],
             event_time=datetime.utcnow(),
         )
+        policy_request = format_extended_policy_request(extended_policy_request)
         await aio_wrapper(
             red.set,
             request_key,
-            json.dumps(extended_policy_request.dict(), cls=SetEncoder),
+            json.dumps(policy_request.dict(), cls=SetEncoder),
+            ex=300,
         )
 
     return extended_policy_request
@@ -182,11 +198,12 @@ async def update_policy_request(
     )
 
     try:
-        policy_request.status = policy_request.status.value
+        policy_request = format_extended_policy_request(policy_request)
         await aio_wrapper(
             cache_conn.set,
             request_key,
             json.dumps(policy_request.dict(), cls=SetEncoder),
+            ex=300,
         )
         return True
     except Exception as err:

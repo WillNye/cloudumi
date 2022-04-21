@@ -24,6 +24,9 @@ class AutomaticPolicyRequestHandler(BaseHandler):
                 host, policy_request.account.account_id, self.user, policy_request.id
             )
 
+        policy_request = automatic_request.format_extended_policy_request(
+            policy_request
+        )
         self.write(policy_request.dict())
 
     async def get(self):
@@ -52,19 +55,24 @@ class AutomaticPolicyRequestHandler(BaseHandler):
         if not policy_request:
             self.set_status(404, "Policy Request not found")
             return
-        policy_request.event_time = policy_request.event_time.timestamp()
 
         if not data["status"] in allowed_statuses:
             self.set_status(400, f"Status must be one of {allowed_statuses}")
         elif (
             data["status"] == policy_request.status
         ):  # No point in updating if it hasn't changed
+            policy_request = automatic_request.format_extended_policy_request(
+                policy_request
+            )
             self.write(policy_request.dict())
         else:
             policy_request.status = Status3[data["status"]]
             if await automatic_request.update_policy_request(
                 self.ctx.host, policy_request
             ):
+                policy_request = automatic_request.format_extended_policy_request(
+                    policy_request
+                )
                 self.write(policy_request.dict())
             else:
                 self.set_status(500, "Unable to update the policy status")
