@@ -1916,7 +1916,6 @@ async def remove_temp_policies(
     log.info(log_data)
 
     current_dateint = datetime.today().strftime("%Y%m%d")
-    cid = extended_request.id
     if not extended_request.expiration_date:
         return
 
