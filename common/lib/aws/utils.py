@@ -1588,7 +1588,7 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
                 "from AWS Organizations. please set the appropriate configuration value."
             )
         org_structure = await retrieve_org_structure(
-            org_account_id, host, region=config.region
+            org_account_id, host, role_to_assume=role_to_assume, region=config.region
         )
         all_org_structure.update(org_structure)
     redis_key = config.get_host_specific_key(
