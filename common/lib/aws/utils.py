@@ -1905,6 +1905,7 @@ async def remove_temp_policies(
     In the future, we may allow specifying temporary policies by `Sid` or other means.
     :param extended_request: A single extended policy
     """
+    from common.lib.v2.aws_principals import get_role_details
 
     should_update_policy_request = False
 
@@ -2120,13 +2121,35 @@ async def remove_temp_policies(
             try:
                 new_policy_statement = []
 
-                existing_policy = await get_resource_policy(
-                    resource_account,
-                    resource_type,
-                    resource_name,
-                    resource_region,
-                    host,
-                )
+                if change.change_type == "resource_policy":
+
+                    existing_policy = await get_resource_policy(
+                        resource_account,
+                        resource_type,
+                        resource_name,
+                        resource_region,
+                        host,
+                    )
+
+                elif change.change_type == "sts_resource_policy":
+                    role = await get_role_details(
+                        resource_account,
+                        principal_name,
+                        host,
+                        extended=True,
+                        force_refresh=True,
+                    )
+                    if not role:
+                        log.error(
+                            {
+                                **log_data,
+                                "message": (
+                                    "Unable to retrieve role. Won't attempt to make cross-account policy."
+                                ),
+                            }
+                        )
+                        return
+                    existing_policy = role.assume_role_policy_document
 
                 for statement in existing_policy.get("Statement", []):
                     if str(extended_request.expiration_date) in statement.get(
