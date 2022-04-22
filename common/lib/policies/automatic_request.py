@@ -3,6 +3,8 @@ import json
 import sys
 from datetime import datetime
 
+import sentry_sdk
+
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
@@ -71,7 +73,8 @@ async def create_policy(host: str, role: str, policy_document: str) -> bool:
         )
     except Exception as err:
         log_data["error"] = repr(err)
-        log.warning(log_data)
+        log.error(log_data)
+        sentry_sdk.capture_exception()
         return False
     else:
         log_data["message"] = "Successfully created policy"
@@ -207,7 +210,7 @@ async def update_policy_request(
         )
         return True
     except Exception as err:
-        log.warning(
+        log.error(
             {
                 "function": f"{__name__}.{sys._getframe().f_code.co_name}",
                 "policy_request_id": policy_request.id,
@@ -217,6 +220,7 @@ async def update_policy_request(
                 "error": repr(err),
             }
         )
+        sentry_sdk.capture_exception()
         return False
 
 
