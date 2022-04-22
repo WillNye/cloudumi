@@ -374,38 +374,11 @@
 
 
 
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Automatically Update Trust Policies
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+
 
       <a href="./" class="md-nav__link md-nav__link--active">
         Automatically Update Trust Policies
       </a>
-
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-
-
-
-
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-
-        <li class="md-nav__item">
-  <a href="#allow-noq-to-automatically-update-trust-relationships-for-role-access" class="md-nav__link">
-    Allow Noq to automatically update trust relationships for role access
-  </a>
-
-</li>
-
-    </ul>
-
-</nav>
 
     </li>
 
@@ -1117,20 +1090,7 @@
 
 
 
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
 
-        <li class="md-nav__item">
-  <a href="#allow-noq-to-automatically-update-trust-relationships-for-role-access" class="md-nav__link">
-    Allow Noq to automatically update trust relationships for role access
-  </a>
-
-</li>
-
-    </ul>
 
 </nav>
                   </div>
@@ -1144,24 +1104,45 @@
 
 
 
-  <h1>Automatically Update Trust Policies</h1>
-
-<h2 id="allow-noq-to-automatically-update-trust-relationships-for-role-access"><strong>Allow Noq to automatically update trust relationships for role access</strong><a class="headerlink" href="#allow-noq-to-automatically-update-trust-relationships-for-role-access" title="Permanent link">&para;</a></h2>
-<p>When a user attempts to retrieve credentials for one of their authorized roles through Noq, Noq will assume your Hub Role with an external ID that is unique to your company. From your Hub role, Noq will attempt to assume the role requested by the user, and it will then return the assumed credentials to the user. </p>
-<p>If Noq is unable to assume this role because your Hub Role is not authorized to perform <code>sts:AssumeRole</code> and/or <code>sts:TagSession</code> in the target role's Trust Policy, Noq can attempt to automatically update the trust policy of the role when it initially receives an <code>Access Denied</code> error. This is convenient because you don't need to update all of your roles automatically. However, if you are using Infrastructure as Code to templatize your roles, we recommend that you update your IaC to give your Noq Hub role the ability to perform these actions. </p>
-<p>To enable this option, please perform the following steps:</p>
-<ol>
-<li>
-<p>Visit <strong>Advanced</strong> -&gt; <strong>Config</strong></p>
-</li>
-<li>
-<p>Set the configuration key for <code>aws.automatically_update_role_trust_policies</code> to <code>true</code>. The final statement should look like this:</p>
-</li>
-</ol>
-<div class="highlight"><pre><span></span><code>aws:
+<h1 id="allow-noq-to-automatically-update-trust-relationships-for-role-access"><strong>Allow Noq to automatically update trust relationships for role access</strong><a class="headerlink" href="#allow-noq-to-automatically-update-trust-relationships-for-role-access" title="Permanent link">&para;</a></h1>
+<p>Users may retrieve credentials for authorized roles through Noq. To retrieve
+credentials, Noq will assume your hub role with an external ID that is unique
+to your company. From your hub role, Noq will attempt to assume the role
+requested by the user. If successful, Noq will return the assumed credentials
+to the user. </p>
+<p>Noq might be unable to assume the role requested by the user because your hub
+role is not authorized to perform <code>sts:AssumeRole</code> or <code>sts:TagSession</code> in the
+target role's trust policy.</p>
+<p>If you prefer, Noq can attempt to automatically update the trust policy of a
+role when it initially receives an <code>Access Denied</code> error. With this feature
+enabled, you do not need to update all of your roles manually. </p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>If you are using an infrastructure as code (IaC) approach to templatize
+your roles, we recommend that you update your IaC templates to give your
+Noq Hub role the ability to perform these actions. </p>
+</div>
+<p>To enable this option, follow the steps in the procedure below.</p>
+<h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
+<h2 id="1-navigate-to-the-update-configuration-page">1. Navigate to the <em>Update Configuration</em> page<a class="headerlink" href="#1-navigate-to-the-update-configuration-page" title="Permanent link">&para;</a></h2>
+<p>Select <strong>Advanced</strong> &gt; <strong>Config</strong> from the main Noq menu.</p>
+<p><img alt="noq landing" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_update_trust_policies_visit_advanced_config.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="2-enable-noq-to-automatically-update-trust-policies">2. Enable Noq to automatically update trust policies<a class="headerlink" href="#2-enable-noq-to-automatically-update-trust-policies" title="Permanent link">&para;</a></h2>
+<p>Set the configuration key for <code>aws.automatically_update_role_trust_policies</code> to
+<code>true</code>. When finished, your Noq configuration file should include an entry
+similar to the following. </p>
+<p><div class="highlight"><pre><span></span><code>aws:
   automatically_update_role_trust_policies: true
 </code></pre></div>
-<p>Take care to avoid duplicate keys. If the top-level <code>aws</code> configuration key already exists, add or update <code>automatically_update_role_trust_policies: true</code> under that key.</p>
+See the figure below for an example of an updated configuration file.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Before updating your configuration file, check whether a top-level <code>aws</code>
+configuration key already exists. If your configuration file already
+includes an <code>aws</code> key, add or update
+<code>automatically_update_role_trust_policies: true</code> under that key.</p>
+</div>
+<p><img alt="noq landing" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_update_trust_policies_config_file.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 
 
             </article>
