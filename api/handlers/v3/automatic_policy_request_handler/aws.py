@@ -1,18 +1,18 @@
 import tornado.escape
 
-from common.handlers.base import BaseHandler
+from common.handlers.base import BaseAdminHandler
 from common.lib.policies import automatic_request
 from common.models import AutomaticPolicyRequest, Status3, WebResponse
 
 
-class AutomaticPolicyRequestHandler(BaseHandler):
+class AutomaticPolicyRequestHandler(BaseAdminHandler):
     async def post(self):
         host = self.ctx.host
         data = tornado.escape.json_decode(self.request.body)
         if not data.get("role"):
             raise Exception("Role ARN not defined")
 
-        # ToDo: Add support to config and handle support for permission_flow. Options: auto_apply, auto_request, review
+        # TODO: Add support to config and handle support for permission_flow. Options: auto_apply, auto_request, review
         permission_flow = "auto_apply"
 
         policy_request = await automatic_request.create_policy_request(
