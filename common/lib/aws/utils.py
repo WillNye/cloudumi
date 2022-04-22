@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pytz
 import sentry_sdk
+import ujson
 from botocore.exceptions import ClientError, ParamValidationError
 from dateutil.parser import parse
 from deepdiff import DeepDiff
@@ -1915,7 +1916,7 @@ async def remove_temp_policies(
     log.info(log_data)
 
     current_dateint = datetime.today().strftime("%Y%m%d")
-
+    cid = extended_request.id
     if not extended_request.expiration_date:
         return
 
@@ -1936,7 +1937,8 @@ async def remove_temp_policies(
             principal_arn = change.arn
 
         arn_parsed = parse_arn(principal_arn)
-        principal_name = arn_parsed["resource_path"].split("/")[-1]
+        # resource name is none for s3 buckets
+        principal_name = (arn_parsed["resource_path"] or "").split("/")[-1]
 
         resource_type = arn_parsed["service"]
         resource_name = arn_parsed["resource"]
@@ -2128,7 +2130,9 @@ async def remove_temp_policies(
                 )
 
                 for statement in existing_policy.get("Statement", []):
-                    if extended_request.expiration_date in statement.get("Sid", ""):
+                    if str(extended_request.expiration_date) in statement.get(
+                        "Sid", ""
+                    ):
                         continue
                     new_policy_statement.append(statement)
 
@@ -2145,21 +2149,22 @@ async def remove_temp_policies(
                         await aio_wrapper(
                             client.put_bucket_policy,
                             Bucket=resource_name,
-                            Policy=json.dumps(
+                            Policy=ujson.dumps(
                                 existing_policy, escape_forward_slashes=False
                             ),
                         )
                 elif resource_type == "sns":
-                    await aio_wrapper(client.set_topic_attributes)(
+                    await aio_wrapper(
+                        client.set_topic_attributes,
                         TopicArn=change.arn,
                         AttributeName="Policy",
-                        AttributeValue=json.dumps(
+                        AttributeValue=ujson.dumps(
                             existing_policy, escape_forward_slashes=False
                         ),
                     )
                 elif resource_type == "sqs":
-                    queue_url: dict = await aio_wrapper(client.get_queue_url)(
-                        QueueName=resource_name
+                    queue_url: dict = await aio_wrapper(
+                        client.get_queue_url, QueueName=resource_name
                     )
 
                     if len(new_policy_statement) == 0:
@@ -2174,7 +2179,7 @@ async def remove_temp_policies(
                             client.set_queue_attributes,
                             QueueUrl=queue_url.get("QueueUrl"),
                             Attributes={
-                                "Policy": json.dumps(
+                                "Policy": ujson.dumps(
                                     existing_policy,
                                     escape_forward_slashes=False,
                                 )
@@ -2184,7 +2189,7 @@ async def remove_temp_policies(
                     await aio_wrapper(
                         client.update_assume_role_policy,
                         RoleName=principal_name,
-                        PolicyDocument=json.dumps(
+                        PolicyDocument=ujson.dumps(
                             existing_policy, escape_forward_slashes=False
                         ),
                     )
