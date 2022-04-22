@@ -16,10 +16,12 @@ tenant_config = f"""
 _development_user_override: user@noq.dev
 _development_groups_override:
   - engineering@noq.dev
+  - user@noq.dev
 notifications:
   enabled: true
 cloudtrail:
   enabled: true
+  account_id: "759357822767"
   queue_arn: arn:aws:sqs:us-west-2:759357822767:noq-cloudtrail-access-denies
 cache_self_service_typeahead:
   cache_resource_templates: true
@@ -85,6 +87,8 @@ tenant_details:
   creation_time: {int(time.time())}
 site_config:
   landing_url: /
+  notifications: enabled
+  request_interval: 1
 headers:
   identity:
     enabled: false
@@ -106,6 +110,9 @@ secrets:
       user_pool_client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
 account_ids_to_name:
   "759357822767": "development"
+celery:
+  cache_cloudtrail_denies:
+    enabled: true
 """
 
 # Store tenant information in DynamoDB
@@ -120,12 +127,14 @@ cloudumi_config = f"""
 _development_user_override: user@noq.dev
 _development_groups_override:
   - engineering@noq.dev
+  - user@noq.dev
 cache_self_service_typeahead:
   cache_resource_templates: true
 notifications:
   enabled: true
 cloudtrail:
   enabled: true
+  account_id: "759357822767"
   queue_arn: arn:aws:sqs:us-west-2:759357822767:noq-cloudtrail-access-denies
 cache_resource_templates:
   repositories:
@@ -190,6 +199,8 @@ tenant_details:
   creation_time: {int(time.time())}
 site_config:
   landing_url: /
+  notifications: enabled
+  request_interval: 1
 headers:
   identity:
     enabled: false
@@ -230,6 +241,9 @@ get_user_by_oidc_settings:
   access_token_audience: null
 aws:
   automatically_update_role_trust_policies: false
+celery:
+  cache_cloudtrail_denies:
+    enabled: true
 """
 
 # Store cloudumidev information in DynamoDB
