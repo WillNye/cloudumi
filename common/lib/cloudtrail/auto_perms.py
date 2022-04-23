@@ -218,7 +218,11 @@ def detect_cloudtrail_denies_and_update_cache(
                 decoded_message, queue_account_number, host
             )
 
-            if (
+            if generated_policy is None:
+                log.warning("Unable to process cloudtrail deny event")
+                num_events += 1
+
+            elif (
                 generated_policy.assessment_result
                 == access_undenied.common.AccessDeniedReason.ERROR
             ):

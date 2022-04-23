@@ -17,6 +17,9 @@ sys.path.append(os.path.join(APP_ROOT, ".."))
 @pytest.mark.usefixtures("aws_credentials")
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("sts")
+@pytest.mark.usefixtures("cloudtrail_table")
+@pytest.mark.usefixtures("sqs")
+@pytest.mark.usefixtures("sqs_queue")
 class TestCelerySync(TestCase):
     def setUp(self):
         from common.celery_tasks import celery_tasks as celery
@@ -44,6 +47,11 @@ class TestCelerySync(TestCase):
                         "file": "cache_iam_resources_for_account.json.gz",
                     }
                 }
+            },
+            "cloudtrail": {
+                "enabled": True,
+                "account_id": "123456789012",
+                "queue_arn": "arn:aws:sqs:us-west-2:123456789012:noq-cloudtrail-access-denies",
             },
         }
 
@@ -194,8 +202,6 @@ class TestCelerySync(TestCase):
         else:
             CONFIG.config["site_configs"][host]["aws"]["iamroles_redis_key"] = old_value
 
-    @pytest.mark.usefixtures("sqs")
-    @pytest.mark.usefixtures("sqs_queue")
     def test_trigger_credential_mapping_refresh_from_role_changes(self):
         res = self.celery.trigger_credential_mapping_refresh_from_role_changes(
             host=host
@@ -210,9 +216,6 @@ class TestCelerySync(TestCase):
             },
         )
 
-    @pytest.mark.usefixtures("cloudtrail_table")
-    @pytest.mark.usefixtures("sqs")
-    @pytest.mark.usefixtures("sqs_queue")
     def test_cache_cloudtrail_denies(self):
         res = self.celery.cache_cloudtrail_denies(host)
         self.assertEqual(
