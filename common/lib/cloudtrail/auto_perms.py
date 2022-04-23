@@ -80,7 +80,7 @@ def get_resource_from_cloudtrail_deny(
     return resource
 
 
-def detect_cloudtrail_denies_and_update_cache(
+async def detect_cloudtrail_denies_and_update_cache(
     celery_app: object,
     host: str,
 ) -> Dict[str, Any]:

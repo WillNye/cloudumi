@@ -182,6 +182,11 @@ site_configs:
     bitbucket:
       url: https://fakerepo.example.com
 
+    cloudtrail:
+      enabled: true
+      account_id: "123456789012"
+      queue_arn: arn:aws:sqs:us-east-1:123456789012:consoleme-cloudtrail-access-deny-events-test
+
     cache_resource_templates:
       repositories:
         - type: git
