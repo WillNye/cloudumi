@@ -67,7 +67,7 @@ site_configs:
     cloudtrail:
       enabled: true
       account_id: "123456789012"
-      queue_arn: "arn:aws:sqs:us-east-1:123456789012:consoleme-cloudtrail-role-events-test"
+      queue_arn: "arn:aws:sqs:us-east-1:123456789012:consoleme-cloudtrail-access-deny-events-test"
 
     # TODO: This is used by testing but we do not support BYO mtls in a SaaS environment
     cli_auth:
