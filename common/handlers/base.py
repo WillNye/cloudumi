@@ -964,4 +964,4 @@ class BaseAdminHandler(BaseHandler):
             await handle_generic_error_response(
                 self, errors[0], errors, 403, "unauthorized", {}
             )
-            return
+            raise tornado.web.Finish()
