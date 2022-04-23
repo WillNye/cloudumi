@@ -276,7 +276,7 @@ def iam(aws_credentials):
             **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
         client.create_role(
-            RoleName="role1",
+            RoleName="roleA",
             AssumeRolePolicyDocument=json.dumps(
                 {
                     "Version": "2012-10-17",
