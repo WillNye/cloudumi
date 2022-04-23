@@ -248,6 +248,16 @@ class ResourcePolicyChangeComponent extends Component {
         </Grid.Column>
       ) : null
 
+    const changesExpiredContent =
+      change.status === 'expired' ? (
+        <Grid.Column>
+          <Message negative>
+            <Message.Header>Change expired</Message.Header>
+            <p>This change has expired and cannot be modified.</p>
+          </Message>
+        </Grid.Column>
+      ) : null
+
     const changesNotSupported = !change.supported ? (
       <Grid.Column>
         <Message warning>
@@ -323,6 +333,7 @@ class ResourcePolicyChangeComponent extends Component {
           {cancelChangesButton}
           {changesAlreadyAppliedContent}
           {changesAlreadyCancelledContent}
+          {changesExpiredContent}
           {changesNotSupported}
           {readOnlyInfo}
         </Grid.Row>

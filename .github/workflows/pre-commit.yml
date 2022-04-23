@@ -60,7 +60,6 @@ jobs:
             terraform \
             clang \
             nodejs -y
-          sudo npm install -g @bazel/bazelisk
           mkdir -p /tmp/env
           python3.9 -m venv /tmp/env
           source /tmp/env/bin/activate
@@ -103,5 +102,4 @@ jobs:
         run: |
           source /tmp/env/bin/activate
           rm -rf deploy/infrastructure/modules/services/dynamo/.tfsec
-          bazel clean --expunge
-          bazel test $(bazel query 'kind(".*_test rule", //...)')
+          make test
