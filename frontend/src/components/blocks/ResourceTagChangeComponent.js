@@ -137,6 +137,16 @@ const ResourceTagChangeComponent = (props) => {
       </Grid.Column>
     ) : null
 
+  const changesExpiredContent =
+    change.status === 'expired' ? (
+      <Grid.Column>
+        <Message negative>
+          <Message.Header>Change expired</Message.Header>
+          <p>This change has expired and cannot be modified.</p>
+        </Message>
+      </Grid.Column>
+    ) : null
+
   const originalTagKey =
     change.original_key && change.original_key !== change.key ? (
       <Table.Row>
@@ -214,6 +224,7 @@ const ResourceTagChangeComponent = (props) => {
         {viewOnlyInfo}
         {changesAlreadyAppliedContent}
         {changesAlreadyCancelledContent}
+        {changesExpiredContent}
       </Grid.Row>
     </Grid>
   ) : null

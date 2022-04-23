@@ -249,6 +249,16 @@ class InlinePolicyChangeComponent extends Component {
         </Grid.Column>
       ) : null
 
+    const changesExpiredContent =
+      change.status === 'expired' ? (
+        <Grid.Column>
+          <Message negative>
+            <Message.Header>Change expired</Message.Header>
+            <p>This change has expired and cannot be modified.</p>
+          </Message>
+        </Grid.Column>
+      ) : null
+
     const changeReadOnly =
       requestReadOnly ||
       change.status === 'applied' ||
@@ -300,6 +310,7 @@ class InlinePolicyChangeComponent extends Component {
           {readOnlyInfo}
           {changesAlreadyAppliedContent}
           {changesAlreadyCancelledContent}
+          {changesExpiredContent}
         </Grid.Row>
       </Grid>
     ) : null

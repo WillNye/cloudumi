@@ -69,10 +69,14 @@ class Configuration(metaclass=Singleton):
 
     def raise_if_invalid_aws_credentials(self):
         try:
+            region = self.get_aws_region()
             session_kwargs = self.get("_global_.boto3.session_kwargs", {})
             session = boto3.Session(**session_kwargs)
             identity = session.client(
-                "sts", **self.get("_global_.boto3.client_kwargs", {})
+                "sts",
+                region_name=region,
+                endpoint_url=f"https://sts.{region}.amazonaws.com",
+                **self.get("_global_.boto3.client_kwargs", {}),
             ).get_caller_identity()
             identity_arn_with_session_name = (
                 identity["Arn"]
