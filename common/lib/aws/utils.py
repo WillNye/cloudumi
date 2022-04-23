@@ -2638,9 +2638,9 @@ async def is_resource_match(regex_patterns, regex_strs) -> bool:
 
 
 async def reduce_statement_actions(statement: dict) -> dict:
-    """Removes redundant actions from a statement that are already permitted by a different action.
+    """Removes redundant actions from a statement and stores a regex map of the reduced.
 
-    :param statement: A statement, IE: {
+    :param statement: A normalized statement, IE: {
         'Action': ['s3:listbucket', 's3:list*'], 'Effect': 'Allow', 'Resource': ['*']
     }
     :return: A statement with all redundant actions removed, IE: {
@@ -2689,6 +2689,49 @@ async def reduce_statement_actions(statement: dict) -> dict:
     return statement
 
 
+async def normalize_statement(statement: dict) -> dict:
+    """Refactors the statement dict and adds additional keys to be used for easy regex checks.
+
+    :param statement: A statement, IE: {
+        'Action': ['s3:listbucket', 's3:list*'], 'Effect': 'Allow', 'Resource': '*'
+    }
+    :return: A statement with all redundant actions removed, IE: {
+        'Action': ['s3:listbucket', 's3:list*'],
+        'ActionMap': {'s3': ['listbucket', 's3:list.*']},
+        'Effect': 'Allow',
+        'Resource': ['*']
+        'ResourceAsRegex': ['.*']
+    }
+    """
+    statement.pop("Sid", None)  # Drop the statement ID
+
+    # Ensure Resource is a sorted list
+    if not isinstance(statement["Resource"], list):
+        statement["Resource"] = [statement["Resource"]]
+
+    if "*" in statement["Resource"] and len(statement["Resource"]) > 1:
+        statement["Resource"] = ["*"]
+    else:
+        statement["Resource"].sort()
+
+    # Add the regex repr of the resource to be used when comparing statements in a policy
+    statement["ResourceAsRegex"] = [
+        f"{statement.get('Effect')}:{resource}".replace("*", ".*")
+        for resource in statement.get("Resource")
+    ]
+
+    statement = await reduce_statement_actions(statement)
+
+    # Create a map of actions grouped by resource to prevent unnecessary checks
+    statement["ActionMap"] = defaultdict(set)
+    for action in statement["Action"]:
+        # Represent the action as the regex lookup so this isn't being done on every iteration
+        # if "*" in action:
+        statement["ActionMap"][action.split(":")[0]].add(action.replace("*", ".*"))
+
+    return statement
+
+
 async def condense_statements(
     statements: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -2705,44 +2748,86 @@ async def condense_statements(
         ...
     ]
     """
-    reduced_statements = list()
-
-    # Group statements that match on Resource
-    for statement in statements:
-        if not isinstance(statement["Resource"], list):
-            statement["Resource"] = [statement["Resource"]]
-
-        resource_ids = get_regex_resource_names(statement)
-        is_new = True
-        if not statement.get(
-            "Condition"
-        ):  # Don't mess with statements that have a condition
-            if (action := statement.get("Action")) and not isinstance(action, list):
-                statement["Action"] = [action]
-
-            for elem, rr in enumerate(reduced_statements):
-                rr_ids = get_regex_resource_names(rr)
-                if await is_resource_match(rr_ids, resource_ids):
-                    # Falls under existing resource, just append actions
-                    rr["Action"] = rr.get("Action", []) + statement.get("Action")
-                    reduced_statements[elem] = rr
-                    is_new = False
-                    break
-                elif await is_resource_match(resource_ids, rr_ids):
-                    # Falls under existing resource, just append actions
-                    statement["Action"] = rr.get("Action", []) + statement.get("Action")
-                    reduced_statements[elem] = statement
-                    is_new = False
-                    break
-
-        if (
-            is_new
-        ):  # Was either a Condition or the Resource didn't hit on an existing statement
-            reduced_statements.append(statement)
-
-    return await asyncio.gather(
-        *[reduce_statement_actions(statement) for statement in reduced_statements]
+    statements = await asyncio.gather(
+        *[normalize_statement(statement) for statement in statements]
     )
+
+    # statements.copy() so we don't mess up enumeration when popping statements with identical resource+effect
+    # The offset variables are so we can access the correct element after elements have been removed
+    pop_offset = 0
+    for elem, statement in enumerate(statements.copy()):
+        offset_elem = elem - pop_offset
+
+        if statement["Action"][0] == "*" or statement.get("Condition"):
+            # Don't mess with statements that allow everything or have a condition
+            continue
+
+        for inner_elem, inner_statement in enumerate(statements):
+            if offset_elem == inner_elem:
+                continue
+            elif not await is_resource_match(
+                inner_statement["ResourceAsRegex"], statement["ResourceAsRegex"]
+            ):
+                continue
+            elif inner_statement.get("Condition"):
+                continue
+            elif (
+                len(inner_statement["Action"]) == 1
+                and inner_statement["Action"][0] == "*"
+            ):
+                continue
+            elif (
+                statement["Effect"] == inner_statement["Effect"]
+                and statement["Resource"] == inner_statement["Resource"]
+            ):
+                # The statements are identical so combine the actions
+                statements[inner_elem]["Action"] = sorted(
+                    list(set(statements[inner_elem]["Action"] + statement["Action"]))
+                )
+                for resource_type, perm_set in statement["ActionMap"].items():
+                    for perm in perm_set:
+                        statements[inner_elem]["ActionMap"][resource_type].add(perm)
+
+                del statements[offset_elem]
+                pop_offset += 1
+                break
+
+            action_pop_offset = 0
+            # statement["Action"].copy() so we don't mess up enumerating Action when popping elements
+            for action_elem, action in enumerate(statement["Action"].copy()):
+                offset_action_elem = action_elem - action_pop_offset
+                action_re = action.replace("*", ".*")
+                action_resource = action.split(":")[0]
+                resource_actions = inner_statement["ActionMap"][action_resource]
+
+                if any(
+                    re.match(related_action, action_re, re.IGNORECASE)
+                    for related_action in resource_actions
+                ):
+                    # If the action falls under a different (inner) statement, remove it.
+                    del statements[offset_elem]["Action"][offset_action_elem]
+                    action_pop_offset += 1
+                    statements[offset_elem]["ActionMap"][action_resource] = set(
+                        act_re
+                        for act_re in statements[offset_elem]["ActionMap"][
+                            action_resource
+                        ]
+                        if act_re != action_re
+                    )
+
+    # Remove statements with no remaining actions and reduce actions once again to account for combined statements
+    statements = await asyncio.gather(
+        *[
+            reduce_statement_actions(statement)
+            for statement in statements
+            if len(statement["Action"]) > 0
+        ]
+    )
+    for elem in range(len(statements)):  # Remove eval keys
+        statements[elem].pop("ActionMap")
+        statements[elem].pop("ResourceAsRegex")
+
+    return statements
 
 
 async def get_identity_type_from_arn(arn: str) -> str:
