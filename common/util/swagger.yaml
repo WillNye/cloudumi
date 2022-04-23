@@ -2411,6 +2411,75 @@ components:
         webhook_url:
           type: string
           description: The slack webhook URL to configure for the callback
+    CloudtrailDetection:
+      type: object
+      properties:
+        host:
+          type: string
+          description: TODO
+        error_code:
+          type: string
+          description: Decoded error code
+        error_message:
+          type: string
+          description: Decoded error message
+        arn:
+          type: string
+          description: principal arn
+        session_name:
+          type: string
+          description: TODO
+        source_ip:
+          type: string
+          description: TODO
+        event_call:
+          type: string
+          description: TODO
+        epoch_event_time:
+          type: integer
+          description: TODO
+        ttl:
+          type: integer
+          description: TODO
+        count:
+          type: integer
+          description: TODO
+        resource:
+          type: string
+          description: TODO
+        request_id:
+          type: string
+          description: TODO
+        generated_policies:
+          type: object
+          description: TODO
+
+    CloudtrailDetectionConfiguration:
+      type: object
+      required:
+        - account_id
+        - queue_arn
+      properties:
+        enabled:
+          type: boolean
+          description: Whether cloudtrail is enabled for a specified account id, defaults to false
+          default: false
+        event_ttl:
+          type: integer
+          description: Time to live of the event, defaults to 86400
+          default: 86400
+        max_messages_to_process:
+          type: integer
+          description: Maximum number of messages that are processes
+          default: 100
+        queue_arn:
+          type: string
+          description: The queue ARN to which the cloud trail detection celery task should subscribe to
+        event_bridge_substitutions:
+          type: array
+          items:
+            type: string
+            description: TODO
     AutomaticPolicyRequest:
       type: object
       required:

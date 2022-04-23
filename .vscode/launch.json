@@ -10,6 +10,7 @@
       "type": "python",
       "request": "launch",
       "console": "integratedTerminal",
+      "justMyCode": false,
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         "AWS_REGION": "us-west-2",
@@ -23,6 +24,7 @@
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/common/scripts/initialize_dynamodb.py",
+      "justMyCode": false,
       "console": "integratedTerminal",
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",

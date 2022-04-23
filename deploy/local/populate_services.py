@@ -16,6 +16,13 @@ tenant_config = f"""
 _development_user_override: user@noq.dev
 _development_groups_override:
   - engineering@noq.dev
+  - user@noq.dev
+notifications:
+  enabled: true
+cloudtrail:
+  enabled: true
+  account_id: "759357822767"
+  queue_arn: arn:aws:sqs:us-west-2:759357822767:noq-cloudtrail-access-denies
 cache_self_service_typeahead:
   cache_resource_templates: true
 cache_resource_templates:
@@ -70,23 +77,25 @@ spoke_accounts:
     delegate_admin_to_owner: false
     restrict_viewers_of_account_resources: false
 org_accounts:
-  - org_id: test_org
-    account_id: '123456789012'
-    account_name: test_account
-    owner: user
+  - org_id: o-yfdp0r70sq
+    account_id: '759357822767'
+    account_name: staging
+    owner: user@noq.dev
 tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: user@noq.dev
   creation_time: {int(time.time())}
 site_config:
   landing_url: /
+  notifications: enabled
+  request_interval: 1
 headers:
   identity:
     enabled: false
   role_login:
     enabled: true
 url: https://localhost
-application_admin: user@noq.dev
+application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
@@ -101,6 +110,9 @@ secrets:
       user_pool_client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
 account_ids_to_name:
   "759357822767": "development"
+celery:
+  cache_cloudtrail_denies:
+    enabled: true
 """
 
 # Store tenant information in DynamoDB
@@ -115,8 +127,15 @@ cloudumi_config = f"""
 _development_user_override: user@noq.dev
 _development_groups_override:
   - engineering@noq.dev
+  - user@noq.dev
 cache_self_service_typeahead:
   cache_resource_templates: true
+notifications:
+  enabled: true
+cloudtrail:
+  enabled: true
+  account_id: "759357822767"
+  queue_arn: arn:aws:sqs:us-west-2:759357822767:noq-cloudtrail-access-denies
 cache_resource_templates:
   repositories:
     - type: git
@@ -170,23 +189,25 @@ spoke_accounts:
     delegate_admin_to_owner: false
     restrict_viewers_of_account_resources: false
 org_accounts:
-  - org_id: test_org
-    account_id: 123456789012
-    account_name: test_account
-    owner: user
+  - org_id: o-yfdp0r70sq
+    account_id: '759357822767'
+    account_name: staging
+    owner: user@noq.dev
 tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: user@noq.dev
   creation_time: {int(time.time())}
 site_config:
   landing_url: /
+  notifications: enabled
+  request_interval: 1
 headers:
   identity:
     enabled: false
   role_login:
     enabled: true
 url: https://cloudumidev.com
-application_admin: user@noq.dev
+application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
@@ -220,6 +241,9 @@ get_user_by_oidc_settings:
   access_token_audience: null
 aws:
   automatically_update_role_trust_policies: false
+celery:
+  cache_cloudtrail_denies:
+    enabled: true
 """
 
 # Store cloudumidev information in DynamoDB
