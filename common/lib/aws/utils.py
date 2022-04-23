@@ -1909,19 +1909,19 @@ async def remove_temp_policies(
 
     should_update_policy_request = False
 
-    log_data: dict = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "message": "Checking for expired policies",
-        "policy_request_id": extended_request.id,
-    }
-    log.info(log_data)
-
     current_dateint = datetime.today().strftime("%Y%m%d")
     if not extended_request.expiration_date:
         return
 
     if str(extended_request.expiration_date) > current_dateint:
         return
+
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "message": "Attempting to expire policy",
+        "policy_request_id": extended_request.id,
+    }
+    log.debug(log_data)
 
     for change in extended_request.changes.changes:
         if change.status != Status.applied:
@@ -2144,7 +2144,7 @@ async def remove_temp_policies(
                             {
                                 **log_data,
                                 "message": (
-                                    "Unable to retrieve role. Won't attempt to make cross-account policy."
+                                    "Unable to retrieve role. Won't attempt to remove cross-account policy."
                                 ),
                             }
                         )

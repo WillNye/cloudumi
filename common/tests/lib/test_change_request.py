@@ -23,7 +23,7 @@ from util.tests.fixtures.globals import host
 @pytest.mark.usefixtures("dynamodb")
 class TestChangeRequestLib(AsyncTestCase):
     @tornado.testing.gen_test
-    async def testgenerate_policy_sid(self):
+    async def test_generate_policy_sid(self):
 
         random_sid = await generate_policy_sid("username@example.com")
         self.assertRegex(random_sid, "^noqusername\d{10}[a-z]{4}$")  # noqa
