@@ -271,6 +271,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtendedAwsPrincipalModel"
+  /api/v3/automatic_policy_request_handler/aws:
+    get:
+      summary: get a list of automated policy requests
+      tags:
+        - policies
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
+    post:
+      summary: Request the automatic policy workflow to be triggered with the provided info
+      tags:
+        - policies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomaticPolicyRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
+  /api/v3/automatic_policy_request_handler/aws/{account_id}/{policy_request_id}:
+    patch:
+      summary: Update the status for a policy request
+      tags:
+        - roles
+      parameters:
+        - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/PolicyRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: The updated policy request status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
   /roles/{account_id}/{role_name}:
     get:
       summary: get details about a role
@@ -494,6 +548,11 @@ components:
       name: resource_type
       in: query
       example: sqs
+      schema:
+        type: string
+    PolicyRequestId:
+      name: policy_request_id
+      in: query
       schema:
         type: string
     LimitQueryString:
@@ -2421,3 +2480,68 @@ components:
           items:
             type: string
             description: TODO
+    AutomaticPolicyRequest:
+      type: object
+      required:
+        - policy
+        - role
+      properties:
+        policy:
+          type: string
+          description: The json dumped policy requested for approval
+        role:
+          type: string
+          description: The AWS Role arn
+          example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
+    ExtendedAutomaticPolicyRequest:
+      type: object
+      required:
+        - policy
+        - role
+        - id
+        - account
+        - user
+        - event_time
+      properties:
+        id:
+          type: string
+          description: A sha256 hash that represents the policy request
+        role:
+          type: string
+          description: The AWS Role arn
+          example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
+        account:
+          $ref: "#/components/schemas/SpokeAccount"
+        role_owner:
+          type: string
+          description: The owner of the AWS role
+        user:
+          type: string
+          description: The AWS user requesting the generated policy
+        event_time:
+          type: string
+          format: date-time
+          description: The time the request was made
+        error:
+          type: string
+          description: The AWS response that caused the automatic policy request
+        system:
+          type: string
+          description: The information of the device the request was generated on
+        process:
+          type: string
+          description: Information about the running process that caused the automatic policy request to be generated
+        policy:
+          type: object
+          description: The json representation of the policy requested for approval
+        status:
+          type: string
+          default: pending
+          description: The policy request's status
+          enum:
+            - approved
+            - pending
+            - denied
+            - applied_awaiting_execution
+            - applied_and_success
+            - applied_and_failure

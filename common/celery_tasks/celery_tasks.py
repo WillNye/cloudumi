@@ -2850,7 +2850,7 @@ def get_current_celery_tasks(host: str = None, status: str = None) -> List[Any]:
 
 
 @app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-def check_expired_policies(self, host: str) -> Dict[str, Any]:
+def handle_expired_policies(self, host: str) -> Dict[str, Any]:
     from common.lib.dynamo import UserDynamoHandler
 
     if not host:
@@ -2871,7 +2871,7 @@ def check_expired_policies(self, host: str) -> Dict[str, Any]:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def check_expired_policies_for_all_hosts() -> Dict:
+def handle_expired_policies_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
     log_data = {
@@ -2881,7 +2881,7 @@ def check_expired_policies_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        check_expired_policies.apply_async((host,))
+        handle_expired_policies.apply_async((host,))
     return log_data
 
 
@@ -3028,8 +3028,8 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "check_expired_policies_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.check_expired_policies_for_all_hosts",
+    "handle_expired_policies_for_all_hosts": {
+        "task": "common.celery_tasks.celery_tasks.handle_expired_policies_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },

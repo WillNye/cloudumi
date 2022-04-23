@@ -360,38 +360,11 @@
 
 
 
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Enable Credential Brokering
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+
 
       <a href="./" class="md-nav__link md-nav__link--active">
         Enable Credential Brokering
       </a>
-
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-
-
-
-
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-
-        <li class="md-nav__item">
-  <a href="#set-up-aws-credential-brokering-through-noq" class="md-nav__link">
-    Set up AWS Credential Brokering through Noq
-  </a>
-
-</li>
-
-    </ul>
-
-</nav>
 
     </li>
 
@@ -1117,20 +1090,7 @@
 
 
 
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
 
-        <li class="md-nav__item">
-  <a href="#set-up-aws-credential-brokering-through-noq" class="md-nav__link">
-    Set up AWS Credential Brokering through Noq
-  </a>
-
-</li>
-
-    </ul>
 
 </nav>
                   </div>
@@ -1144,27 +1104,37 @@
 
 
 
-  <h1>Enable Credential Brokering</h1>
-
-<h2 id="set-up-aws-credential-brokering-through-noq"><strong>Set up AWS Credential Brokering through Noq</strong><a class="headerlink" href="#set-up-aws-credential-brokering-through-noq" title="Permanent link">&para;</a></h2>
-<p>Allow Noq to broker AWS credentials to authorized users within your organization.</p>
-<ol>
-<li>
-<p>Visit <strong>Advanced</strong> -&gt; <strong>Settings</strong></p>
-</li>
-<li>
-<p>Scroll down to <strong>Role Access Authorization</strong> and enable the toggle switch</p>
-</li>
-<li>
-<p>Specify which IAM role tag keys to authoratatively determine which users or groups can retrieve credentials for a role.</p>
-</li>
-</ol>
-<p>For example, if your authorized tags are <code>noq-authorized</code> (With "Allow Web Access" checked) and <code>noq_authorized_cli_only</code> (With "Allow Web Access" unchecked), users/groups included in the noq_authorized tag of a given IAM role will see the role in Noq's "Role Access" page, and they will be able to use Weep to retrieve credentials for the role.</p>
-<p>Conversely, users/groups included in the <code>noq_authorized_cli_only</code> tag will be able to retrieve role credentials via the CLI utility (Weep), but will not see the role listed on the Noq "Role Access" page.</p>
-<p><img alt="Role Account Authorization Tags" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/role_access_authorization_tags.jpeg" /></p>
-<ol>
-<li>You may update role tags through Noq's self-service to enable access. After a role tag is updated, please wait a few minutes for the role allowance to be available to users.</li>
-</ol>
+<h1 id="set-up-aws-credential-brokering-through-noq"><strong>Set up AWS credential brokering through Noq</strong><a class="headerlink" href="#set-up-aws-credential-brokering-through-noq" title="Permanent link">&para;</a></h1>
+<p>Noq can broker AWS credentials to authorized users within your organization.
+To enable this feature, follow the procedure below.</p>
+<h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
+<h2 id="1-navigate-to-the-settings-page">1. Navigate to the <em>Settings</em> page<a class="headerlink" href="#1-navigate-to-the-settings-page" title="Permanent link">&para;</a></h2>
+<p>Select <em>Advanced</em> &gt; <em>Settings</em> from the main Noq menu.</p>
+<p><img alt="settings menu item" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_01_settings_menu_item.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="2-enable-credential-brokering">2. Enable credential brokering<a class="headerlink" href="#2-enable-credential-brokering" title="Permanent link">&para;</a></h2>
+<p>On the <em>Settings</em> page, scroll down to the  <em>Role Access Authorization</em> section
+and enable credential brokering using the toggle switch.</p>
+<p><img alt="enable credential brokering" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_credential_brokering_enable.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="3-select-tags-to-identify-users-and-groups-authorized-to-assume-a-role">3. Select tags to identify users and groups authorized to assume a role<a class="headerlink" href="#3-select-tags-to-identify-users-and-groups-authorized-to-assume-a-role" title="Permanent link">&para;</a></h2>
+<p>In the <em>Role Access Authorization</em> section of the <em>Settings</em> page, identify all
+tags by which you will label users and groups that are authorized to retrieve
+credentials for a role.</p>
+<p>You may use the default tags or define your own tags by clicking the <em>New</em>
+button.</p>
+<p>As an example, consider the <code>noq_authorized</code> and <code>noq_authorized_cli</code> tag
+settings depicted in the figure below. Users and groups specified in the
+value of the <code>noq_authorized</code> tag of a given IAM role will see that role
+in the Noq <em>Role Access</em> page. They will be able to use Weep (Noq's CLI utility)
+to retrieve credentials for that role.</p>
+<p>In addition, users and groups specified in the value of the
+<code>noq_authorized_cli_only</code> tag will be able to retrieve role
+credentials via Weep, but will not see the role
+listed on the Noq <em>Role Access</em> page.</p>
+<p><img alt="enable credential brokering" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_credential_brokering_tags.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="4-update-tags-to-enable-users-to-assume-roles">4. Update tags to enable users to assume roles<a class="headerlink" href="#4-update-tags-to-enable-users-to-assume-roles" title="Permanent link">&para;</a></h2>
+<p>You may tag users and groups using Noq self-service controls to enable access.
+After a role tag is updated, please wait a few minutes for the role to be
+available to users. See the gif below for an example of applying a tag.</p>
 <p><div class="video-container"><iframe src="https://noq-docs-public.s3.us-west-2.amazonaws.com/videos/role_tag_update.mp4" style="width: 900px; height: 500px" frameborder="0" allowfullscreen></iframe></div></p>
 
 

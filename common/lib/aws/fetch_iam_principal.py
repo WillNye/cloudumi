@@ -269,7 +269,7 @@ async def fetch_iam_role(
             if result["ttl"] > int(
                 (datetime.utcnow() - timedelta(hours=1)).timestamp()
             ):
-                log_data["message"] = "Role not in Redis -- fetching from DDB."
+                log_data["message"] = "Returning role from Redis."
                 log.debug(log_data)
                 stats.count(
                     "aws.fetch_iam_role.in_redis",
