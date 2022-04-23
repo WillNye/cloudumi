@@ -5,9 +5,12 @@ import os
 import sys
 from datetime import datetime, timedelta
 from unittest import TestCase
+from unittest.mock import patch
 
 import pytest
 
+from common.lib.aws.access_undenied.access_undenied_aws import common, result_details
+from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
 from util.tests.fixtures.globals import host
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -20,6 +23,7 @@ sys.path.append(os.path.join(APP_ROOT, ".."))
 @pytest.mark.usefixtures("cloudtrail_table")
 @pytest.mark.usefixtures("sqs")
 @pytest.mark.usefixtures("sqs_queue")
+@pytest.mark.usefixtures("iam")
 class TestCelerySync(TestCase):
     def setUp(self):
         from common.celery_tasks import celery_tasks as celery
@@ -217,7 +221,31 @@ class TestCelerySync(TestCase):
         )
 
     def test_cache_cloudtrail_denies(self):
-        res = self.celery.cache_cloudtrail_denies(host)
+        with patch(
+            "common.lib.aws.access_undenied.access_undenied_aws.simulate_custom_policy_helper.simulate_custom_policies",
+            return_value=AnalysisResult(
+                event_id="event_1234",
+                assessment_result=common.AccessDeniedReason.IDENTITY_POLICY_EXPLICIT_DENY,
+                result_details_=result_details.ExplicitDenyResultDetails(
+                    policy_arn="aws:iam::123456789012:policy/role1",
+                    policy_name="role1",
+                    explicit_deny_policy_statement=json.dumps(
+                        {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Principal": {"Service": "ec2.amazonaws.com"},
+                                    "Action": "sts:AssumeRole",
+                                }
+                            ],
+                        }
+                    ),
+                    attachment_target_arn="arn:aws:iam::123456789012:role/role1",
+                ),
+            ),
+        ):
+            res = self.celery.cache_cloudtrail_denies(host)
         self.assertEqual(
             res,
             {

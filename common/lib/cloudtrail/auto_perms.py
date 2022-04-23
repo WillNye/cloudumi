@@ -256,7 +256,7 @@ async def detect_cloudtrail_denies_and_update_cache(
                     )
                     continue
                 event.generated_policies = generated_policy.result_details.policies[0][
-                    "Policy"
+                    "PolicyStatement"
                 ]
                 if all_cloudtrail_denies.get(event.request_id):
                     existing_event = CloudtrailDetection.parse_obj(
