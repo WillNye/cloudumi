@@ -28,7 +28,7 @@ from common.exceptions.exceptions import (
     WebAuthNError,
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
-from common.lib.auth import AuthenticationError
+from common.lib.auth import AuthenticationError, can_admin_all
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
 from common.lib.oidc import authenticate_user_by_oidc
@@ -37,6 +37,7 @@ from common.lib.redis import RedisHandler
 from common.lib.request_context.models import RequestContext
 from common.lib.saml import authenticate_user_by_saml
 from common.lib.tracing import ConsoleMeTracer
+from common.lib.web import handle_generic_error_response
 
 log = config.get_logger()
 
@@ -946,3 +947,21 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
 
     async def get(self, path: str, include_body: bool = True) -> None:
         await super(AuthenticatedStaticFileHandler, self).get(path, include_body)
+
+
+class BaseAdminHandler(BaseHandler):
+    async def authorization_flow(
+        self, user: str = None, console_only: bool = True, refresh_cache: bool = False
+    ) -> None:
+        await super(BaseAdminHandler, self).authorization_flow(
+            user, console_only, refresh_cache
+        )
+
+        if not getattr(self.ctx, "host") or not can_admin_all(
+            self.user, self.groups, getattr(self.ctx, "host")
+        ):
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self, errors[0], errors, 403, "unauthorized", {}
+            )
+            raise tornado.web.Finish()

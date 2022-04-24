@@ -76,10 +76,10 @@ spoke_accounts:
     delegate_admin_to_owner: false
     restrict_viewers_of_account_resources: false
 org_accounts:
-  - org_id: test_org
+  - org_id: o-yfdp0r70sq
     account_id: '759357822767'
-    account_name: test_account
-    owner: user
+    account_name: staging
+    owner: {override_email}
 tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: {override_email}
@@ -187,10 +187,10 @@ spoke_accounts:
     delegate_admin_to_owner: false
     restrict_viewers_of_account_resources: false
 org_accounts:
-  - org_id: test_org
+  - org_id: o-yfdp0r70sq
     account_id: '759357822767'
-    account_name: test_account
-    owner: user
+    account_name: staging
+    owner: {override_email}
 tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: {override_email}

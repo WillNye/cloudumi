@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pytz
 import sentry_sdk
+import ujson
 from botocore.exceptions import ClientError, ParamValidationError
 from dateutil.parser import parse
 from deepdiff import DeepDiff
@@ -112,7 +113,7 @@ async def get_resource_policies(
             arns = resource_info.get("arns", [])
             actions = resource_info.get("actions", [])
             new_policy = await generate_updated_resource_policy(
-                old_policy, principal_arn, arns, actions
+                old_policy, principal_arn, arns, actions, ""
             )
 
             result = {
@@ -132,6 +133,7 @@ async def generate_updated_resource_policy(
     principal_arn: str,
     resource_arns: List[str],
     actions: List[str],
+    policy_sid: str,
     include_resources: bool = True,
 ) -> Dict:
     """
@@ -148,6 +150,7 @@ async def generate_updated_resource_policy(
         "Effect": "Allow",
         "Principal": {"AWS": [principal_arn]},
         "Action": list(set(actions)),
+        "Sid": policy_sid,
     }
     if include_resources:
         new_statement["Resource"] = resource_arns
@@ -399,7 +402,7 @@ async def fetch_sqs_queue(
 
 
 async def get_bucket_location_with_fallback(
-    bucket_name: str, account_id: str, host, fallback_region: str = config.region
+    bucket_name: str, account_id: str, host, fallback_region: str = "us-east-1"
 ) -> str:
     try:
         bucket_location_res = await aio_wrapper(
@@ -1588,7 +1591,7 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
                 "from AWS Organizations. please set the appropriate configuration value."
             )
         org_structure = await retrieve_org_structure(
-            org_account_id, host, region=config.region
+            org_account_id, host, role_to_assume=role_to_assume, region=config.region
         )
         all_org_structure.update(org_structure)
     redis_key = config.get_host_specific_key(
@@ -1902,23 +1905,23 @@ async def remove_temp_policies(
     In the future, we may allow specifying temporary policies by `Sid` or other means.
     :param extended_request: A single extended policy
     """
+    from common.lib.v2.aws_principals import get_role_details
 
     should_update_policy_request = False
 
-    log_data: dict = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "message": "Checking for expired policies",
-        "policy_request_id": extended_request.id,
-    }
-    log.info(log_data)
-
     current_dateint = datetime.today().strftime("%Y%m%d")
-
     if not extended_request.expiration_date:
         return
 
     if str(extended_request.expiration_date) > current_dateint:
         return
+
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "message": "Attempting to expire policy",
+        "policy_request_id": extended_request.id,
+    }
+    log.debug(log_data)
 
     for change in extended_request.changes.changes:
         if change.status != Status.applied:
@@ -1926,11 +1929,16 @@ async def remove_temp_policies(
 
         principal_arn = change.principal.principal_arn
 
-        if change.change_type in ["managed_resource", "resource_policy"]:
+        if change.change_type in [
+            "managed_resource",
+            "resource_policy",
+            "sts_resource_policy",
+        ]:
             principal_arn = change.arn
 
         arn_parsed = parse_arn(principal_arn)
-        principal_name = arn_parsed["resource_path"].split("/")[-1]
+        # resource name is none for s3 buckets
+        principal_name = (arn_parsed["resource_path"] or "").split("/")[-1]
 
         resource_type = arn_parsed["service"]
         resource_name = arn_parsed["resource"]
@@ -1952,7 +1960,8 @@ async def remove_temp_policies(
             log.warning(log_data)
             continue
 
-        iam_client = boto3_cached_conn(
+        client = await aio_wrapper(
+            boto3_cached_conn,
             resource_type,
             host,
             service_type="client",
@@ -1977,20 +1986,20 @@ async def remove_temp_policies(
             try:
                 if resource_name == "role":
                     await aio_wrapper(
-                        iam_client.delete_role_policy,
+                        client.delete_role_policy,
                         RoleName=principal_name,
                         PolicyName=change.policy_name,
                     )
                 elif resource_name == "user":
                     await aio_wrapper(
-                        iam_client.delete_user_policy,
+                        client.delete_user_policy,
                         UserName=principal_name,
                         PolicyName=change.policy_name,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
 
-            except iam_client.exceptions.NoSuchEntityException:
+            except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data[
                     "error"
@@ -2011,18 +2020,18 @@ async def remove_temp_policies(
             try:
                 if resource_name == "role":
                     await aio_wrapper(
-                        iam_client.delete_role_permissions_boundary,
+                        client.delete_role_permissions_boundary,
                         RoleName=principal_name,
                     )
                 elif resource_name == "user":
                     await aio_wrapper(
-                        iam_client.delete_user_permissions_boundary,
+                        client.delete_user_permissions_boundary,
                         UserName=principal_name,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
 
-            except iam_client.exceptions.NoSuchEntityException:
+            except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data[
                     "error"
@@ -2045,20 +2054,20 @@ async def remove_temp_policies(
             try:
                 if resource_name == "role":
                     await aio_wrapper(
-                        iam_client.detach_role_policy,
+                        client.detach_role_policy,
                         RoleName=principal_name,
                         PolicyArn=change.arn,
                     )
                 elif resource_name == "user":
                     await aio_wrapper(
-                        iam_client.detach_user_policy,
+                        client.detach_user_policy,
                         UserName=principal_name,
                         PolicyArn=change.arn,
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
 
-            except iam_client.exceptions.NoSuchEntityException:
+            except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data["error"] = f"{change.arn} was not attached to {resource_name}"
                 log.error(log_data, exc_info=True)
@@ -2077,20 +2086,20 @@ async def remove_temp_policies(
             try:
                 if resource_name == "role":
                     await aio_wrapper(
-                        iam_client.untag_role,
+                        client.untag_role,
                         RoleName=principal_name,
                         TagKeys=[change.key],
                     )
                 elif resource_name == "user":
                     await aio_wrapper(
-                        iam_client.untag_user,
+                        client.untag_user,
                         UserName=principal_name,
                         TagKeys=[change.key],
                     )
                 change.status = Status.expired
                 should_update_policy_request = True
 
-            except iam_client.exceptions.NoSuchEntityException:
+            except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data["error"] = f"{change.key} was not attached to {resource_name}"
                 log.error(log_data, exc_info=True)
@@ -2105,10 +2114,116 @@ async def remove_temp_policies(
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
-        else:
-            if change.autogenerated:
-                # TODO : https://perimy.atlassian.net/browse/SAAS-347
-                pass
+        elif (
+            change.change_type == "resource_policy"
+            or change.change_type == "sts_resource_policy"
+        ):
+            try:
+                new_policy_statement = []
+
+                if change.change_type == "resource_policy":
+
+                    existing_policy = await get_resource_policy(
+                        resource_account,
+                        resource_type,
+                        resource_name,
+                        resource_region,
+                        host,
+                    )
+
+                elif change.change_type == "sts_resource_policy":
+                    role = await get_role_details(
+                        resource_account,
+                        principal_name,
+                        host,
+                        extended=True,
+                        force_refresh=True,
+                    )
+                    if not role:
+                        log.error(
+                            {
+                                **log_data,
+                                "message": (
+                                    "Unable to retrieve role. Won't attempt to remove cross-account policy."
+                                ),
+                            }
+                        )
+                        return
+                    existing_policy = role.assume_role_policy_document
+
+                for statement in existing_policy.get("Statement", []):
+                    if str(extended_request.expiration_date) in statement.get(
+                        "Sid", ""
+                    ):
+                        continue
+                    new_policy_statement.append(statement)
+
+                existing_policy["Statement"] = new_policy_statement
+
+                if resource_type == "s3":
+                    if len(new_policy_statement) == 0:
+                        await aio_wrapper(
+                            client.delete_bucket_policy,
+                            Bucket=resource_name,
+                            ExpectedBucketOwner=resource_account,
+                        )
+                    else:
+                        await aio_wrapper(
+                            client.put_bucket_policy,
+                            Bucket=resource_name,
+                            Policy=ujson.dumps(
+                                existing_policy, escape_forward_slashes=False
+                            ),
+                        )
+                elif resource_type == "sns":
+                    await aio_wrapper(
+                        client.set_topic_attributes,
+                        TopicArn=change.arn,
+                        AttributeName="Policy",
+                        AttributeValue=ujson.dumps(
+                            existing_policy, escape_forward_slashes=False
+                        ),
+                    )
+                elif resource_type == "sqs":
+                    queue_url: dict = await aio_wrapper(
+                        client.get_queue_url, QueueName=resource_name
+                    )
+
+                    if len(new_policy_statement) == 0:
+                        await aio_wrapper(
+                            client.set_queue_attributes,
+                            QueueUrl=queue_url.get("QueueUrl"),
+                            Attributes={"Policy": ""},
+                        )
+
+                    else:
+                        await aio_wrapper(
+                            client.set_queue_attributes,
+                            QueueUrl=queue_url.get("QueueUrl"),
+                            Attributes={
+                                "Policy": ujson.dumps(
+                                    existing_policy,
+                                    escape_forward_slashes=False,
+                                )
+                            },
+                        )
+                elif resource_type == "iam":
+                    await aio_wrapper(
+                        client.update_assume_role_policy,
+                        RoleName=principal_name,
+                        PolicyDocument=ujson.dumps(
+                            existing_policy, escape_forward_slashes=False
+                        ),
+                    )
+
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except Exception as e:
+                log_data["message"] = "Exception occurred updating resource policy"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
 
     if should_update_policy_request:
         try:
