@@ -84,10 +84,10 @@ tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: {override_email}
   creation_time: {int(time.time())}
+notifications:
+  enabled: true
 site_config:
   landing_url: /
-  notifications:
-    enabled: true
   request_interval: 1
 headers:
   identity:
@@ -195,10 +195,10 @@ tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: {override_email}
   creation_time: {int(time.time())}
+notifications:
+  enabled: true
 site_config:
   landing_url: /
-  notifications:
-    enabled: true
   request_interval: 1
 headers:
   identity:
