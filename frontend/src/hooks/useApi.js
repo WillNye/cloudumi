@@ -46,8 +46,7 @@ const useInnerUtils = (persistedState) => {
     persisted: !!persistedState?.data,
   })
 
-  const buildPath = (pathname = '', customUrl) =>
-    customUrl || url + (pathname ? '' : '') + pathname
+  const buildPath = (pathname = '', customUrl) => customUrl || url + pathname
 
   const handleWorking = () => {
     setState({ data: null, status: 'working', error: null })
