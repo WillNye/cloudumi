@@ -8,17 +8,16 @@ os.environ.setdefault(
     "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
 )
 os.environ.setdefault("AWS_PROFILE", "noq_cluster_dev")
+override_email = os.getenv("OVERRIDE_EMAIL", "user@noq.dev")
 
 import common.scripts.initialize_dynamodb  # noqa: F401, E402
 from common.lib.dynamo import RestrictedDynamoHandler  # noqa: F401, E402
 
 tenant_config = f"""
-_development_user_override: user@noq.dev
+_development_user_override: {override_email}
 _development_groups_override:
   - engineering@noq.dev
-  - user@noq.dev
-notifications:
-  enabled: true
+  - {override_email}
 cloudtrail:
   enabled: true
   account_id: "759357822767"
@@ -80,14 +79,15 @@ org_accounts:
   - org_id: o-yfdp0r70sq
     account_id: '759357822767'
     account_name: staging
-    owner: user@noq.dev
+    owner: {override_email}
 tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
-  creator: user@noq.dev
+  creator: {override_email}
   creation_time: {int(time.time())}
+notifications:
+  enabled: true
 site_config:
   landing_url: /
-  notifications: enabled
   request_interval: 1
 headers:
   identity:
@@ -120,18 +120,16 @@ celery:
 ddb = RestrictedDynamoHandler()
 
 async_to_sync(ddb.update_static_config_for_host)(
-    tenant_config, "user@noq.dev", "localhost"
+    tenant_config, override_email, "localhost"
 )
 
 cloudumi_config = f"""
-_development_user_override: user@noq.dev
+_development_user_override: {override_email}
 _development_groups_override:
   - engineering@noq.dev
-  - user@noq.dev
+  - {override_email}
 cache_self_service_typeahead:
   cache_resource_templates: true
-notifications:
-  enabled: true
 cloudtrail:
   enabled: true
   account_id: "759357822767"
@@ -192,14 +190,15 @@ org_accounts:
   - org_id: o-yfdp0r70sq
     account_id: '759357822767'
     account_name: staging
-    owner: user@noq.dev
+    owner: {override_email}
 tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
-  creator: user@noq.dev
+  creator: {override_email}
   creation_time: {int(time.time())}
+notifications:
+  enabled: true
 site_config:
   landing_url: /
-  notifications: enabled
   request_interval: 1
 headers:
   identity:
@@ -251,7 +250,7 @@ celery:
 ddb = RestrictedDynamoHandler()
 
 async_to_sync(ddb.update_static_config_for_host)(
-    cloudumi_config, "user@noq.dev", "cloudumidev_com"
+    cloudumi_config, override_email, "cloudumidev_com"
 )
 
 # Force a re-cache of cloud resources with updated configuration
