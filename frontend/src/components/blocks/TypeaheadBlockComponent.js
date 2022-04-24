@@ -34,10 +34,9 @@ class TypeaheadBlockComponent extends Component {
   }
 
   handleSelectedValueDelete(value) {
-    const { defaultValues } = this.props
-    const selectedValues = (defaultValues || this.state.selectedValues)?.filter(
-      (item) => item !== value
-    )
+    const selectedValues = (
+      this.state.defaultValues || this.state.selectedValues
+    )?.filter((item) => item !== value)
     this.setState({
       selectedValues,
     })
@@ -107,13 +106,19 @@ class TypeaheadBlockComponent extends Component {
     }, 300)
   }
 
-  render() {
-    const { isLoading, results, value, selectedValues } = this.state
-    const { defaultValue, required, label, defaultValues } = this.props
+  componentDidMount() {
+    this.setState({
+      defaultValue: this.props.defaultValue,
+      required: this.props.required,
+      label: this.props.label,
+      selectedValues: this.props.defaultValues,
+    })
+  }
 
-    const selectedValueLabels = (
-      selectedValues.length === 0 ? defaultValues : selectedValues
-    )?.map((selectedValue, index) => {
+  render() {
+    const { isLoading, results, selectedValues, value } = this.state
+
+    const selectedValueLabels = selectedValues.map((selectedValue, index) => {
       return (
         <Label basic color={'red'} key={index}>
           {selectedValue}
@@ -128,12 +133,12 @@ class TypeaheadBlockComponent extends Component {
     let formattedResults = results
 
     return (
-      <Form.Field required={required || false}>
-        <label>{label || 'Enter Value'}</label>
+      <Form.Field required={this.state.required || false}>
+        <label>{this.state.label || 'Enter Value'}</label>
         <Search
           fluid
           multiple
-          defaultValue={defaultValue || ''}
+          defaultValue={this.state.defaultValue || ''}
           loading={isLoading}
           onResultSelect={this.handleResultSelect.bind(this)}
           onSearchChange={_.debounce(this.handleSearchChange.bind(this), 500, {
