@@ -18,8 +18,6 @@ _development_user_override: {override_email}
 _development_groups_override:
   - engineering@noq.dev
   - {override_email}
-notifications:
-  enabled: true
 cloudtrail:
   enabled: true
   account_id: "759357822767"
@@ -88,7 +86,8 @@ tenant_details:
   creation_time: {int(time.time())}
 site_config:
   landing_url: /
-  notifications: enabled
+  notifications:
+    enabled: true
   request_interval: 1
 headers:
   identity:
@@ -131,8 +130,6 @@ _development_groups_override:
   - {override_email}
 cache_self_service_typeahead:
   cache_resource_templates: true
-notifications:
-  enabled: true
 cloudtrail:
   enabled: true
   account_id: "759357822767"
@@ -200,7 +197,8 @@ tenant_details:
   creation_time: {int(time.time())}
 site_config:
   landing_url: /
-  notifications: enabled
+  notifications:
+    enabled: true
   request_interval: 1
 headers:
   identity:

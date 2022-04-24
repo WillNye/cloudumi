@@ -18,6 +18,8 @@ export const Users = () => {
 
   const [defaultValues, setDefaultValues] = useState()
 
+  const [action, setAction] = useState()
+
   const { error, success } = useToast()
 
   const { openModal, closeModal, ModalComponent } = useModal('Add User')
@@ -27,6 +29,7 @@ export const Users = () => {
   }, [])
 
   const handleClick = (action, rowValues) => {
+    setAction(action)
     if (action === 'remove') {
       remove
         .do({ Username: rowValues?.Username })
@@ -43,7 +46,11 @@ export const Users = () => {
   }
 
   const handleFinish = () => {
-    success('User created successfully!')
+    if (action === 'edit') {
+      success('User updated')
+    } else {
+      success('User created successfully!')
+    }
     get.do()
   }
 
