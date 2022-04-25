@@ -195,6 +195,8 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
     async def determine_users_authorized_roles(
         self, user, groups, host, include_cli=False
     ):
+        if not groups:
+            groups = []
         authorization_mapping = await self.retrieve_credential_authorization_mapping(
             host
         )

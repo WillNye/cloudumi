@@ -1,3 +1,5 @@
+import sys
+
 import sentry_sdk
 import tornado.escape
 import tornado.web
@@ -86,7 +88,16 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 "cmsaas_group_mapping",
             )
         )()
-        log_data = {} if not log_data else log_data
+        log_data = (
+            {
+                "function": sys._getframe().f_code.co_name,
+                "host": host,
+                "user": self.user,
+                "role": role,
+            }
+            if not log_data
+            else log_data
+        )
         max_cert_age_message = config.get_host_specific_key(
             "errors.custom_max_cert_age_message",
             host,
@@ -96,7 +107,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             max_cert_age = await group_mapping.get_max_cert_age_for_role(role)
         except Exception as e:
             sentry_sdk.capture_exception()
-            log_data["error"] = e
+            log_data["error"] = str(e)
             log_data[
                 "message"
             ] = "Failed to get max MTLS certificate age. Returning default value of 1 day"
@@ -307,6 +318,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 403:
                     description: No matching roles found, or user has failed authn/authz.
         """
+        host = self.ctx.host
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -314,6 +326,8 @@ class GetCredentialsHandler(BaseMtlsHandler):
             "function": "GetCredentialsHandler.post",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
+            "host": host,
+            "user": self.user,
         }
 
         # Validate the input:
@@ -326,7 +340,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 tags={"user": self.user, "validation_error": str(ve)},
             )
 
-            log_data["validation_error"]: ve.messages
+            log_data["validation_error"] = ve.messages
             log.error(log_data)
 
             error = {
