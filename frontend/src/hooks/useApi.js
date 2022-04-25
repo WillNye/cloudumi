@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { createContext, useEffect, useState } from 'react'
+import { createContext, useEffect } from 'react'
+import { useStateIfMounted } from 'use-state-if-mounted'
 import { useAuth } from '../auth/AuthProviderDefault'
 import { useTimestamp } from './useTimestamp'
 import create from 'zustand'
@@ -12,6 +13,8 @@ const initialState = {
   empty: true,
   persisted: false,
 }
+
+export const url = '/api/v3/'
 
 const usePersistence = create(
   persist(
@@ -35,18 +38,15 @@ const usePersistence = create(
   )
 )
 
-export const url = '/api/v3'
-
 const useInnerUtils = (persistedState) => {
-  const [state, setState] = useState({
+  const [state, setState] = useStateIfMounted({
     ...initialState,
     data: persistedState?.data || null,
     empty: !persistedState?.data,
     persisted: !!persistedState?.data,
   })
 
-  const buildPath = (pathname = '', customUrl) =>
-    customUrl || url + (pathname ? '/' : '') + pathname
+  const buildPath = (pathname = '', customUrl) => customUrl || url + pathname
 
   const handleWorking = () => {
     setState({ data: null, status: 'working', error: null })

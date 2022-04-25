@@ -6,12 +6,14 @@ import { useForm } from 'react-hook-form'
 import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
-import { SelectGroup } from '../../utils'
+import TypeaheadBlockComponent from 'components/blocks/TypeaheadBlockComponent'
 
 export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
-  const { register, handleSubmit, watch } = useForm({ defaultValues })
+  const { register, handleSubmit, setValue, watch } = useForm({ defaultValues })
 
   const { post } = useApi('auth/cognito/users')
+
+  const { get } = useApi('auth/cognito/groups')
 
   const [errorMessage, setErrorMessage] = useState(
     'Something went wrong, try again!'
@@ -31,17 +33,17 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
 
   const fields = watch()
 
-  const currentFieldsSize = Object.keys(fields)?.filter(
-    (key) => fields[key]
-  )?.length
-
-  const isReady = currentFieldsSize >= 1
+  const isReady = fields.Username
 
   const isWorking = post?.status === 'working'
 
   const isSuccess = post?.status === 'done' && !post?.error
 
   const hasError = post?.error && post?.status === 'done'
+
+  const handleInputUpdate = (values) => {
+    setValue('Groups', values, { required: true })
+  }
 
   return (
     <Segment basic>
@@ -58,10 +60,20 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
           <input {...register('Username', { required: true })} />
         </Form.Field>
 
-        <SelectGroup
+        <TypeaheadBlockComponent
+          handleInputUpdate={handleInputUpdate}
+          required
+          noQuery
+          typeahead={`/api/v3/auth/cognito/groups`}
           label='Groups'
-          defaultValues={defaultValues?.Groups || []}
-          register={{ ...register('Groups') }}
+          defaultValues={fields?.Groups}
+          sendRequestCommon={get.do}
+          shouldTransformResults
+          resultsFormatter={(results) =>
+            results.map((item) => ({
+              title: item.GroupName,
+            }))
+          }
         />
 
         {!defaultValues && (
