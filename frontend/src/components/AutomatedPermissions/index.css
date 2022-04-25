@@ -1,0 +1,69 @@
+.ui.basic.segment {
+  width: 90%;
+  margin: auto;
+}
+
+.ui.vertical.segment {
+  width: 90%;
+  margin: auto;
+}
+
+.ui.steps .step > .icon {
+  font-size: 4.5em;
+}
+
+.step1 > .icon {
+  font-size: 4em;
+  font-family: Step;
+  content: url('../../assets/icons/stepper1Pending.svg');
+}
+
+.active.step1 > .icon {
+  font-family: Step;
+  content: url('../../assets/icons/stepper1Active.svg');
+}
+
+.complete.step1 > .icon {
+  font-size: 4em;
+  font-family: Step;
+  content: url('../../assets/icons/stepper2Pending.svg');
+}
+
+.step2 > .icon {
+  font-size: 4em;
+  font-family: Step;
+  content: url('../../assets/icons/stepper2Pending.svg');
+}
+
+.active.step2 > .icon {
+  font-family: Step;
+  content: url('../../assets/icons/stepper2Active.svg');
+}
+
+.complete.step2 > .icon {
+  font-size: 4em;
+  font-family: Step;
+  content: url('../../assets/icons/stepper2Complete.svg');
+}
+
+.step3 > .icon {
+  font-size: 4em;
+  font-family: Step;
+  content: url('../../assets/icons/stepper3Pending.svg');
+}
+
+.active.step3 > .icon {
+  font-size: 4em;
+  font-family: Step;
+  content: url('../../assets/icons/stepper3Active.svg');
+}
+
+.loader-text {
+  padding-top: 25px;
+  font-size: 18px;
+}
+
+.description-text {
+  font-size: 16px;
+  text-align: left;
+}
