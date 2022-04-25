@@ -26,8 +26,12 @@ class GeneratePolicyHandler(BaseAPIV2Handler):
         Determine which user is requesting access to which resource, and the type of access based on their
         selections in self-service
         """
+        host = self.ctx.host
         self.write(BASE_INLINE_POLICY)
-        tags = {"user": self.user}
+        tags = {
+            "user": self.user,
+            "host": host,
+        }
         stats.count("RequestsHandler.post", tags=tags)
         log_data = {
             "function": "RequestsHandler.post",

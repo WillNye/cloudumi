@@ -51,13 +51,21 @@ def escape_json(code):
 
 
 async def parse_policy_change_request(
-    user: str, arn: str, role: str, data_list: list
+    user: str, arn: str, role: str, data_list: list, host: str
 ) -> dict:
     result: dict = {"status": "success"}
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
 
-    stats.count(function, tags={"user": user, "arn": arn, "role": role})
+    stats.count(
+        function,
+        tags={
+            "user": user,
+            "arn": arn,
+            "role": role,
+            "host": host,
+        },
+    )
 
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",

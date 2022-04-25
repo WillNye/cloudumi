@@ -569,6 +569,7 @@ class BaseHandler(TornadoRequestHandler):
                         "request_path": self.request.uri,
                         "ip": self.ip,
                         "user_agent": self.request.headers.get("User-Agent"),
+                        "host": host,
                     },
                 )
                 log_data["message"] = "No user detected. Check configuration."

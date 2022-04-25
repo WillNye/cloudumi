@@ -31,7 +31,13 @@ class HeaderHandler(BaseHandler):
             "request_id": self.request_uuid,
         }
         log.debug(log_data)
-        stats.count("myheaders.get", tags={"user": self.user})
+        stats.count(
+            "myheaders.get",
+            tags={
+                "user": self.user,
+                "host": host,
+            },
+        )
 
         response_html = []
 
@@ -58,16 +64,23 @@ class ApiHeaderHandler(BaseMtlsHandler):
                 200:
                     description: Pretty-formatted list of headers.
         """
+        host = self.ctx.host
         log_data = {
             "function": "apimyheaders.get",
             "message": "Incoming request",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": self.ctx.host,
+            "host": host,
             "user": self.user,
         }
         log.debug(log_data)
-        stats.count("apimyheaders.get")
+        stats.count(
+            "apimyheaders.get",
+            tags={
+                "user": self.user,
+                "host": host,
+            },
+        )
         response = {}
         for k, v in dict(self.request.headers).items():
             if k.lower() in map(

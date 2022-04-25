@@ -252,7 +252,10 @@ class RequestHandler(BaseAPIV2Handler):
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
 
-        tags = {"user": self.user}
+        tags = {
+            "user": self.user,
+            "host": host,
+        }
         stats.count("RequestHandler.post", tags=tags)
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
@@ -316,13 +319,19 @@ class RequestHandler(BaseAPIV2Handler):
                         log.debug(log_data)
                         stats.count(
                             f"{log_data['function']}.post.admin_auto_approved",
-                            tags={"user": self.user},
+                            tags={
+                                "user": self.user,
+                                "host": host,
+                            },
                         )
                     else:
                         # someone is trying to use admin bypass without being an admin, don't allow request to proceed
                         stats.count(
                             f"{log_data['function']}.post.unauthorized_admin_bypass",
-                            tags={"user": self.user},
+                            tags={
+                                "user": self.user,
+                                "host": host,
+                            },
                         )
                         log_data[
                             "message"
@@ -349,7 +358,10 @@ class RequestHandler(BaseAPIV2Handler):
                             approval_probe_approved = True
                             stats.count(
                                 f"{log_data['function']}.probe_auto_approved",
-                                tags={"user": self.user},
+                                tags={
+                                    "user": self.user,
+                                    "host": host,
+                                },
                             )
                             approving_probes = []
                             for approving_probe in should_auto_approve_request[
@@ -386,7 +398,11 @@ class RequestHandler(BaseAPIV2Handler):
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
             stats.count(
-                f"{log_data['function']}.validation_exception", tags={"user": self.user}
+                f"{log_data['function']}.validation_exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
             )
             self.write_error(400, message="Error validating input: " + str(e))
             if config.get("_global_.development"):
@@ -395,7 +411,13 @@ class RequestHandler(BaseAPIV2Handler):
         except Exception as e:
             log_data["message"] = "Unknown Exception occurred while parsing request"
             log.error(log_data, exc_info=True)
-            stats.count(f"{log_data['function']}.exception", tags={"user": self.user})
+            stats.count(
+                f"{log_data['function']}.exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
+            )
             sentry_sdk.capture_exception(tags={"user": self.user})
             self.write_error(500, message="Error parsing request: " + str(e))
             if config.get("_global_.development"):
@@ -507,7 +529,10 @@ class RequestsHandler(BaseAPIV2Handler):
         # TODO: Add server-side sorting
         # sort = arguments.get("sort")
         limit = arguments.get("limit", 1000)
-        tags = {"user": self.user}
+        tags = {
+            "user": self.user,
+            "host": host,
+        }
         stats.count("RequestsHandler.post", tags=tags)
         log_data = {
             "function": "RequestsHandler.post",
@@ -616,14 +641,23 @@ class RequestDetailHandler(BaseAPIV2Handler):
         if len(requests) == 0:
             log_data["message"] = "Request with that ID not found"
             log.warning(log_data)
-            stats.count(f"{log_data['function']}.not_found", tags={"user": self.user})
+            stats.count(
+                f"{log_data['function']}.not_found",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
+            )
             raise NoMatchingRequest(log_data["message"])
         if len(requests) > 1:
             log_data["message"] = "Multiple requests with that ID found"
             log.error(log_data)
             stats.count(
                 f"{log_data['function']}.multiple_requests_found",
-                tags={"user": self.user},
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
             )
             raise InvalidRequestParameter(log_data["message"])
         request = requests[0]
@@ -642,7 +676,10 @@ class RequestDetailHandler(BaseAPIV2Handler):
         GET /api/v2/requests/{request_id}
         """
         host = self.ctx.host
-        tags = {"user": self.user}
+        tags = {
+            "user": self.user,
+            "host": host,
+        }
         stats.count("RequestDetailHandler.get", tags=tags)
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
@@ -751,7 +788,10 @@ class RequestDetailHandler(BaseAPIV2Handler):
         PUT /api/v2/requests/{request_id}
         """
         host = self.ctx.host
-        tags = {"user": self.user}
+        tags = {
+            "user": self.user,
+            "host": host,
+        }
         stats.count("RequestDetailHandler.put", tags=tags)
         log_data = {
             "function": "RequestDetailHandler.put",
@@ -803,7 +843,11 @@ class RequestDetailHandler(BaseAPIV2Handler):
             log.error(log_data, exc_info=True)
             sentry_sdk.capture_exception(tags={"user": self.user})
             stats.count(
-                f"{log_data['function']}.validation_exception", tags={"user": self.user}
+                f"{log_data['function']}.validation_exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
             )
             self.write_error(400, message="Error validating input: " + str(e))
             if config.get("_global_.development"):
@@ -814,7 +858,11 @@ class RequestDetailHandler(BaseAPIV2Handler):
             log.error(log_data, exc_info=True)
             sentry_sdk.capture_exception(tags={"user": self.user})
             stats.count(
-                f"{log_data['function']}.unauthorized", tags={"user": self.user}
+                f"{log_data['function']}.unauthorized",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
             )
             self.write_error(403, message=str(e))
             if config.get("_global_.development"):
