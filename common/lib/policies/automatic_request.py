@@ -3,6 +3,7 @@ import json
 import sys
 from datetime import datetime
 
+import pytz
 import sentry_sdk
 
 from common.config import config
@@ -90,9 +91,14 @@ def get_policy_request_key(
 
 def init_extended_policy_request(**policy_request) -> ExtendedAutomaticPolicyRequest:
     """Takes the json.loads output and translates them to the correct type"""
-    policy_request["event_time"] = datetime.utcfromtimestamp(
-        policy_request["event_time"]
+    policy_request["event_time"] = datetime.fromtimestamp(
+        policy_request["event_time"], tz=pytz.utc
     )
+
+    if policy_request.get("last_updated"):
+        policy_request["last_updated"] = datetime.fromtimestamp(
+            policy_request["last_updated"], tz=pytz.utc
+        )
 
     if isinstance(policy_request["status"], str):
         policy_request["status"] = Status3[policy_request["status"]]
@@ -107,6 +113,11 @@ def format_extended_policy_request(
     """Update variables that can't be json encoded to a json supported format."""
     if not isinstance(policy_request.event_time, float):
         policy_request.event_time = policy_request.event_time.timestamp()
+
+    if policy_request.last_updated and not isinstance(
+        policy_request.last_updated, float
+    ):
+        policy_request.last_updated = policy_request.last_updated.timestamp()
 
     if not isinstance(policy_request.status, str):
         policy_request.status = policy_request.status.value
@@ -200,6 +211,7 @@ async def update_policy_request(
         host, policy_request.account.account_id, policy_request.user, policy_request.id
     )
 
+    policy_request.last_updated = datetime.utcnow()
     try:
         policy_request = format_extended_policy_request(policy_request)
         await aio_wrapper(
