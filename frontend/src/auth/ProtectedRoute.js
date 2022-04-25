@@ -68,7 +68,13 @@ const ProtectedRoute = (props) => {
   if (user?.google_analytics_initialized) {
     const currentPath = location.pathname + location.search
     ReactGA.set({ page: currentPath })
+    ReactGA.set({ domainName: '.noq.dev' })
     ReactGA.pageview(currentPath)
+  }
+
+  if (window?.clarity) {
+    window.clarity('stop')
+    window.clarity('start')
   }
   return (
     <>
