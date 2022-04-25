@@ -7,7 +7,8 @@ from asgiref.sync import sync_to_async
 
 
 async def aio_wrapper(fnc, *args, **kwargs):
-    return await sync_to_async(fnc, thread_sensitive=False)(*args, **kwargs)
+    thread_sensitive = kwargs.pop("thread_sensitive", False)
+    return await sync_to_async(fnc, thread_sensitive=thread_sensitive)(*args, **kwargs)
 
 
 async def bound_fetch(sem, fn, args, kwargs):

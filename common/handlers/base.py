@@ -603,7 +603,15 @@ class BaseHandler(TornadoRequestHandler):
                     self.groups = await auth.get_groups(
                         self.user, self, headers=self.request.headers
                     )
-                except Exception:
+                except Exception as e:
+                    log.error(
+                        {
+                            **log_data,
+                            "error": str(e),
+                            "message": "Unable to get groups",
+                        },
+                        exc_info=True,
+                    )
                     sentry_sdk.capture_exception()
             if not self.groups:
                 raise NoGroupsException(

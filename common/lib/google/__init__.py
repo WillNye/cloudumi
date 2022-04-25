@@ -259,7 +259,7 @@ async def get_service(
 
     # Change credential subject based on group domain
     credential_subjects = config.get_host_specific_key(
-        "google.credential_subject", host
+        "secrets.google.credential_subject", host
     )
     credential_subject = None
     for k, v in credential_subjects.items():
@@ -282,14 +282,16 @@ async def get_service(
         service_name,
         service_path,
         credentials=admin_delegated_credentials,
+        thread_sensitive=True,
     )
 
     return service
 
 
-@aio_wrapper
-def list_group_members_call(service, email):
-    return service.members().list(groupKey=email).execute()
+async def list_group_members_call(service, email):
+    return await aio_wrapper(
+        service.members().list(groupKey=email).execute, thread_sensitive=True
+    )
 
 
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
@@ -320,14 +322,16 @@ async def list_group_members(
     return []
 
 
-@aio_wrapper
-def list_user_groups_call(service, user_email, page_token=None):
+async def list_user_groups_call(service, user_email, page_token=None):
     if page_token:
-        results = (
-            service.groups().list(userKey=user_email, pageToken=page_token).execute()
+        results = await aio_wrapper(
+            service.groups().list(userKey=user_email, pageToken=page_token).execute,
+            thread_sensitive=True,
         )
     else:
-        results = service.groups().list(userKey=user_email).execute()
+        results = await aio_wrapper(
+            service.groups().list(userKey=user_email).execute, thread_sensitive=True
+        )
     return results
 
 
@@ -350,7 +354,7 @@ async def get_group_memberships(host, user_email, dry_run=None, service=None):
             page_token = None
             while True:
                 results = await list_user_groups_call(service, user_email, page_token)
-                for g in results.get("groups"):
+                for g in results.get("groups", []):
                     groups.append(g.get("email"))
                 page_token = results.get("nextPageToken")
                 if not page_token:
@@ -482,12 +486,12 @@ async def raise_if_bulk_add_disabled_and_no_request(
         raise BulkAddPrevented(error)
 
 
-@aio_wrapper
-def insert_group_members_call(service, google_group_email, user_email, role):
-    return (
+async def insert_group_members_call(service, google_group_email, user_email, role):
+    return await aio_wrapper(
         service.members()
         .insert(groupKey=google_group_email, body=dict(email=user_email, role=role))
-        .execute()
+        .execute,
+        thread_sensitive=True,
     )
 
 
@@ -585,12 +589,12 @@ async def api_add_user_to_group_or_raise(host, group_name, member_name, actor):
     return "ADDED"
 
 
-@aio_wrapper
-def delete_group_members_call(service, google_group_email, user_email):
-    return (
+async def delete_group_members_call(service, google_group_email, user_email):
+    return await aio_wrapper(
         service.members()
         .delete(groupKey=google_group_email, memberKey=user_email)
-        .execute()
+        .execute,
+        thread_sensitive=True,
     )
 
 
