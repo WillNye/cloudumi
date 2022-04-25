@@ -118,17 +118,19 @@ class TypeaheadBlockComponent extends Component {
   render() {
     const { isLoading, results, selectedValues, value } = this.state
 
-    const selectedValueLabels = selectedValues.map((selectedValue, index) => {
-      return (
-        <Label basic color={'red'} key={index}>
-          {selectedValue}
-          <Icon
-            name='delete'
-            onClick={() => this.handleSelectedValueDelete(selectedValue)}
-          />
-        </Label>
-      )
-    })
+    const selectedValueLabels =
+      selectedValues &&
+      selectedValues.map((selectedValue, index) => {
+        return (
+          <Label basic color={'red'} key={index}>
+            {selectedValue}
+            <Icon
+              name='delete'
+              onClick={() => this.handleSelectedValueDelete(selectedValue)}
+            />
+          </Label>
+        )
+      })
 
     let formattedResults = results
 
