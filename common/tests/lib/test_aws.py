@@ -528,7 +528,7 @@ class TestAwsPolicyNormalizer(TestCase):
             }
         ]
 
-        normalized_policy = asyncio.run(condense_statements(init_policy))
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
 
         # Confirm GetItem was dropped because it's captured under Get* and all other actions remain
         self.assertListEqual(
@@ -559,9 +559,9 @@ class TestAwsPolicyNormalizer(TestCase):
             },
         ]
 
-        normalized_policy = asyncio.run(condense_statements(init_policy))
-
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
         self.assertEqual(len(normalized_policy), 1)
+
         self.assertListEqual(
             normalized_policy[0]["Action"],
             [
@@ -596,7 +596,7 @@ class TestAwsPolicyNormalizer(TestCase):
             },
         ]
 
-        normalized_policy = asyncio.run(condense_statements(init_policy))
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
         self.assertEqual(len(normalized_policy), 2)
 
         dynamo_statement = self._get_statement_by_resource(
@@ -633,7 +633,7 @@ class TestAwsPolicyNormalizer(TestCase):
             },
         ]
 
-        normalized_policy = asyncio.run(condense_statements(init_policy))
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
         self.assertEqual(len(normalized_policy), 1)
 
         dynamo_statement = normalized_policy[0]
@@ -670,7 +670,7 @@ class TestAwsPolicyNormalizer(TestCase):
             },
         ]
 
-        normalized_policy = asyncio.run(condense_statements(init_policy))
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
         self.assertEqual(len(normalized_policy), 2)
 
         dynamo_statement = self._get_statement_by_resource(
