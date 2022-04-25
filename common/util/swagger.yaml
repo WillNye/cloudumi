@@ -2534,6 +2534,10 @@ components:
         policy:
           type: object
           description: The json representation of the policy requested for approval
+        last_updated:
+          type: string
+          format: date-time
+          description: The last time the policy request was updated.
         status:
           type: string
           default: pending
