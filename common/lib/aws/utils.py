@@ -562,7 +562,12 @@ async def raise_if_background_check_required_and_no_background_check(role, user,
                 log.error(log_data)
                 stats.count(
                     f"{function}.access_denied_background_check_not_passed",
-                    tags={"function": function, "user": user, "role": role},
+                    tags={
+                        "function": function,
+                        "user": user,
+                        "role": role,
+                        "host": host,
+                    },
                 )
                 raise BackgroundCheckNotPassedException(
                     config.get_host_specific_key(
@@ -611,7 +616,11 @@ def apply_managed_policy_to_role(
     log.debug(log_data)
     stats.count(
         f"{function}.attach_role_policy",
-        tags={"role": role.get("Arn"), "policy": policy_arn},
+        tags={
+            "role": role.get("Arn"),
+            "policy": policy_arn,
+            "host": host,
+        },
     )
     return True
 
@@ -668,7 +677,11 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
     log.info({**log_data, "message": "Performing user deletion"})
     await aio_wrapper(iam_user.delete)
     stats.count(
-        f"{log_data['function']}.success", tags={"iam_user_name": iam_user_name}
+        f"{log_data['function']}.success",
+        tags={
+            "iam_user_name": iam_user_name,
+            "host": host,
+        },
     )
     return True
 
@@ -723,7 +736,13 @@ async def delete_iam_role(account_id, role_name, username, host) -> bool:
 
     log.info({**log_data, "message": "Performing role deletion"})
     await aio_wrapper(role.delete)
-    stats.count(f"{log_data['function']}.success", tags={"role_name": role_name})
+    stats.count(
+        f"{log_data['function']}.success",
+        tags={
+            "role_name": role_name,
+            "host": host,
+        },
+    )
 
 
 async def fetch_role_details(account_id, role_name, host):
@@ -954,7 +973,11 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
             results["errors"] += 1
 
     stats.count(
-        f"{log_data['function']}.success", tags={"role_name": create_model.role_name}
+        f"{log_data['function']}.success",
+        tags={
+            "role_name": create_model.role_name,
+            "host": host,
+        },
     )
     log_data["message"] = "Successfully created role"
     log.info(log_data)
@@ -1242,7 +1265,11 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
                 results["errors"] += 1
 
     stats.count(
-        f"{log_data['function']}.success", tags={"role_name": clone_model.role_name}
+        f"{log_data['function']}.success",
+        tags={
+            "role_name": clone_model.role_name,
+            "host": host,
+        },
     )
     log_data["message"] = "Successfully cloned role"
     log.info(log_data)

@@ -37,7 +37,13 @@ async def duo_mfa_user(username, host, message="ConsoleMe Authorization Request"
                 Payload=bytes(json.dumps(payload), "utf-8"),
             )
 
-            stats.count("duo.mfa_request", tags={"user": username})
+            stats.count(
+                "duo.mfa_request",
+                tags={
+                    "user": username,
+                    "host": host,
+                },
+            )
         except ClientError as e:
             log_data["error"] = e.response.get("Error", {}).get(
                 "Message", "Unknown error in Duo Lambda invoke"
@@ -60,7 +66,17 @@ async def decode_duo_response_from_lambda(response, username):
     if not result:
         return False
     if result.get("duo_auth", "") == "success":
-        stats.count("duo.mfa_request.approve", tags={"user": username})
+        stats.count(
+            "duo.mfa_request.approve",
+            tags={
+                "user": username,
+            },
+        )
         return True
-    stats.count("duo.mfa_request.deny", tags={"user": username})
+    stats.count(
+        "duo.mfa_request.deny",
+        tags={
+            "user": username,
+        },
+    )
     return False

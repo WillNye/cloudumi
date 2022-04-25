@@ -30,7 +30,14 @@ async def send_slack_notification_new_request(
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     requester = extended_request.requester_email
     arn = extended_request.principal.principal_arn
-    stats.count(function, tags={"user": requester, "arn": arn})
+    stats.count(
+        function,
+        tags={
+            "user": requester,
+            "arn": arn,
+            "host": host,
+        },
+    )
 
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",

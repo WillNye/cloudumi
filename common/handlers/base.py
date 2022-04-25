@@ -569,6 +569,7 @@ class BaseHandler(TornadoRequestHandler):
                         "request_path": self.request.uri,
                         "ip": self.ip,
                         "user_agent": self.request.headers.get("User-Agent"),
+                        "host": host,
                     },
                 )
                 log_data["message"] = "No user detected. Check configuration."
@@ -714,7 +715,15 @@ class BaseHandler(TornadoRequestHandler):
             )
         if self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
-
+        stats.timer(
+            "base_handler.incoming_request",
+            {
+                "user": self.user,
+                "host": host,
+                "uri": self.request.uri,
+                "method": self.request.method,
+            },
+        )
         self.ctx = RequestContext(
             host=host,
             user=self.user,
@@ -855,6 +864,15 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.requester = {"type": "user", "email": self.user}
                 self.current_cert_age = int(time.time()) - res.get("iat")
                 self.auth_cookie_expiration = res.get("exp")
+                stats.timer(
+                    "base_handler.incoming_request",
+                    {
+                        "user": self.user,
+                        "host": host,
+                        "uri": self.request.uri,
+                        "method": self.request.method,
+                    },
+                )
                 self.ctx = RequestContext(
                     host=host,
                     user=self.user,

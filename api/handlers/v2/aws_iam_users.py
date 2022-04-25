@@ -50,7 +50,12 @@ class UserDetailHandler(BaseAPIV2Handler):
         }
         stats.count(
             "UsersDetailHandler.get",
-            tags={"user": self.user, "account_id": account_id, "user_name": user_name},
+            tags={
+                "user": self.user,
+                "account_id": account_id,
+                "user_name": user_name,
+                "host": host,
+            },
         )
         log.debug(log_data)
         force_refresh = str2bool(
@@ -125,6 +130,7 @@ class UserDetailHandler(BaseAPIV2Handler):
                     "iam_user_name": iam_user_name,
                     "authorized": can_delete_principal,
                     "ip": self.ip,
+                    "host": host,
                 },
             )
             log_data["message"] = "User is unauthorized to delete an AWS IAM User"
@@ -146,6 +152,7 @@ class UserDetailHandler(BaseAPIV2Handler):
                     "iam_user_name": iam_user_name,
                     "authorized": can_delete_principal,
                     "ip": self.ip,
+                    "host": host,
                 },
             )
             self.write_error(500, message="Error occurred deleting IAM user: " + str(e))
