@@ -11,6 +11,7 @@ import ujson as json
 from asgiref.sync import async_to_sync
 from mock import patch
 
+from common.lib.aws.utils import condense_statements
 from common.models import (
     ChangeModelArray,
     ExtendedRequestModel,
@@ -492,3 +493,196 @@ class TestAwsLib(TestCase):
         async_to_sync(remove_temp_policies)(extended_request, host)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
+
+
+class TestAwsPolicyNormalizer(TestCase):
+    @staticmethod
+    def _get_statement_by_resource(policy: list[dict], resource: list[str]) -> dict:
+        resource.sort()
+        for statement in policy:
+            if statement["Resource"] == resource:
+                return statement
+
+        return dict()
+
+    def test_reduce_actions(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:Get*",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+                "Condition": {
+                    "ForAllValues:StringEquals": {
+                        "dynamodb:LeadingKeys": [
+                            "${cognito-identity.amazonaws.com:sub}"
+                        ]
+                    }
+                },
+            }
+        ]
+
+        normalized_policy = asyncio.run(condense_statements(init_policy))
+
+        # Confirm GetItem was dropped because it's captured under Get* and all other actions remain
+        self.assertListEqual(
+            normalized_policy[0]["Action"],
+            [
+                "dynamodb:DeleteItem".lower(),
+                "dynamodb:Get*".lower(),
+                "dynamodb:PutItem".lower(),
+                "dynamodb:Query".lower(),
+                "dynamodb:UpdateItem".lower(),
+            ],
+        )
+
+    def test_group_identical_resources(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Get*",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": ["dynamodb:PutItem", "dynamodb:Query", "dynamodb:UpdateItem"],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+        ]
+
+        normalized_policy = asyncio.run(condense_statements(init_policy))
+
+        self.assertEqual(len(normalized_policy), 1)
+        self.assertListEqual(
+            normalized_policy[0]["Action"],
+            [
+                "dynamodb:DeleteItem".lower(),
+                "dynamodb:Get*".lower(),
+                "dynamodb:PutItem".lower(),
+                "dynamodb:Query".lower(),
+                "dynamodb:UpdateItem".lower(),
+            ],
+        )
+
+    def test_remove_identical_actions_from_child_statement(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:Get*".lower(),
+                    "dynamodb:Query",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*"],
+            },
+        ]
+
+        normalized_policy = asyncio.run(condense_statements(init_policy))
+        self.assertEqual(len(normalized_policy), 2)
+
+        dynamo_statement = self._get_statement_by_resource(
+            normalized_policy, ["arn:aws:dynamodb:*:*:table/MyTable"]
+        )
+        self.assertListEqual(
+            dynamo_statement["Action"],
+            [
+                "dynamodb:DeleteItem".lower(),
+                "dynamodb:PutItem".lower(),
+                "dynamodb:UpdateItem".lower(),
+            ],
+        )
+
+    def test_remove_statements_with_no_action(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:*",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*"],
+            },
+        ]
+
+        normalized_policy = asyncio.run(condense_statements(init_policy))
+        self.assertEqual(len(normalized_policy), 1)
+
+        dynamo_statement = normalized_policy[0]
+        self.assertListEqual(dynamo_statement["Action"], ["dynamodb:*"])
+        self.assertListEqual(dynamo_statement["Resource"], ["arn:aws:dynamodb:*:*"])
+
+    def test_dont_reduce_conditionals(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Condition": {
+                    "ForAllValues:StringEquals": {
+                        "dynamodb:LeadingKeys": [
+                            "${cognito-identity.amazonaws.com:sub}"
+                        ]
+                    }
+                },
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:Get*".lower(),
+                    "dynamodb:Query",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*"],
+            },
+        ]
+
+        normalized_policy = asyncio.run(condense_statements(init_policy))
+        self.assertEqual(len(normalized_policy), 2)
+
+        dynamo_statement = self._get_statement_by_resource(
+            normalized_policy, ["arn:aws:dynamodb:*:*:table/MyTable"]
+        )
+        self.assertListEqual(
+            dynamo_statement.get("Action", []),
+            [
+                "dynamodb:DeleteItem".lower(),
+                "dynamodb:GetItem".lower(),
+                "dynamodb:PutItem".lower(),
+                "dynamodb:Query".lower(),
+                "dynamodb:UpdateItem".lower(),
+            ],
+        )
