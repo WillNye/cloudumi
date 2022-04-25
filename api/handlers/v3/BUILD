@@ -20,6 +20,7 @@ py_library(
         "//api/handlers/v3/api_keys:src",
         "//api/handlers/v3/auth:src",
         "//api/handlers/v3/auth/sso:src",
+        "//api/handlers/v3/automatic_policy_request_handler:src",
         "//api/handlers/v3/config:src",
         "//api/handlers/v3/downloads:src",
         "//api/handlers/v3/identity:src",
