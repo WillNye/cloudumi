@@ -2,23 +2,23 @@ import React from 'react'
 import { SidebarMenu } from 'lib/SidebarMenu'
 import { general, services } from './content'
 
-export const Sidebar = ({ setActiveItem, activeItem, handleItemChange }) => {
+export const Sidebar = ({ onClickItem, activeItem, onItemChange }) => {
   return (
     <>
       <SidebarMenu
         headerTitle='Services'
         menuItems={services}
-        onClickItem={setActiveItem}
+        onClickItem={onClickItem}
         activeItem={activeItem}
-        onChangeActive={handleItemChange}
+        onChangeActive={onItemChange}
       />
 
       <SidebarMenu
         headerTitle='General'
         menuItems={general}
-        onClickItem={setActiveItem}
+        onClickItem={onClickItem}
         activeItem={activeItem}
-        onChangeActive={handleItemChange}
+        onChangeActive={onItemChange}
       />
     </>
   )

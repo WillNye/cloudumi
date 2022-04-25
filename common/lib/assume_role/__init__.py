@@ -1,5 +1,6 @@
 import datetime
 import functools
+import sys
 import time
 from functools import wraps
 
@@ -17,6 +18,8 @@ from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
 
 CACHE = {}
+
+log = consoleme_config.get_logger()
 
 
 class ConsoleMeCloudAux:
@@ -179,7 +182,7 @@ def boto3_cached_conn(
     future_expiration_minutes=15,
     account_number=None,
     assume_role=None,
-    session_name="consoleme",
+    session_name="noq",
     region=consoleme_config.region,
     return_credentials=False,
     external_id=None,
@@ -227,6 +230,24 @@ def boto3_cached_conn(
     :param sts_client_kwargs: Optional arguments to pass during STS client creation
     :return: boto3 client or resource connection
     """
+
+    log_data = {
+        "function": sys._getframe().f_code.co_name,
+        "service": service,
+        "host": host,
+        "service_type": service_type,
+        "account_number": account_number,
+        "assume_role": assume_role,
+        "session_name": session_name,
+        "region": region,
+        "read_only": read_only,
+        "config": config,
+        "sts_client_kwargs": sts_client_kwargs,
+        "client_kwargs": client_kwargs,
+        "session_policy": session_policy,
+        "pre_assume_roles": pre_assume_roles,
+    }
+
     if host and pre_assume_roles is None:
         pre_assume_roles = []
         hub_role = consoleme_config.get_host_specific_key("hub_account", host)
@@ -241,6 +262,8 @@ def boto3_cached_conn(
         raise TenantNoCentralRoleConfigured(
             "Tenant hasn't configured central role for Noq."
         )
+
+    log.debug({**log_data, "message": "Retrieving boto3 client in tenant account"})
     key = (
         host,
         account_number,
@@ -259,7 +282,6 @@ def boto3_cached_conn(
         client_kwargs = {}
     if config:
         client_config = client_config.merge(config)
-
     if key in CACHE:
         retval = _get_cached_creds(
             key,

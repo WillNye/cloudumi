@@ -1,8 +1,9 @@
 import sys
 import time
 
+from tornado.web import Finish
+
 from common.config import config
-from common.exceptions.exceptions import SilentException
 from common.handlers.base import BaseHandler
 
 log = config.get_logger()
@@ -30,7 +31,7 @@ class AuthHandler(BaseHandler):
                     "message": "Invalid host specified",
                 }
             )
-            raise SilentException("Invalid host specified.")
+            raise Finish("Invalid host specified.")
         try:
             if self.request.method.lower() in ["options", "post"]:
                 return

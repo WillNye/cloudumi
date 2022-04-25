@@ -21,8 +21,10 @@ class HeaderHandler(BaseHandler):
 
         if not self.user:
             return
+        host = self.ctx.host
         log_data = {
             "user": self.user,
+            "host": host,
             "function": "myheaders.get",
             "message": "Incoming request",
             "user-agent": self.request.headers.get("User-Agent"),
@@ -61,6 +63,8 @@ class ApiHeaderHandler(BaseMtlsHandler):
             "message": "Incoming request",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
+            "host": self.ctx.host,
+            "user": self.user,
         }
         log.debug(log_data)
         stats.count("apimyheaders.get")

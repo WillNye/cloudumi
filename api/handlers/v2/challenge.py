@@ -114,6 +114,7 @@ class ChallengeValidatorHandler(BaseHandler):
         red = await RedisHandler().redis(host)
         log_data = {
             "user": self.user,
+            "host": host,
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "requested_challenge_token": requested_challenge_token,
             "message": "Incoming request",

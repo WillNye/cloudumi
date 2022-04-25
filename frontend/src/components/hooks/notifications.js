@@ -48,6 +48,8 @@ export const NotificationProvider = ({ children }) => {
       result = await sendRequestCommon(null, '/api/v2/notifications', 'get')
     }
 
+    if (!result) return
+
     setUnreadNotificationCount(result.data.unreadNotificationCount)
     setNotifications(result.data.notifications)
   }

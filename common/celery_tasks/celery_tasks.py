@@ -81,9 +81,7 @@ from common.lib.cloud_credential_authorization_mapping import (
     generate_and_store_credential_authorization_mapping,
     generate_and_store_reverse_authorization_mapping,
 )
-from common.lib.event_bridge.access_denies import (
-    detect_cloudtrail_denies_and_update_cache,
-)
+from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update_cache
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
@@ -2663,16 +2661,16 @@ def cache_cloudtrail_denies(host=None):
             "message": "Not running Celery task in inactive region",
         }
     events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(app, host)
-    if events["new_events"] > 0:
+    if events.get("new_events", 0) > 0:
         # Spawn off a task to cache errors by ARN for the UI
         cache_cloudtrail_errors_by_arn.delay(host=host)
     log_data = {
         "function": function,
         "message": "Successfully cached cloudtrail denies",
         # Total CT denies
-        "num_cloudtrail_denies": events["num_events"],
+        "num_cloudtrail_denies": events.get("num_events", 0),
         # "New" CT messages that we don't already have cached in Dynamo DB. Not a "repeated" error
-        "num_new_cloudtrail_denies": events["new_events"],
+        "num_new_cloudtrail_denies": events.get("new_events", 0),
         "host": host,
     }
     log.debug(log_data)
@@ -2852,7 +2850,7 @@ def get_current_celery_tasks(host: str = None, status: str = None) -> List[Any]:
 
 
 @app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-def check_expired_policies(self, host: str) -> Dict[str, Any]:
+def handle_expired_policies(self, host: str) -> Dict[str, Any]:
     from common.lib.dynamo import UserDynamoHandler
 
     if not host:
@@ -2873,7 +2871,7 @@ def check_expired_policies(self, host: str) -> Dict[str, Any]:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def check_expired_policies_for_all_hosts() -> Dict:
+def handle_expired_policies_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
     log_data = {
@@ -2883,7 +2881,7 @@ def check_expired_policies_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        check_expired_policies.apply_async((host,))
+        handle_expired_policies.apply_async((host,))
     return log_data
 
 
@@ -3030,8 +3028,8 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "check_expired_policies_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.check_expired_policies_for_all_hosts",
+    "handle_expired_policies_for_all_hosts": {
+        "task": "common.celery_tasks.celery_tasks.handle_expired_policies_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },
