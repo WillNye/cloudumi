@@ -195,7 +195,7 @@ async def create_policy_request(
             red.set,
             request_key,
             json.dumps(policy_request.dict(), cls=SetEncoder),
-            ex=300,
+            ex=1000 * 60,
         )
 
     return extended_policy_request
@@ -218,7 +218,7 @@ async def update_policy_request(
             cache_conn.set,
             request_key,
             json.dumps(policy_request.dict(), cls=SetEncoder),
-            ex=300,
+            ex=1000 * 60,
         )
         return True
     except Exception as err:

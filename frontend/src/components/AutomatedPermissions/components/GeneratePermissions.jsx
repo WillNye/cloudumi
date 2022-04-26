@@ -1,84 +1,109 @@
 import { ReadOnlyPolicyMonacoEditor } from 'components/policy/PolicyMonacoEditor'
-import React from 'react'
-import { Table, Segment, Dimmer, Loader, Header } from 'semantic-ui-react'
+import React, { useMemo } from 'react'
+import { Table, Segment, Dimmer, Loader, Header, Icon } from 'semantic-ui-react'
 
-const GeneratePermissions = () => {
+const GeneratePermissions = ({ automatedPolicy }) => {
+  const showLoader = useMemo(() => {
+    const status = automatedPolicy.status || ''
+    if (['applied_and_success', 'applied_and_failure'].includes(status)) {
+      return false
+    }
+    return true
+  }, [automatedPolicy])
+
+  const SuccessComponent = (
+    <div>
+      <Icon size='massive' color='green' name='check circle outline' />
+      <p className='loader-text'>
+        <b> Request Successful!</b>
+        <br />
+        <b> Refreshing soon ...</b>
+      </p>
+    </div>
+  )
+
+  const ErrorComponent = (
+    <div>
+      <Icon size='massive' color='red' name='times circle outline' />
+      <p className='loader-text'>
+        <b> Unable to apply generate permission</b>
+        <br />
+        <b> Request permission ...</b>
+      </p>
+    </div>
+  )
+
   return (
     <div>
-      <Segment placeholder vertical>
-        <Dimmer active inverted>
-          <Loader size='massive'>
-            <p className='loader-text'>
-              <b> Detected Access Denied Error</b>
-              <br />
-              <b> Retrying with permission ...</b>
-            </p>
-          </Loader>
-        </Dimmer>
+      <Segment vertical>
+        {showLoader ? (
+          <Segment placeholder basic>
+            <Dimmer active inverted>
+              <Loader size='massive'>
+                <p className='loader-text'>
+                  <b> Detected Access Denied Error</b>
+                  <br />
+                  <b> Retrying with permission ...</b>
+                </p>
+              </Loader>
+            </Dimmer>
+          </Segment>
+        ) : (
+          <div className='center-icons'>
+            {automatedPolicy.status !== 'applied_and_success'
+              ? ErrorComponent
+              : SuccessComponent}
+          </div>
+        )}
       </Segment>
 
       <Segment basic>
         <Table celled striped definition>
           <Table.Body>
             <Table.Row>
-              <Table.Cell width={4}>Account</Table.Cell>
-              <Table.Cell> </Table.Cell>
+              <Table.Cell width={4}>Status</Table.Cell>
+              <Table.Cell>{automatedPolicy.status || ''}</Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Amazon Resource Name</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>Role</Table.Cell>
+              <Table.Cell>{automatedPolicy.role || ''}</Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Resource type</Table.Cell>
-              <Table.Cell></Table.Cell>
-            </Table.Row>
-
-            <Table.Row>
-              <Table.Cell>Resource name</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>Role Owner</Table.Cell>
+              <Table.Cell>{automatedPolicy.role_owner || ''}</Table.Cell>
             </Table.Row>
 
             <Table.Row>
-              <Table.Cell>Description</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>User</Table.Cell>
+              <Table.Cell>{automatedPolicy.user || ''}</Table.Cell>
             </Table.Row>
 
             <Table.Row>
               <Table.Cell>Event Time</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>{automatedPolicy.event_time || ''}</Table.Cell>
             </Table.Row>
 
             <Table.Row>
-              <Table.Cell>Created on</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>Access Denied Error</Table.Cell>
+              <Table.Cell>{automatedPolicy.error || ''}</Table.Cell>
             </Table.Row>
 
             <Table.Row>
               <Table.Cell>Last Updated</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>{automatedPolicy.last_updated || ''}</Table.Cell>
             </Table.Row>
           </Table.Body>
         </Table>
       </Segment>
 
-      <Segment textAlign='center'>
-        <Header as='h3'>Generated Policy</Header>
-
-        <ReadOnlyPolicyMonacoEditor
-          policy={{
-            Statement: [
-              {
-                Action: ['s3:getobject', 's3:listbucket'],
-                Effect: 'Allow',
-                Resource: [
-                  'arn:aws:s3:::noq-dev-test-bucket',
-                  'arn:aws:s3:::noq-dev-test-bucket/*',
-                ],
-              },
-            ],
-          }}
-        />
-      </Segment>
+      <div className='center-icons'>
+        <Header as='h3' className='padded'>
+          Generated Policy
+        </Header>
+        <div className='monaco-editor'>
+          <ReadOnlyPolicyMonacoEditor policy={automatedPolicy.policy || {}} />
+        </div>
+      </div>
     </div>
   )
 }

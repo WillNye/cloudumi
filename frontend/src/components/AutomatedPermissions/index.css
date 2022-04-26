@@ -60,10 +60,24 @@
 
 .loader-text {
   padding-top: 25px;
-  font-size: 18px;
+  font-size: 16px;
+  color: black;
 }
 
 .description-text {
   font-size: 16px;
   text-align: left;
+}
+
+.center-icons {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  flex-direction: column;
+}
+
+.monaco-editor {
+  width: 80%;
+  margin: auto;
 }
