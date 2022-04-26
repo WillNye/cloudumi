@@ -534,7 +534,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
 
         dev_mode = config.get("_global_.development")
 
-        dev_domain = data.get("domain").replace(".", "_")
+        dev_domain = data.get("domain", "").replace(".", "_")
         if dev_domain:
             if config.get_tenant_static_config_from_dynamo(dev_domain):
                 raise Exception("Domain already registered")
