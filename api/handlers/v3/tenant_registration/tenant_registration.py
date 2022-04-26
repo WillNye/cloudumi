@@ -533,15 +533,23 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             return
 
         dev_mode = config.get("_global_.development")
-        # Generate a valid dev domain
-        dev_domain = await generate_dev_domain(dev_mode)
+
+        dev_domain = data.get("domain").replace(".", "_")
+        if dev_domain:
+            if config.get_tenant_static_config_from_dynamo(dev_domain):
+                raise Exception("Domain already registered")
+            available = True
+
         available = False
-        for i in range(0, 10):
-            # check if the dev domain is available
-            if not config.get_tenant_static_config_from_dynamo(dev_domain):
-                available = True
-                break
+        if not dev_domain:
+            # Generate a valid dev domain
             dev_domain = await generate_dev_domain(dev_mode)
+            for i in range(0, 10):
+                # check if the dev domain is available
+                if not config.get_tenant_static_config_from_dynamo(dev_domain):
+                    available = True
+                    break
+                dev_domain = await generate_dev_domain(dev_mode)
 
         # User pool domain names cannot have underscores
         user_pool_domain_name = dev_domain.replace("_", "-")
