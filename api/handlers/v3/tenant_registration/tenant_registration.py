@@ -644,6 +644,7 @@ get_user_by_oidc_settings:
   client_scopes:
     - email
     - openid
+    - profile
   resource: noq_tenant
   metadata_url: https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration
   jwt_verify: true

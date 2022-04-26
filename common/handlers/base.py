@@ -599,21 +599,20 @@ class BaseHandler(TornadoRequestHandler):
                 refreshed_user_roles_from_cache = True
 
         try:
-            if not self.groups:
-                try:
-                    self.groups = await auth.get_groups(
-                        self.user, self, headers=self.request.headers
-                    )
-                except Exception as e:
-                    log.error(
-                        {
-                            **log_data,
-                            "error": str(e),
-                            "message": "Unable to get groups",
-                        },
-                        exc_info=True,
-                    )
-                    sentry_sdk.capture_exception()
+            try:
+                self.groups = await auth.get_groups(
+                    self.groups, self.user, self, headers=self.request.headers
+                )
+            except Exception as e:
+                log.error(
+                    {
+                        **log_data,
+                        "error": str(e),
+                        "message": "Unable to get groups",
+                    },
+                    exc_info=True,
+                )
+                sentry_sdk.capture_exception()
             if not self.groups:
                 raise NoGroupsException(
                     f"Groups not detected. Headers: {self.request.headers}"
@@ -635,21 +634,21 @@ class BaseHandler(TornadoRequestHandler):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
 
-        if not self.eligible_roles:
-            self.eligible_roles = await group_mapping.get_eligible_roles(
-                self.user,
-                self.groups,
-                self.user_role_name,
-                self.get_host_name(),
-                console_only=console_only,
-            )
+        self.eligible_roles = await group_mapping.get_eligible_roles(
+            self.eligible_roles,
+            self.user,
+            self.groups,
+            self.user_role_name,
+            self.get_host_name(),
+            console_only=console_only,
+        )
 
-            if not self.eligible_roles:
-                log_data[
-                    "message"
-                ] = "No eligible roles detected for user. But letting them continue"
-                log.warning(log_data)
-            log_data["eligible_roles"] = len(self.eligible_roles)
+        if not self.eligible_roles:
+            log_data[
+                "message"
+            ] = "No eligible roles detected for user. But letting them continue"
+            log.warning(log_data)
+        log_data["eligible_roles"] = len(self.eligible_roles)
 
         if not self.eligible_accounts:
             try:

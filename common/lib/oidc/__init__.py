@@ -1,6 +1,8 @@
 import base64
+import re
 import sys
 from datetime import datetime, timedelta
+from typing import Any
 
 import jwt
 import pytz
@@ -93,11 +95,31 @@ async def populate_oidc_config(host):
     return oidc_config
 
 
+async def get_roles_from_token(token: dict[str, Any]):
+    roles = set()
+    custom_role_attributes = config.get_host_specific_key(
+        "get_user_by_oidc_settings.custom_role_attributes", []
+    )
+    for role_attribute in custom_role_attributes:
+        attribute_name = role_attribute["name"]
+        delimiter = role_attribute.get("delimiter", ",")
+        regex = role_attribute.get("regex", "(.*)")
+        role_match = role_attribute.get("role_match", "\\1")
+
+        if not token.get(attribute_name):
+            continue
+        raw_role_values = token[role_attribute["name"]].split(delimiter)
+        regexp = re.compile(regex, re.IGNORECASE)
+        result = re.search()
+        # TODO: Finish this
+
+
 async def authenticate_user_by_oidc(request):
     full_host = request.request.headers.get("X-Forwarded-Host")
     if not full_host:
         full_host = request.get_host()
     host = request.get_host_name()
+    role_allowances = []
     email = None
     groups = []
     decoded_access_token = {}
