@@ -7,8 +7,9 @@ extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
-  google_analytics:
-    tracking_id: G-P5K1SQF3P6
+  metrics:
+    cloudwatch:
+      enabled: false
   web:
     path: "/frontend/build"
   landing_page_domains:

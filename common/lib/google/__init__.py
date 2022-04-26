@@ -50,7 +50,12 @@ async def add_user_to_group_task(
     async with semaphore:
         stats.count(
             "add_user_to_group_task.attempt",
-            tags={"member": member, "group": group, "requesting_user": requesting_user},
+            tags={
+                "member": member,
+                "group": group,
+                "requesting_user": requesting_user,
+                "host": host,
+            },
         )
         member = member.strip()
         result = {
@@ -132,7 +137,12 @@ async def remove_user_from_group_task(
     async with semaphore:
         stats.count(
             "remove_user_from_group_task.attempt",
-            tags={"member": member, "group": group, "requesting_user": requesting_user},
+            tags={
+                "member": member,
+                "group": group,
+                "requesting_user": requesting_user,
+                "host": host,
+            },
         )
         member = member.strip()
         result = {
@@ -544,6 +554,7 @@ async def add_user_to_group(
                 "user_email": user_email,
                 "google_group_email": google_group_email,
                 "updated_by": updated_by,
+                "host": host,
             },
         )
 
@@ -636,6 +647,7 @@ async def remove_user_from_group(
                     "user_email": user_email,
                     "google_group_email": google_group_email,
                     "updated_by": updated_by,
+                    "host": host,
                 },
             )
             await delete_group_members_call(service, google_group_email, user_email)
