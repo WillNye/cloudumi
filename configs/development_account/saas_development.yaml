@@ -7,6 +7,9 @@ extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
+  metrics:
+    cloudwatch:
+      enabled: false
   web:
     path: "/frontend/build"
   landing_page_domains:

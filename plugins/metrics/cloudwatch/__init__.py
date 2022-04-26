@@ -39,6 +39,8 @@ class CloudWatchMetric(Metric):
         )
 
     def send_cloudwatch_metric(self, metric_name, dimensions, unit, value):
+        if not config.get("_global_.metrics.cloudwatch.enabled", True):
+            return
         kwargs = {
             "Namespace": self.namespace,
             "MetricData": [
