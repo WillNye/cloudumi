@@ -188,7 +188,7 @@ async def create_policy_request(
             user=user,
             role=policy_request.role,
             policy=policy_dict["policy"],
-            event_time=datetime.utcnow(),
+            event_time=datetime.utcnow().replace(tzinfo=pytz.utc),
         )
         policy_request = format_extended_policy_request(extended_policy_request)
         await aio_wrapper(
@@ -211,7 +211,7 @@ async def update_policy_request(
         host, policy_request.account.account_id, policy_request.user, policy_request.id
     )
 
-    policy_request.last_updated = datetime.utcnow()
+    policy_request.last_updated = datetime.utcnow().replace(tzinfo=pytz.utc)
     try:
         policy_request = format_extended_policy_request(policy_request)
         await aio_wrapper(
