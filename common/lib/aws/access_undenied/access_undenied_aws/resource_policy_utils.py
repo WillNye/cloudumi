@@ -127,7 +127,7 @@ def _get_s3_resource_policy(
         bucket_policy_document = s3_client.get_bucket_policy(Bucket=bucket_name)[
             "Policy"
         ]
-    except errors.NoSuchBucketPolicy:
+    except (errors.NoSuchBucketPolicy, ClientError):
         bucket_policy_document = EMPTY_RESOURCE_POLICY.format(resource=resource.arn)
     return common.Policy(
         attachment_target_arn=resource.arn,

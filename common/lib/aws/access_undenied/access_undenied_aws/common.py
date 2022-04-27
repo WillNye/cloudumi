@@ -75,6 +75,8 @@ class Config(object):
         self.suppress_output = False
         self.account_id = None
         self.iam_client = None
+        self.host = None
+        self.region = None
 
 
 class Policy(object):

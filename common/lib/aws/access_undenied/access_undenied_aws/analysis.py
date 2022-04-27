@@ -120,7 +120,7 @@ def analyze(
 
         logger.debug("Generating context values for condition assessment...")
         context = simulate_custom_policy_context_generator.SimulateCustomPolicyContextGenerator(
-            session=config.session,
+            config=config,
             event_permission_data_=event_permission_data_,
             cloudtrail_event_=event_,
         ).generate_context(
