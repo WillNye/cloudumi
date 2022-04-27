@@ -67,6 +67,8 @@ class ConsoleMeCloudAux:
 
 
 def _get_cached_creds(
+    host,
+    user,
     key,
     service,
     service_type,
@@ -85,6 +87,15 @@ def _get_cached_creds(
             conn = _client(service, region, role, client_config, client_kwargs)
         else:
             conn = _resource(service, region, role, client_config, client_kwargs)
+
+        role_arn: str = role.get("AssumedRoleUser", {}).get("Arn", "")
+        try:
+            account_id = role_arn.split(":")[4]
+        except IndexError:
+            account_id = ""
+        conn = BotoClientWrapper(
+            host, user, conn, region, service, account_id, role_arn
+        )
 
         if return_credentials:
             return conn, role
@@ -182,6 +193,7 @@ class BotoCallableWrapper:
                     "service_name": self._service,
                     "region": self._region,
                     "request_data": request_data,
+                    "message": "Tenant AWS request",
                 }
             )
 
@@ -384,6 +396,8 @@ def boto3_cached_conn(
         client_config = client_config.merge(config)
     if key in CACHE:
         retval = _get_cached_creds(
+            host,
+            user,
             key,
             service,
             service_type,
