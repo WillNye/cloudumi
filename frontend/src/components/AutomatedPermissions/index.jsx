@@ -4,14 +4,12 @@ import { useAuth } from '../../auth/AuthProviderDefault'
 import DiscoverPermissions from './components/DiscoverPermissions'
 import GeneratePermissions from './components/GeneratePermissions'
 import Tabs from './components/Tabs'
-import { TABS_ENUM } from './constants'
+import {
+  TABS_ENUM,
+  APPLIED_POLICY_STATUSES,
+  TIME_PER_INTERVAL,
+} from './constants'
 import './index.css'
-
-const expiredStatuses = [
-  'applied_awaiting_execution',
-  'applied_and_success',
-  'applied_and_failure',
-]
 
 const AutomatedPermissions = () => {
   const { sendRequestCommon } = useAuth()
@@ -34,7 +32,7 @@ const AutomatedPermissions = () => {
             const currentTime = DateTime.utc().minus({ seconds: 30 })
             const hasExpired = lastUpdated < currentTime
 
-            if (hasExpired && expiredStatuses.includes(status)) {
+            if (hasExpired && APPLIED_POLICY_STATUSES.includes(status)) {
               return false
             }
             return true
@@ -52,12 +50,12 @@ const AutomatedPermissions = () => {
         setSelectedTab(TABS_ENUM.STEP_ONE)
         setAutomatedpolicy({})
       }
-    }, 5000)
+    }, TIME_PER_INTERVAL)
 
     return () => {
       clearInterval(interval)
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderComponent = useMemo(() => {
     if (selectedTab === TABS_ENUM.STEP_ONE) {

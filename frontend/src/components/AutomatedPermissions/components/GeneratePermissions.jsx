@@ -1,5 +1,7 @@
-import { ReadOnlyPolicyMonacoEditor } from 'components/policy/PolicyMonacoEditor'
 import React, { useMemo } from 'react'
+import camelCase from 'lodash/camelCase'
+import startCase from 'lodash/startCase'
+import { ReadOnlyPolicyMonacoEditor } from 'components/policy/PolicyMonacoEditor'
 import { Table, Segment, Dimmer, Loader, Header, Icon } from 'semantic-ui-react'
 
 const GeneratePermissions = ({ automatedPolicy }) => {
@@ -62,7 +64,9 @@ const GeneratePermissions = ({ automatedPolicy }) => {
           <Table.Body>
             <Table.Row>
               <Table.Cell width={4}>Status</Table.Cell>
-              <Table.Cell>{automatedPolicy.status || ''}</Table.Cell>
+              <Table.Cell>
+                {startCase(camelCase(automatedPolicy.status || ''))}
+              </Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell>Role</Table.Cell>
@@ -80,7 +84,11 @@ const GeneratePermissions = ({ automatedPolicy }) => {
 
             <Table.Row>
               <Table.Cell>Event Time</Table.Cell>
-              <Table.Cell>{automatedPolicy.event_time || ''}</Table.Cell>
+              <Table.Cell>
+                {automatedPolicy.event_time
+                  ? new Date(automatedPolicy.event_time).toUTCString()
+                  : ''}
+              </Table.Cell>
             </Table.Row>
 
             <Table.Row>
@@ -90,7 +98,11 @@ const GeneratePermissions = ({ automatedPolicy }) => {
 
             <Table.Row>
               <Table.Cell>Last Updated</Table.Cell>
-              <Table.Cell>{automatedPolicy.last_updated || ''}</Table.Cell>
+              <Table.Cell>
+                {automatedPolicy.last_updated
+                  ? new Date(automatedPolicy.last_updated).toUTCString()
+                  : ''}
+              </Table.Cell>
             </Table.Row>
           </Table.Body>
         </Table>
