@@ -41,6 +41,7 @@ from api.handlers.v2.index import (
     EligibleRolePageConfigHandler,
     EligibleRoleRefreshHandler,
     FrontendHandler,
+    UnauthenticatedFileHandler,
 )
 from api.handlers.v2.logout import LogOutHandler
 from api.handlers.v2.managed_policies import (
@@ -352,6 +353,20 @@ def make_app(jwt_validator=None):
                 ],
             )
         )
+    router.rules.append(
+        Rule(
+            PathMatches(r"/(manifest.json)"),
+            UnauthenticatedFileHandler,
+            dict(path=frontend_path, default_filename="manifest.json"),
+        )
+    )
+    router.rules.append(
+        Rule(
+            PathMatches(r"/(favicon.ico)"),
+            UnauthenticatedFileHandler,
+            dict(path=frontend_path, default_filename="favicon.ico"),
+        )
+    )
     router.rules.append(
         Rule(
             PathMatches(r"/(.*)"),
