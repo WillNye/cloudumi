@@ -2,7 +2,11 @@ import tornado.web
 import ujson as json
 
 from common.config import config
-from common.handlers.base import AuthenticatedStaticFileHandler, BaseHandler
+from common.handlers.base import (
+    AuthenticatedStaticFileHandler,
+    BaseHandler,
+    StaticFileHandler,
+)
 from common.lib.aws.utils import get_account_id_from_arn
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
@@ -207,3 +211,14 @@ class FrontendHandler(AuthenticatedStaticFileHandler):
         if path == "/":
             path = "/index.html"
         await super().get(path)
+
+
+class UnauthenticatedFileHandler(StaticFileHandler):
+    def validate_absolute_path(self, root, absolute_path):
+        try:
+            return super().validate_absolute_path(root, absolute_path)
+        except tornado.web.HTTPError as exc:
+            if exc.status_code == 404 and self.default_filename is not None:
+                absolute_path = self.get_absolute_path(self.root, self.default_filename)
+                return super().validate_absolute_path(root, absolute_path)
+            raise exc

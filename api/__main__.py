@@ -65,7 +65,7 @@ def init():
     )()
     if __name__ in ["__main__", "api.__main__"]:
         port = config.get("_global_.tornado.port", 8092)
-        stats.count("start")
+        stats.count("tornado.start")
 
         server = tornado.httpserver.HTTPServer(app)
 

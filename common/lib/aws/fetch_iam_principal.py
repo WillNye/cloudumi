@@ -124,6 +124,7 @@ def _get_iam_role_sync(
     client = boto3_cached_conn(
         "iam",
         host,
+        None,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -153,6 +154,7 @@ async def _get_iam_role_async(
         boto3_cached_conn,
         "iam",
         host,
+        None,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -273,7 +275,11 @@ async def fetch_iam_role(
                 log.debug(log_data)
                 stats.count(
                     "aws.fetch_iam_role.in_redis",
-                    tags={"account_id": account_id, "role_arn": role_arn},
+                    tags={
+                        "account_id": account_id,
+                        "role_arn": role_arn,
+                        "host": host,
+                    },
                 )
                 result["policy"] = json.loads(result["policy"])
                 return result
@@ -287,13 +293,21 @@ async def fetch_iam_role(
             log_data["message"] = "Force refresh is enabled. Going out to AWS."
             stats.count(
                 "aws.fetch_iam_role.force_refresh",
-                tags={"account_id": account_id, "role_arn": role_arn},
+                tags={
+                    "account_id": account_id,
+                    "role_arn": role_arn,
+                    "host": host,
+                },
             )
         else:
             log_data["message"] = "Role is missing in DDB. Going out to AWS."
             stats.count(
                 "aws.fetch_iam_role.missing_dynamo",
-                tags={"account_id": account_id, "role_arn": role_arn},
+                tags={
+                    "account_id": account_id,
+                    "role_arn": role_arn,
+                    "host": host,
+                },
             )
         log.debug(log_data)
         try:
@@ -321,7 +335,11 @@ async def fetch_iam_role(
                 log.error(log_data)
                 stats.count(
                     "aws.fetch_iam_role.missing_in_aws",
-                    tags={"account_id": account_id, "role_arn": role_arn},
+                    tags={
+                        "account_id": account_id,
+                        "role_arn": role_arn,
+                        "host": host,
+                    },
                 )
                 return None
 
@@ -330,7 +348,11 @@ async def fetch_iam_role(
                 log.error(log_data)
                 stats.count(
                     "aws.fetch_iam_role.aws_connection_problem",
-                    tags={"account_id": account_id, "role_arn": role_arn},
+                    tags={
+                        "account_id": account_id,
+                        "role_arn": role_arn,
+                        "host": host,
+                    },
                 )
                 raise
 
@@ -360,14 +382,22 @@ async def fetch_iam_role(
         log_data["message"] = "Role fetched from AWS, and synced with DDB."
         stats.count(
             "aws.fetch_iam_role.fetched_from_aws",
-            tags={"account_id": account_id, "role_arn": role_arn},
+            tags={
+                "account_id": account_id,
+                "role_arn": role_arn,
+                "host": host,
+            },
         )
 
     else:
         log_data["message"] = "Role fetched from DDB."
         stats.count(
             "aws.fetch_iam_role.in_dynamo",
-            tags={"account_id": account_id, "role_arn": role_arn},
+            tags={
+                "account_id": account_id,
+                "role_arn": role_arn,
+                "host": host,
+            },
         )
 
         # Fix the TTL:
@@ -377,7 +407,11 @@ async def fetch_iam_role(
     # Update the redis cache:
     stats.count(
         "aws.fetch_iam_role.in_dynamo",
-        tags={"account_id": account_id, "role_arn": role_arn},
+        tags={
+            "account_id": account_id,
+            "role_arn": role_arn,
+            "host": host,
+        },
     )
     await aio_wrapper(_add_role_to_redis, result, host)
 
@@ -392,6 +426,7 @@ def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, 
     client = boto3_cached_conn(
         "iam",
         host,
+        user_name,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -418,6 +453,7 @@ async def _get_iam_user_async(
         boto3_cached_conn,
         "iam",
         host,
+        user_name,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -511,7 +547,11 @@ async def fetch_iam_user(
             log.error(log_data)
             stats.count(
                 "aws.fetch_iam_user.missing_in_aws",
-                tags={"account_id": account_id, "user_arn": user_arn},
+                tags={
+                    "account_id": account_id,
+                    "user_arn": user_arn,
+                    "host": host,
+                },
             )
             return None
 
@@ -520,7 +560,11 @@ async def fetch_iam_user(
             log.error(log_data)
             stats.count(
                 "aws.fetch_iam_user.aws_connection_problem",
-                tags={"account_id": account_id, "user_arn": user_arn},
+                tags={
+                    "account_id": account_id,
+                    "user_arn": user_arn,
+                    "host": host,
+                },
             )
             raise
     await _cloudaux_to_aws(user)

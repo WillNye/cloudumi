@@ -51,13 +51,21 @@ def escape_json(code):
 
 
 async def parse_policy_change_request(
-    user: str, arn: str, role: str, data_list: list
+    user: str, arn: str, role: str, data_list: list, host: str
 ) -> dict:
     result: dict = {"status": "success"}
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
 
-    stats.count(function, tags={"user": user, "arn": arn, "role": role})
+    stats.count(
+        function,
+        tags={
+            "user": user,
+            "arn": arn,
+            "role": role,
+            "host": host,
+        },
+    )
 
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -267,7 +275,7 @@ async def can_update_cancel_requests_v2(requester_username, user, groups, host):
     return can_update
 
 
-async def update_role_policy(events, host: str):
+async def update_role_policy(events, host: str, user: str):
     result = {"status": "success"}
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -276,7 +284,7 @@ async def update_role_policy(events, host: str):
 
     log_data = {"function": function, "message": "Updating role policy"}
 
-    response = await update_role(events, host)
+    response = await update_role(events, host, user)
     log_data["message"] = "Received Response"
     log_data["response"] = response
     log.debug(log_data)

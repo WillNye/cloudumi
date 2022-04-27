@@ -8,8 +8,6 @@ import sentry_sdk
 from common.config import config
 from plugins.metrics.base_metric import Metric
 
-# TODO: Do we want metrics to be global to the SaaS or should it be possible to put tenant specific metrics in different
-#  places?
 cloudwatch = boto3.client(
     "cloudwatch",
     region_name=config.region,
@@ -35,14 +33,14 @@ def log_metric_error(future):
 
 class CloudWatchMetric(Metric):
     def __init__(self):
-        self.namespace = config.get(
-            "_global_.metrics.cloudwatch.namespace", "ConsoleMe"
-        )
+        self.namespace = config.get("_global_.metrics.cloudwatch.namespace", "noq")
         self.executor = concurrent.futures.ThreadPoolExecutor(
             config.get("_global_.metrics.cloudwatch.max_threads", 10)
         )
 
     def send_cloudwatch_metric(self, metric_name, dimensions, unit, value):
+        if not config.get("_global_.metrics.cloudwatch.enabled", True):
+            return
         kwargs = {
             "Namespace": self.namespace,
             "MetricData": [

@@ -3,6 +3,9 @@ extends:
 _global_:
   landing_page_domains:
     - {{ domain_name }}
+  metrics:
+    cloudwatch:
+      namespace: {{ cluster_id_safed }}
   auth:
     challenge_url:
       request_ip_must_match_challenge_creation_ip: false

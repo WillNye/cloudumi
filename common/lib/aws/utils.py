@@ -71,11 +71,11 @@ PERMISSIONS_SEPARATOR = "||"
 
 
 async def get_resource_policy(
-    account: str, resource_type: str, name: str, region: str, host: str
+    account: str, resource_type: str, name: str, region: str, host: str, user: str
 ):
     try:
         details = await fetch_resource_details(
-            account, resource_type, name, region, host
+            account, resource_type, name, region, host, user
         )
     except ClientError:
         # We don't have access to this resource, so we can't get the policy.
@@ -108,7 +108,12 @@ async def get_resource_policies(
             resource_type: str = resource_info.get("type", "")
             resource_region: str = resource_info.get("region", "")
             old_policy = await get_resource_policy(
-                resource_account, resource_type, resource_name, resource_region, host
+                resource_account,
+                resource_type,
+                resource_name,
+                resource_region,
+                host,
+                None,
             )
             arns = resource_info.get("arns", [])
             actions = resource_info.get("actions", [])
@@ -164,22 +169,25 @@ async def fetch_resource_details(
     resource_name: str,
     region: str,
     host,
+    user,
     path: str = None,
 ) -> dict:
     if resource_type == "s3":
-        return await fetch_s3_bucket(account_id, resource_name, host)
+        return await fetch_s3_bucket(account_id, resource_name, host, user)
     elif resource_type == "sqs":
-        return await fetch_sqs_queue(account_id, region, resource_name, host)
+        return await fetch_sqs_queue(account_id, region, resource_name, host, user)
     elif resource_type == "sns":
-        return await fetch_sns_topic(account_id, region, resource_name, host)
+        return await fetch_sns_topic(account_id, region, resource_name, host, user)
     elif resource_type == "managed_policy":
-        return await fetch_managed_policy_details(account_id, resource_name, path, host)
+        return await fetch_managed_policy_details(
+            account_id, resource_name, path, host, user
+        )
     else:
         return {}
 
 
 async def fetch_managed_policy_details(
-    account_id: str, resource_name: str, host, path: str = None
+    account_id: str, resource_name: str, host: str, user: str, path: str = None
 ) -> Optional[Dict]:
     from common.lib.policies import get_aws_config_history_url_for_resource
 
@@ -201,6 +209,7 @@ async def fetch_managed_policy_details(
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         host=host,
+        user=user,
     )
     policy_details = await aio_wrapper(
         get_policy,
@@ -214,6 +223,7 @@ async def fetch_managed_policy_details(
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         host=host,
+        user=user,
     )
 
     try:
@@ -232,11 +242,13 @@ async def fetch_managed_policy_details(
     return result
 
 
-async def fetch_assume_role_policy(role_arn: str, host: str) -> Optional[Dict]:
+async def fetch_assume_role_policy(
+    role_arn: str, host: str, user: str
+) -> Optional[Dict]:
     account_id = role_arn.split(":")[4]
     role_name = role_arn.split("/")[-1]
     try:
-        role = await fetch_role_details(account_id, role_name, host)
+        role = await fetch_role_details(account_id, role_name, host, user)
     except ClientError:
         # Role is most likely on an account that we do not have access to
         sentry_sdk.capture_exception()
@@ -245,7 +257,7 @@ async def fetch_assume_role_policy(role_arn: str, host: str) -> Optional[Dict]:
 
 
 async def fetch_sns_topic(
-    account_id: str, region: str, resource_name: str, host: str
+    account_id: str, region: str, resource_name: str, host: str, user: str
 ) -> dict:
     from common.lib.policies import get_aws_config_history_url_for_resource
 
@@ -260,6 +272,7 @@ async def fetch_sns_topic(
         boto3_cached_conn,
         "sns",
         host,
+        user,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -290,6 +303,7 @@ async def fetch_sns_topic(
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         retry_max_attempts=2,
         host=host,
+        user=user,
     )
 
     tags: Dict = await aio_wrapper(client.list_tags_for_resource, ResourceArn=arn)
@@ -309,7 +323,7 @@ async def fetch_sns_topic(
 
 
 async def fetch_sqs_queue(
-    account_id: str, region: str, resource_name: str, host: str
+    account_id: str, region: str, resource_name: str, host: str, user: str
 ) -> dict:
     from common.lib.policies import get_aws_config_history_url_for_resource
 
@@ -335,6 +349,7 @@ async def fetch_sqs_queue(
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         retry_max_attempts=2,
         host=host,
+        user=user,
     )
 
     result: Dict = await aio_wrapper(
@@ -354,6 +369,7 @@ async def fetch_sqs_queue(
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         retry_max_attempts=2,
         host=host,
+        user=user,
     )
 
     tags: Dict = await aio_wrapper(
@@ -372,6 +388,7 @@ async def fetch_sqs_queue(
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         retry_max_attempts=2,
         host=host,
+        user=user,
     )
     result["TagSet"]: list = []
     result["QueueUrl"]: str = queue_url
@@ -436,7 +453,9 @@ async def get_bucket_location_with_fallback(
     return bucket_location
 
 
-async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
+async def fetch_s3_bucket(
+    account_id: str, bucket_name: str, host: str, user: str
+) -> dict:
     """Fetch S3 Bucket and applicable policies
 
     :param account_id:
@@ -472,6 +491,7 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
             host=host,
+            user=user,
         )
         created_time_stamp = bucket_resource.creation_date
         if created_time_stamp:
@@ -498,6 +518,7 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
             host=host,
+            user=user,
         )
     except ClientError as e:
         if "NoSuchBucketPolicy" in str(e):
@@ -521,6 +542,7 @@ async def fetch_s3_bucket(account_id: str, bucket_name: str, host: str) -> dict:
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
             host=host,
+            user=user,
         )
     except ClientError as e:
         if "NoSuchTagSet" in str(e):
@@ -562,7 +584,12 @@ async def raise_if_background_check_required_and_no_background_check(role, user,
                 log.error(log_data)
                 stats.count(
                     f"{function}.access_denied_background_check_not_passed",
-                    tags={"function": function, "user": user, "role": role},
+                    tags={
+                        "function": function,
+                        "user": user,
+                        "role": role,
+                        "host": host,
+                    },
                 )
                 raise BackgroundCheckNotPassedException(
                     config.get_host_specific_key(
@@ -575,13 +602,15 @@ async def raise_if_background_check_required_and_no_background_check(role, user,
 
 
 def apply_managed_policy_to_role(
-    role: Dict, policy_name: str, session_name: str, host: str
+    role: Dict, policy_name: str, session_name: str, host: str, user: str
 ) -> bool:
     """
     Apply a managed policy to a role.
     :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
     :param policy_name: Name of managed policy to add to role
     :param session_name: Name of session to assume role with. This is an identifier that will be logged in CloudTrail
+    :param host: The NOQ Tenant
+    :param user: The user who is applying the manage policy to the role
     :return:
     """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -596,6 +625,7 @@ def apply_managed_policy_to_role(
     client = boto3_cached_conn(
         "iam",
         host,
+        user,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -611,7 +641,11 @@ def apply_managed_policy_to_role(
     log.debug(log_data)
     stats.count(
         f"{function}.attach_role_policy",
-        tags={"role": role.get("Arn"), "policy": policy_arn},
+        tags={
+            "role": role.get("Arn"),
+            "policy": policy_arn,
+            "host": host,
+        },
     )
     return True
 
@@ -634,7 +668,7 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
         "user": username,
     }
     log.info(log_data)
-    iam_user = await fetch_iam_user_details(account_id, iam_user_name, host)
+    iam_user = await fetch_iam_user_details(account_id, iam_user_name, host, username)
 
     # Detach managed policies
     for policy in await aio_wrapper(iam_user.attached_policies.all):
@@ -668,7 +702,11 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
     log.info({**log_data, "message": "Performing user deletion"})
     await aio_wrapper(iam_user.delete)
     stats.count(
-        f"{log_data['function']}.success", tags={"iam_user_name": iam_user_name}
+        f"{log_data['function']}.success",
+        tags={
+            "iam_user_name": iam_user_name,
+            "host": host,
+        },
     )
     return True
 
@@ -683,7 +721,7 @@ async def delete_iam_role(account_id, role_name, username, host) -> bool:
         "host": host,
     }
     log.info(log_data)
-    role = await fetch_role_details(account_id, role_name, host)
+    role = await fetch_role_details(account_id, role_name, host, username)
 
     for instance_profile in await aio_wrapper(role.instance_profiles.all):
         await aio_wrapper(instance_profile.load)
@@ -723,10 +761,16 @@ async def delete_iam_role(account_id, role_name, username, host) -> bool:
 
     log.info({**log_data, "message": "Performing role deletion"})
     await aio_wrapper(role.delete)
-    stats.count(f"{log_data['function']}.success", tags={"role_name": role_name})
+    stats.count(
+        f"{log_data['function']}.success",
+        tags={
+            "role_name": role_name,
+            "host": host,
+        },
+    )
 
 
-async def fetch_role_details(account_id, role_name, host):
+async def fetch_role_details(account_id, role_name, host, user):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "message": "Attempting to fetch role details",
@@ -738,6 +782,7 @@ async def fetch_role_details(account_id, role_name, host):
         boto3_cached_conn,
         "iam",
         host,
+        user,
         service_type="resource",
         account_number=account_id,
         region=config.region,
@@ -760,7 +805,7 @@ async def fetch_role_details(account_id, role_name, host):
     return iam_role
 
 
-async def fetch_iam_user_details(account_id, iam_user_name, host):
+async def fetch_iam_user_details(account_id, iam_user_name, host, user):
     """
     Fetches details about an IAM user from AWS. If spoke_accounts configuration
     is set, the hub (central) account ConsoleMeInstanceProfile role will assume the
@@ -782,6 +827,7 @@ async def fetch_iam_user_details(account_id, iam_user_name, host):
         boto3_cached_conn,
         "iam",
         host,
+        user,
         service_type="resource",
         account_number=account_id,
         region=config.region,
@@ -859,6 +905,7 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
         boto3_cached_conn,
         "iam",
         host,
+        username,
         service_type="client",
         account_number=create_model.account_id,
         region=config.region,
@@ -954,7 +1001,11 @@ async def create_iam_role(create_model: RoleCreationRequestModel, username, host
             results["errors"] += 1
 
     stats.count(
-        f"{log_data['function']}.success", tags={"role_name": create_model.role_name}
+        f"{log_data['function']}.success",
+        tags={
+            "role_name": create_model.role_name,
+            "host": host,
+        },
     )
     log_data["message"] = "Successfully created role"
     log.info(log_data)
@@ -1010,7 +1061,9 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         "host": host,
     }
     log.info(log_data)
-    role = await fetch_role_details(clone_model.account_id, clone_model.role_name, host)
+    role = await fetch_role_details(
+        clone_model.account_id, clone_model.role_name, host, username
+    )
 
     default_trust_policy = config.get_host_specific_key(
         "user_role_creator.default_trust_policy", host
@@ -1055,6 +1108,7 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         boto3_cached_conn,
         "iam",
         host,
+        username,
         service_type="client",
         account_number=clone_model.dest_account_id,
         region=config.region,
@@ -1179,7 +1233,7 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     # other optional attributes to copy over after role has been successfully created
 
     cloned_role = await fetch_role_details(
-        clone_model.dest_account_id, clone_model.dest_role_name, host
+        clone_model.dest_account_id, clone_model.dest_role_name, host, username
     )
 
     # Copy inline policies
@@ -1242,7 +1296,11 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
                 results["errors"] += 1
 
     stats.count(
-        f"{log_data['function']}.success", tags={"role_name": clone_model.role_name}
+        f"{log_data['function']}.success",
+        tags={
+            "role_name": clone_model.role_name,
+            "host": host,
+        },
     )
     log_data["message"] = "Successfully cloned role"
     log.info(log_data)
@@ -1349,6 +1407,7 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
         boto3_cached_conn,
         "ec2",
         host,
+        None,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -1897,7 +1956,7 @@ def allowed_to_sync_role(
 
 
 async def remove_temp_policies(
-    extended_request: ExtendedRequestModel, host: str
+    extended_request: ExtendedRequestModel, host: str, user: str
 ) -> None:
     """
     If this feature is enabled, it will look at created policies and remove expired policies if they have been
@@ -1964,6 +2023,7 @@ async def remove_temp_policies(
             boto3_cached_conn,
             resource_type,
             host,
+            user,
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
@@ -2129,6 +2189,7 @@ async def remove_temp_policies(
                         resource_name,
                         resource_region,
                         host,
+                        user,
                     )
 
                 elif change.change_type == "sts_resource_policy":
@@ -2362,6 +2423,7 @@ async def simulate_iam_principal_action(
     resource_arn,
     source_ip,
     host,
+    user,
     expiration_seconds: Optional[int] = None,
 ):
     """
@@ -2408,6 +2470,7 @@ async def simulate_iam_principal_action(
         boto3_cached_conn,
         "iam",
         host,
+        user,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)

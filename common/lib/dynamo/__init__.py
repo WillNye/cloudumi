@@ -147,6 +147,7 @@ class BaseDynamoHandler:
                 resource = boto3_cached_conn(
                     "dynamodb",
                     host,
+                    None,
                     service_type="resource",
                     account_number=config.get_host_specific_key(
                         "aws.account_number", host
@@ -988,7 +989,14 @@ class UserDynamoHandler(BaseDynamoHandler):
       """
         request_time = request_time or int(time.time())
 
-        stats.count("new_group_request", tags={"user": user_email, "group": group})
+        stats.count(
+            "new_group_request",
+            tags={
+                "user": user_email,
+                "group": group,
+                "host": host,
+            },
+        )
 
         if self.affected_user.get("username") != user_email:
             self.affected_user = self.get_or_create_user(user_email, host)

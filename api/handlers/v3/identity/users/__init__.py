@@ -90,7 +90,10 @@ class IdentityUsersTableHandler(BaseHandler):
         # TODO: Add server-side sorting
         # sort = arguments.get("sort")
         limit = arguments.get("limit", 1000)
-        tags = {"user": self.user}
+        tags = {
+            "user": self.user,
+            "host": host,
+        }
         stats.count("IdentityUsersTableHandler.post", tags=tags)
         log_data = {
             "function": "IdentityUsersTableHandler.post",

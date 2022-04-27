@@ -76,7 +76,12 @@ async def store_json_results_in_redis_and_s3(
 
     stats.count(
         f"{function}.called",
-        tags={"redis_key": redis_key, "s3_bucket": s3_bucket, "s3_key": s3_key},
+        tags={
+            "redis_key": redis_key,
+            "s3_bucket": s3_bucket,
+            "s3_key": s3_key,
+            "host": host,
+        },
     )
 
     # Force prefixing by host
@@ -179,7 +184,12 @@ async def retrieve_json_data_from_redis_or_s3(
     )()
     stats.count(
         f"{function}.called",
-        tags={"redis_key": redis_key, "s3_bucket": s3_bucket, "s3_key": s3_key},
+        tags={
+            "redis_key": redis_key,
+            "s3_bucket": s3_bucket,
+            "s3_key": s3_key,
+            "host": host,
+        },
     )
     s3_bucket_region: str = config.get("_global_.s3_cache_bucket_region", config.region)
 
