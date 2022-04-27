@@ -90,7 +90,13 @@ class ResourceDetailHandler(BaseAPIV2Handler):
                     f"User does not have permission to view resources for account {account_id}"
                 )
             resource_details = await fetch_resource_details(
-                account_id, resource_type, resource_name, region, host, path=path
+                account_id,
+                resource_type,
+                resource_name,
+                region,
+                host,
+                self.user,
+                path=path,
             )
         except Exception as e:
             sentry_sdk.capture_exception()

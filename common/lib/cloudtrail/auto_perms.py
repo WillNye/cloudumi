@@ -122,6 +122,7 @@ async def detect_cloudtrail_denies_and_update_cache(
     sqs_client = boto3_cached_conn(
         "sqs",
         host,
+        None,
         service_type="client",
         region=queue_region,
         retry_max_attempts=2,

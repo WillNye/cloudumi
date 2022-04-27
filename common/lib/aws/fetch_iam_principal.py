@@ -124,6 +124,7 @@ def _get_iam_role_sync(
     client = boto3_cached_conn(
         "iam",
         host,
+        None,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -153,6 +154,7 @@ async def _get_iam_role_async(
         boto3_cached_conn,
         "iam",
         host,
+        None,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -424,6 +426,7 @@ def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, 
     client = boto3_cached_conn(
         "iam",
         host,
+        user_name,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -450,6 +453,7 @@ async def _get_iam_user_async(
         boto3_cached_conn,
         "iam",
         host,
+        user_name,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)

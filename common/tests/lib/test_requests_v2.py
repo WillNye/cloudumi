@@ -2713,6 +2713,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             boto3_cached_conn,
             "s3",
             host,
+            None,
             service_type="client",
             future_expiration_minutes=15,
             account_number="123456789013",
