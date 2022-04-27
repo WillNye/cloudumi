@@ -45,8 +45,7 @@
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
-        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
-        "FRONTEND_PATH": "api/templates"
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}"
       }
     },
     {
@@ -61,7 +60,6 @@
         "AWS_CONTAINER_CREDENTIALS_FULL_URI": "http://localhost:9091/ecs/arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev",
         //"AWS_PROFILE": "noq_cluster_dev_2",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
-        "FRONTEND_PATH": "api/templates",
         "AWS_DEFAULT_REGION": "af-south-1",
         "AWS_REGION": "af-south-1"
       }
