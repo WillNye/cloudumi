@@ -23,30 +23,33 @@ log = config.get_logger()
 
 
 def process_event(event: Dict[str, Any], account_id: str, host: object):
-    config = access_undenied.common.Config()
-    config.session = boto3.Session()
-    config.account_id = config.session.client("sts").get_caller_identity()["Account"]
+    access_undenied_config = access_undenied.common.Config()
+    access_undenied_config.session = boto3.Session()
+    access_undenied_config.account_id = access_undenied_config.session.client(
+        "sts"
+    ).get_caller_identity()["Account"]
     spoke_account_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
         .with_query({"account_id": account_id})
         .first.name
     )
-    config.host = host
-    config.iam_client = boto3_cached_conn(
+    access_undenied_config.host = host
+    access_undenied_config.region = config.region
+    access_undenied_config.iam_client = boto3_cached_conn(
         "iam",
-        config.host,
+        access_undenied_config.host,
         account_number=account_id,
         assume_role=spoke_account_name,
-        region=config.region,
+        region=access_undenied_config.region,
         sts_client_kwargs=dict(
-            region_name=config.region,
-            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            region_name=access_undenied_config.region,
+            endpoint_url=f"https://sts.{access_undenied_config.region}.amazonaws.com",
         ),
     )
 
     access_undenied.cli.initialize_config_from_user_input(
-        config=config,
+        config=access_undenied_config,
         cross_account_role_name=(spoke_account_name),
         management_account_role_arn=(
             f"arn:aws:iam::{account_id}:role/{spoke_account_name}"
@@ -54,7 +57,7 @@ def process_event(event: Dict[str, Any], account_id: str, host: object):
         output_file=sys.stdout,
         suppress_output=True,
     )
-    return access_undenied.analysis.analyze(config, event)
+    return access_undenied.analysis.analyze(access_undenied_config, event)
 
 
 def get_resource_from_cloudtrail_deny(

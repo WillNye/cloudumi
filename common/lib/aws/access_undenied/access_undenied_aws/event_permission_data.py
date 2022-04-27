@@ -60,6 +60,10 @@ class EventPermissionData(object):
                 cloudtrail_event_
             )
         if not event_permission_data_.resource:
+            event_permission_data_._parse_resource_from_s3_event(
+                cloudtrail_event_,
+            )
+        if not event_permission_data_.resource:
             event_permission_data_._parse_resource_from_common_request_parameters(
                 cloudtrail_event_
             )
@@ -206,6 +210,13 @@ class EventPermissionData(object):
                             )
                         ),
                     )
+
+    def _parse_resource_from_s3_event(self, cloudtrail_event_: event.Event) -> None:
+        if cloudtrail_event_.event_source == "s3.amazonaws.com":
+            self.resource = common.Resource(
+                arn=f"arn:aws:s3:::{cloudtrail_event_.raw_request_parameters.get('bucketName')}",
+                account_id=cloudtrail_event_.raw_principal.get("accountId"),
+            )
 
     def _parse_resource_from_common_request_parameters(
         self, cloudtrail_event_: event.Event
