@@ -126,7 +126,12 @@ class GetCredentialsHandler(BaseMtlsHandler):
             log.warning(log_data, exc_info=True)
             stats.count(
                 "GetCredentialsHandler.post.exception",
-                tags={"user": self.user, "requested_role": role, "authorized": False},
+                tags={
+                    "user": self.user,
+                    "requested_role": role,
+                    "authorized": False,
+                    "host": host,
+                },
             )
             error = {
                 "code": "905",
@@ -175,6 +180,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                         "user": self.user,
                         "user_role": False,
                         "app_name": request["app_name"],
+                        "host": host,
                     },
                 )
                 log_data["message"] = "No matching roles for provided app name."
@@ -205,6 +211,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                                 "user": self.user,
                                 "user_role": False,
                                 "account": request["account"],
+                                "host": host,
                             },
                         )
                         log_data["message"] = "Can't find the passed in account."
@@ -251,6 +258,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     tags={
                         "user": self.user,
                         "user_role": False,
+                        "host": host,
                     },
                 )
                 log_data["message"] = message
@@ -285,6 +293,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                             "user": self.user,
                             "user_role": True,
                             "account": request["account"],
+                            "host": host,
                         },
                     )
                     log_data["message"] = "Can't find the passed in account."
@@ -337,7 +346,11 @@ class GetCredentialsHandler(BaseMtlsHandler):
         except ValidationError as ve:
             stats.count(
                 "GetCredentialsHandler.post",
-                tags={"user": self.user, "validation_error": str(ve)},
+                tags={
+                    "user": self.user,
+                    "validation_error": str(ve),
+                    "host": host,
+                },
             )
 
             log_data["validation_error"] = ve.messages
@@ -410,6 +423,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 "user": app_name,
                 "requested_role": requested_role,
                 "authorized": authorized,
+                "host": host,
             },
         )
 
@@ -479,7 +493,11 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     enforce_ip_restrictions = False
                     stats.count(
                         "GetCredentialsHandler.post.no_ip_restriction.success",
-                        tags={"user": self.user, "requested_role": requested_role},
+                        tags={
+                            "user": self.user,
+                            "requested_role": requested_role,
+                            "host": host,
+                        },
                     )
                     log_data["message"] = "User requested non-IP-restricted credentials"
                     log.debug(log_data)
@@ -489,7 +507,11 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     log.warning(log_data)
                     stats.count(
                         "GetCredentialsHandler.post.no_ip_restriction.failure",
-                        tags={"user": self.user, "requested_role": requested_role},
+                        tags={
+                            "user": self.user,
+                            "requested_role": requested_role,
+                            "host": host,
+                        },
                     )
                     error = {
                         "code": "902",
@@ -534,6 +556,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": False,
+                    "host": host,
                 },
             )
             error = {
@@ -590,7 +613,12 @@ class GetCredentialsHandler(BaseMtlsHandler):
         if len(matching_roles) == 0:
             stats.count(
                 "GetCredentialsHandler.post",
-                tags={"user": self.user, "requested_role": None, "authorized": False},
+                tags={
+                    "user": self.user,
+                    "requested_role": None,
+                    "authorized": False,
+                    "host": host,
+                },
             )
             log_data["message"] = "No matching roles"
             log.warning(log_data)
@@ -606,7 +634,12 @@ class GetCredentialsHandler(BaseMtlsHandler):
         if len(matching_roles) > 1:
             stats.count(
                 "GetCredentialsHandler.post",
-                tags={"user": self.user, "requested_role": None, "authorized": False},
+                tags={
+                    "user": self.user,
+                    "requested_role": None,
+                    "authorized": False,
+                    "host": host,
+                },
             )
             log_data["message"] = "More than one matching role"
             log.warning(log_data)
@@ -650,6 +683,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": False,
+                    "host": host,
                 },
             )
             error = {
@@ -671,6 +705,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": True,
+                    "host": host,
                 },
             )
             credentials.pop("ResponseMetadata", None)

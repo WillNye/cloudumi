@@ -111,7 +111,7 @@ class TypeaheadBlockComponent extends Component {
       defaultValue: this.props.defaultValue,
       required: this.props.required,
       label: this.props.label,
-      selectedValues: this.props.defaultValues,
+      selectedValues: this.props.defaultValues || [],
     })
   }
 

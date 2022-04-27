@@ -80,12 +80,26 @@ class Aws:
         )
 
         ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host)
-        stats.count("aws.get_credentials", tags={"role": role, "user": user})
+        stats.count(
+            "aws.get_credentials",
+            tags={
+                "role": role,
+                "user": user,
+                "host": host,
+            },
+        )
 
         # If this is a dynamic request, then we need to fetch the role details, call out to the lambda
         # wait for it to complete, assume the role, and then return the assumed credentials back.
         if user_role:
-            stats.count("aws.call_user_lambda", tags={"role": role, "user": user})
+            stats.count(
+                "aws.call_user_lambda",
+                tags={
+                    "role": role,
+                    "user": user,
+                    "host": host,
+                },
+            )
             try:
                 role = await self.call_user_lambda(role, user, account_id)
             except Exception as e:

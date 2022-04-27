@@ -518,7 +518,12 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
     except Exception as e:  # noqa
         stats.count(
             "_add_role_to_redis.error",
-            tags={"redis_key": redis_key, "error": str(e), "role_entry": role_entry},
+            tags={
+                "redis_key": redis_key,
+                "error": str(e),
+                "role_entry": role_entry.get("arn"),
+                "host": host,
+            },
         )
         account_id = role_entry.get("account_id")
         if not account_id:
@@ -918,7 +923,10 @@ def cache_policies_table_details(host=None) -> bool:
     )
     stats.count(
         "cache_policies_table_details.success",
-        tags={"num_roles": len(all_iam_roles.keys())},
+        tags={
+            "num_roles": len(all_iam_roles.keys()),
+            "host": host,
+        },
     )
     return True
 
@@ -1087,7 +1095,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             store_iam_resources_in_git(all_iam_resources, account_id, host)
 
     stats.count(
-        "cache_iam_resources_for_account.success", tags={"account_id": account_id}
+        "cache_iam_resources_for_account.success",
+        tags={
+            "account_id": account_id,
+            "host": host,
+        },
     )
     log.debug({**log_data, "message": "Finished caching IAM resources for account"})
     return log_data
@@ -1357,7 +1369,11 @@ def cache_managed_policies_for_account(
     log.debug(log_data)
     stats.count(
         "cache_managed_policies_for_account",
-        tags={"account_id": account_id, "num_managed_policies": len(all_policies)},
+        tags={
+            "account_id": account_id,
+            "num_managed_policies": len(all_policies),
+            "host": host,
+        },
     )
 
     policy_key = config.get_host_specific_key(
@@ -1781,7 +1797,11 @@ def cache_sqs_queues_for_account(
     log.debug(log_data)
     stats.count(
         "cache_sqs_queues_for_account",
-        tags={"account_id": account_id, "number_sqs_queues": len(all_queues)},
+        tags={
+            "account_id": account_id,
+            "number_sqs_queues": len(all_queues),
+            "host": host,
+        },
     )
 
     if config.region == config.get_host_specific_key(
@@ -1951,7 +1971,11 @@ def cache_s3_buckets_for_account(
     log.debug(log_data)
     stats.count(
         "cache_s3_buckets_for_account",
-        tags={"account_id": account_id, "number_s3_buckets": len(buckets)},
+        tags={
+            "account_id": account_id,
+            "number_s3_buckets": len(buckets),
+            "host": host,
+        },
     )
 
     if config.region == config.get_host_specific_key(
@@ -2065,7 +2089,13 @@ def clear_old_redis_iam_cache(host=None) -> bool:
         log.error(log_data, exc_info=True)
         raise
 
-    stats.count(f"{function}.success", tags={"expired_roles": len(roles_to_expire)})
+    stats.count(
+        f"{function}.success",
+        tags={
+            "expired_roles": len(roles_to_expire),
+            "host": host,
+        },
+    )
     return True
 
 
