@@ -1,4 +1,5 @@
-extends: AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:940552945933:secret:shared-prod-noq_secrets-qTayVS
+extends:
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:940552945933:secret:shared-prod-noq_secrets-qTayVS
 _global_:
   landing_page_domains:
     - shared.noq.dev
