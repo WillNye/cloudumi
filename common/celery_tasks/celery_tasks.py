@@ -565,7 +565,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
         return log_data
     ct = CloudTrail()
     process_cloudtrail_errors_res: Dict = async_to_sync(ct.process_cloudtrail_errors)(
-        aws, host
+        aws, host, None
     )
     cloudtrail_errors = process_cloudtrail_errors_res["error_count_by_role"]
     red.setex(
@@ -964,6 +964,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         client = boto3_cached_conn(
             "iam",
             host,
+            None,
             account_number=account_id,
             assume_role=spoke_role_name,
             region=config.region,
@@ -975,6 +976,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             session_name=sanitize_session_name(
                 "consoleme_cache_iam_resources_for_account"
             ),
+            read_only=True,
         )
         paginator = client.get_paginator("get_account_authorization_details")
         response_iterator = paginator.paginate()
@@ -1733,6 +1735,7 @@ def cache_sqs_queues_for_account(
             client = boto3_cached_conn(
                 "sqs",
                 host,
+                None,
                 account_number=account_id,
                 assume_role=spoke_role_name,
                 region=region,
@@ -2867,7 +2870,7 @@ def handle_expired_policies(self, host: str) -> Dict[str, Any]:
 
     for request in all_policy_requests:
         extended_request = ExtendedRequestModel.parse_obj(request["extended_request"])
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)

@@ -147,6 +147,7 @@ class BaseDynamoHandler:
                 resource = boto3_cached_conn(
                     "dynamodb",
                     host,
+                    None,
                     service_type="resource",
                     account_number=config.get_host_specific_key(
                         "aws.account_number", host

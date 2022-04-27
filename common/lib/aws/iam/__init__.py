@@ -359,10 +359,11 @@ async def get_all_iam_managed_policies_for_account(account_id, host):
         )
 
 
-async def update_assume_role_policy_trust_noq(host, role_name, account_id):
+async def update_assume_role_policy_trust_noq(host, user, role_name, account_id):
     client = boto3_cached_conn(
         "iam",
         host,
+        user,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)

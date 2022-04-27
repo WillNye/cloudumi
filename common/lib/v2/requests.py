@@ -924,6 +924,7 @@ async def apply_changes_to_role(
         boto3_cached_conn,
         "iam",
         host,
+        user,
         service_type="client",
         account_number=account_id,
         region=config.region,
@@ -1610,6 +1611,7 @@ async def populate_cross_account_resource_policy_for_change(
                     name=resource_name,
                     region=resource_region,
                     host=host,
+                    user=user,
                 )
             else:
                 role_name = resource_arn_parsed["resource_path"].split("/")[-1]
@@ -1815,6 +1817,7 @@ async def apply_managed_policy_resource_tag_change(
         boto3_cached_conn,
         "iam",
         host,
+        user,
         service_type="client",
         account_number=resource_account,
         region=config.region,
@@ -1988,6 +1991,7 @@ async def apply_non_iam_resource_tag_change(
             boto3_cached_conn,
             resource_type,
             host,
+            user,
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
@@ -2368,6 +2372,7 @@ async def apply_resource_policy_change(
             boto3_cached_conn,
             resource_type,
             host,
+            user,
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,

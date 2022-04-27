@@ -42,6 +42,7 @@ def detect_role_changes_and_update_cache(celery_app, host):
     sqs_client = boto3_cached_conn(
         "sqs",
         host,
+        None,
         service_type="client",
         region=queue_region,
         retry_max_attempts=2,

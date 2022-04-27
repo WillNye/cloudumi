@@ -84,7 +84,7 @@ class TestAwsLib(TestCase):
     def test_apply_managed_policy_to_role(self):
         from common.lib.aws.utils import apply_managed_policy_to_role
 
-        apply_managed_policy_to_role(ROLE, "policy-one", "session", host)
+        apply_managed_policy_to_role(ROLE, "policy-one", "session", host, None)
 
     @patch("common.lib.aws.utils.redis_hget")
     def test_get_resource_account(self, mock_aws_config_resources_redis):
@@ -239,7 +239,7 @@ class TestAwsLib(TestCase):
         loop = asyncio.get_event_loop()
 
         result = loop.run_until_complete(
-            fetch_managed_policy_details("123456789012", "policy-one", host)
+            fetch_managed_policy_details("123456789012", "policy-one", host, None)
         )
         self.assertDictEqual(
             result["Policy"],
@@ -253,7 +253,7 @@ class TestAwsLib(TestCase):
         with pytest.raises(Exception) as e:
             loop.run_until_complete(
                 fetch_managed_policy_details(
-                    "123456789012", "policy-non-existent", host
+                    "123456789012", "policy-non-existent", host, None
                 )
             )
 
@@ -274,7 +274,7 @@ class TestAwsLib(TestCase):
         )
         result = loop.run_until_complete(
             fetch_managed_policy_details(
-                "123456789012", policy_name, host, path="testpath/testpath2"
+                "123456789012", policy_name, host, None, path="testpath/testpath2"
             )
         )
         self.assertDictEqual(
@@ -466,7 +466,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = current_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -474,7 +474,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = past_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -482,7 +482,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = future_dateint
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 
@@ -490,7 +490,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = None
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 

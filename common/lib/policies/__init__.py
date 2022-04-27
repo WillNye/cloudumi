@@ -267,7 +267,7 @@ async def can_update_cancel_requests_v2(requester_username, user, groups, host):
     return can_update
 
 
-async def update_role_policy(events, host: str):
+async def update_role_policy(events, host: str, user: str):
     result = {"status": "success"}
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -276,7 +276,7 @@ async def update_role_policy(events, host: str):
 
     log_data = {"function": function, "message": "Updating role policy"}
 
-    response = await update_role(events, host)
+    response = await update_role(events, host, user)
     log_data["message"] = "Received Response"
     log_data["response"] = response
     log.debug(log_data)

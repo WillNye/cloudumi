@@ -69,6 +69,7 @@ class Aws:
         client = boto3_cached_conn(
             "sts",
             host,
+            user,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -96,6 +97,8 @@ class Aws:
 
         try:
             if enforce_ip_restrictions and ip_restrictions:
+                # Used to further restrict user permissions
+                # https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
                 policy = json.dumps(
                     dict(
                         Version="2012-10-17",
@@ -218,7 +221,7 @@ class Aws:
                 )
             ):
                 await update_assume_role_policy_trust_noq(
-                    host, role.split("/")[-1], role.split(":")[4]
+                    host, user, role.split("/")[-1], role.split(":")[4]
                 )
                 raise RoleTrustPolicyModified(
                     "Role trust policy was modified. Please try again in a few seconds."
