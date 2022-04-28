@@ -382,7 +382,7 @@ async def authenticate_user_by_oidc(request):
                 )
             )
             encoded_cookie = await generate_jwt_token(
-                email, groups, host, roles=role_allowances, exp=expiration
+                email, groups, host, roles=list(role_allowances), exp=expiration
             )
             request.set_cookie(
                 config.get("_global_.auth.cookie.name", "consoleme_auth"),
