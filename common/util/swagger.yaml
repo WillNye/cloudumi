@@ -2364,7 +2364,7 @@ components:
             description: CognitoGroup by GroupName - must match with an existing group in the host / tenant
         UserStatus:
           type: string
-          description: Can be UNCONFIRMED, CONFIRMED, ARCHIVED, COMPROMISED, UNKNOWN, RESET_REQUIRED, FORCE_CHANGE_PASSWORD
+          description: Can be UNCONFIRMED, CONFIRMED, ARCHIVED, COMPROMISED, UNKNOWN, RESET_REQUIRED, FORCE_CHANGE_PASSWORD, EXTERNAL_PROVIDER
           enum:
             - UNCONFIRMED
             - CONFIRMED
@@ -2373,6 +2373,7 @@ components:
             - UNKNOWN
             - RESET_REQUIRED
             - FORCE_CHANGE_PASSWORD
+            - EXTERNAL_PROVIDER
     CognitoGroup:
       type: object
       required:
