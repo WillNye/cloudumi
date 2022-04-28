@@ -41,7 +41,7 @@ from common.lib.aws.utils import (
     get_resource_policy,
     get_service_from_arn,
 )
-from common.lib.change_request import generate_policy_name
+from common.lib.change_request import generate_policy_name, generate_policy_sid
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
@@ -535,7 +535,7 @@ async def generate_resource_policies(
             log.debug(log_data)
             return extended_request
 
-        resource_policy = {"Version": "2012-10-17", "Statement": []}
+        resource_policy = {"Version": "2012-10-17", "Statement": [], "Sid": ""}
         resource_policy_sha = sha256(
             json.dumps(resource_policy, escape_forward_slashes=False).encode()
         ).hexdigest()
@@ -924,6 +924,7 @@ async def apply_changes_to_role(
         boto3_cached_conn,
         "iam",
         host,
+        user,
         service_type="client",
         account_number=account_id,
         region=config.region,
@@ -1537,7 +1538,7 @@ async def populate_old_managed_policies(
 
 
 async def populate_cross_account_resource_policy_for_change(
-    change, extended_request, log_data, host: str
+    change, extended_request, log_data, host: str, user
 ):
     resource_policies_changed = False
     supported_resource_policies = config.get_host_specific_key(
@@ -1610,6 +1611,7 @@ async def populate_cross_account_resource_policy_for_change(
                     name=resource_name,
                     region=resource_region,
                     host=host,
+                    user=user,
                 )
             else:
                 role_name = resource_arn_parsed["resource_path"].split("/")[-1]
@@ -1649,6 +1651,7 @@ async def populate_cross_account_resource_policy_for_change(
         # Have to grab the actions from the source inline change for resource policy changes
         actions = []
         resource_arns = []
+
         for source_change in extended_request.changes.changes:
             # Find the specific inline policy associated with this change
             if (
@@ -1659,6 +1662,7 @@ async def populate_cross_account_resource_policy_for_change(
                     "Statement", []
                 ):
                     # Find the specific statement within the inline policy associated with this resource
+
                     if change.arn in statement.get("Resource"):
                         statement_actions = statement.get("Action", [])
                         statement_actions = (
@@ -1690,11 +1694,13 @@ async def populate_cross_account_resource_policy_for_change(
                             if change.arn in resource:
                                 resource_arns.append(resource)
 
+        resource_sid = await generate_policy_sid(user, extended_request.expiration_date)
         new_policy = await generate_updated_resource_policy(
             existing=old_policy,
             principal_arn=extended_request.principal.principal_arn,
             resource_arns=list(set(resource_arns)),
             actions=actions,
+            policy_sid=resource_sid,
             # since iam assume role policy documents can't include resources
             include_resources=change.change_type == "resource_policy",
         )
@@ -1733,7 +1739,7 @@ async def populate_cross_account_resource_policies(
     for change in extended_request.changes.changes:
         concurrent_tasks.append(
             populate_cross_account_resource_policy_for_change(
-                change, extended_request, log_data, host
+                change, extended_request, log_data, host, user
             )
         )
     concurrent_tasks_results = await asyncio.gather(*concurrent_tasks)
@@ -1811,6 +1817,7 @@ async def apply_managed_policy_resource_tag_change(
         boto3_cached_conn,
         "iam",
         host,
+        user,
         service_type="client",
         account_number=resource_account,
         region=config.region,
@@ -1984,6 +1991,7 @@ async def apply_non_iam_resource_tag_change(
             boto3_cached_conn,
             resource_type,
             host,
+            user,
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
@@ -2364,6 +2372,7 @@ async def apply_resource_policy_change(
             boto3_cached_conn,
             resource_type,
             host,
+            user,
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
@@ -2697,13 +2706,24 @@ async def parse_and_apply_policy_request_modification(
         expiration_date_model = ExpirationDateRequestModificationModel.parse_obj(
             request_changes
         )
-        extended_request.expiration_date = expiration_date_model.expiration_date
+        expiration_date = expiration_date_model.expiration_date
+        extended_request.expiration_date = expiration_date
 
-        for policy in extended_request.changes.changes:
-            if policy.change_type in ["inline_policy"]:
-                policy.policy_name = await generate_policy_name(
-                    None, user, host, expiration_date_model.expiration_date
+        for change in extended_request.changes.changes:
+            if change.change_type in ["inline_policy"]:
+                change.policy_name = await generate_policy_name(
+                    None, user, host, expiration_date
                 )
+
+            if change.change_type in ["resource_policy", "sts_resource_policy"]:
+                new_statement = []
+                Statements = change.policy.policy_document.get("Statement", [])
+
+                for statement in Statements:
+                    statement["Sid"] = await generate_policy_sid(user, expiration_date)
+                    new_statement.append(statement)
+
+                change.policy.policy_document["Statement"] = new_statement
 
         success_message = "Successfully updated expiration date"
         error_message = "Error occurred updating expiration date"

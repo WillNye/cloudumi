@@ -1,8 +1,8 @@
-import asyncio
 from unittest import TestCase
 
 import pytest
 import ujson as json
+from asgiref.sync import async_to_sync
 from mock import MagicMock, patch
 
 from util.tests.fixtures.fixtures import create_future
@@ -133,8 +133,5 @@ class TestPoliciesLib(TestCase):
             },
         }
         self.maxDiff = None
-        loop = asyncio.get_event_loop()
-        result = loop.run_until_complete(
-            get_resources_from_events(policy_changes, host)
-        )
+        result = async_to_sync(get_resources_from_events)(policy_changes, host)
         self.assertDictEqual(expected, result)

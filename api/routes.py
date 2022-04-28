@@ -1,5 +1,8 @@
 import os
 
+from api.handlers.v3.automatic_policy_request_handler.aws import (
+    AutomaticPolicyRequestHandler,
+)
 from common.handlers.base import AuthenticatedStaticFileHandler
 
 """Web routes."""
@@ -38,6 +41,7 @@ from api.handlers.v2.index import (
     EligibleRolePageConfigHandler,
     EligibleRoleRefreshHandler,
     FrontendHandler,
+    UnauthenticatedFileHandler,
 )
 from api.handlers.v2.logout import LogOutHandler
 from api.handlers.v2.managed_policies import (
@@ -214,6 +218,14 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
+        (
+            r"/api/v3/automatic_policy_request_handler/aws/?",
+            AutomaticPolicyRequestHandler,
+        ),
+        (
+            r"/api/v3/automatic_policy_request_handler/aws/(?P<account_id>\d{12})/(?P<policy_request_id>[a-fA-F\d]{32})/?",
+            AutomaticPolicyRequestHandler,
+        ),
         (r"/api/v3/services/aws/account/hub/?", HubAccountConfigurationCrudHandler),
         (
             r"/api/v3/services/aws/account/spoke/?",
@@ -341,6 +353,20 @@ def make_app(jwt_validator=None):
                 ],
             )
         )
+    router.rules.append(
+        Rule(
+            PathMatches(r"/(manifest.json)"),
+            UnauthenticatedFileHandler,
+            dict(path=frontend_path, default_filename="manifest.json"),
+        )
+    )
+    router.rules.append(
+        Rule(
+            PathMatches(r"/(favicon.ico)"),
+            UnauthenticatedFileHandler,
+            dict(path=frontend_path, default_filename="favicon.ico"),
+        )
+    )
     router.rules.append(
         Rule(
             PathMatches(r"/(.*)"),

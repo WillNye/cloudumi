@@ -1,5 +1,6 @@
 import datetime
 import functools
+import sys
 import time
 from functools import wraps
 
@@ -17,6 +18,8 @@ from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
 
 CACHE = {}
+
+log = consoleme_config.get_logger()
 
 
 class ConsoleMeCloudAux:
@@ -64,6 +67,8 @@ class ConsoleMeCloudAux:
 
 
 def _get_cached_creds(
+    host,
+    user,
     key,
     service,
     service_type,
@@ -82,6 +87,15 @@ def _get_cached_creds(
             conn = _client(service, region, role, client_config, client_kwargs)
         else:
             conn = _resource(service, region, role, client_config, client_kwargs)
+
+        role_arn: str = role.get("AssumedRoleUser", {}).get("Arn", "")
+        try:
+            account_id = role_arn.split(":")[4]
+        except IndexError:
+            account_id = ""
+        conn = BotoClientWrapper(
+            host, user, conn, region, service, account_id, role_arn
+        )
 
         if return_credentials:
             return conn, role
@@ -127,6 +141,103 @@ def _resource(service, region, role, retry_config, client_kwargs, session=None):
     )
 
 
+class BotoCallableWrapper:
+    # A map of lowercase keys for a service to omit in addition to the default password.
+    _redact_map: dict[list[str]] = {}
+
+    def __init__(
+        self,
+        host,
+        user,
+        boto_conn,
+        region,
+        service,
+        fnc_name,
+        account_id=None,
+        role=None,
+    ):
+        self._boto_conn = boto_conn
+        self._user = user or "NOQ"
+        self._region = region
+        self._service = service
+        self._fnc_name = fnc_name
+        self._account_id = account_id
+        self._role = role
+        self._host = host
+
+    def __call__(self, *args, **kwargs):
+        try:
+            response = getattr(self._boto_conn, self._fnc_name)(*args, **kwargs)
+        except Exception:
+            raise
+        else:
+            omit_keys = self._redact_map.get(self._service, []) + ["password"]
+            request_data = dict()
+
+            for k, v in kwargs.items():
+                lower_k = k.lower()
+                if len(str(v).encode("utf-8")) > 256 or any(
+                    omit_key in lower_k for omit_key in omit_keys
+                ):
+                    continue
+
+                request_data[k] = v
+
+            log.info(
+                {
+                    "host": self._host,
+                    "account_id": self._account_id,
+                    "user": self._user,
+                    "role": self._role,
+                    "action": self._fnc_name,
+                    "service_name": self._service,
+                    "region": self._region,
+                    "request_data": request_data,
+                    "message": "Tenant AWS request",
+                }
+            )
+
+            return response
+
+    def __getattr__(self, item):
+        try:
+            return self.__getattribute__(item)
+        except AttributeError:
+            try:
+                return getattr(self._boto_conn, item)
+            except AttributeError:
+                # Handle client.exceptions.SomeException as the item will only be SomeException
+                return getattr(self._boto_conn.exceptions, item)
+
+
+class BotoClientWrapper:
+    def __init__(
+        self, host, user, boto_conn, region, service, account_id=None, role=None
+    ):
+        self._host = host
+        self._user = user
+        self._boto_conn = boto_conn
+        self._region = region
+        self._service = service
+        self._account_id = account_id
+        self._role = role
+
+    def __getattr__(self, item):
+        try:
+            return self.__getattribute__(item)
+        except AttributeError:
+            return BotoCallableWrapper(
+                self._host,
+                self._user,
+                self._boto_conn,
+                self._region,
+                self._service,
+                item,
+                self._account_id,
+                self._role,
+            )
+
+
 async def get_boto3_instance(
     service,
     host,
@@ -136,6 +247,7 @@ async def get_boto3_instance(
     region=consoleme_config.region,
     service_type="client",
     read_only=False,
+    user=None,
 ):
     """Gets a boto3 instance for a given service on a specific tenant's account.
 
@@ -149,12 +261,14 @@ async def get_boto3_instance(
     :param region: Region to create instance in, defaults to consoleme_config.region
     :param service_type: Service of the boto3 instance, defaults to "client". Could also be "resource"
     :param read_only: Should we prevent write operations through the assumed role credentials?, defaults to False
+    :param user: User to associate all boto3 calls with
     :return: A Boto3 client or resource instance in a tenant's environment
     """
     return await aio_wrapper(
         boto3_cached_conn,
         service,
         host,
+        user,
         service_type=service_type,
         account_number=account_id,
         # TODO: Make it possible to use a separate role per account
@@ -175,11 +289,12 @@ async def get_boto3_instance(
 def boto3_cached_conn(
     service,
     host,
+    user,
     service_type="client",
     future_expiration_minutes=15,
     account_number=None,
     assume_role=None,
-    session_name="consoleme",
+    session_name="noq",
     region=consoleme_config.region,
     return_credentials=False,
     external_id=None,
@@ -227,6 +342,24 @@ def boto3_cached_conn(
     :param sts_client_kwargs: Optional arguments to pass during STS client creation
     :return: boto3 client or resource connection
     """
+
+    log_data = {
+        "function": sys._getframe().f_code.co_name,
+        "service": service,
+        "host": host,
+        "service_type": service_type,
+        "account_number": account_number,
+        "assume_role": assume_role,
+        "session_name": session_name,
+        "region": region,
+        "read_only": read_only,
+        "config": config,
+        "sts_client_kwargs": sts_client_kwargs,
+        "client_kwargs": client_kwargs,
+        "session_policy": session_policy,
+        "pre_assume_roles": pre_assume_roles,
+    }
+
     if host and pre_assume_roles is None:
         pre_assume_roles = []
         hub_role = consoleme_config.get_host_specific_key("hub_account", host)
@@ -241,6 +374,8 @@ def boto3_cached_conn(
         raise TenantNoCentralRoleConfigured(
             "Tenant hasn't configured central role for Noq."
         )
+
+    log.debug({**log_data, "message": "Retrieving boto3 client in tenant account"})
     key = (
         host,
         account_number,
@@ -259,9 +394,10 @@ def boto3_cached_conn(
         client_kwargs = {}
     if config:
         client_config = client_config.merge(config)
-
     if key in CACHE:
         retval = _get_cached_creds(
+            host,
+            user,
             key,
             service,
             service_type,
@@ -347,9 +483,15 @@ def boto3_cached_conn(
     if role:
         CACHE[key] = role
 
+    role_arn: str = role.get("AssumedRoleUser", {}).get("Arn", "")
+    try:
+        account_id = role_arn.split(":")[4]
+    except IndexError:
+        account_id = ""
+    conn = BotoClientWrapper(host, user, conn, region, service, account_id, role_arn)
+
     if return_credentials:
         return conn, role["Credentials"]
-
     return conn
 
 
@@ -432,6 +574,7 @@ def sts_conn(
                 kwargs[service_type] = boto3_cached_conn(
                     service,
                     kwargs.pop("host"),
+                    kwargs.pop("user", None),
                     service_type=service_type,
                     future_expiration_minutes=future_expiration_minutes,
                     account_number=kwargs.pop("account_number", None),

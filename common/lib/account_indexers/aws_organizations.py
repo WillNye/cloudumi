@@ -53,6 +53,7 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
             boto3_cached_conn,
             "organizations",
             host,
+            None,
             account_number=organization.account_id,
             assume_role=role_to_assume,
             session_name="ConsoleMeOrganizationsSync",

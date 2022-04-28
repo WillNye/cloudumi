@@ -1,3 +1,5 @@
+import sys
+
 import sentry_sdk
 import tornado.escape
 import tornado.web
@@ -86,7 +88,16 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 "cmsaas_group_mapping",
             )
         )()
-        log_data = {} if not log_data else log_data
+        log_data = (
+            {
+                "function": sys._getframe().f_code.co_name,
+                "host": host,
+                "user": self.user,
+                "role": role,
+            }
+            if not log_data
+            else log_data
+        )
         max_cert_age_message = config.get_host_specific_key(
             "errors.custom_max_cert_age_message",
             host,
@@ -96,7 +107,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             max_cert_age = await group_mapping.get_max_cert_age_for_role(role)
         except Exception as e:
             sentry_sdk.capture_exception()
-            log_data["error"] = e
+            log_data["error"] = str(e)
             log_data[
                 "message"
             ] = "Failed to get max MTLS certificate age. Returning default value of 1 day"
@@ -115,7 +126,12 @@ class GetCredentialsHandler(BaseMtlsHandler):
             log.warning(log_data, exc_info=True)
             stats.count(
                 "GetCredentialsHandler.post.exception",
-                tags={"user": self.user, "requested_role": role, "authorized": False},
+                tags={
+                    "user": self.user,
+                    "requested_role": role,
+                    "authorized": False,
+                    "host": host,
+                },
             )
             error = {
                 "code": "905",
@@ -164,6 +180,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                         "user": self.user,
                         "user_role": False,
                         "app_name": request["app_name"],
+                        "host": host,
                     },
                 )
                 log_data["message"] = "No matching roles for provided app name."
@@ -194,6 +211,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                                 "user": self.user,
                                 "user_role": False,
                                 "account": request["account"],
+                                "host": host,
                             },
                         )
                         log_data["message"] = "Can't find the passed in account."
@@ -240,6 +258,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     tags={
                         "user": self.user,
                         "user_role": False,
+                        "host": host,
                     },
                 )
                 log_data["message"] = message
@@ -274,6 +293,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                             "user": self.user,
                             "user_role": True,
                             "account": request["account"],
+                            "host": host,
                         },
                     )
                     log_data["message"] = "Can't find the passed in account."
@@ -307,6 +327,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 403:
                     description: No matching roles found, or user has failed authn/authz.
         """
+        host = self.ctx.host
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -314,6 +335,8 @@ class GetCredentialsHandler(BaseMtlsHandler):
             "function": "GetCredentialsHandler.post",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
+            "host": host,
+            "user": self.user,
         }
 
         # Validate the input:
@@ -323,10 +346,14 @@ class GetCredentialsHandler(BaseMtlsHandler):
         except ValidationError as ve:
             stats.count(
                 "GetCredentialsHandler.post",
-                tags={"user": self.user, "validation_error": str(ve)},
+                tags={
+                    "user": self.user,
+                    "validation_error": str(ve),
+                    "host": host,
+                },
             )
 
-            log_data["validation_error"]: ve.messages
+            log_data["validation_error"] = ve.messages
             log.error(log_data)
 
             error = {
@@ -396,6 +423,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 "user": app_name,
                 "requested_role": requested_role,
                 "authorized": authorized,
+                "host": host,
             },
         )
 
@@ -465,7 +493,11 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     enforce_ip_restrictions = False
                     stats.count(
                         "GetCredentialsHandler.post.no_ip_restriction.success",
-                        tags={"user": self.user, "requested_role": requested_role},
+                        tags={
+                            "user": self.user,
+                            "requested_role": requested_role,
+                            "host": host,
+                        },
                     )
                     log_data["message"] = "User requested non-IP-restricted credentials"
                     log.debug(log_data)
@@ -475,7 +507,11 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     log.warning(log_data)
                     stats.count(
                         "GetCredentialsHandler.post.no_ip_restriction.failure",
-                        tags={"user": self.user, "requested_role": requested_role},
+                        tags={
+                            "user": self.user,
+                            "requested_role": requested_role,
+                            "host": host,
+                        },
                     )
                     error = {
                         "code": "902",
@@ -520,6 +556,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": False,
+                    "host": host,
                 },
             )
             error = {
@@ -576,7 +613,12 @@ class GetCredentialsHandler(BaseMtlsHandler):
         if len(matching_roles) == 0:
             stats.count(
                 "GetCredentialsHandler.post",
-                tags={"user": self.user, "requested_role": None, "authorized": False},
+                tags={
+                    "user": self.user,
+                    "requested_role": None,
+                    "authorized": False,
+                    "host": host,
+                },
             )
             log_data["message"] = "No matching roles"
             log.warning(log_data)
@@ -592,7 +634,12 @@ class GetCredentialsHandler(BaseMtlsHandler):
         if len(matching_roles) > 1:
             stats.count(
                 "GetCredentialsHandler.post",
-                tags={"user": self.user, "requested_role": None, "authorized": False},
+                tags={
+                    "user": self.user,
+                    "requested_role": None,
+                    "authorized": False,
+                    "host": host,
+                },
             )
             log_data["message"] = "More than one matching role"
             log.warning(log_data)
@@ -636,6 +683,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": False,
+                    "host": host,
                 },
             )
             error = {
@@ -657,6 +705,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": True,
+                    "host": host,
                 },
             )
             credentials.pop("ResponseMetadata", None)

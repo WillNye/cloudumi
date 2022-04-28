@@ -100,7 +100,10 @@ class PoliciesHandler(BaseAPIV2Handler):
         arguments = json.loads(self.request.body)
         filters = arguments.get("filters")
         limit = arguments.get("limit", 1000)
-        tags = {"user": self.user}
+        tags = {
+            "user": self.user,
+            "host": host,
+        }
         stats.count("PoliciesHandler.post", tags=tags)
         log_data = {
             "function": "PoliciesHandler.post",

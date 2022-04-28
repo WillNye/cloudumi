@@ -60,6 +60,7 @@ def query(
             config_client = boto3_cached_conn(
                 "config",
                 host,
+                None,
                 account_number=account_id,
                 assume_role=ModelAdapter(SpokeAccount)
                 .load_config("spoke_accounts", host)

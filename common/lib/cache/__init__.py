@@ -76,7 +76,12 @@ async def store_json_results_in_redis_and_s3(
 
     stats.count(
         f"{function}.called",
-        tags={"redis_key": redis_key, "s3_bucket": s3_bucket, "s3_key": s3_key},
+        tags={
+            "redis_key": redis_key,
+            "s3_bucket": s3_bucket,
+            "s3_key": s3_key,
+            "host": host,
+        },
     )
 
     # Force prefixing by host
@@ -115,6 +120,9 @@ async def store_json_results_in_redis_and_s3(
 
     # TODO: If Redis field is defined, we should pull data from S3, update data, then store in S3.
     if s3_bucket and s3_key and not redis_field:
+        s3_bucket_region: str = config.get(
+            "_global_.s3_cache_bucket_region", config.region
+        )
         s3_extra_kwargs = {}
         if isinstance(s3_expires, int):
             s3_extra_kwargs["Expires"] = datetime.utcfromtimestamp(s3_expires)
@@ -128,7 +136,12 @@ async def store_json_results_in_redis_and_s3(
             data_for_s3 = gzip.compress(data_for_s3)
 
         put_object(
-            Bucket=s3_bucket, Key=s3_key, Body=data_for_s3, host=host, **s3_extra_kwargs
+            Bucket=s3_bucket,
+            Key=s3_key,
+            Body=data_for_s3,
+            host=host,
+            region=s3_bucket_region,
+            **s3_extra_kwargs,
         )
 
 
@@ -171,8 +184,14 @@ async def retrieve_json_data_from_redis_or_s3(
     )()
     stats.count(
         f"{function}.called",
-        tags={"redis_key": redis_key, "s3_bucket": s3_bucket, "s3_key": s3_key},
+        tags={
+            "redis_key": redis_key,
+            "s3_bucket": s3_bucket,
+            "s3_key": s3_key,
+            "host": host,
+        },
     )
+    s3_bucket_region: str = config.get("_global_.s3_cache_bucket_region", config.region)
 
     # Force prefixing by host
     if s3_key:
@@ -211,7 +230,9 @@ async def retrieve_json_data_from_redis_or_s3(
     # Fall back to S3 if there's no data
     if not data and s3_bucket and s3_key:
         try:
-            s3_object = get_object(Bucket=s3_bucket, Key=s3_key, host=host)
+            s3_object = get_object(
+                Bucket=s3_bucket, Key=s3_key, host=host, region=s3_bucket_region
+            )
         except ClientError as e:
             if str(e) == (
                 "An error occurred (NoSuchKey) when calling the GetObject operation: "

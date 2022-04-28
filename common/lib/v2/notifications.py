@@ -80,6 +80,8 @@ async def get_notifications_for_user(
     )
     unread_count = 0
     notifications_for_user = []
+    if not groups:
+        groups = []
     for user_or_group in [user, *groups]:
         # Filter out identical notifications that were already captured via user-specific attribution. IE: "UserA"
         # performed an access deny operation locally under "RoleA" with session name = "UserA", so the generated

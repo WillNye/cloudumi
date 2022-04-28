@@ -11,6 +11,7 @@ import ujson as json
 from asgiref.sync import async_to_sync
 from mock import patch
 
+from common.lib.aws.utils import condense_statements
 from common.models import (
     ChangeModelArray,
     ExtendedRequestModel,
@@ -83,7 +84,7 @@ class TestAwsLib(TestCase):
     def test_apply_managed_policy_to_role(self):
         from common.lib.aws.utils import apply_managed_policy_to_role
 
-        apply_managed_policy_to_role(ROLE, "policy-one", "session", host)
+        apply_managed_policy_to_role(ROLE, "policy-one", "session", host, None)
 
     @patch("common.lib.aws.utils.redis_hget")
     def test_get_resource_account(self, mock_aws_config_resources_redis):
@@ -238,7 +239,7 @@ class TestAwsLib(TestCase):
         loop = asyncio.get_event_loop()
 
         result = loop.run_until_complete(
-            fetch_managed_policy_details("123456789012", "policy-one", host)
+            fetch_managed_policy_details("123456789012", "policy-one", host, None)
         )
         self.assertDictEqual(
             result["Policy"],
@@ -252,7 +253,7 @@ class TestAwsLib(TestCase):
         with pytest.raises(Exception) as e:
             loop.run_until_complete(
                 fetch_managed_policy_details(
-                    "123456789012", "policy-non-existent", host
+                    "123456789012", "policy-non-existent", host, None
                 )
             )
 
@@ -273,7 +274,7 @@ class TestAwsLib(TestCase):
         )
         result = loop.run_until_complete(
             fetch_managed_policy_details(
-                "123456789012", policy_name, host, path="testpath/testpath2"
+                "123456789012", policy_name, host, None, path="testpath/testpath2"
             )
         )
         self.assertDictEqual(
@@ -465,7 +466,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = current_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -473,7 +474,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = past_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -481,7 +482,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = future_dateint
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 
@@ -489,6 +490,199 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = None
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
+
+
+class TestAwsPolicyNormalizer(TestCase):
+    @staticmethod
+    def _get_statement_by_resource(policy: list[dict], resource: list[str]) -> dict:
+        resource.sort()
+        for statement in policy:
+            if statement["Resource"] == resource:
+                return statement
+
+        return dict()
+
+    def test_reduce_actions(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:Get*",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+                "Condition": {
+                    "ForAllValues:StringEquals": {
+                        "dynamodb:LeadingKeys": [
+                            "${cognito-identity.amazonaws.com:sub}"
+                        ]
+                    }
+                },
+            }
+        ]
+
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
+
+        # Confirm GetItem was dropped because it's captured under Get* and all other actions remain
+        self.assertListEqual(
+            normalized_policy[0]["Action"],
+            [
+                "dynamodb:DeleteItem".lower(),
+                "dynamodb:Get*".lower(),
+                "dynamodb:PutItem".lower(),
+                "dynamodb:Query".lower(),
+                "dynamodb:UpdateItem".lower(),
+            ],
+        )
+
+    def test_group_identical_resources(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Get*",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": ["dynamodb:PutItem", "dynamodb:Query", "dynamodb:UpdateItem"],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+        ]
+
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
+        self.assertEqual(len(normalized_policy), 1)
+
+        self.assertListEqual(
+            normalized_policy[0]["Action"],
+            [
+                "dynamodb:DeleteItem".lower(),
+                "dynamodb:Get*".lower(),
+                "dynamodb:PutItem".lower(),
+                "dynamodb:Query".lower(),
+                "dynamodb:UpdateItem".lower(),
+            ],
+        )
+
+    def test_remove_identical_actions_from_child_statement(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:Get*".lower(),
+                    "dynamodb:Query",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*"],
+            },
+        ]
+
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
+        self.assertEqual(len(normalized_policy), 2)
+
+        dynamo_statement = self._get_statement_by_resource(
+            normalized_policy, ["arn:aws:dynamodb:*:*:table/MyTable"]
+        )
+        self.assertListEqual(
+            dynamo_statement["Action"],
+            [
+                "dynamodb:DeleteItem".lower(),
+                "dynamodb:PutItem".lower(),
+                "dynamodb:UpdateItem".lower(),
+            ],
+        )
+
+    def test_remove_statements_with_no_action(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:*",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*"],
+            },
+        ]
+
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
+        self.assertEqual(len(normalized_policy), 1)
+
+        dynamo_statement = normalized_policy[0]
+        self.assertListEqual(dynamo_statement["Action"], ["dynamodb:*"])
+        self.assertListEqual(dynamo_statement["Resource"], ["arn:aws:dynamodb:*:*"])
+
+    def test_dont_reduce_conditionals(self):
+        init_policy = [
+            {
+                "Effect": "Allow",
+                "Condition": {
+                    "ForAllValues:StringEquals": {
+                        "dynamodb:LeadingKeys": [
+                            "${cognito-identity.amazonaws.com:sub}"
+                        ]
+                    }
+                },
+                "Action": [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*:table/MyTable"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:Get*".lower(),
+                    "dynamodb:Query",
+                ],
+                "Resource": ["arn:aws:dynamodb:*:*"],
+            },
+        ]
+
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
+        self.assertEqual(len(normalized_policy), 2)
+
+        dynamo_statement = self._get_statement_by_resource(
+            normalized_policy, ["arn:aws:dynamodb:*:*:table/MyTable"]
+        )
+        self.assertListEqual(
+            dynamo_statement.get("Action", []),
+            [
+                "dynamodb:DeleteItem".lower(),
+                "dynamodb:GetItem".lower(),
+                "dynamodb:PutItem".lower(),
+                "dynamodb:Query".lower(),
+                "dynamodb:UpdateItem".lower(),
+            ],
+        )

@@ -56,7 +56,12 @@ class ResourceDetailHandler(BaseAPIV2Handler):
                 arn = f"arn:aws:iam::{account_id}:policy/{resource_name}"
 
         stats.count(
-            "ResourcePolicyEditHandler.get", tags={"user": self.user, "arn": arn}
+            "ResourcePolicyEditHandler.get",
+            tags={
+                "user": self.user,
+                "arn": arn,
+                "host": host,
+            },
         )
 
         log_data = {
@@ -85,7 +90,13 @@ class ResourceDetailHandler(BaseAPIV2Handler):
                     f"User does not have permission to view resources for account {account_id}"
                 )
             resource_details = await fetch_resource_details(
-                account_id, resource_type, resource_name, region, host, path=path
+                account_id,
+                resource_type,
+                resource_name,
+                region,
+                host,
+                self.user,
+                path=path,
             )
         except Exception as e:
             sentry_sdk.capture_exception()
@@ -174,7 +185,13 @@ class GetResourceURLHandler(BaseMtlsHandler):
             "host": host,
         }
         log.debug(log_data)
-        stats.count("GetResourceURL.get", tags={"user": self.user})
+        stats.count(
+            "GetResourceURL.get",
+            tags={
+                "user": self.user,
+                "host": host,
+            },
+        )
         if not arn:
             generic_error_message: str = "Missing required parameter"
             errors = ["arn is a required parameter"]
