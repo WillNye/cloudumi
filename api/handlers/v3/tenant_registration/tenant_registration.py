@@ -20,6 +20,8 @@ from common.handlers.base import TornadoRequestHandler
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.free_email_domains import is_email_free
 
+ADMIN_GROUP_NAME = "noq_administrators"
+
 
 async def generate_dev_domain(dev_mode):
     tenant_id = random.randint(000000, 999999)
@@ -276,6 +278,11 @@ async def create_user_pool_user(
     user_pool_id, user_pool_client_id, client_secret, email, password, noq_subdomain
 ):
     cognito = boto3.client("cognito-idp", region_name=config.region)
+    cognito.create_group(
+        UserPoolId=user_pool_id,
+        GroupName=ADMIN_GROUP_NAME,
+        Description="Noq Administrators",
+    )
 
     user = cognito.admin_create_user(
         UserPoolId=user_pool_id,
@@ -286,6 +293,12 @@ async def create_user_pool_user(
         DesiredDeliveryMediums=[
             "EMAIL",
         ],
+    )
+
+    cognito.admin_add_user_to_group(
+        UserPoolId=user_pool_id,
+        Username=email,
+        GroupName=ADMIN_GROUP_NAME,
     )
 
     return user
@@ -634,7 +647,7 @@ headers:
   role_login:
     enabled: true
 url: {dev_domain_url}
-application_admin: {tenant.email}
+application_admin: {ADMIN_GROUP_NAME}
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
