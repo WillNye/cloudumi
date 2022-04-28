@@ -228,7 +228,7 @@ get_user_by_oidc_settings:
     - name: 'custom:role_arns'
       delimiter: ','
       regex: '(.*)'
-      role_match: '\1'
+      role_match: '\\1'
   client_scopes:
     - email
     - openid

@@ -12,6 +12,7 @@ async def generate_jwt_token(
     email,
     groups,
     host,
+    roles=[],
     nbf=datetime.utcnow() - timedelta(seconds=5),
     iat=datetime.utcnow(),
     exp=None,
@@ -29,6 +30,7 @@ async def generate_jwt_token(
         "exp": exp,
         config.get_host_specific_key("jwt.attributes.email", host, "email"): email,
         config.get_host_specific_key("jwt.attributes.groups", host, "groups"): groups,
+        config.get_host_specific_key("jwt.attributes.roles", host, "roles"): roles,
         "host": host,
     }
 
@@ -52,6 +54,10 @@ async def validate_and_return_jwt_token(auth_cookie, host):
         if not email:
             return False
 
+        roles = decoded_jwt.get(
+            config.get_host_specific_key("jwt.attributes.roles", host, "roles"),
+            [],
+        )
         groups = decoded_jwt.get(
             config.get_host_specific_key("jwt.attributes.groups", host, "groups"),
             [],
@@ -71,6 +77,7 @@ async def validate_and_return_jwt_token(auth_cookie, host):
             "user": email,
             "groups": groups,
             "host": host,
+            "roles": roles,
             "iat": decoded_jwt.get("iat"),
             "exp": exp,
         }

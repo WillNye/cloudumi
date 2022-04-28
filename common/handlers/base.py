@@ -451,6 +451,7 @@ class BaseHandler(TornadoRequestHandler):
             if res and isinstance(res, dict):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
+                self.eligible_roles = res.get("roles", [])
                 self.auth_cookie_expiration = res.get("exp")
 
         # if host in ["localhost", "127.0.0.1"] and not self.user:
@@ -860,6 +861,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                     await self.finish()
                 self.user = res.get("user")
                 self.groups = res.get("groups")
+                self.eligible_roles += res.get("roles")
                 self.requester = {"type": "user", "email": self.user}
                 self.current_cert_age = int(time.time()) - res.get("iat")
                 self.auth_cookie_expiration = res.get("exp")
