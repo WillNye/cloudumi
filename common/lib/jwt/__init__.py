@@ -58,7 +58,9 @@ async def validate_and_return_jwt_token(auth_cookie, host):
             return False
 
         roles = decoded_jwt.get(
-            config.get_host_specific_key("jwt.attributes.roles", host, "roles"),
+            config.get_host_specific_key(
+                "jwt.attributes.roles", host, "additional_roles"
+            ),
             [],
         )
         groups = decoded_jwt.get(
