@@ -1,6 +1,9 @@
 # This configuration is used for unit tests.
 
 _global_:
+  metrics:
+    cloudwatch:
+      enabled: false
   development: true
   environment: test
   deployment:
