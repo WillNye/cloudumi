@@ -4,11 +4,13 @@ import json
 import re
 from typing import Optional
 
-import boto3
 import pkg_resources
 from aws_error_utils import ClientError
 
+from common.config.models import ModelAdapter
+from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import common, event, utils
+from common.models import SpokeAccount
 from util.log import logger
 
 ACCESS_DENIED_MESSAGES = json.load(
@@ -56,6 +58,10 @@ class EventPermissionData(object):
         if not event_permission_data_.resource:
             event_permission_data_._parse_resource_from_iam_dataset_mapping(
                 cloudtrail_event_
+            )
+        if not event_permission_data_.resource:
+            event_permission_data_._parse_resource_from_s3_event(
+                cloudtrail_event_,
             )
         if not event_permission_data_.resource:
             event_permission_data_._parse_resource_from_common_request_parameters(
@@ -205,6 +211,13 @@ class EventPermissionData(object):
                         ),
                     )
 
+    def _parse_resource_from_s3_event(self, cloudtrail_event_: event.Event) -> None:
+        if cloudtrail_event_.event_source == "s3.amazonaws.com":
+            self.resource = common.Resource(
+                arn=f"arn:aws:s3:::{cloudtrail_event_.raw_request_parameters.get('bucketName')}",
+                account_id=cloudtrail_event_.raw_principal.get("accountId"),
+            )
+
     def _parse_resource_from_common_request_parameters(
         self, cloudtrail_event_: event.Event
     ) -> None:
@@ -345,18 +358,23 @@ def _get_principal_arn_from_cross_account_principal_id(
         iam_client = config.iam_client
     else:
         try:
-            role_credentials = config.session.client("sts").assume_role(
-                RoleArn=f"arn:aws:iam::{config.account_id}:role/{config.cross_account_role_name}",
-                RoleSessionName=f"AccessUndeniedCrossAccount_{account_id}",
+            cross_account_role_name = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", config.host)
+                .with_query({"account_id": account_id})
+                .first.name
             )
-            target_account_session = boto3.Session(
-                aws_access_key_id=role_credentials["Credentials"]["AccessKeyId"],
-                aws_secret_access_key=role_credentials["Credentials"][
-                    "SecretAccessKey"
-                ],
-                aws_session_token=role_credentials["Credentials"]["SessionToken"],
+            iam_client = boto3_cached_conn(
+                "iam",
+                config.host,
+                account_number=account_id,
+                assume_role=cross_account_role_name,
+                region=config.region,
+                sts_client_kwargs=dict(
+                    region_name=config.region,
+                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                ),
             )
-            iam_client = target_account_session.client("iam")
         except ClientError:
             raise common.AccessUndeniedError(
                 message=(

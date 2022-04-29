@@ -2,12 +2,14 @@ import collections.abc
 import json
 from typing import TYPE_CHECKING, Iterable, List, Optional, Union
 
-import boto3
 import cachetools
 from aws_error_utils import ClientError
 from cachetools import keys
 
+from common.config.models import ModelAdapter
+from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import common
+from common.models import SpokeAccount
 from util.log import logger
 
 if TYPE_CHECKING:
@@ -98,18 +100,27 @@ def _create_policy_from_permissions_boundary_response(
 
 
 def _get_cross_account_iam_client(
-    target_account: str, session: boto3.Session, cross_account_role_name: str
+    target_account: str, config: common.Config, cross_account_role_name: str
 ) -> IAMClient:
     try:
-        role_credentials = session.client("sts").assume_role(
-            RoleArn=(f"arn:aws:iam::{target_account}:role/{cross_account_role_name}"),
-            RoleSessionName="AccessUndeniedResourceSession",
+        cross_account_role_name = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", config.host)
+            .with_query({"account_id": config.account_id})
+            .first.name
         )
-        return boto3.Session(
-            aws_access_key_id=role_credentials["Credentials"]["AccessKeyId"],
-            aws_secret_access_key=role_credentials["Credentials"]["SecretAccessKey"],
-            aws_session_token=role_credentials["Credentials"]["SessionToken"],
-        ).client("iam")
+        iam_client = boto3_cached_conn(
+            "iam",
+            config.host,
+            account_number=config.account_id,
+            assume_role=cross_account_role_name,
+            region=config.region,
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+        )
+        return iam_client
     except ClientError as client_error:
         msg = (
             "Could not assume cross-account role: [role_arn: "
@@ -248,7 +259,7 @@ def get_iam_client_in_account(
 
     return _get_cross_account_iam_client(
         target_account=account_id,
-        session=config.session,
+        config=config,
         cross_account_role_name=config.cross_account_role_name,
     )
 

@@ -8,21 +8,21 @@
 
 
 
-        <link rel="canonical" href="https://docs.noq.dev/docs/features/credential_management/aws_console_temporary_credentials/">
+        <link rel="canonical" href="https://docs.noq.dev/docs/getting_started/enable_users_to_assume_roles/">
 
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.8">
 
 
 
-        <title>Overview - Noq Docs</title>
+        <title>Authorize Users to Assume Roles - Noq Docs</title>
 
 
 
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.644de097.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.644de097.min.css">
 
 
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.e6a45f82.min.css">
 
 
 
@@ -37,7 +37,7 @@
 
 
 
-    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
 
 
 
@@ -75,7 +75,7 @@
     <div data-md-component="skip">
 
 
-        <a href="#overview" class="md-skip">
+        <a href="#authorize-users-to-assume-roles" class="md-skip">
           Skip to content
         </a>
 
@@ -89,7 +89,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Noq Docs" class="md-header__button md-logo" aria-label="Noq Docs" data-md-component="logo">
+    <a href="../.." title="Noq Docs" class="md-header__button md-logo" aria-label="Noq Docs" data-md-component="logo">
 
 
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
 
-              Overview
+              Authorize Users to Assume Roles
 
           </span>
         </div>
@@ -203,7 +203,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Noq Docs" class="md-nav__button md-logo" aria-label="Noq Docs" data-md-component="logo">
+    <a href="../.." title="Noq Docs" class="md-nav__button md-logo" aria-label="Noq Docs" data-md-component="logo">
 
 
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
@@ -222,7 +222,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         Home
       </a>
     </li>
@@ -273,7 +273,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/access_aws_console_with_assumed_roles/" class="md-nav__link">
+      <a href="../access_aws_console_with_assumed_roles/" class="md-nav__link">
         Access AWS Console with Assumed Roles
       </a>
     </li>
@@ -287,7 +287,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/2_self_service_wizard/" class="md-nav__link">
+      <a href="../2_self_service_wizard/" class="md-nav__link">
         Self-Service Permissions
       </a>
     </li>
@@ -301,7 +301,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/configure_cli_credential_brokering/" class="md-nav__link">
+      <a href="../configure_cli_credential_brokering/" class="md-nav__link">
         Configure CLI Credential Brokering
       </a>
     </li>
@@ -325,10 +325,12 @@
 
 
 
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
 
 
 
@@ -371,7 +373,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/1_connect_hub_account/" class="md-nav__link">
+      <a href="../1_connect_hub_account/" class="md-nav__link">
         Connect Your AWS Hub Account
       </a>
     </li>
@@ -385,7 +387,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/5_enable_credential_brokering/" class="md-nav__link">
+      <a href="../5_enable_credential_brokering/" class="md-nav__link">
         Configure Credential Brokering
       </a>
     </li>
@@ -398,10 +400,20 @@
 
 
 
-    <li class="md-nav__item">
-      <a href="../../../getting_started/enable_users_to_assume_roles/" class="md-nav__link">
+
+
+    <li class="md-nav__item md-nav__item--active">
+
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+
+
+
+
+
+      <a href="./" class="md-nav__link md-nav__link--active">
         Authorize Users to Assume Roles
       </a>
+
     </li>
 
 
@@ -413,7 +425,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/6_automatically_update_trust_policies/" class="md-nav__link">
+      <a href="../6_automatically_update_trust_policies/" class="md-nav__link">
         Configure Automatic Updates to Trust Policies
       </a>
     </li>
@@ -427,7 +439,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/8_configure_weep/" class="md-nav__link">
+      <a href="../8_configure_weep/" class="md-nav__link">
         Enable CLI Credential Brokering
       </a>
     </li>
@@ -441,7 +453,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/4_update_account_names/" class="md-nav__link">
+      <a href="../4_update_account_names/" class="md-nav__link">
         Update Account Names
       </a>
     </li>
@@ -455,7 +467,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/3_connect_spoke_accounts/" class="md-nav__link">
+      <a href="../3_connect_spoke_accounts/" class="md-nav__link">
         Connect Additional Spoke Accounts
       </a>
     </li>
@@ -469,7 +481,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/7_enable_ip_restrictions/" class="md-nav__link">
+      <a href="../7_enable_ip_restrictions/" class="md-nav__link">
         Enable IP Restrictions
       </a>
     </li>
@@ -483,7 +495,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/9_connect_eventbridge/" class="md-nav__link">
+      <a href="../9_connect_eventbridge/" class="md-nav__link">
         Configure AWS Event Bridge
       </a>
     </li>
@@ -505,7 +517,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../iam/" class="md-nav__link">
+      <a href="../../iam/" class="md-nav__link">
         IAM Permissions
       </a>
     </li>
@@ -520,7 +532,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../tasks/" class="md-nav__link">
+      <a href="../../tasks/" class="md-nav__link">
         Tasks
       </a>
     </li>
@@ -537,12 +549,10 @@
 
 
 
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
 
 
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-
-
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
 
 
 
@@ -575,12 +585,10 @@
 
 
 
+    <li class="md-nav__item md-nav__item--nested">
 
 
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-
-
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_1" type="checkbox" id="__nav_6_1" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_1" type="checkbox" id="__nav_6_1" >
 
 
 
@@ -611,12 +619,10 @@
 
 
 
+    <li class="md-nav__item md-nav__item--nested">
 
 
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-
-
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_1_1" type="checkbox" id="__nav_6_1_1" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_1_1" type="checkbox" id="__nav_6_1_1" >
 
 
 
@@ -646,58 +652,10 @@
 
 
 
-
-
-    <li class="md-nav__item md-nav__item--active">
-
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-
-
-
-
-
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Overview
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../features/credential_management/aws_console_temporary_credentials/" class="md-nav__link">
         Overview
       </a>
-
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-
-
-
-
-
-
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-
-        <li class="md-nav__item">
-  <a href="#role-selection" class="md-nav__link">
-    Role Selection
-  </a>
-
-</li>
-
-        <li class="md-nav__item">
-  <a href="#recent-roles" class="md-nav__link">
-    Recent Roles
-  </a>
-
-</li>
-
-    </ul>
-
-</nav>
-
     </li>
 
 
@@ -709,7 +667,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../chrome_integration/" class="md-nav__link">
+      <a href="../../features/credential_management/chrome_integration/" class="md-nav__link">
         Chrome Integration
       </a>
     </li>
@@ -723,7 +681,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../alfred_integration/" class="md-nav__link">
+      <a href="../../features/credential_management/alfred_integration/" class="md-nav__link">
         Alfred Integration
       </a>
     </li>
@@ -744,7 +702,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../aws_cli_credentials/" class="md-nav__link">
+      <a href="../../features/credential_management/aws_cli_credentials/" class="md-nav__link">
         AWS CLI Credentials
       </a>
     </li>
@@ -758,7 +716,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../ip_restricted_credentials/" class="md-nav__link">
+      <a href="../../features/credential_management/ip_restricted_credentials/" class="md-nav__link">
         IP Restrictions
       </a>
     </li>
@@ -821,7 +779,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/autogenerate_x_account_permissions/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/autogenerate_x_account_permissions/" class="md-nav__link">
         Autogenerate Cross Account Requests
       </a>
     </li>
@@ -835,7 +793,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/automatically_approve_low_risk_requests/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/automatically_approve_low_risk_requests/" class="md-nav__link">
         Automatically Approve Low-Risk Requests
       </a>
     </li>
@@ -849,7 +807,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/customizable_policy_requests/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/customizable_policy_requests/" class="md-nav__link">
         Customize Policy Requests Before Approving
       </a>
     </li>
@@ -863,7 +821,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/permissions_are_crud/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/permissions_are_crud/" class="md-nav__link">
         Customizable CRUD Mapping for Permissions
       </a>
     </li>
@@ -877,7 +835,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/self_service_permissions/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/self_service_permissions/" class="md-nav__link">
         Self-Service Permissions
       </a>
     </li>
@@ -891,7 +849,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/typeaheads_across_known_resources/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/typeaheads_across_known_resources/" class="md-nav__link">
         Typeaheads across all known resources
       </a>
     </li>
@@ -905,7 +863,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/temporary_policy_requests/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/temporary_policy_requests/" class="md-nav__link">
         Temporary Policy Requests
       </a>
     </li>
@@ -958,7 +916,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../resource_management/create_role/" class="md-nav__link">
+      <a href="../../features/resource_management/create_role/" class="md-nav__link">
         Create Role
       </a>
     </li>
@@ -972,7 +930,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../resource_management/clone_role/" class="md-nav__link">
+      <a href="../../features/resource_management/clone_role/" class="md-nav__link">
         Clone Role
       </a>
     </li>
@@ -1035,7 +993,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/automatic_permissions_generation/" class="md-nav__link">
+      <a href="../../features/planned/automatic_permissions_generation/" class="md-nav__link">
         Automatic Permissions Generation
       </a>
     </li>
@@ -1049,7 +1007,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/unused_permissions_removal/" class="md-nav__link">
+      <a href="../../features/planned/unused_permissions_removal/" class="md-nav__link">
         Unused Permissions Removal
       </a>
     </li>
@@ -1063,7 +1021,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/breakglass_role_access/" class="md-nav__link">
+      <a href="../../features/planned/breakglass_role_access/" class="md-nav__link">
         Breakglass Role Access
       </a>
     </li>
@@ -1077,7 +1035,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/decentralized_request_management/" class="md-nav__link">
+      <a href="../../features/planned/decentralized_request_management/" class="md-nav__link">
         Decentralized Request Management
       </a>
     </li>
@@ -1091,7 +1049,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/multi_role_wizard_selection/" class="md-nav__link">
+      <a href="../../features/planned/multi_role_wizard_selection/" class="md-nav__link">
         Multi-Role Self-Service
       </a>
     </li>
@@ -1105,7 +1063,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/multi_tag_wizard_request/" class="md-nav__link">
+      <a href="../../features/planned/multi_tag_wizard_request/" class="md-nav__link">
         Self-Service Wizard for Tagging
       </a>
     </li>
@@ -1119,7 +1077,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/2fa_step_up/" class="md-nav__link">
+      <a href="../../features/planned/2fa_step_up/" class="md-nav__link">
         2-Factor Step-Up
       </a>
     </li>
@@ -1180,7 +1138,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../swagger/swagger/" class="md-nav__link">
+      <a href="../../swagger/swagger/" class="md-nav__link">
         Swagger Documentation
       </a>
     </li>
@@ -1214,28 +1172,6 @@
 
 
 
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-
-        <li class="md-nav__item">
-  <a href="#role-selection" class="md-nav__link">
-    Role Selection
-  </a>
-
-</li>
-
-        <li class="md-nav__item">
-  <a href="#recent-roles" class="md-nav__link">
-    Recent Roles
-  </a>
-
-</li>
-
-    </ul>
-
 </nav>
                   </div>
                 </div>
@@ -1248,33 +1184,64 @@
 
 
 
-<h1 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h1>
-<p>Noq can broker temporary sessions to the AWS console. After a user authenticates, Noq determines their users and groups from the configured Identity Provider. This could be Okta, Azure AD, Google, or any other OIDC/SAML compatible Identity Provider.</p>
-<p>These attributes are used to determine which roles the user is authorized to access. Noq can be used in a few different ways to determine what roles a user is allowed to access:</p>
+<h1 id="authorize-users-to-assume-roles"><strong>Authorize Users to Assume Roles</strong><a class="headerlink" href="#authorize-users-to-assume-roles" title="Permanent link">&para;</a></h1>
+<p>You may enable users and groups to assume AWS roles using Noq self-service
+controls. To do this, follow the steps in the procedure below to tag AWS
+roles with a user or group defined in your identify provider. You will use
+the Noq user interface to update the policy for a role with one or more new
+tags.</p>
+<p>After a role tag is updated, it might take 1-2 minutes for the role to be
+available to users for whom you have enabled access.</p>
+<h1 id="prerequites"><strong>Prerequites</strong><a class="headerlink" href="#prerequites" title="Permanent link">&para;</a></h1>
+<p>Before you can authorize users and groups to assume AWS roles, you must
+follow the steps in the
+<a href="../5_enable_credential_brokering/">Configure Credential Brokering</a>
+procedure. Please ensure you have completed that procedure before
+continuing.</p>
+<h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
+<h2 id="1-navigate-to-all-cloud-resources">1. Navigate to <em>All Cloud Resources</em><a class="headerlink" href="#1-navigate-to-all-cloud-resources" title="Permanent link">&para;</a></h2>
+<p>Select <em>Resources</em> &gt; <em>All Cloud Resources</em> from the Noq main menu.</p>
+<p><img alt="navigate to all cloud resources" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_select_all_cloud_resources.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>You should then see a page similar to the following.</p>
+<p><img alt="all cloud resources" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_all_cloud_resources.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="2-optional-filter-resources-to-find-the-role-you-want-to-enable">2. Optional: Filter resources to find the role you want to enable<a class="headerlink" href="#2-optional-filter-resources-to-find-the-role-you-want-to-enable" title="Permanent link">&para;</a></h2>
+<p>In the <em>Resource</em> search box, begin typing the name of the role you want to
+enable for one or more users. This will filter the list of resources to
+just those matching the string you enter.</p>
+<p><img alt="filter all cloud resources" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_filter_all_cloud_resources.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="3-select-the-role-you-want-to-enable">3. Select the role you want to enable<a class="headerlink" href="#3-select-the-role-you-want-to-enable" title="Permanent link">&para;</a></h2>
+<p>Select the role you want to enable from the list of resources.</p>
+<p><img alt="select role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_select_role.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="4-select-tags-from-the-edit-policy-view">4. Select tags from the <em>Edit Policy</em> view<a class="headerlink" href="#4-select-tags-from-the-edit-policy-view" title="Permanent link">&para;</a></h2>
+<p>From the <em>Edit Policy</em> view, click the <em>Tags</em> tab. This will enable you to
+edit tags for the role.</p>
+<p><img alt="edit tags" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_edit_tags.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="5-click-the-create-new-tag-button">5. Click the <em>Create New Tag</em> button<a class="headerlink" href="#5-click-the-create-new-tag-button" title="Permanent link">&para;</a></h2>
+<p><img alt="new tags" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_create_new_tag.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="6-add-a-tag-authorizing-a-user-or-group-who-can-assume-the-role">6. Add a tag authorizing a user or group who can assume the role<a class="headerlink" href="#6-add-a-tag-authorizing-a-user-or-group-who-can-assume-the-role" title="Permanent link">&para;</a></h2>
+<p>In <a href="../5_enable_credential_brokering/">Configure Credential Brokering</a> you set
+up one or more keys to use in brokering roles to users and groups. Use one
+or more of those keys here to enable users to assume the role.</p>
 <ol>
-<li>
-<p>Tag the IAM role with the names of the users or groups allowed to access the role (See <a href="/getting_started/5_enable_credential_brokering.md">getting_started/5_enable_credentail_brokering.md</a> for more details.</p>
-</li>
-<li>
-<p>Specify a manual mapping of group/users -&gt; roles in the /config endpoint. Here's an example configuration:</p>
-</li>
+<li>Enter <code>noq_authorized</code> or another key you have configured for credential
+brokering as the key for the new tag.</li>
+<li>Enter the user or group name as the value for the new tag.</li>
+<li>Click the <em>Add</em> button.</li>
 </ol>
-<div class="highlight"><pre><span></span><code>group_mapping:
-  groupa@example.com:
-    roles:
-      - arn:aws:iam::123456789012:role/roleA
-      - arn:aws:iam::123456789012:role/roleB
-  userb@example.com:
-    roles:
-      - arn:aws:iam::123456789012:role/roleA
-</code></pre></div>
-<ol>
-<li>(TBD) Specify a Lambda function to invoke, which should return a mapping of roles -&gt; group/users. (Let us know if you want this feature added!)</li>
-</ol>
-<h2 id="role-selection">Role Selection<a class="headerlink" href="#role-selection" title="Permanent link">&para;</a></h2>
-<p>Noq's index page shows a list of roles that the current user is allowed to access across all of the organization's accounts. This could be hundreds or thousands of roles for a given user.</p>
-<h2 id="recent-roles">Recent Roles<a class="headerlink" href="#recent-roles" title="Permanent link">&para;</a></h2>
-<p>On the left side of the page, we store the 5 most recent roles a user has logged in to. This enables them to quickly select the role they want to use if they are commonly logging in to the same roles.</p>
+<p><img alt="add tags" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_add_tag.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="7-optional-add-tags-for-additional-users-or-group-who-can-assume-the-role">7. Optional: Add tags for additional users or group who can assume the role<a class="headerlink" href="#7-optional-add-tags-for-additional-users-or-group-who-can-assume-the-role" title="Permanent link">&para;</a></h2>
+<p>Repeat step 6 for all users you want to authorize to assume the role.</p>
+<h2 id="8-click-save-to-update-the-policy-for-the-role">8. Click <em>Save</em> to update the policy for the role<a class="headerlink" href="#8-click-save-to-update-the-policy-for-the-role" title="Permanent link">&para;</a></h2>
+<p><img alt="save tag" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_save_tag.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="9-enter-a-justification-and-expiration">9. Enter a justification and expiration<a class="headerlink" href="#9-enter-a-justification-and-expiration" title="Permanent link">&para;</a></h2>
+<p>Describe why you are authorizing these users and groups you've identified to
+assume the role. You may also enter an expiration date for credential brokering
+if desired.</p>
+<p><img alt="enter justification" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_enter_justification.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h1 id="next-steps"><strong>Next Steps</strong><a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h1>
+<p>After Noq propagates the policy changes, authorized users will see the role
+in the list of roles they can assume using Noq.</p>
+<p><img alt="user sees role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_user_sees_role.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 
 
             </article>
@@ -1288,7 +1255,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer">
 
 
-        <a href="../../../tasks/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tasks" rel="prev">
+        <a href="../5_enable_credential_brokering/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Configure Credential Brokering" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -1297,20 +1264,20 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              Tasks
+              Configure Credential Brokering
             </div>
           </div>
         </a>
 
 
 
-        <a href="../chrome_integration/" class="md-footer__link md-footer__link--next" aria-label="Next: Chrome Integration" rel="next">
+        <a href="../6_automatically_update_trust_policies/" class="md-footer__link md-footer__link--next" aria-label="Next: Configure Automatic Updates to Trust Policies" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Chrome Integration
+              Configure Automatic Updates to Trust Policies
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -1353,10 +1320,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "navigation.sections"], "search": "../../../assets/javascripts/workers/search.5e67fbfe.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "navigation.sections"], "search": "../../assets/javascripts/workers/search.5e67fbfe.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
 
 
-      <script src="../../../assets/javascripts/bundle.c44cc438.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c44cc438.min.js"></script>
 
 
   </body>

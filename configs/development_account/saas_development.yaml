@@ -11,7 +11,7 @@ _global_:
     cloudwatch:
       enabled: false
   web:
-    path: "/frontend/build"
+    path: "frontend/dist"
   landing_page_domains:
     - localhost
     - www.noq.localhost

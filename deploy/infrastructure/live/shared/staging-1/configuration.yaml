@@ -1,10 +1,8 @@
-extends: AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:259868150464:secret:shared-staging-noq_secrets-yMK1qO
+extends:
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:259868150464:secret:shared-staging-noq_secrets-yMK1qO
 _global_:
   landing_page_domains:
     - shared.staging.noq.dev
-  metrics:
-    cloudwatch:
-      namespace: staging-noq-dev-shared-staging-1
   auth:
     challenge_url:
       request_ip_must_match_challenge_creation_ip: false
