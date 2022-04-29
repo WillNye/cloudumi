@@ -26,11 +26,11 @@ clean:
 
 .PHONY: test
 test: clean
-	ASYNC_TEST_TIMEOUT=60 $(pytest)
+	ASYNC_TEST_TIMEOUT=600 $(pytest)
 
 .PHONY: testhtml
 testhtml: clean
-	ASYNC_TEST_TIMEOUT=60 $(pytest) $(html_report) && echo "View coverage results in htmlcov/index.html"
+	ASYNC_TEST_TIMEOUT=600 $(pytest) $(html_report) && echo "View coverage results in htmlcov/index.html"
 
 .PHONY: test-lint
 test-lint: test lint

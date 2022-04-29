@@ -112,6 +112,7 @@ def _get_cross_account_iam_client(
         iam_client = boto3_cached_conn(
             "iam",
             config.host,
+            None,
             account_number=config.account_id,
             assume_role=cross_account_role_name,
             region=config.region,
