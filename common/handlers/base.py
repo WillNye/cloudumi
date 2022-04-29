@@ -593,8 +593,8 @@ class BaseHandler(TornadoRequestHandler):
                 log_data["message"] = "Loading from cache"
                 log.debug(log_data)
                 cache = json.loads(cache_r)
-                self.groups = cache.get("groups")
-                self.eligible_roles = cache.get("eligible_roles") or []
+                self.groups = cache.get("groups", [])
+                self.eligible_roles = cache.get("eligible_roles", [])
                 self.eligible_accounts = cache.get("eligible_accounts")
                 self.user_role_name = cache.get("user_role_name")
                 refreshed_user_roles_from_cache = True
