@@ -168,7 +168,15 @@ async def get_user_pool_client(user_pool_id: str, client_id: str, client=None) -
     response = await aio_wrapper(
         client.describe_user_pool_client, UserPoolId=user_pool_id, ClientId=client_id
     )
-    return response
+    return response.get("UserPoolClient", {})
+
+
+async def update_user_pool_client(boto_conn, user_pool: dict):
+    """Sanitizes the request(user_pool) data and updates the user pool client in boto3"""
+    user_pool.pop("ClientSecret", None)
+    user_pool.pop("CreationDate", None)
+    user_pool.pop("LastModifiedDate", None)
+    await aio_wrapper(boto_conn.update_user_pool_client, **user_pool)
 
 
 async def connect_idp_to_app_client(
@@ -186,22 +194,13 @@ async def connect_idp_to_app_client(
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    user_pool_supported_idp_call = await get_user_pool_client(
-        user_pool_id, client_id, client=client
-    )
-    user_pool_supported_idp = user_pool_supported_idp_call.get(
-        "UserPoolClient", {}
-    ).get("SupportedIdentityProviders")
-    if not user_pool_supported_idp:
-        user_pool_supported_idp = list()
+    user_pool = await get_user_pool_client(user_pool_id, client_id, client=client)
+    user_pool_supported_idp = user_pool.get("SupportedIdentityProviders", [])
+
     if idp.provider_name not in user_pool_supported_idp:
         user_pool_supported_idp.append(idp.provider_name)
-        await aio_wrapper(
-            client.update_user_pool_client,
-            UserPoolId=user_pool_id,
-            ClientId=client_id,
-            SupportedIdentityProviders=user_pool_supported_idp,
-        )
+        user_pool["SupportedIdentityProviders"] = user_pool_supported_idp
+        await update_user_pool_client(client, user_pool)
     return True
 
 
@@ -221,22 +220,14 @@ async def disconnect_idp_from_app_client(
     """
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
-    user_pool_supported_idp_call = await get_user_pool_client(
-        user_pool_id, client_id, client=client
-    )
-    user_pool_supported_idp = user_pool_supported_idp_call.get(
-        "UserPoolClient", {}
-    ).get("SupportedIdentityProviders")
+    user_pool = await get_user_pool_client(user_pool_id, client_id, client=client)
+    user_pool_supported_idp = user_pool.get("SupportedIdentityProviders")
     if not user_pool_supported_idp:
         return True
     if idp.provider_name in user_pool_supported_idp:
         user_pool_supported_idp.remove(idp.provider_name)
-        await aio_wrapper(
-            client.update_user_pool_client,
-            UserPoolId=user_pool_id,
-            ClientId=client_id,
-            SupportedIdentityProviders=user_pool_supported_idp,
-        )
+        user_pool["SupportedIdentityProviders"] = user_pool_supported_idp
+        await update_user_pool_client(client, user_pool)
     return True
 
 
