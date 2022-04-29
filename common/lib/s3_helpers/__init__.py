@@ -115,6 +115,7 @@ def put_object(**kwargs):
             client = boto3_cached_conn(
                 "s3",
                 host,
+                kwargs.pop("user", None),
                 account_number=kwargs.get("account_number"),
                 assume_role=assume_role,
                 session_name=sanitize_session_name("consoleme_s3_put_object"),
@@ -147,6 +148,7 @@ def get_object(**kwargs):
             client = boto3_cached_conn(
                 "s3",
                 host,
+                kwargs.pop("user", None),
                 account_number=kwargs.get("account_number"),
                 assume_role=assume_role,
                 session_name=sanitize_session_name("consoleme_s3_get_object"),

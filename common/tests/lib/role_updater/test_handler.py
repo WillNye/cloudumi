@@ -226,7 +226,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
                 "tags": [{"action": "add", "key": "Key", "value": "Value"}],
             }
         ]
-        async_to_sync(self.handler.update_role)(event, host)
+        async_to_sync(self.handler.update_role)(event, host, None)
 
     def test_handler_d(self):
         event = [
@@ -257,4 +257,4 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
                 "tags": [{"action": "add", "key": "Key", "value": "Value"}],
             }
         ]
-        async_to_sync(self.handler.update_role)(event, host)
+        async_to_sync(self.handler.update_role)(event, host, None)

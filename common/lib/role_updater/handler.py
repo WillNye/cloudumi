@@ -17,7 +17,7 @@ log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
-async def update_role(event, host):
+async def update_role(event, host, user):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "event": event,
@@ -70,6 +70,7 @@ async def update_role(event, host):
         client = boto3_cached_conn(
             "iam",
             host,
+            user,
             account_number=account_number,
             assume_role=ModelAdapter(SpokeAccount)
             .load_config("spoke_accounts", host)

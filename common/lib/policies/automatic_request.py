@@ -23,7 +23,7 @@ from common.models import (
 log = config.get_logger(__name__)
 
 
-async def create_policy(host: str, role: str, policy_document: str) -> bool:
+async def create_policy(host: str, user: str, role: str, policy_document: str) -> bool:
     """Creates the policy an AWS"""
     # TODO: If role_arn, check to see if role_arn is flagged as in_development, and if self.user is authorized for this role
     # TODO: Log all requests and actions taken during the session. eg: Google analytics for IAM
@@ -33,6 +33,7 @@ async def create_policy(host: str, role: str, policy_document: str) -> bool:
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "account_id": account_id,
         "host": host,
+        "user": user,
     }
 
     # TODO: Normalize the policy, make sure the identity doesn't already have the allowance, and send the request. In our case, make the change.
@@ -49,6 +50,7 @@ async def create_policy(host: str, role: str, policy_document: str) -> bool:
     iam_client = boto3_cached_conn(
         "iam",
         host,
+        user,
         account_number=account_id,
         assume_role=spoke_role_name,
         region=config.region,
@@ -276,7 +278,10 @@ async def approve_policy_request(
 
     try:
         policy_created = await create_policy(
-            host, policy_request.role, json.dumps(policy_request.policy, cls=SetEncoder)
+            host,
+            user,
+            policy_request.role,
+            json.dumps(policy_request.policy, cls=SetEncoder),
         )
         if policy_created:
             policy_request.status = Status3.applied_awaiting_execution

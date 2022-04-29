@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, Sequence
 
-import boto3
 from aws_error_utils import ClientError
 
+from common.config.models import ModelAdapter
+from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import (
+    common,
     event,
     event_permission_data,
 )
+from common.models import SpokeAccount
 from util.log import logger
 
 if TYPE_CHECKING:
@@ -20,12 +23,28 @@ else:
 class SimulateCustomPolicyContextGenerator(object):
     def __init__(
         self,
-        session: boto3.Session,
+        config: common.Config,
         event_permission_data_: event_permission_data.EventPermissionData,
         cloudtrail_event_: event.Event,
     ):
-        self.session = session
-        self.iam_client = session.client("iam")
+        role_name = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", config.host)
+            .with_query({"account_id": config.account_id})
+            .first.name
+        )
+        self.iam_client = boto3_cached_conn(
+            "iam",
+            config.host,
+            None,
+            account_number=config.account_id,
+            assume_role=role_name,
+            region=config.region,
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+        )
         self.event_permission_data = event_permission_data_
         self.cloudtrail_event = cloudtrail_event_
 

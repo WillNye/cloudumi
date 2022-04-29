@@ -76,6 +76,15 @@ const ProtectedRoute = (props) => {
     window.clarity('stop')
     window.clarity('start')
   }
+
+  if (window?.dataLayer && window?.dataLayer?.push) {
+    window.dataLayer.push({
+      event: 'event',
+      eventProps: {
+        email: user?.user,
+      },
+    })
+  }
   return (
     <>
       <ConsoleMeHeader />

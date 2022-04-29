@@ -168,7 +168,7 @@ async def handle_spoke_account_registration(body):
 
     # Assume role from noq_dev_central_role
     try:
-        sts_client = await aio_wrapper(boto3_cached_conn, "sts", host)
+        sts_client = await aio_wrapper(boto3_cached_conn, "sts", host, None)
         for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
             with attempt:
                 central_role_credentials = await aio_wrapper(
