@@ -143,6 +143,16 @@ class ManagedPolicyChangeComponent extends Component {
         </Grid.Column>
       ) : null
 
+    const changesExpiredContent =
+      change.status === 'expired' ? (
+        <Grid.Column>
+          <Message negative>
+            <Message.Header>Change expired</Message.Header>
+            <p>This change has expired and cannot be modified.</p>
+          </Message>
+        </Grid.Column>
+      ) : null
+
     const requestDetailsContent = change ? (
       <Table celled definition striped>
         <Table.Body>
@@ -199,6 +209,7 @@ class ManagedPolicyChangeComponent extends Component {
           {viewOnlyInfo}
           {changesAlreadyAppliedContent}
           {changesAlreadyCancelledContent}
+          {changesExpiredContent}
         </Grid.Row>
       </Grid>
     ) : null

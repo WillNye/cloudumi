@@ -1,6 +1,11 @@
+extends:
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:940552945933:secret:shared-prod-noq_secrets-qTayVS
 _global_:
   landing_page_domains:
     - shared.noq.dev
+  metrics:
+    cloudwatch:
+      namespace: noq-dev-shared-prod-1
   auth:
     challenge_url:
       request_ip_must_match_challenge_creation_ip: false

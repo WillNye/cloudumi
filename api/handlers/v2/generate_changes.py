@@ -99,19 +99,35 @@ class GenerateChangesHandler(BaseAPIV2Handler):
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
             stats.count(
-                f"{log_data['function']}.validation_exception", tags={"user": self.user}
+                f"{log_data['function']}.validation_exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
             )
             self.write_error(400, message="Error validating input: " + str(e))
             return
         except Exception as e:
             log_data["message"] = "Unknown Exception occurred while generating changes"
             log.error(log_data, exc_info=True)
-            stats.count(f"{log_data['function']}.exception", tags={"user": self.user})
+            stats.count(
+                f"{log_data['function']}.exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
+            )
             sentry_sdk.capture_exception(tags={"user": self.user})
             self.write_error(500, message="Error generating changes: " + str(e))
             return
 
         log_data["message"] = "Successfully generated changes requested"
         log.info(log_data)
-        stats.count(f"{log_data['function']}.success", tags={"user": self.user})
+        stats.count(
+            f"{log_data['function']}.success",
+            tags={
+                "user": self.user,
+                "host": host,
+            },
+        )
         self.write(change_model_array.json())

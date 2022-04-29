@@ -84,15 +84,13 @@ def list_role_tags(role, client=None, **kwargs):
 
 @sts_conn("iam", service_type="client")
 @rate_limited()
-def get_user_managed_policy_documents(user, host, client=None, **kwargs):
+def get_user_managed_policy_documents(user, client=None, **kwargs):
     """Retrieve the currently active policy version document for every managed policy that is attached to the user."""
     policies = get_user_managed_policies(user, force_client=client)
 
     policy_names = (policy["name"] for policy in policies)
     delayed_gmpd_calls = (
-        delayed(get_managed_policy_document)(
-            policy["arn"], host=host, force_client=client
-        )
+        delayed(get_managed_policy_document)(policy["arn"], force_client=client)
         for policy in policies
     )
     policy_documents = Parallel(n_jobs=20, backend="threading")(delayed_gmpd_calls)
@@ -359,10 +357,11 @@ async def get_all_iam_managed_policies_for_account(account_id, host):
         )
 
 
-async def update_assume_role_policy_trust_noq(host, role_name, account_id):
+async def update_assume_role_policy_trust_noq(host, user, role_name, account_id):
     client = boto3_cached_conn(
         "iam",
         host,
+        user,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)

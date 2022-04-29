@@ -9,22 +9,6 @@ export const services = [
     label: 'AWS',
     Component: ServiceAWS,
   },
-  // {
-  //   name: 'jira',
-  //   label: 'Jira',
-  // },
-  // {
-  //   name: 'service-now',
-  //   label: 'Service Now',
-  // },
-  // {
-  //   name: 'pagerduty',
-  //   label: 'Pagerduty',
-  // },
-  // {
-  //   name: 'git',
-  //   label: 'Git',
-  // },
 ]
 
 export const general = [

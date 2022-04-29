@@ -7,8 +7,11 @@ extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
+  metrics:
+    cloudwatch:
+      enabled: false
   web:
-    path: "/frontend/build"
+    path: "frontend/dist"
   landing_page_domains:
     - localhost
     - www.noq.localhost
@@ -42,6 +45,7 @@ _global_:
   # sentry:
   #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
   s3_cache_bucket: noq-local-dev-cache
+  s3_cache_bucket_region: us-west-2
   environment: dev
   development: true
   tornado:

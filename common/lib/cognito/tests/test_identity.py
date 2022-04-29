@@ -176,9 +176,7 @@ class TestIdentity(IsolatedAsyncioTestCase):
         app_clients = await identity.get_user_pool_client(
             self.pool_id, self.user_pool_client["ClientId"]
         )
-        assert app_clients.get("UserPoolClient", {}).get(
-            "SupportedIdentityProviders", []
-        ) == ["SAML"]
+        assert app_clients.get("SupportedIdentityProviders", []) == ["SAML"]
 
     async def test_disconnect_idp_from_app_client(self):
         saml_provider = SamlOIDCSSOIDPProvider(
@@ -196,19 +194,14 @@ class TestIdentity(IsolatedAsyncioTestCase):
         app_clients = await identity.get_user_pool_client(
             self.pool_id, self.user_pool_client.get("ClientId")
         )
-        assert app_clients.get("UserPoolClient", {}).get(
-            "SupportedIdentityProviders", []
-        ) == ["SAML"]
+        assert app_clients.get("SupportedIdentityProviders", []) == ["SAML"]
         assert await identity.disconnect_idp_from_app_client(
             self.pool_id, self.user_pool_client.get("ClientId"), saml_provider
         )
         app_clients = await identity.get_user_pool_client(
             self.pool_id, self.user_pool_client.get("ClientId")
         )
-        assert (
-            app_clients.get("UserPoolClient", {}).get("SupportedIdentityProviders", [])
-            == []
-        )
+        assert app_clients.get("SupportedIdentityProviders", []) == []
 
     async def test_get_identity_users(self):
         cognito_user = await identity.get_identity_users(self.pool_id)

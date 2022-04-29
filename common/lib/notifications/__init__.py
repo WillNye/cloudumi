@@ -108,7 +108,6 @@ async def send_email_via_sendgrid(
     msg["From"] = sender
     msg["To"] = ";".join(to_addresses)
     msg.attach(MIMEText(body, "html", _charset=charset))
-    server.ehlo()
 
     try:
         server.ehlo()

@@ -62,7 +62,6 @@ class ConfigurationCrudHandler(BaseHandler):
             "config_key": self._config_key,
             "host": host,
         }
-        log.debug(log_data)
 
         # Checks authz levels of current user
         generic_error_message = f"Cannot call GET on {type(self).__name__}"

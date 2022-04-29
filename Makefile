@@ -4,7 +4,7 @@ pytest := PYTHONDONTWRITEBYTECODE=1 \
 	CONFIG_LOCATION=util/tests/test_configuration.yaml \
 	pytest --tb short \
 	--cov-config .coveragerc --cov common --cov api \
-	--async-test-timeout=600 --timeout=600 -n auto \
+	--async-test-timeout=1600 --timeout=1600 -n auto \
 	--asyncio-mode=auto --dist loadscope \
     --ignore-glob 'bazel*' .
 
@@ -26,11 +26,11 @@ clean:
 
 .PHONY: test
 test: clean
-	ASYNC_TEST_TIMEOUT=60 $(pytest)
+	ASYNC_TEST_TIMEOUT=1600 $(pytest)
 
 .PHONY: testhtml
 testhtml: clean
-	ASYNC_TEST_TIMEOUT=60 $(pytest) $(html_report) && echo "View coverage results in htmlcov/index.html"
+	ASYNC_TEST_TIMEOUT=1600 $(pytest) $(html_report) && echo "View coverage results in htmlcov/index.html"
 
 .PHONY: test-lint
 test-lint: test lint

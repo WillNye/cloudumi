@@ -42,6 +42,7 @@ async def list_resource_type(host, account_id, region, resource_type):
     cc_client = boto3_cached_conn(
         "cloudcontrol",
         host,
+        None,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)

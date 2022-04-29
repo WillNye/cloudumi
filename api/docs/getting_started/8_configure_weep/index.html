@@ -15,7 +15,7 @@
 
 
 
-        <title>Configure Weep (CLI) - Noq Docs</title>
+        <title>Enable CLI Credential Brokering - Noq Docs</title>
 
 
 
@@ -75,7 +75,7 @@
     <div data-md-component="skip">
 
 
-        <a href="#set-up-weep" class="md-skip">
+        <a href="#enable-cli-credential-brokering" class="md-skip">
           Skip to content
         </a>
 
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
 
-              Configure Weep (CLI)
+              Enable CLI Credential Brokering
 
           </span>
         </div>
@@ -239,13 +239,10 @@
 
 
 
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
-
-
-
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
 
 
 
@@ -258,29 +255,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <div class="md-nav__link md-nav__link--index ">
-          <a href="../">Getting Started</a>
-
-            <label for="__nav_2">
-              <span class="md-nav__icon md-icon"></span>
-            </label>
-
-        </div>
+        <label class="md-nav__link" for="__nav_2">
+          Getting Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
 
       <nav class="md-nav" aria-label="Getting Started" data-md-level="1">
         <label class="md-nav__title" for="__nav_2">
@@ -290,6 +268,104 @@
         <ul class="md-nav__list" data-md-scrollfix>
 
 
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../access_aws_console_with_assumed_roles/" class="md-nav__link">
+        Access AWS Console with Assumed Roles
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../2_self_service_wizard/" class="md-nav__link">
+        Self-Service Permissions
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../configure_cli_credential_brokering/" class="md-nav__link">
+        Configure CLI Credential Brokering
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_3">
+          Configuration Guides
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Configuration Guides" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Configuration Guides
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
 
 
 
@@ -311,8 +387,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../2_self_service_wizard/" class="md-nav__link">
-        (Optional) Step Through Self-Service Wizard
+      <a href="../5_enable_credential_brokering/" class="md-nav__link">
+        Configure Credential Brokering
       </a>
     </li>
 
@@ -325,9 +401,47 @@
 
 
     <li class="md-nav__item">
-      <a href="../3_connect_spoke_accounts/" class="md-nav__link">
-        Connect Spoke Accounts
+      <a href="../enable_users_to_assume_roles/" class="md-nav__link">
+        Authorize Users to Assume Roles
       </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../6_automatically_update_trust_policies/" class="md-nav__link">
+        Configure Automatic Updates to Trust Policies
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--active">
+
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+
+
+
+
+
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Enable CLI Credential Brokering
+      </a>
+
     </li>
 
 
@@ -353,22 +467,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../5_enable_credential_brokering/" class="md-nav__link">
-        Enable Credential Brokering
-      </a>
-    </li>
-
-
-
-
-
-
-
-
-
-    <li class="md-nav__item">
-      <a href="../6_automatically_update_trust_policies/" class="md-nav__link">
-        Automatically Update Trust Policies
+      <a href="../3_connect_spoke_accounts/" class="md-nav__link">
+        Connect Additional Spoke Accounts
       </a>
     </li>
 
@@ -384,77 +484,6 @@
       <a href="../7_enable_ip_restrictions/" class="md-nav__link">
         Enable IP Restrictions
       </a>
-    </li>
-
-
-
-
-
-
-
-
-
-
-
-    <li class="md-nav__item md-nav__item--active">
-
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-
-
-
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Configure Weep (CLI)
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-
-      <a href="./" class="md-nav__link md-nav__link--active">
-        Configure Weep (CLI)
-      </a>
-
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-
-
-
-
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-
-        <li class="md-nav__item">
-  <a href="#set-up-weep" class="md-nav__link">
-    Set up Weep
-  </a>
-
-    <nav class="md-nav" aria-label="Set up Weep">
-      <ul class="md-nav__list">
-
-          <li class="md-nav__item">
-  <a href="#enable-challenge-authentication-mode" class="md-nav__link">
-    Enable Challenge Authentication Mode
-  </a>
-
-</li>
-
-          <li class="md-nav__item">
-  <a href="#download-and-configure-weep" class="md-nav__link">
-    Download and Configure Weep
-  </a>
-
-</li>
-
-      </ul>
-    </nav>
-
-</li>
-
-    </ul>
-
-</nav>
-
     </li>
 
 
@@ -518,15 +547,12 @@
 
 
 
-    <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
 
 
-
-
-
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
 
 
 
@@ -536,13 +562,18 @@
 
 
 
-        <label class="md-nav__link" for="__nav_5">
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_6">
           Features
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Features" data-md-level="1">
-        <label class="md-nav__title" for="__nav_5">
+        <label class="md-nav__title" for="__nav_6">
           <span class="md-nav__icon md-icon"></span>
           Features
         </label>
@@ -557,7 +588,7 @@
     <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_1" type="checkbox" id="__nav_5_1" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_1" type="checkbox" id="__nav_6_1" >
 
 
 
@@ -570,13 +601,13 @@
 
 
 
-        <label class="md-nav__link" for="__nav_5_1">
+        <label class="md-nav__link" for="__nav_6_1">
           Credential Management
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Credential Management" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_1">
+        <label class="md-nav__title" for="__nav_6_1">
           <span class="md-nav__icon md-icon"></span>
           Credential Management
         </label>
@@ -591,7 +622,7 @@
     <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_1_1" type="checkbox" id="__nav_5_1_1" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_1_1" type="checkbox" id="__nav_6_1_1" >
 
 
 
@@ -604,13 +635,13 @@
 
 
 
-        <label class="md-nav__link" for="__nav_5_1_1">
+        <label class="md-nav__link" for="__nav_6_1_1">
           AWS Console Credentials
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="AWS Console Credentials" data-md-level="3">
-        <label class="md-nav__title" for="__nav_5_1_1">
+        <label class="md-nav__title" for="__nav_6_1_1">
           <span class="md-nav__icon md-icon"></span>
           AWS Console Credentials
         </label>
@@ -709,7 +740,7 @@
     <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_2" type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_2" type="checkbox" id="__nav_6_2" >
 
 
 
@@ -730,13 +761,13 @@
 
 
 
-        <label class="md-nav__link" for="__nav_5_2">
+        <label class="md-nav__link" for="__nav_6_2">
           Permissions Management and Request Framework
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Permissions Management and Request Framework" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_2">
+        <label class="md-nav__title" for="__nav_6_2">
           <span class="md-nav__icon md-icon"></span>
           Permissions Management and Request Framework
         </label>
@@ -856,7 +887,7 @@
     <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_3" type="checkbox" id="__nav_5_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_3" type="checkbox" id="__nav_6_3" >
 
 
 
@@ -867,13 +898,13 @@
 
 
 
-        <label class="md-nav__link" for="__nav_5_3">
+        <label class="md-nav__link" for="__nav_6_3">
           Resource Management
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Resource Management" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_3">
+        <label class="md-nav__title" for="__nav_6_3">
           <span class="md-nav__icon md-icon"></span>
           Resource Management
         </label>
@@ -923,7 +954,7 @@
     <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_4" type="checkbox" id="__nav_5_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_4" type="checkbox" id="__nav_6_4" >
 
 
 
@@ -944,13 +975,13 @@
 
 
 
-        <label class="md-nav__link" for="__nav_5_4">
+        <label class="md-nav__link" for="__nav_6_4">
           Planned
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Planned" data-md-level="2">
-        <label class="md-nav__title" for="__nav_5_4">
+        <label class="md-nav__title" for="__nav_6_4">
           <span class="md-nav__icon md-icon"></span>
           Planned
         </label>
@@ -1075,25 +1106,27 @@
 
 
 
-    <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
 
 
-
-
-
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_7" type="checkbox" id="__nav_7" >
 
 
 
-        <label class="md-nav__link" for="__nav_6">
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_7">
           Swagger
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Swagger" data-md-level="1">
-        <label class="md-nav__title" for="__nav_6">
+        <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           Swagger
         </label>
@@ -1137,40 +1170,7 @@
 
 
 
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
 
-        <li class="md-nav__item">
-  <a href="#set-up-weep" class="md-nav__link">
-    Set up Weep
-  </a>
-
-    <nav class="md-nav" aria-label="Set up Weep">
-      <ul class="md-nav__list">
-
-          <li class="md-nav__item">
-  <a href="#enable-challenge-authentication-mode" class="md-nav__link">
-    Enable Challenge Authentication Mode
-  </a>
-
-</li>
-
-          <li class="md-nav__item">
-  <a href="#download-and-configure-weep" class="md-nav__link">
-    Download and Configure Weep
-  </a>
-
-</li>
-
-      </ul>
-    </nav>
-
-</li>
-
-    </ul>
 
 </nav>
                   </div>
@@ -1184,55 +1184,45 @@
 
 
 
-  <h1>Configure Weep (CLI)</h1>
-
-<h2 id="set-up-weep"><strong>Set up Weep</strong><a class="headerlink" href="#set-up-weep" title="Permanent link">&para;</a></h2>
-<p><a href="https://github.com/Netflix/weep">Weep</a> is the open source CLI utility used for ConsoleMe. It's also compatible with Noq.</p>
-<p>Weep offers a number of convenient ways to work with temporary AWS credentials, such as emulating the ECS credential provider,
-the instance metadata service, and providing a <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sourcing-external.html">credential_process</a> endpoint. Weep enables developers so they can work with multiple sets of temporary credentials in parallel, and perform long-lived operations that outlast the expiration time of the credentials. See
-the <a href="https://hawkins.gitbook.io/consoleme/weep-cli/aws-credentials-in-the-cli-using-weep">open source documentation</a>
-for more information. </p>
-<h3 id="enable-challenge-authentication-mode">Enable Challenge Authentication Mode<a class="headerlink" href="#enable-challenge-authentication-mode" title="Permanent link">&para;</a></h3>
-<p><strong>Challenge Authentication Mode must be enabled in order to use Weep with Noq</strong></p>
-<p>Challenge authentication allows Weep to securely authenticate to your tenant on Noq. See <a href="../../features/credential_management/aws_cli_credentials/">Challenge URL Authentication</a> for more details.</p>
-<p>To enable Challenge Authentication, follow the steps below (This is a one-time configuration):</p>
-<ol>
-<li>
-<p>Visit <strong>Advanced</strong> -&gt; <strong>Config</strong> </p>
-</li>
-<li>
-<p>Ensure <code>auth.challenge_url.enabled</code> is set to <code>true</code>.</p>
-</li>
-</ol>
+<h1 id="enable-cli-credential-brokering"><strong>Enable CLI Credential Brokering</strong><a class="headerlink" href="#enable-cli-credential-brokering" title="Permanent link">&para;</a></h1>
+<p><a href="https://github.com/Netflix/weep">Weep</a> is an open source CLI utility. It
+offers convenient ways to work with temporary AWS credentials. For example,
+you may use Weep to emulate the ECS credential provider and the instance
+metadata service. You can also use Weep to provide an endpoint for sourcing
+credentials via the AWS CLI
+<a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sourcing-external.html">credential_process</a>
+config setting.</p>
+<p>Weep enables you to work with multiple sets of temporary
+credentials in parallel. It also supports long-lived operations that outlast
+the expiration time of the credentials.</p>
+<p>Weep was originally developed as part of the open source ConsoleMe project.
+See the
+<a href="https://hawkins.gitbook.io/consoleme/weep-cli/aws-credentials-in-the-cli-using-weep">ConsoleMe documentation</a>
+for more information on Weep </p>
+<h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
+<p>To enable CLI credential brokering in Noq via Weep you must enable challenge
+authentication mode. Challenge authentication allows Weep to securely
+authenticate to your tenant on Noq. For details on the challenge authentication
+flow over HTTPS see
+<a href="../../features/credential_management/aws_cli_credentials/">AWS CLI Credentials</a>.</p>
+<p>To enable challenge authentication, follow the steps below.</p>
+<h2 id="1-navigate-to-the-update-configuration-page">1. Navigate to the <em>Update Configuration</em> page<a class="headerlink" href="#1-navigate-to-the-update-configuration-page" title="Permanent link">&para;</a></h2>
+<p>Select <strong>Advanced</strong> &gt; <strong>Config</strong> from the main Noq menu.</p>
+<p><img alt="select advaced config" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_update_trust_policies_visit_advanced_config.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="2-update-the-noq-configuration-file">2. Update the Noq configuration file<a class="headerlink" href="#2-update-the-noq-configuration-file" title="Permanent link">&para;</a></h2>
+<p>Set the configuration key for <code>auth.challenge_url.enabled</code> to <code>true</code>. When
+finished, your Noq configuration file should include an entry similar to the
+following.</p>
 <div class="highlight"><pre><span></span><code>auth:
   challenge_url:
     enabled: true
 </code></pre></div>
-<h3 id="download-and-configure-weep"><strong>Download and Configure Weep</strong><a class="headerlink" href="#download-and-configure-weep" title="Permanent link">&para;</a></h3>
-<p>To download and configure Weep, follow the steps outlined below:</p>
-<p><div class="video-container"><iframe src="https://noq-docs-public.s3.us-west-2.amazonaws.com/videos/weep_installation.mp4" style="width: 900px; height: 500px" frameborder="0" allowfullscreen></iframe></div></p>
-<ol>
-<li>
-<p>Visit the <strong>Downloads</strong> page in Noq</p>
-</li>
-<li>
-<p>Download Weep for your operating system. </p>
-</li>
-<li>
-<p>If you downloaded a Linux/Mac binary, copy Weep to your $PATH.</p>
-</li>
-</ol>
-<div class="highlight"><pre><span></span><code>cd ~/Downloads
-cp ./weep /usr/local/bin/weep
-</code></pre></div>
-<ol>
-<li>
-<p>Run the commands specified on the Downloads page</p>
-</li>
-<li>
-<p>Run <code>weep list</code> to authenticate.</p>
-</li>
-</ol>
+<h2 id="3-click-save-configuration">3. Click <em>Save Configuration</em><a class="headerlink" href="#3-click-save-configuration" title="Permanent link">&para;</a></h2>
+<p>Click the <em>Save Configuration</em> button to commit the changes.</p>
+<p><img alt="select advaced config" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_challenge_authentication_save_config.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h1 id="next-steps"><strong>Next Steps</strong><a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h1>
+<p>See <a href="getting_started/download_and_configure_weep.md">Configure CLI Credential Brokering</a>
+for instructions on how to download and configure weep for use with your CLI.</p>
 
 
             </article>
@@ -1246,7 +1236,7 @@ cp ./weep /usr/local/bin/weep
     <nav class="md-footer__inner md-grid" aria-label="Footer">
 
 
-        <a href="../7_enable_ip_restrictions/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Enable IP Restrictions" rel="prev">
+        <a href="../6_automatically_update_trust_policies/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Configure Automatic Updates to Trust Policies" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -1255,20 +1245,20 @@ cp ./weep /usr/local/bin/weep
               <span class="md-footer__direction">
                 Previous
               </span>
-              Enable IP Restrictions
+              Configure Automatic Updates to Trust Policies
             </div>
           </div>
         </a>
 
 
 
-        <a href="../9_connect_eventbridge/" class="md-footer__link md-footer__link--next" aria-label="Next: Configure AWS Event Bridge" rel="next">
+        <a href="../4_update_account_names/" class="md-footer__link md-footer__link--next" aria-label="Next: Update Account Names" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Configure AWS Event Bridge
+              Update Account Names
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -1311,7 +1301,7 @@ cp ./weep /usr/local/bin/weep
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.5e67fbfe.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "navigation.sections"], "search": "../../assets/javascripts/workers/search.5e67fbfe.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
 
 
       <script src="../../assets/javascripts/bundle.c44cc438.min.js"></script>

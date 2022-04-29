@@ -21,6 +21,7 @@ py_library(
         ":src_files",
     ],
     deps = [
+        "//plugins/metrics/cloudwatch:lib",
         "//common/config:lib",
         "//common/lib",
     ],

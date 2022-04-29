@@ -69,10 +69,14 @@ class Configuration(metaclass=Singleton):
 
     def raise_if_invalid_aws_credentials(self):
         try:
+            region = self.get_aws_region()
             session_kwargs = self.get("_global_.boto3.session_kwargs", {})
             session = boto3.Session(**session_kwargs)
             identity = session.client(
-                "sts", **self.get("_global_.boto3.client_kwargs", {})
+                "sts",
+                region_name=region,
+                endpoint_url=f"https://sts.{region}.amazonaws.com",
+                **self.get("_global_.boto3.client_kwargs", {}),
             ).get_caller_identity()
             identity_arn_with_session_name = (
                 identity["Arn"]
@@ -284,7 +288,7 @@ class Configuration(metaclass=Singleton):
         except FileNotFoundError as e:
             raise FileNotFoundError(
                 "File not found. Please set the CONFIG_LOCATION environmental variable "
-                f"to point to ConsoleMe's YAML configuration file: {e}"
+                f"to point to Noq's YAML configuration file: {e}"
             )
 
         extends = self.get("extends")
@@ -439,7 +443,7 @@ class Configuration(metaclass=Singleton):
         if self.log:
             return self.log
         if not name:
-            name = self.get("_global_.application_name", "consoleme")
+            name = self.get("_global_.application_name", "noq")
         level_c = self.get("_global_.logging.level", "debug")
         if level_c == "info":
             level = logging.INFO

@@ -69,6 +69,7 @@ class Aws:
         client = boto3_cached_conn(
             "sts",
             host,
+            user,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -79,12 +80,26 @@ class Aws:
         )
 
         ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host)
-        stats.count("aws.get_credentials", tags={"role": role, "user": user})
+        stats.count(
+            "aws.get_credentials",
+            tags={
+                "role": role,
+                "user": user,
+                "host": host,
+            },
+        )
 
         # If this is a dynamic request, then we need to fetch the role details, call out to the lambda
         # wait for it to complete, assume the role, and then return the assumed credentials back.
         if user_role:
-            stats.count("aws.call_user_lambda", tags={"role": role, "user": user})
+            stats.count(
+                "aws.call_user_lambda",
+                tags={
+                    "role": role,
+                    "user": user,
+                    "host": host,
+                },
+            )
             try:
                 role = await self.call_user_lambda(role, user, account_id)
             except Exception as e:
@@ -96,6 +111,8 @@ class Aws:
 
         try:
             if enforce_ip_restrictions and ip_restrictions:
+                # Used to further restrict user permissions
+                # https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
                 policy = json.dumps(
                     dict(
                         Version="2012-10-17",
@@ -218,7 +235,7 @@ class Aws:
                 )
             ):
                 await update_assume_role_policy_trust_noq(
-                    host, role.split("/")[-1], role.split(":")[4]
+                    host, user, role.split("/")[-1], role.split(":")[4]
                 )
                 raise RoleTrustPolicyModified(
                     "Role trust policy was modified. Please try again in a few seconds."

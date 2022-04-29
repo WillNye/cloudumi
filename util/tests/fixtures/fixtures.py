@@ -270,11 +270,27 @@ def iam(aws_credentials):
     from common.config import config
 
     with mock_iam():
-        yield boto3.client(
+        client = boto3.client(
             "iam",
             region_name="us-east-1",
             **config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
+        client.create_role(
+            RoleName="roleA",
+            AssumeRolePolicyDocument=json.dumps(
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {"Service": "ec2.amazonaws.com"},
+                            "Action": "sts:AssumeRole",
+                        }
+                    ],
+                }
+            ),
+        )
+        yield client
 
 
 @pytest.fixture(autouse=False, scope="session")
@@ -541,6 +557,7 @@ def sqs_queue(sqs):
                                 },
                             },
                         },
+                        "errorCode": "AccessDenied",
                         "eventTime": current_time,
                         "eventSource": "iam.amazonaws.com",
                         "eventName": "AttachRolePolicy",
@@ -600,6 +617,7 @@ def sqs_queue(sqs):
                         },
                     },
                 },
+                "errorCode": "AccessDenied",
                 "eventTime": current_time,
                 "eventSource": "iam.amazonaws.com",
                 "eventName": "TagRole",

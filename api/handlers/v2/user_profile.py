@@ -67,15 +67,11 @@ class UserProfileHandler(BaseAPIV1Handler):
             "security_url": None,
             # If site_config.landing_url is set, users will be redirected to the landing URL after authenticating
             # on the frontend.
-            "landing_url": config.get_host_specific_key(
-                "site_config.landing_url", host
-            ),
+            "landing_url": config.get_host_specific_key("landing_url", host),
             "notifications": {
-                "enabled": config.get_host_specific_key(
-                    "site_config.notifications.enabled", host
-                ),
+                "enabled": config.get_host_specific_key("notifications.enabled", host),
                 "request_interval": config.get_host_specific_key(
-                    "site_config.notifications.request_interval",
+                    "notifications.request_interval",
                     host,
                     60,
                 ),

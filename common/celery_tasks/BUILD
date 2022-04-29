@@ -9,6 +9,7 @@ INT_DEPS = [
     "//common/config:lib",
     "//common/exceptions:lib",
     "//common/lib",
+    "//common/lib/aws/access_undenied:lib",
     "//identity:lib",
     "//plugins/auth:lib",
     "//plugins/aws:lib",

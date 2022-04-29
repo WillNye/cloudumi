@@ -25,16 +25,11 @@ from common.lib.slack import send_slack_notification_new_notification
 
 
 class CloudTrail:
-    async def process_cloudtrail_errors(
-        self,
-        aws,
-        host,
-    ) -> object:
+    async def process_cloudtrail_errors(self, aws, host, user) -> object:
         """
         Processes Cloudtrail Errors that were cached by the `cache_cloudtrail_denies` celery task. Generates and returns
         count data. If configured, generates notifications to end-users based on policies that can be generated
 
-        :param notification_ttl_seconds:
         :return:
         """
         notification_ttl_seconds = config.get_host_specific_key(
@@ -113,7 +108,7 @@ class CloudTrail:
                         "principal_arn": arn,
                     },
                 },
-                "updated_policy": json.dumps(cloudtrail_error["generated_policy"]),
+                "updated_policy": json.dumps(cloudtrail_error["generated_policies"]),
             }
             encoded_request = base64.b64encode(
                 json.dumps(generated_request).encode()
@@ -190,6 +185,7 @@ was detected. This notification will disappear when a similar error has not occu
                         resource,
                         cloudtrail_error.get("source_ip"),
                         host,
+                        user,
                     )
                 await send_slack_notification_new_notification(
                     host,

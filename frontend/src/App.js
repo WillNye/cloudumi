@@ -25,6 +25,7 @@ import IdentityRequestsTable from './components/identity/IdentityRequestsTable'
 import IdentityUsersTable from './components/identity/IdentityUsersTable'
 import IdentityUserEdit from './components/identity/User'
 import { Settings } from './components/settings/Settings'
+import AutomatedPermissions from './components/AutomatedPermissions'
 import { MainProvider } from './MainProvider'
 
 function App() {
@@ -144,19 +145,27 @@ function App() {
           key='settings'
           exact
           path='/settings'
+          origin='/settings'
           component={Settings}
         />
-        {/* <ProtectedRoute
+        <ProtectedRoute
           key='settings'
           exact
           path='/settings/:tabName'
+          origin='/settings'
           component={Settings}
-        /> */}
+        />
         <ProtectedRoute
           key='downloads'
           exact
           path='/downloads'
           component={Downloads}
+        />
+        <ProtectedRoute
+          key='automated_permissions'
+          exact
+          path='/automated_permissions'
+          component={AutomatedPermissions}
         />
         <ProtectedRoute key='logout' exact path='/logout' component={Logout} />
         <Route key='login' exact path='/login' component={Login} />

@@ -100,6 +100,10 @@ Resources:
                   - "iam:UpdateRole"
                   - "iam:UpdateRoleDescription"
                   - "iam:UpdateUser"
+                  - "organizations:listpolicies"
+                  - "organizations:describepolicy"
+                  - "organizations:describeaccount"
+                  - "s3:GetBucketLocation"
                   - "s3:GetBucketPolicy" # Retrieve information about your S3 buckets ; Enable modifying buckets
                   - "s3:GetBucketTagging"
                   - "s3:ListAllMyBuckets"

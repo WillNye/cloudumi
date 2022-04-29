@@ -69,6 +69,7 @@ class AuditRolesHandler(BaseMtlsHandler):
             "AuditRoleHandler.get",
             tags={
                 "requester": app_name,
+                "host": host,
             },
         )
 
@@ -125,6 +126,7 @@ class AuditRolesAccessHandler(BaseMtlsHandler):
                 "requester": app_name,
                 "account_id": account_id,
                 "role_name": role_name,
+                "host": host,
             },
         )
 

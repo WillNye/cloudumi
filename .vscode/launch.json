@@ -10,6 +10,7 @@
       "type": "python",
       "request": "launch",
       "console": "integratedTerminal",
+      "justMyCode": false,
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         "AWS_REGION": "us-west-2",
@@ -23,6 +24,7 @@
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/common/scripts/initialize_dynamodb.py",
+      "justMyCode": false,
       "console": "integratedTerminal",
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
@@ -38,12 +40,12 @@
       "request": "launch",
       "program": "${workspaceFolder}/api/__main__.py",
       "console": "integratedTerminal",
+      "justMyCode": false,
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
-        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
-        "FRONTEND_PATH": "api/templates"
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}"
       }
     },
     {
@@ -56,9 +58,10 @@
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // Run `weep serve` in a separate terminal
         "AWS_CONTAINER_CREDENTIALS_FULL_URI": "http://localhost:9091/ecs/arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev",
+        //"AWS_PROFILE": "noq_cluster_dev_2",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
-        "FRONTEND_PATH": "api/templates",
-        "AWS_DEFAULT_REGION": "af-south-1"
+        "AWS_DEFAULT_REGION": "af-south-1",
+        "AWS_REGION": "af-south-1"
       }
     },
     {
@@ -75,15 +78,17 @@
       }
     },
     {
-      "name": "Local Config: Initialize Redis",
+      "name": "Local Config: Update Local Config and Populate Redis",
       "type": "python",
       "request": "launch",
-      "program": "${workspaceFolder}/common/scripts/initialize_redis.py",
+      "program": "${workspaceFolder}/deploy/local/populate_services.py",
+      "justMyCode": false,
       "console": "integratedTerminal",
       "env": {
-        // "CONFIG_LOCATION": "${workspaceFolder}/cloudumi_config/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_DEFALT_REGION": "us-west-2",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}"
       }
     },

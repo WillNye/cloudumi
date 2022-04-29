@@ -26,6 +26,7 @@ class GroupMapping:
 
     async def get_eligible_roles(
         self,
+        roles: list[str],
         username: str,
         groups: list,
         user_role: str,
@@ -34,7 +35,6 @@ class GroupMapping:
         **kwargs,
     ) -> list:
         """Get eligible roles for user."""
-        roles: list = []
         # Legacy cruft, we should rename the parameter here.
         include_cli: bool = not console_only
 

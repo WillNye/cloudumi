@@ -28,7 +28,7 @@ from common.exceptions.exceptions import (
     WebAuthNError,
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
-from common.lib.auth import AuthenticationError
+from common.lib.auth import AuthenticationError, can_admin_all
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
 from common.lib.oidc import authenticate_user_by_oidc
@@ -37,6 +37,7 @@ from common.lib.redis import RedisHandler
 from common.lib.request_context.models import RequestContext
 from common.lib.saml import authenticate_user_by_saml
 from common.lib.tracing import ConsoleMeTracer
+from common.lib.web import handle_generic_error_response
 
 log = config.get_logger()
 
@@ -450,6 +451,7 @@ class BaseHandler(TornadoRequestHandler):
             if res and isinstance(res, dict):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
+                self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
 
         # if host in ["localhost", "127.0.0.1"] and not self.user:
@@ -568,6 +570,7 @@ class BaseHandler(TornadoRequestHandler):
                         "request_path": self.request.uri,
                         "ip": self.ip,
                         "user_agent": self.request.headers.get("User-Agent"),
+                        "host": host,
                     },
                 )
                 log_data["message"] = "No user detected. Check configuration."
@@ -590,20 +593,27 @@ class BaseHandler(TornadoRequestHandler):
                 log_data["message"] = "Loading from cache"
                 log.debug(log_data)
                 cache = json.loads(cache_r)
-                self.groups = cache.get("groups")
-                self.eligible_roles = cache.get("eligible_roles")
+                self.groups = cache.get("groups", [])
+                self.eligible_roles = cache.get("eligible_roles", [])
                 self.eligible_accounts = cache.get("eligible_accounts")
                 self.user_role_name = cache.get("user_role_name")
                 refreshed_user_roles_from_cache = True
 
         try:
-            if not self.groups:
-                try:
-                    self.groups = await auth.get_groups(
-                        self.user, self, headers=self.request.headers
-                    )
-                except Exception:
-                    sentry_sdk.capture_exception()
+            try:
+                self.groups = await auth.get_groups(
+                    self.groups, self.user, self, headers=self.request.headers
+                )
+            except Exception as e:
+                log.error(
+                    {
+                        **log_data,
+                        "error": str(e),
+                        "message": "Unable to get groups",
+                    },
+                    exc_info=True,
+                )
+                sentry_sdk.capture_exception()
             if not self.groups:
                 raise NoGroupsException(
                     f"Groups not detected. Headers: {self.request.headers}"
@@ -625,21 +635,21 @@ class BaseHandler(TornadoRequestHandler):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
 
-        if not self.eligible_roles:
-            self.eligible_roles = await group_mapping.get_eligible_roles(
-                self.user,
-                self.groups,
-                self.user_role_name,
-                self.get_host_name(),
-                console_only=console_only,
-            )
+        self.eligible_roles = await group_mapping.get_eligible_roles(
+            self.eligible_roles,
+            self.user,
+            self.groups,
+            self.user_role_name,
+            self.get_host_name(),
+            console_only=console_only,
+        )
 
-            if not self.eligible_roles:
-                log_data[
-                    "message"
-                ] = "No eligible roles detected for user. But letting them continue"
-                log.warning(log_data)
-            log_data["eligible_roles"] = len(self.eligible_roles)
+        if not self.eligible_roles:
+            log_data[
+                "message"
+            ] = "No eligible roles detected for user. But letting them continue"
+            log.warning(log_data)
+        log_data["eligible_roles"] = len(self.eligible_roles)
 
         if not self.eligible_accounts:
             try:
@@ -705,7 +715,15 @@ class BaseHandler(TornadoRequestHandler):
             )
         if self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
-
+        stats.timer(
+            "base_handler.incoming_request",
+            {
+                "user": self.user,
+                "host": host,
+                "uri": self.request.uri,
+                "method": self.request.method,
+            },
+        )
         self.ctx = RequestContext(
             host=host,
             user=self.user,
@@ -843,9 +861,19 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                     await self.finish()
                 self.user = res.get("user")
                 self.groups = res.get("groups")
+                self.eligible_roles += res.get("additional_roles")
                 self.requester = {"type": "user", "email": self.user}
                 self.current_cert_age = int(time.time()) - res.get("iat")
                 self.auth_cookie_expiration = res.get("exp")
+                stats.timer(
+                    "base_handler.incoming_request",
+                    {
+                        "user": self.user,
+                        "host": host,
+                        "uri": self.request.uri,
+                        "method": self.request.method,
+                    },
+                )
                 self.ctx = RequestContext(
                     host=host,
                     user=self.user,
@@ -946,3 +974,21 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
 
     async def get(self, path: str, include_body: bool = True) -> None:
         await super(AuthenticatedStaticFileHandler, self).get(path, include_body)
+
+
+class BaseAdminHandler(BaseHandler):
+    async def authorization_flow(
+        self, user: str = None, console_only: bool = True, refresh_cache: bool = False
+    ) -> None:
+        await super(BaseAdminHandler, self).authorization_flow(
+            user, console_only, refresh_cache
+        )
+
+        if not getattr(self.ctx, "host") or not can_admin_all(
+            self.user, self.groups, getattr(self.ctx, "host")
+        ):
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self, errors[0], errors, 403, "unauthorized", {}
+            )
+            raise tornado.web.Finish()

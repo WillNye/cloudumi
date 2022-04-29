@@ -85,6 +85,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                     "role": role,
                     "authorized": False,
                     "redirect": bool(redirect),
+                    "host": host,
                 },
             )
             log_data[
@@ -102,6 +103,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 "role": role,
                 "authorized": True,
                 "redirect": bool(redirect),
+                "host": host,
             },
         )
 
@@ -114,6 +116,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                     "role": role,
                     "authorized": False,
                     "redirect": bool(redirect),
+                    "host": host,
                 },
             )
             log_data[
@@ -176,7 +179,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             log_data["message"] = f"Exception generating AWS console URL: {str(e)}"
             log_data["error"] = str(e)
             log.error(log_data, exc_info=True)
-            stats.count("index.post.exception")
+            stats.count("index.post.exception", tags={"host": host, "error": str(e)})
             self.write(
                 {
                     "type": "console_url",
@@ -249,7 +252,11 @@ class RolesHandler(BaseAPIV2Handler):
         if not can_create_role:
             stats.count(
                 f"{log_data['function']}.unauthorized",
-                tags={"user": self.user, "authorized": can_create_role},
+                tags={
+                    "user": self.user,
+                    "authorized": can_create_role,
+                    "host": host,
+                },
             )
             log_data["message"] = "User is unauthorized to create a role"
             log.error(log_data)
@@ -263,7 +270,11 @@ class RolesHandler(BaseAPIV2Handler):
             log_data["error"] = str(e)
             log.error(log_data, exc_info=True)
             stats.count(
-                f"{log_data['function']}.validation_exception", tags={"user": self.user}
+                f"{log_data['function']}.validation_exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
             )
             sentry_sdk.capture_exception()
             self.write_error(400, message="Error validating input: " + str(e))
@@ -283,6 +294,7 @@ class RolesHandler(BaseAPIV2Handler):
                     "user": self.user,
                     "account_id": create_model.account_id,
                     "role_name": create_model.role_name,
+                    "host": host,
                 },
             )
             sentry_sdk.capture_exception()
@@ -296,6 +308,7 @@ class RolesHandler(BaseAPIV2Handler):
                 "user": self.user,
                 "account_id": create_model.account_id,
                 "role_name": create_model.role_name,
+                "host": host,
             },
         )
         self.write(results)
@@ -354,7 +367,12 @@ class RoleDetailHandler(BaseAPIV2Handler):
         }
         stats.count(
             "RoleDetailHandler.get",
-            tags={"user": self.user, "account_id": account_id, "role_name": role_name},
+            tags={
+                "user": self.user,
+                "account_id": account_id,
+                "role_name": role_name,
+                "host": host,
+            },
         )
         log.debug(log_data)
         force_refresh = str2bool(
@@ -446,6 +464,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
                     "role": role_name,
                     "authorized": can_delete_role,
                     "ip": self.ip,
+                    "host": host,
                 },
             )
             log_data["message"] = "User is unauthorized to delete a role"
@@ -465,6 +484,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
                     "role": role_name,
                     "authorized": can_delete_role,
                     "ip": self.ip,
+                    "host": host,
                 },
             )
             self.write_error(500, message="Error occurred deleting role: " + str(e))
@@ -536,6 +556,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
                     "account_id": account_id,
                     "role_name": role_name,
                     "authorized": can_delete_role,
+                    "host": host,
                 },
             )
             log_data["message"] = "App is unauthorized to delete a role"
@@ -555,6 +576,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
                     "account_id": account_id,
                     "role_name": role_name,
                     "authorized": can_delete_role,
+                    "host": host,
                 },
             )
             self.write_error(500, message="Error occurred deleting role: " + str(e))
@@ -594,6 +616,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
                 "requester": app_name,
                 "account_id": account_id,
                 "role_name": role_name,
+                "host": host,
             },
         )
         log.debug(log_data)
@@ -652,7 +675,11 @@ class RoleCloneHandler(BaseAPIV2Handler):
         if not can_create_role:
             stats.count(
                 f"{log_data['function']}.unauthorized",
-                tags={"user": self.user, "authorized": can_create_role},
+                tags={
+                    "user": self.user,
+                    "authorized": can_create_role,
+                    "host": host,
+                },
             )
             log_data["message"] = "User is unauthorized to clone a role"
             log.error(log_data)
@@ -665,7 +692,11 @@ class RoleCloneHandler(BaseAPIV2Handler):
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
             stats.count(
-                f"{log_data['function']}.validation_exception", tags={"user": self.user}
+                f"{log_data['function']}.validation_exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
             )
             sentry_sdk.capture_exception()
             self.write_error(400, message="Error validating input: " + str(e))
@@ -685,6 +716,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
                     "user": self.user,
                     "account_id": clone_model.account_id,
                     "role_name": clone_model.role_name,
+                    "host": host,
                 },
             )
             sentry_sdk.capture_exception()
@@ -761,7 +793,13 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
             "host": host,
         }
         log.debug(log_data)
-        stats.count("GetRolesMTLSHandler.get", tags={"user": self.user})
+        stats.count(
+            "GetRolesMTLSHandler.get",
+            tags={
+                "user": self.user,
+                "host": host,
+            },
+        )
 
         await self.authorization_flow(user=self.user, console_only=console_only)
         eligible_roles_details_array = await get_eligible_role_details(

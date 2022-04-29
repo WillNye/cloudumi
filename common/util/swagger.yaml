@@ -271,6 +271,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtendedAwsPrincipalModel"
+  /api/v3/automatic_policy_request_handler/aws:
+    get:
+      summary: get a list of automated policy requests
+      tags:
+        - policies
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
+    post:
+      summary: Request the automatic policy workflow to be triggered with the provided info
+      tags:
+        - policies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomaticPolicyRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
+  /api/v3/automatic_policy_request_handler/aws/{account_id}/{policy_request_id}:
+    patch:
+      summary: Update the status for a policy request
+      tags:
+        - roles
+      parameters:
+        - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/PolicyRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: The updated policy request status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
   /roles/{account_id}/{role_name}:
     get:
       summary: get details about a role
@@ -494,6 +548,11 @@ components:
       name: resource_type
       in: query
       example: sqs
+      schema:
+        type: string
+    PolicyRequestId:
+      name: policy_request_id
+      in: query
       schema:
         type: string
     LimitQueryString:
@@ -2269,6 +2328,7 @@ components:
           description: required - The username for the user. Must be unique within the user pool. Must be a UTF-8 string between 1 and 128 characters. After the user is created, the username can't be changed.
         Attributes:
           type: array
+          default: []
           items:
             type: object
             properties:
@@ -2282,6 +2342,7 @@ components:
           type: boolean
         MFAOptions:
           type: array
+          default: []
           description: Align with what we get back from cognito list users
           items:
             type: object
@@ -2296,13 +2357,14 @@ components:
                 type: string
         Groups:
           type: array
+          default: []
           description: assigns Cognito group memberships to user account; these groups *must* exist before they can be assigned
           items:
             type: string
             description: CognitoGroup by GroupName - must match with an existing group in the host / tenant
         UserStatus:
           type: string
-          description: Can be UNCONFIRMED, CONFIRMED, ARCHIVED, COMPROMISED, UNKNOWN, RESET_REQUIRED, FORCE_CHANGE_PASSWORD
+          description: Can be UNCONFIRMED, CONFIRMED, ARCHIVED, COMPROMISED, UNKNOWN, RESET_REQUIRED, FORCE_CHANGE_PASSWORD, EXTERNAL_PROVIDER
           enum:
             - UNCONFIRMED
             - CONFIRMED
@@ -2311,6 +2373,7 @@ components:
             - UNKNOWN
             - RESET_REQUIRED
             - FORCE_CHANGE_PASSWORD
+            - EXTERNAL_PROVIDER
     CognitoGroup:
       type: object
       required:
@@ -2352,3 +2415,141 @@ components:
         webhook_url:
           type: string
           description: The slack webhook URL to configure for the callback
+    CloudtrailDetection:
+      type: object
+      properties:
+        host:
+          type: string
+          description: TODO
+        error_code:
+          type: string
+          description: Decoded error code
+        error_message:
+          type: string
+          description: Decoded error message
+        arn:
+          type: string
+          description: principal arn
+        session_name:
+          type: string
+          description: TODO
+        source_ip:
+          type: string
+          description: TODO
+        event_call:
+          type: string
+          description: TODO
+        epoch_event_time:
+          type: integer
+          description: TODO
+        ttl:
+          type: integer
+          description: TODO
+        count:
+          type: integer
+          description: TODO
+        resource:
+          type: string
+          description: TODO
+        request_id:
+          type: string
+          description: TODO
+        generated_policies:
+          type: object
+          description: TODO
+
+    CloudtrailDetectionConfiguration:
+      type: object
+      required:
+        - account_id
+        - queue_arn
+      properties:
+        enabled:
+          type: boolean
+          description: Whether cloudtrail is enabled for a specified account id, defaults to false
+          default: false
+        event_ttl:
+          type: integer
+          description: Time to live of the event, defaults to 86400
+          default: 86400
+        max_messages_to_process:
+          type: integer
+          description: Maximum number of messages that are processes
+          default: 100
+        queue_arn:
+          type: string
+          description: The queue ARN to which the cloud trail detection celery task should subscribe to
+        event_bridge_substitutions:
+          type: array
+          items:
+            type: string
+            description: TODO
+    AutomaticPolicyRequest:
+      type: object
+      required:
+        - policy
+        - role
+      properties:
+        policy:
+          type: string
+          description: The json dumped policy requested for approval
+        role:
+          type: string
+          description: The AWS Role arn
+          example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
+    ExtendedAutomaticPolicyRequest:
+      type: object
+      required:
+        - policy
+        - role
+        - id
+        - account
+        - user
+        - event_time
+      properties:
+        id:
+          type: string
+          description: A sha256 hash that represents the policy request
+        role:
+          type: string
+          description: The AWS Role arn
+          example: arn:aws:iam::111118675309:role/AutomaticPermissionsRole
+        account:
+          $ref: "#/components/schemas/SpokeAccount"
+        role_owner:
+          type: string
+          description: The owner of the AWS role
+        user:
+          type: string
+          description: The AWS user requesting the generated policy
+        event_time:
+          type: string
+          format: date-time
+          description: The time the request was made
+        error:
+          type: string
+          description: The AWS response that caused the automatic policy request
+        system:
+          type: string
+          description: The information of the device the request was generated on
+        process:
+          type: string
+          description: Information about the running process that caused the automatic policy request to be generated
+        policy:
+          type: object
+          description: The json representation of the policy requested for approval
+        last_updated:
+          type: string
+          format: date-time
+          description: The last time the policy request was updated.
+        status:
+          type: string
+          default: pending
+          description: The policy request's status
+          enum:
+            - approved
+            - pending
+            - denied
+            - applied_awaiting_execution
+            - applied_and_success
+            - applied_and_failure

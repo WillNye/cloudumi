@@ -92,18 +92,22 @@ class AccessAdvisor:
         )
         return True
 
-    async def generate_and_save_access_advisor_data(self, host: str, account_id: str):
+    async def generate_and_save_access_advisor_data(
+        self, host: str, account_id: str, user: str = None
+    ):
         """Generates effective and removed permissions
         for all identities across an account.
 
         :param host: Tenant ID
         :param account_id: AWS Account ID
+        :param user: User making the request
         :return: Access Advisor data for identities across a single AWS account
         """
         client = await get_boto3_instance(
             "iam",
             host,
             account_id,
+            user=user,
             session_name="cache_access_advisor",
             assume_role=ModelAdapter(SpokeAccount)
             .load_config("spoke_accounts", host)

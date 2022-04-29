@@ -18,7 +18,6 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//plugins/metrics:lib",
         requirement("boto3"),
         requirement("sentry_sdk"),
     ],

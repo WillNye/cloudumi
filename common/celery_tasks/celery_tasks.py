@@ -81,9 +81,7 @@ from common.lib.cloud_credential_authorization_mapping import (
     generate_and_store_credential_authorization_mapping,
     generate_and_store_reverse_authorization_mapping,
 )
-from common.lib.event_bridge.access_denies import (
-    detect_cloudtrail_denies_and_update_cache,
-)
+from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update_cache
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
@@ -520,7 +518,12 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
     except Exception as e:  # noqa
         stats.count(
             "_add_role_to_redis.error",
-            tags={"redis_key": redis_key, "error": str(e), "role_entry": role_entry},
+            tags={
+                "redis_key": redis_key,
+                "error": str(e),
+                "role_entry": role_entry.get("arn"),
+                "host": host,
+            },
         )
         account_id = role_entry.get("account_id")
         if not account_id:
@@ -567,7 +570,7 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
         return log_data
     ct = CloudTrail()
     process_cloudtrail_errors_res: Dict = async_to_sync(ct.process_cloudtrail_errors)(
-        aws, host
+        aws, host, None
     )
     cloudtrail_errors = process_cloudtrail_errors_res["error_count_by_role"]
     red.setex(
@@ -920,7 +923,10 @@ def cache_policies_table_details(host=None) -> bool:
     )
     stats.count(
         "cache_policies_table_details.success",
-        tags={"num_roles": len(all_iam_roles.keys())},
+        tags={
+            "num_roles": len(all_iam_roles.keys()),
+            "host": host,
+        },
     )
     return True
 
@@ -966,6 +972,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         client = boto3_cached_conn(
             "iam",
             host,
+            None,
             account_number=account_id,
             assume_role=spoke_role_name,
             region=config.region,
@@ -977,6 +984,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             session_name=sanitize_session_name(
                 "consoleme_cache_iam_resources_for_account"
             ),
+            read_only=True,
         )
         paginator = client.get_paginator("get_account_authorization_details")
         response_iterator = paginator.paginate()
@@ -1087,7 +1095,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             store_iam_resources_in_git(all_iam_resources, account_id, host)
 
     stats.count(
-        "cache_iam_resources_for_account.success", tags={"account_id": account_id}
+        "cache_iam_resources_for_account.success",
+        tags={
+            "account_id": account_id,
+            "host": host,
+        },
     )
     log.debug({**log_data, "message": "Finished caching IAM resources for account"})
     return log_data
@@ -1357,7 +1369,11 @@ def cache_managed_policies_for_account(
     log.debug(log_data)
     stats.count(
         "cache_managed_policies_for_account",
-        tags={"account_id": account_id, "num_managed_policies": len(all_policies)},
+        tags={
+            "account_id": account_id,
+            "num_managed_policies": len(all_policies),
+            "host": host,
+        },
     )
 
     policy_key = config.get_host_specific_key(
@@ -1735,6 +1751,7 @@ def cache_sqs_queues_for_account(
             client = boto3_cached_conn(
                 "sqs",
                 host,
+                None,
                 account_number=account_id,
                 assume_role=spoke_role_name,
                 region=region,
@@ -1780,7 +1797,11 @@ def cache_sqs_queues_for_account(
     log.debug(log_data)
     stats.count(
         "cache_sqs_queues_for_account",
-        tags={"account_id": account_id, "number_sqs_queues": len(all_queues)},
+        tags={
+            "account_id": account_id,
+            "number_sqs_queues": len(all_queues),
+            "host": host,
+        },
     )
 
     if config.region == config.get_host_specific_key(
@@ -1950,7 +1971,11 @@ def cache_s3_buckets_for_account(
     log.debug(log_data)
     stats.count(
         "cache_s3_buckets_for_account",
-        tags={"account_id": account_id, "number_s3_buckets": len(buckets)},
+        tags={
+            "account_id": account_id,
+            "number_s3_buckets": len(buckets),
+            "host": host,
+        },
     )
 
     if config.region == config.get_host_specific_key(
@@ -2064,7 +2089,13 @@ def clear_old_redis_iam_cache(host=None) -> bool:
         log.error(log_data, exc_info=True)
         raise
 
-    stats.count(f"{function}.success", tags={"expired_roles": len(roles_to_expire)})
+    stats.count(
+        f"{function}.success",
+        tags={
+            "expired_roles": len(roles_to_expire),
+            "host": host,
+        },
+    )
     return True
 
 
@@ -2663,16 +2694,16 @@ def cache_cloudtrail_denies(host=None):
             "message": "Not running Celery task in inactive region",
         }
     events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(app, host)
-    if events["new_events"] > 0:
+    if events.get("new_events", 0) > 0:
         # Spawn off a task to cache errors by ARN for the UI
         cache_cloudtrail_errors_by_arn.delay(host=host)
     log_data = {
         "function": function,
         "message": "Successfully cached cloudtrail denies",
         # Total CT denies
-        "num_cloudtrail_denies": events["num_events"],
+        "num_cloudtrail_denies": events.get("num_events", 0),
         # "New" CT messages that we don't already have cached in Dynamo DB. Not a "repeated" error
-        "num_new_cloudtrail_denies": events["new_events"],
+        "num_new_cloudtrail_denies": events.get("new_events", 0),
         "host": host,
     }
     log.debug(log_data)
@@ -2852,7 +2883,7 @@ def get_current_celery_tasks(host: str = None, status: str = None) -> List[Any]:
 
 
 @app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-def check_expired_policies(self, host: str) -> Dict[str, Any]:
+def handle_expired_policies(self, host: str) -> Dict[str, Any]:
     from common.lib.dynamo import UserDynamoHandler
 
     if not host:
@@ -2869,11 +2900,11 @@ def check_expired_policies(self, host: str) -> Dict[str, Any]:
 
     for request in all_policy_requests:
         extended_request = ExtendedRequestModel.parse_obj(request["extended_request"])
-        async_to_sync(remove_temp_policies)(extended_request, host)
+        async_to_sync(remove_temp_policies)(extended_request, host, None)
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def check_expired_policies_for_all_hosts() -> Dict:
+def handle_expired_policies_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
     log_data = {
@@ -2883,7 +2914,7 @@ def check_expired_policies_for_all_hosts() -> Dict:
     }
     log.debug(log_data)
     for host in hosts:
-        check_expired_policies.apply_async((host,))
+        handle_expired_policies.apply_async((host,))
     return log_data
 
 
@@ -3030,8 +3061,8 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "check_expired_policies_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.check_expired_policies_for_all_hosts",
+    "handle_expired_policies_for_all_hosts": {
+        "task": "common.celery_tasks.celery_tasks.handle_expired_policies_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },
