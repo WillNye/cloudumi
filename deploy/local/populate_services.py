@@ -124,6 +124,7 @@ async_to_sync(ddb.update_static_config_for_host)(
 )
 
 cloudumi_config = f"""
+_development_user_override: user@noq.dev
 _development_groups_override:
   - engineering@noq.dev
 cache_self_service_typeahead:

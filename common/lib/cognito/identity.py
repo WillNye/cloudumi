@@ -295,7 +295,7 @@ async def upsert_identity_provider(
     Some identity providers, such as SAML and possibly OIDC, can have multiple provider names, while
     Google seems to be limited to one as per experiments on the AWS UI
 
-    Upsert is a destructive operation now, because NOQ only supports one provider at a time; however,
+    Upsert is a destructive operation now, because NOQ only supports one of each type of provider; however,
     Cognito supports setting multiple SAML and OIDC providers.
 
     So we first check if a provider is already set and delete it. We check Google as well for consistency,
