@@ -367,6 +367,7 @@ def _get_principal_arn_from_cross_account_principal_id(
             iam_client = boto3_cached_conn(
                 "iam",
                 config.host,
+                None,
                 account_number=account_id,
                 assume_role=cross_account_role_name,
                 region=config.region,
