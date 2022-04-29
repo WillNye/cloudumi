@@ -29,7 +29,7 @@ const AutomatedPermissions = () => {
         const policyRequests = (resJson.data || []).filter(
           ({ last_updated, status }) => {
             const lastUpdated = DateTime.fromISO(last_updated)
-            const currentTime = DateTime.utc().minus({ seconds: 30 })
+            const currentTime = DateTime.utc().minus({ seconds: 10 })
             const hasExpired = lastUpdated < currentTime
 
             if (hasExpired && APPLIED_POLICY_STATUSES.includes(status)) {
