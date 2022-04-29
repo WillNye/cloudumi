@@ -216,101 +216,63 @@ site_configs:
               other:
                 - path_suffix: ".yaml"
   cloudumidev_com:
-    _development_groups_override:
-      - engineering@noq.dev
-    cache_self_service_typeahead:
-      cache_resource_templates: true
-    cloudtrail:
-      enabled: true
-      account_id: "759357822767"
-      queue_arn: arn:aws:sqs:us-west-2:759357822767:noq-cloudtrail-access-denies
-    cache_resource_templates:
-      repositories:
-        - type: git
-          main_branch_name: master
-          name: consoleme
-          repo_url: https://github.com/Netflix/consoleme
-          web_path: https://github.com/Netflix/consoleme
-          resource_formats:
-            - terraform
-          authentication_settings:
-            email: "terraform@noq.dev"
-          resource_type_parser: null
-          terraform:
-            path_suffix: .tf
-    cloud_credential_authorization_mapping:
-      role_tags:
-        authorized_groups_cli_only_tags:
-          - noq-authorized-cli-only
-        authorized_groups_tags:
-          - noq-authorized
-        enabled: true
-    challenge_url:
-      enabled: true
-    environment: dev
     hub_account:
       name: NoqCentralRoleLocalDev
-      account_id: "759357822767"
-      account_name: "development"
-      role_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+      account_id: "123456789012"
+      role_arn: arn:aws:iam::123456789012:role/NoqCentralRoleLocalDev
       external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
-    policies:
-      role_name: NoqSpokeRoleLocalDev
-      ip_restrictions: false
     spoke_accounts:
       - name: NoqSpokeRoleLocalDev
-        account_name: "development"
-        account_id: "759357822767"
-        role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev
+        account_id: "123456789012"
+        account_name: default_account
+        role_arn: arn:aws:iam::123456789012:role/NoqSpokeRoleLocalDev
         external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
-        hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+        hub_account_arn: arn:aws:iam::123456789012:role/NoqCentralRoleLocalDev
         master_for_account: false
       - name: NoqSpokeRoleLocalDev
-        account_name: development_2
-        account_id: "350876197038"
-        role_arn: arn:aws:iam::350876197038:role/NoqSpokeRoleLocalDev
+        account_id: "123456789013"
+        account_name: default_account
+        role_arn: arn:aws:iam::123456789013:role/NoqSpokeRoleLocalDev
         external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
-        hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+        hub_account_arn: arn:aws:iam::123456789013:role/NoqCentralRoleLocalDev
         master_for_account: false
-        owners: []
-        viewers: []
-        delegate_admin_to_owner: false
-        restrict_viewers_of_account_resources: false
+      - name: NoqSpokeRoleLocalDev
+        account_id: "012345678901"
+        account_name: default_account
+        role_arn: arn:aws:iam::012345678901:role/NoqSpokeRoleLocalDev
+        external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+        hub_account_arn: arn:aws:iam::012345678901:role/NoqCentralRoleLocalDev
+        master_for_account: false
     org_accounts:
-      - org_id: o-yfdp0r70sq
-        account_id: "759357822767"
-        account_name: staging
-        owner: { override_email }
-    tenant_details:
-      external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
-      creator: { override_email }
-      creation_time: { int(time.time()) }
-    notifications:
-      enabled: true
-    site_config:
-      landing_url: /
-      request_interval: 1
-    headers:
-      identity:
-        enabled: false
-      role_login:
-        enabled: true
-    url: https://cloudumidev.com
-    application_admin: engineering@noq.dev
+      - org_id: test_org
+        account_id: "123456789012"
+        account_name: test_account
+        owner: user
+    groups:
+      can_delete_iam_principals:
+        - test_delete_user_allowed
+    application_admin: consoleme_admins@example.com
     secrets:
-      jwt_secret: { token_urlsafe(32) }
-      auth:
-        oidc:
-          client_id: "3vqhl3rfcfoqhl88g47norqick"
-          client_secret: "u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp"
-      cognito:
-        config:
-          user_pool_id: "us-west-2_EQ5XHIluC"
-          user_pool_client_id: "3vqhl3rfcfoqhl88g47norqick"
-          user_pool_client_secret: "u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp"
-          user_pool_region: "us-west-2"
-    account_ids_to_name:
-      "759357822767": "development"
+      jwt_secret: T3sts3cr3t
+    s3_cache_bucket: fakebucket
+    celery:
+      active_region: us-east-1
+      test_account_ids:
+        - "123456789012"
+      sync_regions:
+        - us-east-1
+        - us-west-2
+        - eu-west-1
+      trigger_credential_mapping_refresh_from_role_changes:
+        enabled: true
+      cache_cloudtrail_denies:
+        enabled: true
+
+    cloudtrail:
+      enabled: true
+      account_id: "123456789012"
+      queue_arn: "arn:aws:sqs:us-east-1:123456789012:consoleme-cloudtrail-access-deny-events-test"
+
     auth:
       challenge_url:
         enabled: true
@@ -325,17 +287,140 @@ site_configs:
         - email
         - openid
         - profile
-      resource: noq_tenant
-      metadata_url: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_EQ5XHIluC/.well-known/openid-configuration
-      jwt_verify: true
-      jwt_email_key: email
-      jwt_groups_key: "cognito:groups"
-      grant_type: authorization_code
-      id_token_response_key: id_token
-      access_token_response_key: access_token
-      access_token_audience: null
+
+    # TODO: This is used by testing but we do not support BYO mtls in a SaaS environment
+    cli_auth:
+      certificate_header: certificate_header
+      required_headers:
+        - RequiredMTLSHeader: RequiredMTLSHeaderValue
+
+    url: http://127.0.0.1:8081
+
+    account_ids_to_name:
+      "123456789012":
+        - default_account
+
+    event_bridge:
+      detect_role_changes_and_update_cache:
+        queue_arn: arn:aws:sqs:{region}:123456789012:consoleme-cloudtrail-role-events-test
+      detect_cloudtrail_denies_and_update_cache:
+        queue_arn: arn:aws:sqs:{region}:123456789012:consoleme-cloudtrail-access-deny-events-test
+    redis:
+      host:
+        us-east-1: null
+        us-west-2: null
+        eu-west-1: null
+      port: null
+
+    dynamic_config:
+      group_mapping:
+        someuser@example.com:
+          roles:
+            - arn:aws:iam::123456789012:role/userrolename
+        group1@example.com:
+          roles:
+            - arn:aws:iam::123456789012:role/rolename
+          cli_only_roles:
+            - arn:aws:iam::123456789012:role/rolename2
+        groupa@example.com:
+          roles:
+            - arn:aws:iam::123456789012:role/roleA
+            - arn:aws:iam::123456789012:role/roleB
+
     aws:
-      automatically_update_role_trust_policies: false
-    celery:
-      cache_cloudtrail_denies:
+      account_number: "123456789012"
+      region: us-east-1
+      issuer: YourCompany
+
+    ses:
+      consoleme:
+        sender: consoleme_test@example.com
+        name: Consoleme
+      accessui:
+        sender: access_ui_test@example.com
+        name: Access UI
+
+    user_role_creator:
+      default_trust_policy: {}
+
+    policies:
+      temp_policy_support: true
+      supported_resource_types_for_policy_application:
+        - s3
+        - sns
+        - sqs
+
+    cloud_credential_authorization_mapping:
+      role_tags:
         enabled: true
+        required_trust_policy_entity: ConsoleMeInstanceProfile
+        authorized_groups_tags:
+          - authorized_groups
+        authorized_groups_cli_only_tags:
+          - authorized_groups_cli_only
+      dynamic_config:
+        enabled: true
+      internal_plugin:
+        enabled: true
+
+    logging:
+      json_formatter:
+        indent: 2
+
+    # You'll probably want to override FUNCTION to generate this data with your own business logic.
+    application_settings:
+      application_1:
+        owner: groupa@example.com
+        owner_url: https://www.example.com/groupa@example.com
+        app_url: https://www.example.com/ci_cd_pipeline/application_1
+        roles:
+          - arn:aws:iam::123456789012:role/application_1InstanceProfile
+          - arn:aws:iam::123456789013:role/application_1InstanceProfile
+      application_2:
+        owner: groupa@example.com
+        roles:
+          - arn:aws:iam::123456789012:role/application_2InstanceProfile
+
+    api_auth:
+      valid_entities:
+        - user@example.com
+
+    cache_self_service_typeahead:
+      cache_resource_templates: true
+
+    bitbucket:
+      url: https://fakerepo.example.com
+
+    cache_resource_templates:
+      repositories:
+        - type: git
+          code_repository_provider: bitbucket
+          name: honeybee_templates
+          project_key: project_name
+          repo_url: ssh://git@fakerepo.example.com:7999/project_name/honeybee_templates.git
+          web_path: https://fakerepo.example.com/projects/project_name/repos/honeybee_templates/browse/{relative_path}
+          create_pr_api: https://fakerepo.example.com/rest/api/1.0/projects/project_name/repos/honeybee_templates/pull-requests
+          main_branch_name: master
+          authentication_settings:
+            email: consoleme_admins@example.com
+          commit_settings:
+            create_pr: false # If true, ConsoleMe will show you the PR location and not allow policy review within consoleme
+            commit_to_branch_on_approval: master # If set, will push to this branch on approval
+          resource_formats:
+            - honeybee
+          resource_type_parser:
+            honeybee:
+              iam_role:
+                - path_prefix: honeybee_templates/iamrole/ # must begin with
+                  path_suffix: ".yaml" # must end with
+                  file_content:
+                    includes:
+                      - AssumeRolePolicyDocument
+              managed_policy:
+                - path_prefix: honeybee_templates/iammanagedpolicy/
+                  path_suffix: ".yaml"
+              service_control_policy:
+                - path_prefix: honeybee_templates/servicecontrolpolicy/
+                  path_suffix: ".yaml"
+              other:
+                - path_suffix: ".yaml"
