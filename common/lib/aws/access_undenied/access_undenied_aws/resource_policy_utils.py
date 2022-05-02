@@ -1,10 +1,10 @@
 import json
 import re
-from typing import Optional
+from typing import Any, Optional
 
-import boto3
 from aws_error_utils import ClientError, errors
 
+from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event_permission_data,
@@ -14,12 +14,15 @@ from util.log import logger
 
 def _get_ecr_resource_policy(
     arn_match: re.Match,
-    session: boto3.Session,
+    config: common.Config,
     region: str,
     resource: common.Resource,
 ) -> Optional[common.Policy]:
-    repository_policy_response = session.client(
-        "ecr", region_name=region
+    repository_policy_response = boto3_cached_conn(
+        "ecr",
+        region_name=region,
+        account_number=config.account_id,
+        assume_role=config.cross_account_role_name,
     ).get_repository_policy(repositoryName=(arn_match.group("resource_id")))
     return common.Policy(
         attachment_target_arn=repository_policy_response["ARN"],
@@ -32,10 +35,14 @@ def _get_ecr_resource_policy(
 
 
 def _get_iam_resource_policy(
-    session: boto3.Session, resource: common.Resource
+    config: common.Config, resource: common.Resource
 ) -> Optional[common.Policy]:
     resource_policy_document = json.dumps(
-        session.client("iam").get_role(RoleName=resource.arn.split("/")[-1])["Role"][
+        boto3_cached_conn(
+            "iam",
+            account_number=config.account_id,
+            assume_role=config.cross_account_role_name,
+        ).get_role(RoleName=resource.arn.split("/")[-1])["Role"][
             "AssumeRolePolicyDocument"
         ]
     )
@@ -51,13 +58,18 @@ def _get_iam_resource_policy(
 
 def _get_kms_resource_policy(
     arn_match: re.Match,
-    session: boto3.Session,
+    config: common.Config,
     region: str,
     resource: common.Resource,
 ) -> Optional[common.Policy]:
-    key_policy_document = session.client("kms", region_name=region).get_key_policy(
-        KeyId=(arn_match.group("resource_id")), PolicyName="default"
-    )["Policy"]
+    key_policy_document = boto3_cached_conn(
+        "kms",
+        region_name=region,
+        account_number=config.account_id,
+        assume_role=config.cross_account_role_name,
+    ).get_key_policy(KeyId=(arn_match.group("resource_id")), PolicyName="default")[
+        "Policy"
+    ]
     return common.Policy(
         attachment_target_arn=resource.arn,
         attachment_target_type="Resource: KMS Key",
@@ -70,12 +82,15 @@ def _get_kms_resource_policy(
 
 def _get_lambda_resource_policy(
     arn_match: re.Match,
-    session: boto3.Session,
+    config: common.Config,
     region: str,
     resource: common.Resource,
 ) -> Optional[common.Policy]:
-    lambda_function_policy_response = session.client(
-        "lambda", region_name=region
+    lambda_function_policy_response = boto3_cached_conn(
+        "lambda",
+        region_name=region,
+        account_number=config.account_id,
+        assume_role=config.cross_account_role_name,
     ).get_policy(FunctionName=(arn_match.group("resource_id")))
     return common.Policy(
         attachment_target_arn=arn_match.group(0),
@@ -89,7 +104,7 @@ def _get_lambda_resource_policy(
 
 def _get_resource_account_session(
     config: common.Config, resource: common.Resource
-) -> boto3.Session:
+) -> Any:
     if resource.account_id == config.account_id:
         return config.session
 
@@ -97,13 +112,8 @@ def _get_resource_account_session(
         f"arn:aws:iam::{resource.account_id}:role/{config.cross_account_role_name}"
     )
     try:
-        role_credentials = config.session.client("sts").assume_role(
-            RoleArn=role_arn, RoleSessionName="AccessUndeniedResourceSession"
-        )["Credentials"]
-        return boto3.Session(
-            aws_access_key_id=role_credentials["AccessKeyId"],
-            aws_secret_access_key=role_credentials["SecretAccessKey"],
-            aws_session_token=role_credentials["SessionToken"],
+        return boto3_cached_conn(
+            "sts", account_number=resource.account_id, assume_role=role_arn
         )
     except ClientError as client_error:
         logger.error(
@@ -119,10 +129,14 @@ def _get_resource_account_session(
 
 
 def _get_s3_resource_policy(
-    arn_match: re.Match, session: boto3.Session, resource: common.Resource
+    arn_match: re.Match, config: common.config, resource: common.Resource
 ) -> Optional[common.Policy]:
     bucket_name = arn_match.group("resource_type") or arn_match.group("resource_id")
-    s3_client = session.client("s3")
+    s3_client = boto3_cached_conn(
+        "s3",
+        account_number=config.account_id,
+        assume_role=config.cross_account_role_name,
+    )
     try:
         bucket_policy_document = s3_client.get_bucket_policy(Bucket=bucket_name)[
             "Policy"
@@ -141,11 +155,16 @@ def _get_s3_resource_policy(
 
 def _get_secretsmanager_resource_policy(
     arn_match: re.Match,
-    session: boto3.Session,
+    config: common.Config,
     region: str,
     resource: common.Resource,
 ) -> Optional[common.Policy]:
-    secretsmanager_client = session.client("secretsmanager", region_name=region)
+    secretsmanager_client = boto3_cached_conn(
+        "secretsmanager",
+        region_name=region,
+        account_number=config.account_id,
+        assume_role=config.cross_account_role_name,
+    )
     secret_policy_response = secretsmanager_client.get_resource_policy(
         SecretId=(arn_match.group("resource_id"))
     )
@@ -183,49 +202,44 @@ def get_resource_policy(
                 " ignoring resource policy..."
             )
             return None
-    resource_account_session = _get_resource_account_session(
-        config, event_permission_data_.resource
-    )
     try:
         if service_name == "iam" and event_permission_data_.iam_permission in [
             "AssumeRole",
             "AssumeRoleWithSAML",
             "AssumeRoleWithWebIdentity",
         ]:
-            return _get_iam_resource_policy(
-                resource_account_session, event_permission_data_.resource
-            )
+            return _get_iam_resource_policy(config, event_permission_data_.resource)
         if service_name == "s3":
             return _get_s3_resource_policy(
                 arn_match,
-                resource_account_session,
+                config,
                 event_permission_data_.resource,
             )
         if service_name == "kms" and arn_match.group("resource_type") == "key":
             return _get_kms_resource_policy(
                 arn_match,
-                resource_account_session,
+                config,
                 region,
                 event_permission_data_.resource,
             )
         if service_name == "secretsmanager":
             return _get_secretsmanager_resource_policy(
                 arn_match,
-                config.session,
+                config,
                 region,
                 event_permission_data_.resource,
             )
         if service_name == "ecr":
             return _get_ecr_resource_policy(
                 arn_match,
-                config.session,
+                config,
                 region,
                 event_permission_data_.resource,
             )
         if service_name == "lambda":
             return _get_lambda_resource_policy(
                 arn_match,
-                config.session,
+                config,
                 region,
                 event_permission_data_.resource,
             )
