@@ -142,7 +142,9 @@ def _get_resource_account_session(
     role_arn = f"arn:aws:iam::{resource.account_id}:role/{cross_account_role_name}"
     try:
         return boto3_cached_conn(
-            "sts", account_number=resource.account_id, assume_role=role_arn
+            "sts",
+            account_number=resource.account_id,
+            assume_role=cross_account_role_name,
         )
     except ClientError as client_error:
         logger.error(

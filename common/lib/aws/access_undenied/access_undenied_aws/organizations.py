@@ -93,7 +93,7 @@ def _get_management_account_organizations_client(
             config.host,
             None,
             account_number=management_account_id,
-            assume_role=management_role_arn,
+            assume_role=management_role_arn.split("/")[-1],
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
