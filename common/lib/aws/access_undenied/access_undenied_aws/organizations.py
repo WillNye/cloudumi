@@ -3,11 +3,13 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from aws_error_utils import errors
 
+from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import common, organization_node
 from common.lib.aws.access_undenied.access_undenied_aws.organization_node import (
     OrganizationNode,
 )
+from common.models import SpokeAccount
 from util.log import logger
 
 if TYPE_CHECKING:
@@ -47,12 +49,18 @@ def _get_management_account_organizations_client(
     management_role_arn: str,
     management_account_id: str,
 ) -> Optional[OrganizationsClient]:
+    cross_account_role_name = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", config.host)
+        .with_query({"account_id": config.account_id})
+        .first.name
+    )
     sts_client = boto3_cached_conn(
         "sts",
         config.host,
         None,
         account_number=config.account_id,
-        assume_role=config.cross_account_role_name,
+        assume_role=cross_account_role_name,
         region=config.region,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -65,7 +73,7 @@ def _get_management_account_organizations_client(
         config.host,
         None,
         account_number=config.account_id,
-        assume_role=config.cross_account_role_name,
+        assume_role=cross_account_role_name,
         region=config.region,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -193,12 +201,18 @@ def _get_target_policies_with_policy_document(
 
 
 def initialize_organization_data(config: common.Config, scp_file_content: str) -> None:
+    cross_account_role_name = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", config.host)
+        .with_query({"account_id": config.account_id})
+        .first.name
+    )
     org_client = boto3_cached_conn(
         "organizations",
         config.host,
         None,
         account_number=config.account_id,
-        assume_role=config.cross_account_role_name,
+        assume_role=cross_account_role_name,
         region=config.region,
         sts_client_kwargs=dict(
             region_name=config.region,
