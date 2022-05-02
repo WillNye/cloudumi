@@ -207,9 +207,14 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
     async def _retrieve(self) -> list[dict]:
         cognito_idp = boto3.client("cognito-idp", region_name=self.user_pool_region)
         users = list()
-        for user in await identity.get_identity_users(
-            self.user_pool_id, client=cognito_idp
-        ):
+        try:
+            identity_users = await identity.get_identity_users(
+                self.user_pool_id, client=cognito_idp
+            )
+        except cognito_idp.exceptions.ResourceNotFoundException:
+            return []
+
+        for user in identity_users:
             user_dict: dict = user.dict()
             user_dict.pop("TemporaryPassword", None)
             for attr in user_dict.get("Attributes", []):
@@ -257,12 +262,15 @@ class CognitoGroupCrudHandler(CognitoCrudHandler):
 
     async def _retrieve(self) -> list[dict]:
         cognito_idp = boto3.client("cognito-idp", region_name=self.user_pool_region)
-        return [
-            group.dict()
-            for group in await identity.get_identity_groups(
-                self.user_pool_id, client=cognito_idp
-            )
-        ]
+        try:
+            return [
+                group.dict()
+                for group in await identity.get_identity_groups(
+                    self.user_pool_id, client=cognito_idp
+                )
+            ]
+        except cognito_idp.exceptions.ResourceNotFoundException:
+            return []
 
     async def _create(self, data) -> CognitoGroup:
         cognito_idp = boto3.client("cognito-idp", region_name=self.user_pool_region)
