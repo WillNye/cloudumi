@@ -129,7 +129,7 @@ def _get_resource_account_session(
 
 
 def _get_s3_resource_policy(
-    arn_match: re.Match, config: common.config, resource: common.Resource
+    arn_match: re.Match, config: common.Config, resource: common.Resource
 ) -> Optional[common.Policy]:
     bucket_name = arn_match.group("resource_type") or arn_match.group("resource_id")
     s3_client = boto3_cached_conn(
