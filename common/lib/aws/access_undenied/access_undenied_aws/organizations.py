@@ -1,13 +1,15 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-import boto3
 from aws_error_utils import errors
 
+from common.config.models import ModelAdapter
+from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import common, organization_node
 from common.lib.aws.access_undenied.access_undenied_aws.organization_node import (
     OrganizationNode,
 )
+from common.models import SpokeAccount
 from util.log import logger
 
 if TYPE_CHECKING:
@@ -34,38 +36,71 @@ def _deserialize_organization_nodes(
     )
 
 
-def _get_management_account_id(session: boto3.Session) -> Optional[str]:
+def _get_management_account_id(org_client: Any) -> Optional[str]:
     try:
-        return (session.client("organizations").describe_organization())[
-            "Organization"
-        ]["MasterAccountId"]
+        return (org_client.describe_organization())["Organization"]["MasterAccountId"]
     except errors.AWSOrganizationsNotInUse:
         logger.debug("The account is not a member of an AWS Organization.")
         return None
 
 
 def _get_management_account_organizations_client(
-    session: boto3.Session,
+    config: common.Config,
     management_role_arn: str,
     management_account_id: str,
 ) -> Optional[OrganizationsClient]:
-    if management_account_id == session.client("sts").get_caller_identity()["Account"]:
+    cross_account_role_name = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", config.host)
+        .with_query({"account_id": config.account_id})
+        .first.name
+    )
+    sts_client = boto3_cached_conn(
+        "sts",
+        config.host,
+        None,
+        account_number=config.account_id,
+        assume_role=cross_account_role_name,
+        region=config.region,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+    )
+
+    org_client = boto3_cached_conn(
+        "organizations",
+        config.host,
+        None,
+        account_number=config.account_id,
+        assume_role=cross_account_role_name,
+        region=config.region,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+    )
+
+    if management_account_id == sts_client.get_caller_identity()["Account"]:
         logger.debug("The profile is in the organization's management account.")
-        return session.client("organizations")
+        return org_client
 
     if not management_role_arn:
         return None
     try:
-        role_credentials = session.client("sts").assume_role(
-            RoleArn=management_role_arn,
-            RoleSessionName="AccessUndeniedManagementSession",
+        org_client = boto3_cached_conn(
+            "organizations",
+            config.host,
+            None,
+            account_number=management_account_id,
+            assume_role=management_role_arn.split("/")[-1],
+            region=config.region,
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
         )
-        management_account_session = boto3.Session(
-            aws_access_key_id=role_credentials["Credentials"]["AccessKeyId"],
-            aws_secret_access_key=role_credentials["Credentials"]["SecretAccessKey"],
-            aws_session_token=role_credentials["Credentials"]["SessionToken"],
-        )
-        return management_account_session.client("organizations")
+        return org_client
     except errors.AccessDenied:
         logger.error(f"Could not assume organization role: {management_role_arn}")
         return None
@@ -166,7 +201,26 @@ def _get_target_policies_with_policy_document(
 
 
 def initialize_organization_data(config: common.Config, scp_file_content: str) -> None:
-    config.management_account_id = _get_management_account_id(config.session)
+    cross_account_role_name = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", config.host)
+        .with_query({"account_id": config.account_id})
+        .first.name
+    )
+    org_client = boto3_cached_conn(
+        "organizations",
+        config.host,
+        None,
+        account_number=config.account_id,
+        assume_role=cross_account_role_name,
+        region=config.region,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+    )
+
+    config.management_account_id = _get_management_account_id(org_client)
     if scp_file_content:
         config.organization_nodes = json.loads(
             scp_file_content, object_hook=_deserialize_organization_nodes
@@ -179,7 +233,7 @@ def initialize_organization_data(config: common.Config, scp_file_content: str) -
     if config.management_account_id:
         management_account_organizations_client = (
             _get_management_account_organizations_client(
-                config.session,
+                config,
                 config.management_account_role_arn,
                 config.management_account_id,
             )
