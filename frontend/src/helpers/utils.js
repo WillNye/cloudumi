@@ -343,3 +343,7 @@ export const copyToClipboard = (string) => {
   }
   return true
 }
+
+export const validateApprovePolicy = (changesConfig, policyId) => {
+  return !!(changesConfig[policyId] || {}).can_approve_policy
+}
