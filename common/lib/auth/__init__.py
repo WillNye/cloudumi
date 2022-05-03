@@ -293,7 +293,6 @@ async def populate_approve_reject_policy(
 ) -> bool:
     request_config = {}
 
-    # Currently the only allowances are: Inline policies
     for change in extended_request.changes.changes:
         arn = change.principal.principal_arn
         if change.change_type in [
