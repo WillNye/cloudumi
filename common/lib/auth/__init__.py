@@ -315,8 +315,7 @@ async def populate_approve_reject_policy(
 async def can_admin_policies(
     user: str, user_groups: List[str], host: str, account_ids: set[str] = []
 ) -> bool:
-    is_owner = await user_can_edit_resources(user, user_groups, host, account_ids)
-    if is_owner:
+    if await user_can_edit_resources(user, user_groups, host, account_ids):
         return True
     if is_in_group(
         user,

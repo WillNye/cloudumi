@@ -24,7 +24,7 @@ from common.exceptions.exceptions import (
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
-from common.lib.auth import can_admin_policies
+from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import (
     create_or_update_managed_policy,
@@ -2614,8 +2614,34 @@ async def parse_and_apply_policy_request_modification(
     request_changes = policy_request_model.modification_model
 
     if request_changes.command in [Command.update_change, Command.cancel_request]:
+
+        if request_changes.command == Command.update_change:
+            update_change_model = UpdateChangeModificationModel.parse_obj(
+                request_changes
+            )
+            specific_change = await _get_specific_change(
+                extended_request.changes, update_change_model.change_id
+            )
+            if not specific_change:
+                raise NoMatchingRequest(
+                    "Unable to find a compatible non-applied change with "
+                    "that ID in this policy request"
+                )
+
+            specific_change_arn = specific_change.principal.principal_arn
+            if specific_change.change_type in [
+                "managed_resource",
+                "resource_policy",
+                "sts_resource_policy",
+            ]:
+                specific_change_arn = specific_change.arn
+
+            account_ids = [await get_resource_account(specific_change_arn, host)]
+        else:
+            account_ids = await get_extended_request_account_ids(extended_request, host)
+
         can_update_cancel = await can_update_cancel_requests_v2(
-            extended_request, user, user_groups, host
+            extended_request, user, user_groups, host, account_ids
         )
         if not can_update_cancel:
             raise Unauthorized(
@@ -2627,7 +2653,33 @@ async def parse_and_apply_policy_request_modification(
         Command.approve_request,
         Command.reject_request,
     ]:
-        can_manage_policy_request = await can_admin_policies(user, user_groups, host)
+        if request_changes.command in [Command.approve_request, Command.reject_request]:
+            account_ids = await get_extended_request_account_ids(extended_request, host)
+
+        if request_changes.command == Command.apply_change:
+            apply_change_model = ApplyChangeModificationModel.parse_obj(request_changes)
+            specific_change = await _get_specific_change(
+                extended_request.changes, apply_change_model.change_id
+            )
+            if not specific_change:
+                raise NoMatchingRequest(
+                    "Unable to find a compatible non-applied change with "
+                    "that ID in this policy request"
+                )
+
+            specific_change_arn = specific_change.principal.principal_arn
+            if specific_change.change_type in [
+                "managed_resource",
+                "resource_policy",
+                "sts_resource_policy",
+            ]:
+                specific_change_arn = specific_change.arn
+
+            account_ids = [await get_resource_account(specific_change_arn, host)]
+
+        can_manage_policy_request = await can_admin_policies(
+            user, user_groups, host, account_ids
+        )
         # Authorization required if the policy wasn't approved by an auto-approval probe.
         should_apply_because_auto_approved = (
             request_changes.command == Command.apply_change and approval_probe_approved

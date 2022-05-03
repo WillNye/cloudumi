@@ -2317,7 +2317,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         input_body = {
             "modification_model": {
                 "command": "update_change",
-                "change_id": extended_request.changes.changes[0].id + "non-existent",
+                "change_id": extended_request.changes.changes[0].id,
                 "policy_document": updated_policy_doc,
             }
         }
@@ -2344,6 +2344,9 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         # Trying to update a non-existent change
         from common.exceptions.exceptions import NoMatchingRequest
 
+        policy_request_model.modification_model.change_id = (
+            extended_request.changes.changes[0].id + "non-existent"
+        )
         with pytest.raises(NoMatchingRequest) as e:
             await parse_and_apply_policy_request_modification(
                 extended_request,
@@ -2407,7 +2410,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         input_body = {
             "modification_model": {
                 "command": "apply_change",
-                "change_id": extended_request.changes.changes[0].id + "non-existent",
+                "change_id": extended_request.changes.changes[0].id,
                 "policy_document": updated_policy_doc,
             }
         }
@@ -2439,6 +2442,11 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
         can_admin_policies.return_value = create_future(True)
         # Trying to apply a non-existent change
+
+        policy_request_model.modification_model.change_id = (
+            extended_request.changes.changes[0].id + "non-existent"
+        )
+
         with pytest.raises(NoMatchingRequest) as e:
             await parse_and_apply_policy_request_modification(
                 extended_request,
