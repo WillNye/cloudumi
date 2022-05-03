@@ -1052,6 +1052,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "owner": get_aws_principal_owner(role, host),
                 "policy": dynamo.convert_iam_resource_to_json(role),
                 "last_updated": last_updated,
+                "tags": role.get("Tags", []),
                 "templated": red.hget(
                     config.get_host_specific_key(
                         "templated_roles.redis_key",
