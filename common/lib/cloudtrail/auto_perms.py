@@ -232,7 +232,7 @@ async def detect_cloudtrail_denies_and_update_cache(
                 f"{principal_arn}-{session_name}-{event_call}-{event.resource}"
             )
             generated_policy = process_event(
-                decoded_message, queue_account_number, host
+                decoded_message, decoded_message.get("recipientAccountId"), host
             )
 
             if generated_policy is None:
