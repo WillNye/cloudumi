@@ -28,6 +28,8 @@ def _get_ecr_resource_policy(
     )
     repository_policy_response = boto3_cached_conn(
         "ecr",
+        config.host,
+        None,
         region_name=region,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
@@ -54,6 +56,8 @@ def _get_iam_resource_policy(
     resource_policy_document = json.dumps(
         boto3_cached_conn(
             "iam",
+            config.host,
+            None,
             account_number=resource.account_id,
             assume_role=cross_account_role_name,
         ).get_role(RoleName=resource.arn.split("/")[-1])["Role"][
@@ -84,6 +88,8 @@ def _get_kms_resource_policy(
     )
     key_policy_document = boto3_cached_conn(
         "kms",
+        config.host,
+        None,
         region_name=region,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
@@ -114,6 +120,8 @@ def _get_lambda_resource_policy(
     )
     lambda_function_policy_response = boto3_cached_conn(
         "lambda",
+        config.host,
+        None,
         region_name=region,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
@@ -143,6 +151,8 @@ def _get_resource_account_session(
     try:
         return boto3_cached_conn(
             "sts",
+            config.host,
+            None,
             account_number=resource.account_id,
             assume_role=cross_account_role_name,
         )
@@ -171,6 +181,8 @@ def _get_s3_resource_policy(
     )
     s3_client = boto3_cached_conn(
         "s3",
+        config.host,
+        None,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
     )
@@ -204,6 +216,8 @@ def _get_secretsmanager_resource_policy(
     )
     secretsmanager_client = boto3_cached_conn(
         "secretsmanager",
+        config.host,
+        None,
         region_name=region,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
