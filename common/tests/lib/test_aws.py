@@ -69,17 +69,17 @@ class TestAwsLib(TestCase):
         self.assertFalse(role_has_managed_policy(ROLE, "Policy3"))
 
     def test_role_has_tag(self):
-        from common.lib.aws.utils import role_has_tag
+        from common.lib.aws.utils import get_role_tag
 
-        self.assertTrue(role_has_tag(ROLE, "tag1"))
-        self.assertTrue(role_has_tag(ROLE, "tag1", "value1"))
+        self.assertTrue(bool(get_role_tag(ROLE, "tag1")))
+        self.assertEqual(get_role_tag(ROLE, "tag1"), "value1")
 
     def test_role_has_tag_false(self):
-        from common.lib.aws.utils import role_has_tag
+        from common.lib.aws.utils import get_role_tag
 
-        self.assertFalse(role_has_tag(ROLE, "tag2"))
-        self.assertFalse(role_has_tag(ROLE, "tag2", "value1"))
-        self.assertFalse(role_has_tag(ROLE, "tag1", "value2"))
+        self.assertFalse(bool(get_role_tag(ROLE, "tag2")))
+        self.assertNotEqual(get_role_tag(ROLE, "tag2"), "value1")
+        self.assertNotEqual(get_role_tag(ROLE, "tag1"), "value2")
 
     def test_apply_managed_policy_to_role(self):
         from common.lib.aws.utils import apply_managed_policy_to_role

@@ -1307,20 +1307,21 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     return results
 
 
-def role_has_tag(role: Dict, key: str, value: Optional[str] = None) -> bool:
+def get_role_tag(role: Dict, key: str, default: Optional[str] = None) -> any:
     """
-    Checks a role dictionary and determine of the role has the specified tag. If `value` is passed,
-    This function will only return true if the tag's value matches the `value` variable.
+    Retrieves and parses the value of a provided AWS tag.
     :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
     :param key: key of the tag
-    :param value: optional value of the tag
+    :param default: Default value is tag not found
     :return:
     """
-    for tag in role.get("Tags", []):
+    for tag in role.get("Tags", role.get("tags", [])):
         if tag.get("Key") == key:
-            if not value or tag.get("Value") == value:
-                return True
-    return False
+            val = tag.get("Value")
+            if isinstance(val, str) and key.startswith("noq") and ":" in val:
+                return val.split(":")
+            return val
+    return default
 
 
 def role_has_managed_policy(role: Dict, managed_policy_name: str) -> bool:
