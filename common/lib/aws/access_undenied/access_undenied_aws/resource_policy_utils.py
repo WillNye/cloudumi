@@ -23,13 +23,13 @@ def _get_ecr_resource_policy(
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", config.host)
-        .with_query({"account_id": config.account_id})
+        .with_query({"account_id": resource.account_id})
         .first.name
     )
     repository_policy_response = boto3_cached_conn(
         "ecr",
         region_name=region,
-        account_number=config.account_id,
+        account_number=resource.account_id,
         assume_role=cross_account_role_name,
     ).get_repository_policy(repositoryName=(arn_match.group("resource_id")))
     return common.Policy(
@@ -48,13 +48,13 @@ def _get_iam_resource_policy(
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", config.host)
-        .with_query({"account_id": config.account_id})
+        .with_query({"account_id": resource.account_id})
         .first.name
     )
     resource_policy_document = json.dumps(
         boto3_cached_conn(
             "iam",
-            account_number=config.account_id,
+            account_number=resource.account_id,
             assume_role=cross_account_role_name,
         ).get_role(RoleName=resource.arn.split("/")[-1])["Role"][
             "AssumeRolePolicyDocument"
@@ -79,13 +79,13 @@ def _get_kms_resource_policy(
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", config.host)
-        .with_query({"account_id": config.account_id})
+        .with_query({"account_id": resource.account_id})
         .first.name
     )
     key_policy_document = boto3_cached_conn(
         "kms",
         region_name=region,
-        account_number=config.account_id,
+        account_number=resource.account_id,
         assume_role=cross_account_role_name,
     ).get_key_policy(KeyId=(arn_match.group("resource_id")), PolicyName="default")[
         "Policy"
@@ -109,13 +109,13 @@ def _get_lambda_resource_policy(
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", config.host)
-        .with_query({"account_id": config.account_id})
+        .with_query({"account_id": resource.account_id})
         .first.name
     )
     lambda_function_policy_response = boto3_cached_conn(
         "lambda",
         region_name=region,
-        account_number=config.account_id,
+        account_number=resource.account_id,
         assume_role=cross_account_role_name,
     ).get_policy(FunctionName=(arn_match.group("resource_id")))
     return common.Policy(
@@ -136,7 +136,7 @@ def _get_resource_account_session(
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", config.host)
-        .with_query({"account_id": config.account_id})
+        .with_query({"account_id": resource.account_id})
         .first.name
     )
     role_arn = f"arn:aws:iam::{resource.account_id}:role/{cross_account_role_name}"
@@ -166,12 +166,12 @@ def _get_s3_resource_policy(
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", config.host)
-        .with_query({"account_id": config.account_id})
+        .with_query({"account_id": resource.account_id})
         .first.name
     )
     s3_client = boto3_cached_conn(
         "s3",
-        account_number=config.account_id,
+        account_number=resource.account_id,
         assume_role=cross_account_role_name,
     )
     try:
@@ -199,13 +199,13 @@ def _get_secretsmanager_resource_policy(
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", config.host)
-        .with_query({"account_id": config.account_id})
+        .with_query({"account_id": resource.account_id})
         .first.name
     )
     secretsmanager_client = boto3_cached_conn(
         "secretsmanager",
         region_name=region,
-        account_number=config.account_id,
+        account_number=resource.account_id,
         assume_role=cross_account_role_name,
     )
     secret_policy_response = secretsmanager_client.get_resource_policy(
