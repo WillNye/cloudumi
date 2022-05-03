@@ -1,3 +1,4 @@
+import json
 from typing import Any, List
 
 from common.config import config
@@ -136,3 +137,35 @@ async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> 
                 )
                 break
     return formatted_policies
+
+
+async def get_escalated_roles_by_tag(
+    eligible_roles: list[str], groups: list[str], host: str
+) -> list[dict]:
+    """Get TEAR supported roles given a list of groups and already usable roles
+
+    :param eligible_roles: Roles that are already accessible and can be ignored
+    :param groups: List of groups to check against
+    :param host: The host/tenant to check against
+
+    :return: A list of roles that can be used as part of the TEAR workflow
+    """
+    from common.lib.aws.iam import TEAR_SUPPORT_TAG
+    from common.lib.aws.utils import get_role_tag
+
+    escalated_roles = dict()
+    all_iam_roles = await get_iam_roles_for_host(host)
+
+    for role_arn, role in all_iam_roles.items():
+        if role_arn in eligible_roles:
+            continue
+
+        role = json.loads(role)
+        if tear_groups := get_role_tag(role, TEAR_SUPPORT_TAG):
+            if isinstance(tear_groups, str):
+                tear_groups = [tear_groups]
+
+            if any(group in tear_groups for group in groups):
+                escalated_roles[role_arn] = role
+
+    return list(escalated_roles.values())

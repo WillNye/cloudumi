@@ -23,6 +23,7 @@ from common.models import HubAccount, SpokeAccount
 log = config.get_logger(__name__)
 
 ALL_IAM_MANAGED_POLICIES = defaultdict(dict)
+TEAR_SUPPORT_TAG = "noq-tear-groups"
 
 
 @aws_paginated("AttachedPolicies")
