@@ -28,7 +28,7 @@ export const IntegrationSSO = () => {
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do()
+        .do({}, rowValues?.provider_type.toLowerCase())
         .then(() => {
           success('Provider removed')
           get.do()

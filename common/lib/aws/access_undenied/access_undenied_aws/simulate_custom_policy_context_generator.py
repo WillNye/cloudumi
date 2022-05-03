@@ -36,6 +36,7 @@ class SimulateCustomPolicyContextGenerator(object):
         self.iam_client = boto3_cached_conn(
             "iam",
             config.host,
+            None,
             account_number=config.account_id,
             assume_role=role_name,
             region=config.region,

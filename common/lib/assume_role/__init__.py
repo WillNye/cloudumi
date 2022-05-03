@@ -315,13 +315,13 @@ def boto3_cached_conn(
 
     # Same Account:
     client = boto3_cached_conn('iam')
-    resource = boto3_cached_conn('iam', service_type='resource')
+    resource = boto3_cached_conn('iam', host, user, service_type='resource')
 
     # Cross Account Client:
-    client = boto3_cached_conn('iam', account_number='000000000000', assume_role='role_name')
+    client = boto3_cached_conn('iam', host, user, account_number='000000000000', assume_role='role_name')
 
     # Cross Account Resource:
-    resource = boto3_cached_conn('iam', service_type='resource', account_number='000000000000', assume_role='role_name')
+    resource = boto3_cached_conn('iam', host, user, service_type='resource', account_number='000000000000', assume_role='role_name')
 
     :param service: AWS service (i.e. 'iam', 'ec2', 'kms')
     :param service_type: 'client' or 'resource'

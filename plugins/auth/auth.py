@@ -152,6 +152,7 @@ class Auth:
 
     async def get_groups(
         self,
+        groups: list[str],
         user: str,
         request_object,
         headers=None,
@@ -163,7 +164,6 @@ class Auth:
         groups_to_add_for_all_users = config.get_host_specific_key(
             "auth.groups_to_add_for_all_users", host, []
         )
-        groups = []
         if get_header_groups or config.get_host_specific_key(
             "auth.get_groups_by_header", host
         ):

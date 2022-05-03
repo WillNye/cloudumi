@@ -1,6 +1,11 @@
+import asyncio
 import base64
+import operator
+import re
 import sys
 from datetime import datetime, timedelta
+from functools import reduce
+from typing import Any
 
 import jwt
 import pytz
@@ -91,6 +96,27 @@ async def populate_oidc_config(host):
                     f"OIDC/OAuth2 key type not recognized. Detected key type: {key_type}."
                 )
     return oidc_config
+
+
+async def get_roles_from_token(host, token: dict[str, Any]) -> set:
+    roles = set()
+    custom_role_attributes = config.get_host_specific_key(
+        "get_user_by_oidc_settings.custom_role_attributes", host, []
+    )
+    for role_attribute in custom_role_attributes:
+        attribute_name = role_attribute["name"]
+        delimiter = role_attribute.get("delimiter", ",")
+        regex = role_attribute.get("regex", "(.*)")
+        role_match = role_attribute.get("role_match", "\\1")
+
+        if not token.get(attribute_name):
+            continue
+        raw_role_values = token[role_attribute["name"]].split(delimiter)
+        regexp = re.compile(regex, re.IGNORECASE)
+
+        for role_val in raw_role_values:
+            roles.add(re.sub(regexp, role_match, role_val))
+    return roles
 
 
 async def authenticate_user_by_oidc(request):
@@ -200,8 +226,7 @@ async def authenticate_user_by_oidc(request):
                 },
                 body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
             )
-        except tornado.httpclient.HTTPError as e:
-            print(e)
+        except tornado.httpclient.HTTPError:
             raise
 
         token_exchange_response_body_dict = json.loads(token_exchange_response.body)
@@ -221,79 +246,72 @@ async def authenticate_user_by_oidc(request):
             )
         )
 
-        jwt_verify = config.get_host_specific_key(
-            "get_user_by_oidc_settings.jwt_verify", host, True
+        header = jwt.get_unverified_header(id_token)
+        key_id = header["kid"]
+        algorithm = header["alg"]
+        if algorithm == "none" or not algorithm:
+            raise UnableToAuthenticate(
+                "ID Token header does not specify a signing algorithm."
+            )
+        pub_key = oidc_config["jwt_keys"][key_id]
+        # This will raises errors if the audience isn't right or if the token is expired or has other errors.
+        decoded_id_token = jwt.decode(
+            id_token,
+            pub_key,
+            audience=oidc_config["client_id"],
+            algorithms=algorithm,
         )
-        if jwt_verify:
-            header = jwt.get_unverified_header(id_token)
-            key_id = header["kid"]
-            algorithm = header["alg"]
-            if algorithm == "none" or not algorithm:
-                raise UnableToAuthenticate(
-                    "ID Token header does not specify a signing algorithm."
-                )
-            pub_key = oidc_config["jwt_keys"][key_id]
-            # This will raises errors if the audience isn't right or if the token is expired or has other errors.
-            decoded_id_token = jwt.decode(
-                id_token,
-                pub_key,
-                audience=oidc_config["client_id"],
-                algorithms=algorithm,
-            )
 
-            email = decoded_id_token.get(
-                config.get_host_specific_key(
-                    "get_user_by_oidc_settings.jwt_email_key",
-                    host,
-                    "email",
-                )
-            )
-
-            # For google auth, the access_token does not contain JWT-parsable claims.
-            if config.get_host_specific_key(
-                "get_user_by_oidc_settings.get_groups_from_access_token",
+        email = decoded_id_token.get(
+            config.get_host_specific_key(
+                "get_user_by_oidc_settings.jwt_email_key",
                 host,
-                True,
-            ):
-                try:
-                    header = jwt.get_unverified_header(access_token)
-                    key_id = header["kid"]
-                    algorithm = header["alg"]
-                    if algorithm == "none" or not algorithm:
-                        raise UnableToAuthenticate(
-                            "Access Token header does not specify a signing algorithm."
-                        )
-                    pub_key = oidc_config["jwt_keys"][key_id]
-                    # This will raises errors if the audience isn't right or if the token is expired or has other
-                    # errors.
-                    decoded_access_token = jwt.decode(
-                        access_token,
-                        pub_key,
-                        audience=config.get_host_specific_key(
-                            "get_user_by_oidc_settings.access_token_audience",
-                            host,
+                "email",
+            )
+        )
+
+        # For google auth, the access_token does not contain JWT-parsable claims.
+        if config.get_host_specific_key(
+            "get_user_by_oidc_settings.get_groups_from_access_token",
+            host,
+            True,
+        ):
+            try:
+                header = jwt.get_unverified_header(access_token)
+                key_id = header["kid"]
+                algorithm = header["alg"]
+                if algorithm == "none" or not algorithm:
+                    raise UnableToAuthenticate(
+                        "Access Token header does not specify a signing algorithm."
+                    )
+                pub_key = oidc_config["jwt_keys"][key_id]
+                # This will raises errors if the audience isn't right or if the token is expired or has other
+                # errors.
+                decoded_access_token = jwt.decode(
+                    access_token,
+                    pub_key,
+                    audience=config.get_host_specific_key(
+                        "get_user_by_oidc_settings.access_token_audience",
+                        host,
+                    ),
+                    algorithms=algorithm,
+                )
+            except (DecodeError, KeyError) as e:
+                # This exception occurs when the access token is opaque or otherwise not JWT-parsable.
+                # It is expected with some IdPs.
+                log.debug(
+                    {
+                        **log_data,
+                        "message": (
+                            "Unable to derive user's groups from access_token. Attempting to get groups through "
+                            "userinfo endpoint. "
                         ),
-                        algorithms=algorithm,
-                    )
-                except (DecodeError, KeyError) as e:
-                    # This exception occurs when the access token is opaque or otherwise not JWT-parsable.
-                    # It is expected with some IdPs.
-                    log.debug(
-                        {
-                            **log_data,
-                            "message": (
-                                "Unable to derive user's groups from access_token. Attempting to get groups through "
-                                "userinfo endpoint. "
-                            ),
-                            "error": e,
-                            "user": email,
-                        }
-                    )
-                    log.debug(log_data, exc_info=True)
-                    groups = []
-        else:
-            decoded_id_token = jwt.decode(id_token, verify=jwt_verify)
-            decoded_access_token = jwt.decode(access_token, verify=jwt_verify)
+                        "error": e,
+                        "user": email,
+                    }
+                )
+                log.debug(log_data, exc_info=True)
+                groups = []
 
         email = email or decoded_id_token.get(
             config.get_host_specific_key(
@@ -306,6 +324,11 @@ async def authenticate_user_by_oidc(request):
         if not email:
             raise UnableToAuthenticate("Unable to determine user from ID Token")
 
+        role_allowance_sets = await asyncio.gather(
+            get_roles_from_token(host, decoded_id_token),
+            get_roles_from_token(host, decoded_access_token),
+        )
+        role_allowances = reduce(operator.or_, role_allowance_sets)
         groups = (
             groups
             or decoded_access_token.get(
@@ -359,7 +382,7 @@ async def authenticate_user_by_oidc(request):
                 )
             )
             encoded_cookie = await generate_jwt_token(
-                email, groups, host, exp=expiration
+                email, groups, host, roles=list(role_allowances), exp=expiration
             )
             request.set_cookie(
                 config.get("_global_.auth.cookie.name", "consoleme_auth"),

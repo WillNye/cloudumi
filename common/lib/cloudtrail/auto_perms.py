@@ -39,6 +39,7 @@ def process_event(event: Dict[str, Any], account_id: str, host: object):
     access_undenied_config.iam_client = boto3_cached_conn(
         "iam",
         access_undenied_config.host,
+        None,
         account_number=account_id,
         assume_role=spoke_account_name,
         region=access_undenied_config.region,
