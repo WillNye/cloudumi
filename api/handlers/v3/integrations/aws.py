@@ -80,6 +80,7 @@ class AwsIntegrationHandler(BaseHandler):
         )
         if spoke_roles:
             spoke_role_name = spoke_roles[0].name
+            spoke_stack_name = spoke_role_name
         else:
             spoke_role_name = config.get(
                 "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
