@@ -5,7 +5,7 @@ import uuid
 
 import sentry_sdk
 import ujson as json
-from policy_sentry.util.arns import parse_arn
+from policy_sentry.util.arns import get_account_from_arn, parse_arn
 from pydantic import ValidationError
 
 from common.config import config
@@ -17,9 +17,13 @@ from common.exceptions.exceptions import (
     Unauthorized,
 )
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
-from common.lib.auth import can_admin_policies
+from common.lib.auth import (
+    can_admin_policies,
+    get_extended_request_account_ids,
+    populate_approve_reject_policy,
+)
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
-from common.lib.aws.utils import get_resource_account
+from common.lib.aws.utils import get_account_id_from_arn, get_resource_account
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import filter_table, write_json_error
@@ -298,8 +302,13 @@ class RequestHandler(BaseAPIV2Handler):
                 # the policy request page to do this manually.
                 if changes.admin_auto_approve:
                     # make sure user is allowed to use admin_auto_approve
+                    account_ids = await get_extended_request_account_ids(
+                        extended_request, host
+                    )
                     can_manage_policy_request = (
-                        await can_admin_policies(self.user, self.groups, host),
+                        await can_admin_policies(
+                            self.user, self.groups, host, account_ids
+                        ),
                     )
                     if can_manage_policy_request:
                         extended_request.request_status = RequestStatus.approved
@@ -751,9 +760,13 @@ class RequestDetailHandler(BaseAPIV2Handler):
             )
             last_updated = updated_request.get("last_updated")
 
-        can_approve_reject = await can_admin_policies(self.user, self.groups, host)
+        accounts_ids = await get_extended_request_account_ids(extended_request, host)
+        can_approve_reject = await can_admin_policies(
+            self.user, self.groups, host, accounts_ids
+        )
+
         can_update_cancel = await can_update_cancel_requests_v2(
-            extended_request.requester_email, self.user, self.groups, host
+            extended_request, self.user, self.groups, host
         )
         can_move_back_to_pending = await can_move_back_to_pending_v2(
             extended_request, last_updated, self.user, self.groups, host
@@ -774,10 +787,16 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 arn_parsed["account"], extended_request.principal.principal_arn, host
             )
             template = iam_role.get("templated")
+
+        changes_config = await populate_approve_reject_policy(
+            extended_request, self.groups, host, self.user
+        )
+
         response = {
             "request": extended_request.json(),
             "last_updated": last_updated,
             "request_config": request_specific_config,
+            "changes_config": changes_config,
             "template": template,
         }
 

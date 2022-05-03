@@ -12,7 +12,7 @@ class SelfServiceConfigHandler(BaseAPIV2Handler):
     async def get(self):
         host = self.ctx.host
         admin_bypass_approval_enabled: bool = await can_admin_policies(
-            self.user, self.groups, host
+            self.user, self.groups, host, []
         )
         export_to_terraform_enabled: bool = config.get_host_specific_key(
             "export_to_terraform_enabled", host, False

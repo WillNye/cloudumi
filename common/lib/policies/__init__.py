@@ -16,7 +16,7 @@ from common.exceptions.exceptions import (
     MissingConfigurationValue,
     ResourceNotFound,
 )
-from common.lib.auth import can_admin_policies
+from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.utils import (
     get_region_from_arn,
     get_resource_account,
@@ -230,7 +230,7 @@ async def can_move_back_to_pending(request, current_user, groups, host):
         if request.get("last_updated", 0) < int(time.time()) - 86400:
             return False
         # Allow admins to return requests back to pending state
-        is_owner = await can_admin_policies(current_user, groups, host)
+        is_owner = await can_admin_policies(current_user, groups, host, account_ids)
         if is_owner:
             return True
     return False
@@ -247,7 +247,8 @@ async def can_move_back_to_pending_v2(
         if last_updated < int(time.time()) - 86400:
             return False
         # Allow admins to return requests back to pending state
-        is_owner = await can_admin_policies(current_user, groups, host)
+        account_ids = get_extended_request_account_ids(extended_request)
+        is_owner = await can_admin_policies(current_user, groups, host, account_ids)
         if is_owner:
             return True
     return False

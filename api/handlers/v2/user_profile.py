@@ -94,7 +94,7 @@ class UserProfileHandler(BaseAPIV1Handler):
             "employee_info_url": "",  # TODO: Support custom employee info url
             "authorization": {
                 "can_edit_policies": await can_admin_policies(
-                    self.user, self.groups, host
+                    self.user, self.groups, host, []
                 ),
                 "can_create_roles": can_create_roles(self.user, self.groups, host),
                 "can_delete_iam_principals": can_delete_iam_principals(

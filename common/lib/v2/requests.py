@@ -2615,7 +2615,7 @@ async def parse_and_apply_policy_request_modification(
 
     if request_changes.command in [Command.update_change, Command.cancel_request]:
         can_update_cancel = await can_update_cancel_requests_v2(
-            extended_request.requester_email, user, user_groups, host
+            extended_request, user, user_groups, host
         )
         if not can_update_cancel:
             raise Unauthorized(

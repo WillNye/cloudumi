@@ -10,12 +10,15 @@ import {
   Segment,
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
-import { sortAndStringifyNestedJSONObject } from '../../helpers/utils'
+import {
+  sortAndStringifyNestedJSONObject,
+  validateApprovePolicy,
+} from '../../helpers/utils'
 
 class AssumeRolePolicyChangeComponent extends Component {
   constructor(props) {
     super(props)
-    const { change, config, requestReadOnly, requestID } = props
+    const { change, config, changesConfig, requestReadOnly, requestID } = props
     const oldPolicyDoc =
       change.old_policy && change.old_policy.policy_document
         ? change.old_policy.policy_document
@@ -35,6 +38,7 @@ class AssumeRolePolicyChangeComponent extends Component {
       oldStatement: sortAndStringifyNestedJSONObject(oldPolicyDoc),
       change,
       config,
+      changesConfig: changesConfig || {},
       requestReadOnly,
       requestID,
       isLoading: false,
@@ -122,15 +126,18 @@ class AssumeRolePolicyChangeComponent extends Component {
       lastSavedStatement,
       isLoading,
       buttonResponseMessage,
+      changesConfig,
     } = this.state
+
+    const isOwner =
+      validateApprovePolicy(changesConfig, change.id) ||
+      config.can_approve_reject
 
     const headerContent = (
       <Header size='large'>Assume Role Policy Change</Header>
     )
     const applyChangesButton =
-      config.can_approve_reject &&
-      change.status === 'not_applied' &&
-      !requestReadOnly ? (
+      isOwner && change.status === 'not_applied' && !requestReadOnly ? (
         <Grid.Column>
           <Button
             content='Apply Change'
@@ -145,7 +152,8 @@ class AssumeRolePolicyChangeComponent extends Component {
     const noChangesDetected = lastSavedStatement === newStatement
 
     const updateChangesButton =
-      config.can_update_cancel &&
+      (validateApprovePolicy(changesConfig, change.id) ||
+        config.can_update_cancel) &&
       change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
@@ -160,7 +168,7 @@ class AssumeRolePolicyChangeComponent extends Component {
       ) : null
 
     const cancelChangesButton =
-      (config.can_approve_reject || config.can_update_cancel) &&
+      (isOwner || config.can_update_cancel) &&
       change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
@@ -275,8 +283,7 @@ class AssumeRolePolicyChangeComponent extends Component {
               oldValue={oldStatement}
               newValue={newStatement}
               readOnly={
-                (!config.can_update_cancel && !config.can_approve_reject) ||
-                changeReadOnly
+                (!config.can_update_cancel && !isOwner) || changeReadOnly
               }
               onLintError={this.onLintError}
               onValueChange={this.onValueChange}

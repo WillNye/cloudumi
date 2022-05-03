@@ -10,10 +10,11 @@ from cryptography.hazmat.backends.openssl.rsa import _RSAPublicKey
 
 from common.config import config
 from common.config.models import ModelAdapter
+from common.lib.aws.utils import get_resource_account
 from common.lib.crypto import CryptoSign
 from common.lib.generic import is_in_group
 from common.lib.plugins import get_plugin_by_name
-from common.models import SpokeAccount
+from common.models import ExtendedRequestModel, SpokeAccount
 
 log = config.get_logger()
 
@@ -196,23 +197,41 @@ async def get_accounts_user_can_view_resources_for(user, groups, host) -> set[st
     return allowed
 
 
-async def user_can_edit_resources(user, groups, host) -> bool:
+async def get_accounts_user_can_edit_resources_for(user, groups, host) -> set[str]:
     spoke_roles = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list
-    allowed = False
+    allowed_accounts = set()
     for spoke_role in spoke_roles:
-        if can_admin_all(user, groups, host) and spoke_role.get(
-            "delegate_admin_to_owner", False
-        ):
-            allowed = True
-            break
+        if not spoke_role.get("delegate_admin_to_owner"):
+            continue
         if user in spoke_role.get("owners", []):
-            allowed = True
-            break
+            allowed_accounts.add(spoke_role.get("account_id"))
+            continue
         for group in groups:
             if group in spoke_role.get("owners", []):
-                allowed = True
+                allowed_accounts.add(spoke_role.get("account_id"))
                 break
-    return allowed
+    return allowed_accounts
+
+
+async def user_can_edit_resources(user, groups, host, account_ids) -> bool:
+    can_edit_resource = False
+    if can_admin_all(user, groups, host):
+        return True
+
+    if len(account_ids) == 0:
+        return can_edit_resource
+
+    allowed_accounts = await get_accounts_user_can_edit_resources_for(
+        user, groups, host
+    )
+    for account_id in account_ids:
+        if account_id in allowed_accounts:
+            can_edit_resource = True
+        else:
+            can_edit_resource = False
+            break
+
+    return can_edit_resource
 
 
 def can_admin_identity(user: str, user_groups: List[str], host: str):
@@ -251,8 +270,52 @@ def can_create_roles(user: str, user_groups: List[str], host: str) -> bool:
     return False
 
 
-async def can_admin_policies(user: str, user_groups: List[str], host: str) -> bool:
-    is_owner = await user_can_edit_resources(user, user_groups, host)
+async def get_extended_request_account_ids(
+    extended_request: ExtendedRequestModel, host: str
+) -> set[str]:
+    accounts = []
+
+    for change in extended_request.changes.changes:
+        arn = change.principal.principal_arn
+        if change.change_type in [
+            "managed_resource",
+            "resource_policy",
+            "sts_resource_policy",
+        ]:
+            arn = change.arn
+
+        await get_resource_account(arn, host)
+    return accounts
+
+
+async def populate_approve_reject_policy(
+    extended_request: ExtendedRequestModel, groups, host, user: str
+) -> bool:
+    request_config = {}
+
+    # Currently the only allowances are: Inline policies
+    for change in extended_request.changes.changes:
+        arn = change.principal.principal_arn
+        if change.change_type in [
+            "managed_resource",
+            "resource_policy",
+            "sts_resource_policy",
+        ]:
+            arn = change.arn
+
+        account_id = await get_resource_account(arn, host)
+
+        is_owner = await can_admin_policies(user, groups, host, [account_id])
+        request_config[change.id] = {
+            "can_approve_policy": False if not is_owner else True
+        }
+    return request_config
+
+
+async def can_admin_policies(
+    user: str, user_groups: List[str], host: str, account_ids: set[str] = []
+) -> bool:
+    is_owner = await user_can_edit_resources(user, user_groups, host, account_ids)
     if is_owner:
         return True
     if is_in_group(
