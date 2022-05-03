@@ -5,7 +5,7 @@ import uuid
 
 import sentry_sdk
 import ujson as json
-from policy_sentry.util.arns import get_account_from_arn, parse_arn
+from policy_sentry.util.arns import parse_arn
 from pydantic import ValidationError
 
 from common.config import config
@@ -23,7 +23,7 @@ from common.lib.auth import (
     populate_approve_reject_policy,
 )
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
-from common.lib.aws.utils import get_account_id_from_arn, get_resource_account
+from common.lib.aws.utils import get_resource_account
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import filter_table, write_json_error
