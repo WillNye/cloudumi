@@ -5,7 +5,6 @@ class NewTenantRegistration(BaseModel):
     first_name: str
     last_name: str
     email: str
-    password: str
     country: str
     marketing_consent: bool = False
     registration_code: str
