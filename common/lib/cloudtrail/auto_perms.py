@@ -238,6 +238,12 @@ async def detect_cloudtrail_denies_and_update_cache(
             if generated_policy is None:
                 log.warning("Unable to process cloudtrail deny event")
                 num_events += 1
+                processed_messages.append(
+                    {
+                        "Id": message["MessageId"],
+                        "ReceiptHandle": message["ReceiptHandle"],
+                    }
+                )
 
             elif (
                 generated_policy.assessment_result
