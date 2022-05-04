@@ -21,7 +21,7 @@ async def send_email_via_ses(
     subject: str,
     body: str,
     host: str,
-    sending_app: str = "consoleme",
+    sending_app: str = "noq",
     charset: str = "UTF-8",
 ) -> None:
     region: str = config.get_host_specific_key("ses.region", host, config.region)
@@ -133,7 +133,7 @@ async def send_email(
     subject: str,
     body: str,
     host: str,
-    sending_app: str = "consoleme",
+    sending_app: str = "noq",
     charset: str = "UTF-8",
 ) -> None:
     # Handle non-list recipients
@@ -161,7 +161,7 @@ async def send_access_email_to_user(
     group_url: str,
     host: str,
     reviewer_comments: None = None,
-    sending_app: str = "consoleme",
+    sending_app: str = "noq",
 ) -> None:
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Request for group {group} has been {status}"
@@ -192,7 +192,7 @@ async def send_access_email_to_user(
 
 
 async def send_request_created_to_user(
-    user, group, updated_by, status, request_url, host, sending_app="consoleme"
+    user, group, updated_by, status, request_url, host, sending_app="noq"
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Request for group {group} has been created"
@@ -223,7 +223,7 @@ async def send_request_to_secondary_approvers(
     request_url,
     pending_requests_url,
     host: str,
-    sending_app="consoleme",
+    sending_app="noq",
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: A request for group {group} requires your approval"
@@ -249,7 +249,7 @@ async def send_request_to_secondary_approvers(
 
 
 async def send_group_modification_notification(
-    groups, to_address, host, sending_app="consoleme"
+    groups, to_address, host, sending_app="noq"
 ):
     """
     Send an email containing group changes to a notification address
@@ -304,12 +304,12 @@ async def send_group_modification_notification(
 
 
 async def send_new_aws_groups_notification(
-    to_addresses, new_aws_groups, host, sending_app="consoleme"
+    to_addresses, new_aws_groups, host, sending_app="noq"
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: New AWS groups detected"
     message = """New AWS login groups were created.<br>
-    ConsoleMe is configured to send notifications when new AWS-related google groups are detected.
+    Noq is configured to send notifications when new AWS-related google groups are detected.
     This is to detect any accidentally or maliciously created google groups.<br>"""
     added_groups_snippet = ""
     if new_aws_groups:
@@ -334,7 +334,7 @@ async def send_new_aws_groups_notification(
 
 
 async def send_policy_request_status_update(
-    request, policy_change_uri, host: str, sending_app="consoleme"
+    request, policy_change_uri, host: str, sending_app="noq"
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Policy change request for {request['arn']} has been {request['status']}"
@@ -373,7 +373,7 @@ async def send_policy_request_status_update_v2(
     extended_request: ExtendedRequestModel,
     policy_change_uri,
     host,
-    sending_app="consoleme",
+    sending_app="noq",
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     to_addresses = [extended_request.requester_email]
@@ -421,7 +421,7 @@ async def send_new_comment_notification(
     user,
     policy_change_uri,
     host,
-    sending_app="consoleme",
+    sending_app="noq",
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     principal = await get_principal_friendly_name(extended_request.principal)
