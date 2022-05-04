@@ -185,7 +185,9 @@ async def get_accounts_user_can_view_resources_for(user, groups, host) -> set[st
         if not spoke_role.get("restrict_viewers_of_account_resources"):
             allowed.add(spoke_role.get("account_id"))
             continue
-        if user in spoke_role.get("viewers", []):
+        if user in spoke_role.get("viewers", []) or user in spoke_role.get(
+            "owners", []
+        ):
             allowed.add(spoke_role.get("account_id"))
             continue
         for group in groups:
