@@ -22,7 +22,7 @@ from common.models import (
 log = config.get_logger()
 
 
-def process_event(event: Dict[str, Any], account_id: str, host: object):
+def process_event(event: Dict[str, Any], account_id: str, host: str):
     access_undenied_config = access_undenied.common.Config()
     access_undenied_config.session = boto3.Session()
     access_undenied_config.account_id = access_undenied_config.session.client(
