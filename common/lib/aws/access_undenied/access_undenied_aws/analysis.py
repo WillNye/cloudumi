@@ -141,7 +141,7 @@ def analyze(
             )
         )
         analysis_result = simulate_custom_policy_helper.simulate_custom_policies(
-            config.iam_client,
+            config,
             event_,
             event_permission_data_,
             iam_policy_data_,
