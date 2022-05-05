@@ -135,6 +135,7 @@ class EligibleRoleHandler(BaseHandler):
                     "role_name": f"[{role_name}](/policies/edit/{account_id}/iamrole/{role_name})",
                     "redirect_uri": f"/role/{arn}",  # TODO: Use the TEAR uri
                     "tear_role": True,
+                    "content": "Escalate",
                 }
             )
 
