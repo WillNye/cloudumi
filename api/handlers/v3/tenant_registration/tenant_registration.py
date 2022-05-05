@@ -4,7 +4,6 @@ import hmac
 import random
 import time
 from secrets import token_urlsafe
-from typing import List
 from urllib.parse import urlparse
 
 import boto3
@@ -12,7 +11,6 @@ import sentry_sdk
 import tornado.escape
 import tornado.web
 from email_validator import validate_email
-from password_strength import PasswordPolicy
 
 from api.handlers.v3.tenant_registration.models import NewTenantRegistration
 from common.config import config
@@ -275,7 +273,7 @@ async def get_external_id(host, username):
 
 
 async def create_user_pool_user(
-    user_pool_id, user_pool_client_id, client_secret, email, password, noq_subdomain
+    user_pool_id, user_pool_client_id, client_secret, email, noq_subdomain
 ):
     cognito = boto3.client("cognito-idp", region_name=config.region)
     cognito.create_group(
@@ -506,30 +504,6 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             )
             return
 
-        password = data.get("password")
-        policy = PasswordPolicy.from_names(
-            length=8,
-            uppercase=1,
-            numbers=1,
-            special=1,
-            nonletters=1,
-        )
-
-        tested_pass = policy.password(password)
-        errors = tested_pass.test()
-        # Convert errors to string so they can be json encoded later
-        errors: List[str] = [str(e) for e in errors]
-
-        if errors:
-            self.set_status(400)
-            self.write(
-                {
-                    "error": "The password is not complex enough.",
-                    "errors": errors,
-                }
-            )
-            return
-
         region = config.region
         # validate tenant
         try:
@@ -608,7 +582,6 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 cognito_client_id,
                 cognito_user_pool_client_secret,
                 tenant.email,
-                tenant.password,
                 dev_domain,
             )
         except Exception as e:

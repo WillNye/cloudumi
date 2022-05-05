@@ -313,8 +313,15 @@ def _get_principal_from_user_identity(
         #     "type": "AWSAccount"
         # }
         logger.debug("Cross-account access: Principal represented as unique id...")
+
+        account_role_name = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", config.host)
+            .with_query({"account_id": config.account_id})
+            .first.name
+        )
         principal.arn = _get_principal_arn_from_cross_account_principal_id(
-            config.cross_account_role_name,
+            account_role_name,
             event_.raw_principal["principalId"],
             event_.raw_principal["accountId"],
         )

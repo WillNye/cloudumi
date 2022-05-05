@@ -10,12 +10,15 @@ import {
   Segment,
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
-import { sortAndStringifyNestedJSONObject } from '../../helpers/utils'
+import {
+  sortAndStringifyNestedJSONObject,
+  validateApprovePolicy,
+} from '../../helpers/utils'
 
 class InlinePolicyChangeComponent extends Component {
   constructor(props) {
     super(props)
-    const { change, config, requestReadOnly, requestID } = props
+    const { change, config, requestReadOnly, requestID, changesConfig } = props
     const oldPolicyDoc =
       change.old_policy && change.old_policy.policy_document
         ? change.old_policy.policy_document
@@ -36,6 +39,7 @@ class InlinePolicyChangeComponent extends Component {
       oldStatement: sortAndStringifyNestedJSONObject(oldPolicyDoc),
       change,
       config,
+      changesConfig: changesConfig || {},
       requestReadOnly,
       requestID,
       isLoading: false,
@@ -116,6 +120,7 @@ class InlinePolicyChangeComponent extends Component {
       oldStatement,
       newStatement,
       change,
+      changesConfig,
       config,
       isError,
       messages,
@@ -124,6 +129,10 @@ class InlinePolicyChangeComponent extends Component {
       isLoading,
       buttonResponseMessage,
     } = this.state
+
+    const isOwner =
+      validateApprovePolicy(changesConfig, change.id) ||
+      config.can_approve_reject
 
     const newPolicy = change.new ? (
       <span style={{ color: 'red' }}>- New Policy</span>
@@ -142,9 +151,7 @@ class InlinePolicyChangeComponent extends Component {
     }
 
     const applyChangesButton =
-      config.can_approve_reject &&
-      change.status === 'not_applied' &&
-      !requestReadOnly ? (
+      isOwner && change.status === 'not_applied' && !requestReadOnly ? (
         <Grid.Column>
           <Button
             content='Apply Change'
@@ -159,7 +166,8 @@ class InlinePolicyChangeComponent extends Component {
     const noChangesDetected = lastSavedStatement === newStatement
 
     const updateChangesButton =
-      config.can_update_cancel &&
+      (validateApprovePolicy(changesConfig, change.id) ||
+        config.can_update_cancel) &&
       change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
@@ -174,7 +182,7 @@ class InlinePolicyChangeComponent extends Component {
       ) : null
 
     const cancelChangesButton =
-      (config.can_approve_reject || config.can_update_cancel) &&
+      (config.can_update_cancel || isOwner) &&
       change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>
@@ -289,8 +297,7 @@ class InlinePolicyChangeComponent extends Component {
               oldValue={oldStatement}
               newValue={newStatement}
               readOnly={
-                (!config.can_update_cancel && !config.can_approve_reject) ||
-                changeReadOnly
+                (!config.can_update_cancel && !isOwner) || changeReadOnly
               }
               onLintError={this.onLintError}
               onValueChange={this.onValueChange}

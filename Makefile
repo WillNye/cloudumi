@@ -8,6 +8,16 @@ pytest := PYTHONDONTWRITEBYTECODE=1 \
 	--asyncio-mode=auto --dist loadscope \
     --ignore-glob 'bazel*' .
 
+pytest_single_process := PYTHONDONTWRITEBYTECODE=1 \
+	PYTEST_PLUGINS=util.tests.fixtures.fixtures \
+	PYTHONPATH=$(pwd) \
+	CONFIG_LOCATION=util/tests/test_configuration.yaml \
+	pytest --tb short \
+	--cov-config .coveragerc --cov common --cov api \
+	--async-test-timeout=1600 --timeout=1600 \
+	--asyncio-mode=auto \
+    --ignore-glob 'bazel*' .
+
 html_report := --cov-report html
 test_args := --cov-report term-missing
 

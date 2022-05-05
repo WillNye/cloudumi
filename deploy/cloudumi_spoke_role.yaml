@@ -24,6 +24,7 @@ Resources:
                   - "config:List*" # Retrieve information about AWS resources to list in a single source of truth
                   - "config:Select*" # Query AWS Config
                   - "ec2:describeregions" # Retrieve active regions for your AWS environment
+                  - "iam:AddRoleToInstanceProfile" # Used when creating/cloning roles
                   - "iam:AttachRolePolicy"
                   - "iam:AttachUserPolicy"
                   - "iam:CreateInstanceProfile"

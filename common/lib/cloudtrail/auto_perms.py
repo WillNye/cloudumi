@@ -22,7 +22,7 @@ from common.models import (
 log = config.get_logger()
 
 
-def process_event(event: Dict[str, Any], account_id: str, host: object):
+def process_event(event: Dict[str, Any], account_id: str, host: str):
     access_undenied_config = access_undenied.common.Config()
     access_undenied_config.session = boto3.Session()
     access_undenied_config.account_id = access_undenied_config.session.client(
@@ -232,12 +232,18 @@ async def detect_cloudtrail_denies_and_update_cache(
                 f"{principal_arn}-{session_name}-{event_call}-{event.resource}"
             )
             generated_policy = process_event(
-                decoded_message, queue_account_number, host
+                decoded_message, decoded_message.get("recipientAccountId"), host
             )
 
             if generated_policy is None:
                 log.warning("Unable to process cloudtrail deny event")
                 num_events += 1
+                processed_messages.append(
+                    {
+                        "Id": message["MessageId"],
+                        "ReceiptHandle": message["ReceiptHandle"],
+                    }
+                )
 
             elif (
                 generated_policy.assessment_result

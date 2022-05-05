@@ -10,6 +10,7 @@ import {
   Dimmer,
 } from 'semantic-ui-react'
 import { useAuth } from '../../auth/AuthProviderDefault'
+import { validateApprovePolicy } from '../../helpers/utils'
 
 const ResourceTagChangeComponent = (props) => {
   const change = props.change
@@ -54,6 +55,10 @@ const ResourceTagChangeComponent = (props) => {
     )
   }
 
+  const isOwner =
+    validateApprovePolicy(props.changesConfig, change.id) ||
+    props.config.can_approve_reject
+
   const headerContent = (
     <Header size='large'>
       Tag Change - {action} {change.key}
@@ -61,9 +66,7 @@ const ResourceTagChangeComponent = (props) => {
   )
 
   const applyChangesButton =
-    props.config.can_approve_reject &&
-    change.status === 'not_applied' &&
-    !props.requestReadOnly ? (
+    isOwner && change.status === 'not_applied' && !props.requestReadOnly ? (
       <Grid.Column>
         <Button
           content='Apply Change'
@@ -75,9 +78,7 @@ const ResourceTagChangeComponent = (props) => {
     ) : null
 
   const cancelChangesButton =
-    props.config.can_approve_reject &&
-    change.status === 'not_applied' &&
-    !props.requestReadOnly ? (
+    isOwner && change.status === 'not_applied' && !props.requestReadOnly ? (
       <Grid.Column>
         <Button
           content='Cancel Change'

@@ -141,7 +141,7 @@ const DataTableRowsComponent = ({
                 fluid
                 labelPosition='right'
                 icon={column.icon}
-                primary
+                color={entry[column.color] || 'blue'}
                 style={{
                   cursor: 'pointer',
                 }}
