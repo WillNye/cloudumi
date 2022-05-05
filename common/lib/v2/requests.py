@@ -1355,6 +1355,7 @@ async def populate_old_policies(
     user: str,
     host: str,
     principal: Optional[ExtendedAwsPrincipalModel] = None,
+    force_refresh=False,
 ) -> ExtendedRequestModel:
     """
     Populates the old policies for each inline policy.
@@ -1398,7 +1399,7 @@ async def populate_old_policies(
                     principal_name,
                     host,
                     extended=True,
-                    force_refresh=True,
+                    force_refresh=force_refresh,
                 )
             elif arn_parsed["resource"] == "user":
                 principal = await get_user_details(
@@ -1406,7 +1407,7 @@ async def populate_old_policies(
                     principal_name,
                     host,
                     extended=True,
-                    force_refresh=True,
+                    force_refresh=force_refresh,
                 )
 
     for change in extended_request.changes.changes:
@@ -1538,7 +1539,7 @@ async def populate_old_managed_policies(
 
 
 async def populate_cross_account_resource_policy_for_change(
-    change, extended_request, log_data, host: str, user
+    change, extended_request, log_data, host: str, user, force_refresh: bool = False
 ):
     resource_policies_changed = False
     supported_resource_policies = config.get_host_specific_key(
@@ -1620,7 +1621,7 @@ async def populate_cross_account_resource_policy_for_change(
                     role_name,
                     host,
                     extended=True,
-                    force_refresh=True,
+                    force_refresh=force_refresh,
                 )
                 if not role:
                     log.error(
@@ -2286,6 +2287,7 @@ async def apply_resource_policy_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     host: str,
+    force_refresh: bool = False,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource policy change for supported changes
@@ -2430,7 +2432,9 @@ async def apply_resource_policy_change(
                 ),
             )
             # force refresh the role for which we just changed the assume role policy doc
-            await fetch_iam_role(resource_account, change.arn, host, force_refresh=True)
+            await fetch_iam_role(
+                resource_account, change.arn, host, force_refresh=force_refresh
+            )
         response.action_results.append(
             ActionResult(
                 status="success",
@@ -2519,6 +2523,7 @@ async def maybe_approve_reject_request(
     log_data: Dict,
     response: PolicyRequestModificationResponseModel,
     host: str,
+    force_refresh: bool = False,
 ) -> PolicyRequestModificationResponseModel:
     any_changes_applied = False
     any_changes_pending = False
@@ -2572,7 +2577,7 @@ async def maybe_approve_reject_request(
                 account_id,
                 extended_request.principal.principal_arn,
                 host,
-                force_refresh=True,
+                force_refresh=force_refresh,
             )
     return response
 
@@ -2585,6 +2590,7 @@ async def parse_and_apply_policy_request_modification(
     last_updated,
     host: str,
     approval_probe_approved=False,
+    force_refresh=False,
 ) -> PolicyRequestModificationResponseModel:
     """
     Parses the policy request modification changes
@@ -2902,7 +2908,7 @@ async def parse_and_apply_policy_request_modification(
                     account_id,
                     extended_request.principal.principal_arn,
                     host,
-                    force_refresh=True,
+                    force_refresh=force_refresh,
                 )
             if specific_change.status == Status.applied:
                 # Change was successful, update in dynamo
@@ -3078,7 +3084,7 @@ async def parse_and_apply_policy_request_modification(
             account_id,
             extended_request.principal.principal_arn,
             host,
-            force_refresh=True,
+            force_refresh=force_refresh,
         )
 
     response = await maybe_approve_reject_request(
