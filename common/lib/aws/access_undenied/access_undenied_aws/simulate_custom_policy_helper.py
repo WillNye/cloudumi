@@ -3,6 +3,8 @@ import json
 import re
 from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence, Set
 
+from common.config.models import ModelAdapter
+from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event,
@@ -16,6 +18,7 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
 from common.lib.aws.access_undenied.access_undenied_aws.iam_policy_data import (
     IamPolicyData,
 )
+from common.models import SpokeAccount
 from util.log import logger
 
 if TYPE_CHECKING:
@@ -176,12 +179,22 @@ def get_resource_owner_parameter_from_account_arn(
 
 
 def simulate_custom_policies(
-    iam_client: IAMClient,
+    config: common.Config,
     cloudtrail_event_: event.Event,
     event_permission_data_: event_permission_data.EventPermissionData,
     iam_policy_data_: iam_policy_data.IamPolicyData,
     simulate_custom_policy_arguments_base: SimulateCustomPolicyRequestRequestTypeDef,
 ) -> Optional[results.AnalysisResult]:
+    account_id = event_permission_data_.principal.account_id
+    role = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", config.host)
+        .with_query({"account_id": account_id})
+        .first.name
+    )
+    iam_client = boto3_cached_conn(
+        "iam", config.host, None, account_number=account_id, assume_role=role
+    )
     for guardrail_policy in iam_policy_data_.guardrail_policies or [None]:
         deny_result = _simulate_custom_policy(
             iam_client,

@@ -2317,7 +2317,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         input_body = {
             "modification_model": {
                 "command": "update_change",
-                "change_id": extended_request.changes.changes[0].id + "non-existent",
+                "change_id": extended_request.changes.changes[0].id,
                 "policy_document": updated_policy_doc,
             }
         }
@@ -2344,6 +2344,9 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         # Trying to update a non-existent change
         from common.exceptions.exceptions import NoMatchingRequest
 
+        policy_request_model.modification_model.change_id = (
+            extended_request.changes.changes[0].id + "non-existent"
+        )
         with pytest.raises(NoMatchingRequest) as e:
             await parse_and_apply_policy_request_modification(
                 extended_request,
@@ -2407,7 +2410,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         input_body = {
             "modification_model": {
                 "command": "apply_change",
-                "change_id": extended_request.changes.changes[0].id + "non-existent",
+                "change_id": extended_request.changes.changes[0].id,
                 "policy_document": updated_policy_doc,
             }
         }
@@ -2418,7 +2421,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         mock_dynamo_write.return_value = create_future(None)
         mock_populate_old_policies.return_value = create_future(extended_request)
         # mock_fetch_iam_role.return_value = create_future(None)
-        can_admin_policies.return_value = False
+        can_admin_policies.return_value = create_future(False)
         client = boto3.client(
             "iam",
             region_name="us-east-1",
@@ -2437,8 +2440,13 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             )
             self.assertIn("Unauthorized", str(e))
 
-        can_admin_policies.return_value = True
+        can_admin_policies.return_value = create_future(True)
         # Trying to apply a non-existent change
+
+        policy_request_model.modification_model.change_id = (
+            extended_request.changes.changes[0].id + "non-existent"
+        )
+
         with pytest.raises(NoMatchingRequest) as e:
             await parse_and_apply_policy_request_modification(
                 extended_request,
@@ -2783,7 +2791,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         mock_populate_old_policies.return_value = create_future(extended_request)
         mock_fetch_iam_role.return_value = create_future(None)
         mock_can_update_cancel_requests_v2.return_value = create_future(False)
-        can_admin_policies.return_value = False
+        can_admin_policies.return_value = create_future(False)
         mock_send_email.return_value = create_future(None)
         client = boto3.client(
             "iam",
@@ -2803,7 +2811,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             )
             self.assertIn("Unauthorized", str(e))
 
-        can_admin_policies.return_value = True
+        can_admin_policies.return_value = create_future(True)
         mock_can_update_cancel_requests_v2.return_value = create_future(True)
 
         # Authorized person updating the change

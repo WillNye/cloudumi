@@ -40,7 +40,9 @@ class ResourceDetailHandler(BaseAPIV2Handler):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
         read_only = False
 
-        can_save_delete = can_admin_policies(self.user, self.groups, host)
+        can_save_delete = await can_admin_policies(
+            self.user, self.groups, host, [account_id]
+        )
 
         account_id_for_arn: str = account_id
         if resource_type == "s3":

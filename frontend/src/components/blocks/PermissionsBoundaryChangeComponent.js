@@ -9,6 +9,7 @@ import {
   Loader,
   Dimmer,
 } from 'semantic-ui-react'
+import { validateApprovePolicy } from '../../helpers/utils'
 
 class PermissionsBoundaryChangeComponent extends Component {
   constructor(props) {
@@ -19,6 +20,7 @@ class PermissionsBoundaryChangeComponent extends Component {
       buttonResponseMessage: [],
       change: this.props.change,
       config: this.props.config,
+      changesConfig: this.props.changesConfig || {},
       requestID: this.props.requestID,
       requestReadOnly: this.props.requestReadOnly,
     }
@@ -70,7 +72,12 @@ class PermissionsBoundaryChangeComponent extends Component {
       requestReadOnly,
       isLoading,
       buttonResponseMessage,
+      changesConfig,
     } = this.state
+
+    const isOwner =
+      validateApprovePolicy(changesConfig, change.id) ||
+      config.can_approve_reject
 
     const action =
       change.action === 'detach' ? (
@@ -86,9 +93,7 @@ class PermissionsBoundaryChangeComponent extends Component {
     )
 
     const applyChangesButton =
-      config.can_approve_reject &&
-      change.status === 'not_applied' &&
-      !requestReadOnly ? (
+      isOwner && change.status === 'not_applied' && !requestReadOnly ? (
         <Grid.Column>
           <Button
             content='Apply Change'
@@ -100,7 +105,7 @@ class PermissionsBoundaryChangeComponent extends Component {
       ) : null
 
     const cancelChangesButton =
-      (config.can_approve_reject || config.can_update_cancel) &&
+      (isOwner || config.can_update_cancel) &&
       change.status === 'not_applied' &&
       !requestReadOnly ? (
         <Grid.Column>

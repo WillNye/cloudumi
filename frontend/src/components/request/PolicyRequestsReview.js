@@ -31,6 +31,7 @@ class PolicyRequestReview extends Component {
       isSubmitting: false,
       lastUpdated: null,
       requestConfig: {},
+      changesConfig: {},
       policyDocuments: {},
       template: null,
     }
@@ -196,11 +197,17 @@ class PolicyRequestReview extends Component {
                 messages: [response.message],
               })
             } else {
-              const { request, request_config, last_updated, template } =
-                response
+              const {
+                request,
+                request_config,
+                last_updated,
+                template,
+                changes_config,
+              } = response
               this.setState({
                 extendedRequest: JSON.parse(request),
                 requestConfig: request_config,
+                changesConfig: changes_config,
                 lastUpdated: last_updated,
                 loading: false,
                 template: template,
@@ -218,6 +225,7 @@ class PolicyRequestReview extends Component {
       messages,
       isSubmitting,
       requestConfig,
+      changesConfig,
       loading,
       requestID,
       template,
@@ -440,6 +448,7 @@ class PolicyRequestReview extends Component {
                 <InlinePolicyChangeComponent
                   change={change}
                   config={requestConfig}
+                  changesConfig={changesConfig}
                   requestReadOnly={requestReadOnly}
                   updatePolicyDocument={this.updatePolicyDocument}
                   reloadDataFromBackend={this.reloadDataFromBackend}
@@ -457,6 +466,7 @@ class PolicyRequestReview extends Component {
                 <InlinePolicyChangeComponent
                   change={change}
                   config={requestConfig}
+                  changesConfig={changesConfig}
                   requestReadOnly={requestReadOnly}
                   updatePolicyDocument={this.updatePolicyDocument}
                   reloadDataFromBackend={this.reloadDataFromBackend}
@@ -471,6 +481,7 @@ class PolicyRequestReview extends Component {
                 <ManagedPolicyChangeComponent
                   change={change}
                   config={requestConfig}
+                  changesConfig={changesConfig}
                   requestReadOnly={requestReadOnly}
                   reloadDataFromBackend={this.reloadDataFromBackend}
                   requestID={requestID}
@@ -484,6 +495,7 @@ class PolicyRequestReview extends Component {
                 <PermissionsBoundaryChangeComponent
                   change={change}
                   config={requestConfig}
+                  changesConfig={changesConfig}
                   requestReadOnly={requestReadOnly}
                   reloadDataFromBackend={this.reloadDataFromBackend}
                   requestID={requestID}
@@ -497,6 +509,7 @@ class PolicyRequestReview extends Component {
                 <AssumeRolePolicyChangeComponent
                   change={change}
                   config={requestConfig}
+                  changesConfig={changesConfig}
                   requestReadOnly={requestReadOnly}
                   updatePolicyDocument={this.updatePolicyDocument}
                   reloadDataFromBackend={this.reloadDataFromBackend}
@@ -511,6 +524,7 @@ class PolicyRequestReview extends Component {
                 <ResourceTagChangeComponent
                   change={change}
                   config={requestConfig}
+                  changesConfig={changesConfig}
                   requestReadOnly={requestReadOnly}
                   updateTag={this.updateTag}
                   reloadDataFromBackend={this.reloadDataFromBackend}
@@ -526,6 +540,7 @@ class PolicyRequestReview extends Component {
                 <ResourcePolicyChangeComponent
                   change={change}
                   config={requestConfig}
+                  changesConfig={changesConfig}
                   requestReadOnly={requestReadOnly}
                   updatePolicyDocument={this.updatePolicyDocument}
                   reloadDataFromBackend={this.reloadDataFromBackend}

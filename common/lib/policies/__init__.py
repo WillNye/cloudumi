@@ -16,7 +16,7 @@ from common.exceptions.exceptions import (
     MissingConfigurationValue,
     ResourceNotFound,
 )
-from common.lib.auth import can_admin_policies
+from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.utils import (
     get_region_from_arn,
     get_resource_account,
@@ -230,7 +230,7 @@ async def can_move_back_to_pending(request, current_user, groups, host):
         if request.get("last_updated", 0) < int(time.time()) - 86400:
             return False
         # Allow admins to return requests back to pending state
-        if can_admin_policies(current_user, groups, host):
+        if await can_admin_policies(current_user, groups, host):
             return True
     return False
 
@@ -246,7 +246,8 @@ async def can_move_back_to_pending_v2(
         if last_updated < int(time.time()) - 86400:
             return False
         # Allow admins to return requests back to pending state
-        if can_admin_policies(current_user, groups, host):
+        account_ids = await get_extended_request_account_ids(extended_request, host)
+        if await can_admin_policies(current_user, groups, host, account_ids):
             return True
     return False
 
@@ -257,19 +258,23 @@ async def can_update_requests(request, user, groups, host):
 
     # Allow admins to return requests back to pending state
     if not can_update:
-        if can_admin_policies(user, groups, host):
+        if await can_admin_policies(user, groups, host):
             return True
 
     return can_update
 
 
-async def can_update_cancel_requests_v2(requester_username, user, groups, host):
+async def can_update_cancel_requests_v2(
+    extended_request: ExtendedRequestModel, user, groups, host, account_ids=None
+):
     # Users can update their own requests
-    can_update = user == requester_username
+    can_update = user == extended_request.requester_email
 
     # Allow admins to update / cancel requests
     if not can_update:
-        if can_admin_policies(user, groups, host):
+        if not account_ids:
+            account_ids = await get_extended_request_account_ids(extended_request, host)
+        if await can_admin_policies(user, groups, host, account_ids):
             return True
 
     return can_update
