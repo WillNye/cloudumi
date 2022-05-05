@@ -62,6 +62,7 @@ test_model_list_dict = [
 ]
 
 
+@pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("dynamodb")
 @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
 class TestModels(TestCase):
