@@ -1956,7 +1956,10 @@ def allowed_to_sync_role(
 
 
 async def remove_temp_policies(
-    extended_request: ExtendedRequestModel, host: str, user: str
+    extended_request: ExtendedRequestModel,
+    host: str,
+    user: str,
+    force_refresh: bool = False,
 ) -> None:
     """
     If this feature is enabled, it will look at created policies and remove expired policies if they have been
@@ -2198,7 +2201,7 @@ async def remove_temp_policies(
                         principal_name,
                         host,
                         extended=True,
-                        force_refresh=True,
+                        force_refresh=force_refresh,
                     )
                     if not role:
                         log.error(
@@ -2297,7 +2300,7 @@ async def remove_temp_policies(
                     resource_account,
                     principal_arn,
                     host,
-                    force_refresh=True,
+                    force_refresh=force_refresh,
                     run_sync=True,
                 )
 
@@ -2306,7 +2309,7 @@ async def remove_temp_policies(
                     resource_account,
                     principal_arn,
                     host,
-                    force_refresh=True,
+                    force_refresh=force_refresh,
                     run_sync=True,
                 )
 

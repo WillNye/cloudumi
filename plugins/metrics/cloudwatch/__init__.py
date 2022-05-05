@@ -52,6 +52,9 @@ class CloudWatchMetric(Metric):
                 },
             ],
         }
+        for k, v in kwargs.items():
+            if len(v) > 1025:
+                k[v] = k[v][:1024]
         future = self.executor.submit(cloudwatch.put_metric_data, **kwargs)
         future.add_done_callback(log_metric_error)
 
