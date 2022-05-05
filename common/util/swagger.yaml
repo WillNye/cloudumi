@@ -687,6 +687,10 @@ components:
         admin_auto_approve:
           type: boolean
           default: False
+        is_tear:
+          type: boolean
+          default: False
+          description: Is this a temporary elevated access request
     ExtendedRequestModel:
       allOf:
         - $ref: "#/components/schemas/RequestModel"
@@ -708,7 +712,11 @@ components:
             expiration_date:
               type: integer
               example: 20210905
-              description: Date to expire requested policy, in the format of YYYYmmdd
+              description: Date to expire requested policy or role, in the format of YYYYmmdd
+            is_tear:
+              type: boolean
+              default: False
+              description: Is this a temporary elevated access request
     ChangeGeneratorModelArray:
       type: object
       required:
@@ -1250,6 +1258,19 @@ components:
               type: string
               readOnly: true
               description: the change model ID of the source change, that this change was generated from
+    TearRoleChangeModel:
+      allOf:
+        - $ref: "#/components/schemas/ChangeModel"
+        - type: object
+          properties:
+            change_type:
+              type: string
+              pattern: "tear_assume_role"
+            role_arn:
+              type: string
+              example: arn:aws:iam::123456789012:role/roleName
+              pattern: '(^arn:([^:]*):([^:]*):([^:]*):(|\*|[\d]{12}|cloudfront|aws):(.+)$)|^\*$'
+              description: Role to temporarily assume
     ResourcePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1337,6 +1358,7 @@ components:
               - $ref: "#/components/schemas/PermissionsBoundaryChangeModel"
               - $ref: "#/components/schemas/ResourcePolicyChangeModel"
               - $ref: "#/components/schemas/AssumeRolePolicyChangeModel"
+              - $ref: "#/components/schemas/TearRoleChangeModel"
               - $ref: "#/components/schemas/ResourceTagChangeModel"
               - $ref: "#/components/schemas/GenericFileChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyResourceChangeModel"
@@ -1763,6 +1785,10 @@ components:
         admin_auto_approve:
           type: boolean
           default: False
+        is_tear:
+          type: boolean
+          default: False
+          description: Is this a temporary elevated access request
         expiration_date:
           type: integer
           example: 20210905
