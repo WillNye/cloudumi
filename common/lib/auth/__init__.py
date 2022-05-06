@@ -13,6 +13,7 @@ from common.config.models import ModelAdapter
 from common.lib.aws.utils import get_resource_account
 from common.lib.crypto import CryptoSign
 from common.lib.generic import is_in_group
+from common.lib.mfa import mfa_verify
 from common.lib.plugins import get_plugin_by_name
 from common.models import ExtendedRequestModel, SpokeAccount
 
@@ -511,6 +512,14 @@ def is_sensitive_attr(attribute, host):
         if attr.get("name") == attribute:
             return attr.get("sensitive", False)
     return False
+
+
+async def mfa_authenticate_user(handler):
+    is_authenticated, err = await mfa_verify(handler.ctx.host, handler.user)
+    if not is_authenticated:
+        handler.set_status(403)
+        handler.write({"message": err})
+        await handler.finish()
 
 
 class Error(Exception):

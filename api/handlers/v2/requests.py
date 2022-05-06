@@ -20,6 +20,7 @@ from common.handlers.base import BaseAPIV2Handler, BaseHandler
 from common.lib.auth import (
     can_admin_policies,
     get_extended_request_account_ids,
+    mfa_authenticate_user,
     populate_approve_reject_policy,
 )
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
@@ -57,6 +58,28 @@ from common.models import (
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
+
+
+async def validate_request_creation(
+    handler, request_change: RequestCreationModel
+) -> RequestCreationModel:
+    err = ""
+
+    if any(
+        change.change_type == "tear_assume_role"
+        for change in request_change.changes.changes
+    ):
+        if not request_change.expiration_date:
+            err += "expiration_date is a required field for temporary elevated access requests. "
+        if err:
+            handler.set_status(400)
+            handler.write({"message": err})
+            await handler.finish()
+
+        await mfa_authenticate_user(handler)
+        request_change.admin_auto_approve = False
+
+    return request_change
 
 
 class RequestHandler(BaseAPIV2Handler):
@@ -293,6 +316,7 @@ class RequestHandler(BaseAPIV2Handler):
                 await self.finish()
                 return
 
+            changes = await validate_request_creation(self, changes)
             admin_approved = False
             approval_probe_approved = False
 
