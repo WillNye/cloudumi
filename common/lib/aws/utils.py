@@ -1307,7 +1307,7 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     return results
 
 
-def get_role_tag(role: Dict, key: str, default: Optional[str] = None) -> any:
+def get_role_tag(role: Dict, key: str, default: Optional[any] = None) -> any:
     """
     Retrieves and parses the value of a provided AWS tag.
     :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)

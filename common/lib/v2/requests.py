@@ -27,6 +27,7 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import (
+    TEAR_USERS_TAG,
     create_or_update_managed_policy,
     get_managed_policy_document,
 )
@@ -39,6 +40,7 @@ from common.lib.aws.utils import (
     get_resource_account,
     get_resource_from_arn,
     get_resource_policy,
+    get_role_tag,
     get_service_from_arn,
 )
 from common.lib.change_request import generate_policy_name, generate_policy_sid
@@ -203,7 +205,7 @@ async def generate_request_from_change_model_array(
             generic_file_changes.append(
                 GenericFileChangeModel.parse_obj(change.__dict__)
             )
-        elif change.change_type == "tear_assume_role":
+        elif change.change_type == "tear_apply_role":
             tear_role_changes.append(TearRoleChangeModel.parse_obj(change.__dict__))
         else:
             raise UnsupportedChangeType(
@@ -466,7 +468,7 @@ async def is_request_eligible_for_auto_approval(
     is_eligible = False
 
     if any(
-        change.change_type == "tear_assume_role"
+        change.change_type == "tear_apply_role"
         for change in extended_request.changes.changes
     ):
         return False
@@ -2145,6 +2147,83 @@ async def apply_non_iam_resource_tag_change(
     return response
 
 
+async def apply_tear_role_change(
+    extended_request: ExtendedRequestModel,
+    change: ManagedPolicyResourceChangeModel,
+    response: PolicyRequestModificationResponseModel,
+    user: str,
+    host: str,
+) -> PolicyRequestModificationResponseModel:
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "user": user,
+        "change": change.dict(),
+        "message": "Granting TEAR support to user",
+        "request": extended_request.dict(),
+        "host": host,
+    }
+    log.info(log_data)
+
+    account_id = await get_resource_account(
+        extended_request.principal.principal_arn, host
+    )
+    parsed_arn = parse_arn(change.principal.principal_arn)
+    principal_name = parsed_arn["resource_path"].split("/")[-1]
+
+    try:
+        iam_client = await aio_wrapper(
+            boto3_cached_conn,
+            "iam",
+            host,
+            user,
+            service_type="client",
+            account_number=account_id,
+            region=config.region,
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_id})
+            .first.name,
+            session_name=sanitize_session_name("principal-updater-" + user),
+            retry_max_attempts=2,
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        )
+
+        role_tags = await aio_wrapper(
+            iam_client.list_role_tags, RoleName=principal_name
+        )
+        elevated_users = get_role_tag(role_tags, TEAR_USERS_TAG, [])
+        elevated_users = (
+            {elevated_users} if isinstance(elevated_users, str) else set(elevated_users)
+        )
+        elevated_users.add(user)
+
+        await aio_wrapper(
+            iam_client.tag_role,
+            RoleName=principal_name,
+            Tags=[{"Key": TEAR_USERS_TAG, "Value": ":".join(elevated_users)}],
+        )
+        change.status = Status.applied
+    except Exception as e:
+        log_data["message"] = "Exception occurred creating or updating tag"
+        log_data["error"] = str(e)
+        log.error(log_data, exc_info=True)
+        sentry_sdk.capture_exception()
+        response.errors += 1
+        response.action_results.append(
+            ActionResult(
+                status="error",
+                message=f"Error occurred updating tag for principal: {principal_name}: "
+                + str(e),
+            )
+        )
+
+    return response
+
+
 async def apply_managed_policy_resource_change(
     extended_request: ExtendedRequestModel,
     change: ManagedPolicyResourceChangeModel,
@@ -2896,9 +2975,14 @@ async def parse_and_apply_policy_request_modification(
                     user,
                     host,
                 )
-            elif specific_change.change_type == "tear_assume_role":
-                # Assign role to user
-                pass
+            elif specific_change.change_type == "tear_apply_role":
+                response = await apply_tear_role_change(
+                    extended_request,
+                    specific_change,
+                    response,
+                    user,
+                    host,
+                )
             else:
                 # Save current policy by populating "old" policies at the time of application for historical record
                 extended_request = await populate_old_policies(
