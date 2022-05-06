@@ -687,10 +687,6 @@ components:
         admin_auto_approve:
           type: boolean
           default: False
-        is_tear:
-          type: boolean
-          default: False
-          description: Is this a temporary elevated access request
     ExtendedRequestModel:
       allOf:
         - $ref: "#/components/schemas/RequestModel"
@@ -713,10 +709,6 @@ components:
               type: integer
               example: 20210905
               description: Date to expire requested policy or role, in the format of YYYYmmdd
-            is_tear:
-              type: boolean
-              default: False
-              description: Is this a temporary elevated access request
     ChangeGeneratorModelArray:
       type: object
       required:
@@ -1266,11 +1258,6 @@ components:
             change_type:
               type: string
               pattern: "tear_assume_role"
-            role_arn:
-              type: string
-              example: arn:aws:iam::123456789012:role/roleName
-              pattern: '(^arn:([^:]*):([^:]*):([^:]*):(|\*|[\d]{12}|cloudfront|aws):(.+)$)|^\*$'
-              description: Role to temporarily assume
     ResourcePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1785,10 +1772,6 @@ components:
         admin_auto_approve:
           type: boolean
           default: False
-        is_tear:
-          type: boolean
-          default: False
-          description: Is this a temporary elevated access request
         expiration_date:
           type: integer
           example: 20210905
