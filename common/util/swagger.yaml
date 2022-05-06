@@ -1257,7 +1257,7 @@ components:
           properties:
             change_type:
               type: string
-              pattern: "tear_assume_role"
+              pattern: "tear_apply_role"
     ResourcePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"

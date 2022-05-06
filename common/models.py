@@ -179,7 +179,7 @@ class ResourceTagChangeModel(ChangeModel):
 
 
 class TearRoleChangeModel(ChangeModel):
-    change_type: Optional[constr(regex=r"tear_assume_role")] = None
+    change_type: Optional[constr(regex=r"tear_apply_role")] = None
 
 
 class ManagedPolicyChangeModel(ChangeModel):
