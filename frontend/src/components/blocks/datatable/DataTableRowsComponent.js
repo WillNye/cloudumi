@@ -14,6 +14,7 @@ const DataTableRowsComponent = ({
   calculateColumnSize,
   setExpandedRow,
   setRedirect,
+  setIsTempEscalationModalOpen,
 }) => {
   const expandNestedJson = (data) => {
     Object.keys(data).forEach((key) => {
@@ -32,6 +33,12 @@ const DataTableRowsComponent = ({
     if (column.onClick && column.onClick.action === 'redirect') {
       // TODO, change this to useHistory
       setRedirect(entry[column.key] + window.location.search || '')
+    }
+
+    if (column.onClick && column.onClick.action === 'open_modal') {
+      if (column.onClick.type === 'temp_escalation_modal') {
+        setIsTempEscalationModalOpen(true)
+      }
     }
   }
 
@@ -121,8 +128,8 @@ const DataTableRowsComponent = ({
                 fluid
                 labelPosition='right'
                 icon={column.icon}
+                color={entry[column.color] || 'blue'}
                 onClick={(e) => handleCellClick(e, column, entry)}
-                primary
                 size='mini'
               />
             </Table.Cell>
