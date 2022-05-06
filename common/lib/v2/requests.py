@@ -90,6 +90,7 @@ from common.models import (
     SpokeAccount,
     Status,
     TagAction,
+    TearRoleChangeModel,
     UpdateChangeModificationModel,
     UserModel,
 )
@@ -136,6 +137,7 @@ async def generate_request_from_change_model_array(
     permissions_boundary_changes = []
     managed_policy_resource_changes = []
     generic_file_changes = []
+    tear_role_changes = []
     role = None
 
     extended_request_uuid = str(uuid.uuid4())
@@ -201,6 +203,8 @@ async def generate_request_from_change_model_array(
             generic_file_changes.append(
                 GenericFileChangeModel.parse_obj(change.__dict__)
             )
+        elif change.change_type == "tear_assume_role":
+            tear_role_changes.append(TearRoleChangeModel.parse_obj(change.__dict__))
         else:
             raise UnsupportedChangeType(
                 f"Invalid `change_type` for change: {change.__dict__}"
@@ -460,6 +464,12 @@ async def is_request_eligible_for_auto_approval(
     }
     log.info(log_data)
     is_eligible = False
+
+    if any(
+        change.change_type == "tear_assume_role"
+        for change in extended_request.changes.changes
+    ):
+        return False
 
     # Currently the only allowances are: Inline policies
     for change in extended_request.changes.changes:
@@ -2886,6 +2896,9 @@ async def parse_and_apply_policy_request_modification(
                     user,
                     host,
                 )
+            elif specific_change.change_type == "tear_assume_role":
+                # Assign role to user
+                pass
             else:
                 # Save current policy by populating "old" policies at the time of application for historical record
                 extended_request = await populate_old_policies(
