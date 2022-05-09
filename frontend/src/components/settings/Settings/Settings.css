@@ -1,0 +1,12 @@
+.custom-checkbox {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
+.checkbox-padding {
+  margin: 0px 8px 3px 0px;
+}
+
+.user-groups {
+  padding: 3px 2px 8px 2px;
+}
