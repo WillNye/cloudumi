@@ -401,12 +401,12 @@ class Configuration(metaclass=Singleton):
         """
         # Only support keys that explicitly call out a host in development mode
         if self.get("_global_.development"):
-            host_config_base_key = f"site_configs.{host}"
+            static_config_key = f"site_configs.{host}.{key}"
             # If we've defined a static config yaml file for the host, that takes precedence over
             # anything in Dynamo, even if the static config doesn't actually have the config
             # key the user is querying.
-            if self.get(host_config_base_key):
-                return self.get(f"{host_config_base_key}.{key}", default=default)
+            if self.get(static_config_key):
+                return self.get(static_config_key, default=default)
 
         # Otherwise, we need to get the config from local variable,
         # fall back to Redis cache, and lastly fall back to Dynamo
