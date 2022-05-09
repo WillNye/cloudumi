@@ -12,6 +12,10 @@ const MonacoDiffComponent = (props) => {
   const monaco = useMonaco()
   const onLintError = props.onLintError
   const onValueChange = props.onValueChange
+  const renderSideBySide =
+    typeof props.renderSideBySide !== 'undefined'
+      ? props.renderSideBySide
+      : true
   const modifiedEditorRef = useRef()
   const [language, setLanguage] = useState('json')
   const [languageDetected, setLanguageDetected] = useState(false)
@@ -69,7 +73,7 @@ const MonacoDiffComponent = (props) => {
   const { oldValue, newValue, readOnly } = props
   const options = {
     selectOnLineNumbers: true,
-    renderSideBySide: true,
+    renderSideBySide: renderSideBySide,
     enableSplitViewResizing: false,
     quickSuggestions: true,
     scrollbar: {

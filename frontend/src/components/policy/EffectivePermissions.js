@@ -54,6 +54,7 @@ const EffectivePermissions = () => {
                   {resourceEffectivePermissions.effective_policy !==
                   resourceEffectivePermissions.effective_policy_unused_permissions_removed ? (
                     <MonacoDiffComponent
+                      renderSideBySide={false}
                       onLintError={onLintError}
                       oldValue={JSON.stringify(
                         resourceEffectivePermissions.effective_policy,

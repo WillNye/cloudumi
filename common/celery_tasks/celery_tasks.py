@@ -56,6 +56,7 @@ from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import (
     get_iam_roles_for_host,
+    store_iam_managed_policies_for_host,
     store_iam_roles_for_host,
 )
 from common.lib.aws.cloudtrail import CloudTrail
@@ -932,7 +933,6 @@ def cache_policies_table_details(host=None) -> bool:
 
 
 @app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-@app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
 def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[str, Any]:
     if not host:
         raise Exception("`host` must be passed to this task.")
@@ -1026,6 +1026,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
 
         iam_users = all_iam_resources["UserDetailList"]
         iam_roles = all_iam_resources["RoleDetailList"]
+        iam_policies = all_iam_resources["Policies"]
 
         # Make sure these roles satisfy config -> roles.allowed_*
         filtered_iam_roles = []
@@ -1093,6 +1094,11 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             host,
         ):
             store_iam_resources_in_git(all_iam_resources, account_id, host)
+
+        if iam_policies:
+            async_to_sync(store_iam_managed_policies_for_host)(
+                host, iam_policies, account_id
+            )
 
     stats.count(
         "cache_iam_resources_for_account.success",
