@@ -80,6 +80,8 @@ async def get_identity_arns_for_account(
     all_roles = await get_iam_roles_for_host(host)
     matching_roles = set()
     for arn in all_roles.keys():
+        if ":role/service-role/" in arn:
+            continue
         if arn.split(":")[4] == account_id:
             matching_roles.add(arn)
     return list(matching_roles)
