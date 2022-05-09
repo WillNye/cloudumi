@@ -2,14 +2,36 @@
 import React, { useContext, useState } from 'react'
 import { ApiContext, useApi } from 'hooks/useApi'
 
-import { Button, Form, Segment } from 'semantic-ui-react'
+import { Button, Form, Segment, Label, Icon, Input } from 'semantic-ui-react'
 import { Bar, Fill } from 'lib/Misc'
 import { useCopyToClipboard } from 'hooks/useCopyToClipboard'
 import { useForm } from 'react-hook-form'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
+import { removeUserAccount } from './utils'
+
+const SpokeAccountUsers = ({ category, setValue, labels }) => (
+  <div className='user-groups'>
+    {labels.map((selectedValue, index) => {
+      return (
+        <Label basic color={'red'} key={index} size='mini'>
+          {selectedValue}
+          <Icon
+            name='delete'
+            onClick={() => {
+              const newValues = removeUserAccount(labels, selectedValue)
+              setValue(category, newValues)
+            }}
+          />
+        </Label>
+      )
+    })}
+  </div>
+)
 
 export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
-  const { register, handleSubmit, watch } = useForm({ defaultValues })
+  const [accountOwner, setAccountOwner] = useState('')
+  const [accountViewer, setAccountViewer] = useState('')
+  const { register, handleSubmit, watch, setValue } = useForm({ defaultValues })
 
   const { post } = useApi('services/aws/account/spoke')
 
@@ -64,6 +86,92 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
           <Form.Field>
             <label>Account Name</label>
             <input {...register('account_name', { required: true })} />
+          </Form.Field>
+
+          <Form.Field className='custom-checkbox'>
+            <input
+              className='checkbox-padding'
+              type='checkbox'
+              {...register('delegate_admin_to_owner')}
+            />
+            <label className='form-label'>Delegate Admin to Owner</label>
+          </Form.Field>
+
+          <Form.Field>
+            <label>Account Owners</label>
+            <Input
+              placeholder='Add owners ...'
+              labelPosition='right'
+              value={accountOwner}
+              onChange={(e) => {
+                e.preventDefault()
+                setAccountOwner(e.target.value)
+              }}
+              label={
+                <Button
+                  type='button'
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (!accountOwner) return
+                    setValue('owners', [...(fields.owners || []), accountOwner])
+                    setAccountOwner('')
+                  }}
+                >
+                  Add
+                </Button>
+              }
+            />
+            <SpokeAccountUsers
+              category='owners'
+              labels={fields.owners || []}
+              setValue={setValue}
+            />
+          </Form.Field>
+
+          <Form.Field className='custom-checkbox'>
+            <input
+              className='checkbox-padding'
+              type='checkbox'
+              {...register('restrict_viewers_of_account_resources')}
+            />
+
+            <label className='form-label'>
+              Restrict Viewers of Account Resources
+            </label>
+          </Form.Field>
+
+          <Form.Field>
+            <label>Account Viewers</label>
+            <Input
+              placeholder='Add viewers ...'
+              labelPosition='right'
+              value={accountViewer}
+              onChange={(e) => {
+                e.preventDefault()
+                setAccountViewer(e.target.value)
+              }}
+              label={
+                <Button
+                  type='button'
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (!accountViewer) return
+                    setValue('viewers', [
+                      ...(fields.viewers || []),
+                      accountViewer,
+                    ])
+                    setAccountViewer('')
+                  }}
+                >
+                  Add
+                </Button>
+              }
+            />
+            <SpokeAccountUsers
+              category='viewers'
+              labels={fields.viewers || []}
+              setValue={setValue}
+            />
           </Form.Field>
 
           <Bar>
