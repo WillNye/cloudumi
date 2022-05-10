@@ -109,17 +109,21 @@ class Aws:
             role, user, host
         )
 
+        # Set transitive tags to identify user
+        transitive_tag_keys = []
+        tags = []
         role_transitive_tag_key_identifying_user = config.get_host_specific_key(
             "aws.role_transitive_tag_key_identifying_user", host, "noq_transitive_user"
         )
 
-        tags = [
-            {
-                "Key": role_transitive_tag_key_identifying_user,
-                "Value": user,
-            }
-        ]
-        transitive_tag_keys = [role_transitive_tag_key_identifying_user]
+        if role_transitive_tag_key_identifying_user:
+            tags = [
+                {
+                    "Key": role_transitive_tag_key_identifying_user,
+                    "Value": user,
+                }
+            ]
+            transitive_tag_keys = [role_transitive_tag_key_identifying_user]
 
         try:
             if enforce_ip_restrictions and ip_restrictions:
