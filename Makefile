@@ -28,7 +28,6 @@ clean:
 	rm -rf *.egg-info || echo $?
 	rm -f celerybeat-schedule.db || echo $?
 	rm -f celerybeat-schedule || echo $?
-	rm -rf consoleme.tar.gz || echo $?
 	rm -rf ui/.npmrc ui/.yarnrc || echo $?
 	find . -name '*.pyc' -delete
 	find . -name '*.pyo' -delete

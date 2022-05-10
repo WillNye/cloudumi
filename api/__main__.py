@@ -74,13 +74,6 @@ def init():
 
         server.start()  # forks one process per cpu
 
-        if config.get("_global_.tornado.debug", False):
-            for directory, _, files in os.walk("consoleme/templates"):
-                [
-                    tornado.autoreload.watch(directory + "/" + f)
-                    for f in files
-                    if not f.startswith(".")
-                ]
         log.debug({"message": "Server started", "port": port})
         asyncio.get_event_loop().run_forever()
 

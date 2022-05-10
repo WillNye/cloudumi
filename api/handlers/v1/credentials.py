@@ -486,7 +486,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 mfa_success = await duo_mfa_user(
                     self.user.split("@")[0],
                     host,
-                    message="ConsoleMe Non-IP Restricted Credential Request",
+                    message="Noq Non-IP Restricted Credential Request",
                 )
 
                 if mfa_success:
