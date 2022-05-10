@@ -94,7 +94,9 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
               type='checkbox'
               {...register('delegate_admin_to_owner')}
             />
-            <label className='form-label'>Delegate Admin to Owner</label>
+            <label className='form-label'>
+              Delegate Policy Request Administration to Owner
+            </label>
           </Form.Field>
 
           <Form.Field>

@@ -61,7 +61,17 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/decentralized_request_management/</loc>
+         <lastmod>2022-05-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/permissions_are_crud/</loc>
+         <lastmod>2022-05-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/restrict_viewers_of_account_resources/</loc>
          <lastmod>2022-05-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -96,22 +106,12 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/features/planned/decentralized_request_management/</loc>
-         <lastmod>2022-05-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.noq.dev/docs/features/planned/multi_role_wizard_selection/</loc>
          <lastmod>2022-05-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/planned/multi_tag_wizard_request/</loc>
-         <lastmod>2022-05-10</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.noq.dev/docs/features/planned/pagerduty_integration/</loc>
          <lastmod>2022-05-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
