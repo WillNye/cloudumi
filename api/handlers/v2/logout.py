@@ -34,7 +34,7 @@ class LogOutHandler(BaseHandler):
                 log_data,
             )
             return
-        cookie_name: str = config.get("_global_.auth.cookie.name", "consoleme_auth")
+        cookie_name: str = config.get("_global_.auth.cookie.name", "noq_auth")
         if not cookie_name:
             await handle_generic_error_response(
                 self,

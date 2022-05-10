@@ -45,7 +45,6 @@ repos:
     rev: v2.5.1
     hooks:
       - id: prettier
-        exclude: "^helm/consoleme"
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.64.0
     hooks:

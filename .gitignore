@@ -7,8 +7,6 @@ crash.log
 terraform.tfvars
 state.tf
 cdk.out/
-consoleme.tar.gz
-consoleme.zip
 
 # Byte-compiled / optimized / DLL files
 **/__pycache__/*
@@ -131,13 +129,9 @@ webpack-stats.*.json
 package-lock.json
 **/package-lock.json
 .setupmeta.version
-consoleme/templates/*
 
-# Local Build Artifact
-consoleme.tar.gz
 
 # Config
-consoleme.yaml
 cdk/config.yaml
 
 # Bazel

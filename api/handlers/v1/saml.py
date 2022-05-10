@@ -62,7 +62,7 @@ class SamlHandler(BaseHandler):
                     email, groups, host, exp=expiration
                 )
                 self.set_cookie(
-                    config.get("_global_.auth.cookie.name", "consoleme_auth"),
+                    config.get("_global_.auth.cookie.name", "noq_auth"),
                     encoded_cookie,
                     expires=expiration,
                     secure=config.get_host_specific_key(
