@@ -73,6 +73,7 @@ async def validate_request_creation(
         tear_supported_roles = await get_tear_supported_roles_by_tag(
             handler.eligible_roles, handler.groups, handler.ctx.host
         )
+        tear_supported_roles = [role["arn"] for role in tear_supported_roles]
 
         if (
             not tear_supported_roles
