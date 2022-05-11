@@ -66,7 +66,7 @@ async def validate_request_creation(
     err = ""
 
     if any(
-        change.change_type == "tear_assume_role"
+        change.change_type == "tear_can_assume_role"
         for change in request_change.changes.changes
     ):
         if not request_change.expiration_date:
@@ -302,6 +302,9 @@ class RequestHandler(BaseAPIV2Handler):
         try:
             # Validate the model
             changes = RequestCreationModel.parse_raw(self.request.body)
+            if not changes.dry_run:
+                changes = await validate_request_creation(self, changes)
+
             extended_request = await generate_request_from_change_model_array(
                 changes, self.user, host
             )
@@ -316,7 +319,6 @@ class RequestHandler(BaseAPIV2Handler):
                 await self.finish()
                 return
 
-            changes = await validate_request_creation(self, changes)
             admin_approved = False
             approval_probe_approved = False
 

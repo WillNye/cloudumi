@@ -205,7 +205,7 @@ async def generate_request_from_change_model_array(
             generic_file_changes.append(
                 GenericFileChangeModel.parse_obj(change.__dict__)
             )
-        elif change.change_type == "tear_apply_role":
+        elif change.change_type == "tear_can_assume_role":
             tear_role_changes.append(TearRoleChangeModel.parse_obj(change.__dict__))
         else:
             raise UnsupportedChangeType(
@@ -323,6 +323,7 @@ async def generate_request_from_change_model_array(
             or len(managed_policy_changes) > 0
             or len(assume_role_policy_changes) > 0
             or len(permissions_boundary_changes) > 0
+            or len(tear_role_changes) > 0
         ):
             # for inline/managed/assume role policies, principal arn must be a role
             if arn_parsed["service"] != "iam" or arn_parsed["resource"] not in [
@@ -390,6 +391,7 @@ async def generate_request_from_change_model_array(
             + resource_tag_changes
             + permissions_boundary_changes
             + managed_policy_resource_changes
+            + tear_role_changes
         )
         extended_request = ExtendedRequestModel(
             admin_auto_approve=request_creation.admin_auto_approve,
@@ -468,7 +470,7 @@ async def is_request_eligible_for_auto_approval(
     is_eligible = False
 
     if any(
-        change.change_type == "tear_apply_role"
+        change.change_type == "tear_can_assume_role"
         for change in extended_request.changes.changes
     ):
         return False
@@ -2975,7 +2977,7 @@ async def parse_and_apply_policy_request_modification(
                     user,
                     host,
                 )
-            elif specific_change.change_type == "tear_apply_role":
+            elif specific_change.change_type == "tear_can_assume_role":
                 response = await apply_tear_role_change(
                     extended_request,
                     specific_change,
