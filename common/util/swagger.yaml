@@ -1,7 +1,6 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
 # consoleme/models.py:
-# `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel ;
-#  black ../models.py`
+# `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel ; black ../models.py`
 openapi: 3.0.0
 info:
   description: ConsoleMe API definition
@@ -1257,7 +1256,7 @@ components:
           properties:
             change_type:
               type: string
-              pattern: "tear_apply_role"
+              pattern: "tear_can_assume_role"
     ResourcePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
