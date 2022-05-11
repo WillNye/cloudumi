@@ -139,6 +139,38 @@ async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> 
     return formatted_policies
 
 
+async def get_active_tear_roles_by_tag(
+    eligible_roles: list[str], user: str, host: str
+) -> list[dict]:
+    """Get active TEAR roles for a given user and already usable roles
+
+    :param eligible_roles: Roles that are already accessible and can be ignored
+    :param user: List of groups to check against
+    :param host: The host/tenant to check against
+
+    :return: A list of roles that can be used as part of the TEAR workflow
+    """
+    from common.lib.aws.iam import TEAR_USERS_TAG
+    from common.lib.aws.utils import get_role_tag
+
+    active_tear_roles = dict()
+    all_iam_roles = await get_iam_roles_for_host(host)
+
+    for role_arn, role in all_iam_roles.items():
+        if role_arn in eligible_roles:
+            continue
+
+        role = json.loads(role)
+        if active_tear_users := get_role_tag(role, TEAR_USERS_TAG):
+            if isinstance(active_tear_users, str):
+                active_tear_users = [active_tear_users]
+
+            if user in active_tear_users:
+                active_tear_roles[role_arn] = role
+
+    return list(active_tear_roles.values())
+
+
 async def get_escalated_roles_by_tag(
     eligible_roles: list[str], groups: list[str], host: str
 ) -> list[dict]:
