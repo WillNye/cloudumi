@@ -7,7 +7,7 @@ from common.handlers.base import (
     BaseHandler,
     StaticFileHandler,
 )
-from common.lib.aws.cached_resources.iam import get_escalated_roles_by_tag
+from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
 from common.lib.aws.utils import get_account_id_from_arn
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
@@ -116,7 +116,7 @@ class EligibleRoleHandler(BaseHandler):
                 }
             )
 
-        for role in await get_escalated_roles_by_tag(
+        for role in await get_tear_supported_roles_by_tag(
             self.eligible_roles, self.groups, self.ctx.host
         ):
             role_name = role["arn"].split("/")[-1]

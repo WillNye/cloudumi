@@ -139,7 +139,7 @@ async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> 
     return formatted_policies
 
 
-async def get_active_tear_roles_by_tag(
+async def get_user_active_tear_roles_by_tag(
     eligible_roles: list[str], user: str, host: str
 ) -> list[dict]:
     """Get active TEAR roles for a given user and already usable roles
@@ -171,7 +171,7 @@ async def get_active_tear_roles_by_tag(
     return list(active_tear_roles.values())
 
 
-async def get_escalated_roles_by_tag(
+async def get_tear_supported_roles_by_tag(
     eligible_roles: list[str], groups: list[str], host: str
 ) -> list[dict]:
     """Get TEAR supported roles given a list of groups and already usable roles

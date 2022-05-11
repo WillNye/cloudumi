@@ -16,7 +16,7 @@ from common.lib.auth import (
     can_delete_iam_principals_app,
     get_accounts_user_can_view_resources_for,
 )
-from common.lib.aws.cached_resources.iam import get_escalated_roles_by_tag
+from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.utils import (
     allowed_to_sync_role,
@@ -236,7 +236,7 @@ class RolesHandler(BaseAPIV2Handler):
     async def get(self):
         payload = {
             "eligible_roles": self.eligible_roles,
-            "escalated_roles": await get_escalated_roles_by_tag(
+            "escalated_roles": await get_tear_supported_roles_by_tag(
                 self.eligible_roles, self.groups, self.ctx.host
             ),
         }

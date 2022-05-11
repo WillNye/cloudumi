@@ -23,6 +23,7 @@ from common.lib.auth import (
     mfa_authenticate_user,
     populate_approve_reject_policy,
 )
+from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.utils import get_resource_account
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
@@ -61,25 +62,36 @@ log = config.get_logger()
 
 
 async def validate_request_creation(
-    handler, request_change: RequestCreationModel
+    handler, request: RequestCreationModel
 ) -> RequestCreationModel:
     err = ""
 
-    if any(
-        change.change_type == "tear_can_assume_role"
-        for change in request_change.changes.changes
+    if tear_change := next(
+        (c for c in request.changes.changes if c.change_type == "tear_can_assume_role"),
+        None,
     ):
-        if not request_change.expiration_date:
+        tear_supported_roles = await get_tear_supported_roles_by_tag(
+            handler.eligible_roles, handler.groups, handler.ctx.host
+        )
+
+        if (
+            not tear_supported_roles
+            or tear_change.principal.principal_arn not in tear_supported_roles
+        ):
+            err += f"No TEAR support for {tear_change.principal.principal_arn} or access already exists. "
+
+        if not request.expiration_date:
             err += "expiration_date is a required field for temporary elevated access requests. "
+
         if err:
             handler.set_status(400)
             handler.write({"message": err})
             await handler.finish()
 
         await mfa_authenticate_user(handler)
-        request_change.admin_auto_approve = False
+        request.admin_auto_approve = False
 
-    return request_change
+    return request
 
 
 class RequestHandler(BaseAPIV2Handler):
