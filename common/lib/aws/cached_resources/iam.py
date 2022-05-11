@@ -141,7 +141,7 @@ async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> 
 
 async def get_user_active_tear_roles_by_tag(
     eligible_roles: list[str], user: str, host: str
-) -> list[dict]:
+) -> list[str]:
     """Get active TEAR roles for a given user and already usable roles
 
     :param eligible_roles: Roles that are already accessible and can be ignored
@@ -153,7 +153,7 @@ async def get_user_active_tear_roles_by_tag(
     from common.lib.aws.iam import TEAR_USERS_TAG
     from common.lib.aws.utils import get_role_tag
 
-    active_tear_roles = dict()
+    active_tear_roles = set()
     all_iam_roles = await get_iam_roles_for_host(host)
 
     for role_arn, role in all_iam_roles.items():
@@ -166,9 +166,9 @@ async def get_user_active_tear_roles_by_tag(
                 active_tear_users = [active_tear_users]
 
             if user in active_tear_users:
-                active_tear_roles[role_arn] = role
+                active_tear_roles.add(role_arn)
 
-    return list(active_tear_roles.values())
+    return list(active_tear_roles)
 
 
 async def get_tear_supported_roles_by_tag(

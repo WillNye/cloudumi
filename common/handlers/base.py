@@ -29,6 +29,7 @@ from common.exceptions.exceptions import (
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
 from common.lib.auth import AuthenticationError, can_admin_all
+from common.lib.aws.cached_resources.iam import get_user_active_tear_roles_by_tag
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
 from common.lib.oidc import authenticate_user_by_oidc
@@ -635,6 +636,9 @@ class BaseHandler(TornadoRequestHandler):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
 
+        self.eligible_roles += await get_user_active_tear_roles_by_tag(
+            self.eligible_roles, self.user, host
+        )
         self.eligible_roles = await group_mapping.get_eligible_roles(
             self.eligible_roles,
             self.user,
@@ -862,6 +866,10 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
+                self.eligible_roles += await get_user_active_tear_roles_by_tag(
+                    self.eligible_roles, self.user, host
+                )
+                self.eligible_roles = list(set(self.eligible_roles))
                 self.requester = {"type": "user", "email": self.user}
                 self.current_cert_age = int(time.time()) - res.get("iat")
                 self.auth_cookie_expiration = res.get("exp")
