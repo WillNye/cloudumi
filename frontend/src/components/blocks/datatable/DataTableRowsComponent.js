@@ -30,13 +30,18 @@ const DataTableRowsComponent = ({
   const handleCellClick = (e, column, entry) => {
     // This function should appropriately handle a Cell Click given a desired
     // action by the column configuration
-    if (column.onClick && column.onClick.action === 'redirect') {
+
+    const onClickhandler = entry.onClick || column.onClick
+
+    if (!onClickhandler) return
+
+    if (onClickhandler.action === 'redirect') {
       // TODO, change this to useHistory
       setRedirect(entry[column.key] + window.location.search || '')
     }
 
-    if (column.onClick && column.onClick.action === 'open_modal') {
-      if (column.onClick.type === 'temp_escalation_modal') {
+    if (onClickhandler.action === 'open_modal') {
+      if (onClickhandler.type === 'temp_escalation_modal') {
         setIsTempEscalationModalOpen(true)
       }
     }

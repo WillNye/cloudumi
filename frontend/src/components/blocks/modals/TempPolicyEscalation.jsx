@@ -7,8 +7,6 @@ const TempPolicyEscalationModal = ({
   isTempEscalationModalOpen,
   setIsTempEscalationModalOpen,
 }) => {
-  const [open, setOpen] = React.useState(true)
-
   return (
     <Modal
       open={isTempEscalationModalOpen}
