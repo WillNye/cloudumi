@@ -139,12 +139,9 @@ async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> 
     return formatted_policies
 
 
-async def get_user_active_tear_roles_by_tag(
-    eligible_roles: list[str], user: str, host: str
-) -> list[str]:
-    """Get active TEAR roles for a given user and already usable roles
+async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
+    """Get active TEAR roles for a given user
 
-    :param eligible_roles: Roles that are already accessible and can be ignored
     :param user: List of groups to check against
     :param host: The host/tenant to check against
 
@@ -157,9 +154,6 @@ async def get_user_active_tear_roles_by_tag(
     all_iam_roles = await get_iam_roles_for_host(host)
 
     for role_arn, role in all_iam_roles.items():
-        if role_arn in eligible_roles:
-            continue
-
         role = json.loads(role)
         if active_tear_users := get_role_tag(role, TEAR_USERS_TAG):
             if isinstance(active_tear_users, str):

@@ -636,9 +636,7 @@ class BaseHandler(TornadoRequestHandler):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
 
-        self.eligible_roles += await get_user_active_tear_roles_by_tag(
-            self.eligible_roles, self.user, host
-        )
+        self.eligible_roles += await get_user_active_tear_roles_by_tag(self.user, host)
         self.eligible_roles = await group_mapping.get_eligible_roles(
             self.eligible_roles,
             self.user,
@@ -867,7 +865,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
                 self.eligible_roles += await get_user_active_tear_roles_by_tag(
-                    self.eligible_roles, self.user, host
+                    self.user, host
                 )
                 self.eligible_roles = list(set(self.eligible_roles))
                 self.requester = {"type": "user", "email": self.user}

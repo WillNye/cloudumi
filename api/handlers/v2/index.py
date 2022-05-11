@@ -7,7 +7,10 @@ from common.handlers.base import (
     BaseHandler,
     StaticFileHandler,
 )
-from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
+from common.lib.aws.cached_resources.iam import (
+    get_tear_supported_roles_by_tag,
+    get_user_active_tear_roles_by_tag,
+)
 from common.lib.aws.utils import get_account_id_from_arn
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
@@ -96,7 +99,40 @@ class EligibleRoleHandler(BaseHandler):
         host = self.ctx.host
 
         roles = []
+        active_tear_roles = await get_user_active_tear_roles_by_tag(self.user, host)
+
         for arn in self.eligible_roles:
+            role_name = arn.split("/")[-1]
+            account_id = await get_account_id_from_arn(arn)
+            account_name = self.eligible_accounts.get(account_id, "")
+            formatted_account_name = config.get_host_specific_key(
+                "role_select_page.formatted_account_name",
+                host,
+                "{account_name}",
+            ).format(account_name=account_name, account_id=account_id)
+            row = {
+                "arn": arn,
+                "account_name": formatted_account_name,
+                "account_id": account_id,
+                "role_name": f"[{role_name}](/policies/edit/{account_id}/iamrole/{role_name})",
+                "redirect_uri": f"/role/{arn}",
+                "inactive_tear": False,
+            }
+
+            if arn in active_tear_roles:
+                row["content"] = "Sign-In (Elevated Access)"
+                row["color"] = "red"
+
+            roles.append(row)
+
+        for role in await get_tear_supported_roles_by_tag(
+            self.eligible_roles + active_tear_roles, self.groups, self.ctx.host
+        ):
+            """
+            Update:
+                button action (display modal)
+            """
+            arn = role["arn"]
             role_name = arn.split("/")[-1]
             account_id = await get_account_id_from_arn(arn)
             account_name = self.eligible_accounts.get(account_id, "")
@@ -110,32 +146,12 @@ class EligibleRoleHandler(BaseHandler):
                     "arn": arn,
                     "account_name": formatted_account_name,
                     "account_id": account_id,
-                    "role_name": f"[{role_name}](/policies/edit/{account_id}/iamrole/{role_name})",
-                    "redirect_uri": f"/role/{arn}",
-                    "tear_role": False,
-                }
-            )
-
-        for role in await get_tear_supported_roles_by_tag(
-            self.eligible_roles, self.groups, self.ctx.host
-        ):
-            role_name = role["arn"].split("/")[-1]
-            account_id = await get_account_id_from_arn(arn)
-            account_name = self.eligible_accounts.get(account_id, "")
-            formatted_account_name = config.get_host_specific_key(
-                "role_select_page.formatted_account_name",
-                host,
-                "{account_name}",
-            ).format(account_name=account_name, account_id=account_id)
-            roles.append(
-                {
-                    "arn": arn,
-                    "account_name": formatted_account_name,
-                    "account_id": account_id,
+                    "type": "modal_button",
                     "role_name": f"[{role_name}](/policies/edit/{account_id}/iamrole/{role_name})",
                     "redirect_uri": f"/role/{arn}",  # TODO: Use the TEAR uri
-                    "tear_role": True,
-                    "content": "Escalate",
+                    "inactive_tear": True,
+                    "content": "Request Elevated Access",
+                    "color": "red",
                 }
             )
 
@@ -190,6 +206,7 @@ class EligibleRolePageConfigHandler(BaseHandler):
                         "type": "abutton",
                         "icon": "sign-in",
                         "content": "Sign-In",
+                        "color": "blue",
                         "onClick": {"action": "redirect"},
                         "style": {"maxWidth": "300px"},
                     },

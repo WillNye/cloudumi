@@ -124,11 +124,11 @@ const DataTableRowsComponent = ({
               style={column.style}
             >
               <Button
-                content={entry[column.content] || column.content}
+                content={entry['content'] || column.content}
                 fluid
                 labelPosition='right'
                 icon={column.icon}
-                color={entry[column.color] || 'blue'}
+                color={entry['color'] || 'blue'}
                 onClick={(e) => handleCellClick(e, column, entry)}
                 size='mini'
               />
@@ -144,11 +144,11 @@ const DataTableRowsComponent = ({
               <Button
                 as='a'
                 href={entry[column.key] + window.location.search || ''}
-                content={entry[column.content] || column.content}
+                content={entry['content'] || column.content}
                 fluid
                 labelPosition='right'
                 icon={column.icon}
-                color={entry[column.color] || 'blue'}
+                color={entry['color'] || 'blue'}
                 style={{
                   cursor: 'pointer',
                 }}
