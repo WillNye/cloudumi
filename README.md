@@ -156,6 +156,20 @@ We use GitVersion to automatically version our mono repo by providing modifier n
 
 - In the event that docker containers fail to run with an error on a symbol not found \*.so exception, use the `how to run in sysbox` instructions to run a fully isolated Ubuntu-based build environment that allows docker in docker on 20.04.
 
+## Tracing on locahost
+
+We support Zipkin tracing when debugging locally. To enable tracing, update `configs/development_account/saas_development.yaml`
+and uncomment the `tracing` section:
+
+```yaml
+tracing:
+  enabled: true
+```
+
+Then run Zipkin: `docker run -d -p 9411:9411 openzipkin/zipkin`
+
+Start the API, browse to Noq, then view traces at http://localhost:9411/
+
 ## Troubleshooting in Container
 
 We use a slightly modified version of `ecsgo` to connect to our containers. Run the following commands to install `ecsgo`:
