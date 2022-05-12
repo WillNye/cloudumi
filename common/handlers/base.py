@@ -278,12 +278,10 @@ class BaseHandler(TornadoRequestHandler):
 
         await self.configure_tracing()
 
-        if config.get_host_specific_key("tornado.xsrf", host, True):
-            cookie_kwargs = config.get_host_specific_key(
-                "tornado.xsrf_cookie_kwargs", host, {}
-            )
+        if config.get("_global_.tornado.xsrf", True):
+            cookie_kwargs = config.get("_global_.tornado.xsrf_cookie_kwargs", {})
             self.set_cookie(
-                config.get_host_specific_key("xsrf_cookie_name", host, "_xsrf"),
+                config.get("_global_.xsrf_cookie_name", "_xsrf"),
                 self.xsrf_token,
                 **cookie_kwargs,
             )

@@ -1,5 +1,4 @@
 """Configuration handling library."""
-import copy
 import datetime
 import logging
 import logging.handlers
@@ -313,15 +312,20 @@ class Configuration(metaclass=Singleton):
         self, key: str, default: Optional[Union[List[str], int, bool, str, Dict]] = None
     ) -> Any:
         """Get value for configuration entry in dot notation."""
-        value = copy.deepcopy(self.config)
+        value = default
         # Only support keys that explicitly call out a host
         if key not in ["extends", "site_configs"] and (
             not key.startswith("site_configs.") and not key.startswith("_global_.")
         ):
             raise Exception(f"Configuration key is invalid: {key}")
+        nested = False
         for k in key.split("."):
             try:
-                value = value[k]
+                if nested:
+                    value = value[k]
+                else:
+                    value = self.config[k]
+                    nested = True
             except KeyError:
                 return default
         return value

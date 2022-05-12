@@ -44,14 +44,17 @@ class ConsoleMeTracer:
         # Skip anything that's not a call, return, or exception
         if event not in ["call", "return", "exception"]:
             return
-
+        if not frame.f_code:
+            return
         # Set a reproducible pan name
         span_name = f"{frame.f_code.co_filename}-{frame.f_code.co_name}-{frame.f_back.f_code.co_filename}"
 
         # Skip tracing functions outside of core ConsoleMe by default
         in_scope_function_calls = config.get(
-            "_global_.tracing.in_scope_function_calls", ["/consoleme/"]
+            "_global_.tracing.in_scope_function_calls",
+            ["/api/", "/common/", "/lib/", "/botocore/"],
         )
+
         if not (
             any(x in frame.f_code.co_filename for x in in_scope_function_calls)
             or any(
@@ -94,11 +97,11 @@ class ConsoleMeTracer:
     async def configure_tracing(
         self, span_name, host, span_kind=SERVER, tags=None, annotations=None
     ) -> Optional[ConsoleMeTracerObject]:
-        if not config.get_host_specific_key("tracing.enabled", host, False):
+        if not config.get("_global_.tracing.enabled", False):
             return
 
-        if not random() * 100 <= config.get_host_specific_key(
-            "tracing.sample_rate", host, 0.1
+        if not random() * 100 <= config.get(
+            "_global_.tracing.sample_rate", 100
         ):  # nosec
             return
 
@@ -106,16 +109,15 @@ class ConsoleMeTracer:
             tags = []
         if not annotations:
             annotations = []
-        zipkin_address = config.get_host_specific_key(
-            "tracing.zipkin_address",
-            host,
+        zipkin_address = config.get(
+            "_global_.tracing.zipkin_address",
             "http://127.0.0.1:9411/api/v2/spans",
         ).format(
             region=config.region,
             environment=config.get("_global_.environment"),
         )
         endpoint = az.create_endpoint(
-            config.get_host_specific_key("tracing.application_name", host, "consoleme")
+            config.get("_global_.tracing.application_name", "noq")
         )
         # The tracer's sample rate is 100% because we are pre-sampling our requests
         self.tracer = await az.create(zipkin_address, endpoint, sample_rate=1.0)
