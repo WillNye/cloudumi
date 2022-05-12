@@ -39,8 +39,8 @@ const DataTableComponent = ({ config, mock }) => {
     setExpandedRow,
     setFilteredData,
     setRedirect,
-    isTempEscalationModalOpen,
-    setIsTempEscalationModalOpen,
+    tempEscalationModalData,
+    setTempEscalationModalData,
   } = useDataTable(config, mock)
 
   const calculateColumnSize = (tableConfig) => {
@@ -105,7 +105,7 @@ const DataTableComponent = ({ config, mock }) => {
             calculateColumnSize={calculateColumnSize}
             setExpandedRow={setExpandedRow}
             setRedirect={setRedirect}
-            setIsTempEscalationModalOpen={setIsTempEscalationModalOpen}
+            setTempEscalationModalData={setTempEscalationModalData}
           />
         </Table.Body>
         <Table.Footer>
@@ -146,8 +146,8 @@ const DataTableComponent = ({ config, mock }) => {
         </Table.Footer>
       </Table>
       <TempPolicyEscalationModal
-        setIsTempEscalationModalOpen={setIsTempEscalationModalOpen}
-        isTempEscalationModalOpen={isTempEscalationModalOpen}
+        setTempEscalationModalData={setTempEscalationModalData}
+        tempEscalationModalData={tempEscalationModalData}
       />
     </>
   )

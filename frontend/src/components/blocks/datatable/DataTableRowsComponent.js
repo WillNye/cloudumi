@@ -14,7 +14,7 @@ const DataTableRowsComponent = ({
   calculateColumnSize,
   setExpandedRow,
   setRedirect,
-  setIsTempEscalationModalOpen,
+  setTempEscalationModalData,
 }) => {
   const expandNestedJson = (data) => {
     Object.keys(data).forEach((key) => {
@@ -42,7 +42,7 @@ const DataTableRowsComponent = ({
 
     if (onClickhandler.action === 'open_modal') {
       if (onClickhandler.type === 'temp_escalation_modal') {
-        setIsTempEscalationModalOpen(true)
+        setTempEscalationModalData(true, entry)
       }
     }
   }

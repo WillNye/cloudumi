@@ -203,8 +203,8 @@ const useDataTable = (config, mock) => {
   const setExpandedRow = (expandedRow) =>
     dispatch({ type: 'SET_EXPANDED_ROW', expandedRow })
   const setRedirect = (redirect) => dispatch({ type: 'SET_REDIRECT', redirect })
-  const setIsTempEscalationModalOpen = (isOpen) =>
-    dispatch({ type: 'SET_TEMP_ESCALATION_MODAL_OPEN', isOpen })
+  const setTempEscalationModalData = (isOpen, data) =>
+    dispatch({ type: 'SET_TEMP_ESCALATION_MODAL_OPEN', isOpen, data })
 
   return {
     ...state,
@@ -214,7 +214,7 @@ const useDataTable = (config, mock) => {
     setExpandedRow,
     setFilteredData,
     setRedirect,
-    setIsTempEscalationModalOpen,
+    setTempEscalationModalData,
   }
 }
 
