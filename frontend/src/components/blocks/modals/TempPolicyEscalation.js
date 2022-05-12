@@ -75,10 +75,12 @@ const TempPolicyEscalationModal = ({
           requestId: request_id,
           requestUrl: request_url,
         })
+      } else {
+        setErrorAlert(
+          'Server reported an error with the request: ' +
+            JSON.stringify(response)
+        )
       }
-      setErrorAlert(
-        'Server reported an error with the request: ' + JSON.stringify(response)
-      )
     } else {
       setErrorAlert('Failed to submit request')
     }
