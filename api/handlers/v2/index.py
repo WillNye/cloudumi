@@ -146,12 +146,14 @@ class EligibleRoleHandler(BaseHandler):
                     "arn": arn,
                     "account_name": formatted_account_name,
                     "account_id": account_id,
-                    "type": "modal_button",
                     "role_name": f"[{role_name}](/policies/edit/{account_id}/iamrole/{role_name})",
-                    "redirect_uri": f"/role/{arn}",  # TODO: Use the TEAR uri
                     "inactive_tear": True,
                     "content": "Request Elevated Access",
                     "color": "red",
+                    "onClick": {
+                        "action": "open_modal",
+                        "type": "temp_escalation_modal",
+                    },
                 }
             )
 
@@ -203,7 +205,7 @@ class EligibleRolePageConfigHandler(BaseHandler):
                     {
                         "placeholder": "AWS Console Sign-In",
                         "key": "redirect_uri",
-                        "type": "abutton",
+                        "type": "button",
                         "icon": "sign-in",
                         "content": "Sign-In",
                         "color": "blue",
