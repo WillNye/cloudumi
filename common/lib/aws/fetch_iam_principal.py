@@ -247,6 +247,8 @@ async def fetch_iam_role(
     :param role_arn:
     :return:
     """
+    from common.lib.aws.utils import get_aws_principal_owner
+
     log_data: dict = {
         "function": f"{sys._getframe().f_code.co_name}",
         "role_arn": role_arn,
@@ -358,15 +360,18 @@ async def fetch_iam_role(
 
         # Format the role for DynamoDB and Redis:
         await _cloudaux_to_aws(role)
+
+        last_updated: int = int((datetime.utcnow()).timestamp())
         result = {
             "arn": role.get("Arn"),
             "host": host,
             "name": role.pop("RoleName"),
             "resourceId": role.pop("RoleId"),
             "accountId": account_id,
-            "ttl": int((datetime.utcnow() + timedelta(hours=36)).timestamp()),
+            "tags": role.get("Tags", []),
             "policy": dynamo.convert_iam_resource_to_json(role),
             "permissions_boundary": role.get("PermissionsBoundary", {}),
+            "owner": get_aws_principal_owner(role, host),
             "templated": red.hget(
                 config.get_host_specific_key(
                     "templated_roles.redis_key",
@@ -375,6 +380,8 @@ async def fetch_iam_role(
                 ),
                 role.get("Arn").lower(),
             ),
+            "last_updated": last_updated,
+            "ttl": int((datetime.utcnow() + timedelta(hours=36)).timestamp()),
         }
 
         # Sync with DDB:

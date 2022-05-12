@@ -71,7 +71,8 @@ from common.lib.aws.utils import (
     cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
-    remove_temp_policies,
+    remove_all_expired_policies,
+    remove_host_expired_policies,
 )
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
@@ -97,7 +98,7 @@ from common.lib.tenants import get_all_hosts
 from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
-from common.models import ExtendedRequestModel, SpokeAccount
+from common.models import SpokeAccount
 from identity.lib.groups.groups import (
     cache_identity_groups_for_host,
     cache_identity_requests_for_host,
@@ -1045,14 +1046,13 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             role_entry = {
                 "arn": role.get("Arn"),
                 "host": host,
-                "name": role.get("RoleName"),
-                "resourceId": role.get("RoleId"),
+                "name": role.pop("RoleName"),
+                "resourceId": role.pop("RoleId"),
                 "accountId": account_id,
-                "ttl": ttl,
-                "owner": get_aws_principal_owner(role, host),
-                "policy": dynamo.convert_iam_resource_to_json(role),
-                "last_updated": last_updated,
                 "tags": role.get("Tags", []),
+                "policy": dynamo.convert_iam_resource_to_json(role),
+                "permissions_boundary": role.get("PermissionsBoundary", {}),
+                "owner": get_aws_principal_owner(role, host),
                 "templated": red.hget(
                     config.get_host_specific_key(
                         "templated_roles.redis_key",
@@ -1061,6 +1061,8 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                     ),
                     role.get("Arn").lower(),
                 ),
+                "last_updated": last_updated,
+                "ttl": int((datetime.utcnow() + timedelta(hours=36)).timestamp()),
             }
 
             # DynamoDB:
@@ -2884,39 +2886,16 @@ def get_current_celery_tasks(host: str = None, status: str = None) -> List[Any]:
 
 
 @app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-def handle_expired_policies(self, host: str) -> Dict[str, Any]:
-    from common.lib.dynamo import UserDynamoHandler
-
+def handle_expired_policies(self, host: str):
     if not host:
         raise Exception("`host` must be passed to this task.")
 
-    dynamo_handler = UserDynamoHandler(host=host)
-
-    all_policy_requests = async_to_sync(dynamo_handler.get_all_policy_requests)(
-        host, status="approved"
-    )
-
-    if not all_policy_requests:
-        return
-
-    for request in all_policy_requests:
-        extended_request = ExtendedRequestModel.parse_obj(request["extended_request"])
-        async_to_sync(remove_temp_policies)(extended_request, host, None)
+    async_to_sync(remove_host_expired_policies)(host)
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
 def handle_expired_policies_for_all_hosts() -> Dict:
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
-    log_data = {
-        "function": function,
-        "message": "Spawning tasks",
-        "num_hosts": len(hosts),
-    }
-    log.debug(log_data)
-    for host in hosts:
-        handle_expired_policies.apply_async((host,))
-    return log_data
+    return async_to_sync(remove_all_expired_policies)()
 
 
 schedule_30_minute = timedelta(seconds=1800)

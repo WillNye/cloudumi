@@ -33,7 +33,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_config import query
 from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
-from common.lib.aws.iam import get_managed_policy_document, get_policy
+from common.lib.aws.iam import TEAR_USERS_TAG, get_managed_policy_document, get_policy
 from common.lib.aws.s3 import (
     get_bucket_location,
     get_bucket_policy,
@@ -52,6 +52,7 @@ from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import sort_dict
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
+from common.lib.tenants import get_all_hosts
 from common.models import (
     CloneRoleRequestModel,
     ExtendedRequestModel,
@@ -1956,7 +1957,7 @@ def allowed_to_sync_role(
     return False
 
 
-async def remove_temp_policies(
+async def remove_request_expired_policies(
     extended_request: ExtendedRequestModel, host: str, user: str
 ) -> None:
     """
@@ -1970,10 +1971,10 @@ async def remove_temp_policies(
     should_update_policy_request = False
 
     current_dateint = datetime.today().strftime("%Y%m%d")
-    if not extended_request.expiration_date:
-        return
-
-    if str(extended_request.expiration_date) > current_dateint:
+    if (
+        not extended_request.expiration_date
+        or str(extended_request.expiration_date) > current_dateint
+    ):
         return
 
     log_data: dict = {
@@ -2175,6 +2176,66 @@ async def remove_temp_policies(
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
+        elif change.change_type == "tear_can_assume_role":
+            request_user = extended_request.requester_info.extended_info.get(
+                "userName", None
+            )
+
+            try:
+                role_tags = await aio_wrapper(
+                    client.list_role_tags, RoleName=principal_name
+                )
+                elevated_users = get_role_tag(role_tags, TEAR_USERS_TAG, [])
+                elevated_users = (
+                    {elevated_users}
+                    if isinstance(elevated_users, str)
+                    else set(elevated_users)
+                )
+
+                elevated_users.remove(request_user)
+
+                if elevated_users:
+                    await aio_wrapper(
+                        client.tag_role,
+                        RoleName=principal_name,
+                        Tags=[
+                            {"Key": TEAR_USERS_TAG, "Value": ":".join(elevated_users)}
+                        ],
+                    )
+                else:
+                    await aio_wrapper(
+                        client.untag_role,
+                        RoleName=principal_name,
+                        TagKeys=[change.key],
+                    )
+
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except client.exceptions.NoSuchEntityException:
+                log_data["message"] = "Role not found"
+                log_data["error"] = f"Role not found: {principal_name}"
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except KeyError:
+                log_data["message"] = "TEAR support not active for user"
+                log_data["error"] = f"TEAR support not active for {request_user}"
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except Exception as e:
+                log_data["message"] = "Exception occurred deleting tag"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
         elif (
             change.change_type == "resource_policy"
             or change.change_type == "sts_resource_policy"
@@ -2316,6 +2377,40 @@ async def remove_temp_policies(
             log_data["error"] = str(e)
             log.error(log_data, exc_info=True)
             sentry_sdk.capture_exception()
+
+
+async def remove_host_expired_policies(host: str):
+    dynamo_handler = UserDynamoHandler(host=host)
+    all_policy_requests = await dynamo_handler.get_all_policy_requests(
+        host, status="approved"
+    )
+    if not all_policy_requests:
+        return
+
+    for request in all_policy_requests:
+        await remove_request_expired_policies(
+            ExtendedRequestModel.parse_obj(request["extended_request"]), host, None
+        )
+
+    # Can swap back to this once it's thread safe
+    # await asyncio.gather(*[
+    #     remove_request_expired_policies(ExtendedRequestModel.parse_obj(request["extended_request"]), host, None)
+    #     for request in all_policy_requests
+    # ])
+
+
+async def remove_all_expired_policies() -> dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    hosts = get_all_hosts()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_hosts": len(hosts),
+    }
+    log.debug(log_data)
+    await asyncio.gather(*[remove_host_expired_policies(host) for host in hosts])
+
+    return log_data
 
 
 def get_aws_principal_owner(role_details: Dict[str, Any], host: str) -> Optional[str]:
