@@ -771,6 +771,44 @@ async def delete_iam_role(account_id, role_name, username, host) -> bool:
     )
 
 
+async def prune_iam_resource_tag(
+    boto_conn, resource_type: str, resource_id: str, tag: str, value: str = None
+):
+    """Removes a subset of a tag or the entire tag from a supported IAM resource"""
+    assert resource_type in ["role", "user", "policy"]
+
+    if resource_type == "policy":
+        boto_kwargs = {"PolicyArn": resource_id}
+    else:
+        boto_kwargs = {f"{resource_type.title()}Name": resource_id}
+
+    if not value:
+        await aio_wrapper(
+            getattr(boto_conn, f"untag_{resource_type}"), TagKeys=[tag], **boto_kwargs
+        )
+
+    resource_tags = await aio_wrapper(
+        getattr(boto_conn, f"list_{resource_type}_tags"), **boto_kwargs
+    )
+    resource_tag = get_role_tag(resource_tags, tag, [])
+    resource_tag = (
+        {resource_tag} if isinstance(resource_tag, str) else set(resource_tag)
+    )
+
+    resource_tag.remove(value)
+
+    if resource_tag:
+        await aio_wrapper(
+            getattr(boto_conn, f"tag_{resource_type}"),
+            Tags=[{"Key": tag, "Value": ":".join(resource_tag)}],
+            **boto_kwargs,
+        )
+    else:
+        await aio_wrapper(
+            getattr(boto_conn, f"untag_{resource_type}"), TagKeys=[tag], **boto_kwargs
+        )
+
+
 async def fetch_role_details(account_id, role_name, host, user):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -2146,24 +2184,24 @@ async def remove_request_expired_policies(
 
         elif change.change_type == "resource_tag":
             try:
-                if resource_name == "role":
-                    await aio_wrapper(
-                        client.untag_role,
-                        RoleName=principal_name,
-                        TagKeys=[change.key],
-                    )
-                elif resource_name == "user":
-                    await aio_wrapper(
-                        client.untag_user,
-                        UserName=principal_name,
-                        TagKeys=[change.key],
-                    )
+                await prune_iam_resource_tag(
+                    client, resource_name, principal_name, change.key, change.value
+                )
                 change.status = Status.expired
                 should_update_policy_request = True
 
             except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
                 log_data["error"] = f"{change.key} was not attached to {resource_name}"
+                log.error(log_data, exc_info=True)
+                sentry_sdk.capture_exception()
+
+                change.status = Status.expired
+                should_update_policy_request = True
+
+            except KeyError:
+                log_data["message"] = "Value not found for key"
+                log_data["error"] = f"{change.key} does not contain {change.value}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -2182,33 +2220,9 @@ async def remove_request_expired_policies(
             )
 
             try:
-                role_tags = await aio_wrapper(
-                    client.list_role_tags, RoleName=principal_name
+                await prune_iam_resource_tag(
+                    client, "role", principal_name, TEAR_USERS_TAG, request_user
                 )
-                elevated_users = get_role_tag(role_tags, TEAR_USERS_TAG, [])
-                elevated_users = (
-                    {elevated_users}
-                    if isinstance(elevated_users, str)
-                    else set(elevated_users)
-                )
-
-                elevated_users.remove(request_user)
-
-                if elevated_users:
-                    await aio_wrapper(
-                        client.tag_role,
-                        RoleName=principal_name,
-                        Tags=[
-                            {"Key": TEAR_USERS_TAG, "Value": ":".join(elevated_users)}
-                        ],
-                    )
-                else:
-                    await aio_wrapper(
-                        client.untag_role,
-                        RoleName=principal_name,
-                        TagKeys=[change.key],
-                    )
-
                 change.status = Status.expired
                 should_update_policy_request = True
 
