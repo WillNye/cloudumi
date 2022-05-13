@@ -1,5 +1,5 @@
 resource "aws_iam_role" "dax_role" {
-  name = "${var.stage}-${var.tenant_name}-daxRole"
+  name = "${var.stage}-${var.namespace}-dax"
   lifecycle {
     ignore_changes = all
   }
@@ -45,7 +45,7 @@ resource "aws_iam_role" "dax_role" {
 }
 
 resource "aws_dax_parameter_group" "dax_param_group" {
-  name = "${var.stage}-${var.tenant_name}-pg"
+  name = "${var.stage}-${var.namespace}-pg"
 
   parameters {
     name  = "query-ttl-min"
@@ -59,13 +59,13 @@ resource "aws_dax_parameter_group" "dax_param_group" {
 }
 
 resource "aws_dax_subnet_group" "dax_subnet_group" {
-  name       = "${var.stage}-${var.tenant_name}-sg"
+  name       = "${var.stage}-${var.namespace}-sg"
   subnet_ids = var.subnet_ids
 }
 
 #tfsec:ignore:*
 resource "aws_dax_cluster" "dax_cluster" {
-  cluster_name         = "${var.stage}-${var.tenant_name}"
+  cluster_name         = "${var.stage}-${var.namespace}"
   iam_role_arn         = aws_iam_role.dax_role.arn
   node_type            = var.node_type
   replication_factor   = var.node_count

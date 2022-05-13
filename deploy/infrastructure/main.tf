@@ -66,7 +66,7 @@ module "tenant_dynamodb_service" {
 module "tenant_dax_cluster" {
   source = "./modules/services/dax"
 
-  tenant_name        = var.tenant_name
+  namespace          = var.namespace
   stage              = var.stage
   subnet_ids         = module.tenant_networking.vpc_subnet_private_id
   security_group_ids = [module.tenant_container_service.ecs_security_group_id]

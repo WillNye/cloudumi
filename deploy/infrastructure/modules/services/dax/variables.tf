@@ -8,13 +8,12 @@ variable "stage" {
   }
 }
 
-variable "tenant_name" {
-  description = "The shortened name of the tenant"
+variable "namespace" {
+  description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
   type        = string
-  default     = "noq"
 
   validation {
-    condition     = length(var.tenant_name) <= 12
+    condition     = length(var.namespace) <= 12
     error_message = "Tenant name must be shorter than 12 characters."
   }
 }

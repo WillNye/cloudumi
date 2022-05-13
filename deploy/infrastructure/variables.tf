@@ -3,17 +3,6 @@ variable "account_id" {
   type        = string
 }
 
-variable "tenant_name" {
-  description = "The shortened name of the tenant"
-  type        = string
-  default     = "noq"
-
-  validation {
-    condition     = length(var.tenant_name) <= 12
-    error_message = "Tenant name must be shorter than 12 characters."
-  }
-}
-
 variable "allowed_inbound_cidr_blocks" {
   description = "The CIDR blocks that are allowed to connect to the cluster"
   type        = list(string)
@@ -72,6 +61,11 @@ variable "modify_ecs_task_role" {
 variable "namespace" {
   description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
   type        = string
+
+  validation {
+    condition     = length(var.namespace) <= 12
+    error_message = "Tenant name must be shorter than 12 characters."
+  }
 }
 
 variable "noq_core" {
