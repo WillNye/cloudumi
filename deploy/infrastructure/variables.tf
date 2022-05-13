@@ -3,6 +3,17 @@ variable "account_id" {
   type        = string
 }
 
+variable "tenant_name" {
+  description = "The shortened name of the tenant"
+  type        = string
+  default     = "noq"
+
+  validation {
+    condition     = length(var.tenant_name) <= 12
+    error_message = "Tenant name must be shorter than 12 characters."
+  }
+}
+
 variable "allowed_inbound_cidr_blocks" {
   description = "The CIDR blocks that are allowed to connect to the cluster"
   type        = list(string)
@@ -156,4 +167,15 @@ variable "elasticache_node_type" {
   description = "The node type to use for Elasticache"
   type        = string
   default     = "cache.t3.micro"
+}
+
+variable "dax_node_type" {
+  type    = string
+  default = "dax.t2.medium"
+}
+
+variable "dax_node_count" {
+  description = "Number of cluster nodes"
+  type        = number
+  default     = 3
 }

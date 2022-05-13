@@ -63,6 +63,17 @@ module "tenant_dynamodb_service" {
   timeout                      = var.timeout
 }
 
+module "tenant_dax_cluster" {
+  source = "./modules/services/dax"
+
+  tenant_name        = var.tenant_name
+  stage              = var.stage
+  subnet_ids         = module.tenant_networking.vpc_subnet_private_id
+  security_group_ids = [module.tenant_container_service.ecs_security_group_id]
+  node_type          = var.dax_node_type
+  node_count         = var.dax_node_count
+}
+
 module "tenant_ecs_task_role" {
   source = "./modules/services/ecs_task_role"
 
