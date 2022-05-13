@@ -410,7 +410,7 @@ class TestAwsLib(TestCase):
     @pytest.mark.usefixtures("dynamodb")
     @pytest.mark.usefixtures("iam")
     def test_remove_temp_policies(self):
-        from common.lib.aws.utils import remove_host_expired_policies
+        from common.lib.aws.utils import remove_expired_host_requests
 
         account_id = "123456789012"
         current_dateint = datetime.today().strftime("%Y%m%d")
@@ -466,7 +466,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = current_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_host_expired_policies)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -474,7 +474,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = past_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_host_expired_policies)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -482,7 +482,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = future_dateint
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_host_expired_policies)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 
@@ -490,7 +490,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = None
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_host_expired_policies)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 

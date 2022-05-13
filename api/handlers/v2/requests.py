@@ -887,6 +887,20 @@ class RequestDetailHandler(BaseAPIV2Handler):
             extended_request, last_updated = await self._get_extended_request(
                 request_id, log_data, host
             )
+
+            if any(
+                change.change_type == "tear_can_assume_role"
+                for change in extended_request.changes.changes
+            ):
+                change_info = request_changes.modification_model
+                if (
+                    hasattr(change_info, "expiration_date")
+                    and not change_info.expiration_date
+                ):
+                    raise ValueError(
+                        "An expiration date must be provided for elevated access requests."
+                    )
+
             response = await parse_and_apply_policy_request_modification(
                 extended_request,
                 request_changes,
@@ -896,7 +910,12 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 host,
             )
 
-        except (NoMatchingRequest, InvalidRequestParameter, ValidationError) as e:
+        except (
+            NoMatchingRequest,
+            InvalidRequestParameter,
+            ValidationError,
+            ValueError,
+        ) as e:
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
             sentry_sdk.capture_exception(tags={"user": self.user})

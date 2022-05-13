@@ -1995,19 +1995,20 @@ def allowed_to_sync_role(
     return False
 
 
-async def remove_request_expired_policies(
-    extended_request: ExtendedRequestModel, host: str, user: str
+async def remove_expired_request_changes(
+    extended_request: ExtendedRequestModel,
+    host: str,
+    user: str,
+    force_refresh: bool = False,
 ) -> None:
     """
-    If this feature is enabled, it will look at created policies and remove expired policies if they have been
-    designated as temporary. Policies can be designated as temporary through a certain prefix in the policy name and an expiration date.
+    If this feature is enabled, it will look at changes and remove those that are expired policies if they have been.
+    Changes can be designated as temporary by defining an expiration date.
     In the future, we may allow specifying temporary policies by `Sid` or other means.
-    :param extended_request: A single extended policy
     """
     from common.lib.v2.aws_principals import get_role_details
 
     should_update_policy_request = False
-
     current_dateint = datetime.today().strftime("%Y%m%d")
     if (
         not extended_request.expiration_date
@@ -2189,6 +2190,7 @@ async def remove_request_expired_policies(
                 )
                 change.status = Status.expired
                 should_update_policy_request = True
+                force_refresh = True
 
             except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
@@ -2225,6 +2227,7 @@ async def remove_request_expired_policies(
                 )
                 change.status = Status.expired
                 should_update_policy_request = True
+                force_refresh = True
 
             except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Role not found"
@@ -2274,7 +2277,7 @@ async def remove_request_expired_policies(
                         principal_name,
                         host,
                         extended=True,
-                        force_refresh=True,
+                        force_refresh=force_refresh,
                     )
                     if not role:
                         log.error(
@@ -2373,7 +2376,7 @@ async def remove_request_expired_policies(
                     resource_account,
                     principal_arn,
                     host,
-                    force_refresh=True,
+                    force_refresh=force_refresh,
                     run_sync=True,
                 )
 
@@ -2382,7 +2385,7 @@ async def remove_request_expired_policies(
                     resource_account,
                     principal_arn,
                     host,
-                    force_refresh=True,
+                    force_refresh=force_refresh,
                     run_sync=True,
                 )
 
@@ -2393,7 +2396,7 @@ async def remove_request_expired_policies(
             sentry_sdk.capture_exception()
 
 
-async def remove_host_expired_policies(host: str):
+async def remove_expired_host_requests(host: str):
     dynamo_handler = UserDynamoHandler(host=host)
     all_policy_requests = await dynamo_handler.get_all_policy_requests(
         host, status="approved"
@@ -2402,18 +2405,18 @@ async def remove_host_expired_policies(host: str):
         return
 
     for request in all_policy_requests:
-        await remove_request_expired_policies(
+        await remove_expired_request_changes(
             ExtendedRequestModel.parse_obj(request["extended_request"]), host, None
         )
 
     # Can swap back to this once it's thread safe
     # await asyncio.gather(*[
-    #     remove_request_expired_policies(ExtendedRequestModel.parse_obj(request["extended_request"]), host, None)
+    #     remove_expired_request_changes(ExtendedRequestModel.parse_obj(request["extended_request"]), host, None)
     #     for request in all_policy_requests
     # ])
 
 
-async def remove_all_expired_policies() -> dict:
+async def remove_all_expired_requests() -> dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
     log_data = {
@@ -2422,7 +2425,7 @@ async def remove_all_expired_policies() -> dict:
         "num_hosts": len(hosts),
     }
     log.debug(log_data)
-    await asyncio.gather(*[remove_host_expired_policies(host) for host in hosts])
+    await asyncio.gather(*[remove_expired_host_requests(host) for host in hosts])
 
     return log_data
 

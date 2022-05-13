@@ -3,6 +3,7 @@ import { Screen } from 'lib/Screen'
 import { Sidebar } from './components/Sidebar'
 import { useHistory } from 'react-router-dom'
 import { ServiceAWS } from './components/ServiceAWS'
+import './Settings.css'
 
 export const Settings = ({ computedMatch, origin }) => {
   const { push } = useHistory()

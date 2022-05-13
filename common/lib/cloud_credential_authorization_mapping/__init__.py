@@ -288,7 +288,6 @@ async def generate_and_store_credential_authorization_mapping(
         authorization_mapping = await InternalPluginAuthorizationMappingGenerator().generate_credential_authorization_mapping(
             authorization_mapping, host
         )
-
     # Store in S3 and Redis
     redis_topic = config.get_host_specific_key(
         "generate_and_store_credential_authorization_mapping.redis_key",

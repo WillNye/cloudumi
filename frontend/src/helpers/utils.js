@@ -12,7 +12,7 @@ export function random_id() {
 }
 
 export function generate_id() {
-  return 'ConsoleMe' + random_id()
+  return 'Noq' + random_id()
 }
 
 export function generate_temp_id(expiration_date) {
@@ -240,7 +240,7 @@ export const parseLocalStorageCache = (key, default_return = []) => {
 }
 
 export const setRecentRoles = (role) => {
-  const localStorageRecentRolesKey = 'consoleMeLocalStorage'
+  const localStorageRecentRolesKey = 'NoqLocalStorage'
   let recentRoles = parseLocalStorageCache(localStorageRecentRolesKey)
   if (recentRoles == null) {
     recentRoles = [role]
@@ -296,7 +296,7 @@ const default_user_settings = {
 }
 
 export const getLocalStorageSettings = (specificSetting = '') => {
-  const localStorageSettingsKey = 'consoleMeUserSettings'
+  const localStorageSettingsKey = 'NoqUserSettings'
   let localSettings = parseLocalStorageCache(
     localStorageSettingsKey,
     default_user_settings
@@ -311,7 +311,7 @@ export const getLocalStorageSettings = (specificSetting = '') => {
 }
 
 export const setLocalStorageSettings = (settings) => {
-  const localStorageSettingsKey = 'consoleMeUserSettings'
+  const localStorageSettingsKey = 'NoqUserSettings'
   window.localStorage.setItem(localStorageSettingsKey, JSON.stringify(settings))
 }
 

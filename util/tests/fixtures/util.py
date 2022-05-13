@@ -31,7 +31,7 @@ class ConsoleMeAsyncHTTPTestCase(AsyncHTTPTestCase):
             if not headers.get("Cookie"):
                 headers["Cookie"] = "=".join(
                     (
-                        "consoleme_auth",
+                        "noq_auth",
                         generate_jwt_token_for_testing(user=user, groups=groups),
                     )
                 )
@@ -45,7 +45,7 @@ class ConsoleMeAsyncHTTPTestCase(AsyncHTTPTestCase):
             headers["host"] = host_header
             if not headers.get("Cookie"):
                 headers["Cookie"] = "=".join(
-                    ("consoleme_auth", generate_jwt_token_for_testing())
+                    ("noq_auth", generate_jwt_token_for_testing())
                 )
             kwargs["headers"] = headers
         return super(ConsoleMeAsyncHTTPTestCase, self).fetch(*args, **kwargs)

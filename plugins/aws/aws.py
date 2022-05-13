@@ -76,7 +76,7 @@ class Aws:
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-            session_name=sanitize_session_name("consoleme_get_credentials"),
+            session_name=sanitize_session_name("noq_get_credentials"),
         )
 
         ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host)
@@ -108,6 +108,28 @@ class Aws:
         await raise_if_background_check_required_and_no_background_check(
             role, user, host
         )
+
+        # Set transitive tags to identify user
+        transitive_tag_keys = []
+        tags = []
+        transitive_tag_enabled = config.get_host_specific_key(
+            "aws.transitive_session_tags.enabled", host
+        )
+        if transitive_tag_enabled:
+            role_transitive_tag_key_identifying_user = config.get_host_specific_key(
+                "aws.transitive_session_tags.user_key",
+                host,
+                "noq_transitive_session_tag_user",
+            )
+
+            if role_transitive_tag_key_identifying_user:
+                tags = [
+                    {
+                        "Key": role_transitive_tag_key_identifying_user,
+                        "Value": user,
+                    }
+                ]
+                transitive_tag_keys = [role_transitive_tag_key_identifying_user]
 
         try:
             if enforce_ip_restrictions and ip_restrictions:
@@ -144,6 +166,8 @@ class Aws:
                     RoleArn=role,
                     RoleSessionName=user.lower(),
                     Policy=policy,
+                    Tags=tags,
+                    TransitiveTagKeys=transitive_tag_keys,
                     DurationSeconds=config.get_host_specific_key(
                         "aws.session_duration", host, 3600
                     ),
@@ -192,6 +216,8 @@ class Aws:
                     RoleArn=role,
                     RoleSessionName=user.lower(),
                     Policy=policy,
+                    Tags=tags,
+                    TransitiveTagKeys=transitive_tag_keys,
                     DurationSeconds=config.get_host_specific_key(
                         "aws.session_duration", host, 3600
                     ),
@@ -211,6 +237,8 @@ class Aws:
                 client.assume_role,
                 RoleArn=role,
                 RoleSessionName=user.lower(),
+                Tags=tags,
+                TransitiveTagKeys=transitive_tag_keys,
                 DurationSeconds=config.get_host_specific_key(
                     "aws.session_duration", host, 3600
                 ),

@@ -279,12 +279,10 @@ class BaseHandler(TornadoRequestHandler):
 
         await self.configure_tracing()
 
-        if config.get_host_specific_key("tornado.xsrf", host, True):
-            cookie_kwargs = config.get_host_specific_key(
-                "tornado.xsrf_cookie_kwargs", host, {}
-            )
+        if config.get("_global_.tornado.xsrf", True):
+            cookie_kwargs = config.get("_global_.tornado.xsrf_cookie_kwargs", {})
             self.set_cookie(
-                config.get_host_specific_key("xsrf_cookie_name", host, "_xsrf"),
+                config.get("_global_.xsrf_cookie_name", "_xsrf"),
                 self.xsrf_token,
                 **cookie_kwargs,
             )
@@ -443,7 +441,7 @@ class BaseHandler(TornadoRequestHandler):
 
         # Check to see if user has a valid auth cookie
         auth_cookie = self.get_cookie(
-            config.get("_global_.auth.cookie.name", "consoleme_auth")
+            config.get("_global_.auth.cookie.name", "noq_auth")
         )
 
         # Validate auth cookie and use it to retrieve group information
@@ -687,9 +685,7 @@ class BaseHandler(TornadoRequestHandler):
                 )
             except (redis.exceptions.ConnectionError, ClusterDownError):
                 pass
-        if not self.get_cookie(
-            config.get("_global_.auth.cookie.name", "consoleme_auth")
-        ):
+        if not self.get_cookie(config.get("_global_.auth.cookie.name", "noq_auth")):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                 minutes=config.get_host_specific_key(
                     "jwt.expiration_minutes", host, 1200
@@ -700,7 +696,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.user, self.groups, host, exp=expiration
             )
             self.set_cookie(
-                config.get("_global_.auth.cookie.name", "consoleme_auth"),
+                config.get("_global_.auth.cookie.name", "noq_auth"),
                 encoded_cookie,
                 expires=expiration,
                 secure=config.get_host_specific_key(
@@ -847,7 +843,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 return
         elif config.get_host_specific_key("auth.require_jwt", host, True):
             auth_cookie = self.get_cookie(
-                config.get("_global_.auth.cookie.name", "consoleme_auth")
+                config.get("_global_.auth.cookie.name", "noq_auth")
             )
 
             if auth_cookie:

@@ -233,7 +233,7 @@ async def handle_resource_type_ahead_request(cls):
         )
         if all_role_arns_j:
             all_role_arns = all_role_arns_j.keys()
-        # ConsoleMe (Account: Test, Arn: arn)
+        # Noq (Account: Test, Arn: arn)
         # TODO: Make this OSS compatible and configurable
         try:
             accounts = await get_account_id_to_name_mapping(host)
