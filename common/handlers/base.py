@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Union
 
+import pprofile as pprofile
 import pytz
 import redis
 import sentry_sdk
@@ -277,6 +278,8 @@ class BaseHandler(TornadoRequestHandler):
         self.tracer = None
 
         await self.configure_tracing()
+        self.profiler = pprofile.Profile()
+        self.profiler.enable()
 
         if config.get("_global_.tornado.xsrf", True):
             cookie_kwargs = config.get("_global_.tornado.xsrf_cookie_kwargs", {})
@@ -354,6 +357,10 @@ class BaseHandler(TornadoRequestHandler):
         #         "a+",
         #     ) as f:
         #         f.write(json.dumps(request_details, reject_bytes=False))
+
+        self.profiler.disable()
+        with open("/tmp/noq_profile.pprof", "a+") as f:
+            self.profiler.callgrind(f)
         super(BaseHandler, self).on_finish()
 
     async def attempt_sso_authn(self, host) -> bool:
