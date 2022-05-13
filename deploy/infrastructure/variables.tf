@@ -9,6 +9,11 @@ variable "allowed_inbound_cidr_blocks" {
   default     = []
 }
 
+variable "noq_employee_cidr_blocks" {
+  description = "The CIDRs for NOQ employees to allow network access to a resource"
+  type        = list(string)
+}
+
 variable "attributes" {
   description = "Additional attributes, e.g. `1`"
   type        = number

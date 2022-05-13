@@ -57,3 +57,8 @@ output "vpc_subnet_private_id" {
   description = "The private CIDR range of the private subnet assign to the VPC"
   value       = [aws_subnet.subnet_private_az0.id, aws_subnet.subnet_private_az1.id]
 }
+
+output "noq_employee_sg_id" {
+  description = "The SG ID to use for giving NOQ employees network access to a resource"
+  value       = aws_security_group.noq_employees_sg.id
+}
