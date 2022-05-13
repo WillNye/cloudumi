@@ -72,7 +72,7 @@ resource "aws_dax_cluster" "dax_cluster" {
   parameter_group_name = aws_dax_parameter_group.dax_param_group.name
   security_group_ids   = var.security_group_ids
   subnet_group_name    = aws_dax_subnet_group.dax_subnet_group.name
-  server_side_encryption = {
+  server_side_encryption {
     enabled = true
   }
 }
