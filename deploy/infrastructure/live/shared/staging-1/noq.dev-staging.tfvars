@@ -29,24 +29,6 @@ tags = {
 # It sets up a container registry (so only for prod and staging)
 noq_core = true
 
-allowed_inbound_cidr_blocks = [
-  "70.187.228.241/32", # Curtis
-  "75.164.48.220/32",
-  "141.239.104.37/32", # Kris
-  "41.190.131.30/32",  # Kayizzi
-  "75.164.90.80/32",   # Matt
-  "47.221.213.96/32",  # Will
-]
-
-noq_employee_cidr_blocks = [
-  "70.187.228.241/32", # Curtis
-  "75.164.48.220/32",
-  "141.239.104.37/32", # Kris
-  "41.190.131.30/32",  # Kayizzi
-  "75.164.90.80/32",   # Matt
-  "47.221.213.96/32",  # Will
-]
-
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
 

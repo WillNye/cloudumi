@@ -48,13 +48,13 @@ resource "aws_dax_parameter_group" "dax_param_group" {
   name = "${var.stage}-${var.namespace}-pg"
 
   parameters {
-    name  = "query-ttl-min"
-    value = "10"
+    name  = "query-ttl-millis"
+    value = "600000" # 10 minutes
   }
 
   parameters {
-    name  = "record-ttl-hour"
-    value = "4"
+    name  = "record-ttl-millis"
+    value = "36000000" # 1 hour
   }
 }
 
