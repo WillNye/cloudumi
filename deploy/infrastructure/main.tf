@@ -24,17 +24,14 @@ provider "aws" {
 }
 
 locals {
-  cluster_id                  = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
-  global_vars                 = yamldecode(file("global.yaml"))
-  noq_employee_cidr_blocks    = local.global_vars["noq"]["employees"]["cidr_blocks"]
-  allowed_inbound_cidr_blocks = var.stage == "staging" ? local.noq_employee_cidr_blocks : var.allowed_inbound_cidr_blocks
+  cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
 }
 
 module "tenant_networking" {
   source = "./modules/services/networking"
 
-  allowed_inbound_cidr_blocks = local.allowed_inbound_cidr_blocks
-  noq_employee_cidr_blocks    = local.noq_employee_cidr_blocks
+  allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
+  noq_employee_cidr_blocks    = var.noq_employee_cidr_blocks
   attributes                  = var.attributes
   cluster_id                  = local.cluster_id
   convert_case                = var.convert_case
@@ -123,7 +120,7 @@ module "tenant_ecs_task_role" {
 module "tenant_container_service" {
   source = "./modules/services/containers"
 
-  allowed_inbound_cidr_blocks      = local.allowed_inbound_cidr_blocks
+  allowed_inbound_cidr_blocks      = var.allowed_inbound_cidr_blocks
   attributes                       = var.attributes
   capacity_providers               = var.capacity_providers
   cloudumi_files_bucket            = module.tenant_s3_service.cloudumi_bucket_name
