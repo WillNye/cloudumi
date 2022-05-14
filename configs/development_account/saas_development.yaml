@@ -7,6 +7,7 @@ extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
+  # profiler: yappi | pprofile | memray
   #  tracing:
   #    enabled: true
   metrics:

@@ -7,7 +7,6 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Union
 
-import pprofile as pprofile
 import pytz
 import redis
 import sentry_sdk
@@ -278,8 +277,6 @@ class BaseHandler(TornadoRequestHandler):
         self.tracer = None
 
         await self.configure_tracing()
-        self.profiler = pprofile.Profile()
-        self.profiler.enable()
 
         if config.get("_global_.tornado.xsrf", True):
             cookie_kwargs = config.get("_global_.tornado.xsrf_cookie_kwargs", {})
@@ -331,36 +328,6 @@ class BaseHandler(TornadoRequestHandler):
             asyncio.ensure_future(self.tracer.finish_spans())
             asyncio.ensure_future(self.tracer.disable_tracing())
 
-        # if config.get_host_specific_key(
-        #     "_security_risk_full_debugging.enabled", host
-        # ):
-        #     responses = None
-        #     if hasattr(self, "responses"):
-        #         responses = self.responses
-        #     request_details = {
-        #         "path": self.request.path,
-        #         "method": self.request.method,
-        #         "body": self.request.body,
-        #         "arguments": self.request.arguments,
-        #         "body_arguments": self.request.body_arguments,
-        #         "headers": dict(self.request.headers.items()),
-        #         "query": self.request.query,
-        #         "query_arguments": self.request.query_arguments,
-        #         "uri": self.request.uri,
-        #         "cookies": dict(self.request.cookies.items()),
-        #         "response": responses,
-        #     }
-        #     with open(
-        #         config.get_host_specific_key(
-        #             "_security_risk_full_debugging.file", host
-        #         ),
-        #         "a+",
-        #     ) as f:
-        #         f.write(json.dumps(request_details, reject_bytes=False))
-
-        self.profiler.disable()
-        with open("/tmp/noq_profile.pprof", "a+") as f:
-            self.profiler.callgrind(f)
         super(BaseHandler, self).on_finish()
 
     async def attempt_sso_authn(self, host) -> bool:

@@ -6,6 +6,7 @@ python -m api.__main__"""
 # docker/base/BUILD)
 # Tech Debt ticket: SAAS-95, SAAS-94
 import os
+import signal
 
 if os.getenv("NOQ_CONTAINER"):
     import sys
@@ -17,7 +18,6 @@ if os.getenv("DEBUG"):
 
 import asyncio
 import logging
-import os
 
 import newrelic.agent
 import tornado.autoreload
@@ -29,6 +29,25 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 from api.routes import make_app
 from common.config import config
 from common.lib.plugins import get_plugin_by_name
+
+configured_profiler = config.get("_global_.profiler")
+if configured_profiler:
+    if configured_profiler == "memray":
+        from memray import Tracker
+
+        profiler = Tracker("/tmp/memray.bin")
+        profiler.__enter__()
+    elif configured_profiler == "pprofile":
+        import pprofile
+
+        profiler = pprofile.Profile()
+        profiler.enable()
+    elif configured_profiler == "yappi":
+        import yappi
+
+        yappi.start()
+    else:
+        raise ValueError(f"Profiler {configured_profiler} not supported")
 
 newrelic.agent.initialize()
 logging.basicConfig(level=logging.DEBUG, format=config.get("_global_.logging.format"))
@@ -59,6 +78,20 @@ if config.get("_global_.elastic_apn.enabled"):
     apm = ElasticAPM(app)
 
 
+async def shutdown(signal, loop):
+    """Cleanup tasks tied to the service's shutdown."""
+    logging.info(f"Received exit signal {signal.name}...")
+    logging.info("Closing database connections")
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+
+    [task.cancel() for task in tasks]
+
+    logging.info(f"Cancelling {len(tasks)} outstanding tasks")
+    await asyncio.gather(*tasks)
+    logging.info("Flushing metrics")
+    loop.stop()
+
+
 def init():
     stats = get_plugin_by_name(
         config.get("_global_.plugins.metrics", "cmsaas_metrics")
@@ -75,7 +108,28 @@ def init():
         server.start()  # forks one process per cpu
 
         log.debug({"message": "Server started", "port": port})
-        asyncio.get_event_loop().run_forever()
+        signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
+        loop = asyncio.get_event_loop()
+        for s in signals:
+            loop.add_signal_handler(
+                s, lambda s=s: asyncio.create_task(shutdown(s, loop))
+            )
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
+            if configured_profiler:
+                if configured_profiler == "pprofile":
+                    profiler.disable()
+                    with open("/tmp/noq_profile.pprof", "w") as f:
+                        profiler.callgrind(f)
+                if configured_profiler == "memray":
+                    profiler.__exit__(None, None, None)
+                if configured_profiler == "yappi":
+                    yappi.stop()
+                    yappi.get_func_stats().print_all()
+                    yappi.get_thread_stats().print_all()
+            logging.info("Successfully shutdown the service.")
 
 
 init()  #
