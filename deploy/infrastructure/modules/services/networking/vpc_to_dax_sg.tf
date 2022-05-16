@@ -1,15 +1,13 @@
-
-
 resource "aws_security_group" "vpc_to_dax_sg" {
   name        = "${var.namespace}-ecs-dax-access"
   description = "Gives access to the DAX cluster for resources on the VPC."
   vpc_id      = aws_vpc.main_vpc.id
 
   ingress {
-    description = "Allow communication for the DAX cluster"
-    from_port   = 8811
-    to_port     = 9911
-    protocol    = "TCP"
+    description = "Allow encrypted communication for the DAX cluster"
+    from_port   = 9111
+    to_port     = 9111
+    protocol    = "tcp"
     cidr_blocks = [aws_vpc.main_vpc.cidr_block]
   }
 

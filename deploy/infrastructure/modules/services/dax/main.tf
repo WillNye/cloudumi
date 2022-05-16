@@ -65,13 +65,14 @@ resource "aws_dax_subnet_group" "dax_subnet_group" {
 
 #tfsec:ignore:*
 resource "aws_dax_cluster" "dax_cluster" {
-  cluster_name         = "${var.stage}-${var.namespace}"
-  iam_role_arn         = aws_iam_role.dax_role.arn
-  node_type            = var.node_type
-  replication_factor   = var.node_count
-  parameter_group_name = aws_dax_parameter_group.dax_param_group.name
-  security_group_ids   = var.security_group_ids
-  subnet_group_name    = aws_dax_subnet_group.dax_subnet_group.name
+  cluster_name                     = "${var.stage}-${var.namespace}"
+  iam_role_arn                     = aws_iam_role.dax_role.arn
+  cluster_endpoint_encryption_type = "TLS"
+  node_type                        = var.node_type
+  replication_factor               = var.node_count
+  parameter_group_name             = aws_dax_parameter_group.dax_param_group.name
+  security_group_ids               = var.security_group_ids
+  subnet_group_name                = aws_dax_subnet_group.dax_subnet_group.name
   server_side_encryption {
     enabled = true
   }
