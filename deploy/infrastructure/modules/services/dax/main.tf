@@ -54,7 +54,7 @@ resource "aws_dax_parameter_group" "dax_param_group" {
 
   parameters {
     name  = "record-ttl-millis"
-    value = "36000000" # 1 hour
+    value = "3600000" # 1 hour
   }
 }
 

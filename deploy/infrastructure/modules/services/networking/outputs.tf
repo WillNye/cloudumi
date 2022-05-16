@@ -58,7 +58,7 @@ output "vpc_subnet_private_id" {
   value       = [aws_subnet.subnet_private_az0.id, aws_subnet.subnet_private_az1.id]
 }
 
-output "noq_employee_sg_id" {
-  description = "The SG ID to use for giving NOQ employees network access to a resource"
-  value       = aws_security_group.noq_employees_sg.id
+output "vpc_to_dax_sg_id" {
+  description = "The SG ID to use to expose the DAX cluster to other resources on the VPC."
+  value       = aws_security_group.vpc_to_dax_sg.id
 }

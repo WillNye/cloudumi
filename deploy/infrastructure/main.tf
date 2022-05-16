@@ -80,15 +80,12 @@ module "tenant_dynamodb_service" {
 module "tenant_dax_cluster" {
   source = "./modules/services/dax"
 
-  namespace  = var.namespace
-  stage      = var.stage
-  subnet_ids = module.tenant_networking.vpc_subnet_private_id
-  security_group_ids = [
-    module.tenant_container_service.ecs_security_group_id,
-    module.tenant_networking.noq_employee_sg_id
-  ]
-  node_type  = var.dax_node_type
-  node_count = var.dax_node_count
+  namespace          = var.namespace
+  stage              = var.stage
+  subnet_ids         = module.tenant_networking.vpc_subnet_private_id
+  security_group_ids = [module.tenant_networking.vpc_to_dax_sg_id]
+  node_type          = var.dax_node_type
+  node_count         = var.dax_node_count
 }
 
 module "tenant_elasticache_service" {
