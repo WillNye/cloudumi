@@ -4,9 +4,9 @@ resource "aws_security_group" "vpc_to_dax_sg" {
   vpc_id      = aws_vpc.main_vpc.id
 
   ingress {
-    description = "Allow encrypted communication for the DAX cluster"
-    from_port   = 9111
-    to_port     = 9111
+    description = "Allow unencrypted communication for the DAX cluster"
+    from_port   = 8111
+    to_port     = 8111
     protocol    = "tcp"
     cidr_blocks = [aws_vpc.main_vpc.cidr_block]
   }

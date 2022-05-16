@@ -67,7 +67,7 @@ resource "aws_dax_subnet_group" "dax_subnet_group" {
 resource "aws_dax_cluster" "dax_cluster" {
   cluster_name                     = "${var.stage}-${var.namespace}"
   iam_role_arn                     = aws_iam_role.dax_role.arn
-  cluster_endpoint_encryption_type = "TLS"
+  cluster_endpoint_encryption_type = "NONE" # Encryption not supported for AmazonDaxClient as of 2022/05/16
   node_type                        = var.node_type
   replication_factor               = var.node_count
   parameter_group_name             = aws_dax_parameter_group.dax_param_group.name
