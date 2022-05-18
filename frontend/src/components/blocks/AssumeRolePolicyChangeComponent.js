@@ -182,15 +182,17 @@ class AssumeRolePolicyChangeComponent extends Component {
         </Grid.Column>
       ) : null
 
-    const readOnlyInfo =
-      requestReadOnly && change.status === 'not_applied' ? (
-        <Grid.Column>
-          <Message info>
-            <Message.Header>View only</Message.Header>
-            <p>This change is view only and can no longer be modified.</p>
-          </Message>
-        </Grid.Column>
-      ) : null
+    const isReadonlyInfo =
+      (requestReadOnly && change.status === 'not_applied') ||
+      (!config.can_update_cancel && !isOwner)
+    const readOnlyInfo = isReadonlyInfo ? (
+      <Grid.Column>
+        <Message info>
+          <Message.Header>View only</Message.Header>
+          <p>This change is view only and can no longer be modified.</p>
+        </Message>
+      </Grid.Column>
+    ) : null
 
     const messagesToShow =
       messages.length > 0 ? (
