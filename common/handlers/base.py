@@ -687,6 +687,8 @@ class BaseHandler(TornadoRequestHandler):
             )
         if self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
+
+        self.is_admin = can_admin_all(self.user, self.groups, host)
         stats.timer(
             "base_handler.incoming_request",
             {
@@ -953,6 +955,9 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
 
 
 class BaseAdminHandler(BaseHandler):
+    def set_default_headers(self) -> None:
+        self.set_header("Content-Type", "application/json")
+
     async def authorization_flow(
         self, user: str = None, console_only: bool = True, refresh_cache: bool = False
     ) -> None:
@@ -960,9 +965,7 @@ class BaseAdminHandler(BaseHandler):
             user, console_only, refresh_cache
         )
 
-        if not getattr(self.ctx, "host") or not can_admin_all(
-            self.user, self.groups, getattr(self.ctx, "host")
-        ):
+        if not getattr(self.ctx, "host") or not self.is_admin:
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, errors[0], errors, 403, "unauthorized", {}

@@ -27,8 +27,8 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import (
-    TEAR_USERS_TAG,
     create_or_update_managed_policy,
+    get_active_tear_users_tag,
     get_managed_policy_document,
 )
 from common.lib.aws.sanitize import sanitize_session_name
@@ -2194,20 +2194,17 @@ async def apply_tear_role_change(
             ),
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         )
-
+        tear_users_tag = get_active_tear_users_tag(host)
         role_tags = await aio_wrapper(
             iam_client.list_role_tags, RoleName=principal_name
         )
-        elevated_users = get_role_tag(role_tags, TEAR_USERS_TAG, [])
-        elevated_users = (
-            {elevated_users} if isinstance(elevated_users, str) else set(elevated_users)
-        )
+        elevated_users = get_role_tag(role_tags, tear_users_tag, True, set())
         elevated_users.add(user)
 
         await aio_wrapper(
             iam_client.tag_role,
             RoleName=principal_name,
-            Tags=[{"Key": TEAR_USERS_TAG, "Value": ":".join(elevated_users)}],
+            Tags=[{"Key": tear_users_tag, "Value": ":".join(elevated_users)}],
         )
         change.status = Status.applied
     except Exception as e:
