@@ -18,13 +18,25 @@ from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import RedisHandler
-from common.models import HubAccount, SpokeAccount
+from common.models import HubAccount, PrincipalModelTearConfig, SpokeAccount
 
 log = config.get_logger(__name__)
 
 ALL_IAM_MANAGED_POLICIES = defaultdict(dict)
 TEAR_SUPPORT_TAG = "noq-tear-supported-groups"
 TEAR_USERS_TAG = "noq-tear-active-users"
+
+
+def get_active_tear_users_tag(host: str) -> str:
+    return config.get_host_specific_key(
+        "elevated_access.active_users_tag", host, TEAR_USERS_TAG
+    )
+
+
+def get_tear_support_groups_tag(host: str) -> str:
+    return config.get_host_specific_key(
+        "elevated_access.supported_groups_tag", host, TEAR_SUPPORT_TAG
+    )
 
 
 @aws_paginated("AttachedPolicies")
@@ -398,3 +410,44 @@ async def update_assume_role_policy_trust_noq(host, user, role_name, account_id)
         RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
     )
     return True
+
+
+async def update_role_tear_config(
+    host, user, role_name, account_id: str, tear_config: PrincipalModelTearConfig
+) -> [bool, str]:
+    client = boto3_cached_conn(
+        "iam",
+        host,
+        user,
+        account_number=account_id,
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
+        region=config.region,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        session_name=sanitize_session_name("noq_update_assume_role_policy_trust"),
+    )
+
+    try:
+        await aio_wrapper(
+            client.tag_role,
+            RoleName=role_name,
+            Tags=[
+                {
+                    "Key": get_active_tear_users_tag(host),
+                    "Value": ":".join(tear_config.active_users),
+                },
+                {
+                    "Key": get_tear_support_groups_tag(host),
+                    "Value": ":".join(tear_config.supported_groups),
+                },
+            ],
+        )
+        return True, ""
+    except Exception as err:
+        return False, repr(err)
