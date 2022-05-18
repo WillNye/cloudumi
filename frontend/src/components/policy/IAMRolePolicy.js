@@ -9,6 +9,7 @@ import EffectivePermissions from './EffectivePermissions'
 import InlinePolicy from './InlinePolicy'
 import Issues from './Issues'
 import Tags from './Tags'
+import ConfigureAccess from './ConfigureAccess'
 
 const IAMRolePolicy = () => {
   const all = usePolicyContext()
@@ -163,6 +164,24 @@ const IAMRolePolicy = () => {
       },
     },
   ])
+
+  if (resource.elevated_access_config) {
+    tabs.push({
+      menuItem: {
+        key: 'config_access',
+        content: <>Configure Access</>,
+      },
+      render: () => {
+        return (
+          <Tab.Pane>
+            <ConfigureAccess
+              elevated_access_config={resource.elevated_access_config}
+            />
+          </Tab.Pane>
+        )
+      },
+    })
+  }
 
   if (resourceEffecivePermissions) {
     tabs.push({
