@@ -373,6 +373,28 @@ paths:
           description: OK
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+  /roles/{account_id}/{role_name}/elevated-access-config:
+    put:
+      summary: update a role
+      tags:
+        - roles
+        - privileged
+      parameters:
+        - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/RoleName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrincipalModelTearConfig"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAwsPrincipalModel"
   /user:
     get:
       summary: get details about current user
@@ -1593,6 +1615,17 @@ components:
           items:
             anyOf:
               - $ref: "#/components/schemas/AppDetailsModel"
+    PrincipalModelTearConfig:
+      type: object
+      properties:
+        active_users:
+          type: array
+          items:
+            type: string
+        supported_groups:
+          type: array
+          items:
+            type: string
     ExtendedAwsPrincipalModel:
       allOf:
         - $ref: "#/components/schemas/AwsPrincipalModel"
@@ -1625,6 +1658,8 @@ components:
               type: array
               items:
                 type: object # TODO: make tags schema
+            elevated_access_config:
+              $ref: "#/components/schemas/PrincipalModelTearConfig"
             effective_policy:
               type: object
               description: |-
