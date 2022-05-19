@@ -118,15 +118,17 @@ class PermissionsBoundaryChangeComponent extends Component {
         </Grid.Column>
       ) : null
 
-    const viewOnlyInfo =
-      requestReadOnly && change.status === 'not_applied' ? (
-        <Grid.Column>
-          <Message info>
-            <Message.Header>View only</Message.Header>
-            <p>This change is view only and can no longer be modified.</p>
-          </Message>
-        </Grid.Column>
-      ) : null
+    const isReadonlyInfo =
+      (requestReadOnly && change.status === 'not_applied') ||
+      (!config.can_update_cancel && !isOwner)
+    const viewOnlyInfo = isReadonlyInfo ? (
+      <Grid.Column>
+        <Message info>
+          <Message.Header>View only</Message.Header>
+          <p>This change is view only and can no longer be modified.</p>
+        </Message>
+      </Grid.Column>
+    ) : null
 
     const changesAlreadyAppliedContent =
       change.status === 'applied' ? (

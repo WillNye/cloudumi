@@ -89,15 +89,16 @@ const ResourceTagChangeComponent = (props) => {
       </Grid.Column>
     ) : null
 
-  const viewOnlyInfo =
-    props.requestReadOnly && change.status === 'not_applied' ? (
-      <Grid.Column>
-        <Message info>
-          <Message.Header>View only</Message.Header>
-          <p>This change is view only and can no longer be modified.</p>
-        </Message>
-      </Grid.Column>
-    ) : null
+  const isReadonlyInfo =
+    (props.requestReadOnly && change.status === 'not_applied') || !isOwner
+  const viewOnlyInfo = isReadonlyInfo ? (
+    <Grid.Column>
+      <Message info>
+        <Message.Header>View only</Message.Header>
+        <p>This change is view only and can no longer be modified.</p>
+      </Message>
+    </Grid.Column>
+  ) : null
 
   const responseMessagesToShow =
     buttonResponseMessage.length > 0 ? (
