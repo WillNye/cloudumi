@@ -6,6 +6,9 @@ from common.models import AutomaticPolicyRequest, Status3, WebResponse
 
 
 class AutomaticPolicyRequestHandler(BaseAdminHandler):
+    def check_xsrf_cookie(self):
+        pass
+
     async def post(self):
         host = self.ctx.host
         data = tornado.escape.json_decode(self.request.body)
