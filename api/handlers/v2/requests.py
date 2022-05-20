@@ -17,6 +17,7 @@ from common.exceptions.exceptions import (
     Unauthorized,
 )
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
+from common.lib.asyncio import aio_wrapper
 from common.lib.auth import (
     can_admin_policies,
     get_extended_request_account_ids,
@@ -431,7 +432,7 @@ class RequestHandler(BaseAPIV2Handler):
                             log_data["request"] = extended_request.dict()
                             log.debug(log_data)
 
-            request = IAMRequest.write_v2(extended_request, host)
+            request = await IAMRequest.write_v2(extended_request, host)
             log_data["message"] = "New request created in Dynamo"
             log_data["request"] = extended_request.dict()
             log_data["dynamo_request"] = request.dict()
@@ -508,7 +509,7 @@ class RequestHandler(BaseAPIV2Handler):
                 response.action_results = policy_apply_response.action_results
 
             # Update in dynamo
-            IAMRequest.write_v2(extended_request, host)
+            await IAMRequest.write_v2(extended_request, host)
             account_id = await get_resource_account(
                 extended_request.principal.principal_arn, host
             )
@@ -574,7 +575,9 @@ class RequestsHandler(BaseAPIV2Handler):
             "host": host,
         }
         log.debug(log_data)
-        requests = [request.dict() for request in IAMRequest.query(host)]
+        requests = [
+            request.dict() for request in await aio_wrapper(IAMRequest.query, host)
+        ]
 
         total_count = len(requests)
 
@@ -658,7 +661,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
         )
 
     async def _get_extended_request(self, request_id, log_data, host):
-        request: IAMRequest = IAMRequest.get(host, request_id=request_id)
+        request: IAMRequest = await IAMRequest.get(host, request_id=request_id)
         if not request:
             log_data["message"] = "Request with that ID not found"
             log.warning(log_data)
@@ -743,7 +746,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 "extended_request"
             ]
             # Update in dynamo with the latest resource policy changes
-            updated_request = IAMRequest.write_v2(extended_request, host)
+            updated_request = await IAMRequest.write_v2(extended_request, host)
             last_updated = updated_request.last_updated
 
         populate_old_managed_policies_result = concurrent_results[2]
@@ -751,7 +754,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
         if populate_old_managed_policies_result["changed"]:
             extended_request = populate_old_managed_policies_result["extended_request"]
             # Update in dynamo with the latest resource policy changes
-            updated_request = IAMRequest.write_v2(extended_request, host)
+            updated_request = await IAMRequest.write_v2(extended_request, host)
             last_updated = updated_request.last_updated
 
         accounts_ids = await get_extended_request_account_ids(extended_request, host)

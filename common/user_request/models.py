@@ -11,6 +11,7 @@ from common.config.config import (
     get_dynamo_table_name,
     get_logger,
 )
+from common.lib.asyncio import aio_wrapper
 from common.lib.pynamo import NoqMapAttribute, NoqModel
 from common.models import ExtendedRequestModel
 
@@ -51,7 +52,7 @@ class IAMRequest(NoqModel):
     arn_index = IAMRequestArnIndex()
 
     @classmethod
-    def get(cls, host: str, arn=None, request_id=None):
+    async def get(cls, host: str, arn=None, request_id=None):
         """Reads a policy request from the appropriate DynamoDB table"""
         if not arn and not request_id:
             raise Exception("Must pass in ARN or Policy Request ID")
@@ -61,12 +62,13 @@ class IAMRequest(NoqModel):
         if request_id:
             return super(IAMRequest, cls).get(host, request_id)
 
-        results = cls.arn_index.query(host, cls.arn == arn)
-        if results.total_count == 1:
-            return results.next()
+        results = await aio_wrapper(cls.arn_index.query, host, cls.arn == arn)
+        results = [r for r in results]
+        if len(results) == 1:
+            return results[0]
 
     @classmethod
-    def write_v2(cls, extended_request: ExtendedRequestModel, host: str):
+    async def write_v2(cls, extended_request: ExtendedRequestModel, host: str):
         """
         Writes a policy request v2 to the appropriate DynamoDB table
         """
@@ -102,7 +104,7 @@ class IAMRequest(NoqModel):
 
         try:
             request = cls(**new_request)
-            request.save()
+            await aio_wrapper(request.save)
             log_data[
                 "message"
             ] = "Successfully finished writing policy request v2 to Dynamo"

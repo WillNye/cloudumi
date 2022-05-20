@@ -127,8 +127,8 @@ async def get_all_pending_requests(user, groups, host):
                 pending_requests["pending_requests_waiting_my_approval"].append(req)
                 break
 
-    all_policy_requests = IAMRequest.query(
-        host, filter_condition=(IAMRequest.status == "pending")
+    all_policy_requests = await aio_wrapper(
+        IAMRequest.query, host, filter_condition=(IAMRequest.status == "pending")
     )
     pending_requests["all_pending_requests"].extend(
         [request.dict() for request in all_policy_requests]

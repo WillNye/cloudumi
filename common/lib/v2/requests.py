@@ -2580,7 +2580,7 @@ async def _update_dynamo_with_change(
     visible: bool = True,
 ):
     try:
-        IAMRequest.write_v2(extended_request, host)
+        await IAMRequest.write_v2(extended_request, host)
         response.action_results.append(
             ActionResult(status="success", message=success_message, visible=visible)
         )

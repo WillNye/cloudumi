@@ -2375,7 +2375,7 @@ async def remove_expired_request_changes(
     if should_update_policy_request:
         try:
             extended_request.request_status = RequestStatus.expired
-            IAMRequest.write_v2(extended_request, host)
+            await IAMRequest.write_v2(extended_request, host)
 
             if resource_name == "role":
                 await fetch_iam_role(
@@ -2403,15 +2403,13 @@ async def remove_expired_request_changes(
 
 
 async def remove_expired_host_requests(host: str):
-    all_requests = IAMRequest.query(
-        host, filter_condition=(IAMRequest.status == "approved")
+    all_requests = await aio_wrapper(
+        IAMRequest.query, host, filter_condition=(IAMRequest.status == "approved")
     )
-    if all_requests.total_count == 0:
-        return
 
     for request in all_requests:
         await remove_expired_request_changes(
-            ExtendedRequestModel.parse_obj(request.extended_request), host, None
+            ExtendedRequestModel.parse_obj(request.extended_request.dict()), host, None
         )
 
     # Can swap back to this once it's thread safe
