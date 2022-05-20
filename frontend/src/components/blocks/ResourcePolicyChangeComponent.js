@@ -283,8 +283,11 @@ class ResourcePolicyChangeComponent extends Component {
       </Grid.Column>
     ) : null
 
+    const isReadonlyInfo =
+      (requestReadOnly && change.status === 'not_applied') ||
+      (!config.can_update_cancel && !isOwner)
     const readOnlyInfo =
-      requestReadOnly && change.status === 'not_applied' && change.supported ? (
+      isReadonlyInfo && change.supported ? (
         <Grid.Column>
           <Message info>
             <Message.Header>View only</Message.Header>
