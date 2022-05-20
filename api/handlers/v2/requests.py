@@ -26,8 +26,6 @@ from common.lib.auth import (
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.utils import get_resource_account
-from common.lib.cache import retrieve_json_data_from_redis_or_s3
-from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import filter_table, write_json_error
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
@@ -56,6 +54,7 @@ from common.models import (
     RequestCreationResponse,
     RequestStatus,
 )
+from common.user_request.models import IAMRequest
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -113,10 +112,6 @@ class RequestHandler(BaseAPIV2Handler):
             with Timeout(
                 seconds=5, error_message="Timeout: Are you sure Celery is running?"
             ):
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_policy_requests",
-                    kwargs={"host": host},
-                )
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
                     kwargs={"host": host},
@@ -436,11 +431,10 @@ class RequestHandler(BaseAPIV2Handler):
                             log_data["request"] = extended_request.dict()
                             log.debug(log_data)
 
-            dynamo = UserDynamoHandler(host=host, user=self.user)
-            request = await dynamo.write_policy_request_v2(extended_request, host)
+            request = IAMRequest.write_v2(extended_request, host)
             log_data["message"] = "New request created in Dynamo"
             log_data["request"] = extended_request.dict()
-            log_data["dynamo_request"] = request
+            log_data["dynamo_request"] = request.dict()
             log.debug(log_data)
         except (InvalidRequestParameter, ValidationError) as e:
             log_data["message"] = "Validation Exception"
@@ -514,7 +508,7 @@ class RequestHandler(BaseAPIV2Handler):
                 response.action_results = policy_apply_response.action_results
 
             # Update in dynamo
-            await dynamo.write_policy_request_v2(extended_request, host)
+            IAMRequest.write_v2(extended_request, host)
             account_id = await get_resource_account(
                 extended_request.principal.principal_arn, host
             )
@@ -559,19 +553,6 @@ class RequestsHandler(BaseAPIV2Handler):
         host = self.ctx.host
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         markdown = arguments.get("markdown")
-        cache_key = config.get_host_specific_key(
-            "cache_all_policy_requests.redis_key",
-            host,
-            f"{host}_ALL_POLICY_REQUESTS",
-        )
-        s3_bucket = config.get_host_specific_key(
-            "cache_policy_requests.s3.bucket", host
-        )
-        s3_key = config.get_host_specific_key(
-            "cache_policy_requests.s3.file",
-            host,
-            "policy_requests/all_policy_requests_v1.json.gz",
-        )
         arguments = json.loads(self.request.body)
         filters = arguments.get("filters")
         # TODO: Add server-side sorting
@@ -593,9 +574,7 @@ class RequestsHandler(BaseAPIV2Handler):
             "host": host,
         }
         log.debug(log_data)
-        requests = await retrieve_json_data_from_redis_or_s3(
-            cache_key, s3_bucket=s3_bucket, s3_key=s3_key, host=host, default=[]
-        )
+        requests = [request.dict() for request in IAMRequest.query(host)]
 
         total_count = len(requests)
 
@@ -613,7 +592,7 @@ class RequestsHandler(BaseAPIV2Handler):
 
         if markdown:
             requests_to_write = []
-            for request in requests[0:limit]:
+            for request in requests[:limit]:
                 principal_arn = request.get("principal", {}).get("principal_arn", "")
                 url = request.get("principal", {}).get("resource_url", "")
                 resource_name = principal_arn
@@ -673,20 +652,14 @@ class RequestDetailHandler(BaseAPIV2Handler):
         from common.celery_tasks.celery_tasks import app as celery_app
 
         host = self.ctx.host
-        # TODO: Only cache policy requests / Credential AuthZ for host
-        celery_app.send_task(
-            "common.celery_tasks.celery_tasks.cache_policy_requests",
-            kwargs={"host": host},
-        )
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
             kwargs={"host": host},
         )
 
     async def _get_extended_request(self, request_id, log_data, host):
-        dynamo = UserDynamoHandler(host=host, user=self.user)
-        requests = await dynamo.get_policy_requests(host, request_id=request_id)
-        if len(requests) == 0:
+        request: IAMRequest = IAMRequest.get(host, request_id=request_id)
+        if not request:
             log_data["message"] = "Request with that ID not found"
             log.warning(log_data)
             stats.count(
@@ -697,27 +670,15 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 },
             )
             raise NoMatchingRequest(log_data["message"])
-        if len(requests) > 1:
-            log_data["message"] = "Multiple requests with that ID found"
-            log.error(log_data)
-            stats.count(
-                f"{log_data['function']}.multiple_requests_found",
-                tags={
-                    "user": self.user,
-                    "host": host,
-                },
-            )
-            raise InvalidRequestParameter(log_data["message"])
-        request = requests[0]
 
-        if request.get("version") != "2":
+        if request.version != "2":
             # Request format is not compatible with this endpoint version
             raise InvalidRequestParameter("Request with that ID is not a v2 request")
 
         extended_request = ExtendedRequestModel.parse_obj(
-            request.get("extended_request")
+            request.extended_request.dict()
         )
-        return extended_request, request.get("last_updated")
+        return extended_request, request.last_updated
 
     async def get(self, request_id):
         """
@@ -782,22 +743,16 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 "extended_request"
             ]
             # Update in dynamo with the latest resource policy changes
-            dynamo = UserDynamoHandler(host=host, user=self.user)
-            updated_request = await dynamo.write_policy_request_v2(
-                extended_request, host
-            )
-            last_updated = updated_request.get("last_updated")
+            updated_request = IAMRequest.write_v2(extended_request, host)
+            last_updated = updated_request.last_updated
 
         populate_old_managed_policies_result = concurrent_results[2]
 
         if populate_old_managed_policies_result["changed"]:
             extended_request = populate_old_managed_policies_result["extended_request"]
             # Update in dynamo with the latest resource policy changes
-            dynamo = UserDynamoHandler(host=host, user=self.user)
-            updated_request = await dynamo.write_policy_request_v2(
-                extended_request, host
-            )
-            last_updated = updated_request.get("last_updated")
+            updated_request = IAMRequest.write_v2(extended_request, host)
+            last_updated = updated_request.last_updated
 
         accounts_ids = await get_extended_request_account_ids(extended_request, host)
         can_approve_reject = await can_admin_policies(

@@ -1248,7 +1248,6 @@ def populate_caches(
         host=host, wait_for_subtask_completion=False
     )
     celery.cache_policies_table_details(host=host)
-    celery.cache_policy_requests(host=host)
     celery.cache_credential_authorization_mapping(host=host)
 
 

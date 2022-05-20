@@ -90,7 +90,6 @@ from common.lib.git import store_iam_resources_in_git
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.redis import RedisHandler
-from common.lib.requests import cache_all_policy_requests
 from common.lib.self_service.typeahead import cache_self_service_typeahead
 from common.lib.sentry import before_send_event
 from common.lib.templated_resources import cache_resource_templates
@@ -2329,38 +2328,6 @@ def cache_resources_from_aws_config_across_accounts(
 
 
 @app.task(soft_time_limit=300)
-def cache_policy_requests_for_all_hosts() -> Dict:
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
-    log_data = {
-        "function": function,
-        "message": "Spawning tasks",
-        "num_hosts": len(hosts),
-    }
-    log.debug(log_data)
-    for host in hosts:
-        cache_policy_requests.apply_async((host,))
-    return log_data
-
-
-@app.task(soft_time_limit=300)
-def cache_policy_requests(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    requests = async_to_sync(cache_all_policy_requests)(host=host)
-
-    log_data = {
-        "function": function,
-        "num_requests": len(requests),
-        "message": "Successfully cached requests",
-        "host": host,
-    }
-
-    return log_data
-
-
-@app.task(soft_time_limit=300)
 def cache_cloud_account_mapping_for_all_hosts() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     hosts = get_all_hosts()
@@ -2976,11 +2943,6 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
-    },
-    "cache_policy_requests_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_policy_requests_for_all_hosts",
-        "options": {"expires": 180},
-        "schedule": schedule_5_minutes,
     },
     "cache_cloud_account_mapping_for_all_hosts": {
         "task": "common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_hosts",

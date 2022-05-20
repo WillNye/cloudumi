@@ -571,6 +571,15 @@ class Configuration(metaclass=Singleton):
             )
         return f"{cluster_id}_{namespace}_{table_name}"
 
+    def dynamodb_host(self):
+        return self.get(
+            "_global_.dynamodb_server",
+            self.get("_global_.boto3.client_kwargs.endpoint_url"),
+        )
+
+    def get_dax_endpoints(self):
+        return self.get("_global_.dax_endpoints", [])
+
 
 class ContextFilter(logging.Filter):
     """Logging Filter for adding hostname to log entries."""
@@ -598,6 +607,8 @@ CONFIG.set_logging_levels()
 
 values = CONFIG.config
 region = CONFIG.get_aws_region()
+dax_endpoints = CONFIG.get_dax_endpoints()
+dynamodb_host = CONFIG.dynamodb_host()
 hostname = socket.gethostname()
 api_spec = {}
 dir_ref = dir

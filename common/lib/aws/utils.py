@@ -52,7 +52,6 @@ from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
-from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import sort_dict
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
@@ -68,6 +67,7 @@ from common.models import (
     SpokeAccount,
     Status,
 )
+from common.user_request.models import IAMRequest
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -2374,9 +2374,8 @@ async def remove_expired_request_changes(
 
     if should_update_policy_request:
         try:
-            dynamo_handler = UserDynamoHandler(host=host)
             extended_request.request_status = RequestStatus.expired
-            await dynamo_handler.write_policy_request_v2(extended_request, host)
+            IAMRequest.write_v2(extended_request, host)
 
             if resource_name == "role":
                 await fetch_iam_role(
@@ -2404,16 +2403,15 @@ async def remove_expired_request_changes(
 
 
 async def remove_expired_host_requests(host: str):
-    dynamo_handler = UserDynamoHandler(host=host)
-    all_policy_requests = await dynamo_handler.get_all_policy_requests(
-        host, status="approved"
+    all_requests = IAMRequest.query(
+        host, filter_condition=(IAMRequest.status == "approved")
     )
-    if not all_policy_requests:
+    if all_requests.total_count == 0:
         return
 
-    for request in all_policy_requests:
+    for request in all_requests:
         await remove_expired_request_changes(
-            ExtendedRequestModel.parse_obj(request["extended_request"]), host, None
+            ExtendedRequestModel.parse_obj(request.extended_request), host, None
         )
 
     # Can swap back to this once it's thread safe

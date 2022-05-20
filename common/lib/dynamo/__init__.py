@@ -42,7 +42,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
 from common.lib.s3_helpers import get_s3_bucket_for_host
 from common.lib.yaml import yaml
-from common.models import AuthenticationResponse, ExtendedRequestModel
+from common.models import AuthenticationResponse
 from identity.lib.groups.models import GroupRequest, GroupRequests
 
 # TODO: Partion key should be host key. Dynamo instance should be retrieved dynamically. Should use dynamodb:LeadingKeys
@@ -589,104 +589,6 @@ class UserDynamoHandler(BaseDynamoHandler):
         self.parallel_write_table(
             self.resource_cache_table, data, ["resourceId", "resourceType"]
         )
-
-    async def write_policy_request_v2(
-        self, extended_request: ExtendedRequestModel, host: str
-    ):
-        """
-        Writes a policy request v2 to the appropriate DynamoDB table
-        Sample run:
-        write_policy_request_v2(request)
-        """
-        new_request = {
-            "request_id": extended_request.id,
-            "principal": extended_request.principal.dict(),
-            "status": extended_request.request_status.value,
-            "justification": extended_request.justification,
-            "request_time": extended_request.timestamp,
-            "last_updated": int(time.time()),
-            "version": "2",
-            "extended_request": json.loads(extended_request.json()),
-            "username": extended_request.requester_email,
-            "host": host,
-        }
-
-        if extended_request.principal.principal_type == "AwsResource":
-            new_request["arn"] = extended_request.principal.principal_arn
-        elif extended_request.principal.principal_type == "HoneybeeAwsResourceTemplate":
-            repository_name = extended_request.principal.repository_name
-            resource_identifier = extended_request.principal.resource_identifier
-            new_request["arn"] = f"{repository_name}-{resource_identifier}"
-        else:
-            raise Exception("Invalid principal type")
-
-        log_data = {
-            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-            "message": "Writing policy request v2 to Dynamo",
-            "request": new_request,
-            "host": host,
-        }
-        log.debug(log_data)
-
-        try:
-            await aio_wrapper(
-                self.policy_requests_table.put_item,
-                Item=self._data_to_dynamo_replace(new_request),
-            )
-            log_data[
-                "message"
-            ] = "Successfully finished writing policy request v2 to Dynamo"
-            log.debug(log_data)
-        except Exception as e:
-            log_data["message"] = "Error occurred writing policy request v2 to Dynamo"
-            log_data["error"] = str(e)
-            log.error(log_data, exc_info=True)
-            error = f"{log_data['message']}: {str(e)}"
-            raise Exception(error)
-
-        return new_request
-
-    async def get_policy_requests(self, host: str, arn=None, request_id=None):
-        """Reads a policy request from the appropriate DynamoDB table"""
-        if not arn and not request_id:
-            raise Exception("Must pass in ARN or policy request ID")
-        if request_id:
-            requests = self.policy_requests_table.query(
-                KeyConditionExpression="request_id = :ri AND host = :h",
-                ExpressionAttributeValues={":ri": request_id, ":h": host},
-            )
-        else:
-            requests = self.policy_requests_table.query(
-                KeyConditionExpression="arn = :arn AND host = :h",
-                ExpressionAttributeValues={":arn": arn, ":h": host},
-            )
-        matching_requests = []
-        if requests["Items"]:
-            items = self._data_from_dynamo_replace(requests["Items"])
-            matching_requests.extend(items)
-        return matching_requests
-
-    async def get_all_policy_requests(
-        self, host: str, status: Optional[str] = "pending"
-    ) -> List[Dict[str, Union[int, List[str], str]]]:
-        """Return all policy requests. If a status is specified, only requests with the specified status will be
-        returned.
-        :param status:
-        :return:
-        """
-        # TODO: Index by host instead of scanning
-        requests = await aio_wrapper(
-            self.parallel_scan_table, self.policy_requests_table
-        )
-
-        return_value = []
-        for item in requests:
-            if not item["host"] == host:
-                continue
-            if status and not item["status"] == status:
-                continue
-            return_value.append(item)
-        return return_value
 
     def sign_request(
         self, user_entry: Dict[str, Union[Decimal, List[str], Binary, str]], host: str

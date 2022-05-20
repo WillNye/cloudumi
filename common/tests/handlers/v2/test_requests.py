@@ -61,19 +61,6 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             "data": mock_request_data,
         }
 
-        from common.lib.redis import RedisHandler
-
-        # Mocked by fakeredis
-        red = RedisHandler().redis_sync(host)
-        red.set(
-            self.config.get_host_specific_key(
-                "cache_policy_requests.redis_key",
-                host,
-                f"{host}_ALL_POLICY_REQUESTS",
-            ),
-            json.dumps(mock_request_data),
-        )
-
         headers = {
             self.config.get_host_specific_key(
                 "auth.user_header_name", host
@@ -122,19 +109,6 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                 ]
             },
         }
-
-        from common.lib.redis import RedisHandler
-
-        # Mocked by fakeredis
-        red = RedisHandler().redis_sync(host)
-        red.set(
-            self.config.get_host_specific_key(
-                "cache_policy_requests.redis_key",
-                host,
-                "ALL_POLICY_REQUESTS",
-            ),
-            json.dumps(mock_request_data),
-        )
 
         headers = {
             self.config.get_host_specific_key(
@@ -189,19 +163,6 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             },
         }
 
-        from common.lib.redis import RedisHandler
-
-        # Mocked by fakeredis
-        red = RedisHandler().redis_sync(host)
-        red.set(
-            self.config.get_host_specific_key(
-                "cache_policy_requests.redis_key",
-                host,
-                f"{host}_ALL_POLICY_REQUESTS",
-            ),
-            json.dumps(mock_request_data),
-        )
-
         response = self.fetch(
             "/api/v2/request",
             method="POST",
@@ -223,23 +184,10 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         )
 
     def test_post_limit(self):
-        mock_request_data = [
-            {"request_id": 12345, "username": "user@example.com"},
-            {"request_id": 12346, "username": "userb@example.com"},
-        ]
-
-        from common.lib.redis import RedisHandler
-
-        # Mocked by fakeredis
-        red = RedisHandler().redis_sync(host)
-        red.set(
-            self.config.get_host_specific_key(
-                "cache_policy_requests.redis_key",
-                host,
-                f"{host}_ALL_POLICY_REQUESTS",
-            ),
-            json.dumps(mock_request_data),
-        )
+        # mock_request_data = [
+        #     {"request_id": 12345, "username": "user@example.com"},
+        #     {"request_id": 12346, "username": "userb@example.com"},
+        # ]
 
         response = self.fetch(
             "/api/v2/requests",
@@ -255,19 +203,6 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             {"request_id": 12345, "username": "user@example.com"},
             {"request_id": 12346, "username": "userb@example.com"},
         ]
-
-        from common.lib.redis import RedisHandler
-
-        # Mocked by fakeredis
-        red = RedisHandler().redis_sync(host)
-        red.set(
-            self.config.get_host_specific_key(
-                "cache_policy_requests.redis_key",
-                host,
-                f"{host}_ALL_POLICY_REQUESTS",
-            ),
-            json.dumps(mock_request_data),
-        )
 
         response = self.fetch(
             "/api/v2/requests",

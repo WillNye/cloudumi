@@ -44,7 +44,6 @@ from common.lib.aws.utils import (
     get_service_from_arn,
 )
 from common.lib.change_request import generate_policy_name, generate_policy_sid
-from common.lib.dynamo import UserDynamoHandler
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
     can_move_back_to_pending_v2,
@@ -96,6 +95,7 @@ from common.models import (
     UpdateChangeModificationModel,
     UserModel,
 )
+from common.user_request.models import IAMRequest
 
 log = config.get_logger()
 
@@ -2579,9 +2579,8 @@ async def _update_dynamo_with_change(
     error_message: str,
     visible: bool = True,
 ):
-    dynamo = UserDynamoHandler(host=host, user=user)
     try:
-        await dynamo.write_policy_request_v2(extended_request, host)
+        IAMRequest.write_v2(extended_request, host)
         response.action_results.append(
             ActionResult(status="success", message=success_message, visible=visible)
         )

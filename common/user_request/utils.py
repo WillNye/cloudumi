@@ -6,9 +6,9 @@ from common.config import config
 from common.exceptions.exceptions import NoMatchingRequest
 from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_all
-from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.plugins import get_plugin_by_name
+from common.user_request.models import IAMRequest
 
 
 async def can_approve_reject_request(user, secondary_approvers, groups, host):
@@ -101,73 +101,6 @@ async def get_all_pending_requests_api(user, host):
     return pending_requests
 
 
-async def get_app_pending_requests_policies(user, host):
-    dynamo_handler = UserDynamoHandler(host=host, user=user)
-    all_policy_requests = await dynamo_handler.get_all_policy_requests(
-        host, status="pending"
-    )
-    if not all_policy_requests:
-        all_policy_requests = []
-    return all_policy_requests
-
-
-async def get_all_policy_requests(user, host, status=None):
-    dynamo_handler = UserDynamoHandler(host=host, user=user)
-    all_policy_requests = await dynamo_handler.get_all_policy_requests(
-        host, status=status
-    )
-    if not all_policy_requests:
-        all_policy_requests = []
-    return all_policy_requests
-
-
-async def cache_all_policy_requests(
-    user="consoleme",
-    redis_key=None,
-    s3_bucket=None,
-    s3_key=None,
-    host=None,
-):
-    if not host:
-        raise Exception("Unknown host")
-    if not redis_key:
-        redis_key = config.get_host_specific_key(
-            "cache_policy_requests.redis_key",
-            host,
-            f"{host}_ALL_POLICY_REQUESTS",
-        )
-    if not s3_bucket and not s3_key:
-        if config.region == config.get_host_specific_key(
-            "celery.active_region", host, config.region
-        ) or config.get("_global_.environment") in [
-            "dev",
-            "test",
-        ]:
-            s3_bucket = config.get_host_specific_key(
-                "cache_policy_requests.s3.bucket", host
-            )
-            s3_key = config.get_host_specific_key(
-                "cache_policy_requests.s3.file",
-                host,
-                "policy_requests/all_policy_requests_v1.json.gz",
-            )
-    requests = await get_all_policy_requests(user, host)
-    requests_to_cache = []
-    for request in requests:
-        requests_to_cache.append(request)
-    requests_to_cache = sorted(
-        requests_to_cache, key=lambda i: i.get("request_time", 0), reverse=True
-    )
-    await store_json_results_in_redis_and_s3(
-        requests_to_cache,
-        redis_key,
-        s3_bucket=s3_bucket,
-        s3_key=s3_key,
-        host=host,
-    )
-    return requests_to_cache
-
-
 async def get_all_pending_requests(user, groups, host):
     """Get all pending requests sorted into three buckets:
     - all_pending_requests
@@ -194,20 +127,23 @@ async def get_all_pending_requests(user, groups, host):
                 pending_requests["pending_requests_waiting_my_approval"].append(req)
                 break
 
-    all_policy_requests = await get_app_pending_requests_policies(user, host)
-    pending_requests["all_pending_requests"].extend(all_policy_requests)
+    all_policy_requests = IAMRequest.query(
+        host, filter_condition=(IAMRequest.status == "pending")
+    )
+    pending_requests["all_pending_requests"].extend(
+        [request.dict() for request in all_policy_requests]
+    )
 
     for req in all_policy_requests:
-        req["secondary_approvers"] = config.get_host_specific_key(
+        secondary_approvers = config.get_host_specific_key(
             "groups.can_admin_policies", host
         )
 
-        for sa in req["secondary_approvers"]:
-            if sa in groups or sa == user:
-                pending_requests["pending_requests_waiting_my_approval"].append(req)
-                break
+        if any(sa in groups or sa == user for sa in secondary_approvers):
+            pending_requests["pending_requests_waiting_my_approval"].append(req.dict())
+
         if user == req.get("username", ""):
-            pending_requests["my_pending_requests"].append(req)
+            pending_requests["my_pending_requests"].append(req.dict())
 
     return pending_requests
 
