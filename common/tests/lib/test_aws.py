@@ -90,6 +90,7 @@ class TestAwsLib(TestCase):
     def test_get_resource_account(self, mock_aws_config_resources_redis):
         from common.lib.aws.utils import get_resource_account
 
+        loop = asyncio.new_event_loop()
         mock_aws_config_resources_redis.return_value = create_future(None)
         test_cases = [
             {
@@ -108,7 +109,6 @@ class TestAwsLib(TestCase):
                 "description": "arbitrary resource without account in ARN",
             },
         ]
-        loop = asyncio.get_event_loop()
         for tc in test_cases:
             result = loop.run_until_complete(get_resource_account(tc["arn"], host))
             self.assertEqual(
@@ -124,8 +124,8 @@ class TestAwsLib(TestCase):
         mock_aws_config_resources_redis.return_value = create_future(
             json.dumps(aws_config_resources_test_case_redis_result)
         )
-        result = loop.run_until_complete(
-            get_resource_account(aws_config_resources_test_case["arn"], host)
+        result = async_to_sync(get_resource_account)(
+            aws_config_resources_test_case["arn"], host
         )
         self.assertEqual(
             aws_config_resources_test_case["expected"],
@@ -136,7 +136,6 @@ class TestAwsLib(TestCase):
     def test_is_member_of_ou(self):
         from common.lib.aws.utils import _is_member_of_ou
 
-        loop = asyncio.get_event_loop()
         fake_org = {
             "Id": "r",
             "Children": [
@@ -155,17 +154,17 @@ class TestAwsLib(TestCase):
         }
 
         # Account ID in nested OU
-        result, ous = loop.run_until_complete(_is_member_of_ou("100", fake_org))
+        result, ous = async_to_sync(_is_member_of_ou)("100", fake_org)
         self.assertTrue(result)
         self.assertEqual(ous, {"b", "a", "r"})
 
         # OU ID in OU structure
-        result, ous = loop.run_until_complete(_is_member_of_ou("b", fake_org))
+        result, ous = async_to_sync(_is_member_of_ou)("b", fake_org)
         self.assertTrue(result)
         self.assertEqual(ous, {"a", "r"})
 
         # ID not in OU structure
-        result, ous = loop.run_until_complete(_is_member_of_ou("101", fake_org))
+        result, ous = async_to_sync(_is_member_of_ou)("101", fake_org)
         self.assertFalse(result)
         self.assertEqual(ous, set())
 
@@ -177,7 +176,6 @@ class TestAwsLib(TestCase):
             ServiceControlPolicyTargetModel,
         )
 
-        loop = asyncio.get_event_loop()
         blank_scp_details = ServiceControlPolicyDetailsModel(
             id="",
             arn="",
@@ -197,9 +195,7 @@ class TestAwsLib(TestCase):
             targets=scp_targets, policy=blank_scp_details
         )
         fake_ous = set()
-        result = loop.run_until_complete(
-            _scp_targets_account_or_ou(fake_scp, "100", fake_ous)
-        )
+        result = async_to_sync(_scp_targets_account_or_ou)(fake_scp, "100", fake_ous)
         self.assertTrue(result)
 
         # SCP targets OU of which account is a member
@@ -212,9 +208,7 @@ class TestAwsLib(TestCase):
             targets=scp_targets, policy=blank_scp_details
         )
         fake_ous = {"abc123", "def456"}
-        result = loop.run_until_complete(
-            _scp_targets_account_or_ou(fake_scp, "100", fake_ous)
-        )
+        result = async_to_sync(_scp_targets_account_or_ou)(fake_scp, "100", fake_ous)
         self.assertTrue(result)
 
         # SCP doesn't target account
@@ -227,19 +221,15 @@ class TestAwsLib(TestCase):
             targets=scp_targets, policy=blank_scp_details
         )
         fake_ous = {"abc123", "def456"}
-        result = loop.run_until_complete(
-            _scp_targets_account_or_ou(fake_scp, "100", fake_ous)
-        )
+        result = async_to_sync(_scp_targets_account_or_ou)(fake_scp, "100", fake_ous)
         self.assertFalse(result)
 
     def test_fetch_managed_policy_details(self):
         from common.config import config
         from common.lib.aws.utils import fetch_managed_policy_details
 
-        loop = asyncio.get_event_loop()
-
-        result = loop.run_until_complete(
-            fetch_managed_policy_details("123456789012", "policy-one", host, None)
+        result = async_to_sync(fetch_managed_policy_details)(
+            "123456789012", "policy-one", host, None
         )
         self.assertDictEqual(
             result["Policy"],
@@ -251,10 +241,8 @@ class TestAwsLib(TestCase):
         self.assertListEqual(result["TagSet"], [])
 
         with pytest.raises(Exception) as e:
-            loop.run_until_complete(
-                fetch_managed_policy_details(
-                    "123456789012", "policy-non-existent", host, None
-                )
+            async_to_sync(fetch_managed_policy_details)(
+                "123456789012", "policy-non-existent", host, None
             )
 
         self.assertIn("NoSuchEntity", str(e))
@@ -272,10 +260,8 @@ class TestAwsLib(TestCase):
             Path=policy_path,
             PolicyDocument=json.dumps(result["Policy"]),
         )
-        result = loop.run_until_complete(
-            fetch_managed_policy_details(
-                "123456789012", policy_name, host, None, path="testpath/testpath2"
-            )
+        result = async_to_sync(fetch_managed_policy_details)(
+            "123456789012", policy_name, host, None, path="testpath/testpath2"
         )
         self.assertDictEqual(
             result["Policy"],
@@ -407,6 +393,7 @@ class TestAwsLib(TestCase):
 
         CONFIG.config = old_config
 
+    @pytest.mark.skip(reason="EN-637")
     @pytest.mark.usefixtures("dynamodb")
     @pytest.mark.usefixtures("iam")
     def test_remove_temp_policies(self):
@@ -466,7 +453,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = current_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(host)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -474,7 +461,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = past_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(host)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -482,7 +469,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = future_dateint
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(host)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 
@@ -490,7 +477,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = None
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(host)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 

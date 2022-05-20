@@ -2,8 +2,8 @@ from decimal import Decimal
 from typing import Union
 
 from boto3.dynamodb.types import Binary  # noqa
+from pynamodax.attributes import MapAttribute
 from pynamodax.models import Model
-from pynamodb.attributes import MapAttribute
 from pynamodb_encoder import decoder, encoder
 
 DYNAMO_EMPTY_STRING = "---DYNAMO-EMPTY-STRING---"

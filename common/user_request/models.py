@@ -69,8 +69,6 @@ class IAMRequest(NoqModel):
     def write_v2(cls, extended_request: ExtendedRequestModel, host: str):
         """
         Writes a policy request v2 to the appropriate DynamoDB table
-        Sample run:
-        write_policy_request_v2(request)
         """
         new_request = {
             "request_id": extended_request.id,

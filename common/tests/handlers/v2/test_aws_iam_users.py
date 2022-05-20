@@ -42,7 +42,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         body = json.loads(response.body)
         body.pop("created_time")
-        self.assertEqual(
+        self.assertDictEqual(
             body,
             {
                 "name": "TestUser",
@@ -81,6 +81,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
                 "tags": [],
                 "effective_policy": None,
                 "effective_policy_repoed": None,
+                "elevated_access_config": None,
                 "config_timeline_url": None,
                 "templated": False,
                 "template_link": None,
