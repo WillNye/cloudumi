@@ -57,3 +57,8 @@ output "vpc_subnet_private_id" {
   description = "The private CIDR range of the private subnet assign to the VPC"
   value       = [aws_subnet.subnet_private_az0.id, aws_subnet.subnet_private_az1.id]
 }
+
+output "vpc_to_dax_sg_id" {
+  description = "The SG ID to use to expose the DAX cluster to other resources on the VPC."
+  value       = aws_security_group.vpc_to_dax_sg.id
+}

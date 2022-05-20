@@ -3,6 +3,9 @@ extends:
 _global_:
   landing_page_domains:
     - shared.staging.noq.dev
+  metrics:
+    cloudwatch:
+      namespace: staging-noq-dev-shared-staging-1
   auth:
     challenge_url:
       request_ip_must_match_challenge_creation_ip: false
@@ -36,7 +39,6 @@ _global_:
   environment: staging
   tornado:
     debug: true
-
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:
@@ -63,6 +65,8 @@ _global_:
       global: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
     debug: true
   # Saas Configuration
+  dax_endpoints:
+    - staging-shared.eb1l6j.dax-clusters.us-west-2.amazonaws.com:8111
   redis:
     host:
       global: staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com

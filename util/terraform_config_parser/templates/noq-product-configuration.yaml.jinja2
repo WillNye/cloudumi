@@ -69,6 +69,8 @@ _global_:
       global: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
     debug: true
   # Saas Configuration
+  dax_endpoints:
+    - {{ dax_configuration_endpoint }}
   redis:
     host:
       global: {{ elasticache_address }}
