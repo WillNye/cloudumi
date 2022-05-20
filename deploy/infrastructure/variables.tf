@@ -9,6 +9,12 @@ variable "allowed_inbound_cidr_blocks" {
   default     = []
 }
 
+variable "noq_employee_cidr_blocks" {
+  description = "The CIDRs for NOQ employees to allow network access to a resource"
+  type        = list(string)
+  default     = []
+}
+
 variable "attributes" {
   description = "Additional attributes, e.g. `1`"
   type        = number
@@ -61,6 +67,11 @@ variable "modify_ecs_task_role" {
 variable "namespace" {
   description = "Namespace, which could be your organization name. It will be used as the first item in naming sequence. The {namespace}.{zone} make up the domain name"
   type        = string
+
+  validation {
+    condition     = length(var.namespace) <= 12
+    error_message = "Tenant name must be shorter than 12 characters."
+  }
 }
 
 variable "noq_core" {
@@ -156,4 +167,15 @@ variable "elasticache_node_type" {
   description = "The node type to use for Elasticache"
   type        = string
   default     = "cache.t3.micro"
+}
+
+variable "dax_node_type" {
+  type    = string
+  default = "dax.t2.medium"
+}
+
+variable "dax_node_count" {
+  description = "Number of cluster nodes"
+  type        = number
+  default     = 3
 }
