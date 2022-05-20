@@ -216,3 +216,19 @@ output "aws_secrets_manager_arn" {
   description = "The configured AWS Secrets Manager ARN"
   value       = module.tenant_container_service.aws_secrets_manager_arn
 }
+
+output "dax_cluster_arn" {
+  description = "The ARN of the DAX cluster"
+  value       = module.tenant_dax_cluster.dax_cluster_arn
+}
+
+output "dax_cluster_address" {
+  description = "The DNS name of the DAX cluster without the port appended"
+  value       = module.tenant_dax_cluster.dax_cluster_address
+}
+
+output "dax_configuration_endpoint" {
+  description = "The configuration endpoint for this DAX cluster, consisting of a DNS name and a port number"
+  value       = module.tenant_dax_cluster.dax_configuration_endpoint
+}
+
