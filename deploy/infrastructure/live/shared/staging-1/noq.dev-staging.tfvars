@@ -50,6 +50,10 @@ noq_employee_cidr_blocks = [
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
 
+# Dax
+dax_node_type  = "dax.t2.medium"
+dax_node_count = 1
+
 # Redis
 redis_node_type = "cache.t3.micro"
 
