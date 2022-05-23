@@ -4,10 +4,10 @@ from typing import List, Optional, Union
 import ujson as json
 from policy_sentry.util.arns import parse_arn
 
+from common.aws.iam.utils import fetch_iam_role, fetch_iam_user
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
 from common.lib.aws.iam import get_active_tear_users_tag, get_tear_support_groups_tag
 from common.lib.aws.utils import get_role_tag
 from common.lib.plugins import get_plugin_by_name

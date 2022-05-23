@@ -8,6 +8,7 @@ import ujson as json
 from policy_sentry.util.arns import parse_arn
 from pydantic import ValidationError
 
+from common.aws.iam.utils import fetch_iam_role
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
@@ -25,7 +26,6 @@ from common.lib.auth import (
     populate_approve_reject_policy,
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
-from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.utils import get_resource_account
 from common.lib.generic import filter_table, write_json_error
 from common.lib.plugins import get_plugin_by_name

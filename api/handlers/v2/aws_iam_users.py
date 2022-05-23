@@ -4,13 +4,13 @@ from typing import Optional
 import sentry_sdk
 import tornado.escape
 
+from common.aws.iam.utils import fetch_iam_user
 from common.config import config
 from common.handlers.base import BaseAPIV2Handler
 from common.lib.auth import (
     can_delete_iam_principals,
     get_accounts_user_can_view_resources_for,
 )
-from common.lib.aws.fetch_iam_principal import fetch_iam_user
 from common.lib.aws.utils import delete_iam_user
 from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name

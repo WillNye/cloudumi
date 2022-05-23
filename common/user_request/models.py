@@ -60,7 +60,7 @@ class IAMRequest(NoqModel):
             raise Exception("Only ARN OR Policy Request ID can be provided")
 
         if request_id:
-            return super(IAMRequest, cls).get(host, request_id)
+            return await aio_wrapper(super(IAMRequest, cls).get, host, request_id)
 
         results = await aio_wrapper(cls.arn_index.query, host, cls.arn == arn)
         results = [r for r in results]

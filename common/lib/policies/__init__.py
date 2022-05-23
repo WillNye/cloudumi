@@ -404,7 +404,7 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
 async def get_formatted_policy_changes(
     account_id, arn, request, host, force_refresh=False
 ):
-    from common.lib.aws.fetch_iam_principal import fetch_iam_role
+    from common.aws.iam.utils import fetch_iam_role
 
     existing_role: dict = await fetch_iam_role(
         account_id, arn, host, force_refresh=force_refresh

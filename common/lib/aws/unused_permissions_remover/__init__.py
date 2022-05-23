@@ -6,10 +6,10 @@ import ujson as json
 from jinja2 import Environment, FileSystemLoader
 from jinja2.utils import select_autoescape
 
+from common.aws.iam.utils import fetch_iam_role
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.access_advisor import get_epoch_authenticated
-from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import get_role_managed_policy_documents
 from common.lib.aws.utils import (
     calculate_policy_changes,

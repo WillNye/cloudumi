@@ -18,6 +18,7 @@ from deepdiff import DeepDiff
 from parliament import analyze_policy_string, enhance_finding
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
+from common.aws.iam.utils import fetch_iam_role, fetch_iam_user
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -32,7 +33,6 @@ from common.lib.account_indexers.aws_organizations import (
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_config import query
-from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
 from common.lib.aws.iam import (
     get_active_tear_users_tag,
     get_managed_policy_document,

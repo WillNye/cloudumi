@@ -29,24 +29,21 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger(__name__)
 
 
-@retry(
-    stop_max_attempt_number=3,
-    wait_exponential_multiplier=1000,
-    wait_exponential_max=1000,
-)
-def _fetch_role_from_redis(role_arn: str, host: str):
-    """Fetch the role from redis with a retry.
-
-    :param role_arn:
-    :return:
-    """
-    redis_key = config.get_host_specific_key(
-        "aws.iamroles_redis_key",
+def get_host_iam_conn(host: str, account_id: str):
+    return boto3_cached_conn(
+        "iam",
         host,
-        f"{host}_IAM_ROLE_CACHE",
+        None,
+        account_number=account_id,
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
+        read_only=True,
+        retry_max_attempts=2,
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        session_name=sanitize_session_name("consoleme_get_iam_role"),
     )
-    red = RedisHandler().redis_sync(host)
-    return red.hget(redis_key, role_arn)
 
 
 @retry(
@@ -121,20 +118,7 @@ async def _cloudaux_to_aws(principal):
 def _get_iam_role_sync(
     account_id, role_name, conn, host: str
 ) -> Optional[Dict[str, Any]]:
-    client = boto3_cached_conn(
-        "iam",
-        host,
-        None,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        read_only=True,
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        session_name=sanitize_session_name("consoleme_get_iam_role"),
-    )
+    client = get_host_iam_conn(host, account_id)
     role = client.get_role(RoleName=role_name)["Role"]
     role["ManagedPolicies"] = get_role_managed_policies(
         {"RoleName": role_name}, host=host, **conn
@@ -150,20 +134,7 @@ async def _get_iam_role_async(
     account_id, role_name, conn, host: str
 ) -> Optional[Dict[str, Any]]:
     tasks = []
-    client = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
-        host,
-        None,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        read_only=True,
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
+    client = await aio_wrapper(get_host_iam_conn, host, account_id)
     role_details = asyncio.ensure_future(
         aio_wrapper(client.get_role, RoleName=role_name)
     )
@@ -263,30 +234,6 @@ async def fetch_iam_role(
     result: dict = {}
 
     if not force_refresh:
-        # First check redis:
-        result: str = await aio_wrapper(_fetch_role_from_redis, role_arn, host)
-
-        if result:
-            result: dict = json.loads(result)
-
-            # If this item is less than an hour old, then return it from Redis.
-            if result["ttl"] > int(
-                (datetime.utcnow() - timedelta(hours=1)).timestamp()
-            ):
-                log_data["message"] = "Returning role from Redis."
-                log.debug(log_data)
-                stats.count(
-                    "aws.fetch_iam_role.in_redis",
-                    tags={
-                        "account_id": account_id,
-                        "role_arn": role_arn,
-                        "host": host,
-                    },
-                )
-                result["policy"] = json.loads(result["policy"])
-                return result
-
-        # If not in Redis or it's older than an hour, proceed to DynamoDB:
         result = await aio_wrapper(dynamo.fetch_iam_role, role_arn, host)
 
     # If it's NOT in dynamo, or if we're forcing a refresh, we need to reach out to AWS and fetch:
@@ -430,20 +377,7 @@ async def fetch_iam_role(
 
 
 def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, Any]]:
-    client = boto3_cached_conn(
-        "iam",
-        host,
-        user_name,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        read_only=True,
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        session_name=sanitize_session_name("consoleme_get_iam_user"),
-    )
+    client = get_host_iam_conn(host, account_id)
     user = client.get_user(UserName=user_name)["User"]
     user["ManagedPolicies"] = get_user_managed_policies({"UserName": user_name}, **conn)
     user["InlinePolicies"] = get_user_inline_policies({"UserName": user_name}, **conn)
@@ -456,20 +390,7 @@ async def _get_iam_user_async(
     account_id, user_name, conn, host
 ) -> Optional[Dict[str, Any]]:
     tasks = []
-    client = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
-        host,
-        user_name,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        read_only=True,
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
+    client = await aio_wrapper(get_host_iam_conn, host, account_id)
     user_details = asyncio.ensure_future(
         aio_wrapper(client.get_user, UserName=user_name)
     )

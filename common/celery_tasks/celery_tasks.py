@@ -44,6 +44,7 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
+from common.aws.iam.utils import fetch_iam_role
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
@@ -60,7 +61,6 @@ from common.lib.aws.cached_resources.iam import (
     store_iam_roles_for_host,
 )
 from common.lib.aws.cloudtrail import CloudTrail
-from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import get_all_managed_policies
 from common.lib.aws.s3 import list_buckets
 from common.lib.aws.sanitize import sanitize_session_name

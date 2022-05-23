@@ -8,6 +8,7 @@ import ujson as json
 from furl import furl
 from pydantic import ValidationError
 
+from common.aws.iam.utils import fetch_iam_role
 from common.config import config
 from common.handlers.base import BaseAdminHandler, BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -17,7 +18,6 @@ from common.lib.auth import (
     get_accounts_user_can_view_resources_for,
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
-from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import update_role_tear_config
 from common.lib.aws.utils import (
     allowed_to_sync_role,

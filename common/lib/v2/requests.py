@@ -12,6 +12,7 @@ from botocore.exceptions import ClientError
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
+from common.aws.iam.utils import fetch_iam_role
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -25,7 +26,6 @@ from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
-from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.iam import (
     create_or_update_managed_policy,
     get_active_tear_users_tag,
