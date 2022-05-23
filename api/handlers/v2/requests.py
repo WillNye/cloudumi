@@ -22,11 +22,13 @@ from common.lib.auth import (
     get_extended_request_account_ids,
     populate_approve_reject_policy,
 )
+from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
 from common.lib.aws.utils import get_resource_account
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import filter_table, write_json_error
+from common.lib.mfa import mfa_verify
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
     can_move_back_to_pending_v2,
@@ -54,9 +56,58 @@ from common.models import (
     RequestCreationResponse,
     RequestStatus,
 )
+from common.models import Status2 as WebStatus
+from common.models import WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
+
+
+async def validate_request_creation(
+    handler, request: RequestCreationModel
+) -> RequestCreationModel:
+    err = ""
+
+    if tear_change := next(
+        (c for c in request.changes.changes if c.change_type == "tear_can_assume_role"),
+        None,
+    ):
+        tear_supported_roles = await get_tear_supported_roles_by_tag(
+            handler.eligible_roles, handler.groups, handler.ctx.host
+        )
+        tear_supported_roles = [role["arn"] for role in tear_supported_roles]
+
+        if (
+            not tear_supported_roles
+            or tear_change.principal.principal_arn not in tear_supported_roles
+        ):
+            err += f"No TEAR support for {tear_change.principal.principal_arn} or access already exists. "
+
+        if not request.expiration_date:
+            err += "expiration_date is a required field for temporary elevated access requests. "
+
+        if err:
+            handler.set_status(400)
+            handler.write(
+                WebResponse(staus=WebStatus.error, errors=[err]).json(
+                    exclude_unset=True, exclude_none=True
+                )
+            )
+            return await handler.finish()
+
+        is_authenticated, err = await mfa_verify(handler.ctx.host, handler.user)
+        if not is_authenticated:
+            handler.set_status(403)
+            handler.write(
+                WebResponse(staus=WebStatus.error, errors=[err]).json(
+                    exclude_unset=True, exclude_none=True
+                )
+            )
+            return await handler.finish()
+
+        request.admin_auto_approve = False
+
+    return request
 
 
 class RequestHandler(BaseAPIV2Handler):
@@ -279,6 +330,9 @@ class RequestHandler(BaseAPIV2Handler):
         try:
             # Validate the model
             changes = RequestCreationModel.parse_raw(self.request.body)
+            if not changes.dry_run:
+                changes = await validate_request_creation(self, changes)
+
             extended_request = await generate_request_from_change_model_array(
                 changes, self.user, host
             )
@@ -848,6 +902,20 @@ class RequestDetailHandler(BaseAPIV2Handler):
             extended_request, last_updated = await self._get_extended_request(
                 request_id, log_data, host
             )
+
+            if any(
+                change.change_type == "tear_can_assume_role"
+                for change in extended_request.changes.changes
+            ):
+                change_info = request_changes.modification_model
+                if (
+                    hasattr(change_info, "expiration_date")
+                    and not change_info.expiration_date
+                ):
+                    raise ValueError(
+                        "An expiration date must be provided for elevated access requests."
+                    )
+
             response = await parse_and_apply_policy_request_modification(
                 extended_request,
                 request_changes,
@@ -857,7 +925,12 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 host,
             )
 
-        except (NoMatchingRequest, InvalidRequestParameter, ValidationError) as e:
+        except (
+            NoMatchingRequest,
+            InvalidRequestParameter,
+            ValidationError,
+            ValueError,
+        ) as e:
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
             sentry_sdk.capture_exception(tags={"user": self.user})

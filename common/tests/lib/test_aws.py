@@ -69,17 +69,17 @@ class TestAwsLib(TestCase):
         self.assertFalse(role_has_managed_policy(ROLE, "Policy3"))
 
     def test_role_has_tag(self):
-        from common.lib.aws.utils import role_has_tag
+        from common.lib.aws.utils import get_role_tag
 
-        self.assertTrue(role_has_tag(ROLE, "tag1"))
-        self.assertTrue(role_has_tag(ROLE, "tag1", "value1"))
+        self.assertTrue(bool(get_role_tag(ROLE, "tag1")))
+        self.assertEqual(get_role_tag(ROLE, "tag1"), "value1")
 
     def test_role_has_tag_false(self):
-        from common.lib.aws.utils import role_has_tag
+        from common.lib.aws.utils import get_role_tag
 
-        self.assertFalse(role_has_tag(ROLE, "tag2"))
-        self.assertFalse(role_has_tag(ROLE, "tag2", "value1"))
-        self.assertFalse(role_has_tag(ROLE, "tag1", "value2"))
+        self.assertFalse(bool(get_role_tag(ROLE, "tag2")))
+        self.assertNotEqual(get_role_tag(ROLE, "tag2"), "value1")
+        self.assertNotEqual(get_role_tag(ROLE, "tag1"), "value2")
 
     def test_apply_managed_policy_to_role(self):
         from common.lib.aws.utils import apply_managed_policy_to_role
@@ -410,7 +410,7 @@ class TestAwsLib(TestCase):
     @pytest.mark.usefixtures("dynamodb")
     @pytest.mark.usefixtures("iam")
     def test_remove_temp_policies(self):
-        from common.lib.aws.utils import remove_temp_policies
+        from common.lib.aws.utils import remove_expired_host_requests
 
         account_id = "123456789012"
         current_dateint = datetime.today().strftime("%Y%m%d")
@@ -466,7 +466,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = current_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -474,7 +474,7 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = past_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -482,7 +482,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = future_dateint
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 
@@ -490,7 +490,7 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = None
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(remove_temp_policies)(extended_request, host, None)
+        async_to_sync(remove_expired_host_requests)(extended_request, host, None)
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 

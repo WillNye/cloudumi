@@ -21,6 +21,7 @@ export const initialState = {
     totalRows: 1000,
   },
   warningMessage: '',
+  tempEscalationModalData: { isOpen: false, data: null },
 }
 
 export const reducer = (state, action) => {
@@ -70,6 +71,15 @@ export const reducer = (state, action) => {
       return {
         ...state,
         redirect: action.redirect,
+      }
+    }
+    case 'SET_TEMP_ESCALATION_MODAL_OPEN': {
+      return {
+        ...state,
+        tempEscalationModalData: {
+          isOpen: action.isOpen,
+          data: action.data || null,
+        },
       }
     }
     case 'SET_EXPANDED_ROW': {

@@ -7,12 +7,15 @@
       <env name="PYTHONUNBUFFERED" value="1" />
       <env name="CONFIG_LOCATION" value="configs/development_account/saas_development.yaml" />
       <env name="AWS_PROFILE" value="noq_cluster_dev" />
+      <env name="AWS_REGION" value="us-west-2" />
+      <env name="AWS_CONTAINER_CREDENTIALS_FULL_URI" value="http://localhost:9091/ecs/arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev" />
     </envs>
-    <option name="SDK_HOME" value="$PROJECT_DIR$/env/bin/python" />
+    <option name="SDK_HOME" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/" />
-    <option name="IS_MODULE_SDK" value="false" />
+    <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
+    <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="celery" />
     <option name="PARAMETERS" value="-A common.celery_tasks.celery_tasks worker -l DEBUG -B --concurrency=16" />
     <option name="SHOW_COMMAND_LINE" value="false" />

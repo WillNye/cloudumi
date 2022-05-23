@@ -8,6 +8,8 @@ from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
+from common.lib.aws.iam import get_active_tear_users_tag, get_tear_support_groups_tag
+from common.lib.aws.utils import get_role_tag
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.redis import RedisHandler, redis_get
@@ -19,6 +21,7 @@ from common.models import (
     EligibleRolesModel,
     EligibleRolesModelArray,
     ExtendedAwsPrincipalModel,
+    PrincipalModelTearConfig,
     S3DetailsModel,
     S3Error,
     S3ErrorArray,
@@ -210,6 +213,7 @@ async def get_role_details(
     host: str,
     extended: bool = False,
     force_refresh: bool = False,
+    is_admin_request: bool = False,
 ) -> Optional[Union[ExtendedAwsPrincipalModel, AwsPrincipalModel]]:
     account_ids_to_name = await get_account_id_to_name_mapping(host)
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
@@ -218,7 +222,24 @@ async def get_role_details(
     if not role:
         return None
     if extended:
+        elevated_access_config = None
         template = await get_role_template(arn, host)
+        tags = role["policy"]["Tags"]
+        if config.get_host_specific_key("elevated_access.enabled", host, False):
+            tear_support_tag = get_tear_support_groups_tag(host)
+            tear_users_tag = get_active_tear_users_tag(host)
+            tear_tags = [tear_support_tag, tear_users_tag]
+            if is_admin_request:
+                active_users = get_role_tag(role, tear_users_tag, True, set())
+                supported_groups = get_role_tag(role, tear_support_tag, True, set())
+
+                elevated_access_config = PrincipalModelTearConfig(
+                    active_users=list(active_users),
+                    supported_groups=list(supported_groups),
+                )
+
+            tags = [tag for tag in tags if tag["Key"] not in tear_tags]
+
         return ExtendedAwsPrincipalModel(
             name=role_name,
             account_id=account_id,
@@ -239,7 +260,8 @@ async def get_role_details(
             ),
             apps=await get_app_details_for_role(arn, host),
             managed_policies=role["policy"]["AttachedManagedPolicies"],
-            tags=role["policy"]["Tags"],
+            tags=tags,
+            elevated_access_config=elevated_access_config,
             templated=bool(template),
             template_link=template,
             created_time=role["policy"].get("CreateDate"),

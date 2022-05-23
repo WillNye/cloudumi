@@ -19,6 +19,7 @@ import AssumeRolePolicyChangeComponent from '../blocks/AssumeRolePolicyChangeCom
 import ResourcePolicyChangeComponent from '../blocks/ResourcePolicyChangeComponent'
 import ResourceTagChangeComponent from '../blocks/ResourceTagChangeComponent'
 import ExpirationDateBlockComponent from 'components/blocks/ExpirationDateBlockComponent'
+import TemporaryEscalationComponent from 'components/blocks/TemporaryEscalationBlockComponent'
 
 class PolicyRequestReview extends Component {
   constructor(props) {
@@ -547,6 +548,19 @@ class PolicyRequestReview extends Component {
                   requestID={requestID}
                   sendProposedPolicy={this.sendProposedPolicy}
                   sendRequestCommon={this.props.sendRequestCommon}
+                />
+              )
+            }
+            if (change.change_type === 'tear_can_assume_role') {
+              return (
+                <TemporaryEscalationComponent
+                  change={change}
+                  config={requestConfig}
+                  changesConfig={changesConfig}
+                  requestReadOnly={requestReadOnly}
+                  requesterEmail={requesterEmail}
+                  reloadDataFromBackend={this.reloadDataFromBackend}
+                  requestID={requestID}
                 />
               )
             }

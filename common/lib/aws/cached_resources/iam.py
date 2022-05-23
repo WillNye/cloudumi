@@ -1,6 +1,8 @@
+import json
 from typing import Any, List
 
 from common.config import config
+from common.lib.aws.iam import get_active_tear_users_tag, get_tear_support_groups_tag
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -138,3 +140,55 @@ async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> 
                 )
                 break
     return formatted_policies
+
+
+async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
+    """Get active TEAR roles for a given user
+
+    :param user: List of groups to check against
+    :param host: The host/tenant to check against
+
+    :return: A list of roles that can be used as part of the TEAR workflow
+    """
+    from common.lib.aws.utils import get_role_tag
+
+    active_tear_roles = set()
+    all_iam_roles = await get_iam_roles_for_host(host)
+    tear_users_tag = get_active_tear_users_tag(host)
+
+    for role_arn, role in all_iam_roles.items():
+        role = json.loads(role)
+        if active_tear_users := get_role_tag(role, tear_users_tag, True, set()):
+            if user in active_tear_users:
+                active_tear_roles.add(role_arn)
+
+    return list(active_tear_roles)
+
+
+async def get_tear_supported_roles_by_tag(
+    eligible_roles: list[str], groups: list[str], host: str
+) -> list[dict]:
+    """Get TEAR supported roles given a list of groups and already usable roles
+
+    :param eligible_roles: Roles that are already accessible and can be ignored
+    :param groups: List of groups to check against
+    :param host: The host/tenant to check against
+
+    :return: A list of roles that can be used as part of the TEAR workflow
+    """
+    from common.lib.aws.utils import get_role_tag
+
+    escalated_roles = dict()
+    all_iam_roles = await get_iam_roles_for_host(host)
+
+    for role_arn, role in all_iam_roles.items():
+        if role_arn in eligible_roles:
+            continue
+
+        role = json.loads(role)
+        tear_support_tag = get_tear_support_groups_tag(host)
+        if tear_groups := get_role_tag(role, tear_support_tag, True, set()):
+            if any(group in tear_groups for group in groups):
+                escalated_roles[role_arn] = role
+
+    return list(escalated_roles.values())

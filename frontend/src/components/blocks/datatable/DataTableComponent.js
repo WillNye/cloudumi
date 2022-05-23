@@ -12,6 +12,7 @@ import {
 import DataTableActionsComponent from './DataTableActionsComponent'
 import DataTableColumnsComponent from './DataTableColumnsComponent'
 import DataTableRowsComponent from './DataTableRowsComponent'
+import TempPolicyEscalationModal from '../modals/TempPolicyEscalation'
 
 import 'react-semantic-ui-datepickers/dist/react-semantic-ui-datepickers.css'
 
@@ -38,6 +39,8 @@ const DataTableComponent = ({ config, mock }) => {
     setExpandedRow,
     setFilteredData,
     setRedirect,
+    tempEscalationModalData,
+    setTempEscalationModalData,
   } = useDataTable(config, mock)
 
   const calculateColumnSize = (tableConfig) => {
@@ -102,6 +105,7 @@ const DataTableComponent = ({ config, mock }) => {
             calculateColumnSize={calculateColumnSize}
             setExpandedRow={setExpandedRow}
             setRedirect={setRedirect}
+            setTempEscalationModalData={setTempEscalationModalData}
           />
         </Table.Body>
         <Table.Footer>
@@ -141,6 +145,10 @@ const DataTableComponent = ({ config, mock }) => {
           </Table.Row>
         </Table.Footer>
       </Table>
+      <TempPolicyEscalationModal
+        setTempEscalationModalData={setTempEscalationModalData}
+        tempEscalationModalData={tempEscalationModalData}
+      />
     </>
   )
 }

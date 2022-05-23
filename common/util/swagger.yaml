@@ -1,7 +1,6 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
 # consoleme/models.py:
-# `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel ;
-#  black ../models.py`
+# `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel ; black ../models.py`
 openapi: 3.0.0
 info:
   description: ConsoleMe API definition
@@ -374,6 +373,28 @@ paths:
           description: OK
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+  /roles/{account_id}/{role_name}/elevated-access-config:
+    put:
+      summary: update a role
+      tags:
+        - roles
+        - privileged
+      parameters:
+        - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/RoleName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrincipalModelTearConfig"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtendedAwsPrincipalModel"
   /user:
     get:
       summary: get details about current user
@@ -708,7 +729,7 @@ components:
             expiration_date:
               type: integer
               example: 20210905
-              description: Date to expire requested policy, in the format of YYYYmmdd
+              description: Date to expire requested policy or role, in the format of YYYYmmdd
     ChangeGeneratorModelArray:
       type: object
       required:
@@ -1250,6 +1271,14 @@ components:
               type: string
               readOnly: true
               description: the change model ID of the source change, that this change was generated from
+    TearRoleChangeModel:
+      allOf:
+        - $ref: "#/components/schemas/ChangeModel"
+        - type: object
+          properties:
+            change_type:
+              type: string
+              pattern: "tear_can_assume_role"
     ResourcePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1337,6 +1366,7 @@ components:
               - $ref: "#/components/schemas/PermissionsBoundaryChangeModel"
               - $ref: "#/components/schemas/ResourcePolicyChangeModel"
               - $ref: "#/components/schemas/AssumeRolePolicyChangeModel"
+              - $ref: "#/components/schemas/TearRoleChangeModel"
               - $ref: "#/components/schemas/ResourceTagChangeModel"
               - $ref: "#/components/schemas/GenericFileChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyResourceChangeModel"
@@ -1585,6 +1615,17 @@ components:
           items:
             anyOf:
               - $ref: "#/components/schemas/AppDetailsModel"
+    PrincipalModelTearConfig:
+      type: object
+      properties:
+        active_users:
+          type: array
+          items:
+            type: string
+        supported_groups:
+          type: array
+          items:
+            type: string
     ExtendedAwsPrincipalModel:
       allOf:
         - $ref: "#/components/schemas/AwsPrincipalModel"
@@ -1617,6 +1658,8 @@ components:
               type: array
               items:
                 type: object # TODO: make tags schema
+            elevated_access_config:
+              $ref: "#/components/schemas/PrincipalModelTearConfig"
             effective_policy:
               type: object
               description: |-

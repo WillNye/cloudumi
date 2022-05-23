@@ -209,11 +209,55 @@ const useRemove = (commonPathname, options) => {
   }
 }
 
+const usePut = (commonPathname, options) => {
+  const { sendRequestCommon } = useAuth()
+
+  const { state, buildPath, handleWorking, handleResponse, reset } =
+    useInnerUtils()
+
+  const put = async (body, pathname) => {
+    handleWorking()
+    try {
+      const res = await sendRequestCommon(
+        body || {},
+        buildPath(
+          `${commonPathname}${pathname ? '/' + pathname : ''}`,
+          options?.url
+        ),
+        'put'
+      )
+      return handleResponse(res)
+    } catch (error) {
+      const errorsHandler = (errors) =>
+        errors.map((err) => (
+          <p style={{ margin: 0, textAlign: 'center' }}>
+            <small>{err}</small>
+          </p>
+        ))
+      const formattedError = {
+        message: error?.message,
+        errorsMap: error?.errors ? errorsHandler(error?.errors) : null,
+        errorsJoin: error?.errors ? error?.errors.join(',') : null,
+        errors: error?.errors,
+      }
+      throw formattedError
+    }
+  }
+
+  return {
+    ...state,
+    empty: !state?.data,
+    reset,
+    do: put,
+  }
+}
+
 export const useApi = (commonPathname, options) => {
   return {
     get: useGet(commonPathname, options),
     post: usePost(commonPathname, options),
     remove: useRemove(commonPathname, options),
+    put: usePut(commonPathname, options),
   }
 }
 

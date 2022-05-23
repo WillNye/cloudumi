@@ -4,6 +4,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List
 
+import sentry_sdk
+
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.session import get_session_for_tenant
@@ -148,8 +150,12 @@ async def send_email(
             {"message": "Overriding to_address", "new_to_addresses": to_addresses}
         )
 
-    # Once we know under what conditions to use which provider we can update to support sending via ses
-    await send_email_via_sendgrid(to_addresses, subject, body, charset)
+    try:
+        # Once we know under what conditions to use which provider we can update to support sending via ses
+        await send_email_via_sendgrid(to_addresses, subject, body, charset)
+    except Exception as err:
+        log.exception(repr(err))
+        sentry_sdk.capture_exception()
 
 
 async def send_access_email_to_user(

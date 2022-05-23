@@ -14,6 +14,7 @@ const DataTableRowsComponent = ({
   calculateColumnSize,
   setExpandedRow,
   setRedirect,
+  setTempEscalationModalData,
 }) => {
   const expandNestedJson = (data) => {
     Object.keys(data).forEach((key) => {
@@ -29,9 +30,20 @@ const DataTableRowsComponent = ({
   const handleCellClick = (e, column, entry) => {
     // This function should appropriately handle a Cell Click given a desired
     // action by the column configuration
-    if (column.onClick && column.onClick.action === 'redirect') {
+
+    const onClickhandler = entry.onClick || column.onClick
+
+    if (!onClickhandler) return
+
+    if (onClickhandler.action === 'redirect') {
       // TODO, change this to useHistory
       setRedirect(entry[column.key] + window.location.search || '')
+    }
+
+    if (onClickhandler.action === 'open_modal') {
+      if (onClickhandler.type === 'temp_escalation_modal') {
+        setTempEscalationModalData(true, entry)
+      }
     }
   }
 
@@ -117,12 +129,12 @@ const DataTableRowsComponent = ({
               style={column.style}
             >
               <Button
-                content={entry[column.content] || column.content}
+                content={entry['content'] || column.content}
                 fluid
                 labelPosition='right'
                 icon={column.icon}
+                color={entry['color'] || 'blue'}
                 onClick={(e) => handleCellClick(e, column, entry)}
-                primary
                 size='mini'
               />
             </Table.Cell>
@@ -137,11 +149,11 @@ const DataTableRowsComponent = ({
               <Button
                 as='a'
                 href={entry[column.key] + window.location.search || ''}
-                content={entry[column.content] || column.content}
+                content={entry['content'] || column.content}
                 fluid
                 labelPosition='right'
                 icon={column.icon}
-                primary
+                color={entry['color'] || 'blue'}
                 style={{
                   cursor: 'pointer',
                 }}
