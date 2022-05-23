@@ -1,7 +1,10 @@
+import json
+from datetime import datetime
 from decimal import Decimal
 from typing import Union
 
 from boto3.dynamodb.types import Binary  # noqa
+from cloudaux import get_iso_string
 from pynamodax.attributes import MapAttribute
 from pynamodax.models import Model
 from pynamodb_encoder import decoder, encoder
@@ -46,6 +49,15 @@ def sanitize_dynamo_obj(
 class NoqModel(Model):
     def dict(self) -> dict:
         return sanitize_dynamo_obj(ENCODER.encode(self))
+
+    def dump_json_attr(self, attr: dict) -> str:
+        return json.dumps(attr, default=self._json_encode_timestamps)
+
+    @staticmethod
+    def _json_encode_timestamps(field: datetime) -> str:
+        """Solve those pesky timestamps and JSON annoyances."""
+        if isinstance(field, datetime):
+            return get_iso_string(field)
 
     @classmethod
     def from_dict(cls, model_as_dict: dict):
