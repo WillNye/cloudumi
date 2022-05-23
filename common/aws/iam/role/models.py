@@ -2,7 +2,6 @@ import json
 import sys
 from datetime import datetime, timedelta
 
-import sentry_sdk
 from botocore.exceptions import ClientError
 from pynamodax.attributes import ListAttribute, NumberAttribute, UnicodeAttribute
 
@@ -140,8 +139,8 @@ class IAMRole(NoqModel):
                 arn=role.get("Arn"),
                 entity_id=entity_id,
                 host=host,
-                name=role.pop("RoleName"),
-                resourceId=role.pop("RoleId"),
+                name=role.get("RoleName"),
+                resourceId=role.get("RoleId"),
                 accountId=account_id,
                 tags=[TagMap(**tag) for tag in role.get("Tags", [])],
                 policy=cls().dump_json_attr(role),
@@ -175,40 +174,14 @@ class IAMRole(NoqModel):
     async def create(
         cls, create_model: RoleCreationRequestModel, username: str, host: str
     ):
-        from common.lib.aws.utils import get_aws_principal_owner
+        await _create_iam_role(create_model, username, host)
+        arn = f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
+        return await cls.get(create_model.account_id, host, arn, True)
 
-        role = await _create_iam_role(create_model, username, host)
-        entity_id = f"{role['Arn']}||{host}"
-        last_updated: int = int((datetime.utcnow()).timestamp())
-
-        try:
-            iam_role = cls(
-                arn=role.get("Arn"),
-                entity_id=entity_id,
-                host=host,
-                name=role.pop("RoleName"),
-                resourceId=role.pop("RoleId"),
-                accountId=create_model.account_id,
-                tags=[TagMap(**tag) for tag in role.get("Tags", [])],
-                policy=cls().dump_json_attr(role),
-                permissions_boundary=role.get("PermissionsBoundary", {}),
-                owner=get_aws_principal_owner(role, host),
-                templated=role.get("Arn").lower(),
-                last_updated=last_updated,
-                ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
-            )
-            await aio_wrapper(iam_role.save)
-        except Exception as e:
-            log_data = {
-                "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                "message": "Unable to cache role",
-                "account_id": create_model.account_id,
-                "role_name": create_model.role_name,
-                "user": username,
-                "host": host,
-                "error": str(e),
-            }
-            log.error(log_data)
-            sentry_sdk.capture_exception()
-        else:
-            return iam_role
+    @classmethod
+    async def delete_role(
+        cls, account_id: str, role_name: str, username: str, host: str
+    ):
+        arn = f"arn:aws:iam::{account_id}:role/{role_name}"
+        entity_id = f"{arn}||{host}"
+        print(entity_id)

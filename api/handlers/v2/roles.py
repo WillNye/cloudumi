@@ -9,6 +9,7 @@ from furl import furl
 from pydantic import ValidationError
 
 from common.aws.iam.role.models import IAMRole
+from common.aws.iam.role.utils import _delete_iam_role, clone_iam_role
 from common.config import config
 from common.handlers.base import BaseAdminHandler, BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -19,7 +20,7 @@ from common.lib.auth import (
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
 from common.lib.aws.iam import update_role_tear_config
-from common.lib.aws.utils import allowed_to_sync_role, clone_iam_role, delete_iam_role
+from common.lib.aws.utils import allowed_to_sync_role
 from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.aws_principals import get_eligible_role_details, get_role_details
@@ -480,7 +481,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
             self.write_error(403, message="User is unauthorized to delete a role")
             return
         try:
-            await delete_iam_role(account_id, role_name, self.user, host)
+            await _delete_iam_role(account_id, role_name, self.user, host)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -573,7 +574,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             return
 
         try:
-            await delete_iam_role(account_id, role_name, app_name, host)
+            await _delete_iam_role(account_id, role_name, app_name, host)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
