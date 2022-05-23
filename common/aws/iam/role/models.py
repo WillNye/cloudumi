@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from botocore.exceptions import ClientError
 from pynamodax.attributes import ListAttribute, NumberAttribute, UnicodeAttribute
 
+from common.aws.base_model import TagMap
 from common.aws.iam.role.utils import (
     _clone_iam_role,
     _create_iam_role,
@@ -27,11 +28,6 @@ from common.models import CloneRoleRequestModel, RoleCreationRequestModel, Spoke
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = get_logger(__name__)
-
-
-class TagMap(NoqMapAttribute):
-    Key = UnicodeAttribute()
-    Value = UnicodeAttribute()
 
 
 class IAMRole(NoqModel):

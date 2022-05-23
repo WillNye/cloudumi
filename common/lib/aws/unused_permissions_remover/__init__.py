@@ -7,10 +7,10 @@ from jinja2 import Environment, FileSystemLoader
 from jinja2.utils import select_autoescape
 
 from common.aws.iam.role.models import IAMRole
+from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.access_advisor import get_epoch_authenticated
-from common.lib.aws.iam import get_role_managed_policy_documents
 from common.lib.aws.utils import (
     calculate_policy_changes,
     condense_statements,

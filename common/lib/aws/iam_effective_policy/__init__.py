@@ -1,7 +1,7 @@
 from common.aws.iam.role.models import IAMRole
+from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.aws.iam.user.utils import fetch_iam_user
 from common.config import config
-from common.lib.aws.iam import get_role_managed_policy_documents
 from common.lib.aws.utils import (
     condense_statements,
     get_account_id_from_arn,

@@ -12,7 +12,10 @@ from botocore.exceptions import ClientError
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
+import common.aws.iam.role.utils
+from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.role.models import IAMRole
+from common.aws.utils import get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -28,7 +31,6 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.iam import (
     create_or_update_managed_policy,
-    get_active_tear_users_tag,
     get_managed_policy_document,
 )
 from common.lib.aws.sanitize import sanitize_session_name
@@ -40,7 +42,6 @@ from common.lib.aws.utils import (
     get_resource_account,
     get_resource_from_arn,
     get_resource_policy,
-    get_role_tag,
     get_service_from_arn,
 )
 from common.lib.change_request import generate_policy_name, generate_policy_sid
@@ -2196,9 +2197,9 @@ async def apply_tear_role_change(
         )
         tear_users_tag = get_active_tear_users_tag(host)
         role_tags = await aio_wrapper(
-            iam_client.list_role_tags, RoleName=principal_name
+            common.aws.iam.role.utils.list_role_tags, RoleName=principal_name
         )
-        elevated_users = get_role_tag(role_tags, tear_users_tag, True, set())
+        elevated_users = get_resource_tag(role_tags, tear_users_tag, True, set())
         elevated_users.add(user)
 
         await aio_wrapper(

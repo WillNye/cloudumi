@@ -1,8 +1,11 @@
 import json
 from typing import Any, List
 
+from common.aws.iam.role.config import (
+    get_active_tear_users_tag,
+    get_tear_support_groups_tag,
+)
 from common.config import config
-from common.lib.aws.iam import get_active_tear_users_tag, get_tear_support_groups_tag
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -150,7 +153,7 @@ async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
-    from common.lib.aws.utils import get_role_tag
+    from common.aws.utils import get_resource_tag
 
     active_tear_roles = set()
     all_iam_roles = await get_iam_roles_for_host(host)
@@ -158,7 +161,7 @@ async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
 
     for role_arn, role in all_iam_roles.items():
         role = json.loads(role)
-        if active_tear_users := get_role_tag(role, tear_users_tag, True, set()):
+        if active_tear_users := get_resource_tag(role, tear_users_tag, True, set()):
             if user in active_tear_users:
                 active_tear_roles.add(role_arn)
 
@@ -176,7 +179,7 @@ async def get_tear_supported_roles_by_tag(
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
-    from common.lib.aws.utils import get_role_tag
+    from common.aws.utils import get_resource_tag
 
     escalated_roles = dict()
     all_iam_roles = await get_iam_roles_for_host(host)
@@ -187,7 +190,7 @@ async def get_tear_supported_roles_by_tag(
 
         role = json.loads(role)
         tear_support_tag = get_tear_support_groups_tag(host)
-        if tear_groups := get_role_tag(role, tear_support_tag, True, set()):
+        if tear_groups := get_resource_tag(role, tear_support_tag, True, set()):
             if any(group in tear_groups for group in groups):
                 escalated_roles[role_arn] = role
 

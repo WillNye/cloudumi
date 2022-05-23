@@ -9,6 +9,7 @@ from furl import furl
 from pydantic import ValidationError
 
 from common.aws.iam.role.models import IAMRole
+from common.aws.iam.role.utils import update_role_tear_config
 from common.config import config
 from common.handlers.base import BaseAdminHandler, BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -18,7 +19,6 @@ from common.lib.auth import (
     get_accounts_user_can_view_resources_for,
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
-from common.lib.aws.iam import update_role_tear_config
 from common.lib.aws.utils import allowed_to_sync_role
 from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name

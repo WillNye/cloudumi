@@ -9,17 +9,17 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-import pytz
 import sentry_sdk
 import ujson
 from botocore.exceptions import ClientError, ParamValidationError
-from dateutil.parser import parse
 from deepdiff import DeepDiff
 from parliament import analyze_policy_string, enhance_finding
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
+from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.user.utils import fetch_iam_user
+from common.aws.utils import get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -34,11 +34,7 @@ from common.lib.account_indexers.aws_organizations import (
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_config import query
-from common.lib.aws.iam import (
-    get_active_tear_users_tag,
-    get_managed_policy_document,
-    get_policy,
-)
+from common.lib.aws.iam import get_managed_policy_document, get_policy
 from common.lib.aws.s3 import (
     get_bucket_location,
     get_bucket_policy,
@@ -671,7 +667,7 @@ async def prune_iam_resource_tag(
     resource_tags = await aio_wrapper(
         getattr(boto_conn, f"list_{resource_type}_tags"), **boto_kwargs
     )
-    resource_tag = get_role_tag(resource_tags, tag, True, set())
+    resource_tag = get_resource_tag(resource_tags, tag, True, set())
     resource_tag.remove(value)
 
     if resource_tag:
@@ -729,65 +725,6 @@ async def fetch_iam_user_details(account_id, iam_user_name, host, user):
         raise
     await aio_wrapper(iam_user.load)
     return iam_user
-
-
-def get_role_tag(
-    role: Dict, key: str, is_list: Optional[bool] = False, default: Optional[any] = None
-) -> any:
-    """
-    Retrieves and parses the value of a provided AWS tag.
-    :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :param key: key of the tag
-    :param is_list: The value for the key is a list type
-    :param default: Default value is tag not found
-    :return:
-    """
-    for tag in role.get("Tags", role.get("tags", [])):
-        if tag.get("Key") == key:
-            val = tag.get("Value")
-            if is_list:
-                return set([] if not val else val.split(":"))
-            return val
-    return default
-
-
-def role_has_managed_policy(role: Dict, managed_policy_name: str) -> bool:
-    """
-    Checks a role dictionary to determine if a managed policy is attached
-    :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :param managed_policy_name: the name of the managed policy
-    :return:
-    """
-
-    for managed_policy in role.get("AttachedManagedPolicies", []):
-        if managed_policy.get("PolicyName") == managed_policy_name:
-            return True
-    return False
-
-
-def role_newer_than_x_days(role: Dict, days: int) -> bool:
-    """
-    Checks a role dictionary to determine if it is newer than the specified number of days
-    :param role:  An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :param days: number of days
-    :return:
-    """
-    if isinstance(role.get("CreateDate"), str):
-        role["CreateDate"] = parse(role.get("CreateDate"))
-    role_age = datetime.now(tz=pytz.utc) - role.get("CreateDate")
-    if role_age.days < days:
-        return True
-    return False
-
-
-def is_role_instance_profile(role: Dict) -> bool:
-    """
-    Checks a role naively to determine if it is associate with an instance profile.
-    We only check by name, and not the actual attached instance profiles.
-    :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :return:
-    """
-    return role.get("RoleName").endswith("InstanceProfile")
 
 
 def get_region_from_arn(arn):

@@ -4,13 +4,16 @@ from typing import List, Optional, Union
 import ujson as json
 from policy_sentry.util.arns import parse_arn
 
+from common.aws.iam.role.config import (
+    get_active_tear_users_tag,
+    get_tear_support_groups_tag,
+)
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.user.utils import fetch_iam_user
+from common.aws.utils import get_resource_tag
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.iam import get_active_tear_users_tag, get_tear_support_groups_tag
-from common.lib.aws.utils import get_role_tag
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.redis import RedisHandler, redis_get
@@ -233,8 +236,8 @@ async def get_role_details(
             tear_users_tag = get_active_tear_users_tag(host)
             tear_tags = [tear_support_tag, tear_users_tag]
             if is_admin_request:
-                active_users = get_role_tag(role, tear_users_tag, True, set())
-                supported_groups = get_role_tag(role, tear_support_tag, True, set())
+                active_users = get_resource_tag(role, tear_users_tag, True, set())
+                supported_groups = get_resource_tag(role, tear_support_tag, True, set())
 
                 elevated_access_config = PrincipalModelTearConfig(
                     active_users=list(active_users),

@@ -5,18 +5,26 @@ from typing import Any, Dict, Optional
 import sentry_sdk
 import ujson as json
 from botocore.exceptions import ClientError
+from joblib import Parallel, delayed
 
-from common.aws.iam.utils import get_host_iam_conn
-from common.config import config
-from common.exceptions.exceptions import MissingConfigurationValue
-from common.lib.asyncio import aio_wrapper
-from common.lib.aws.iam import (
-    get_role_inline_policies,
-    get_role_managed_policies,
-    list_role_tags,
+from common.aws.iam.role.config import (
+    get_active_tear_users_tag,
+    get_tear_support_groups_tag,
 )
+from common.aws.iam.utils import get_host_iam_conn
+from common.config import config, models
+from common.exceptions.exceptions import MissingConfigurationValue
+from common.lib.assume_role import rate_limited, sts_conn
+from common.lib.asyncio import aio_wrapper
+from common.lib.aws.aws_paginate import aws_paginated
+from common.lib.aws.iam import get_managed_policy_document
 from common.lib.plugins import get_plugin_by_name
-from common.models import CloneRoleRequestModel, RoleCreationRequestModel
+from common.models import (
+    CloneRoleRequestModel,
+    HubAccount,
+    PrincipalModelTearConfig,
+    RoleCreationRequestModel,
+)
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger(__name__)
@@ -618,3 +626,160 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     log_data["message"] = "Successfully cloned role"
     log.info(log_data)
     return results
+
+
+@rate_limited()
+@sts_conn("iam", service_type="client")
+def get_role_inline_policy_names(role, client=None, **kwargs):
+    marker = {}
+    inline_policies = []
+
+    while True:
+        response = client.list_role_policies(RoleName=role["RoleName"], **marker)
+        inline_policies.extend(response["PolicyNames"])
+
+        if response["IsTruncated"]:
+            marker["Marker"] = response["Marker"]
+        else:
+            return inline_policies
+
+
+@sts_conn("iam", service_type="client")
+@rate_limited()
+def get_role_inline_policy_document(role, policy_name, client=None, **kwargs):
+    response = client.get_role_policy(RoleName=role["RoleName"], PolicyName=policy_name)
+    return response.get("PolicyDocument")
+
+
+def get_role_inline_policies(role, **kwargs):
+    policy_names = get_role_inline_policy_names(role, **kwargs)
+
+    policies = zip(
+        policy_names,
+        Parallel(n_jobs=20, backend="threading")(
+            delayed(get_role_inline_policy_document)(role, policy_name, **kwargs)
+            for policy_name in policy_names
+        ),
+    )
+    policies = dict(policies)
+
+    return policies
+
+
+@sts_conn("iam", service_type="client")
+@aws_paginated("Tags")
+@rate_limited()
+def list_role_tags(role, client=None, **kwargs):
+    return client.list_role_tags(RoleName=role["RoleName"], **kwargs)
+
+
+@sts_conn("iam", service_type="client")
+@rate_limited()
+def get_role_managed_policies(role, client=None, **kwargs):
+    marker = {}
+    policies = []
+
+    while True:
+        response = client.list_attached_role_policies(
+            RoleName=role["RoleName"], **marker
+        )
+        policies.extend(response["AttachedPolicies"])
+
+        if response["IsTruncated"]:
+            marker["Marker"] = response["Marker"]
+        else:
+            break
+
+    return [{"name": p["PolicyName"], "arn": p["PolicyArn"]} for p in policies]
+
+
+@sts_conn("iam", service_type="client")
+@rate_limited()
+def get_role_managed_policy_documents(role, client=None, **kwargs):
+    """Retrieve the currently active policy version document for every managed policy that is attached to the role."""
+    policies = get_role_managed_policies(role, force_client=client)
+
+    policy_names = (policy["name"] for policy in policies)
+    delayed_gmpd_calls = (
+        delayed(get_managed_policy_document)(policy["arn"], force_client=client)
+        for policy in policies
+    )
+    policy_documents = Parallel(n_jobs=20, backend="threading")(delayed_gmpd_calls)
+
+    return dict(zip(policy_names, policy_documents))
+
+
+async def update_role_tear_config(
+    host, user, role_name, account_id: str, tear_config: PrincipalModelTearConfig
+) -> [bool, str]:
+    from common.aws.iam.role.models import IAMRole
+
+    client = await aio_wrapper(
+        get_host_iam_conn,
+        host,
+        account_id,
+        "update_role_tear_config",
+        user=user,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+    )
+
+    try:
+        await aio_wrapper(
+            client.tag_role,
+            RoleName=role_name,
+            Tags=[
+                {
+                    "Key": get_active_tear_users_tag(host),
+                    "Value": ":".join(tear_config.active_users),
+                },
+                {
+                    "Key": get_tear_support_groups_tag(host),
+                    "Value": ":".join(tear_config.supported_groups),
+                },
+            ],
+        )
+    except Exception as err:
+        return False, repr(err)
+    else:
+        await IAMRole.get(
+            account_id, host, f"arn:aws:iam::{account_id}:role/{role_name}", True
+        )
+        return True, ""
+
+
+async def update_assume_role_policy_trust_noq(host, user, role_name, account_id):
+    client = await aio_wrapper(
+        get_host_iam_conn,
+        host,
+        account_id,
+        "noq_update_assume_role_policy_trust",
+        user=user,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+    )
+
+    role = await aio_wrapper(client.get_role, RoleName=role_name)
+    assume_role_trust_policy = role.get("Role", {}).get("AssumeRolePolicyDocument", {})
+    if not assume_role_trust_policy:
+        return False
+    hub_account = models.ModelAdapter(HubAccount).load_config("hub_account", host).model
+    if not hub_account:
+        return False
+
+    assume_role_policy = {
+        "Effect": "Allow",
+        "Action": ["sts:AssumeRole", "sts:TagSession"],
+        "Principal": {"AWS": [hub_account.role_arn]},
+    }
+
+    assume_role_trust_policy["Statement"].append(assume_role_policy)
+
+    client.update_assume_role_policy(
+        RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
+    )
+    return True
