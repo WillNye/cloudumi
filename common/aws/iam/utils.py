@@ -328,7 +328,7 @@ async def fetch_iam_role(
                 role.get("Arn").lower(),
             ),
             "last_updated": last_updated,
-            "ttl": int((datetime.utcnow() + timedelta(hours=36)).timestamp()),
+            "ttl": int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
         }
 
         # Sync with DDB:
