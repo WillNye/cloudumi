@@ -13,7 +13,7 @@ import { removeUserAccount } from './utils'
 
 const TempEscalationAccess = ({ elevated_access_config }) => {
   const { openModal, closeModal, ModalComponent } = useModal(
-    'Temporary Escalation Access Modal'
+    'Temporary Elevated Access Modal'
   )
 
   const {
@@ -68,10 +68,10 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
       <Header as='h2'>
         Temporary Escalation Access
         <Header.Subheader>
-          Users who are members of the following groups will be allowed to
-          submit Temporary Escalation Access Requests (TEARS). Required
-          approvals and notifications can be globally configured on the &nbsp;
-          <Link to='/settings'>Settings</Link> page.
+          Users who are members of the following groups will be able to request
+          temporary access to this role. Approvals and notifications can be
+          globally configured on the&nbsp;
+          <Link to='/config'>Config</Link> page.
         </Header.Subheader>
       </Header>
 
@@ -92,7 +92,7 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
       <ModalComponent
         onClose={closeModal}
         hideConfirm
-        forceTitle='Add User Groups for Temporary Escalation Access'
+        forceTitle='Add User Groups for Temporary Elevated Access'
       >
         <TempEscalationUserModal
           elevated_access_config={elevated_access_config}
