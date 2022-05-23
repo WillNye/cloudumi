@@ -18,7 +18,6 @@ from common.exceptions.exceptions import (
     Unauthorized,
 )
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
-from common.lib.asyncio import aio_wrapper
 from common.lib.auth import (
     can_admin_policies,
     get_extended_request_account_ids,
@@ -590,9 +589,7 @@ class RequestsHandler(BaseAPIV2Handler):
             "host": host,
         }
         log.debug(log_data)
-        requests = [
-            request.dict() for request in await aio_wrapper(IAMRequest.query, host)
-        ]
+        requests = [request.dict() for request in await IAMRequest.query(host)]
 
         total_count = len(requests)
 

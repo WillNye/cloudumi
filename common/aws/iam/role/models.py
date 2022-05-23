@@ -7,6 +7,7 @@ from pynamodax.attributes import ListAttribute, NumberAttribute, UnicodeAttribut
 
 from common.aws.iam.role.utils import (
     _create_iam_role,
+    _delete_iam_role,
     _get_iam_role_async,
     _get_iam_role_sync,
 )
@@ -19,7 +20,6 @@ from common.config.config import (
     get_logger,
 )
 from common.config.models import ModelAdapter
-from common.lib.asyncio import aio_wrapper
 from common.lib.plugins import get_plugin_by_name
 from common.lib.pynamo import NoqMapAttribute, NoqModel
 from common.models import RoleCreationRequestModel, SpokeAccount
@@ -86,7 +86,7 @@ class IAMRole(NoqModel):
         entity_id = f"{arn}||{host}"
 
         if not force_refresh:
-            iam_role = await aio_wrapper(super(IAMRole, cls).get, host, entity_id)
+            iam_role = await super(IAMRole, cls).get(host, entity_id)
 
         if not iam_role:
             if force_refresh:
@@ -150,7 +150,7 @@ class IAMRole(NoqModel):
                 last_updated=last_updated,
                 ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
             )
-            await aio_wrapper(iam_role.save)
+            await iam_role.save()
 
             log_data["message"] = "Role fetched from AWS, and synced with DDB."
             stats.count(
@@ -184,4 +184,5 @@ class IAMRole(NoqModel):
     ):
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
         entity_id = f"{arn}||{host}"
+        await _delete_iam_role(account_id, role_name, username, host)
         print(entity_id)

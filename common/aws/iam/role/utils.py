@@ -263,6 +263,41 @@ async def _create_iam_role(
     return results
 
 
+async def _fetch_role_resource(account_id, role_name, host, user):
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "message": "Attempting to fetch role details",
+        "account": account_id,
+        "role": role_name,
+    }
+    log.info(log_data)
+    iam_resource = await aio_wrapper(
+        boto3_cached_conn,
+        "iam",
+        host,
+        user,
+        service_type="resource",
+        account_number=account_id,
+        region=config.region,
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
+        session_name=sanitize_session_name("_fetch_role_resource"),
+        retry_max_attempts=2,
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+    )
+    try:
+        iam_role = await aio_wrapper(iam_resource.Role, role_name)
+    except ClientError as ce:
+        if ce.response["Error"]["Code"] == "NoSuchEntity":
+            log_data["message"] = "Requested role doesn't exist"
+            log.error(log_data)
+        raise
+    await aio_wrapper(iam_role.load)
+    return iam_role
+
+
 async def _delete_iam_role(account_id, role_name, username, host) -> bool:
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -320,41 +355,6 @@ async def _delete_iam_role(account_id, role_name, username, host) -> bool:
             "host": host,
         },
     )
-
-
-async def _fetch_role_resource(account_id, role_name, host, user):
-    log_data = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "message": "Attempting to fetch role details",
-        "account": account_id,
-        "role": role_name,
-    }
-    log.info(log_data)
-    iam_resource = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
-        host,
-        user,
-        service_type="resource",
-        account_number=account_id,
-        region=config.region,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        session_name=sanitize_session_name("_fetch_role_resource"),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
-    try:
-        iam_role = await aio_wrapper(iam_resource.Role, role_name)
-    except ClientError as ce:
-        if ce.response["Error"]["Code"] == "NoSuchEntity":
-            log_data["message"] = "Requested role doesn't exist"
-            log.error(log_data)
-        raise
-    await aio_wrapper(iam_role.load)
-    return iam_role
 
 
 async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
