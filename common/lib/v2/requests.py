@@ -12,7 +12,7 @@ from botocore.exceptions import ClientError
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
-from common.aws.iam.utils import fetch_iam_role
+from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -2520,7 +2520,7 @@ async def apply_resource_policy_change(
                 ),
             )
             # force refresh the role for which we just changed the assume role policy doc
-            await fetch_iam_role(
+            await IAMRole.get(
                 resource_account, change.arn, host, force_refresh=force_refresh
             )
         response.action_results.append(
@@ -2660,7 +2660,7 @@ async def maybe_approve_reject_request(
             extended_request.principal.principal_arn, host
         )
         if extended_request.principal.principal_arn.startswith("aws:aws:iam::"):
-            await fetch_iam_role(
+            await IAMRole.get(
                 account_id,
                 extended_request.principal.principal_arn,
                 host,
@@ -2999,7 +2999,7 @@ async def parse_and_apply_policy_request_modification(
                     extended_request.principal.principal_arn,
                     host,
                 )
-                await fetch_iam_role(
+                await IAMRole.get(
                     account_id,
                     extended_request.principal.principal_arn,
                     host,
@@ -3175,7 +3175,7 @@ async def parse_and_apply_policy_request_modification(
         account_id = await get_resource_account(
             extended_request.principal.principal_arn, host
         )
-        await fetch_iam_role(
+        await IAMRole.get(
             account_id,
             extended_request.principal.principal_arn,
             host,

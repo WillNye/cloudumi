@@ -4,7 +4,8 @@ from typing import List, Optional, Union
 import ujson as json
 from policy_sentry.util.arns import parse_arn
 
-from common.aws.iam.utils import fetch_iam_role, fetch_iam_user
+from common.aws.iam.role.models import IAMRole
+from common.aws.iam.user.utils import fetch_iam_user
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.asyncio import aio_wrapper
@@ -217,7 +218,9 @@ async def get_role_details(
 ) -> Optional[Union[ExtendedAwsPrincipalModel, AwsPrincipalModel]]:
     account_ids_to_name = await get_account_id_to_name_mapping(host)
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-    role = await fetch_iam_role(account_id, arn, host, force_refresh=force_refresh)
+    role = (
+        await IAMRole.get(account_id, arn, host, force_refresh=force_refresh)
+    ).dict()
     # requested role doesn't exist
     if not role:
         return None

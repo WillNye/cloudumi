@@ -8,7 +8,7 @@ import ujson as json
 from furl import furl
 from pydantic import ValidationError
 
-from common.aws.iam.utils import fetch_iam_role
+from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.handlers.base import BaseAdminHandler, BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -19,12 +19,7 @@ from common.lib.auth import (
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
 from common.lib.aws.iam import update_role_tear_config
-from common.lib.aws.utils import (
-    allowed_to_sync_role,
-    clone_iam_role,
-    create_iam_role,
-    delete_iam_role,
-)
+from common.lib.aws.utils import allowed_to_sync_role, clone_iam_role, delete_iam_role
 from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.aws_principals import get_eligible_role_details, get_role_details
@@ -289,7 +284,7 @@ class RolesHandler(BaseAPIV2Handler):
             return
 
         try:
-            results = await create_iam_role(create_model, self.user, host)
+            results = await IAMRole.create(create_model, self.user, host)
         except Exception as e:
             log_data["message"] = f"Exception creating role: {str(e)}"
             log_data["error"] = str(e)
@@ -319,7 +314,7 @@ class RolesHandler(BaseAPIV2Handler):
                 "host": host,
             },
         )
-        self.write(results)
+        self.write(results.dict())
 
 
 class AccountRolesHandler(BaseAPIV2Handler):
@@ -506,7 +501,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
 
-        await fetch_iam_role(account_id, arn, host, force_refresh=True)
+        await IAMRole.get(account_id, arn, host, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",
@@ -597,7 +592,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
 
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        await fetch_iam_role(account_id, arn, host, force_refresh=True)
+        await IAMRole.get(account_id, arn, host, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",

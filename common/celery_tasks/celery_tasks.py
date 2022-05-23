@@ -44,7 +44,7 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
-from common.aws.iam.utils import fetch_iam_role
+from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
@@ -2695,7 +2695,7 @@ def refresh_iam_role(role_arn, host=None):
         raise Exception("`host` must be passed to this task.")
 
     account_id = role_arn.split(":")[4]
-    async_to_sync(fetch_iam_role)(
+    async_to_sync(IAMRole.get)(
         account_id, role_arn, host, force_refresh=True, run_sync=True
     )
 

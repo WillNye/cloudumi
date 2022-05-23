@@ -8,7 +8,7 @@ import ujson as json
 from policy_sentry.util.arns import parse_arn
 from pydantic import ValidationError
 
-from common.aws.iam.utils import fetch_iam_role
+from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
@@ -532,7 +532,7 @@ class RequestHandler(BaseAPIV2Handler):
             # Force a refresh of the role in Redis/DDB
             arn_parsed = parse_arn(extended_request.principal.principal_arn)
             if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
-                await fetch_iam_role(
+                await IAMRole.get(
                     account_id,
                     extended_request.principal.principal_arn,
                     host,
@@ -792,13 +792,12 @@ class RequestDetailHandler(BaseAPIV2Handler):
         }
 
         template = None
-        # Force a refresh of the role in Redis/DDB
         arn_parsed = parse_arn(extended_request.principal.principal_arn)
         if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
-            iam_role = await fetch_iam_role(
+            iam_role = await IAMRole.get(
                 arn_parsed["account"], extended_request.principal.principal_arn, host
             )
-            template = iam_role.get("templated")
+            template = iam_role.templated
 
         changes_config = await populate_approve_reject_policy(
             extended_request, self.groups, host, self.user

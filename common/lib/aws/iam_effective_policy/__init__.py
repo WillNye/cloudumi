@@ -1,4 +1,5 @@
-from common.aws.iam.utils import fetch_iam_role, fetch_iam_user
+from common.aws.iam.role.models import IAMRole
+from common.aws.iam.user.utils import fetch_iam_user
 from common.config import config
 from common.lib.aws.iam import get_role_managed_policy_documents
 from common.lib.aws.utils import (
@@ -17,9 +18,11 @@ async def calculate_effective_policy_for_identity(
     account_id = await get_account_id_from_arn(arn)
     identity_type = await get_identity_type_from_arn(arn)
     if identity_type == "role":
-        identity = await fetch_iam_role(
-            account_id, arn, host, force_refresh=force_refresh, run_sync=True
-        )
+        identity = (
+            await IAMRole.get(
+                account_id, arn, host, force_refresh=force_refresh, run_sync=True
+            )
+        ).dict()
         identity_policy_list_name = "RolePolicyList"
         identity_name_parameter = "RoleName"
     elif identity_type == "user":

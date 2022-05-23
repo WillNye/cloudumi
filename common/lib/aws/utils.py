@@ -18,7 +18,8 @@ from deepdiff import DeepDiff
 from parliament import analyze_policy_string, enhance_finding
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
-from common.aws.iam.utils import fetch_iam_role, fetch_iam_user
+from common.aws.iam.role.models import IAMRole
+from common.aws.iam.user.utils import fetch_iam_user
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -61,7 +62,6 @@ from common.models import (
     ExtendedRequestModel,
     OrgAccount,
     RequestStatus,
-    RoleCreationRequestModel,
     ServiceControlPolicyArrayModel,
     ServiceControlPolicyModel,
     SpokeAccount,
@@ -887,179 +887,6 @@ async def fetch_iam_user_details(account_id, iam_user_name, host, user):
         raise
     await aio_wrapper(iam_user.load)
     return iam_user
-
-
-async def create_iam_role(create_model: RoleCreationRequestModel, username, host):
-    """
-    Creates IAM role.
-    :param create_model: RoleCreationRequestModel, which has the following attributes:
-        account_id: destination account's ID
-        role_name: destination role name
-        description: optional string - description of the role
-                     default: Role created by {username} through ConsoleMe
-        instance_profile: optional boolean - whether to create an instance profile and attach it to the role or not
-                     default: True
-    :param username: username of user requesting action
-    :return: results: - indicating the results of each action
-    """
-    log_data = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "message": "Attempting to create role",
-        "account_id": create_model.account_id,
-        "role_name": create_model.role_name,
-        "user": username,
-        "host": host,
-    }
-    log.info(log_data)
-
-    default_trust_policy = config.get_host_specific_key(
-        "user_role_creator.default_trust_policy",
-        host,
-        {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Principal": {"Service": "ec2.amazonaws.com"},
-                    "Action": "sts:AssumeRole",
-                }
-            ],
-        },
-    )
-    if default_trust_policy is None:
-        raise MissingConfigurationValue(
-            "Missing Default Assume Role Policy Configuration"
-        )
-
-    default_max_session_duration = config.get_host_specific_key(
-        "user_role_creator.default_max_session_duration", host, 3600
-    )
-
-    if create_model.description:
-        description = create_model.description
-    else:
-        description = f"Role created by {username} through ConsoleMe"
-
-    iam_client = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
-        host,
-        username,
-        service_type="client",
-        account_number=create_model.account_id,
-        region=config.region,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": create_model.account_id})
-        .first.name,
-        session_name=sanitize_session_name("create_role_" + username),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
-    results = {"errors": 0, "role_created": "false", "action_results": []}
-    try:
-        await aio_wrapper(
-            iam_client.create_role,
-            RoleName=create_model.role_name,
-            AssumeRolePolicyDocument=json.dumps(default_trust_policy),
-            MaxSessionDuration=default_max_session_duration,
-            Description=description,
-            Tags=[],
-        )
-        results["action_results"].append(
-            {
-                "status": "success",
-                "message": f"Role arn:aws:iam::{create_model.account_id}:role/{create_model.role_name} "
-                f"successfully created",
-            }
-        )
-        results["role_created"] = "true"
-    except Exception as e:
-        log_data["message"] = "Exception occurred creating role"
-        log_data["error"] = str(e)
-        log.error(log_data, exc_info=True)
-        results["action_results"].append(
-            {
-                "status": "error",
-                "message": f"Error creating role {create_model.role_name} in account {create_model.account_id}:"
-                + str(e),
-            }
-        )
-        results["errors"] += 1
-        sentry_sdk.capture_exception()
-        # Since we were unable to create the role, no point continuing, just return
-        return results
-
-    # If here, role has been successfully created, add status updates for each action
-    results["action_results"].append(
-        {
-            "status": "success",
-            "message": "Successfully added default Assume Role Policy Document",
-        }
-    )
-    results["action_results"].append(
-        {
-            "status": "success",
-            "message": "Successfully added description: " + description,
-        }
-    )
-
-    # Create instance profile and attach if specified
-    if create_model.instance_profile:
-        try:
-            await aio_wrapper(
-                iam_client.create_instance_profile,
-                InstanceProfileName=create_model.role_name,
-            )
-            await aio_wrapper(
-                iam_client.add_role_to_instance_profile,
-                InstanceProfileName=create_model.role_name,
-                RoleName=create_model.role_name,
-            )
-            results["action_results"].append(
-                {
-                    "status": "success",
-                    "message": f"Successfully added instance profile {create_model.role_name} to role "
-                    f"{create_model.role_name}",
-                }
-            )
-        except Exception as e:
-            log_data[
-                "message"
-            ] = "Exception occurred creating/attaching instance profile"
-            log_data["error"] = str(e)
-            log.error(log_data, exc_info=True)
-            sentry_sdk.capture_exception()
-            results["action_results"].append(
-                {
-                    "status": "error",
-                    "message": f"Error creating/attaching instance profile {create_model.role_name} to role: "
-                    + str(e),
-                }
-            )
-            results["errors"] += 1
-
-    stats.count(
-        f"{log_data['function']}.success",
-        tags={
-            "role_name": create_model.role_name,
-            "host": host,
-        },
-    )
-    log_data["message"] = "Successfully created role"
-    log.info(log_data)
-    # Force caching of role
-    try:
-        role_arn = (
-            f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
-        )
-        await fetch_iam_role(
-            create_model.account_id, role_arn, host, force_refresh=True
-        )
-    except Exception as e:
-        log.error({**log_data, "message": "Unable to cache role", "error": str(e)})
-        sentry_sdk.capture_exception()
-    return results
 
 
 async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
@@ -2378,7 +2205,7 @@ async def remove_expired_request_changes(
             await IAMRequest.write_v2(extended_request, host)
 
             if resource_name == "role":
-                await fetch_iam_role(
+                await IAMRole.get(
                     resource_account,
                     principal_arn,
                     host,
@@ -2635,7 +2462,7 @@ async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str
     account_id = await get_account_id_from_arn(arn)
     # trying to find principal for subsequent queries
     if principal_type == "role":
-        principal_details = await fetch_iam_role(account_id, arn, host)
+        principal_details = (await IAMRole.get(account_id, arn, host)).dict()
     elif principal_type == "user":
         principal_details = await fetch_iam_user(account_id, arn, host)
     return principal_details.get("owner")
