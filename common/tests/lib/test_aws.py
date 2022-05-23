@@ -81,11 +81,6 @@ class TestAwsLib(TestCase):
         self.assertNotEqual(get_role_tag(ROLE, "tag2"), "value1")
         self.assertNotEqual(get_role_tag(ROLE, "tag1"), "value2")
 
-    def test_apply_managed_policy_to_role(self):
-        from common.aws.iam.role.utils import apply_managed_policy_to_role
-
-        apply_managed_policy_to_role(ROLE, "policy-one", "session", host, None)
-
     @patch("common.lib.aws.utils.redis_hget")
     def test_get_resource_account(self, mock_aws_config_resources_redis):
         from common.lib.aws.utils import get_resource_account

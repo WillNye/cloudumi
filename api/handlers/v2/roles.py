@@ -9,7 +9,6 @@ from furl import furl
 from pydantic import ValidationError
 
 from common.aws.iam.role.models import IAMRole
-from common.aws.iam.role.utils import _delete_iam_role, clone_iam_role
 from common.config import config
 from common.handlers.base import BaseAdminHandler, BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -285,7 +284,7 @@ class RolesHandler(BaseAPIV2Handler):
             return
 
         try:
-            results = await IAMRole.create(create_model, self.user, host)
+            _, results = await IAMRole.create(create_model, self.user, host)
         except Exception as e:
             log_data["message"] = f"Exception creating role: {str(e)}"
             log_data["error"] = str(e)
@@ -315,7 +314,7 @@ class RolesHandler(BaseAPIV2Handler):
                 "host": host,
             },
         )
-        self.write(results.dict())
+        self.write(results)
 
 
 class AccountRolesHandler(BaseAPIV2Handler):
@@ -481,7 +480,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
             self.write_error(403, message="User is unauthorized to delete a role")
             return
         try:
-            await _delete_iam_role(account_id, role_name, self.user, host)
+            await IAMRole.delete_role(account_id, role_name, self.user, host)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -574,7 +573,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             return
 
         try:
-            await _delete_iam_role(account_id, role_name, app_name, host)
+            await IAMRole.delete_role(account_id, role_name, app_name, host)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -712,7 +711,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
             return
 
         try:
-            results = await clone_iam_role(clone_model, self.user, host)
+            _, results = await IAMRole.clone(clone_model, self.user, host)
         except Exception as e:
             log_data["message"] = "Exception cloning role"
             log_data["error"] = str(e)

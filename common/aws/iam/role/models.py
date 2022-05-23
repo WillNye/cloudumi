@@ -6,6 +6,7 @@ from botocore.exceptions import ClientError
 from pynamodax.attributes import ListAttribute, NumberAttribute, UnicodeAttribute
 
 from common.aws.iam.role.utils import (
+    _clone_iam_role,
     _create_iam_role,
     _delete_iam_role,
     _get_iam_role_async,
@@ -22,7 +23,7 @@ from common.config.config import (
 from common.config.models import ModelAdapter
 from common.lib.plugins import get_plugin_by_name
 from common.lib.pynamo import NoqMapAttribute, NoqModel
-from common.models import RoleCreationRequestModel, SpokeAccount
+from common.models import CloneRoleRequestModel, RoleCreationRequestModel, SpokeAccount
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = get_logger(__name__)
@@ -58,6 +59,10 @@ class IAMRole(NoqModel):
     @property
     def role_id(self):
         return f"{self.arn}||{self.host}"
+
+    @property
+    def assume_role_policy(self):
+        return self.policy.get("AssumeRolePolicyDocument")
 
     @classmethod
     async def get(
@@ -174,15 +179,29 @@ class IAMRole(NoqModel):
     async def create(
         cls, create_model: RoleCreationRequestModel, username: str, host: str
     ):
-        await _create_iam_role(create_model, username, host)
+        results = await _create_iam_role(create_model, username, host)
+        if results["role_created"] == "false":
+            return None, results
+
         arn = f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
-        return await cls.get(create_model.account_id, host, arn, True)
+        iam_role = await cls.get(create_model.account_id, host, arn, True)
+        return iam_role, results
 
     @classmethod
     async def delete_role(
         cls, account_id: str, role_name: str, username: str, host: str
     ):
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        entity_id = f"{arn}||{host}"
+        iam_role = await cls.get(account_id, host, arn)
         await _delete_iam_role(account_id, role_name, username, host)
-        print(entity_id)
+        return await iam_role.delete()
+
+    @classmethod
+    async def clone(cls, clone_model: CloneRoleRequestModel, username, host):
+        results = await _clone_iam_role(clone_model, username, host)
+        if results["role_created"] == "false":
+            return None, results
+
+        arn = f"arn:aws:iam::{clone_model.dest_account_id}:role/{clone_model.dest_role_name}"
+        iam_role = await cls.get(clone_model.dest_account_id, host, arn, True)
+        return iam_role, results

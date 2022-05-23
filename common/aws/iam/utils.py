@@ -7,11 +7,13 @@ from common.lib.aws.sanitize import sanitize_session_name
 from common.models import SpokeAccount
 
 
-def get_host_iam_conn(host: str, account_id: str, session_name: str):
+def get_host_iam_conn(
+    host: str, account_id: str, session_name: str, user: str = None, **kwargs
+):
     return boto3_cached_conn(
         "iam",
         host,
-        None,
+        user,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -21,6 +23,7 @@ def get_host_iam_conn(host: str, account_id: str, session_name: str):
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         session_name=sanitize_session_name(session_name),
+        **kwargs
     )
 
 

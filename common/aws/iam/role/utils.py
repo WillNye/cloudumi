@@ -8,18 +8,15 @@ from botocore.exceptions import ClientError
 
 from common.aws.iam.utils import get_host_iam_conn
 from common.config import config
-from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
-from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.iam import (
     get_role_inline_policies,
     get_role_managed_policies,
     list_role_tags,
 )
-from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.plugins import get_plugin_by_name
-from common.models import CloneRoleRequestModel, RoleCreationRequestModel, SpokeAccount
+from common.models import CloneRoleRequestModel, RoleCreationRequestModel
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger(__name__)
@@ -272,20 +269,12 @@ async def _fetch_role_resource(account_id, role_name, host, user):
     }
     log.info(log_data)
     iam_resource = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
+        get_host_iam_conn,
         host,
-        user,
+        account_id,
+        "_fetch_role_resource",
+        user=user,
         service_type="resource",
-        account_number=account_id,
-        region=config.region,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        session_name=sanitize_session_name("_fetch_role_resource"),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
     )
     try:
         iam_role = await aio_wrapper(iam_resource.Role, role_name)
@@ -298,7 +287,7 @@ async def _fetch_role_resource(account_id, role_name, host, user):
     return iam_role
 
 
-async def _delete_iam_role(account_id, role_name, username, host) -> bool:
+async def _delete_iam_role(account_id, role_name, username, host):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "message": "Attempting to delete role",
@@ -357,7 +346,7 @@ async def _delete_iam_role(account_id, role_name, username, host) -> bool:
     )
 
 
-async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
+async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     """
     Clones IAM role within same account or across account, always creating and attaching instance profile if one exists
     on the source role.
@@ -437,22 +426,12 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         description = f"Role cloned via ConsoleMe by {username} from {role.arn}"
 
     tags = role.tags if clone_model.options.tags and role.tags else []
-
     iam_client = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
+        get_host_iam_conn,
         host,
-        username,
-        service_type="client",
-        account_number=clone_model.dest_account_id,
-        region=config.region,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": clone_model.dest_account_id})
-        .first.name,
-        session_name=sanitize_session_name("clone_role_" + username),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        clone_model.dest_account_id,
+        f"clone_role_{username}",
+        user=username,
     )
     results = {"errors": 0, "role_created": "false", "action_results": []}
     try:
@@ -639,66 +618,3 @@ async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     log_data["message"] = "Successfully cloned role"
     log.info(log_data)
     return results
-
-
-def apply_managed_policy_to_role(
-    role: Dict, policy_name: str, session_name: str, host: str, user: str
-) -> bool:
-    """
-    Apply a managed policy to a role.
-    :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :param policy_name: Name of managed policy to add to role
-    :param session_name: Name of session to assume role with. This is an identifier that will be logged in CloudTrail
-    :param host: The NOQ Tenant
-    :param user: The user who is applying the manage policy to the role
-    :return:
-    """
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    log_data = {
-        "function": function,
-        "role": role,
-        "policy_name": policy_name,
-        "session_name": session_name,
-    }
-    account_id = role.get("Arn").split(":")[4]
-    policy_arn = f"arn:aws:iam::{account_id}:policy/{policy_name}"
-    client = boto3_cached_conn(
-        "iam",
-        host,
-        user,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        session_name=sanitize_session_name(session_name),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
-
-    client.attach_role_policy(RoleName=role.get("RoleName"), PolicyArn=policy_arn)
-    log_data["message"] = "Applied managed policy to role"
-    log.debug(log_data)
-    stats.count(
-        f"{function}.attach_role_policy",
-        tags={
-            "role": role.get("Arn"),
-            "policy": policy_arn,
-            "host": host,
-        },
-    )
-    return True
-
-
-async def fetch_assume_role_policy(
-    role_arn: str, host: str, user: str
-) -> Optional[Dict]:
-    account_id = role_arn.split(":")[4]
-    role_name = role_arn.split("/")[-1]
-    try:
-        role = await _fetch_role_resource(account_id, role_name, host, user)
-    except ClientError:
-        # Role is most likely on an account that we do not have access to
-        sentry_sdk.capture_exception()
-        return None
-    return role.assume_role_policy_document
