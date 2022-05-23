@@ -160,6 +160,10 @@ hub_account:
 policies:
   role_name: NoqSpokeRoleLocalDev
   ip_restrictions: false
+elevated_access:
+  enabled: true
+  mfa:
+    enabled: false
 spoke_accounts:
   - name: NoqSpokeRoleLocalDev
     account_name: 'development'

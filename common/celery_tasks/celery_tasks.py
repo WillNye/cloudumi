@@ -1063,7 +1063,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                     role.get("Arn").lower(),
                 ),
                 "last_updated": last_updated,
-                "ttl": int((datetime.utcnow() + timedelta(hours=36)).timestamp()),
+                "ttl": int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
             }
 
             # DynamoDB:

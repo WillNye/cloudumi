@@ -20,7 +20,6 @@ from common.handlers.base import BaseAPIV2Handler, BaseHandler
 from common.lib.auth import (
     can_admin_policies,
     get_extended_request_account_ids,
-    mfa_authenticate_user,
     populate_approve_reject_policy,
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
@@ -29,6 +28,7 @@ from common.lib.aws.utils import get_resource_account
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import filter_table, write_json_error
+from common.lib.mfa import mfa_verify
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
     can_move_back_to_pending_v2,
@@ -56,6 +56,8 @@ from common.models import (
     RequestCreationResponse,
     RequestStatus,
 )
+from common.models import Status2 as WebStatus
+from common.models import WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -86,10 +88,23 @@ async def validate_request_creation(
 
         if err:
             handler.set_status(400)
-            handler.write({"message": err})
-            await handler.finish()
+            handler.write(
+                WebResponse(staus=WebStatus.error, errors=[err]).json(
+                    exclude_unset=True, exclude_none=True
+                )
+            )
+            return await handler.finish()
 
-        await mfa_authenticate_user(handler)
+        is_authenticated, err = await mfa_verify(handler.ctx.host, handler.user)
+        if not is_authenticated:
+            handler.set_status(403)
+            handler.write(
+                WebResponse(staus=WebStatus.error, errors=[err]).json(
+                    exclude_unset=True, exclude_none=True
+                )
+            )
+            return await handler.finish()
+
         request.admin_auto_approve = False
 
     return request
