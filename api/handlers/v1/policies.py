@@ -4,13 +4,14 @@ from typing import Dict, List, Optional
 import ujson as json
 from policyuniverse.expander_minimizer import _expand_wildcard_action
 
+from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.exceptions.exceptions import InvalidRequestParameter, MustBeFte
 from common.handlers.base import BaseAPIV1Handler, BaseHandler, BaseMtlsHandler
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.aws.utils import get_account_id_from_arn
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
-from common.lib.redis import redis_get, redis_hgetall
+from common.lib.redis import redis_get
 
 log = config.get_logger()
 
@@ -111,100 +112,86 @@ async def handle_resource_type_ahead_request(cls):
         "show_full_arn_for_s3_buckets"
     )
 
-    role_name = False
-    if resource_type == "s3":
-        topic = config.get_host_specific_key(
-            "redis.s3_bucket_key", host, f"{host}_S3_BUCKETS"
-        )
-        s3_bucket = config.get_host_specific_key(
-            "account_resource_cache.s3_combined.bucket", host
-        )
-        s3_key = config.get_host_specific_key(
-            "account_resource_cache.s3_combined.file",
+    role_name = bool(resource_type == "iam_role")
+    if resource_type in ["iam_arn", "iam_role"]:
+        filter_condition = None
+        if account_id:
+            filter_condition = IAMRole.accountId == account_id
+        iam_roles = await IAMRole.query(
             host,
-            "account_resource_cache/cache_s3_combined_v1.json.gz",
+            filter_condition=filter_condition,
+            attributes_to_get=["host", "accountId", "name", "arn", "resourceId"],
         )
-    elif resource_type == "sqs":
-        topic = config.get_host_specific_key(
-            "redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
-        )
-        s3_bucket = config.get_host_specific_key(
-            "account_resource_cache.sqs_combined.bucket", host
-        )
-        s3_key = config.get_host_specific_key(
-            "account_resource_cache.sqs_combined.file",
-            host,
-            "account_resource_cache/cache_sqs_queues_combined_v1.json.gz",
-        )
-    elif resource_type == "sns":
-        topic = config.get_host_specific_key(
-            "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
-        )
-        s3_bucket = config.get_host_specific_key(
-            "account_resource_cache.sns_topics_combined.bucket",
-            host,
-        )
-        s3_key = config.get_host_specific_key(
-            "account_resource_cache.sns_topics_topics_combined.file",
-            host,
-            "account_resource_cache/cache_sns_topics_combined_v1.json.gz",
-        )
-    elif resource_type == "iam_arn":
-        topic = config.get_host_specific_key(
-            "aws.iamroles_redis_key ", host, f"{host}_IAM_ROLE_CACHE"
-        )
-        s3_bucket = config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-            host,
-        )
-        s3_key = config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-            host,
-            "account_resource_cache/cache_all_roles_v1.json.gz",
-        )
-    elif resource_type == "iam_role":
-        topic = config.get("aws.iamroles_redis_key ", f"{host}_IAM_ROLE_CACHE")
-        s3_bucket = config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-            host,
-        )
-        s3_key = config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-            host,
-            "account_resource_cache/cache_all_roles_v1.json.gz",
-        )
-        role_name = True
-    elif resource_type == "account":
-        topic = None
-        s3_bucket = None
-        s3_key = None
-        topic_is_hash = False
-    elif resource_type == "app":
-        topic = config.get_host_specific_key(
-            "celery.apps_to_roles.redis_key",
-            host,
-            f"{host}_APPS_TO_ROLES",
-        )
-        s3_bucket = None
-        s3_key = None
-        topic_is_hash = False
+        data = [role.dict() for role in iam_roles]
     else:
-        cls.send_error(404, message=f"Invalid resource_type: {resource_type}")
-        return
+        if resource_type == "s3":
+            topic = config.get_host_specific_key(
+                "redis.s3_bucket_key", host, f"{host}_S3_BUCKETS"
+            )
+            s3_bucket = config.get_host_specific_key(
+                "account_resource_cache.s3_combined.bucket", host
+            )
+            s3_key = config.get_host_specific_key(
+                "account_resource_cache.s3_combined.file",
+                host,
+                "account_resource_cache/cache_s3_combined_v1.json.gz",
+            )
+        elif resource_type == "sqs":
+            topic = config.get_host_specific_key(
+                "redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
+            )
+            s3_bucket = config.get_host_specific_key(
+                "account_resource_cache.sqs_combined.bucket", host
+            )
+            s3_key = config.get_host_specific_key(
+                "account_resource_cache.sqs_combined.file",
+                host,
+                "account_resource_cache/cache_sqs_queues_combined_v1.json.gz",
+            )
+        elif resource_type == "sns":
+            topic = config.get_host_specific_key(
+                "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
+            )
+            s3_bucket = config.get_host_specific_key(
+                "account_resource_cache.sns_topics_combined.bucket",
+                host,
+            )
+            s3_key = config.get_host_specific_key(
+                "account_resource_cache.sns_topics_topics_combined.file",
+                host,
+                "account_resource_cache/cache_sns_topics_combined_v1.json.gz",
+            )
+        elif resource_type == "account":
+            topic = None
+            s3_bucket = None
+            s3_key = None
+            topic_is_hash = False
+        elif resource_type == "app":
+            topic = config.get_host_specific_key(
+                "celery.apps_to_roles.redis_key",
+                host,
+                f"{host}_APPS_TO_ROLES",
+            )
+            s3_bucket = None
+            s3_key = None
+            topic_is_hash = False
+        else:
+            cls.send_error(404, message=f"Invalid resource_type: {resource_type}")
+            return
 
-    if not topic and resource_type != "account":
-        raise InvalidRequestParameter("Invalid resource_type specified")
+        if not topic and resource_type != "account":
+            raise InvalidRequestParameter("Invalid resource_type specified")
 
-    if topic and topic_is_hash and s3_key:
-        data = await retrieve_json_data_from_redis_or_s3(
-            redis_key=topic,
-            redis_data_type="hash",
-            s3_bucket=s3_bucket,
-            s3_key=s3_key,
-            host=host,
-        )
-    elif topic:
-        data = await redis_get(topic, host)
+        if topic and topic_is_hash and s3_key:
+            data = await retrieve_json_data_from_redis_or_s3(
+                redis_key=topic,
+                redis_data_type="hash",
+                s3_bucket=s3_bucket,
+                s3_key=s3_key,
+                host=host,
+            )
+        elif topic:
+            data = await redis_get(topic, host)
 
     results: List[Dict] = []
 
@@ -220,19 +207,13 @@ async def handle_resource_type_ahead_request(cls):
                 results.append({"title": account})
     elif resource_type == "app":
         results = {}
-        all_role_arns = []
-        all_role_arns_j = await redis_hgetall(
-            (
-                config.get_host_specific_key(
-                    "aws.iamroles_redis_key",
-                    host,
-                    f"{host}_IAM_ROLE_CACHE",
-                )
-            ),
-            host,
+        filter_condition = None
+        if account_id:
+            filter_condition = IAMRole.accountId == account_id
+        iam_role_arns = await IAMRole.query(
+            host, filter_condition=filter_condition, attributes_to_get=["arn"]
         )
-        if all_role_arns_j:
-            all_role_arns = all_role_arns_j.keys()
+        all_role_arns = [role.arn for role in iam_role_arns]
         # Noq (Account: Test, Arn: arn)
         # TODO: Make this OSS compatible and configurable
         try:

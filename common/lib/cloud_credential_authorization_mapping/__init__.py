@@ -6,8 +6,8 @@ from typing import Dict, List, Optional
 import sentry_sdk
 from pydantic.json import pydantic_encoder
 
+from common.aws.iam.role.models import IAMRole
 from common.config import config
-from common.lib.aws.cached_resources.iam import get_iam_roles_for_host
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -160,7 +160,8 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
             or int(time.time()) - self._all_roles_last_update.get(host, 0) > 600
         ):
             try:
-                all_roles = await get_iam_roles_for_host(host)
+                all_roles = await IAMRole.query(host, attributes_to_get=["arn"])
+                all_roles = [role.arn for role in all_roles]
             except Exception as e:
                 sentry_sdk.capture_exception()
                 log.error(
@@ -171,7 +172,7 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
                     exc_info=True,
                 )
                 return []
-            self._all_roles[host] = list(all_roles.keys())
+            self._all_roles[host] = all_roles
             self._all_roles_count[host] = len(self._all_roles)
             self._all_roles_last_update[host] = int(time.time())
         return self._all_roles[host]

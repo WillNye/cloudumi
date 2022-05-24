@@ -55,11 +55,7 @@ from common.lib.account_indexers import (
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
-from common.lib.aws.cached_resources.iam import (
-    get_iam_roles_for_host,
-    store_iam_managed_policies_for_host,
-    store_iam_roles_for_host,
-)
+from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_host
 from common.lib.aws.cloudtrail import CloudTrail
 from common.lib.aws.iam import get_all_managed_policies
 from common.lib.aws.s3 import list_buckets
@@ -638,42 +634,34 @@ def cache_policies_table_details(host=None) -> bool:
         "cache_policies_table_details.skip_iam_roles", host, False
     )
     if not skip_iam_roles:
-        all_iam_roles = async_to_sync(get_iam_roles_for_host)(host)
+        all_iam_roles = async_to_sync(IAMRole.query)(host)
 
-        for arn, role_details_j in all_iam_roles.items():
-            role_details = ujson.loads(role_details_j)
-            role_details_policy = ujson.loads(role_details.get("policy", {}))
+        for role in all_iam_roles:
+            role_details_policy = role.policy
             role_tags = role_details_policy.get("Tags", {})
 
-            if not allowed_to_sync_role(arn, role_tags, host):
+            if not allowed_to_sync_role(role.arn, role_tags, host):
                 continue
 
-            error_count = cloudtrail_errors.get(arn, 0)
-            s3_errors_for_arn = s3_errors.get(arn, [])
+            error_count = cloudtrail_errors.get(role.arn, 0)
+            s3_errors_for_arn = s3_errors.get(role.arn, [])
             for error in s3_errors_for_arn:
                 error_count += int(error.get("count"))
 
-            account_id = arn.split(":")[4]
+            account_id = role.accountId
             account_name = accounts_d.get(str(account_id), "Unknown")
-            resource_id = role_details.get("resourceId")
+            resource_id = role.resourceId
             items.append(
                 {
                     "account_id": account_id,
                     "account_name": account_name,
-                    "arn": arn,
+                    "arn": role.arn,
                     "technology": "AWS::IAM::Role",
-                    "templated": red.hget(
-                        config.get_host_specific_key(
-                            "templated_roles.redis_key",
-                            host,
-                            f"{host}_TEMPLATED_ROLES_v2",
-                        ),
-                        arn.lower(),
-                    ),
+                    "templated": role.templated,
                     "errors": error_count,
                     "config_history_url": async_to_sync(
                         get_aws_config_history_url_for_resource
-                    )(account_id, resource_id, arn, "AWS::IAM::Role", host),
+                    )(account_id, resource_id, role.arn, "AWS::IAM::Role", host),
                 }
             )
 
@@ -940,10 +928,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
     from common.lib.dynamo import IAMRoleDynamoHandler
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    aws = get_plugin_by_name(
-        config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
-    )()
-    red = RedisHandler().redis_sync(host)
     log_data = {
         "function": function,
         "account_id": account_id,
@@ -951,7 +935,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
     }
     # Get the DynamoDB handler:
     dynamo = IAMRoleDynamoHandler(host)
-    iam_role_cache_key = f"{host}_IAM_ROLE_CACHE"
     iam_user_cache_key = f"{host}_IAM_USER_CACHE"
     # Only query IAM and put data in Dynamo if we're in the active region
     if config.region == config.get_host_specific_key(
@@ -1028,52 +1011,10 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         iam_roles = all_iam_resources["RoleDetailList"]
         iam_policies = all_iam_resources["Policies"]
 
-        # Make sure these roles satisfy config -> roles.allowed_*
-        filtered_iam_roles = []
-        for role in iam_roles:
-            arn = role.get("Arn", "")
-            tags = role.get("Tags", [])
-            if allowed_to_sync_role(arn, tags, host):
-                filtered_iam_roles.append(role)
-
-        iam_roles = filtered_iam_roles
+        async_to_sync(IAMRole.sync_account_roles(account_id, host, iam_roles))
 
         last_updated: int = int((datetime.utcnow()).timestamp())
-
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
-        # Save them:
-        for role in iam_roles:
-            role_entry = {
-                "arn": role.get("Arn"),
-                "host": host,
-                "name": role.pop("RoleName"),
-                "resourceId": role.pop("RoleId"),
-                "accountId": account_id,
-                "tags": role.get("Tags", []),
-                "policy": dynamo.convert_iam_resource_to_json(role),
-                "permissions_boundary": role.get("PermissionsBoundary", {}),
-                "owner": get_aws_principal_owner(role, host),
-                "templated": red.hget(
-                    config.get_host_specific_key(
-                        "templated_roles.redis_key",
-                        host,
-                        f"{host}_TEMPLATED_ROLES_v2",
-                    ),
-                    role.get("Arn").lower(),
-                ),
-                "last_updated": last_updated,
-                "ttl": int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
-            }
-
-            # DynamoDB:
-            dynamo.sync_iam_role_for_account(role_entry)
-
-            # Redis:
-            _add_role_to_redis(iam_role_cache_key, role_entry, host)
-
-            # Run internal function on role. This can be used to inspect roles, add managed policies, or other actions
-            aws.handle_detected_role(role)
-
         for user in iam_users:
             user_entry = {
                 "arn": user.get("Arn"),
@@ -1218,14 +1159,10 @@ def cache_iam_resources_across_accounts(
 ) -> Dict:
     if not host:
         raise Exception("`host` must be passed to this task.")
-    from common.lib.dynamo import IAMRoleDynamoHandler
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(host)
     cache_keys = {
-        "iam_roles": {
-            "cache_key": f"{host}_IAM_ROLE_CACHE",
-        },
         "iam_users": {
             "cache_key": f"{host}_IAM_USER_CACHE",
         },
@@ -1276,26 +1213,6 @@ def cache_iam_resources_across_accounts(
                 ),
             }
         )
-        dynamo = IAMRoleDynamoHandler(host)
-        # In non-active regions, we just want to sync DDB data to Redis
-        roles = dynamo.fetch_all_roles(host)
-        for role_entry in roles:
-            _add_role_to_redis(cache_keys["iam_roles"]["cache_key"], role_entry, host)
-
-    # Delete roles in Redis cache with expired TTL
-    all_roles = red.hgetall(cache_keys["iam_roles"]["cache_key"])
-    roles_to_delete_from_cache = []
-    for arn, role_entry_j in all_roles.items():
-        role_entry = json.loads(role_entry_j)
-        if datetime.fromtimestamp(role_entry["ttl"]) < datetime.utcnow():
-            roles_to_delete_from_cache.append(arn)
-    if roles_to_delete_from_cache:
-        red.hdel(cache_keys["iam_roles"]["cache_key"], *roles_to_delete_from_cache)
-        for arn in roles_to_delete_from_cache:
-            all_roles.pop(arn, None)
-    if all_roles:
-        async_to_sync(store_iam_roles_for_host)(all_roles, host)
-        cache_aws_resource_details(all_roles, host)
 
     # Delete users in Redis cache with expired TTL
     all_users = red.hgetall(cache_keys["iam_users"]["cache_key"])
@@ -1326,7 +1243,6 @@ def cache_iam_resources_across_accounts(
         )
         cache_aws_resource_details(all_users, host)
 
-    log_data["num_iam_roles"] = len(all_roles)
     log_data["num_iam_users"] = len(all_users)
     stats.count(f"{function}.success")
     log_data["num_accounts"] = len(accounts_d)

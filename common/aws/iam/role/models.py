@@ -1,3 +1,4 @@
+import asyncio
 import json
 import sys
 from datetime import datetime, timedelta
@@ -22,6 +23,7 @@ from common.config.config import (
     get_logger,
 )
 from common.config.models import ModelAdapter
+from common.lib.aws.utils import allowed_to_sync_role, get_aws_principal_owner
 from common.lib.plugins import get_plugin_by_name
 from common.lib.pynamo import NoqMapAttribute, NoqModel
 from common.models import CloneRoleRequestModel, RoleCreationRequestModel, SpokeAccount
@@ -201,3 +203,68 @@ class IAMRole(NoqModel):
         arn = f"arn:aws:iam::{clone_model.dest_account_id}:role/{clone_model.dest_role_name}"
         iam_role = await cls.get(clone_model.dest_account_id, host, arn, True)
         return iam_role, results
+
+    @classmethod
+    async def sync_account_roles(
+        cls, account_id: str, host: str, iam_roles: list[dict]
+    ):
+        aws = get_plugin_by_name(
+            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+        )()
+        filtered_iam_roles = []
+        for role in iam_roles:
+            arn = role.get("Arn", "")
+            tags = role.get("Tags", [])
+            if allowed_to_sync_role(arn, tags, host):
+                filtered_iam_roles.append(role)
+
+        iam_tasks = []
+        for iam_role in filtered_iam_roles:
+            iam_tasks.append(
+                _get_iam_role_async(
+                    account_id,
+                    iam_role["RoleName"],
+                    {
+                        "account_number": account_id,
+                        "assume_role": ModelAdapter(SpokeAccount)
+                        .load_config("spoke_accounts", host)
+                        .with_query({"account_id": account_id})
+                        .first.name,
+                        "region": config.region,
+                        "client_kwargs": config.get_host_specific_key(
+                            "boto3.client_kwargs", host, {}
+                        ),
+                    },
+                    host,
+                )
+            )
+
+        iam_roles = asyncio.gather(*iam_tasks)
+
+        last_updated: int = int((datetime.utcnow()).timestamp())
+        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
+
+        with cls.batch_write() as batch:
+            for role in iam_roles:
+                entity_id = f"{role.get('Arn')}||{host}"
+                batch.save(
+                    cls(
+                        arn=role.get("Arn"),
+                        entity_id=entity_id,
+                        host=host,
+                        name=role.get("RoleName"),
+                        resourceId=role.get("RoleId"),
+                        accountId=account_id,
+                        tags=[TagMap(**tag) for tag in role.get("Tags", [])],
+                        policy=cls().dump_json_attr(role),
+                        permissions_boundary=role.get("PermissionsBoundary", {}),
+                        owner=get_aws_principal_owner(role, host),
+                        templated=role.get("Arn").lower(),
+                        last_updated=last_updated,
+                        ttl=ttl,
+                    )
+                )
+
+        for role in iam_roles:
+            # Run internal function on role. This can be used to inspect roles, add managed policies, or other actions
+            aws.handle_detected_role(role)
