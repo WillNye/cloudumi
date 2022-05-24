@@ -85,6 +85,7 @@ from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
+from common.lib.pynamo import NoqModel
 from common.lib.redis import RedisHandler
 from common.lib.self_service.typeahead import cache_self_service_typeahead
 from common.lib.sentry import before_send_event
@@ -925,8 +926,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
     if not host:
         raise Exception("`host` must be passed to this task.")
     # progress_recorder = ProgressRecorder(self)
-    from common.lib.dynamo import IAMRoleDynamoHandler
-
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
@@ -934,7 +933,6 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         "host": host,
     }
     # Get the DynamoDB handler:
-    dynamo = IAMRoleDynamoHandler(host)
     iam_user_cache_key = f"{host}_IAM_USER_CACHE"
     # Only query IAM and put data in Dynamo if we're in the active region
     if config.region == config.get_host_specific_key(
@@ -1025,7 +1023,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 "ttl": ttl,
                 "last_updated": last_updated,
                 "owner": get_aws_principal_owner(user, host),
-                "policy": dynamo.convert_iam_resource_to_json(user),
+                "policy": NoqModel().dump_json_attr(user),
                 "templated": False,  # Templates not supported for IAM users at this time
             }
             # Redis:

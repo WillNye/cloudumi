@@ -15,8 +15,6 @@ import bcrypt
 import simplejson as json
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import Binary  # noqa
-from cloudaux import get_iso_string
-from retrying import retry
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
@@ -1449,96 +1447,6 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         await self.copy_tenant_config_dynamo_to_redis(
             host, int(time.time()), new_config_d
         )
-
-
-class IAMRoleDynamoHandler(BaseDynamoHandler):
-    def __init__(self, host) -> None:
-        try:
-            self.role_table = self._get_dynamo_table(
-                config.get_host_specific_key(
-                    "aws.iamroles_dynamo_table",
-                    host,
-                    get_dynamo_table_name("iamroles_multitenant"),
-                ),
-                host,
-            )
-            self.host = host
-
-        except Exception:
-            log.error("Unable to get the IAM Role DynamoDB tables.", exc_info=True)
-            raise
-
-    @retry(
-        stop_max_attempt_number=4,
-        wait_exponential_multiplier=1000,
-        wait_exponential_max=1000,
-    )
-    def _update_role_table_value(self, role_ddb: dict) -> None:
-        """Run the specific DynamoDB update with retryability."""
-        self.role_table.put_item(Item=role_ddb)
-
-    @retry(
-        stop_max_attempt_number=4,
-        wait_exponential_multiplier=1000,
-        wait_exponential_max=1000,
-    )
-    def fetch_iam_role(
-        self,
-        role_arn: str,
-        host: str,
-    ):
-        entity_id = self.get_role_id(role_arn, host)
-        return self.role_table.get_item(Key={"host": host, "entity_id": entity_id})
-
-    def convert_iam_resource_to_json(self, role: dict) -> str:
-        return json.dumps(role, default=self._json_encode_timestamps)
-
-    def _json_encode_timestamps(self, field: datetime) -> str:
-        """Solve those pesky timestamps and JSON annoyances."""
-        if isinstance(field, datetime):
-            return get_iso_string(field)
-
-    def get_role_id(self, role_arn, role_host):
-        return f"{role_arn}||{role_host}"
-
-    def sync_iam_role_for_account(self, role_ddb: dict) -> None:
-        """Sync the IAM roles received to DynamoDB.
-        :param role_ddb:
-        :return:
-        """
-        role_ddb["entity_id"] = self.get_role_id(role_ddb["arn"], role_ddb["host"])
-        try:
-            # Unfortunately, DDB does not support batch updates :(... So, we need to update each item individually :/
-            self._update_role_table_value(role_ddb)
-
-        except Exception as e:
-            log_data = {
-                "message": "Error syncing Account's IAM roles to DynamoDB",
-                "account_id": role_ddb["accountId"],
-                "role_ddb": role_ddb,
-                "error": str(e),
-            }
-            log.error(log_data, exc_info=True)
-            raise
-
-    def fetch_all_roles(self, host):
-        # TODO: Rewrite me
-        response = self.role_table.query(
-            KeyConditionExpression="host = :h",
-            ExpressionAttributeValues={":h": host},
-        )
-        print(response)
-        # response = self.role_table.scan()
-        # items = []
-        #
-        # if response and "Items" in response:
-        #     items = self._data_from_dynamo_replace(response["Items"])
-        # while "LastEvaluatedKey" in response:
-        #     response = self.role_table.scan(
-        #         ExclusiveStartKey=response["LastEvaluatedKey"]
-        #     )
-        #     items.extend(self._data_from_dynamo_replace(response["Items"]))
-        # return items
 
 
 # from asgiref.sync import async_to_sync

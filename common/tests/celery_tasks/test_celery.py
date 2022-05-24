@@ -7,7 +7,9 @@ from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
+from asgiref.sync import async_to_sync
 
+from common.aws.iam.role.models import IAMRole
 from common.lib.aws.access_undenied.access_undenied_aws import common, result_details
 from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
 from util.tests.fixtures.globals import host
@@ -29,9 +31,9 @@ class TestCelerySync(TestCase):
 
         self.celery = celery
 
+    @pytest.mark.skip(reason="EN-637")
     def cache_iam_resources_for_account(self):
         from common.config.config import CONFIG
-        from common.lib.dynamo import IAMRoleDynamoHandler
         from common.lib.redis import RedisHandler
 
         red = RedisHandler().redis_sync(host)
@@ -64,9 +66,7 @@ class TestCelerySync(TestCase):
         self.celery.cache_iam_resources_for_account("123456789012", host=host)
 
         # Verify that everything is there:
-        dynamo = IAMRoleDynamoHandler(host)
-
-        results = dynamo.role_table.scan(TableName="consoleme_iamroles_multitenant")
+        results = async_to_sync(IAMRole.query)(host)
 
         remaining_roles = [
             "arn:aws:iam::123456789012:role/ConsoleMe",
