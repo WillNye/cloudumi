@@ -23,9 +23,6 @@ from common.lib.cloud_credential_authorization_mapping.models import (
     RoleAuthorizationsDecoder,
     user_or_group,
 )
-from common.lib.cloud_credential_authorization_mapping.role_tags import (
-    RoleTagAuthorizationMappingGenerator,
-)
 from common.lib.singleton import Singleton
 
 log = config.get_logger("cloudumi")
@@ -265,14 +262,6 @@ async def generate_and_store_credential_authorization_mapping(
 ) -> Dict[user_or_group, RoleAuthorizations]:
     authorization_mapping: Dict[user_or_group, RoleAuthorizations] = {}
 
-    if config.get_host_specific_key(
-        "cloud_credential_authorization_mapping.role_tags.enabled",
-        host,
-        True,
-    ):
-        authorization_mapping = await RoleTagAuthorizationMappingGenerator().generate_credential_authorization_mapping(
-            authorization_mapping, host
-        )
     if config.get_host_specific_key(
         "cloud_credential_authorization_mapping.dynamic_config.enabled",
         host,

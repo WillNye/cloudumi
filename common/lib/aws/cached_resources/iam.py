@@ -12,33 +12,6 @@ from common.lib.cache import (
 )
 
 
-async def get_iam_roles_for_host(host: str) -> Any:
-    """Retrieves all IAM roles for a host from Redis or S3.
-
-    :param host: Tenant ID
-    :return: Any (A struct with all of the IAM roles)
-    """
-    return await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get_host_specific_key(
-            "aws.iamroles_redis_key",
-            host,
-            f"{host}_IAM_ROLE_CACHE",
-        ),
-        redis_data_type="hash",
-        s3_bucket=config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-            host,
-        ),
-        s3_key=config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-            host,
-            "account_resource_cache/cache_all_roles_v1.json.gz",
-        ),
-        default={},
-        host=host,
-    )
-
-
 async def get_identity_arns_for_account(
     host: str, account_id: str, identity_type: str = "role"
 ) -> List[str]:

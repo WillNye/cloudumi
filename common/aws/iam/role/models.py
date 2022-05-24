@@ -1,4 +1,3 @@
-import asyncio
 import json
 import sys
 from datetime import datetime, timedelta
@@ -218,34 +217,11 @@ class IAMRole(NoqModel):
             if allowed_to_sync_role(arn, tags, host):
                 filtered_iam_roles.append(role)
 
-        iam_tasks = []
-        for iam_role in filtered_iam_roles:
-            iam_tasks.append(
-                _get_iam_role_async(
-                    account_id,
-                    iam_role["RoleName"],
-                    {
-                        "account_number": account_id,
-                        "assume_role": ModelAdapter(SpokeAccount)
-                        .load_config("spoke_accounts", host)
-                        .with_query({"account_id": account_id})
-                        .first.name,
-                        "region": config.region,
-                        "client_kwargs": config.get_host_specific_key(
-                            "boto3.client_kwargs", host, {}
-                        ),
-                    },
-                    host,
-                )
-            )
-
-        iam_roles = asyncio.gather(*iam_tasks)
-
         last_updated: int = int((datetime.utcnow()).timestamp())
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
 
         with cls.batch_write() as batch:
-            for role in iam_roles:
+            for role in filtered_iam_roles:
                 entity_id = f"{role.get('Arn')}||{host}"
                 batch.save(
                     cls(

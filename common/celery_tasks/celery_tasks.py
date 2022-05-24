@@ -1940,89 +1940,6 @@ def _scan_redis_iam_cache(
     return red.hscan(cache_key, index, count=count)
 
 
-@app.task(soft_time_limit=1800)
-def clear_old_redis_iam_cache_for_all_hosts() -> Dict:
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
-    log_data = {
-        "function": function,
-        "message": "Spawning tasks",
-        "num_hosts": len(hosts),
-    }
-    log.debug(log_data)
-    for host in hosts:
-        clear_old_redis_iam_cache.apply_async((host,))
-    return log_data
-
-
-@app.task(soft_time_limit=1800)
-def clear_old_redis_iam_cache(host=None) -> bool:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    # Do not run if this is not in the active region:
-    if config.region != config.get_host_specific_key(
-        "celery.active_region", host, config.region
-    ):
-        return False
-    red = RedisHandler().redis_sync(host)
-    # Need to loop over all items in the set:
-    cache_key: str = config.get_host_specific_key(
-        "aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
-    )
-    index: int = 0
-    expire_ttl: int = int((datetime.utcnow() - timedelta(hours=6)).timestamp())
-    roles_to_expire = []
-
-    # We will loop over REDIS_IAM_COUNT items at a time:
-    try:
-        while True:
-            results = _scan_redis_iam_cache(cache_key, index, REDIS_IAM_COUNT, host)
-            index = results[0]
-
-            # Verify if the role is too old:
-            for arn, role in results[1].items():
-                role = json.loads(role)
-
-                if role["ttl"] <= expire_ttl:
-                    roles_to_expire.append(arn)
-
-            # We will be complete if the next index is 0:
-            if not index:
-                break
-
-    except:  # noqa
-        log_data = {
-            "function": function,
-            "message": "Error retrieving roles from Redis for cache cleanup.",
-            "host": host,
-        }
-        log.error(log_data, exc_info=True)
-        raise
-
-    # Delete all the roles that we need to delete:
-    try:
-        if roles_to_expire:
-            red.hdel(cache_key, *roles_to_expire)
-    except:  # noqa
-        log_data = {
-            "function": function,
-            "message": "Error deleting roles from Redis for cache cleanup.",
-            "host": host,
-        }
-        log.error(log_data, exc_info=True)
-        raise
-
-    stats.count(
-        f"{function}.success",
-        tags={
-            "expired_roles": len(roles_to_expire),
-            "host": host,
-        },
-    )
-    return True
-
-
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
 def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
     from common.lib.dynamo import UserDynamoHandler
@@ -2812,11 +2729,6 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_hosts",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
-    },
-    "clear_old_redis_iam_cache_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.clear_old_redis_iam_cache_for_all_hosts",
-        "options": {"expires": 180},
-        "schedule": schedule_6_hours,
     },
     "cache_policies_table_details_for_all_hosts": {
         "task": "common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_hosts",
