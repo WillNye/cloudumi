@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button, Form, Segment, Checkbox, Header } from 'semantic-ui-react'
 import Datatable from 'lib/Datatable'
@@ -7,12 +7,39 @@ import { DatatableWrapper } from 'lib/Datatable/ui/utils'
 import { Fill, Bar } from 'lib/Misc'
 import { TableTopBar } from '../../../settings/Settings/components/utils'
 
-const RoleAccess = ({ tags }) => {
+const RoleAccess = ({ role_access_config }) => {
   const { register, handleSubmit } = useForm()
 
   const { openModal, closeModal, ModalComponent } = useModal(
     'Add User Groups for Role Access'
   )
+  const authorized_groups = useMemo(() => {
+    const groups = []
+    role_access_config.noq_authorized_groups.forEach((tag) => {
+      tag.value.forEach((group) => {
+        groups.push({
+          group_name: group,
+          web_access: tag.web_access,
+          tag_name: tag.tag_name,
+        })
+      })
+    })
+    return groups
+  }, [role_access_config])
+
+  const cli_authorized_groups = useMemo(() => {
+    const groups = []
+    role_access_config.noq_authorized_cli_groups.forEach((tag) => {
+      tag.value.forEach((group) => {
+        groups.push({
+          group_name: group,
+          web_access: tag.web_access,
+          tag_name: tag.tag_name,
+        })
+      })
+    })
+    return groups
+  }, [role_access_config])
 
   return (
     <>
@@ -26,7 +53,7 @@ const RoleAccess = ({ tags }) => {
 
       <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
         <Datatable
-          data={tags}
+          data={[...authorized_groups, ...cli_authorized_groups]}
           columns={[
             {
               Header: 'Group',
@@ -39,9 +66,8 @@ const RoleAccess = ({ tags }) => {
               Cell: ({ row }) => (
                 <Checkbox
                   toggle
-                  onChange={() => {}}
-                  false
-                  defaultChecked={true}
+                  defaultChecked={row?.original?.web_access}
+                  disabled
                 />
               ),
             },

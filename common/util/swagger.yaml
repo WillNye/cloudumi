@@ -1626,6 +1626,23 @@ components:
           type: array
           items:
             type: string
+    PrincipalModelRoleAccessConfig:
+      type: object
+      properties:
+        noq_authorized_cli_groups_default_tag:
+          type: string
+          readOnly: true
+        noq_authorized_groups_default_tag:
+          type: string
+          readOnly: true
+        noq_authorized_groups:
+          type: array
+          items:
+            type: object
+        noq_authorized_cli_groups:
+          type: array
+          items:
+            type: object
     ExtendedAwsPrincipalModel:
       allOf:
         - $ref: "#/components/schemas/AwsPrincipalModel"
@@ -1660,6 +1677,8 @@ components:
                 type: object # TODO: make tags schema
             elevated_access_config:
               $ref: "#/components/schemas/PrincipalModelTearConfig"
+            role_access_config:
+              $ref: "#/components/schemas/PrincipalModelRoleAccessConfig"
             effective_policy:
               type: object
               description: |-
