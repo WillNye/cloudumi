@@ -31,9 +31,9 @@ const EffectivePermissions = () => {
                 The effective permissions of a role are a combination of the
                 permissions contained in a role's inline policies and managed
                 policies. The effective permissions are de-duplicated,
-                minimized, and alphabetically sorted. The right side shows the
-                effective permissions of a role with all permissions removed if
-                they have not been used in the last 90 days.
+                minimized, and alphabetically sorted. This policy shows all
+                permissions removed if they have not been used in the last 90
+                days.
               </Header.Subheader>
             </Header>
             <Segment

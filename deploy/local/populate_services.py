@@ -75,6 +75,10 @@ spoke_accounts:
     viewers: []
     delegate_admin_to_owner: false
     restrict_viewers_of_account_resources: false
+temporary_elevated_access_requests:
+  enabled: true
+  mfa:
+    enabled: false
 tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: {override_email}
@@ -160,7 +164,7 @@ hub_account:
 policies:
   role_name: NoqSpokeRoleLocalDev
   ip_restrictions: false
-elevated_access:
+temporary_elevated_access_requests:
   enabled: true
   mfa:
     enabled: false

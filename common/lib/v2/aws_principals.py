@@ -225,10 +225,11 @@ async def get_role_details(
         elevated_access_config = None
         template = await get_role_template(arn, host)
         tags = role["policy"]["Tags"]
-        if config.get_host_specific_key("elevated_access.enabled", host, False):
+        if config.get_host_specific_key(
+            "temporary_elevated_access_requests.enabled", host, False
+        ):
             tear_support_tag = get_tear_support_groups_tag(host)
             tear_users_tag = get_active_tear_users_tag(host)
-            tear_tags = [tear_support_tag, tear_users_tag]
             if is_admin_request:
                 active_users = get_role_tag(role, tear_users_tag, True, set())
                 supported_groups = get_role_tag(role, tear_support_tag, True, set())
@@ -237,8 +238,6 @@ async def get_role_details(
                     active_users=list(active_users),
                     supported_groups=list(supported_groups),
                 )
-
-            tags = [tag for tag in tags if tag["Key"] not in tear_tags]
 
         return ExtendedAwsPrincipalModel(
             name=role_name,
