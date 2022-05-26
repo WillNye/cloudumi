@@ -14,6 +14,7 @@ from common.aws.iam.role.config import (
 from common.aws.iam.utils import get_host_iam_conn
 from common.config import config, models
 from common.exceptions.exceptions import MissingConfigurationValue
+from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import rate_limited, sts_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
@@ -33,7 +34,9 @@ log = config.get_logger(__name__)
 def _get_iam_role_sync(
     account_id, role_name, conn, host: str
 ) -> Optional[Dict[str, Any]]:
-    client = get_host_iam_conn(host, account_id, "consoleme_get_iam_role")
+    client = get_host_iam_conn(
+        host, account_id, "consoleme_get_iam_role", read_only=True
+    )
     role = client.get_role(RoleName=role_name)["Role"]
     role["ManagedPolicies"] = get_role_managed_policies(
         {"RoleName": role_name}, host=host, **conn
@@ -50,7 +53,7 @@ async def _get_iam_role_async(
 ) -> Optional[Dict[str, Any]]:
     tasks = []
     client = await aio_wrapper(
-        get_host_iam_conn, host, account_id, "consoleme_get_iam_role"
+        get_host_iam_conn, host, account_id, "consoleme_get_iam_role", read_only=True
     )
     role_details = asyncio.ensure_future(
         aio_wrapper(client.get_role, RoleName=role_name)
@@ -745,7 +748,7 @@ async def update_role_tear_config(
         return False, repr(err)
     else:
         await IAMRole.get(
-            account_id, host, f"arn:aws:iam::{account_id}:role/{role_name}", True
+            host, account_id, f"arn:aws:iam::{account_id}:role/{role_name}", True
         )
         return True, ""
 
@@ -783,3 +786,25 @@ async def update_assume_role_policy_trust_noq(host, user, role_name, account_id)
         RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
     )
     return True
+
+
+async def get_roles_as_resource(host: str, viewable_accounts: set, resource_map: dict):
+    from common.aws.iam.role.models import IAMRole
+
+    account_map = await get_account_id_to_name_mapping(host)
+
+    iam_roles = await IAMRole.query(
+        host,
+        filter_condition=IAMRole.accountId.is_in(*viewable_accounts),
+        attributes_to_get=["accountId", "arn", "templated"],
+    )
+    for iam_role in iam_roles:
+        resource_map[iam_role.arn] = {
+            "account_id": iam_role.accountId,
+            "arn": iam_role.arn,
+            "account_name": account_map.get(iam_role.accountId, "N/A"),
+            "technology": "AWS::IAM::Role",
+            "templated": iam_role.templated,
+        }
+
+    return resource_map

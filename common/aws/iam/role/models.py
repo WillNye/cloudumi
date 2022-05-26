@@ -1,9 +1,15 @@
 import json
 import sys
 from datetime import datetime, timedelta
+from typing import Dict, Iterable, Optional, Sequence, Type
 
 from botocore.exceptions import ClientError
 from pynamodax.attributes import ListAttribute, NumberAttribute, UnicodeAttribute
+from pynamodax.exceptions import DoesNotExist
+from pynamodax.expressions.condition import Condition
+from pynamodax.models import _T, _KeyType
+from pynamodax.pagination import ResultIterator
+from pynamodax.settings import OperationSettings
 
 from common.aws.base_model import TagMap
 from common.aws.iam.role.utils import (
@@ -61,11 +67,23 @@ class IAMRole(NoqModel):
     def assume_role_policy(self):
         return self.policy.get("AssumeRolePolicyDocument")
 
+    @property
+    def is_expired(self) -> bool:
+        if not self.ttl:
+            return False
+        return bool(datetime.fromtimestamp(float(self.ttl)) < datetime.utcnow())
+
+    def _normalize_object(self):
+        if self.ttl:
+            self.ttl = int(self.ttl)
+        if self.policy:
+            self.policy = json.loads(self.policy)
+
     @classmethod
     async def get(
         cls,
-        account_id: str,
         host: str,
+        account_id: str,
         arn: str,
         force_refresh: bool = False,
         run_sync: bool = False,
@@ -88,15 +106,19 @@ class IAMRole(NoqModel):
         entity_id = f"{arn}||{host}"
 
         if not force_refresh:
-            iam_role = await super(IAMRole, cls).get(host, entity_id)
+            try:
+                iam_role: IAMRole = await super(IAMRole, cls).get(host, entity_id)
+            except DoesNotExist:
+                log_data["message"] = "Role is missing in DDB. Going out to AWS."
+                stats.count("aws.fetch_iam_role.missing_dynamo", tags=stat_tags)
 
-        if not iam_role:
+        if not iam_role or iam_role.is_expired:
             if force_refresh:
                 log_data["message"] = "Force refresh is enabled. Going out to AWS."
                 stats.count("aws.fetch_iam_role.force_refresh", tags=stat_tags)
-            else:
-                log_data["message"] = "Role is missing in DDB. Going out to AWS."
-                stats.count("aws.fetch_iam_role.missing_dynamo", tags=stat_tags)
+            elif iam_role and iam_role.is_expired:
+                log_data["message"] = "Role is out of date. Going out to AWS."
+                stats.count("aws.fetch_iam_role.is_expired", tags=stat_tags)
             log.debug(log_data)
 
             try:
@@ -148,7 +170,6 @@ class IAMRole(NoqModel):
                 policy=cls().dump_json_attr(role),
                 permissions_boundary=role.get("PermissionsBoundary", {}),
                 owner=get_aws_principal_owner(role, host),
-                templated=role.get("Arn").lower(),
                 last_updated=last_updated,
                 ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
             )
@@ -164,48 +185,45 @@ class IAMRole(NoqModel):
             log_data["message"] = "Role fetched from DDB."
             stats.count("aws.fetch_iam_role.in_dynamo", tags=stat_tags)
 
-            # Fix the TTL:
-            iam_role.ttl = int(iam_role.ttl)
-
         log.debug(log_data)
 
-        iam_role.policy = json.loads(iam_role.policy)
+        iam_role._normalize_object()
         return iam_role
 
     @classmethod
     async def create(
-        cls, create_model: RoleCreationRequestModel, username: str, host: str
+        cls, host: str, username: str, create_model: RoleCreationRequestModel
     ):
         results = await _create_iam_role(create_model, username, host)
         if results["role_created"] == "false":
             return None, results
 
         arn = f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
-        iam_role = await cls.get(create_model.account_id, host, arn, True)
+        iam_role = await cls.get(host, create_model.account_id, arn, True)
         return iam_role, results
 
     @classmethod
     async def delete_role(
-        cls, account_id: str, role_name: str, username: str, host: str
+        cls, host: str, account_id: str, role_name: str, username: str
     ):
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        iam_role = await cls.get(account_id, host, arn)
+        iam_role = await cls.get(host, account_id, arn)
         await _delete_iam_role(account_id, role_name, username, host)
         return await iam_role.delete()
 
     @classmethod
-    async def clone(cls, clone_model: CloneRoleRequestModel, username, host):
+    async def clone(cls, host, username, clone_model: CloneRoleRequestModel):
         results = await _clone_iam_role(clone_model, username, host)
         if results["role_created"] == "false":
             return None, results
 
         arn = f"arn:aws:iam::{clone_model.dest_account_id}:role/{clone_model.dest_role_name}"
-        iam_role = await cls.get(clone_model.dest_account_id, host, arn, True)
+        iam_role = await cls.get(host, clone_model.dest_account_id, arn, True)
         return iam_role, results
 
     @classmethod
     async def sync_account_roles(
-        cls, account_id: str, host: str, iam_roles: list[dict]
+        cls, host: str, account_id: str, iam_roles: list[dict]
     ):
         aws = get_plugin_by_name(
             config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
@@ -235,7 +253,6 @@ class IAMRole(NoqModel):
                         policy=cls().dump_json_attr(role),
                         permissions_boundary=role.get("PermissionsBoundary", {}),
                         owner=get_aws_principal_owner(role, host),
-                        templated=role.get("Arn").lower(),
                         last_updated=last_updated,
                         ttl=ttl,
                     )
@@ -244,3 +261,83 @@ class IAMRole(NoqModel):
         for role in iam_roles:
             # Run internal function on role. This can be used to inspect roles, add managed policies, or other actions
             aws.handle_detected_role(role)
+
+    @classmethod
+    def _parse_results(cls, results: ResultIterator[_T]) -> list:
+        iam_roles = []
+        expired_roles = []
+        for iam_role in results:
+            if not iam_role.is_expired:
+                iam_role._normalize_object()
+                iam_roles.append(iam_role)
+            else:
+                expired_roles.append(iam_role)
+
+        if expired_roles:
+            with cls.batch_write() as batch:
+                for iam_role in expired_roles:
+                    batch.delete(iam_role)
+
+        return iam_roles
+
+    @classmethod
+    async def scan(
+        cls: Type[_T],
+        filter_condition: Optional[Condition] = None,
+        segment: Optional[int] = None,
+        total_segments: Optional[int] = None,
+        limit: Optional[int] = None,
+        last_evaluated_key: Optional[Dict[str, Dict[str, any]]] = None,
+        page_size: Optional[int] = None,
+        consistent_read: Optional[bool] = None,
+        index_name: Optional[str] = None,
+        rate_limit: Optional[float] = None,
+        attributes_to_get: Optional[Sequence[str]] = None,
+        settings: OperationSettings = OperationSettings.default,
+    ) -> list:
+        results = await super(IAMRole, cls).scan(
+            filter_condition,
+            segment,
+            total_segments,
+            limit,
+            last_evaluated_key,
+            page_size,
+            consistent_read,
+            index_name,
+            rate_limit,
+            attributes_to_get,
+            settings,
+        )
+        return cls._parse_results(results)
+
+    @classmethod
+    async def query(
+        cls: Type[_T],
+        hash_key: _KeyType,
+        range_key_condition: Optional[Condition] = None,
+        filter_condition: Optional[Condition] = None,
+        consistent_read: bool = False,
+        index_name: Optional[str] = None,
+        scan_index_forward: Optional[bool] = None,
+        limit: Optional[int] = None,
+        last_evaluated_key: Optional[Dict[str, Dict[str, any]]] = None,
+        attributes_to_get: Optional[Iterable[str]] = None,
+        page_size: Optional[int] = None,
+        rate_limit: Optional[float] = None,
+        settings: OperationSettings = OperationSettings.default,
+    ) -> list:
+        results = await super(IAMRole, cls).query(
+            hash_key,
+            range_key_condition,
+            filter_condition,
+            consistent_read,
+            index_name,
+            scan_index_forward,
+            limit,
+            last_evaluated_key,
+            attributes_to_get,
+            page_size,
+            rate_limit,
+            settings,
+        )
+        return cls._parse_results(results)

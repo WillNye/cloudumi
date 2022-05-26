@@ -122,7 +122,7 @@ async def handle_resource_type_ahead_request(cls):
             filter_condition=filter_condition,
             attributes_to_get=["host", "accountId", "name", "arn", "resourceId"],
         )
-        data = [role.dict() for role in iam_roles]
+        data = {iam_role.arn: iam_role.dict() for iam_role in iam_roles}
     else:
         if resource_type == "s3":
             topic = config.get_host_specific_key(
