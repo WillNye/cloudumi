@@ -1,4 +1,5 @@
-load("@rules_python//python:packaging.bzl", "py_wheel")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
 
 filegroup(
     name = "src_files",
@@ -8,11 +9,16 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-py_wheel(
-    name = "py_wheel",
-    distribution = "common_lib",
-    python_tag = "py3",
-    version = "$(VERSION)",
-    deps = [":lib"],
-    tags = ["manual"],
+py_library(
+    name = "lib",
+    srcs_version = "PY3",
+    srcs = [
+        ":src_files",
+    ],
+    deps = [
+        "//common/lib",
+        requirement("pynamodax"),
+        requirement("amazon-dax-client"),
+    ],
+    visibility = ["//visibility:public"],
 )

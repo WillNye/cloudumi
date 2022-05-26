@@ -13,6 +13,7 @@ from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("sts")
 @pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("dynamodb")
 class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config

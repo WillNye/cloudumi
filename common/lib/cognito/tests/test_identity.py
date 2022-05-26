@@ -21,6 +21,7 @@ from common.models import (
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("sts")
+@pytest.mark.usefixtures("dynamodb")
 class TestIdentity(IsolatedAsyncioTestCase):
     """Docstring in public class."""
 

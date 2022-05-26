@@ -11,6 +11,7 @@ INT_DEPS = [
     "//common/aws:lib",
     "//common/lib",
     "//common/lib/aws/access_undenied:lib",
+    "//common/user_request:lib",
     "//identity:lib",
     "//plugins/auth:lib",
     "//plugins/aws:lib",

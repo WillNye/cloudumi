@@ -24,6 +24,7 @@ sys.path.append(os.path.join(APP_ROOT, ".."))
 @pytest.mark.usefixtures("sqs")
 @pytest.mark.usefixtures("sqs_queue")
 @pytest.mark.usefixtures("iam")
+@pytest.mark.usefixtures("dynamodb")
 class TestCelerySync(TestCase):
     def setUp(self):
         from common.celery_tasks import celery_tasks as celery

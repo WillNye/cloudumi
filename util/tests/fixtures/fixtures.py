@@ -307,7 +307,7 @@ def aws_config(aws_credentials):
 
 
 @pytest.fixture(autouse=False, scope="session")
-def s3(aws_credentials):
+def s3(aws_credentials, dynamodb):
     """Mocked S3 Fixture."""
     from common.config import config
 
