@@ -35,6 +35,8 @@ EXT_DEPS = [
     requirement("policy_sentry"),
     requirement("pydantic"),
     requirement("pyjwt"),
+    requirement("pynamodax"),
+    requirement("pynamodb-encoder"),
     requirement("pytz"),
     requirement("redis"),
     requirement("redislite"),
