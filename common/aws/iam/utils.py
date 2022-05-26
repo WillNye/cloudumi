@@ -19,7 +19,6 @@ def get_host_iam_conn(
         .load_config("spoke_accounts", host)
         .with_query({"account_id": account_id})
         .first.name,
-        read_only=True,
         retry_max_attempts=2,
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
         session_name=sanitize_session_name(session_name),

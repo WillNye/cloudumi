@@ -631,6 +631,7 @@ def cache_policies_table_details(host=None) -> bool:
         s3_errors = json.loads(all_s3_errors)
 
     # IAM Roles
+    all_iam_roles = []
     skip_iam_roles = config.get_host_specific_key(
         "cache_policies_table_details.skip_iam_roles", host, False
     )
@@ -914,7 +915,7 @@ def cache_policies_table_details(host=None) -> bool:
     stats.count(
         "cache_policies_table_details.success",
         tags={
-            "num_roles": len(all_iam_roles.keys()),
+            "num_roles": len(all_iam_roles),
             "host": host,
         },
     )
@@ -1009,7 +1010,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         iam_roles = all_iam_resources["RoleDetailList"]
         iam_policies = all_iam_resources["Policies"]
 
-        async_to_sync(IAMRole.sync_account_roles(account_id, host, iam_roles))
+        async_to_sync(IAMRole.sync_account_roles)(host, account_id, iam_roles)
 
         last_updated: int = int((datetime.utcnow()).timestamp())
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
@@ -2527,7 +2528,7 @@ def refresh_iam_role(role_arn, host=None):
 
     account_id = role_arn.split(":")[4]
     async_to_sync(IAMRole.get)(
-        account_id, role_arn, host, force_refresh=True, run_sync=True
+        host, account_id, role_arn, force_refresh=True, run_sync=True
     )
 
 

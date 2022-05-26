@@ -17,7 +17,9 @@ log = config.get_logger(__name__)
 
 
 def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, Any]]:
-    client = get_host_iam_conn(host, account_id, "consoleme_get_iam_user")
+    client = get_host_iam_conn(
+        host, account_id, "consoleme_get_iam_user", read_only=True
+    )
     user = client.get_user(UserName=user_name)["User"]
     user["ManagedPolicies"] = get_user_managed_policies({"UserName": user_name}, **conn)
     user["InlinePolicies"] = get_user_inline_policies({"UserName": user_name}, **conn)
@@ -31,7 +33,7 @@ async def _get_iam_user_async(
 ) -> Optional[Dict[str, Any]]:
     tasks = []
     client = await aio_wrapper(
-        get_host_iam_conn, host, account_id, "consoleme_get_iam_user"
+        get_host_iam_conn, host, account_id, "consoleme_get_iam_user", read_only=True
     )
     user_details = asyncio.ensure_future(
         aio_wrapper(client.get_user, UserName=user_name)
