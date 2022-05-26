@@ -18,7 +18,7 @@ from common.lib.auth import (
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
 from common.lib.aws.fetch_iam_principal import fetch_iam_role
-from common.lib.aws.iam import update_role_tear_config
+from common.lib.aws.iam import update_role_access_config, update_role_tear_config
 from common.lib.aws.utils import (
     allowed_to_sync_role,
     clone_iam_role,
@@ -30,6 +30,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.aws_principals import get_eligible_role_details, get_role_details
 from common.models import (
     CloneRoleRequestModel,
+    PrincipalModelRoleAccessConfig,
     PrincipalModelTearConfig,
     RoleCreationRequestModel,
     Status2,
@@ -872,6 +873,75 @@ class RoleTearConfigHandler(BaseAdminHandler):
 
         update_successful, err = await update_role_tear_config(
             host, self.user, role_name, account_id, tear_config
+        )
+        if not update_successful:
+            self.set_status(500, err)
+            return
+
+        try:
+            role_details = await get_role_details(
+                account_id,
+                role_name,
+                host,
+                extended=True,
+                force_refresh=True,
+                is_admin_request=self.is_admin,
+            )
+            self.write(role_details.json())
+        except Exception as e:
+            sentry_sdk.capture_exception()
+            log.error({**log_data, "error": e}, exc_info=True)
+            self.set_status(
+                500,
+                f"Update successful but error encountered when retrieving role: {str(e)}",
+            )
+
+
+class RoleAccessConfigHandler(BaseAdminHandler):
+    """Handler for /api/v2/roles/{accountNumber}/{roleName}/access
+
+    Allows an admin to update access to a specific role in an account.
+    """
+
+    allowed_methods = ["PUT"]
+
+    async def put(self, account_id, role_name):
+        """
+        PUT /api/v2/roles/{account_number}/{role_name}/access
+        """
+        host = self.ctx.host
+        log_data = {
+            "function": "RoleAccessConfigHandler.put",
+            "user": self.user,
+            "message": "Updating Role access Config",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "account_id": account_id,
+            "host": host,
+            "role_name": role_name,
+        }
+        log.debug(log_data)
+
+        try:
+            role_access_config = PrincipalModelRoleAccessConfig.parse_raw(
+                self.request.body
+            )
+        except ValidationError as e:
+            log_data["message"] = "Validation Exception"
+            log.error(log_data, exc_info=True)
+            stats.count(
+                f"{log_data['function']}.validation_exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
+            )
+            sentry_sdk.capture_exception()
+            self.write_error(400, message="Error validating input: " + str(e))
+            return
+
+        update_successful, err = await update_role_access_config(
+            host, self.user, role_name, account_id, role_access_config
         )
         if not update_successful:
             self.set_status(500, err)

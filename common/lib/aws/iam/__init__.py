@@ -18,7 +18,12 @@ from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import RedisHandler
-from common.models import HubAccount, PrincipalModelTearConfig, SpokeAccount
+from common.models import (
+    HubAccount,
+    PrincipalModelRoleAccessConfig,
+    PrincipalModelTearConfig,
+    SpokeAccount,
+)
 
 log = config.get_logger(__name__)
 
@@ -449,6 +454,60 @@ async def update_role_tear_config(
                     "Value": ":".join(tear_config.supported_groups),
                 },
             ],
+        )
+        return True, ""
+    except Exception as err:
+        return False, repr(err)
+
+
+async def update_role_access_config(
+    host,
+    user,
+    role_name,
+    account_id: str,
+    role_access_config: PrincipalModelRoleAccessConfig,
+) -> [bool, str]:
+    client = boto3_cached_conn(
+        "iam",
+        host,
+        user,
+        account_number=account_id,
+        assume_role=ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+        .first.name,
+        region=config.region,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        session_name=sanitize_session_name("noq_update_assume_role_policy_trust"),
+    )
+
+    tags_to_update = []
+
+    for group_tag in role_access_config.noq_authorized_cli_groups:
+        tags_to_update.append(
+            {
+                "Key": group_tag["tag_name"],
+                "Value": ":".join(group_tag["value"]),
+            }
+        )
+
+    for group_tag in role_access_config.noq_authorized_groups:
+        tags_to_update.append(
+            {
+                "Key": group_tag["tag_name"],
+                "Value": ":".join(group_tag["value"]),
+            }
+        )
+
+    try:
+        await aio_wrapper(
+            client.tag_role,
+            RoleName=role_name,
+            Tags=tags_to_update,
         )
         return True, ""
     except Exception as err:
