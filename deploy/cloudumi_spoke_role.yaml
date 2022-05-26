@@ -80,6 +80,7 @@ Resources:
                   - "iam:ListUserPolicies"
                   - "iam:ListUserTags"
                   - "iam:ListUsers"
+                  - "iam:PassRole"
                   - "iam:PutRolePermissionsBoundary"
                   - "iam:PutRolePolicy"
                   - "iam:PutUserPermissionsBoundary"
