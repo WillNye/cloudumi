@@ -221,9 +221,11 @@ async def get_role_details(
 ) -> Optional[Union[ExtendedAwsPrincipalModel, AwsPrincipalModel]]:
     account_ids_to_name = await get_account_id_to_name_mapping(host)
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-    role = (
-        await IAMRole.get(account_id, arn, host, force_refresh=force_refresh)
-    ).dict()
+    role: IAMRole = await IAMRole.get(
+        host, account_id, arn, force_refresh=force_refresh
+    )
+
+    role: dict = role.dict()
     # requested role doesn't exist
     if not role:
         return None

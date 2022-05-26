@@ -12,7 +12,6 @@ from botocore.exceptions import ClientError
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
-import common.aws.iam.role.utils
 from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.role.models import IAMRole
 from common.aws.utils import get_resource_tag
@@ -2197,7 +2196,7 @@ async def apply_tear_role_change(
         )
         tear_users_tag = get_active_tear_users_tag(host)
         role_tags = await aio_wrapper(
-            common.aws.iam.role.utils.list_role_tags, RoleName=principal_name
+            iam_client.list_role_tags, RoleName=principal_name
         )
         elevated_users = get_resource_tag(role_tags, tear_users_tag, True, set())
         elevated_users.add(user)
@@ -2522,7 +2521,7 @@ async def apply_resource_policy_change(
             )
             # force refresh the role for which we just changed the assume role policy doc
             await IAMRole.get(
-                resource_account, change.arn, host, force_refresh=force_refresh
+                host, resource_account, change.arn, force_refresh=force_refresh
             )
         response.action_results.append(
             ActionResult(
@@ -2662,9 +2661,9 @@ async def maybe_approve_reject_request(
         )
         if extended_request.principal.principal_arn.startswith("aws:aws:iam::"):
             await IAMRole.get(
+                host,
                 account_id,
                 extended_request.principal.principal_arn,
-                host,
                 force_refresh=force_refresh,
             )
     return response
@@ -3001,13 +3000,14 @@ async def parse_and_apply_policy_request_modification(
                     host,
                 )
                 await IAMRole.get(
+                    host,
                     account_id,
                     extended_request.principal.principal_arn,
-                    host,
                     force_refresh=force_refresh,
                 )
             if specific_change.status == Status.applied:
                 # Change was successful, update in dynamo
+                account_id = specific_change_arn.split(":")[4]
                 success_message = "Successfully updated change in dynamo"
                 error_message = "Error updating change in dynamo"
                 specific_change.updated_by = user
@@ -3020,6 +3020,9 @@ async def parse_and_apply_policy_request_modification(
                     success_message,
                     error_message,
                     visible=False,
+                )
+                await IAMRole.get(
+                    host, account_id, specific_change_arn, force_refresh=True
                 )
         else:
             raise NoMatchingRequest(
@@ -3177,9 +3180,9 @@ async def parse_and_apply_policy_request_modification(
             extended_request.principal.principal_arn, host
         )
         await IAMRole.get(
+            host,
             account_id,
             extended_request.principal.principal_arn,
-            host,
             force_refresh=force_refresh,
         )
 
