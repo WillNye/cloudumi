@@ -18,7 +18,7 @@ py_library(
     deps = [
         "//common/lib",
         requirement("pynamodax"),
-        requirement("amazon-dax-client"),
+        requirement("noq-dax-client"),
     ],
     visibility = ["//visibility:public"],
 )

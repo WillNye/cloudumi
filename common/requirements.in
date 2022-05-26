@@ -1,4 +1,4 @@
-amazon-dax-client
+noq-dax-client
 pydantic
 pynamodax==6.0.0
 pynamodb-encoder==0.1.1
