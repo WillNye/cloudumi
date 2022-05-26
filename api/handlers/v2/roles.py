@@ -284,7 +284,7 @@ class RolesHandler(BaseAPIV2Handler):
             return
 
         try:
-            _, results = await IAMRole.create(create_model, self.user, host)
+            _, results = await IAMRole.create(host, self.user, create_model)
         except Exception as e:
             log_data["message"] = f"Exception creating role: {str(e)}"
             log_data["error"] = str(e)
@@ -480,7 +480,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
             self.write_error(403, message="User is unauthorized to delete a role")
             return
         try:
-            await IAMRole.delete_role(account_id, role_name, self.user, host)
+            await IAMRole.delete_role(host, account_id, role_name, self.user)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -501,7 +501,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
 
-        await IAMRole.get(account_id, arn, host, force_refresh=True)
+        await IAMRole.get(host, account_id, arn, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",
@@ -573,7 +573,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             return
 
         try:
-            await IAMRole.delete_role(account_id, role_name, app_name, host)
+            await IAMRole.delete_role(host, account_id, role_name, app_name)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -592,7 +592,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
 
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        await IAMRole.get(account_id, arn, host, force_refresh=True)
+        await IAMRole.get(host, account_id, arn, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",
@@ -711,7 +711,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
             return
 
         try:
-            _, results = await IAMRole.clone(clone_model, self.user, host)
+            _, results = await IAMRole.clone(host, self.user, clone_model)
         except Exception as e:
             log_data["message"] = "Exception cloning role"
             log_data["error"] = str(e)

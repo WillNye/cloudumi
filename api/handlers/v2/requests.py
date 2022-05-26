@@ -532,9 +532,9 @@ class RequestHandler(BaseAPIV2Handler):
             arn_parsed = parse_arn(extended_request.principal.principal_arn)
             if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
                 await IAMRole.get(
+                    host,
                     account_id,
                     extended_request.principal.principal_arn,
-                    host,
                     force_refresh=True,
                 )
             log_data["request"] = extended_request.dict()
@@ -792,7 +792,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
         arn_parsed = parse_arn(extended_request.principal.principal_arn)
         if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
             iam_role = await IAMRole.get(
-                arn_parsed["account"], extended_request.principal.principal_arn, host
+                host, arn_parsed["account"], extended_request.principal.principal_arn
             )
             template = iam_role.templated
 

@@ -3,6 +3,7 @@ import sys
 import tornado.escape
 import ujson as json
 
+from common.aws.iam.role.utils import get_roles_as_resource
 from common.config import config
 from common.exceptions.exceptions import ResourceNotFound
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
@@ -134,15 +135,19 @@ class PoliciesHandler(BaseAPIV2Handler):
             host=host,
         )
 
-        allowed_accounts_for_viewing_resources = (
-            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+        viewable_accounts = await get_accounts_user_can_view_resources_for(
+            self.user, self.groups, host
         )
 
         total_count = len(all_policies)
-        policies = []
+        policies = dict()
         for policy in all_policies:
-            if policy.get("account_id") in allowed_accounts_for_viewing_resources:
-                policies.append(policy)
+            if policy.get("account_id") in viewable_accounts:
+                if arn := policy.get("arn"):
+                    policies[arn] = policy
+
+        policies = await get_roles_as_resource(host, viewable_accounts, policies)
+        policies = list(policies.values())
 
         if filters:
             try:
