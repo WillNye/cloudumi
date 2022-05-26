@@ -20,7 +20,7 @@ async def calculate_effective_policy_for_identity(
     if identity_type == "role":
         identity = (
             await IAMRole.get(
-                account_id, arn, host, force_refresh=force_refresh, run_sync=True
+                host, account_id, arn, force_refresh=force_refresh, run_sync=True
             )
         ).dict()
         identity_policy_list_name = "RolePolicyList"

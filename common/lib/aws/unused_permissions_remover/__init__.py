@@ -201,9 +201,9 @@ async def calculate_unused_policy_for_identities(
             continue
         account_id = await get_account_id_from_arn(arn)
         role = await IAMRole.get(
+            host,
             account_id,
             arn,
-            host,
             force_refresh=force_refresh,
             run_sync=True,
         )

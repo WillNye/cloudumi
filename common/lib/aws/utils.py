@@ -17,7 +17,6 @@ from parliament import analyze_policy_string, enhance_finding
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
 from common.aws.iam.role.config import get_active_tear_users_tag
-from common.aws.iam.role.models import IAMRole
 from common.aws.iam.user.utils import fetch_iam_user
 from common.aws.utils import get_resource_tag
 from common.config import config
@@ -1331,6 +1330,7 @@ async def remove_expired_request_changes(
     Changes can be designated as temporary by defining an expiration date.
     In the future, we may allow specifying temporary policies by `Sid` or other means.
     """
+    from common.aws.iam.role.models import IAMRole
     from common.lib.v2.aws_principals import get_role_details
 
     should_update_policy_request = False
@@ -1701,9 +1701,9 @@ async def remove_expired_request_changes(
 
             if resource_name == "role":
                 await IAMRole.get(
+                    host,
                     resource_account,
                     principal_arn,
-                    host,
                     force_refresh=force_refresh,
                     run_sync=True,
                 )
@@ -1952,12 +1952,14 @@ async def simulate_iam_principal_action(
 
 
 async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str]:
+    from common.aws.iam.role.models import IAMRole
+
     principal_details = {}
     principal_type = await get_identity_type_from_arn(arn)
     account_id = await get_account_id_from_arn(arn)
     # trying to find principal for subsequent queries
     if principal_type == "role":
-        principal_details = (await IAMRole.get(account_id, arn, host)).dict()
+        principal_details = (await IAMRole.get(host, account_id, arn)).dict()
     elif principal_type == "user":
         principal_details = await fetch_iam_user(account_id, arn, host)
     return principal_details.get("owner")
