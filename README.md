@@ -196,4 +196,7 @@ This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credenti
 appropriately without too much of a hassle. Run the following command to source all environment variables from the
 container's primary process (PID 1):
 
-- `. <(xargs -0 bash -c 'printf "export %q\n" "$@"' -- < /proc/1/environ)`
+```bash
+. <(xargs -0 bash -c 'printf "export %q\n" "$@"' -- < /proc/1/environ)
+for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done;
+```
