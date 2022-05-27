@@ -289,7 +289,7 @@ class IAMRole(NoqModel):
             aws.handle_detected_role(role)
 
     @classmethod
-    def _parse_results(cls, results: ResultIterator[_T]) -> list:
+    async def _parse_results(cls, results: ResultIterator[_T]) -> list:
         iam_roles = []
         expired_roles = []
         for iam_role in results:
@@ -333,7 +333,7 @@ class IAMRole(NoqModel):
             attributes_to_get,
             settings,
         )
-        return cls._parse_results(results)
+        return await cls._parse_results(results)
 
     @classmethod
     async def query(
@@ -365,4 +365,4 @@ class IAMRole(NoqModel):
             rate_limit,
             settings,
         )
-        return cls._parse_results(results)
+        return await cls._parse_results(results)
