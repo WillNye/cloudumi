@@ -144,7 +144,9 @@ class ChallengeValidatorHandler(BaseHandler):
         if not valid_user_challenge:
             return
 
-        if valid_user_challenge.get("visited"):
+        if valid_user_challenge.get("visited") and config.get_host_specific_key(
+            "auth.challenge_url.allow_multiple_visits_to_challenge_url", host, True
+        ):
             message = (
                 "This unique challenge URL has already been viewed. "
                 "Please try requesting a new challenge URL."
@@ -158,8 +160,9 @@ class ChallengeValidatorHandler(BaseHandler):
         # (i.e. IPv4 vs IPv6), the challenge may have been created with an IPv4 address, and the authenticated browser
         # verification request may originate from an IPv6 one, or visa versa, in which case this configuration may
         # need to be explicitly set to False.
-        if config.get(
-            "_global_.auth.challenge_url.request_ip_must_match_challenge_creation_ip",
+        if config.get_host_specific_key(
+            "auth.challenge_url.request_ip_must_match_challenge_creation_ip",
+            host,
             True,
         ):
             if request_ip != valid_user_challenge.get("ip"):
@@ -271,8 +274,9 @@ class ChallengeValidatorHandler(BaseHandler):
         # (i.e. IPv4 vs IPv6), the challenge may have been created with an IPv4 address, and the authenticated browser
         # verification request may originate from an IPv6 one, or visa versa, in which case this configuration may
         # need to be explicitly set to False.
-        if config.get(
-            "_global_.auth.challenge_url.request_ip_must_match_challenge_creation_ip",
+        if config.get_host_specific_key(
+            "auth.challenge_url.request_ip_must_match_challenge_creation_ip",
+            host,
             True,
         ):
             if request_ip != valid_user_challenge.get("ip"):
@@ -351,8 +355,9 @@ class ChallengePollerHandler(TornadoRequestHandler):
 
         ip = self.get_request_ip()
 
-        if config.get(
-            "_global_.auth.challenge_url.request_ip_must_match_challenge_creation_ip",
+        if config.get_host_specific_key(
+            "auth.challenge_url.request_ip_must_match_challenge_creation_ip",
+            host,
             True,
         ):
             if ip != challenge.get("ip"):
