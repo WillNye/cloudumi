@@ -29,7 +29,11 @@ export const SpokeAccounts = () => {
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do({ account_id: rowValues?.account_id })
+        .do({
+          account_id: rowValues?.account_id,
+          name: rowValues?.name,
+          account_name: rowValues?.account_name,
+        })
         .then(() => {
           success('Spoke Account removed')
           get.do()

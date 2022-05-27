@@ -16,7 +16,8 @@ export const SelectAccount = ({ register, label, options = [] }) => {
   }, [])
 
   const handleOptions = (data) => {
-    if (data) return data.map((i) => `${i.name} - ${i.account_id}`)
+    if (data)
+      return data.map((i) => `${i.account_name || ''} - ${i.account_id}`)
     return options
   }
 
