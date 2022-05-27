@@ -37,7 +37,7 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
     setIsPolicyEditorLoading(true)
     put
       .do(data)
-      .then((response) => {
+      .then(() => {
         setIsPolicyEditorLoading(false)
         closeModal()
         setToggleRefreshRole(true)
@@ -92,7 +92,7 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
       <ModalComponent
         onClose={closeModal}
         hideConfirm
-        forceTitle='Add User Groups for Temporary Elevated Access'
+        forceTitle='Add Temporary Elevated Access User Groups'
       >
         <TempEscalationUserModal
           elevated_access_config={elevated_access_config}
