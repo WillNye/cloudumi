@@ -1162,18 +1162,17 @@ def parliament(session_mocker):
 
 @pytest.fixture(scope="session")
 def user_iam_role(iamrole_table, www_user):
-    from common.lib.dynamo import IAMRoleDynamoHandler
+    from common.aws.iam.role.models import IAMRole
 
-    ddb = IAMRoleDynamoHandler(host)
-    role_entry = {
-        "arn": www_user.pop("Arn"),
-        "name": www_user.pop("RoleName"),
-        "accountId": "123456789012",
-        "ttl": int((datetime.utcnow() + timedelta(hours=36)).timestamp()),
-        "policy": ddb.convert_iam_resource_to_json(www_user),
-        "host": host,
-    }
-    ddb.sync_iam_role_for_account(role_entry)
+    role_entry = IAMRole(
+        arn=www_user.get("Arn"),
+        name=www_user.get("RoleName"),
+        accountId="123456789012",
+        ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
+        policy=IAMRole().dump_json_attr(www_user),
+        host=host,
+    )
+    role_entry.save()
 
 
 @pytest.fixture(autouse=False, scope="session")

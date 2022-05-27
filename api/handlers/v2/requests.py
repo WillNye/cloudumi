@@ -8,7 +8,7 @@ import ujson as json
 from policy_sentry.util.arns import parse_arn
 from pydantic import ValidationError
 
-from common.aws.iam.utils import fetch_iam_role
+from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
@@ -18,7 +18,6 @@ from common.exceptions.exceptions import (
     Unauthorized,
 )
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
-from common.lib.asyncio import aio_wrapper
 from common.lib.auth import (
     can_admin_policies,
     get_extended_request_account_ids,
@@ -532,10 +531,10 @@ class RequestHandler(BaseAPIV2Handler):
             # Force a refresh of the role in Redis/DDB
             arn_parsed = parse_arn(extended_request.principal.principal_arn)
             if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
-                await fetch_iam_role(
+                await IAMRole.get(
+                    host,
                     account_id,
                     extended_request.principal.principal_arn,
-                    host,
                     force_refresh=True,
                 )
             log_data["request"] = extended_request.dict()
@@ -590,9 +589,7 @@ class RequestsHandler(BaseAPIV2Handler):
             "host": host,
         }
         log.debug(log_data)
-        requests = [
-            request.dict() for request in await aio_wrapper(IAMRequest.query, host)
-        ]
+        requests = [request.dict() for request in await IAMRequest.query(host)]
 
         total_count = len(requests)
 
@@ -792,13 +789,12 @@ class RequestDetailHandler(BaseAPIV2Handler):
         }
 
         template = None
-        # Force a refresh of the role in Redis/DDB
         arn_parsed = parse_arn(extended_request.principal.principal_arn)
         if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
-            iam_role = await fetch_iam_role(
-                arn_parsed["account"], extended_request.principal.principal_arn, host
+            iam_role = await IAMRole.get(
+                host, arn_parsed["account"], extended_request.principal.principal_arn
             )
-            template = iam_role.get("templated")
+            template = iam_role.templated
 
         changes_config = await populate_approve_reject_policy(
             extended_request, self.groups, host, self.user

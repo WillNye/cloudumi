@@ -3,12 +3,13 @@ import copy
 import json
 import os
 import sys
-from datetime import datetime, timedelta
 from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
+from asgiref.sync import async_to_sync
 
+from common.aws.iam.role.models import IAMRole
 from common.lib.aws.access_undenied.access_undenied_aws import common, result_details
 from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
 from util.tests.fixtures.globals import host
@@ -31,9 +32,9 @@ class TestCelerySync(TestCase):
 
         self.celery = celery
 
+    @pytest.mark.skip(reason="EN-637")
     def cache_iam_resources_for_account(self):
         from common.config.config import CONFIG
-        from common.lib.dynamo import IAMRoleDynamoHandler
         from common.lib.redis import RedisHandler
 
         red = RedisHandler().redis_sync(host)
@@ -66,9 +67,7 @@ class TestCelerySync(TestCase):
         self.celery.cache_iam_resources_for_account("123456789012", host=host)
 
         # Verify that everything is there:
-        dynamo = IAMRoleDynamoHandler(host)
-
-        results = dynamo.role_table.scan(TableName="consoleme_iamroles_multitenant")
+        results = async_to_sync(IAMRole.query)(host)
 
         remaining_roles = [
             "arn:aws:iam::123456789012:role/ConsoleMe",
@@ -128,84 +127,6 @@ class TestCelerySync(TestCase):
         # Reset the config value:
         self.celery.config.region = old_conf_region
         CONFIG.config = old_config
-
-    def test_clear_old_redis_iam_cache(self):
-        from common.config.config import CONFIG
-        from common.lib.redis import RedisHandler
-
-        red = RedisHandler().redis_sync(host)
-
-        redis_expiration_key = f"{host}_cache_iam_resources_for_account_expiration"
-
-        self.celery.REDIS_IAM_COUNT = 3
-
-        # Clear out the existing cache from Redis:
-        red.delete(redis_expiration_key)
-
-        # Set the config value for the redis cache location
-        old_value = CONFIG.config["site_configs"][host]["aws"].pop(
-            "iamroles_redis_key", None
-        )
-        CONFIG.config["site_configs"][host]["aws"][
-            "iamroles_redis_key"
-        ] = redis_expiration_key
-
-        # Add in some dummy IAM roles with a TTL that is more than 6 hours old:
-        old_ttl = int((datetime.utcnow() - timedelta(hours=6, seconds=5)).timestamp())
-
-        # 13 items / 3 = 5 iterations -- all of these roles should be cleaned up:
-        for i in range(0, 13):
-            role_entry = {
-                "arn": f"arn:aws:iam::123456789012:role/RoleNumber{i}",
-                "name": f"RoleNumber{i}",
-                "accountId": "123456789012",
-                "ttl": old_ttl,
-                "policy": "{}",
-                "host": host,
-            }
-            self.celery._add_role_to_redis(redis_expiration_key, role_entry, host)
-
-        # Add a role with a current TTL -- this should not be cleaned up:
-        role_entry = {
-            "arn": "arn:aws:iam::123456789012:role/RoleNumber99",
-            "name": "RoleNumber99",
-            "accountId": "123456789012",
-            "ttl": int(datetime.utcnow().timestamp()),
-            "policy": "{}",
-            "host": host,
-        }
-        self.celery._add_role_to_redis(redis_expiration_key, role_entry, host)
-
-        # Nothing should happen if we are not in us-west-2:
-        old_conf_region = self.celery.config.region
-        self.celery.config.region = "eu-west-1"
-
-        self.celery.clear_old_redis_iam_cache(host)
-        self.assertEqual(red.hlen(redis_expiration_key), 14)
-
-        # With the proper region:
-        self.celery.config.region = "us-east-1"
-        self.celery.clear_old_redis_iam_cache(host)
-
-        # Verify:
-        self.assertEqual(red.hlen(redis_expiration_key), 1)
-        self.assertIsNotNone(
-            red.hget(
-                redis_expiration_key,
-                "arn:aws:iam::123456789012:role/RoleNumber99",
-            )
-        )
-
-        # Clear out the existing cache from Redis:
-        red.delete(redis_expiration_key)
-
-        # Reset the config values:
-        self.celery.config.region = old_conf_region
-        self.celery.REDIS_IAM_COUNT = 1000
-        if not old_value:
-            del CONFIG.config["site_configs"][host]["aws"]["iamroles_redis_key"]
-        else:
-            CONFIG.config["site_configs"][host]["aws"]["iamroles_redis_key"] = old_value
 
     def test_trigger_credential_mapping_refresh_from_role_changes(self):
         res = self.celery.trigger_credential_mapping_refresh_from_role_changes(

@@ -37,54 +37,18 @@ ROLE = {
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("sts")
 class TestAwsLib(TestCase):
-    def test_is_role_instance_profile(self):
-        from common.lib.aws.utils import is_role_instance_profile
-
-        self.assertTrue(is_role_instance_profile(ROLE))
-
-    def test_is_role_instance_profile_false(self):
-        from common.lib.aws.utils import is_role_instance_profile
-
-        role = {"RoleName": "Test"}
-        self.assertFalse(is_role_instance_profile(role))
-
-    def test_role_newer_than_x_days(self):
-        from common.lib.aws.utils import role_newer_than_x_days
-
-        self.assertTrue(role_newer_than_x_days(ROLE, 30))
-
-    def test_role_newer_than_x_days_false(self):
-        from common.lib.aws.utils import role_newer_than_x_days
-
-        self.assertFalse(role_newer_than_x_days(ROLE, 1))
-
-    def test_role_has_managed_policy(self):
-        from common.lib.aws.utils import role_has_managed_policy
-
-        self.assertTrue(role_has_managed_policy(ROLE, "Policy1"))
-
-    def test_role_has_managed_policy_false(self):
-        from common.lib.aws.utils import role_has_managed_policy
-
-        self.assertFalse(role_has_managed_policy(ROLE, "Policy3"))
-
     def test_role_has_tag(self):
-        from common.lib.aws.utils import get_role_tag
+        from common.aws.utils import get_resource_tag
 
-        self.assertTrue(bool(get_role_tag(ROLE, "tag1")))
-        self.assertEqual(get_role_tag(ROLE, "tag1"), "value1")
+        self.assertTrue(bool(get_resource_tag(ROLE, "tag1")))
+        self.assertEqual(get_resource_tag(ROLE, "tag1"), "value1")
 
     def test_role_has_tag_false(self):
-        from common.lib.aws.utils import get_role_tag
+        from common.aws.utils import get_resource_tag
 
-        self.assertFalse(bool(get_role_tag(ROLE, "tag2")))
-        self.assertNotEqual(get_role_tag(ROLE, "tag2"), "value1")
-        self.assertNotEqual(get_role_tag(ROLE, "tag1"), "value2")
-
-    def test_apply_managed_policy_to_role(self):
-        from common.lib.aws.utils import apply_managed_policy_to_role
-
-        apply_managed_policy_to_role(ROLE, "policy-one", "session", host, None)
+        self.assertFalse(bool(get_resource_tag(ROLE, "tag2")))
+        self.assertNotEqual(get_resource_tag(ROLE, "tag2"), "value1")
+        self.assertNotEqual(get_resource_tag(ROLE, "tag1"), "value2")
 
     @patch("common.lib.aws.utils.redis_hget")
     def test_get_resource_account(self, mock_aws_config_resources_redis):

@@ -4,7 +4,7 @@ from typing import Optional
 import sentry_sdk
 import tornado.escape
 
-from common.aws.iam.utils import fetch_iam_user
+from common.aws.iam.user.utils import fetch_iam_user
 from common.config import config
 from common.handlers.base import BaseAPIV2Handler
 from common.lib.auth import (

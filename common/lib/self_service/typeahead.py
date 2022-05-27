@@ -1,8 +1,8 @@
 import ujson as json
 
+from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
-from common.lib.aws.cached_resources.iam import get_iam_roles_for_host
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -26,7 +26,7 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
         "cache_self_service_typeahead.app_name_tag", host
     )
     # Cache role and app information
-    role_data = await get_iam_roles_for_host(host)
+    role_data = await IAMRole.query(host)
 
     accounts_d = await get_account_id_to_name_mapping(host)
 
@@ -85,12 +85,11 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                     )
                 )
 
-    for role, details_j in role_data.items():
-        account_id = role.split(":")[4]
+    for role in role_data:
+        account_id = role.arn.split(":")[4]
         account_name = accounts_d.get(account_id, account_id)
-        details = json.loads(details_j)
-        policy = json.loads(details["policy"])
-        role_name = policy.get("RoleName", policy["Arn"].split("/")[-1])
+        policy = role.policy
+        role_name = role.name
         app_name = None
         app_url = None
         if app_name_tag:

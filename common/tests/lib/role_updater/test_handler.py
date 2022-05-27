@@ -48,9 +48,9 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         role_name = "role_name"
-        from common.lib.aws.utils import delete_iam_role
+        from common.aws.iam.role.utils import _delete_iam_role
 
-        await delete_iam_role("123456789012", role_name, "consoleme-unit-test", host)
+        await _delete_iam_role("123456789012", role_name, "consoleme-unit-test", host)
 
     async def test_parse_account_id_from_arn(self):
         arn = "arn:aws:iam::123456789012:role/testrole"

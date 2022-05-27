@@ -60,7 +60,7 @@ class IAMRequest(NoqModel):
             raise Exception("Only ARN OR Policy Request ID can be provided")
 
         if request_id:
-            return await aio_wrapper(super(IAMRequest, cls).get, host, request_id)
+            return await super(IAMRequest, cls).get(host, request_id)
 
         results = await aio_wrapper(cls.arn_index.query, host, cls.arn == arn)
         results = [r for r in results]
@@ -104,7 +104,7 @@ class IAMRequest(NoqModel):
 
         try:
             request = cls(**new_request)
-            await aio_wrapper(request.save)
+            await request.save()
             log_data[
                 "message"
             ] = "Successfully finished writing policy request v2 to Dynamo"

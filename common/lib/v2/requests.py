@@ -12,7 +12,9 @@ from botocore.exceptions import ClientError
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
-from common.aws.iam.utils import fetch_iam_role
+from common.aws.iam.role.config import get_active_tear_users_tag
+from common.aws.iam.role.models import IAMRole
+from common.aws.utils import get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -28,7 +30,6 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.iam import (
     create_or_update_managed_policy,
-    get_active_tear_users_tag,
     get_managed_policy_document,
 )
 from common.lib.aws.sanitize import sanitize_session_name
@@ -40,7 +41,6 @@ from common.lib.aws.utils import (
     get_resource_account,
     get_resource_from_arn,
     get_resource_policy,
-    get_role_tag,
     get_service_from_arn,
 )
 from common.lib.change_request import generate_policy_name, generate_policy_sid
@@ -2198,7 +2198,7 @@ async def apply_tear_role_change(
         role_tags = await aio_wrapper(
             iam_client.list_role_tags, RoleName=principal_name
         )
-        elevated_users = get_role_tag(role_tags, tear_users_tag, True, set())
+        elevated_users = get_resource_tag(role_tags, tear_users_tag, True, set())
         elevated_users.add(user)
 
         await aio_wrapper(
@@ -2520,8 +2520,8 @@ async def apply_resource_policy_change(
                 ),
             )
             # force refresh the role for which we just changed the assume role policy doc
-            await fetch_iam_role(
-                resource_account, change.arn, host, force_refresh=force_refresh
+            await IAMRole.get(
+                host, resource_account, change.arn, force_refresh=force_refresh
             )
         response.action_results.append(
             ActionResult(
@@ -2660,10 +2660,10 @@ async def maybe_approve_reject_request(
             extended_request.principal.principal_arn, host
         )
         if extended_request.principal.principal_arn.startswith("aws:aws:iam::"):
-            await fetch_iam_role(
+            await IAMRole.get(
+                host,
                 account_id,
                 extended_request.principal.principal_arn,
-                host,
                 force_refresh=force_refresh,
             )
     return response
@@ -2999,14 +2999,15 @@ async def parse_and_apply_policy_request_modification(
                     extended_request.principal.principal_arn,
                     host,
                 )
-                await fetch_iam_role(
+                await IAMRole.get(
+                    host,
                     account_id,
                     extended_request.principal.principal_arn,
-                    host,
                     force_refresh=force_refresh,
                 )
             if specific_change.status == Status.applied:
                 # Change was successful, update in dynamo
+                account_id = specific_change_arn.split(":")[4]
                 success_message = "Successfully updated change in dynamo"
                 error_message = "Error updating change in dynamo"
                 specific_change.updated_by = user
@@ -3019,6 +3020,9 @@ async def parse_and_apply_policy_request_modification(
                     success_message,
                     error_message,
                     visible=False,
+                )
+                await IAMRole.get(
+                    host, account_id, specific_change_arn, force_refresh=True
                 )
         else:
             raise NoMatchingRequest(
@@ -3175,10 +3179,10 @@ async def parse_and_apply_policy_request_modification(
         account_id = await get_resource_account(
             extended_request.principal.principal_arn, host
         )
-        await fetch_iam_role(
+        await IAMRole.get(
+            host,
             account_id,
             extended_request.principal.principal_arn,
-            host,
             force_refresh=force_refresh,
         )
 
