@@ -222,18 +222,11 @@ class IAMRole(NoqModel):
         return iam_role, results
 
     @classmethod
-    async def sync_account_roles(
-        cls, host: str, account_id: str, iam_roles: list[dict]
+    async def _batch_write_role(
+        cls, host: str, account_id: str, filtered_iam_roles: list[dict]
     ):
-        aws = get_plugin_by_name(
-            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
-        )()
-        filtered_iam_roles = []
-        for role in iam_roles:
-            arn = role.get("Arn", "")
-            tags = role.get("Tags", [])
-            if allowed_to_sync_role(arn, tags, host):
-                filtered_iam_roles.append(role)
+        # Don't use this. It doesn't work but the implementation looks good.
+        # When this is stable we'll replace existing logic which just calls save for each role
 
         last_updated: int = int((datetime.utcnow()).timestamp())
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
@@ -258,6 +251,39 @@ class IAMRole(NoqModel):
                     )
                 )
 
+    @classmethod
+    async def sync_account_roles(
+        cls, host: str, account_id: str, iam_roles: list[dict]
+    ):
+        aws = get_plugin_by_name(
+            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+        )()
+        last_updated: int = int((datetime.utcnow()).timestamp())
+        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
+        filtered_iam_roles = []
+        for role in iam_roles:
+            arn = role.get("Arn", "")
+            tags = role.get("Tags", [])
+            if allowed_to_sync_role(arn, tags, host):
+                filtered_iam_roles.append(role)
+
+        for role in filtered_iam_roles:
+            entity_id = f"{role.get('Arn')}||{host}"
+            await cls(
+                arn=role.get("Arn"),
+                entity_id=entity_id,
+                host=host,
+                name=role.get("RoleName"),
+                resourceId=role.get("RoleId"),
+                accountId=account_id,
+                tags=[TagMap(**tag) for tag in role.get("Tags", [])],
+                policy=cls().dump_json_attr(role),
+                permissions_boundary=role.get("PermissionsBoundary", {}),
+                owner=get_aws_principal_owner(role, host),
+                last_updated=last_updated,
+                ttl=ttl,
+            ).save()
+
         for role in iam_roles:
             # Run internal function on role. This can be used to inspect roles, add managed policies, or other actions
             aws.handle_detected_role(role)
@@ -274,9 +300,8 @@ class IAMRole(NoqModel):
                 expired_roles.append(iam_role)
 
         if expired_roles:
-            with cls.batch_write() as batch:
-                for iam_role in expired_roles:
-                    batch.delete(iam_role)
+            for iam_role in expired_roles:
+                await iam_role.delete()
 
         return iam_roles
 
