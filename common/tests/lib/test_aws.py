@@ -357,11 +357,12 @@ class TestAwsLib(TestCase):
 
         CONFIG.config = old_config
 
-    @pytest.mark.skip(reason="EN-637")
-    @pytest.mark.usefixtures("dynamodb")
+    @pytest.mark.usefixtures("policy_requests_table")
+    @pytest.mark.usefixtures("redis")
     @pytest.mark.usefixtures("iam")
     def test_remove_temp_policies(self):
         from common.lib.aws.utils import remove_expired_host_requests
+        from common.user_request.models import IAMRequest
 
         account_id = "123456789012"
         current_dateint = datetime.today().strftime("%Y%m%d")
@@ -417,7 +418,11 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = current_dateint
         extended_request.changes.changes[0].status = Status.applied
+        async_to_sync(IAMRequest.write_v2)(extended_request, host)
         async_to_sync(remove_expired_host_requests)(host)
+        extended_request = async_to_sync(IAMRequest.get)(
+            host, request_id=extended_request.id
+        )
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 

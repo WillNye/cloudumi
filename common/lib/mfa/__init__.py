@@ -9,7 +9,9 @@ log = config.get_logger()
 async def mfa_verify(host: str, user: str, **kwargs) -> tuple[bool, Union[None, str]]:
     """Resolve host and user provider info, normalize request and pass info to provider authentication function"""
 
-    if not config.get_host_specific_key("elevated_access.mfa.enabled", host, True):
+    if not config.get_host_specific_key(
+        "temporary_elevated_access_requests.mfa.enabled", host, True
+    ):
         log.debug({"message": "MFA disabled for host", "host": host})
         return True, None
 

@@ -20,6 +20,7 @@ py_library(
     ],
     deps = [
         "//common/config:lib",
+        "//common/aws:lib",
         requirement("email_validator"),
         requirement("uvloop"),
         requirement("marshmallow"),

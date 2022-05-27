@@ -247,7 +247,7 @@ def sts(aws_credentials):
         yield boto3.client(
             "sts",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -260,7 +260,7 @@ def ec2(aws_credentials):
         yield boto3.client(
             "ec2",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -273,7 +273,7 @@ def iam(aws_credentials):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
         client.create_role(
             RoleName="roleA",
@@ -302,12 +302,12 @@ def aws_config(aws_credentials):
         yield boto3.client(
             "config",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
 @pytest.fixture(autouse=False, scope="session")
-def s3(aws_credentials):
+def s3(aws_credentials, dynamodb):
     """Mocked S3 Fixture."""
     from common.config import config
 
@@ -315,7 +315,7 @@ def s3(aws_credentials):
         yield boto3.client(
             "s3",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -328,7 +328,7 @@ def ses(aws_credentials):
         client = boto3.client(
             "ses",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
         client.verify_email_address(EmailAddress="consoleme_test@example.com")
         yield client
@@ -343,7 +343,7 @@ def sqs(aws_credentials):
         yield boto3.client(
             "sqs",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -356,7 +356,7 @@ def sns(aws_credentials):
         yield boto3.client(
             "sns",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -434,7 +434,7 @@ def dynamodb(aws_credentials):
         yield boto3.client(
             "dynamodb",
             region_name="us-east-1",
-            **CONFIG.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **CONFIG.get("_global_.boto3.client_kwargs", {}),
         )
 
         # Reset the config value:
