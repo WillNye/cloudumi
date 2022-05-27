@@ -1608,7 +1608,7 @@ command in a shell.</p>
 <div class="highlight"><pre><span></span><code>weep file example-aws-role
 </code></pre></div>
 <p>The will write to shared credentials file for the default profile, i.e.
-<code>~/.aws/credentials</code>. </p>
+<code>~/.aws/credentials</code>.</p>
 <div class="highlight"><pre><span></span><code>cat ~/.aws/credentials
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>[default]
@@ -1630,7 +1630,7 @@ command.</p>
 appropriate profile as illustrated in the examples below.</p>
 <div class="highlight"><pre><span></span><code><span class="nv">AWS_PROFILE</span><span class="o">=</span>test_account_user aws sts get-caller-identity
 </code></pre></div>
-<p>or </p>
+<p>or</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># you can also use the --profile flag</span>
 aws --profile test_account_user sts get-caller-identity
 </code></pre></div>

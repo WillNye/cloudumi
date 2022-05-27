@@ -1457,18 +1457,18 @@
 credentials, Noq will assume your hub role with an external ID that is unique
 to your company. From your hub role, Noq will attempt to assume the role
 requested by the user. If successful, Noq will return the assumed credentials
-to the user. </p>
+to the user.</p>
 <p>Noq might be unable to assume the role requested by the user because your hub
 role is not authorized to perform <code>sts:AssumeRole</code> or <code>sts:TagSession</code> in the
 target role's trust policy.</p>
 <p>If you prefer, Noq can attempt to automatically update the trust policy of a
 role when it initially receives an <code>Access Denied</code> error. With this feature
-enabled, you do not need to update all of your roles manually. </p>
+enabled, you do not need to update all of your roles manually.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>If you are using an infrastructure as code (IaC) approach to templatize
 your roles, we recommend that you update your IaC templates to give your
-Noq Hub role the ability to perform these actions. </p>
+Noq Hub role the ability to perform these actions.</p>
 </div>
 <p>To enable this option, follow the steps in the procedure below.</p>
 <h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
@@ -1478,7 +1478,7 @@ Noq Hub role the ability to perform these actions. </p>
 <h2 id="2-enable-noq-to-automatically-update-trust-policies">2. Enable Noq to automatically update trust policies<a class="headerlink" href="#2-enable-noq-to-automatically-update-trust-policies" title="Permanent link">&para;</a></h2>
 <p>Set the configuration key for <code>aws.automatically_update_role_trust_policies</code> to
 <code>true</code>. When finished, your Noq configuration file should include an entry
-similar to the following. </p>
+similar to the following.</p>
 <p><div class="highlight"><pre><span></span><code>aws:
   automatically_update_role_trust_policies: true
 </code></pre></div>
