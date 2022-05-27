@@ -6,7 +6,6 @@ from typing import Dict, List, Optional
 import sentry_sdk
 from pydantic.json import pydantic_encoder
 
-from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
@@ -152,6 +151,8 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
         return self.reverse_mapping[host]["reverse_mapping"]
 
     async def retrieve_all_roles(self, host: str, max_age: Optional[int] = None):
+        from common.aws.iam.role.models import IAMRole
+
         if (
             not self._all_roles[host]
             or int(time.time()) - self._all_roles_last_update.get(host, 0) > 600
@@ -260,7 +261,18 @@ async def generate_and_store_reverse_authorization_mapping(
 async def generate_and_store_credential_authorization_mapping(
     host,
 ) -> Dict[user_or_group, RoleAuthorizations]:
+    from common.aws.iam.role.utils import get_authorized_group_map
+
     authorization_mapping: Dict[user_or_group, RoleAuthorizations] = {}
+
+    if config.get_host_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.enabled",
+        host,
+        True,
+    ):
+        authorization_mapping = await get_authorized_group_map(
+            authorization_mapping, host
+        )
 
     if config.get_host_specific_key(
         "cloud_credential_authorization_mapping.dynamic_config.enabled",

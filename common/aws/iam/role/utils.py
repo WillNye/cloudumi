@@ -19,6 +19,7 @@ from common.lib.assume_role import rate_limited, sts_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.iam import get_managed_policy_document
+from common.lib.cloud_credential_authorization_mapping import RoleAuthorizations
 from common.lib.plugins import get_plugin_by_name
 from common.models import (
     CloneRoleRequestModel,
@@ -786,6 +787,75 @@ async def update_assume_role_policy_trust_noq(host, user, role_name, account_id)
         RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
     )
     return True
+
+
+async def get_authorized_group_map(
+    authorization_mapping: Dict[str, RoleAuthorizations], host
+) -> Dict[str, RoleAuthorizations]:
+    from common.aws.iam.role.models import IAMRole
+
+    required_trust_policy_entity = config.get_host_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.required_trust_policy_entity",
+        host,
+    )
+
+    for iam_role in await IAMRole.query(host):
+        if (
+            required_trust_policy_entity
+            and required_trust_policy_entity.lower()
+            not in json.dumps(
+                iam_role.policy["AssumeRolePolicyDocument"],
+                escape_forward_slashes=False,
+            ).lower()
+        ):
+            continue
+
+        role_tag_config = "cloud_credential_authorization_mapping.role_tags"
+        authorized_group_tags = config.get_host_specific_key(
+            f"{role_tag_config}.authorized_groups_tags", host, []
+        )
+        authorized_cli_group_tags = config.get_host_specific_key(
+            f"{role_tag_config}.authorized_groups_cli_only_tags", host, []
+        )
+
+        for tag in iam_role.tags:
+            if tag["Key"] in authorized_group_tags:
+                splitted_groups = tag["Value"].split(":")
+                for group in splitted_groups:
+                    if config.get_host_specific_key(
+                        "auth.force_groups_lowercase",
+                        host,
+                        False,
+                    ):
+                        group = group.lower()
+                    if not authorization_mapping.get(group):
+                        authorization_mapping[group] = RoleAuthorizations.parse_obj(
+                            {
+                                "authorized_roles": set(),
+                                "authorized_roles_cli_only": set(),
+                            }
+                        )
+                    authorization_mapping[group].authorized_roles.add(iam_role.arn)
+            if tag["Key"] in authorized_cli_group_tags:
+                splitted_groups = tag["Value"].split(":")
+                for group in splitted_groups:
+                    if config.get_host_specific_key(
+                        "auth.force_groups_lowercase",
+                        host,
+                        False,
+                    ):
+                        group = group.lower()
+                    if not authorization_mapping.get(group):
+                        authorization_mapping[group] = RoleAuthorizations.parse_obj(
+                            {
+                                "authorized_roles": set(),
+                                "authorized_roles_cli_only": set(),
+                            }
+                        )
+                    authorization_mapping[group].authorized_roles_cli_only.add(
+                        iam_role.arn
+                    )
+    return authorization_mapping
 
 
 async def get_roles_as_resource(host: str, viewable_accounts: set, resource_map: dict):
