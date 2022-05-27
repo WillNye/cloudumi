@@ -509,6 +509,7 @@ class Configuration(metaclass=Singleton):
 
     def set_logging_levels(self):
         default_logging_levels = {
+            "amazondax": "WARNING",
             "asyncio": "WARNING",
             "boto3": "CRITICAL",
             "boto": "CRITICAL",

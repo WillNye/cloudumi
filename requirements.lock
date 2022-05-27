@@ -391,7 +391,7 @@ newrelic==7.6.0.173
     # via
     #   -r ./api/requirements.in
     #   -r ./api/util/requirements.in
-noq-dax-client==2.1.0
+noq-dax-client==2.1.1
     # via -r ./common/requirements.in
 numpy==1.22.3
     # via pandas
