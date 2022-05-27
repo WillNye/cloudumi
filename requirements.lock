@@ -26,7 +26,7 @@ amqp==5.1.0
     # via
     #   -r ./api/requirements.in
     #   kombu
-antlr4-python3-runtime==4.10
+antlr4-python3-runtime==4.7.2
     # via noq-dax-client
 argcomplete==2.0.0
     # via checkov
@@ -404,7 +404,7 @@ newrelic==7.6.0.173
     #   -r ./api/util/requirements.in
 nodeenv==1.6.0
     # via pre-commit
-noq-dax-client==2.0.0
+noq-dax-client==2.1.0
     # via -r ./common/requirements.in
 numpy==1.22.3
     # via pandas
