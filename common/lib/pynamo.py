@@ -11,14 +11,11 @@ from pynamodax.expressions.update import Action
 from pynamodax.models import _T, Model, _KeyType
 from pynamodax.pagination import ResultIterator
 from pynamodax.settings import OperationSettings
-from pynamodb_encoder import decoder, encoder
 
 from common.lib.asyncio import aio_wrapper
 
 DYNAMO_EMPTY_STRING = "---DYNAMO-EMPTY-STRING---"
 DYNAMODB_EMPTY_DECIMAL = Decimal(0)
-ENCODER = encoder.Encoder()
-DECODER = decoder.Decoder()
 
 
 def sanitize_dynamo_obj(
@@ -54,7 +51,7 @@ def sanitize_dynamo_obj(
 
 class NoqModel(Model):
     def dict(self) -> dict:
-        return sanitize_dynamo_obj(ENCODER.encode(self))
+        return sanitize_dynamo_obj(super(NoqModel, self).dict())
 
     def dump_json_attr(self, attr: dict) -> str:
         return json.dumps(attr, default=self._json_encode_timestamps)
@@ -88,10 +85,6 @@ class NoqModel(Model):
         """Solve those pesky timestamps and JSON annoyances."""
         if isinstance(field, datetime):
             return get_iso_string(field)
-
-    @classmethod
-    def from_dict(cls, model_as_dict: dict):
-        return DECODER.decode(cls, model_as_dict)
 
     @classmethod
     async def get(
@@ -179,8 +172,5 @@ class NoqMapAttribute(MapAttribute):
     def is_raw(cls):
         return cls == NoqMapAttribute
 
-    def as_dict(self):
-        return sanitize_dynamo_obj(super(NoqMapAttribute, self).as_dict())
-
     def dict(self):  # Helper to standardize the method for converting object to dict
-        return self.as_dict()
+        return sanitize_dynamo_obj(self.as_dict())
