@@ -38,7 +38,7 @@ export const TempEscalationUserModal = ({
   isPolicyEditorLoading,
 }) => {
   const [groupName, setGroupName] = useState('')
-  const { handleSubmit, watch, setValue } = useForm({
+  const { watch, setValue } = useForm({
     defaultValues: elevated_access_config,
   })
 
@@ -49,7 +49,7 @@ export const TempEscalationUserModal = ({
       <Dimmer active={isPolicyEditorLoading} inverted>
         <Loader />
       </Dimmer>
-      <Form onSubmit={handleSubmit(updateUserGroups)}>
+      <Form>
         <Form.Field>
           <label>Add Group Name</label>
           <Input
@@ -62,7 +62,7 @@ export const TempEscalationUserModal = ({
             }}
             label={
               <Button
-                type='button'
+                type='submit'
                 onClick={(e) => {
                   e.preventDefault()
                   if (!groupName) return
@@ -80,13 +80,19 @@ export const TempEscalationUserModal = ({
         </Form.Field>
 
         <UserGroups labels={fields.supported_groups} setValue={setValue} />
-        <Bar>
-          <Fill />
-          <Button type='submit' disabled={isPolicyEditorLoading} positive>
-            Submit
-          </Button>
-        </Bar>
       </Form>
+
+      <Bar>
+        <Fill />
+        <Button
+          type='button'
+          onClick={() => updateUserGroups({ ...fields })}
+          disabled={isPolicyEditorLoading}
+          positive
+        >
+          Submit
+        </Button>
+      </Bar>
     </Segment>
   )
 }

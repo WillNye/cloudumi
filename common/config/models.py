@@ -470,12 +470,12 @@ class ModelAdapter:
             )
         config_items = self.__access_subkey(host_config, self._key, self._default)
         for model in self._model_array:
-            if self.filter_on(model.dict()) in [
+            if self.filter_on(self._model.dict()) in [
                 self.filter_on(x) for x in config_items
             ]:
                 config_items.pop(
                     [self.filter_on(x) for x in config_items].index(
-                        self.filter_on(model.dict())
+                        self.filter_on(self._model.dict())
                     )
                 )
         await ddb.update_static_config_for_host(
