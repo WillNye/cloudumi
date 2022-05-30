@@ -30,7 +30,7 @@ class SelfServiceStep3 extends Component {
       admin_bypass_approval_enabled: this.props.admin_bypass_approval_enabled,
       export_to_terraform_enabled: this.props.export_to_terraform_enabled,
       admin_auto_approve: false,
-      policy_name: '',
+      policyName: '',
       dry_run_policy: '',
       old_policy: '',
       new_policy: '',
@@ -39,6 +39,7 @@ class SelfServiceStep3 extends Component {
       requestUrl: null,
       principal_name: '',
       change_type: 'inline_policy',
+      showIac: true,
     }
     this.inlinePolicyEditorRef = React.createRef()
     this.editorDidMount = this.editorDidMount.bind(this)
@@ -101,6 +102,7 @@ class SelfServiceStep3 extends Component {
             role.principal.resource_identifier,
           active: false,
           change_type: 'generic_file',
+          showIac: false,
         })
       } else {
         this.setState({
@@ -111,6 +113,9 @@ class SelfServiceStep3 extends Component {
           ),
           principal_name: role.principal.principal_arn,
           active: false,
+          policyName:
+            response?.extended_request?.changes?.changes &&
+            response?.extended_request?.changes?.changes[0]?.policy_name,
         })
       }
     }
@@ -472,6 +477,10 @@ class SelfServiceStep3 extends Component {
             onLintError={this.onLintError}
             onValueChange={this.onValueChange}
             readOnly={false}
+            showIac={this.state.showIac}
+            renderSideBySide={true}
+            policyName={this.state.policyName}
+            principal={role.principal}
           />
         </Segment>
         <Divider />
