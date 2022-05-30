@@ -2031,6 +2031,7 @@ async def apply_non_iam_resource_tag_change(
             resource_name,
             resource_region or config.region,
             host,
+            user,
         )
 
         if change.original_key and not change.key:
