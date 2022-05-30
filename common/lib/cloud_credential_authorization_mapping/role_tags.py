@@ -67,6 +67,8 @@ class RoleTagAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
                     host,
                     [],
                 ):
+                    if not tag.get("Value"):
+                        continue
                     splitted_groups = tag["Value"].split(":")
                     for group in splitted_groups:
                         if config.get_host_specific_key(
@@ -88,6 +90,8 @@ class RoleTagAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
                     host,
                     [],
                 ):
+                    if not tag.get("Value"):
+                        continue
                     splitted_groups = tag["Value"].split(":")
                     for group in splitted_groups:
                         if config.get_host_specific_key(
