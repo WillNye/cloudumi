@@ -119,8 +119,7 @@ const MonacoDiffComponent = (props) => {
     automaticLayout: true,
     readOnly,
   }
-  const readOnlyOptions = options
-  readOnlyOptions.readOnly = true
+  const readOnlyOptions = { ...options, readOnly: true }
   const editorTheme = getLocalStorageSettings('editorTheme')
   if (props.showIac) {
     return (
