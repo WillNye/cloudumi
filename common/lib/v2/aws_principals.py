@@ -239,7 +239,7 @@ async def get_role_details(
                     supported_groups=list(supported_groups),
                 )
 
-        return ExtendedAwsPrincipalModel(
+        principal = ExtendedAwsPrincipalModel(
             name=role_name,
             account_id=account_id,
             account_name=account_ids_to_name.get(account_id, None),
@@ -270,6 +270,7 @@ async def get_role_details(
             permissions_boundary=role["policy"].get("PermissionsBoundary", {}),
             terraform=role.get("terraform"),
         )
+        return principal
     else:
         return AwsPrincipalModel(
             name=role_name,
