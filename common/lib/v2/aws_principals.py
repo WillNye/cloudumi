@@ -268,6 +268,7 @@ async def get_role_details(
             description=role["policy"].get("Description"),
             owner=role.get("owner"),
             permissions_boundary=role["policy"].get("PermissionsBoundary", {}),
+            terraform=role.get("terraform"),
         )
     else:
         return AwsPrincipalModel(
