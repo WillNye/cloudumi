@@ -23,6 +23,7 @@ from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.dynamo import IAMRoleDynamoHandler
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
+from common.lib.terraform.transformers.IAMRoleTransformer import IAMRoleTransformer
 from common.models import SpokeAccount
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -360,7 +361,8 @@ async def fetch_iam_role(
 
         # Format the role for DynamoDB and Redis:
         await _cloudaux_to_aws(role)
-
+        iam_role_transformer = IAMRoleTransformer(role)
+        terraformed_role = iam_role_transformer._generate_hcl2_code(role)
         last_updated: int = int((datetime.utcnow()).timestamp())
         result = {
             "arn": role.get("Arn"),
@@ -381,6 +383,7 @@ async def fetch_iam_role(
                 role.get("Arn").lower(),
             ),
             "last_updated": last_updated,
+            "terraformed_role": terraformed_role,
             "ttl": int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
         }
 
