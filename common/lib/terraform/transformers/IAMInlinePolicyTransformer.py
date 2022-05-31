@@ -16,7 +16,7 @@ class IAMInlinePolicyTransformer(BaseEntityTransformer):
         self._principal = principal.value
         super().__init__(f"aws_iam_{principal.value}_policy", policy_name, entity_json)
 
-    def _generate_hcl2_code(self, entity_json) -> str:
+    def generate_hcl2_code(self, entity_json) -> str:
         policy_document_hcl = IAMPolicyDocumentTransformer(
             entity_json["PolicyDocument"],
             f"{self._safe_name}_document",

@@ -11,7 +11,7 @@ class InstanceProfileTransformer(BaseEntityTransformer):
             entity_json,
         )
 
-    def _generate_hcl2_code(self, entity_json) -> str:
+    def generate_hcl2_code(self, entity_json) -> str:
 
         return f"""resource "{self._entity_type}" "{self._safe_name}" {{
   name = "{self.raw_name}"

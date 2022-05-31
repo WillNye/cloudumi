@@ -12,7 +12,7 @@ class IAMPolicyDocumentTransformer(BaseEntityTransformer):
             "data.aws_iam_policy_document", policy_document_name, entity_json
         )
 
-    def _generate_hcl2_code(self, entity_json) -> str:
+    def generate_hcl2_code(self, entity_json) -> str:
         statements = IAMPolicyDocumentTransformer.force_list(entity_json["Statement"])
         if "Principal" in statements[0]:
             statements = self.transform_assume_policy_statements(statements)

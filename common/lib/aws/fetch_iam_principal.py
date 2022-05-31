@@ -288,7 +288,7 @@ async def fetch_iam_role(
                 result["policy"]["RoleName"] = role_arn.split("/")[-1]
 
                 iam_role_transformer = IAMRoleTransformer(result["policy"])
-                result["terraform"] = iam_role_transformer._generate_hcl2_code(
+                result["terraform"] = iam_role_transformer.generate_hcl2_code(
                     result["policy"]
                 )
                 return result
@@ -368,7 +368,7 @@ async def fetch_iam_role(
         # Format the role for DynamoDB and Redis:
         await _cloudaux_to_aws(role)
         iam_role_transformer = IAMRoleTransformer(role)
-        terraform = iam_role_transformer._generate_hcl2_code(role)
+        terraform = iam_role_transformer.generate_hcl2_code(role)
         last_updated: int = int((datetime.utcnow()).timestamp())
         result = {
             "arn": role.get("Arn"),
@@ -437,7 +437,7 @@ async def fetch_iam_role(
     result["policy"] = json.loads(result["policy"])
     if not result.get("terraform"):
         iam_role_transformer = IAMRoleTransformer(result)
-        result["terraform"] = iam_role_transformer._generate_hcl2_code(role)
+        result["terraform"] = iam_role_transformer.generate_hcl2_code(role)
     return result
 
 

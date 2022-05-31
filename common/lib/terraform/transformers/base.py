@@ -12,9 +12,9 @@ class BaseEntityTransformer:
         self._entity_type = entity_type
         self._entity_name = entity_name
         self._safe_name = BaseEntityTransformer.safe_name_converter(entity_name)
-        self._code = self._generate_hcl2_code(entity_json)
+        self._code = self.generate_hcl2_code(entity_json)
 
-    def _generate_hcl2_code(self, entity_json) -> str:
+    def generate_hcl2_code(self, entity_json) -> str:
         raise NotImplementedError()
 
     def entities_to_import(self) -> list:

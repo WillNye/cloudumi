@@ -22,7 +22,7 @@ class IAMRoleTransformer(BaseEntityTransformer):
             entity_json,
         )
 
-    def _generate_hcl2_code(self, entity_json) -> str:
+    def generate_hcl2_code(self, entity_json) -> str:
         assume_policy_document = IAMPolicyDocumentTransformer(
             entity_json["AssumeRolePolicyDocument"],
             f"{self._safe_name}_assume_role_policy",

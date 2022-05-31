@@ -16,7 +16,7 @@ class IAMManagedPolicyAttachmentTransformer(BaseEntityTransformer):
             f"aws_iam_{self._principal}_policy_attachment", attachment_name, entity_json
         )
 
-    def _generate_hcl2_code(self, entity_json) -> str:
+    def generate_hcl2_code(self, entity_json) -> str:
         policy_arn = f'"{entity_json["PolicyArn"]}"'
         if not self.is_aws_managed(entity_json["PolicyArn"]):
             policy_arn = f"aws_iam_policy.{BaseEntityTransformer.safe_name_converter(entity_json['PolicyName'])}.arn"
