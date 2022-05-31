@@ -56,7 +56,7 @@ class IAMRoleTransformer(BaseEntityTransformer):
         return f"""resource "aws_iam_role" "{self._safe_name}" {{
   name                  = "{entity_json['RoleName']}"
   path                  = "{entity_json['Path']}"
-  description           = \"{entity_json['Description']}\"
+  description           = \"{entity_json.get('Description', '')}\"
   {permissions_boundary}
   assume_role_policy = {assume_policy_document.identifier()}.json
 

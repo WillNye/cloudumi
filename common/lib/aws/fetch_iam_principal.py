@@ -285,6 +285,12 @@ async def fetch_iam_role(
                     },
                 )
                 result["policy"] = json.loads(result["policy"])
+                result["policy"]["RoleName"] = role_arn.split("/")[-1]
+
+                iam_role_transformer = IAMRoleTransformer(result["policy"])
+                result["terraform"] = iam_role_transformer._generate_hcl2_code(
+                    result["policy"]
+                )
                 return result
 
         # If not in Redis or it's older than an hour, proceed to DynamoDB:
@@ -429,6 +435,9 @@ async def fetch_iam_role(
     log.debug(log_data)
 
     result["policy"] = json.loads(result["policy"])
+    if not result.get("terraform"):
+        iam_role_transformer = IAMRoleTransformer(result)
+        result["terraform"] = iam_role_transformer._generate_hcl2_code(role)
     return result
 
 
