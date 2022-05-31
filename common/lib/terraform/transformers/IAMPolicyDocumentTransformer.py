@@ -1,4 +1,4 @@
-import ujson as json
+import json
 
 from common.lib.terraform.transformers.base import BaseEntityTransformer
 
