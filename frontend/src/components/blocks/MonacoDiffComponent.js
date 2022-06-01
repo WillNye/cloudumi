@@ -6,42 +6,10 @@ import {
   getMonacoCompletions,
   getStringFormat,
   getLocalStorageSettings,
+  convertToCloudFormation,
+  convertToTerraform,
 } from '../../helpers/utils'
 import { Menu } from 'semantic-ui-react'
-import yaml from 'js-yaml'
-
-const convertToTerraform = (policy_name, policy_statement) => {
-  return `resource "aws_iam_policy" "${policy_name}" {
-  name        = "${policy_name}"
-  path        = "/"
-  description = "Policy generated through Noq"
-  policy      =  <<EOF
-${policy_statement}
-EOF
-}`
-}
-
-const convertToCloudFormation = (policy_name, policy_statement, principal) => {
-  const principalSplited = principal?.principal_arn.split('/')
-  const principalName = principalSplited[principalSplited.length - 1]
-
-  const yamlPolicyStatement = JSON.parse(policy_statement)
-
-  const cfPolicy = {
-    Type: 'AWS::IAM::Policy',
-    Properties: {
-      PolicyDocument: yamlPolicyStatement,
-    },
-  }
-
-  if (principal?.principal_arn.includes(':role/')) {
-    cfPolicy['Properties']['Roles'] = [principalName]
-  } else if (principal?.principal_arn.includes(':user/')) {
-    cfPolicy['Properties']['Users'] = [principalName]
-  }
-
-  return yaml.dump(cfPolicy)
-}
 
 const MonacoDiffComponent = (props) => {
   const monaco = useMonaco()
