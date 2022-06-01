@@ -408,6 +408,8 @@ class RoleDetailHandler(BaseAPIV2Handler):
                 is_admin_request=self.is_admin,
             )
         except Exception as e:
+            if config.get("_global_.development"):
+                raise
             sentry_sdk.capture_exception()
             log.error({**log_data, "error": e}, exc_info=True)
             role_details = None
