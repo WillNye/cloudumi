@@ -1181,14 +1181,12 @@ def cache_iam_resources_across_accounts(
         # First, get list of accounts
         # Second, call tasks to enumerate all the roles across all accounts
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_iam_resources_for_account.s(account_id, host))
-            else:
+            if config.get("_global_.environment") in ["test"]:
                 log.debug(
                     {
                         **log_data,
                         "message": (
-                            "`environment` configuration is not set. Only running tasks "
+                            "`environment` configuration is set to `test`. Only running tasks "
                             "for accounts in configuration "
                             "key `celery.test_account_ids`"
                         ),
@@ -1198,6 +1196,8 @@ def cache_iam_resources_across_accounts(
                     "celery.test_account_ids", host, []
                 ):
                     tasks.append(cache_iam_resources_for_account.s(account_id, host))
+            else:
+                tasks.append(cache_iam_resources_for_account.s(account_id, host))
         if run_subtasks:
             results = group(*tasks).apply_async()
             if wait_for_subtask_completion:

@@ -6,7 +6,10 @@ import {
   getMonacoCompletions,
   getStringFormat,
   getLocalStorageSettings,
+  convertToCloudFormation,
+  convertToTerraform,
 } from '../../helpers/utils'
+import { Menu } from 'semantic-ui-react'
 
 const MonacoDiffComponent = (props) => {
   const monaco = useMonaco()
@@ -19,6 +22,7 @@ const MonacoDiffComponent = (props) => {
   const modifiedEditorRef = useRef()
   const [language, setLanguage] = useState('json')
   const [languageDetected, setLanguageDetected] = useState(false)
+  const [activeItem, setActiveItem] = useState('JSON')
 
   const onChange = (newValue) => {
     onValueChange(newValue)
@@ -83,21 +87,103 @@ const MonacoDiffComponent = (props) => {
     automaticLayout: true,
     readOnly,
   }
+  const readOnlyOptions = { ...options, readOnly: true }
   const editorTheme = getLocalStorageSettings('editorTheme')
-  return (
-    <DiffEditor
-      language={language}
-      width='100%'
-      height='500px'
-      original={oldValue}
-      modified={newValue}
-      onMount={editorDidMount}
-      options={options}
-      onChange={onChange}
-      theme={editorTheme}
-      alwaysConsumeMouseWheel={false}
-    />
-  )
+  if (props.showIac) {
+    return (
+      <div>
+        <Menu pointing secondary>
+          <Menu.Item
+            name='JSON'
+            content='JSON'
+            active={activeItem === 'JSON'}
+            onClick={() => {
+              setActiveItem('JSON')
+            }}
+          ></Menu.Item>
+          <Menu.Item
+            name='Terraform'
+            content='Terraform'
+            active={activeItem === 'Terraform'}
+            onClick={() => {
+              setActiveItem('Terraform')
+            }}
+          ></Menu.Item>
+          <Menu.Item
+            name='CloudFormation'
+            content='CloudFormation'
+            active={activeItem === 'CloudFormation'}
+            onClick={() => {
+              setActiveItem('CloudFormation')
+            }}
+          ></Menu.Item>
+        </Menu>
+        {activeItem === 'JSON' ? (
+          <DiffEditor
+            language={language}
+            width='100%'
+            height='500px'
+            original={oldValue}
+            modified={newValue}
+            onMount={editorDidMount}
+            options={options}
+            onChange={onChange}
+            theme={editorTheme}
+            alwaysConsumeMouseWheel={false}
+          />
+        ) : null}
+        {activeItem === 'Terraform' ? (
+          <DiffEditor
+            language={'hcl'}
+            width='100%'
+            height='500px'
+            original={oldValue}
+            modified={convertToTerraform(
+              props?.policyName || 'policyName',
+              newValue,
+              props.principal
+            )}
+            onMount={editorDidMount}
+            options={readOnlyOptions}
+            theme={editorTheme}
+            alwaysConsumeMouseWheel={false}
+          />
+        ) : null}
+        {activeItem === 'CloudFormation' ? (
+          <DiffEditor
+            language={'yaml'}
+            width='100%'
+            height='500px'
+            original={oldValue}
+            modified={convertToCloudFormation(
+              props?.policyName || 'policyName',
+              newValue,
+              props.principal
+            )}
+            onMount={editorDidMount}
+            options={readOnlyOptions}
+            theme={editorTheme}
+            alwaysConsumeMouseWheel={false}
+          />
+        ) : null}
+      </div>
+    )
+  } else {
+    return (
+      <DiffEditor
+        language={language}
+        width='100%'
+        height='500px'
+        original={oldValue}
+        modified={newValue}
+        onMount={editorDidMount}
+        options={options}
+        onChange={onChange}
+        theme={editorTheme}
+        alwaysConsumeMouseWheel={false}
+      />
+    )
+  }
 }
 
 // This component requires four props:
