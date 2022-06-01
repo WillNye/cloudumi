@@ -1449,7 +1449,7 @@
 
 <p>Noq can be configured to pass the user's username as the value of a <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_session-tags.html#id_session-tags_role-chaining">transitive session tag</a> when brokering credentials. To enable this configuration, select <em>Advanced</em>, followed by <em>Config</em> from the main Noq menu. Then set <code>aws.transitive_session_tags.enabled</code> to <code>true</code>. Brokered credentials must have the <code>sts:TagSession</code> permission for this functionality to work.</p>
 <p>If a user assume subsequent roles, this transitive session tag will be passed as well. It can be used to identify the user's identity in "AssumeRole" Cloudtrail events, and it can also be used for attribute-based access control.</p>
-<p>The default tag name is <code>noq_transitive_session_tag_user</code>, and the tag value is the user's username. </p>
+<p>The default tag name is <code>noq_transitive_session_tag_user</code>, and the tag value is the user's username.</p>
 <p>Here's an example <code>sts:AssumeRole</code> Cloudtrail message that includes the transitive session tag:</p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="err">{</span><span class="w"></span>
 <span class="w">        </span><span class="ss">&quot;eventVersion&quot;</span><span class="err">:</span><span class="w"> </span><span class="ss">&quot;1.08&quot;</span><span class="p">,</span><span class="w"></span>
