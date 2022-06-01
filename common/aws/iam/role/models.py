@@ -31,6 +31,7 @@ from common.config.models import ModelAdapter
 from common.lib.aws.utils import allowed_to_sync_role, get_aws_principal_owner
 from common.lib.plugins import get_plugin_by_name
 from common.lib.pynamo import NoqMapAttribute, NoqModel
+from common.lib.terraform.transformers.IAMRoleTransformer import IAMRoleTransformer
 from common.models import CloneRoleRequestModel, RoleCreationRequestModel, SpokeAccount
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -66,14 +67,19 @@ class IAMRole(NoqModel):
 
     @property
     def assume_role_policy_document(self):
-        if not self.policy:
-            return {}
+        return self.policy_dict.get("AssumeRolePolicyDocument", {})
 
-        policy = self.policy
-        if isinstance(policy, str):
-            policy = json.loads(policy)
+    @property
+    def policy_dict(self) -> dict:
+        if getattr(self, "_policy_dict", None) is None:
+            if not self.policy:
+                self._policy_dict = {}
+            elif isinstance(self.policy, str):
+                self._policy_dict = json.dumps(self.policy)
+            else:
+                self._policy_dict = self.policy
 
-        return policy.get("AssumeRolePolicyDocument", {})
+        return self._policy_dict
 
     @property
     def is_expired(self) -> bool:
@@ -81,11 +87,21 @@ class IAMRole(NoqModel):
             return False
         return bool(datetime.fromtimestamp(float(self.ttl)) < datetime.utcnow())
 
+    @property
+    def terraform(self) -> str:
+        iam_role_transformer = IAMRoleTransformer(self.policy_dict)
+        return iam_role_transformer.generate_hcl2_code(self.policy_dict)
+
     def _normalize_object(self):
         if self.ttl:
             self.ttl = int(self.ttl)
-        if self.policy:
+        if self.policy and isinstance(self.policy, str):
             self.policy = json.loads(self.policy)
+
+    def dict(self) -> dict:
+        as_dict = super(IAMRole, self).dict()
+        as_dict["terraform"] = self.terraform
+        return as_dict
 
     @classmethod
     async def get(
