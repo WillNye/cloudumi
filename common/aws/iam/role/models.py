@@ -44,6 +44,7 @@ class IAMRole(NoqModel):
         dax_write_endpoints = dax_endpoints
         dax_read_endpoints = dax_endpoints
         fallback_to_dynamodb = True
+        region = config.region
 
     host = UnicodeAttribute(hash_key=True)
     entity_id = UnicodeAttribute(range_key=True)
@@ -64,8 +65,15 @@ class IAMRole(NoqModel):
         return f"{self.arn}||{self.host}"
 
     @property
-    def assume_role_policy(self):
-        return self.policy.get("AssumeRolePolicyDocument")
+    def assume_role_policy_document(self):
+        if not self.policy:
+            return {}
+
+        policy = self.policy
+        if isinstance(policy, str):
+            policy = json.loads(policy)
+
+        return policy.get("AssumeRolePolicyDocument", {})
 
     @property
     def is_expired(self) -> bool:

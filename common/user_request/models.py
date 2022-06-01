@@ -10,6 +10,7 @@ from common.config.config import (
     dynamodb_host,
     get_dynamo_table_name,
     get_logger,
+    region,
 )
 from common.lib.asyncio import aio_wrapper
 from common.lib.pynamo import NoqMapAttribute, NoqModel
@@ -24,6 +25,7 @@ class IAMRequestArnIndex(GlobalSecondaryIndex):
         read_capacity_units = 1
         write_capacity_units = 1
         projection = AllProjection()
+        region = region
 
     host = UnicodeAttribute(hash_key=True)
     arn = UnicodeAttribute(range_key=True)
