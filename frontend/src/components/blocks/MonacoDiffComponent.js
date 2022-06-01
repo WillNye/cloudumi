@@ -140,7 +140,8 @@ const MonacoDiffComponent = (props) => {
             original={oldValue}
             modified={convertToTerraform(
               props?.policyName || 'policyName',
-              newValue
+              newValue,
+              props.principal
             )}
             onMount={editorDidMount}
             options={readOnlyOptions}

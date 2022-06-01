@@ -347,15 +347,25 @@ export const validateApprovePolicy = (changesConfig, policyId) => {
   return !!(changesConfig[policyId] || {}).can_approve_policy
 }
 
-export const convertToTerraform = (policy_name, policy_statement) => {
-  return `resource "aws_iam_policy" "${policy_name}" {
+export const convertToTerraform = (
+  policy_name,
+  policy_statement,
+  principal
+) => {
+  let principalArn =
+    principal?.principal_arn || ' arn:aws:iam::1:role/principalName'
+  const principalSplited = principalArn.split('/')
+  const principalName = principalSplited[principalSplited.length - 1]
+  let principalType = 'role'
+
+  return `resource "aws_iam_${principalType}_policy" "${policy_name}" {
   name        = "${policy_name}"
-  path        = "/"
-  description = "Policy generated through Noq"
+  ${principalType}        = "${principalName}"
   policy      =  <<EOF
 ${policy_statement}
 EOF
-}`
+}
+`
 }
 
 export const convertToCloudFormation = (
@@ -363,7 +373,9 @@ export const convertToCloudFormation = (
   policy_statement,
   principal
 ) => {
-  const principalSplited = principal?.principal_arn.split('/')
+  let principalArn =
+    principal?.principal_arn || ' arn:aws:iam::1:role/principalName'
+  const principalSplited = principalArn.split('/')
   const principalName = principalSplited[principalSplited.length - 1]
   let yamlPolicyStatement = ''
   try {
@@ -377,6 +389,7 @@ export const convertToCloudFormation = (
     Type: 'AWS::IAM::Policy',
     Properties: {
       PolicyDocument: yamlPolicyStatement,
+      PolicyName: policy_name,
     },
   }
 
