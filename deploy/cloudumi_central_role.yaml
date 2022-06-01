@@ -280,9 +280,10 @@ Resources:
       ActionType: "AWSCentralAcctRegistration"
       TemplateVersion: 1.5
       AWSAccountId: !Ref "AWS::AccountId"
+      ReadOnlyMode: !Ref ReadOnlyModeParameter
 
 Conditions:
-  ReadOnlyModeEnabled: !Equals [true, !Ref ReadOnlyMode]
+  ReadOnlyModeEnabled: !Equals [true, !Ref ReadOnlyModeParameter]
 
 Parameters:
   ExternalIDParameter:
@@ -334,7 +335,9 @@ Parameters:
     MaxLength: "100"
     AllowedPattern: '^arn:aws:sns:[\w-]*:\d{12}:.+'
     ConstraintDescription: 'Invalid RegistrationTopicArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
-  ReadOnlyMode:
+  ReadOnlyModeParameter:
+    Description: >-
+      Only give read-only permissions to the Spoke role.
     Type: String
     Default: false
     AllowedValues:
