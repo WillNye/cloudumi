@@ -150,6 +150,18 @@ class ManagedPoliciesHandler(BaseAPIV2Handler):
 
         account_id = policy_arn.split(":")[4]
         policy_name = policy_arn.split("/")[-1]
+
+        if account_id == "aws":
+            if (
+                len(ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list)
+                > 0
+            ):
+                account_id = (
+                    ModelAdapter(SpokeAccount)
+                    .load_config("spoke_accounts", host)
+                    .list[0]["account_id"]
+                )
+
         log_data = {
             "function": "ManagedPoliciesHandler.get",
             "user": self.user,
