@@ -96,7 +96,13 @@ class IAMRole(NoqModel):
             iam_role_transformer = IAMRoleTransformer(self.policy_dict)
             return iam_role_transformer.generate_hcl2_code(self.policy_dict)
         except Exception as err:
-            log.warning(str(err))
+            log.warning(
+                {
+                    "message": "Unable to generate Terraform",
+                    "IAMRole": self.role_id,
+                    "error": str(err),
+                }
+            )
             return ""
 
     def _normalize_object(self):
