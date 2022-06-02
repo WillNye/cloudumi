@@ -8,8 +8,10 @@ load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
 INT_DEPS = [
     "//common/config:lib",
     "//common/exceptions:lib",
+    "//common/aws:lib",
     "//common/lib",
     "//common/lib/aws/access_undenied:lib",
+    "//common/user_request:lib",
     "//identity:lib",
     "//plugins/auth:lib",
     "//plugins/aws:lib",

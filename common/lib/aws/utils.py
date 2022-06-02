@@ -9,15 +9,16 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-import pytz
 import sentry_sdk
 import ujson
 from botocore.exceptions import ClientError, ParamValidationError
-from dateutil.parser import parse
 from deepdiff import DeepDiff
 from parliament import analyze_policy_string, enhance_finding
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
+from common.aws.iam.role.config import get_active_tear_users_tag
+from common.aws.iam.user.utils import fetch_iam_user
+from common.aws.utils import get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -32,12 +33,7 @@ from common.lib.account_indexers.aws_organizations import (
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_config import query
-from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
-from common.lib.aws.iam import (
-    get_active_tear_users_tag,
-    get_managed_policy_document,
-    get_policy,
-)
+from common.lib.aws.iam import get_managed_policy_document, get_policy
 from common.lib.aws.s3 import (
     get_bucket_location,
     get_bucket_policy,
@@ -52,22 +48,20 @@ from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
-from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import sort_dict
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
 from common.lib.tenants import get_all_hosts
 from common.models import (
-    CloneRoleRequestModel,
     ExtendedRequestModel,
     OrgAccount,
     RequestStatus,
-    RoleCreationRequestModel,
     ServiceControlPolicyArrayModel,
     ServiceControlPolicyModel,
     SpokeAccount,
     Status,
 )
+from common.user_request.models import IAMRequest
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -245,20 +239,6 @@ async def fetch_managed_policy_details(
     )
 
     return result
-
-
-async def fetch_assume_role_policy(
-    role_arn: str, host: str, user: str
-) -> Optional[Dict]:
-    account_id = role_arn.split(":")[4]
-    role_name = role_arn.split("/")[-1]
-    try:
-        role = await fetch_role_details(account_id, role_name, host, user)
-    except ClientError:
-        # Role is most likely on an account that we do not have access to
-        sentry_sdk.capture_exception()
-        return None
-    return role.assume_role_policy_document
 
 
 async def fetch_sns_topic(
@@ -606,55 +586,6 @@ async def raise_if_background_check_required_and_no_background_check(role, user,
                 )
 
 
-def apply_managed_policy_to_role(
-    role: Dict, policy_name: str, session_name: str, host: str, user: str
-) -> bool:
-    """
-    Apply a managed policy to a role.
-    :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :param policy_name: Name of managed policy to add to role
-    :param session_name: Name of session to assume role with. This is an identifier that will be logged in CloudTrail
-    :param host: The NOQ Tenant
-    :param user: The user who is applying the manage policy to the role
-    :return:
-    """
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    log_data = {
-        "function": function,
-        "role": role,
-        "policy_name": policy_name,
-        "session_name": session_name,
-    }
-    account_id = role.get("Arn").split(":")[4]
-    policy_arn = f"arn:aws:iam::{account_id}:policy/{policy_name}"
-    client = boto3_cached_conn(
-        "iam",
-        host,
-        user,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        session_name=sanitize_session_name(session_name),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
-
-    client.attach_role_policy(RoleName=role.get("RoleName"), PolicyArn=policy_arn)
-    log_data["message"] = "Applied managed policy to role"
-    log.debug(log_data)
-    stats.count(
-        f"{function}.attach_role_policy",
-        tags={
-            "role": role.get("Arn"),
-            "policy": policy_arn,
-            "host": host,
-        },
-    )
-    return True
-
-
 async def delete_iam_user(account_id, iam_user_name, username, host: str) -> bool:
     """
     This function assumes the user has already been pre-authorized to delete an IAM user. it will detach all managed
@@ -716,65 +647,6 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
     return True
 
 
-async def delete_iam_role(account_id, role_name, username, host) -> bool:
-    log_data = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "message": "Attempting to delete role",
-        "account_id": account_id,
-        "role_name": role_name,
-        "user": username,
-        "host": host,
-    }
-    log.info(log_data)
-    role = await fetch_role_details(account_id, role_name, host, username)
-
-    for instance_profile in await aio_wrapper(role.instance_profiles.all):
-        await aio_wrapper(instance_profile.load)
-        log.info(
-            {
-                **log_data,
-                "message": "Removing and deleting instance profile from role",
-                "instance_profile": instance_profile.name,
-            }
-        )
-        await aio_wrapper(instance_profile.remove_role, RoleName=role.name)
-        await aio_wrapper(instance_profile.delete)
-
-    # Detach managed policies
-    for policy in await aio_wrapper(role.attached_policies.all):
-        await aio_wrapper(policy.load)
-        log.info(
-            {
-                **log_data,
-                "message": "Detaching managed policy from role",
-                "policy_arn": policy.arn,
-            }
-        )
-        await aio_wrapper(policy.detach_role, RoleName=role_name)
-
-    # Delete Inline policies
-    for policy in await aio_wrapper(role.policies.all):
-        await aio_wrapper(policy.load)
-        log.info(
-            {
-                **log_data,
-                "message": "Deleting inline policy on role",
-                "policy_name": policy.name,
-            }
-        )
-        await aio_wrapper(policy.delete)
-
-    log.info({**log_data, "message": "Performing role deletion"})
-    await aio_wrapper(role.delete)
-    stats.count(
-        f"{log_data['function']}.success",
-        tags={
-            "role_name": role_name,
-            "host": host,
-        },
-    )
-
-
 async def prune_iam_resource_tag(
     boto_conn, resource_type: str, resource_id: str, tag: str, value: str = None
 ):
@@ -794,7 +666,7 @@ async def prune_iam_resource_tag(
     resource_tags = await aio_wrapper(
         getattr(boto_conn, f"list_{resource_type}_tags"), **boto_kwargs
     )
-    resource_tag = get_role_tag(resource_tags, tag, True, set())
+    resource_tag = get_resource_tag(resource_tags, tag, True, set())
     resource_tag.remove(value)
 
     if resource_tag:
@@ -807,41 +679,6 @@ async def prune_iam_resource_tag(
         await aio_wrapper(
             getattr(boto_conn, f"untag_{resource_type}"), TagKeys=[tag], **boto_kwargs
         )
-
-
-async def fetch_role_details(account_id, role_name, host, user):
-    log_data = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "message": "Attempting to fetch role details",
-        "account": account_id,
-        "role": role_name,
-    }
-    log.info(log_data)
-    iam_resource = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
-        host,
-        user,
-        service_type="resource",
-        account_number=account_id,
-        region=config.region,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        session_name=sanitize_session_name("fetch_role_details"),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
-    try:
-        iam_role = await aio_wrapper(iam_resource.Role, role_name)
-    except ClientError as ce:
-        if ce.response["Error"]["Code"] == "NoSuchEntity":
-            log_data["message"] = "Requested role doesn't exist"
-            log.error(log_data)
-        raise
-    await aio_wrapper(iam_role.load)
-    return iam_role
 
 
 async def fetch_iam_user_details(account_id, iam_user_name, host, user):
@@ -887,522 +724,6 @@ async def fetch_iam_user_details(account_id, iam_user_name, host, user):
         raise
     await aio_wrapper(iam_user.load)
     return iam_user
-
-
-async def create_iam_role(create_model: RoleCreationRequestModel, username, host):
-    """
-    Creates IAM role.
-    :param create_model: RoleCreationRequestModel, which has the following attributes:
-        account_id: destination account's ID
-        role_name: destination role name
-        description: optional string - description of the role
-                     default: Role created by {username} through ConsoleMe
-        instance_profile: optional boolean - whether to create an instance profile and attach it to the role or not
-                     default: True
-    :param username: username of user requesting action
-    :return: results: - indicating the results of each action
-    """
-    log_data = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "message": "Attempting to create role",
-        "account_id": create_model.account_id,
-        "role_name": create_model.role_name,
-        "user": username,
-        "host": host,
-    }
-    log.info(log_data)
-
-    default_trust_policy = config.get_host_specific_key(
-        "user_role_creator.default_trust_policy",
-        host,
-        {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Principal": {"Service": "ec2.amazonaws.com"},
-                    "Action": "sts:AssumeRole",
-                }
-            ],
-        },
-    )
-    if default_trust_policy is None:
-        raise MissingConfigurationValue(
-            "Missing Default Assume Role Policy Configuration"
-        )
-
-    default_max_session_duration = config.get_host_specific_key(
-        "user_role_creator.default_max_session_duration", host, 3600
-    )
-
-    if create_model.description:
-        description = create_model.description
-    else:
-        description = f"Role created by {username} through ConsoleMe"
-
-    iam_client = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
-        host,
-        username,
-        service_type="client",
-        account_number=create_model.account_id,
-        region=config.region,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": create_model.account_id})
-        .first.name,
-        session_name=sanitize_session_name("create_role_" + username),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
-    results = {"errors": 0, "role_created": "false", "action_results": []}
-    try:
-        await aio_wrapper(
-            iam_client.create_role,
-            RoleName=create_model.role_name,
-            AssumeRolePolicyDocument=json.dumps(default_trust_policy),
-            MaxSessionDuration=default_max_session_duration,
-            Description=description,
-            Tags=[],
-        )
-        results["action_results"].append(
-            {
-                "status": "success",
-                "message": f"Role arn:aws:iam::{create_model.account_id}:role/{create_model.role_name} "
-                f"successfully created",
-            }
-        )
-        results["role_created"] = "true"
-    except Exception as e:
-        log_data["message"] = "Exception occurred creating role"
-        log_data["error"] = str(e)
-        log.error(log_data, exc_info=True)
-        results["action_results"].append(
-            {
-                "status": "error",
-                "message": f"Error creating role {create_model.role_name} in account {create_model.account_id}:"
-                + str(e),
-            }
-        )
-        results["errors"] += 1
-        sentry_sdk.capture_exception()
-        # Since we were unable to create the role, no point continuing, just return
-        return results
-
-    # If here, role has been successfully created, add status updates for each action
-    results["action_results"].append(
-        {
-            "status": "success",
-            "message": "Successfully added default Assume Role Policy Document",
-        }
-    )
-    results["action_results"].append(
-        {
-            "status": "success",
-            "message": "Successfully added description: " + description,
-        }
-    )
-
-    # Create instance profile and attach if specified
-    if create_model.instance_profile:
-        try:
-            await aio_wrapper(
-                iam_client.create_instance_profile,
-                InstanceProfileName=create_model.role_name,
-            )
-            await aio_wrapper(
-                iam_client.add_role_to_instance_profile,
-                InstanceProfileName=create_model.role_name,
-                RoleName=create_model.role_name,
-            )
-            results["action_results"].append(
-                {
-                    "status": "success",
-                    "message": f"Successfully added instance profile {create_model.role_name} to role "
-                    f"{create_model.role_name}",
-                }
-            )
-        except Exception as e:
-            log_data[
-                "message"
-            ] = "Exception occurred creating/attaching instance profile"
-            log_data["error"] = str(e)
-            log.error(log_data, exc_info=True)
-            sentry_sdk.capture_exception()
-            results["action_results"].append(
-                {
-                    "status": "error",
-                    "message": f"Error creating/attaching instance profile {create_model.role_name} to role: "
-                    + str(e),
-                }
-            )
-            results["errors"] += 1
-
-    stats.count(
-        f"{log_data['function']}.success",
-        tags={
-            "role_name": create_model.role_name,
-            "host": host,
-        },
-    )
-    log_data["message"] = "Successfully created role"
-    log.info(log_data)
-    # Force caching of role
-    try:
-        role_arn = (
-            f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
-        )
-        await fetch_iam_role(
-            create_model.account_id, role_arn, host, force_refresh=True
-        )
-    except Exception as e:
-        log.error({**log_data, "message": "Unable to cache role", "error": str(e)})
-        sentry_sdk.capture_exception()
-    return results
-
-
-async def clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
-    """
-    Clones IAM role within same account or across account, always creating and attaching instance profile if one exists
-    on the source role.
-    ;param username: username of user requesting action
-    ;:param clone_model: CloneRoleRequestModel, which has the following attributes:
-        account_id: source role's account ID
-        role_name: source role's name
-        dest_account_id: destination role's account ID (may be same as account_id)
-        dest_role_name: destination role's name
-        clone_options: dict to indicate what to copy when cloning:
-            assume_role_policy: bool
-                default: False - uses default ConsoleMe AssumeRolePolicy
-            tags: bool
-                default: False - defaults to no tags
-            copy_description: bool
-                default: False - defaults to copying provided description or default description
-            description: string
-                default: "Role cloned via ConsoleMe by `username` from `arn:aws:iam::<account_id>:role/<role_name>`
-                if copy_description is True, then description is ignored
-            inline_policies: bool
-                default: False - defaults to no inline policies
-            managed_policies: bool
-                default: False - defaults to no managed policies
-    :return: results: - indicating the results of each action
-    """
-
-    log_data = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "message": "Attempting to clone role",
-        "account_id": clone_model.account_id,
-        "role_name": clone_model.role_name,
-        "dest_account_id": clone_model.dest_account_id,
-        "dest_role_name": clone_model.dest_role_name,
-        "user": username,
-        "host": host,
-    }
-    log.info(log_data)
-    role = await fetch_role_details(
-        clone_model.account_id, clone_model.role_name, host, username
-    )
-
-    default_trust_policy = config.get_host_specific_key(
-        "user_role_creator.default_trust_policy", host
-    )
-    trust_policy = (
-        role.assume_role_policy_document
-        if clone_model.options.assume_role_policy
-        else default_trust_policy
-    )
-    if trust_policy is None:
-        raise MissingConfigurationValue(
-            "Missing Default Assume Role Policy Configuration"
-        )
-
-    default_max_session_duration = config.get_host_specific_key(
-        "user_role_creator.default_max_session_duration", host, 3600
-    )
-
-    max_session_duration = (
-        role.max_session_duration
-        if clone_model.options.max_session_duration
-        else default_max_session_duration
-    )
-
-    if (
-        clone_model.options.copy_description
-        and role.description is not None
-        and role.description != ""
-    ):
-        description = role.description
-    elif (
-        clone_model.options.description is not None
-        and clone_model.options.description != ""
-    ):
-        description = clone_model.options.description
-    else:
-        description = f"Role cloned via ConsoleMe by {username} from {role.arn}"
-
-    tags = role.tags if clone_model.options.tags and role.tags else []
-
-    iam_client = await aio_wrapper(
-        boto3_cached_conn,
-        "iam",
-        host,
-        username,
-        service_type="client",
-        account_number=clone_model.dest_account_id,
-        region=config.region,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": clone_model.dest_account_id})
-        .first.name,
-        session_name=sanitize_session_name("clone_role_" + username),
-        retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-    )
-    results = {"errors": 0, "role_created": "false", "action_results": []}
-    try:
-        await aio_wrapper(
-            iam_client.create_role,
-            RoleName=clone_model.dest_role_name,
-            AssumeRolePolicyDocument=json.dumps(trust_policy),
-            MaxSessionDuration=max_session_duration,
-            Description=description,
-            Tags=tags,
-        )
-        results["action_results"].append(
-            {
-                "status": "success",
-                "message": f"Role arn:aws:iam::{clone_model.dest_account_id}:role/{clone_model.dest_role_name} "
-                f"successfully created",
-            }
-        )
-        results["role_created"] = "true"
-    except Exception as e:
-        log_data["message"] = "Exception occurred creating cloned role"
-        log_data["error"] = str(e)
-        log.error(log_data, exc_info=True)
-        results["action_results"].append(
-            {
-                "status": "error",
-                "message": f"Error creating role {clone_model.dest_role_name} in account {clone_model.dest_account_id}:"
-                + str(e),
-            }
-        )
-        results["errors"] += 1
-        sentry_sdk.capture_exception()
-        # Since we were unable to create the role, no point continuing, just return
-        return results
-
-    if clone_model.options.tags:
-        results["action_results"].append(
-            {"status": "success", "message": "Successfully copied tags"}
-        )
-    if clone_model.options.assume_role_policy:
-        results["action_results"].append(
-            {
-                "status": "success",
-                "message": "Successfully copied Assume Role Policy Document",
-            }
-        )
-    else:
-        results["action_results"].append(
-            {
-                "status": "success",
-                "message": "Successfully added default Assume Role Policy Document",
-            }
-        )
-    if (
-        clone_model.options.copy_description
-        and role.description is not None
-        and role.description != ""
-    ):
-        results["action_results"].append(
-            {"status": "success", "message": "Successfully copied description"}
-        )
-    elif clone_model.options.copy_description:
-        results["action_results"].append(
-            {
-                "status": "error",
-                "message": "Failed to copy description, so added default description: "
-                + description,
-            }
-        )
-    else:
-        results["action_results"].append(
-            {
-                "status": "success",
-                "message": "Successfully added description: " + description,
-            }
-        )
-    # Create instance profile and attach if it exists in source role
-    if len(list(await aio_wrapper(role.instance_profiles.all))) > 0:
-        try:
-            await aio_wrapper(
-                iam_client.create_instance_profile,
-                InstanceProfileName=clone_model.dest_role_name,
-            )
-            await aio_wrapper(
-                iam_client.add_role_to_instance_profile,
-                InstanceProfileName=clone_model.dest_role_name,
-                RoleName=clone_model.dest_role_name,
-            )
-            results["action_results"].append(
-                {
-                    "status": "success",
-                    "message": f"Successfully added instance profile {clone_model.dest_role_name} to role "
-                    f"{clone_model.dest_role_name}",
-                }
-            )
-        except Exception as e:
-            log_data[
-                "message"
-            ] = "Exception occurred creating/attaching instance profile"
-            log_data["error"] = str(e)
-            log.error(log_data, exc_info=True)
-            sentry_sdk.capture_exception()
-            results["action_results"].append(
-                {
-                    "status": "error",
-                    "message": f"Error creating/attaching instance profile {clone_model.dest_role_name} to role: "
-                    + str(e),
-                }
-            )
-            results["errors"] += 1
-
-    # other optional attributes to copy over after role has been successfully created
-
-    cloned_role = await fetch_role_details(
-        clone_model.dest_account_id, clone_model.dest_role_name, host, username
-    )
-
-    # Copy inline policies
-    if clone_model.options.inline_policies:
-        for src_policy in await aio_wrapper(role.policies.all):
-            await aio_wrapper(src_policy.load)
-            try:
-                dest_policy = await aio_wrapper(cloned_role.Policy, src_policy.name)
-                await aio_wrapper(
-                    dest_policy.put,
-                    PolicyDocument=json.dumps(src_policy.policy_document),
-                )
-                results["action_results"].append(
-                    {
-                        "status": "success",
-                        "message": f"Successfully copied inline policy {src_policy.name}",
-                    }
-                )
-            except Exception as e:
-                log_data["message"] = "Exception occurred copying inline policy"
-                log_data["error"] = str(e)
-                log.error(log_data, exc_info=True)
-                sentry_sdk.capture_exception()
-                results["action_results"].append(
-                    {
-                        "status": "error",
-                        "message": f"Error copying inline policy {src_policy.name}: "
-                        + str(e),
-                    }
-                )
-                results["errors"] += 1
-
-    # Copy managed policies
-    if clone_model.options.managed_policies:
-        for src_policy in await aio_wrapper(role.attached_policies.all):
-            await aio_wrapper(src_policy.load)
-            dest_policy_arn = src_policy.arn.replace(
-                clone_model.account_id, clone_model.dest_account_id
-            )
-            try:
-                await aio_wrapper(cloned_role.attach_policy, PolicyArn=dest_policy_arn)
-                results["action_results"].append(
-                    {
-                        "status": "success",
-                        "message": f"Successfully attached managed policy {src_policy.arn} as {dest_policy_arn}",
-                    }
-                )
-            except Exception as e:
-                log_data["message"] = "Exception occurred copying managed policy"
-                log_data["error"] = str(e)
-                log.error(log_data, exc_info=True)
-                sentry_sdk.capture_exception()
-                results["action_results"].append(
-                    {
-                        "status": "error",
-                        "message": f"Error attaching managed policy {dest_policy_arn}: "
-                        + str(e),
-                    }
-                )
-                results["errors"] += 1
-
-    stats.count(
-        f"{log_data['function']}.success",
-        tags={
-            "role_name": clone_model.role_name,
-            "host": host,
-        },
-    )
-    log_data["message"] = "Successfully cloned role"
-    log.info(log_data)
-    return results
-
-
-def get_role_tag(
-    role: Dict, key: str, is_list: Optional[bool] = False, default: Optional[any] = None
-) -> any:
-    """
-    Retrieves and parses the value of a provided AWS tag.
-    :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :param key: key of the tag
-    :param is_list: The value for the key is a list type
-    :param default: Default value is tag not found
-    :return:
-    """
-    for tag in role.get("Tags", role.get("tags", [])):
-        if tag.get("Key") == key:
-            val = tag.get("Value")
-            if is_list:
-                return set([] if not val else val.split(":"))
-            return val
-    return default
-
-
-def role_has_managed_policy(role: Dict, managed_policy_name: str) -> bool:
-    """
-    Checks a role dictionary to determine if a managed policy is attached
-    :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :param managed_policy_name: the name of the managed policy
-    :return:
-    """
-
-    for managed_policy in role.get("AttachedManagedPolicies", []):
-        if managed_policy.get("PolicyName") == managed_policy_name:
-            return True
-    return False
-
-
-def role_newer_than_x_days(role: Dict, days: int) -> bool:
-    """
-    Checks a role dictionary to determine if it is newer than the specified number of days
-    :param role:  An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :param days: number of days
-    :return:
-    """
-    if isinstance(role.get("CreateDate"), str):
-        role["CreateDate"] = parse(role.get("CreateDate"))
-    role_age = datetime.now(tz=pytz.utc) - role.get("CreateDate")
-    if role_age.days < days:
-        return True
-    return False
-
-
-def is_role_instance_profile(role: Dict) -> bool:
-    """
-    Checks a role naively to determine if it is associate with an instance profile.
-    We only check by name, and not the actual attached instance profiles.
-    :param role: An AWS role dictionary (from a boto3 get_role or get_account_authorization_details call)
-    :return:
-    """
-    return role.get("RoleName").endswith("InstanceProfile")
 
 
 def get_region_from_arn(arn):
@@ -2009,6 +1330,7 @@ async def remove_expired_request_changes(
     Changes can be designated as temporary by defining an expiration date.
     In the future, we may allow specifying temporary policies by `Sid` or other means.
     """
+    from common.aws.iam.role.models import IAMRole
     from common.lib.v2.aws_principals import get_role_details
 
     should_update_policy_request = False
@@ -2374,15 +1696,14 @@ async def remove_expired_request_changes(
 
     if should_update_policy_request:
         try:
-            dynamo_handler = UserDynamoHandler(host=host)
             extended_request.request_status = RequestStatus.expired
-            await dynamo_handler.write_policy_request_v2(extended_request, host)
+            await IAMRequest.write_v2(extended_request, host)
 
             if resource_name == "role":
-                await fetch_iam_role(
+                await IAMRole.get(
+                    host,
                     resource_account,
                     principal_arn,
-                    host,
                     force_refresh=force_refresh,
                     run_sync=True,
                 )
@@ -2404,16 +1725,13 @@ async def remove_expired_request_changes(
 
 
 async def remove_expired_host_requests(host: str):
-    dynamo_handler = UserDynamoHandler(host=host)
-    all_policy_requests = await dynamo_handler.get_all_policy_requests(
-        host, status="approved"
+    all_requests = await IAMRequest.query(
+        host, filter_condition=(IAMRequest.status == "approved")
     )
-    if not all_policy_requests:
-        return
 
-    for request in all_policy_requests:
+    for request in all_requests:
         await remove_expired_request_changes(
-            ExtendedRequestModel.parse_obj(request["extended_request"]), host, None
+            ExtendedRequestModel.parse_obj(request.extended_request.dict()), host, None
         )
 
     # Can swap back to this once it's thread safe
@@ -2634,12 +1952,14 @@ async def simulate_iam_principal_action(
 
 
 async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str]:
+    from common.aws.iam.role.models import IAMRole
+
     principal_details = {}
     principal_type = await get_identity_type_from_arn(arn)
     account_id = await get_account_id_from_arn(arn)
     # trying to find principal for subsequent queries
     if principal_type == "role":
-        principal_details = await fetch_iam_role(account_id, arn, host)
+        principal_details = (await IAMRole.get(host, account_id, arn)).dict()
     elif principal_type == "user":
         principal_details = await fetch_iam_user(account_id, arn, host)
     return principal_details.get("owner")

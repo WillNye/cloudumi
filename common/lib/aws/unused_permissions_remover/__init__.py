@@ -6,11 +6,11 @@ import ujson as json
 from jinja2 import Environment, FileSystemLoader
 from jinja2.utils import select_autoescape
 
+from common.aws.iam.role.models import IAMRole
+from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.access_advisor import get_epoch_authenticated
-from common.lib.aws.fetch_iam_principal import fetch_iam_role
-from common.lib.aws.iam import get_role_managed_policy_documents
 from common.lib.aws.utils import (
     calculate_policy_changes,
     condense_statements,
@@ -200,19 +200,20 @@ async def calculate_unused_policy_for_identities(
         if ":role/aws-reserved" in arn:
             continue
         account_id = await get_account_id_from_arn(arn)
-        role = await fetch_iam_role(
+        role = await IAMRole.get(
+            host,
             account_id,
             arn,
-            host,
             force_refresh=force_refresh,
             run_sync=True,
         )
-        role_name = role["name"]
+        role_dict = role.dict()
+        role_name = role.name
 
-        account_number = role["accountId"]
+        account_number = role.accountId
 
         # Get last-used data for role
-        access_advisor_data_for_role = access_advisor_data.get(role["arn"], [])
+        access_advisor_data_for_role = access_advisor_data.get(role.arn, [])
         used_services = set()
         unused_services = set()
 
@@ -247,11 +248,11 @@ async def calculate_unused_policy_for_identities(
         # Generate Before/After for each role policy
 
         individual_role_inline_policy_changes = await calculate_policy_changes(
-            role, used_services, policy_type="inline_policy"
+            role_dict, used_services, policy_type="inline_policy"
         )
 
         individual_role_managed_policy_changes = await calculate_policy_changes(
-            role,
+            role_dict,
             used_services,
             policy_type="managed_policy",
             managed_policy_details=managed_policy_details,
@@ -277,7 +278,7 @@ async def calculate_unused_policy_for_identities(
             return
 
         permission_removal_commands = await generate_permission_removal_commands(
-            role, effective_policy_unused_permissions_removed
+            role_dict, effective_policy_unused_permissions_removed
         )
 
         role_permissions_data[arn] = {

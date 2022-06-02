@@ -7,7 +7,6 @@ import sentry_sdk
 from pydantic.json import pydantic_encoder
 
 from common.config import config
-from common.lib.aws.cached_resources.iam import get_iam_roles_for_host
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -22,9 +21,6 @@ from common.lib.cloud_credential_authorization_mapping.models import (
     RoleAuthorizations,
     RoleAuthorizationsDecoder,
     user_or_group,
-)
-from common.lib.cloud_credential_authorization_mapping.role_tags import (
-    RoleTagAuthorizationMappingGenerator,
 )
 from common.lib.singleton import Singleton
 
@@ -155,12 +151,15 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
         return self.reverse_mapping[host]["reverse_mapping"]
 
     async def retrieve_all_roles(self, host: str, max_age: Optional[int] = None):
+        from common.aws.iam.role.models import IAMRole
+
         if (
             not self._all_roles[host]
             or int(time.time()) - self._all_roles_last_update.get(host, 0) > 600
         ):
             try:
-                all_roles = await get_iam_roles_for_host(host)
+                all_roles = await IAMRole.query(host, attributes_to_get=["arn"])
+                all_roles = [role.arn for role in all_roles]
             except Exception as e:
                 sentry_sdk.capture_exception()
                 log.error(
@@ -171,14 +170,13 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
                     exc_info=True,
                 )
                 return []
-            self._all_roles[host] = list(all_roles.keys())
+            self._all_roles[host] = all_roles
             self._all_roles_count[host] = len(self._all_roles)
             self._all_roles_last_update[host] = int(time.time())
         return self._all_roles[host]
 
     async def all_roles(self, host, paginate=False, page=None, count=None):
-        all_roles = await self.retrieve_all_roles(host)
-        return all_roles
+        return await self.retrieve_all_roles(host)
 
     async def number_roles(self, host) -> int:
         _ = await self.retrieve_all_roles(host)
@@ -262,6 +260,8 @@ async def generate_and_store_reverse_authorization_mapping(
 async def generate_and_store_credential_authorization_mapping(
     host,
 ) -> Dict[user_or_group, RoleAuthorizations]:
+    from common.aws.iam.role.utils import get_authorized_group_map
+
     authorization_mapping: Dict[user_or_group, RoleAuthorizations] = {}
 
     if config.get_host_specific_key(
@@ -269,9 +269,10 @@ async def generate_and_store_credential_authorization_mapping(
         host,
         True,
     ):
-        authorization_mapping = await RoleTagAuthorizationMappingGenerator().generate_credential_authorization_mapping(
+        authorization_mapping = await get_authorized_group_map(
             authorization_mapping, host
         )
+
     if config.get_host_specific_key(
         "cloud_credential_authorization_mapping.dynamic_config.enabled",
         host,
@@ -315,6 +316,8 @@ async def generate_and_store_credential_authorization_mapping(
             host,
             "credential_authorization_mapping/credential_authorization_mapping_v1.json.gz",
         )
+
+    print(authorization_mapping)
     await store_json_results_in_redis_and_s3(
         authorization_mapping,
         redis_topic,

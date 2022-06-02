@@ -1,6 +1,7 @@
 pytest := PYTHONDONTWRITEBYTECODE=1 \
 	PYTEST_PLUGINS=util.tests.fixtures.fixtures \
 	PYTHONPATH=$(PWD) \
+	AWS_DEFAULT_REGION=us-east-1 \
 	CONFIG_LOCATION=util/tests/test_configuration.yaml \
 	pytest --tb short \
 	--cov-config .coveragerc --cov common --cov api \
@@ -11,6 +12,7 @@ pytest := PYTHONDONTWRITEBYTECODE=1 \
 pytest_single_process := PYTHONDONTWRITEBYTECODE=1 \
 	PYTEST_PLUGINS=util.tests.fixtures.fixtures \
 	PYTHONPATH=$(pwd) \
+	AWS_DEFAULT_REGION=us-east-1 \
 	CONFIG_LOCATION=util/tests/test_configuration.yaml \
 	pytest --tb short \
 	--cov-config .coveragerc --cov common --cov api \

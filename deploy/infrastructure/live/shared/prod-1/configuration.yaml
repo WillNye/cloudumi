@@ -66,6 +66,8 @@ _global_:
       global: redis://noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
     debug: true
   # Saas Configuration
+  dax_endpoints:
+    - prod-shared.ph1bdh.dax-clusters.us-west-2.amazonaws.com:8111
   redis:
     host:
       global: noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com

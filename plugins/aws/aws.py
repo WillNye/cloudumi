@@ -9,6 +9,7 @@ from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient
 from tornado.httputil import url_concat
 
+from common.aws.iam.role.utils import update_assume_role_policy_trust_noq
 from common.config import config
 from common.exceptions.exceptions import (
     RoleTrustPolicyModified,
@@ -16,7 +17,6 @@ from common.exceptions.exceptions import (
 )
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.iam import update_assume_role_policy_trust_noq
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import (
     raise_if_background_check_required_and_no_background_check,

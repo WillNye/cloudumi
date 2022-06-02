@@ -14,6 +14,7 @@ sys.path.append(os.path.join(APP_ROOT, ".."))
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("dynamodb")
 class TestRoleLoginApi(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app

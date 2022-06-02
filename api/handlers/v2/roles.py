@@ -8,6 +8,8 @@ import ujson as json
 from furl import furl
 from pydantic import ValidationError
 
+from common.aws.iam.role.models import IAMRole
+from common.aws.iam.role.utils import update_role_tear_config
 from common.config import config
 from common.handlers.base import BaseAdminHandler, BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -17,14 +19,7 @@ from common.lib.auth import (
     get_accounts_user_can_view_resources_for,
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
-from common.lib.aws.fetch_iam_principal import fetch_iam_role
-from common.lib.aws.iam import update_role_tear_config
-from common.lib.aws.utils import (
-    allowed_to_sync_role,
-    clone_iam_role,
-    create_iam_role,
-    delete_iam_role,
-)
+from common.lib.aws.utils import allowed_to_sync_role
 from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.aws_principals import get_eligible_role_details, get_role_details
@@ -289,7 +284,7 @@ class RolesHandler(BaseAPIV2Handler):
             return
 
         try:
-            results = await create_iam_role(create_model, self.user, host)
+            _, results = await IAMRole.create(host, self.user, create_model)
         except Exception as e:
             log_data["message"] = f"Exception creating role: {str(e)}"
             log_data["error"] = str(e)
@@ -487,7 +482,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
             self.write_error(403, message="User is unauthorized to delete a role")
             return
         try:
-            await delete_iam_role(account_id, role_name, self.user, host)
+            await IAMRole.delete_role(host, account_id, role_name, self.user)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -508,7 +503,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
 
-        await fetch_iam_role(account_id, arn, host, force_refresh=True)
+        await IAMRole.get(host, account_id, arn, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",
@@ -580,7 +575,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             return
 
         try:
-            await delete_iam_role(account_id, role_name, app_name, host)
+            await IAMRole.delete_role(host, account_id, role_name, app_name)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -599,7 +594,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
 
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        await fetch_iam_role(account_id, arn, host, force_refresh=True)
+        await IAMRole.get(host, account_id, arn, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",
@@ -718,7 +713,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
             return
 
         try:
-            results = await clone_iam_role(clone_model, self.user, host)
+            _, results = await IAMRole.clone(host, self.user, clone_model)
         except Exception as e:
             log_data["message"] = "Exception cloning role"
             log_data["error"] = str(e)

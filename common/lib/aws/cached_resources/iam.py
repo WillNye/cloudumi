@@ -1,68 +1,15 @@
-import json
 from typing import Any, List
 
+from common.aws.iam.role.config import (
+    get_active_tear_users_tag,
+    get_tear_support_groups_tag,
+)
+from common.aws.iam.role.models import IAMRole
 from common.config import config
-from common.lib.aws.iam import get_active_tear_users_tag, get_tear_support_groups_tag
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
-
-
-async def store_iam_roles_for_host(all_roles: Any, host: str) -> bool:
-    """Store all IAM roles for a host in Redis and S3.
-
-    :param all_roles: A dict of all IAM roles for a host
-    :param host: Tenant ID
-    :return: bool indicating success
-    """
-    await store_json_results_in_redis_and_s3(
-        all_roles,
-        redis_key=config.get_host_specific_key(
-            "aws.iamroles_redis_key",
-            host,
-            f"{host}_IAM_ROLE_CACHE",
-        ),
-        redis_data_type="hash",
-        s3_bucket=config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-            host,
-        ),
-        s3_key=config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-            host,
-            "account_resource_cache/cache_all_roles_v1.json.gz",
-        ),
-        host=host,
-    )
-    return True
-
-
-async def get_iam_roles_for_host(host: str) -> Any:
-    """Retrieves all IAM roles for a host from Redis or S3.
-
-    :param host: Tenant ID
-    :return: Any (A struct with all of the IAM roles)
-    """
-    return await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get_host_specific_key(
-            "aws.iamroles_redis_key",
-            host,
-            f"{host}_IAM_ROLE_CACHE",
-        ),
-        redis_data_type="hash",
-        s3_bucket=config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-            host,
-        ),
-        s3_key=config.get_host_specific_key(
-            "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-            host,
-            "account_resource_cache/cache_all_roles_v1.json.gz",
-        ),
-        default={},
-        host=host,
-    )
 
 
 async def get_identity_arns_for_account(
@@ -79,13 +26,13 @@ async def get_identity_arns_for_account(
     if identity_type != "role":
         raise NotImplementedError(f"identity_type {identity_type} not implemented")
 
-    all_roles = await get_iam_roles_for_host(host)
+    all_roles = await IAMRole.query(host, attributes_to_get=["arn"])
     matching_roles = set()
-    for arn in all_roles.keys():
-        if ":role/service-role/" in arn:
+    for role in all_roles:
+        if ":role/service-role/" in role.arn:
             continue
-        if arn.split(":")[4] == account_id:
-            matching_roles.add(arn)
+        if role.arn.split(":")[4] == account_id:
+            matching_roles.add(role.arn)
     return list(matching_roles)
 
 
@@ -150,17 +97,18 @@ async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
-    from common.lib.aws.utils import get_role_tag
+    from common.aws.utils import get_resource_tag
 
     active_tear_roles = set()
-    all_iam_roles = await get_iam_roles_for_host(host)
+    all_iam_roles = await IAMRole.query(host)
     tear_users_tag = get_active_tear_users_tag(host)
 
-    for role_arn, role in all_iam_roles.items():
-        role = json.loads(role)
-        if active_tear_users := get_role_tag(role, tear_users_tag, True, set()):
+    for iam_role in all_iam_roles:
+        if active_tear_users := get_resource_tag(
+            iam_role.policy, tear_users_tag, True, set()
+        ):
             if user in active_tear_users:
-                active_tear_roles.add(role_arn)
+                active_tear_roles.add(iam_role.arn)
 
     return list(active_tear_roles)
 
@@ -176,19 +124,19 @@ async def get_tear_supported_roles_by_tag(
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
-    from common.lib.aws.utils import get_role_tag
+    from common.aws.utils import get_resource_tag
 
     escalated_roles = dict()
-    all_iam_roles = await get_iam_roles_for_host(host)
+    all_iam_roles = await IAMRole.query(host)
 
-    for role_arn, role in all_iam_roles.items():
-        if role_arn in eligible_roles:
+    for iam_role in all_iam_roles:
+        if iam_role.arn in eligible_roles:
             continue
 
-        role = json.loads(role)
+        role = iam_role.dict()
         tear_support_tag = get_tear_support_groups_tag(host)
-        if tear_groups := get_role_tag(role, tear_support_tag, True, set()):
+        if tear_groups := get_resource_tag(role, tear_support_tag, True, set()):
             if any(group in tear_groups for group in groups):
-                escalated_roles[role_arn] = role
+                escalated_roles[iam_role.arn] = role
 
     return list(escalated_roles.values())
