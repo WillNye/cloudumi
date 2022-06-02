@@ -164,7 +164,6 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
         groups, resp, err = await self.okta_client.list_groups(
             query_params={"q": group_name}
         )
-        print(groups)
         matching_group = None
         for group in groups:
             if group.profile.name == group_name:
@@ -278,7 +277,6 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
                     ),
                 )
             )
-            print(user)
         return users_to_return
 
     async def create_group(self, group: Group):

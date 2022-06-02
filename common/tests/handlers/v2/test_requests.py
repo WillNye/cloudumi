@@ -215,7 +215,6 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
             method="POST",
             body=json.dumps({"filters": {"request_id": "12346"}}),
         )
-        print(response.body)
         self.assertEqual(response.code, 200)
         res = json.loads(response.body)
         self.assertEqual(len(json.loads(response.body)), 3)

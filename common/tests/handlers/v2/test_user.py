@@ -63,7 +63,6 @@ class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
             }
         )
         response = self.fetch("/api/v2/user_registration", method="POST", body=body)
-        print(response.body)
         self.assertEqual(response.code, 200)
         self.assertEqual(
             json.loads(response.body),
@@ -196,7 +195,6 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
 
         admin_user = "consoleme_admins@example.com"
         response = self.fetch("/api/v2/user", method="POST", body=body, user=admin_user)
-        print(response.body)
         self.assertEqual(response.code, 200)
         self.assertEqual(
             json.loads(response.body),
