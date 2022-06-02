@@ -317,7 +317,6 @@ async def generate_and_store_credential_authorization_mapping(
             "credential_authorization_mapping/credential_authorization_mapping_v1.json.gz",
         )
 
-    print(authorization_mapping)
     await store_json_results_in_redis_and_s3(
         authorization_mapping,
         redis_topic,
