@@ -91,8 +91,13 @@ class IAMRole(NoqModel):
     def terraform(self) -> str:
         if not self.policy_dict:
             return ""
-        iam_role_transformer = IAMRoleTransformer(self.policy_dict)
-        return iam_role_transformer.generate_hcl2_code(self.policy_dict)
+
+        try:
+            iam_role_transformer = IAMRoleTransformer(self.policy_dict)
+            return iam_role_transformer.generate_hcl2_code(self.policy_dict)
+        except Exception as err:
+            log.warning(str(err))
+            return ""
 
     def _normalize_object(self):
         if self.ttl:
