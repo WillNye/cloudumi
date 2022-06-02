@@ -89,6 +89,8 @@ class IAMRole(NoqModel):
 
     @property
     def terraform(self) -> str:
+        if not self.policy_dict:
+            return ""
         iam_role_transformer = IAMRoleTransformer(self.policy_dict)
         return iam_role_transformer.generate_hcl2_code(self.policy_dict)
 
