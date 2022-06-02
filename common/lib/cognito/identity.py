@@ -15,6 +15,7 @@ from common.models import (
 )
 
 LOG = config.get_logger()
+CLIENT_SECRET_MASK = "********"
 
 
 async def __get_google_provider(
@@ -44,7 +45,7 @@ async def __get_google_provider(
             )
             google_provider = GoogleOIDCSSOIDPProvider(
                 client_id=identity_provider.get("ProviderDetails", {}).get("client_id"),
-                client_secret="********" if mask_secrets else client_secret,
+                client_secret=CLIENT_SECRET_MASK if mask_secrets else client_secret,
                 authorize_scopes=identity_provider.get("ProviderDetails", {}).get(
                     "authorize_scopes"
                 ),
@@ -109,7 +110,7 @@ async def __get_oidc_provider(
             )
             oidc_provider = OIDCSSOIDPProvider(
                 client_id=identity_provider.get("ProviderDetails", {}).get("client_id"),
-                client_secret="********" if mask_secrets else client_secret,
+                client_secret=CLIENT_SECRET_MASK if mask_secrets else client_secret,
                 attributes_request_method=identity_provider.get(
                     "ProviderDetails", {}
                 ).get("attributes_request_method"),
@@ -321,12 +322,17 @@ async def upsert_identity_provider(
     supported_providers = list(SSOIDPProviders.__dict__["__fields__"].keys())
     for provider_type in supported_providers:
         # If a request is being made to set an already defined provider, remove the existing provider
-        if updated_provider := getattr(id_provider, provider_type) and (
+        if getattr(id_provider, provider_type) and (
             current_provider := getattr(current_providers, provider_type)
         ):
-            if updated_provider.client_secret == "********":
+            updated_provider = getattr(id_provider, provider_type)
+            if (
+                hasattr(updated_provider, "client_secret")
+                and updated_provider.client_secret == CLIENT_SECRET_MASK
+            ):
                 updated_provider.client_secret = current_provider.client_secret
                 setattr(id_provider, provider_type, updated_provider)
+
             await disconnect_idp_from_app_client(
                 user_pool_id, user_pool_client_id, current_provider, client=client
             )
