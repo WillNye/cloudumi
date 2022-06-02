@@ -75,7 +75,7 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
 
         try:
             sso_idp_provider = await identity.get_identity_providers(
-                self.user_pool_id, client=cognito_idp
+                self.user_pool_id, client=cognito_idp, mask_secrets=True
             )
         except cognito_idp.exceptions.ResourceNotFoundException:
             raise ValueError

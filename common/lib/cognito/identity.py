@@ -18,7 +18,10 @@ LOG = config.get_logger()
 
 
 async def __get_google_provider(
-    user_pool_id: str, identity_providers: Dict[str, List[Dict[str, Any]]], client=None
+    user_pool_id: str,
+    identity_providers: Dict[str, List[Dict[str, Any]]],
+    mask_secrets: bool,
+    client=None,
 ) -> Union[GoogleOIDCSSOIDPProvider, None]:
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
@@ -36,11 +39,12 @@ async def __get_google_provider(
         )
         identity_provider = identity_provider_call.get("IdentityProvider", {})
         if identity_provider:
+            client_secret = identity_provider.get("ProviderDetails", {}).get(
+                "client_secret"
+            )
             google_provider = GoogleOIDCSSOIDPProvider(
                 client_id=identity_provider.get("ProviderDetails", {}).get("client_id"),
-                client_secret=identity_provider.get("ProviderDetails", {}).get(
-                    "client_secret"
-                ),
+                client_secret="********" if mask_secrets else client_secret,
                 authorize_scopes=identity_provider.get("ProviderDetails", {}).get(
                     "authorize_scopes"
                 ),
@@ -80,7 +84,10 @@ async def __get_saml_provider(
 
 
 async def __get_oidc_provider(
-    user_pool_id: str, identity_providers: Dict[str, List[Dict[str, Any]]], client=None
+    user_pool_id: str,
+    identity_providers: Dict[str, List[Dict[str, Any]]],
+    mask_secrets: bool,
+    client=None,
 ) -> Union[OIDCSSOIDPProvider, None]:
     client = await aio_wrapper(boto3.client, "cognito-idp", region_name=config.region)
     oidc_provider = None
@@ -97,11 +104,12 @@ async def __get_oidc_provider(
         )
         identity_provider = identity_provider_call.get("IdentityProvider", {})
         if identity_provider:
+            client_secret = identity_provider.get("ProviderDetails", {}).get(
+                "client_secret"
+            )
             oidc_provider = OIDCSSOIDPProvider(
                 client_id=identity_provider.get("ProviderDetails", {}).get("client_id"),
-                client_secret=identity_provider.get("ProviderDetails", {}).get(
-                    "client_secret"
-                ),
+                client_secret="********" if mask_secrets else client_secret,
                 attributes_request_method=identity_provider.get(
                     "ProviderDetails", {}
                 ).get("attributes_request_method"),
@@ -231,7 +239,9 @@ async def disconnect_idp_from_app_client(
     return True
 
 
-async def get_identity_providers(user_pool_id: str, client=None) -> SSOIDPProviders:
+async def get_identity_providers(
+    user_pool_id: str, client=None, mask_secrets: bool = False
+) -> SSOIDPProviders:
     """Get all identity providers.
 
     Queries AWS Cognito IDP for all identity providers, automatically paginates; here is the thing though,
@@ -269,9 +279,13 @@ async def get_identity_providers(user_pool_id: str, client=None) -> SSOIDPProvid
         next_token = response.get("NextToken")
 
     return SSOIDPProviders(
-        google=await __get_google_provider(user_pool_id, identity_providers, client),
+        google=await __get_google_provider(
+            user_pool_id, identity_providers, mask_secrets, client
+        ),
         saml=await __get_saml_provider(user_pool_id, identity_providers, client),
-        oidc=await __get_oidc_provider(user_pool_id, identity_providers, client),
+        oidc=await __get_oidc_provider(
+            user_pool_id, identity_providers, mask_secrets, client
+        ),
     )
 
 
@@ -307,9 +321,12 @@ async def upsert_identity_provider(
     supported_providers = list(SSOIDPProviders.__dict__["__fields__"].keys())
     for provider_type in supported_providers:
         # If a request is being made to set an already defined provider, remove the existing provider
-        if getattr(id_provider, provider_type) and (
+        if updated_provider := getattr(id_provider, provider_type) and (
             current_provider := getattr(current_providers, provider_type)
         ):
+            if updated_provider.client_secret == "********":
+                updated_provider.client_secret = current_provider.client_secret
+                setattr(id_provider, provider_type, updated_provider)
             await disconnect_idp_from_app_client(
                 user_pool_id, user_pool_client_id, current_provider, client=client
             )
