@@ -1629,12 +1629,16 @@ components:
     PrincipalModelRoleAccessConfig:
       type: object
       properties:
-        noq_authorized_cli_groups_default_tag:
+        noq_authorized_cli_tag:
           type: string
           readOnly: true
-        noq_authorized_groups_default_tag:
+        noq_authorized_tag:
           type: string
           readOnly: true
+        is_valid_config:
+          type: boolean
+          readOnly: true
+          default: False
         noq_authorized_groups:
           type: array
           items:

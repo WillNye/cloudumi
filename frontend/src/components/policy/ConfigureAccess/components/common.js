@@ -116,13 +116,13 @@ export const RoleAccessGroupModal = ({
         updateTagGroups(
           data,
           newRoleAccessdata.noq_authorized_groups || [],
-          role_access_config.noq_authorized_groups_default_tag
+          role_access_config.noq_authorized_tag
         )
       } else {
         updateTagGroups(
           data,
           newRoleAccessdata.noq_authorized_cli_groups || [],
-          role_access_config.noq_authorized_cli_groups_default_tag
+          role_access_config.noq_authorized_cli_tag
         )
       }
       updateUserGroups(newRoleAccessdata)

@@ -8,6 +8,7 @@ import { TableTopBar } from '../../../settings/Settings/components/utils'
 import { roleAccessColumns } from './columns'
 import { usePolicyContext } from '../../hooks/PolicyProvider'
 import { RoleAccessGroupModal } from './common'
+import { Link } from 'react-router-dom'
 
 const RoleAccess = ({ role_access_config }) => {
   const { openModal, closeModal, ModalComponent } = useModal(
@@ -110,30 +111,39 @@ const RoleAccess = ({ role_access_config }) => {
         </Header.Subheader>
       </Header>
 
-      <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
-        <Datatable
-          data={[...authorized_groups, ...cli_authorized_groups]}
-          columns={columns}
-          emptyState={{
-            label: 'Add User Group',
-            onClick: openModal,
-          }}
-          isLoading={false}
-          loadingState={{ label: '' }}
-        />
-      </DatatableWrapper>
+      {role_access_config.is_valid_config ? (
+        <>
+          <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
+            <Datatable
+              data={[...authorized_groups, ...cli_authorized_groups]}
+              columns={columns}
+              emptyState={{
+                label: 'Add User Group',
+                onClick: openModal,
+              }}
+              isLoading={false}
+              loadingState={{ label: '' }}
+            />
+          </DatatableWrapper>
 
-      <ModalComponent
-        onClose={closeModal}
-        hideConfirm
-        forceTitle='Add Role Access User Groups'
-      >
-        <RoleAccessGroupModal
-          role_access_config={role_access_config}
-          updateUserGroups={updateUserGroups}
-          isPolicyEditorLoading={isPolicyEditorLoading}
-        />
-      </ModalComponent>
+          <ModalComponent
+            onClose={closeModal}
+            hideConfirm
+            forceTitle='Add Role Access User Groups'
+          >
+            <RoleAccessGroupModal
+              role_access_config={role_access_config}
+              updateUserGroups={updateUserGroups}
+              isPolicyEditorLoading={isPolicyEditorLoading}
+            />
+          </ModalComponent>
+        </>
+      ) : (
+        <div>
+          Role Access Authorization is either not enabled or not properly
+          configured. Visit&nbsp;<Link to='/settings'>settings</Link> page.
+        </div>
+      )}
     </>
   )
 }
