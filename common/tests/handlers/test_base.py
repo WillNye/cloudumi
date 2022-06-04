@@ -1,6 +1,7 @@
 import json
 
 import jwt
+import pytest
 from tornado.web import Application
 
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
@@ -9,6 +10,7 @@ TEST_SECRET = "SECRET"
 TEST_ALG = ["HS256"]
 
 
+@pytest.mark.usefixtures("dynamodb")
 class TestBaseJSONHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         self.app = Application(self.get_handlers())

@@ -253,6 +253,9 @@ class InlinePolicyChangeComponent extends Component {
               }
               onLintError={this.onLintError}
               onValueChange={this.onValueChange}
+              showIac={true}
+              policyName={change.policy_name}
+              principal={change.principal}
             />
           </Grid.Column>
         </Grid.Row>

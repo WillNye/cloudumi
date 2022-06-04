@@ -48,6 +48,7 @@ class TestMain(ConsoleMeAsyncHTTPTestCase):
 
 
 @pytest.mark.usefixtures("aws_credentials")
+@pytest.mark.usefixtures("dynamodb")
 class TestHealth(AsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app

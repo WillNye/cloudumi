@@ -247,7 +247,7 @@ def sts(aws_credentials):
         yield boto3.client(
             "sts",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -260,7 +260,7 @@ def ec2(aws_credentials):
         yield boto3.client(
             "ec2",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -273,7 +273,7 @@ def iam(aws_credentials):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
         client.create_role(
             RoleName="roleA",
@@ -302,12 +302,12 @@ def aws_config(aws_credentials):
         yield boto3.client(
             "config",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
 @pytest.fixture(autouse=False, scope="session")
-def s3(aws_credentials):
+def s3(aws_credentials, dynamodb):
     """Mocked S3 Fixture."""
     from common.config import config
 
@@ -315,7 +315,7 @@ def s3(aws_credentials):
         yield boto3.client(
             "s3",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -328,7 +328,7 @@ def ses(aws_credentials):
         client = boto3.client(
             "ses",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
         client.verify_email_address(EmailAddress="consoleme_test@example.com")
         yield client
@@ -343,7 +343,7 @@ def sqs(aws_credentials):
         yield boto3.client(
             "sqs",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -356,7 +356,7 @@ def sns(aws_credentials):
         yield boto3.client(
             "sns",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get("_global_.boto3.client_kwargs", {}),
         )
 
 
@@ -434,7 +434,7 @@ def dynamodb(aws_credentials):
         yield boto3.client(
             "dynamodb",
             region_name="us-east-1",
-            **CONFIG.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **CONFIG.get("_global_.boto3.client_kwargs", {}),
         )
 
         # Reset the config value:
@@ -1162,18 +1162,17 @@ def parliament(session_mocker):
 
 @pytest.fixture(scope="session")
 def user_iam_role(iamrole_table, www_user):
-    from common.lib.dynamo import IAMRoleDynamoHandler
+    from common.aws.iam.role.models import IAMRole
 
-    ddb = IAMRoleDynamoHandler(host)
-    role_entry = {
-        "arn": www_user.pop("Arn"),
-        "name": www_user.pop("RoleName"),
-        "accountId": "123456789012",
-        "ttl": int((datetime.utcnow() + timedelta(hours=36)).timestamp()),
-        "policy": ddb.convert_iam_resource_to_json(www_user),
-        "host": host,
-    }
-    ddb.sync_iam_role_for_account(role_entry)
+    role_entry = IAMRole(
+        arn=www_user.get("Arn"),
+        name=www_user.get("RoleName"),
+        accountId="123456789012",
+        ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
+        policy=IAMRole().dump_json_attr(www_user),
+        host=host,
+    )
+    role_entry.save()
 
 
 @pytest.fixture(autouse=False, scope="session")
@@ -1248,7 +1247,6 @@ def populate_caches(
         host=host, wait_for_subtask_completion=False
     )
     celery.cache_policies_table_details(host=host)
-    celery.cache_policy_requests(host=host)
     celery.cache_credential_authorization_mapping(host=host)
 
 

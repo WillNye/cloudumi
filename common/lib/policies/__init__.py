@@ -404,9 +404,9 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
 async def get_formatted_policy_changes(
     account_id, arn, request, host, force_refresh=False
 ):
-    from common.lib.aws.fetch_iam_principal import fetch_iam_role
+    from common.aws.iam.role.models import IAMRole
 
-    existing_role: dict = await fetch_iam_role(
+    existing_role: IAMRole = await IAMRole.get(
         account_id, arn, host, force_refresh=force_refresh
     )
     policy_changes: list = json.loads(request.get("policy_changes"))
@@ -438,7 +438,7 @@ async def get_formatted_policy_changes(
                 if old_policy:
                     existing_policy_document = json.loads(old_policy)[0]
             if not old_policy:
-                existing_inline_policies = existing_role["policy"].get(
+                existing_inline_policies = existing_role.policy.get(
                     "RolePolicyList", []
                 )
                 existing_policy_document = {}
@@ -468,7 +468,7 @@ async def get_formatted_policy_changes(
                 raise InvalidRequestParameter(
                     "Only one role can be changed in a request"
                 )
-            existing_ar_policy = existing_role["policy"]["AssumeRolePolicyDocument"]
+            existing_ar_policy = existing_role.policy["AssumeRolePolicyDocument"]
             old_policy = request.get("old_policy", {})
             if old_policy:
                 existing_ar_policy = json.loads(old_policy)[0]
@@ -508,7 +508,7 @@ async def get_formatted_policy_changes(
                         "diff": diff,
                     }
                 )
-    return {"changes": formatted_policy_changes, "role": existing_role}
+    return {"changes": formatted_policy_changes, "role": existing_role.dict()}
 
 
 async def should_auto_approve_policy_v2(

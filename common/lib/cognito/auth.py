@@ -62,8 +62,6 @@ def initiate_auth(host, username, password):
     return resp, None
 
 
-res = initiate_auth("dev-824318_noq_localhost", "ccastrapel@gmail.com", "5)TXWi#4tr")
-print(res)
 #
 # @app.route('/auth/login', methods=['POST'])
 # def login():

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, Sequence
 
 from aws_error_utils import ClientError
 
+import common.aws.iam.role.utils
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import (
@@ -74,7 +75,7 @@ class SimulateCustomPolicyContextGenerator(object):
         principal_tags = []
         try:
             if self.event_permission_data.principal.type == "AssumedRole":
-                principal_tags = self.iam_client.list_role_tags(
+                principal_tags = common.aws.iam.role.utils.list_role_tags(
                     RoleName=(self.event_permission_data.principal.name)
                 )["Tags"]
             elif self.event_permission_data.principal.type == "IAMUser":

@@ -4,12 +4,16 @@ from typing import List, Optional, Union
 import ujson as json
 from policy_sentry.util.arns import parse_arn
 
+from common.aws.iam.role.config import (
+    get_active_tear_users_tag,
+    get_tear_support_groups_tag,
+)
+from common.aws.iam.role.models import IAMRole
+from common.aws.iam.user.utils import fetch_iam_user
+from common.aws.utils import get_resource_tag
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.fetch_iam_principal import fetch_iam_role, fetch_iam_user
-from common.lib.aws.iam import get_active_tear_users_tag, get_tear_support_groups_tag
-from common.lib.aws.utils import get_role_tag
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.redis import RedisHandler, redis_get
@@ -217,7 +221,11 @@ async def get_role_details(
 ) -> Optional[Union[ExtendedAwsPrincipalModel, AwsPrincipalModel]]:
     account_ids_to_name = await get_account_id_to_name_mapping(host)
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-    role = await fetch_iam_role(account_id, arn, host, force_refresh=force_refresh)
+    role: IAMRole = await IAMRole.get(
+        host, account_id, arn, force_refresh=force_refresh
+    )
+
+    role: dict = role.dict()
     # requested role doesn't exist
     if not role:
         return None
@@ -231,15 +239,15 @@ async def get_role_details(
             tear_support_tag = get_tear_support_groups_tag(host)
             tear_users_tag = get_active_tear_users_tag(host)
             if is_admin_request:
-                active_users = get_role_tag(role, tear_users_tag, True, set())
-                supported_groups = get_role_tag(role, tear_support_tag, True, set())
+                active_users = get_resource_tag(role, tear_users_tag, True, set())
+                supported_groups = get_resource_tag(role, tear_support_tag, True, set())
 
                 elevated_access_config = PrincipalModelTearConfig(
                     active_users=list(active_users),
                     supported_groups=list(supported_groups),
                 )
 
-        return ExtendedAwsPrincipalModel(
+        principal = ExtendedAwsPrincipalModel(
             name=role_name,
             account_id=account_id,
             account_name=account_ids_to_name.get(account_id, None),
@@ -268,7 +276,9 @@ async def get_role_details(
             description=role["policy"].get("Description"),
             owner=role.get("owner"),
             permissions_boundary=role["policy"].get("PermissionsBoundary", {}),
+            terraform=role.get("terraform"),
         )
+        return principal
     else:
         return AwsPrincipalModel(
             name=role_name,
