@@ -163,7 +163,7 @@ class ChallengeValidatorHandler(BaseHandler):
         if config.get_host_specific_key(
             "auth.challenge_url.request_ip_must_match_challenge_creation_ip",
             host,
-            True,
+            False,
         ):
             if request_ip != valid_user_challenge.get("ip"):
                 log.error(
@@ -277,7 +277,7 @@ class ChallengeValidatorHandler(BaseHandler):
         if config.get_host_specific_key(
             "auth.challenge_url.request_ip_must_match_challenge_creation_ip",
             host,
-            True,
+            False,
         ):
             if request_ip != valid_user_challenge.get("ip"):
                 log.error(
@@ -358,7 +358,7 @@ class ChallengePollerHandler(TornadoRequestHandler):
         if config.get_host_specific_key(
             "auth.challenge_url.request_ip_must_match_challenge_creation_ip",
             host,
-            True,
+            False,
         ):
             if ip != challenge.get("ip"):
                 self.write({"status": "unauthorized"})
