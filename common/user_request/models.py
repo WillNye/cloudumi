@@ -38,6 +38,7 @@ class IAMRequest(NoqModel):
         dax_write_endpoints = dax_endpoints
         dax_read_endpoints = dax_endpoints
         fallback_to_dynamodb = True
+        region = region
 
     host = UnicodeAttribute(hash_key=True)
     request_id = UnicodeAttribute(range_key=True)
