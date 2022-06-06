@@ -347,6 +347,10 @@ export const validateApprovePolicy = (changesConfig, policyId) => {
   return !!(changesConfig[policyId] || {}).can_approve_policy
 }
 
+export const getAllowedResourceAdmins = (changesConfig, policyId) => {
+  return (changesConfig[policyId] || {}).allowed_admins || []
+}
+
 export const convertToTerraform = (
   policy_name,
   policy_statement,
