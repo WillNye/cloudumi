@@ -289,6 +289,7 @@ class AssumeRolePolicyChangeComponent extends Component {
               }
               onLintError={this.onLintError}
               onValueChange={this.onValueChange}
+              pythonScript={change?.python_script}
             />
           </Grid.Column>
         </Grid.Row>

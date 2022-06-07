@@ -10,6 +10,7 @@ import {
   convertToTerraform,
 } from '../../helpers/utils'
 import { Menu } from 'semantic-ui-react'
+import { ReadOnlyPolicyMonacoEditor } from '../policy/PolicyMonacoEditor'
 
 const MonacoDiffComponent = (props) => {
   const monaco = useMonaco()
@@ -117,6 +118,14 @@ const MonacoDiffComponent = (props) => {
               setActiveItem('CloudFormation')
             }}
           ></Menu.Item>
+          <Menu.Item
+            name='Python Script'
+            content='pyScript'
+            active={activeItem === 'pyScript'}
+            onClick={() => {
+              setActiveItem('pyScript')
+            }}
+          ></Menu.Item>
         </Menu>
         {activeItem === 'JSON' ? (
           <DiffEditor
@@ -166,6 +175,17 @@ const MonacoDiffComponent = (props) => {
             alwaysConsumeMouseWheel={false}
           />
         ) : null}
+        {activeItem === 'pyScript' ? (
+          <ReadOnlyPolicyMonacoEditor
+            policy={props?.pythonScript}
+            json={false}
+            defaultLanguage={'python'}
+            width='100%'
+            height='500px'
+            theme={editorTheme}
+            alwaysConsumeMouseWheel={false}
+          />
+        ) : null}
       </div>
     )
   } else {
@@ -199,5 +219,6 @@ MonacoDiffComponent.propTypes = {
   readOnly: PropTypes.bool.isRequired,
   onLintError: PropTypes.func.isRequired,
   onValueChange: PropTypes.func.isRequired,
+  pythonScript: PropTypes.string.isRequired,
 }
 export default MonacoDiffComponent

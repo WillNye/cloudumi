@@ -306,6 +306,7 @@ class InlinePolicyChangeComponent extends Component {
               showIac={true}
               policyName={change.policy_name}
               principal={change.principal}
+              pythonScript={change?.python_script}
             />
           </Grid.Column>
         </Grid.Row>
