@@ -290,6 +290,39 @@ async def get_extended_request_account_ids(
     return accounts
 
 
+async def get_account_deleagted_admins(account_id, host):
+    spoke_role_adapter = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", host)
+        .with_query({"account_id": account_id})
+    )
+    allowed_admins = set()
+
+    try:
+        spoke_role = spoke_role_adapter.first
+        if spoke_role.delegate_admin_to_owner:
+            allowed_admins.update(spoke_role.owners)
+    except ValueError:
+        # Spoke account not available
+        pass
+
+    application_admin = config.get_host_specific_key("application_admin", host)
+    if application_admin:
+        allowed_admins.add(application_admin)
+
+    admin_groups = [
+        *config.get_host_specific_key("groups.can_admin_policies", host, []),
+        *config.get_host_specific_key(
+            "dynamic_config.groups.can_admin_policies",
+            host,
+            [],
+        ),
+    ]
+    allowed_admins.update(admin_groups)
+
+    return list(allowed_admins)
+
+
 async def populate_approve_reject_policy(
     extended_request: ExtendedRequestModel, groups, host, user: str
 ) -> bool:
@@ -307,8 +340,10 @@ async def populate_approve_reject_policy(
         account_id = await get_resource_account(arn, host)
 
         is_owner = await can_admin_policies(user, groups, host, [account_id])
+        allowed_admins = await get_account_deleagted_admins(account_id, host)
         request_config[change.id] = {
-            "can_approve_policy": False if not is_owner else True
+            "can_approve_policy": False if not is_owner else True,
+            "allowed_admins": allowed_admins,
         }
     return request_config
 

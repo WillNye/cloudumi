@@ -11,6 +11,7 @@ import {
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import {
+  getAllowedResourceAdmins,
   sortAndStringifyNestedJSONObject,
   validateApprovePolicy,
 } from '../../helpers/utils'
@@ -21,6 +22,7 @@ import {
   ReadOnlyNotification,
   ResponseNotification,
 } from './notificationMessages'
+import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 class InlinePolicyChangeComponent extends Component {
   constructor(props) {
@@ -141,6 +143,8 @@ class InlinePolicyChangeComponent extends Component {
       validateApprovePolicy(changesConfig, change.id) ||
       config.can_approve_reject
 
+    const allowedAdmins = getAllowedResourceAdmins(changesConfig, change.id)
+
     const newPolicy = change.new ? (
       <span style={{ color: 'red' }}>- New Policy</span>
     ) : null
@@ -212,8 +216,8 @@ class InlinePolicyChangeComponent extends Component {
         <Message negative>
           <Message.Header>There was a problem with your request</Message.Header>
           <Message.List>
-            {messages.map((message) => (
-              <Message.Item>{message}</Message.Item>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
             ))}
           </Message.List>
         </Message>
@@ -226,6 +230,8 @@ class InlinePolicyChangeComponent extends Component {
 
     const policyChangeContent = change ? (
       <Grid fluid>
+        <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
+
         <Grid.Row columns='equal'>
           <Grid.Column>
             <Header
@@ -243,6 +249,7 @@ class InlinePolicyChangeComponent extends Component {
             />
           </Grid.Column>
         </Grid.Row>
+
         <Grid.Row>
           <Grid.Column>
             <MonacoDiffComponent

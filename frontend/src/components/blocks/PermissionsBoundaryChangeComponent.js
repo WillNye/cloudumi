@@ -8,7 +8,10 @@ import {
   Loader,
   Dimmer,
 } from 'semantic-ui-react'
-import { validateApprovePolicy } from '../../helpers/utils'
+import {
+  getAllowedResourceAdmins,
+  validateApprovePolicy,
+} from '../../helpers/utils'
 import {
   AppliedNotification,
   CancelledNotification,
@@ -16,6 +19,7 @@ import {
   ReadOnlyNotification,
   ResponseNotification,
 } from './notificationMessages'
+import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 class PermissionsBoundaryChangeComponent extends Component {
   constructor(props) {
@@ -85,6 +89,8 @@ class PermissionsBoundaryChangeComponent extends Component {
       validateApprovePolicy(changesConfig, change.id) ||
       config.can_approve_reject
 
+    const allowedAdmins = getAllowedResourceAdmins(changesConfig, change.id)
+
     const action =
       change.action === 'detach' ? (
         <span style={{ color: 'red' }}>Detach</span>
@@ -153,6 +159,7 @@ class PermissionsBoundaryChangeComponent extends Component {
 
     const policyChangeContent = change ? (
       <Grid fluid>
+        <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
         <Grid.Row columns='equal'>
           <Grid.Column>{requestDetailsContent}</Grid.Column>
         </Grid.Row>
