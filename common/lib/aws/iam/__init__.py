@@ -5,88 +5,21 @@ from collections import defaultdict
 
 from joblib import Parallel, delayed
 
-from common.config import config, models
-from common.config.models import ModelAdapter
-from common.lib.assume_role import (
-    ConsoleMeCloudAux,
-    boto3_cached_conn,
-    rate_limited,
-    sts_conn,
-)
+from common.config import config
+from common.lib.assume_role import ConsoleMeCloudAux, rate_limited, sts_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
-from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import RedisHandler
-from common.models import (
-    HubAccount,
-    PrincipalModelRoleAccessConfig,
-    PrincipalModelTearConfig,
-    SpokeAccount,
-)
 
 log = config.get_logger(__name__)
 
 ALL_IAM_MANAGED_POLICIES = defaultdict(dict)
-TEAR_SUPPORT_TAG = "noq-tear-supported-groups"
-TEAR_USERS_TAG = "noq-tear-active-users"
-
-
-def get_active_tear_users_tag(host: str) -> str:
-    return config.get_host_specific_key(
-        "temporary_elevated_access_requests.active_users_tag", host, TEAR_USERS_TAG
-    )
-
-
-def get_tear_support_groups_tag(host: str) -> str:
-    return config.get_host_specific_key(
-        "temporary_elevated_access_requests.supported_groups_tag",
-        host,
-        TEAR_SUPPORT_TAG,
-    )
 
 
 @aws_paginated("AttachedPolicies")
 def _get_user_managed_policies(user, client=None, **kwargs):
     return client.list_attached_user_policies(UserName=user["UserName"], **kwargs)
-
-
-@rate_limited()
-@sts_conn("iam", service_type="client")
-def get_role_inline_policy_names(role, client=None, **kwargs):
-    marker = {}
-    inline_policies = []
-
-    while True:
-        response = client.list_role_policies(RoleName=role["RoleName"], **marker)
-        inline_policies.extend(response["PolicyNames"])
-
-        if response["IsTruncated"]:
-            marker["Marker"] = response["Marker"]
-        else:
-            return inline_policies
-
-
-@sts_conn("iam", service_type="client")
-@rate_limited()
-def get_role_inline_policy_document(role, policy_name, client=None, **kwargs):
-    response = client.get_role_policy(RoleName=role["RoleName"], PolicyName=policy_name)
-    return response.get("PolicyDocument")
-
-
-def get_role_inline_policies(role, **kwargs):
-    policy_names = get_role_inline_policy_names(role, **kwargs)
-
-    policies = zip(
-        policy_names,
-        Parallel(n_jobs=20, backend="threading")(
-            delayed(get_role_inline_policy_document)(role, policy_name, **kwargs)
-            for policy_name in policy_names
-        ),
-    )
-    policies = dict(policies)
-
-    return policies
 
 
 @sts_conn("iam", service_type="client")
@@ -97,53 +30,10 @@ def get_user_managed_policies(user, client=None, **kwargs):
 
 
 @sts_conn("iam", service_type="client")
-@aws_paginated("Tags")
-@rate_limited()
-def list_role_tags(role, client=None, **kwargs):
-    return client.list_role_tags(RoleName=role["RoleName"], **kwargs)
-
-
-@sts_conn("iam", service_type="client")
 @rate_limited()
 def get_user_managed_policy_documents(user, client=None, **kwargs):
     """Retrieve the currently active policy version document for every managed policy that is attached to the user."""
     policies = get_user_managed_policies(user, force_client=client)
-
-    policy_names = (policy["name"] for policy in policies)
-    delayed_gmpd_calls = (
-        delayed(get_managed_policy_document)(policy["arn"], force_client=client)
-        for policy in policies
-    )
-    policy_documents = Parallel(n_jobs=20, backend="threading")(delayed_gmpd_calls)
-
-    return dict(zip(policy_names, policy_documents))
-
-
-@sts_conn("iam", service_type="client")
-@rate_limited()
-def get_role_managed_policies(role, client=None, **kwargs):
-    marker = {}
-    policies = []
-
-    while True:
-        response = client.list_attached_role_policies(
-            RoleName=role["RoleName"], **marker
-        )
-        policies.extend(response["AttachedPolicies"])
-
-        if response["IsTruncated"]:
-            marker["Marker"] = response["Marker"]
-        else:
-            break
-
-    return [{"name": p["PolicyName"], "arn": p["PolicyArn"]} for p in policies]
-
-
-@sts_conn("iam", service_type="client")
-@rate_limited()
-def get_role_managed_policy_documents(role, client=None, **kwargs):
-    """Retrieve the currently active policy version document for every managed policy that is attached to the role."""
-    policies = get_role_managed_policies(role, force_client=client)
 
     policy_names = (policy["name"] for policy in policies)
     delayed_gmpd_calls = (
@@ -376,139 +266,3 @@ async def get_all_iam_managed_policies_for_account(account_id, host):
             default=[],
             host=host,
         )
-
-
-async def update_assume_role_policy_trust_noq(host, user, role_name, account_id):
-    client = boto3_cached_conn(
-        "iam",
-        host,
-        user,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        region=config.region,
-        sts_client_kwargs=dict(
-            region_name=config.region,
-            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-        ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        session_name=sanitize_session_name("noq_update_assume_role_policy_trust"),
-    )
-
-    role = await aio_wrapper(client.get_role, RoleName=role_name)
-    assume_role_trust_policy = role.get("Role", {}).get("AssumeRolePolicyDocument", {})
-    if not assume_role_trust_policy:
-        return False
-    hub_account = models.ModelAdapter(HubAccount).load_config("hub_account", host).model
-    if not hub_account:
-        return False
-
-    assume_role_policy = {
-        "Effect": "Allow",
-        "Action": ["sts:AssumeRole", "sts:TagSession"],
-        "Principal": {"AWS": [hub_account.role_arn]},
-    }
-
-    assume_role_trust_policy["Statement"].append(assume_role_policy)
-
-    client.update_assume_role_policy(
-        RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
-    )
-    return True
-
-
-async def update_role_tear_config(
-    host, user, role_name, account_id: str, tear_config: PrincipalModelTearConfig
-) -> [bool, str]:
-    client = boto3_cached_conn(
-        "iam",
-        host,
-        user,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        region=config.region,
-        sts_client_kwargs=dict(
-            region_name=config.region,
-            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-        ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        session_name=sanitize_session_name("noq_update_assume_role_policy_trust"),
-    )
-
-    try:
-        await aio_wrapper(
-            client.tag_role,
-            RoleName=role_name,
-            Tags=[
-                {
-                    "Key": get_active_tear_users_tag(host),
-                    "Value": ":".join(tear_config.active_users),
-                },
-                {
-                    "Key": get_tear_support_groups_tag(host),
-                    "Value": ":".join(tear_config.supported_groups),
-                },
-            ],
-        )
-        return True, ""
-    except Exception as err:
-        return False, repr(err)
-
-
-async def update_role_access_config(
-    host,
-    user,
-    role_name,
-    account_id: str,
-    role_access_config: PrincipalModelRoleAccessConfig,
-) -> [bool, str]:
-    client = boto3_cached_conn(
-        "iam",
-        host,
-        user,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
-        .with_query({"account_id": account_id})
-        .first.name,
-        region=config.region,
-        sts_client_kwargs=dict(
-            region_name=config.region,
-            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-        ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        session_name=sanitize_session_name("noq_update_assume_role_policy_trust"),
-    )
-
-    tags_to_update = []
-
-    for group_tag in role_access_config.noq_authorized_cli_groups:
-        tags_to_update.append(
-            {
-                "Key": group_tag["tag_name"],
-                "Value": ":".join(group_tag["value"]),
-            }
-        )
-
-    for group_tag in role_access_config.noq_authorized_groups:
-        tags_to_update.append(
-            {
-                "Key": group_tag["tag_name"],
-                "Value": ":".join(group_tag["value"]),
-            }
-        )
-
-    try:
-        await aio_wrapper(
-            client.tag_role,
-            RoleName=role_name,
-            Tags=tags_to_update,
-        )
-        return True, ""
-    except Exception as err:
-        return False, repr(err)

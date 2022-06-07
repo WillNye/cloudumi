@@ -8,6 +8,7 @@ from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("dynamodb")
 class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config

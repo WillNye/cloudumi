@@ -200,3 +200,12 @@ container's primary process (PID 1):
 . <(xargs -0 bash -c 'printf "export %q\n" "$@"' -- < /proc/1/environ)
 for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done;
 ```
+
+### Connecting to Celery Flower
+
+Celery Flower contains a web interface that details Celery task status.
+To connect to the web interface, install [ecs-tunnel](https://github.com/alastairmccormack/ecs-tunnel) and run the following command (Replace the cluster and task IDs as appropriate)
+
+```bash
+AWS_PROFILE=noq_staging ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t 21e241ef65b74408b3be12648e1a3e94 --region us-west-2
+```

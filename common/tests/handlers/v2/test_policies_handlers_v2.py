@@ -4,7 +4,9 @@ import sys
 
 import pytest
 import ujson as json
+from mock import patch
 
+from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import host
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
@@ -16,6 +18,7 @@ sys.path.append(os.path.join(APP_ROOT, ".."))
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("populate_caches")
+@pytest.mark.usefixtures("dynamodb")
 class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
@@ -46,8 +49,11 @@ class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(first_entity["account_id"], "123456789012")
         self.assertEqual(first_entity["account_name"], "default_account")
 
-    def test_policies_check_api(self):
+    @patch("common.lib.aws.utils.access_analyzer_validate_policy")
+    def test_policies_check_api(self, mock_access_analyzer_validate_policy):
         from common.config import config
+
+        mock_access_analyzer_validate_policy.return_value = create_future([])
 
         headers = {
             config.get_host_specific_key(

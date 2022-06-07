@@ -6,6 +6,7 @@ import ManagedPolicy from './ManagedPolicy'
 import PermissionsBoundary from './PermissionsBoundary'
 import ServiceControlPolicy from './ServiceControlPolicy'
 import EffectivePermissions from './EffectivePermissions'
+import Terraform from './Terraform'
 import InlinePolicy from './InlinePolicy'
 import Issues from './Issues'
 import Tags from './Tags'
@@ -164,6 +165,22 @@ const IAMRolePolicy = () => {
       },
     },
   ])
+
+  if (all?.resource?.terraform) {
+    tabs.push({
+      menuItem: {
+        key: 'terraform',
+        content: <>Terraform</>,
+      },
+      render: () => {
+        return (
+          <Tab.Pane>
+            <Terraform terraform={all?.resource?.terraform} />
+          </Tab.Pane>
+        )
+      },
+    })
+  }
 
   if (resource.elevated_access_config || resource.role_access_config) {
     tabs.push({

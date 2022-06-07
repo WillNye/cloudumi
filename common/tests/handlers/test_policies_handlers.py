@@ -24,6 +24,7 @@ mock_policy_redis = MagicMock(
 )
 
 
+@pytest.mark.usefixtures("dynamodb")
 class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app

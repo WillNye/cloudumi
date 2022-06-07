@@ -388,6 +388,10 @@ class ExtendedAwsPrincipalModel(AwsPrincipalModel):
         None,
         description="A string depicting the owning user or group for a given AWS principal. Typically determined by one or\nmore tags on the principal.",
     )
+    terraform: Optional[str] = Field(
+        None,
+        description="A string depicting the terraformed version of the principal, if available.",
+    )
 
 
 class UserModel(BaseModel):

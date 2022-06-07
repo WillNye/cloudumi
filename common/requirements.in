@@ -1,1 +1,3 @@
+noq-dax-client
 pydantic
+pynamodax==6.1.0

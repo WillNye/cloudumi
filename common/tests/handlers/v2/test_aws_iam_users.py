@@ -9,6 +9,7 @@ from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
+@pytest.mark.usefixtures("dynamodb")
 class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
@@ -42,7 +43,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(response.code, 200)
         body = json.loads(response.body)
         body.pop("created_time")
-        self.assertEqual(
+        self.assertDictEqual(
             body,
             {
                 "name": "TestUser",
@@ -81,6 +82,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
                 "tags": [],
                 "effective_policy": None,
                 "effective_policy_repoed": None,
+                "elevated_access_config": None,
                 "config_timeline_url": None,
                 "templated": False,
                 "template_link": None,

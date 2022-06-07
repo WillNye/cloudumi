@@ -48,7 +48,6 @@ if args.use_celery:
     celery.cache_resources_from_aws_config_across_accounts_for_all_hosts()
     celery.cache_policies_table_details_for_all_hosts.apply_async(countdown=180)
     celery.cache_access_advior_across_accounts_for_all_hosts()
-    celery.cache_policy_requests_for_all_hosts()
     celery.cache_credential_authorization_mapping_for_all_hosts.apply_async(
         countdown=180
     )
@@ -124,7 +123,6 @@ else:
         celery.cache_resource_templates_task(host)
         celery.cache_self_service_typeahead_task(host)
         celery.cache_policies_table_details(host)
-        celery.cache_policy_requests(host)
         celery.cache_credential_authorization_mapping(host)
 total_time = int(time.time()) - start_time
 print(f"Done caching data in Redis. It took {total_time} seconds")

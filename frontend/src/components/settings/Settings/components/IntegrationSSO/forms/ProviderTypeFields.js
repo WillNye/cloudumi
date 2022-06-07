@@ -11,7 +11,10 @@ const GoogleFields = ({ register }) => (
     </Form.Field>
     <Form.Field>
       <label>Client Secret</label>
-      <input type='text' {...register('client_secret', { required: true })} />
+      <input
+        type='password'
+        {...register('client_secret', { required: true })}
+      />
     </Form.Field>
     <Form.Field>
       <label>Authorize Scopes</label>
@@ -60,7 +63,10 @@ const OIDCFields = ({ register }) => (
     </Form.Field>
     <Form.Field>
       <label>Client Secret</label>
-      <input type='text' {...register('client_secret', { required: true })} />
+      <input
+        type='password'
+        {...register('client_secret', { required: true })}
+      />
     </Form.Field>
     <Form.Field>
       <label>Attributes Request Method</label>

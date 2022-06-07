@@ -36,8 +36,8 @@ allowed_inbound_cidr_blocks = [
 dynamo_table_replica_regions = ["us-west-2"]
 
 # Dax
-dax_node_type  = "dax.t2.medium"
-dax_node_count = 3
+dax_node_type  = "dax.t3.small"
+dax_node_count = 1
 
 # Redis
 redis_node_type = "cache.t3.small"

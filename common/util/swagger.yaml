@@ -1719,6 +1719,10 @@ components:
               description: |-
                 A string depicting the owning user or group for a given AWS principal. Typically determined by one or
                 more tags on the principal.
+            terraform:
+              type: string
+              description: |-
+                A string depicting the terraformed version of the principal, if available.
     UserModel:
       type: object
       readOnly: true

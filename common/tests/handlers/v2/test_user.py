@@ -59,7 +59,7 @@ class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
         body = json.dumps(
             {
                 "username": "testuser5@example.com",
-                "password": "testuser5password",
+                "password": "testuser5password312623!@$$@#ddd",
             }
         )
         response = self.fetch("/api/v2/user_registration", method="POST", body=body)
@@ -181,11 +181,14 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def test_create_user(self):
+        user_password = "testuser3password312623!@$$@#ddd"
+        new_user_password = f"new_{user_password}"
+
         body = json.dumps(
             {
                 "user_management_action": "create",
                 "username": "testuser3",
-                "password": "testuser3password",
+                "password": user_password,
                 "groups": ["group1", "group2", "group3"],
             }
         )
@@ -208,7 +211,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
 
         ddb = UserDynamoHandler(host=host)
         login_attempt_success = LoginAttemptModel(
-            username="testuser3", password="testuser3password"
+            username="testuser3", password=user_password
         )
 
         should_pass = async_to_sync(ddb.authenticate_user)(login_attempt_success, host)
@@ -246,7 +249,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
             {
                 "user_management_action": "update",
                 "username": "testuser3",
-                "password": "testuser3newpassword",
+                "password": new_user_password,
             }
         )
         response = self.fetch("/api/v2/user", method="POST", body=body, user=admin_user)
@@ -283,7 +286,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
             {
                 "user_management_action": "update",
                 "username": "testuser3",
-                "password": "testuser3newpassword2",
+                "password": new_user_password,
                 "groups": ["group1", "group2", "group3", "newgroup", "newgroup2"],
             }
         )
