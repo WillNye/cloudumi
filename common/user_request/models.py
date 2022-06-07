@@ -173,7 +173,7 @@ class IAMRequest(NoqModel):
             )
             boto_policy_document = json.dumps(
                 change.get("policy", {}).get("policy_document", {}),
-                indent=4,
+                indent=2,
                 escape_forward_slashes=False,
             )
 

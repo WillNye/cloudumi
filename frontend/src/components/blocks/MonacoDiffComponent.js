@@ -118,14 +118,16 @@ const MonacoDiffComponent = (props) => {
               setActiveItem('CloudFormation')
             }}
           ></Menu.Item>
-          <Menu.Item
-            name='Python Script'
-            content='pyScript'
-            active={activeItem === 'pyScript'}
-            onClick={() => {
-              setActiveItem('pyScript')
-            }}
-          ></Menu.Item>
+          {props?.pythonScript ? (
+            <Menu.Item
+              name='Python'
+              content='Python'
+              active={activeItem === 'Python'}
+              onClick={() => {
+                setActiveItem('Python')
+              }}
+            ></Menu.Item>
+          ) : null}
         </Menu>
         {activeItem === 'JSON' ? (
           <DiffEditor
@@ -175,7 +177,7 @@ const MonacoDiffComponent = (props) => {
             alwaysConsumeMouseWheel={false}
           />
         ) : null}
-        {activeItem === 'pyScript' ? (
+        {activeItem === 'Python' ? (
           <ReadOnlyPolicyMonacoEditor
             policy={props?.pythonScript}
             json={false}
@@ -211,7 +213,7 @@ const MonacoDiffComponent = (props) => {
 // 2. newValue = new value for the diff
 // 3. readOnly = whether the new value should be readOnly or not
 // 4. onLintError = method that will be called whenever a lint error is detected
-// 5. onChange = method that will be called whenever a chance occurs to upate the value
+// 5. onChange = method that will be called whenever a chance occurs to update the value
 
 MonacoDiffComponent.propTypes = {
   oldValue: PropTypes.string.isRequired,
@@ -219,6 +221,5 @@ MonacoDiffComponent.propTypes = {
   readOnly: PropTypes.bool.isRequired,
   onLintError: PropTypes.func.isRequired,
   onValueChange: PropTypes.func.isRequired,
-  pythonScript: PropTypes.string.isRequired,
 }
 export default MonacoDiffComponent

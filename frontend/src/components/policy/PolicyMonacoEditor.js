@@ -19,6 +19,7 @@ const editorOptions = {
   scrollBeyondLastLine: false,
   automaticLayout: true,
   wordWrap: 'wordWrapColumn',
+  wordWrapColumn: 120,
 }
 
 const lintingErrorMapping = {

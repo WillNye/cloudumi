@@ -9,7 +9,9 @@ except ImportError:
 resource = "{{ resource_id }}"
 policy = """{{ policy_document }}"""
 
-if not input('Continue with {{ change_type }} change to {}? y/n: '.format(resource)).lower().startswith('y'):
+if not input(
+    '{}\nContinue with {{ change_type }} change defined above to {}? y/n: '.format(policy, resource)
+).lower().startswith('y'):
     print("Exiting")
     sys.exit(0)
 
