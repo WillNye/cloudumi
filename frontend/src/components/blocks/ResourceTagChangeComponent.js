@@ -9,7 +9,10 @@ import {
   Dimmer,
 } from 'semantic-ui-react'
 import { useAuth } from '../../auth/AuthProviderDefault'
-import { validateApprovePolicy } from '../../helpers/utils'
+import {
+  getAllowedResourceAdmins,
+  validateApprovePolicy,
+} from '../../helpers/utils'
 import {
   AppliedNotification,
   CancelledNotification,
@@ -17,6 +20,7 @@ import {
   ReadOnlyNotification,
   ResponseNotification,
 } from './notificationMessages'
+import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 const ResourceTagChangeComponent = (props) => {
   const change = props.change
@@ -64,6 +68,8 @@ const ResourceTagChangeComponent = (props) => {
   const isOwner =
     validateApprovePolicy(props.changesConfig, change.id) ||
     props.config.can_approve_reject
+
+  const allowedAdmins = getAllowedResourceAdmins(props.changesConfig, change.id)
 
   const headerContent = (
     <Header size='large'>
@@ -163,6 +169,7 @@ const ResourceTagChangeComponent = (props) => {
 
   const policyChangeContent = change ? (
     <Grid fluid>
+      <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
       <Grid.Row columns='equal'>
         <Grid.Column>{requestDetailsContent}</Grid.Column>
       </Grid.Row>

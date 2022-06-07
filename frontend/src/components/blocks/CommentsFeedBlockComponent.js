@@ -80,8 +80,8 @@ class CommentsFeedBlockComponent extends Component {
         <Message negative>
           <Message.Header>An error occurred</Message.Header>
           <Message.List>
-            {messages.map((message) => (
-              <Message.Item>{message}</Message.Item>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
             ))}
           </Message.List>
         </Message>
@@ -90,8 +90,8 @@ class CommentsFeedBlockComponent extends Component {
     const commentsContent =
       comments && comments.length > 0 ? (
         <Comment.Group>
-          {comments.map((comment) => (
-            <Comment>
+          {comments.map((comment, index) => (
+            <Comment key={index}>
               {comment.user && comment.user.photo_url ? (
                 <Comment.Avatar src={comment.user.photo_url} />
               ) : (

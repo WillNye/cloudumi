@@ -75,8 +75,8 @@ const ExpirationDateBlockComponent = ({
       <Message negative>
         <Message.Header>An error occurred</Message.Header>
         <Message.List>
-          {errorMessages.map((message) => (
-            <Message.Item>{message}</Message.Item>
+          {errorMessages.map((message, index) => (
+            <Message.Item key={index}>{message}</Message.Item>
           ))}
         </Message.List>
       </Message>
