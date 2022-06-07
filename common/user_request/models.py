@@ -1,10 +1,13 @@
-import json
 import sys
 import time
 
+import ujson as json
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pynamodax.attributes import NumberAttribute, UnicodeAttribute
 from pynamodax.indexes import AllProjection, GlobalSecondaryIndex
 
+from common.aws.utils import ResourceSummary
+from common.config import config
 from common.config.config import (
     dax_endpoints,
     dynamodb_host,
@@ -12,9 +15,11 @@ from common.config.config import (
     get_logger,
     region,
 )
+from common.config.models import ModelAdapter
+from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.pynamo import NoqMapAttribute, NoqModel
-from common.models import ExtendedRequestModel
+from common.models import ExtendedRequestModel, SpokeAccount
 
 log = get_logger("cloudumi")
 
@@ -118,3 +123,180 @@ class IAMRequest(NoqModel):
             log.error(log_data, exc_info=True)
             error = f"{log_data['message']}: {str(e)}"
             raise Exception(error)
+
+    async def set_commands_for_changes(self):
+        """Adds a boto3 script and an AWS CLI command for each change that can be leveraged by users.
+
+        CLI support is currently disabled for the following commands to an issue escaping certain commands.
+            resource_policy - sqs
+
+        """
+        disabled_cli_cmd_map = {"resource_policy": ["sqs"]}
+        log_data: dict = {
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "request": self.extended_request.dict(),
+            "host": self.host,
+        }
+        self_dict = self.dict()
+        principal = self_dict["principal"]
+        if principal.get("principal_type") in [
+            "TerraformAwsResource",
+            "HoneybeeAwsResourceTemplate",
+        ]:
+            # This method is only supported by AwsResource at this time
+            return
+
+        if not principal.get("principal_arn"):
+            return
+
+        principal_arn = principal.get("principal_arn")
+        principal_summary = await ResourceSummary.set(self.host, principal_arn)
+
+        template_env = Environment(
+            loader=FileSystemLoader("common/templates"),
+            extensions=["jinja2.ext.loopcontrols"],
+            autoescape=select_autoescape(),
+        )
+        sqs_client = None
+        put_policy_cli_template = None
+        boto3_template = template_env.get_template("user_request_boto3.py.j2")
+
+        for elem, change in enumerate(
+            self_dict["extended_request"].get("changes", {}).get("changes", [])
+        ):
+            change_type = change.get("change_type")
+            cli_cmd = ""
+            python_script = ""
+            cli_policy_document = json.dumps(
+                change.get("policy", {}).get("policy_document", {}),
+                escape_forward_slashes=False,
+            )
+            boto_policy_document = json.dumps(
+                change.get("policy", {}).get("policy_document", {}),
+                indent=4,
+                escape_forward_slashes=False,
+            )
+
+            if change_type == "generic_file":
+                continue
+            elif change_type in [
+                "resource_policy",
+                "sts_resource_policy",
+                "assume_role_policy",
+                "inline_policy",
+            ]:
+                if not put_policy_cli_template:  # Lazy load templates
+                    put_policy_cli_template = template_env.get_template(
+                        "user_request_aws_cli_put_policy.py.j2"
+                    )
+
+                if change_type == "inline_policy":
+                    resource_summary = principal_summary
+                else:
+                    try:
+                        resource_summary = await ResourceSummary.set(
+                            self.host, change["arn"]
+                        )
+                    except Exception as err:
+                        log.error(
+                            {
+                                "message": "Unable to get resource info for change",
+                                "error": str(err),
+                                **log_data,
+                            }
+                        )
+                        continue
+
+                if change_type == "sts_resource_policy":
+                    resource_summary.resource_type = "iam"
+
+                if resource_summary.resource_type == "sqs":
+                    if not sqs_client:
+                        try:
+                            sqs_client = await aio_wrapper(
+                                boto3_cached_conn,
+                                resource_summary.resource_type,
+                                self.host,
+                                None,
+                                account_number=resource_summary.account,
+                                assume_role=ModelAdapter(SpokeAccount)
+                                .load_config("spoke_accounts", self.host)
+                                .with_query({"account_id": resource_summary.account})
+                                .first.name,
+                                region=resource_summary.region or config.region,
+                                session_name="get-request-resource-details",
+                                sts_client_kwargs=dict(
+                                    region_name=config.region,
+                                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                                ),
+                                client_kwargs=config.get_host_specific_key(
+                                    "boto3.client_kwargs", self.host, {}
+                                ),
+                                read_only=True,
+                            )
+                        except Exception as err:
+                            log.error(
+                                {
+                                    "message": "Unable to create boto3 client",
+                                    "error": str(err),
+                                    **log_data,
+                                }
+                            )
+                            continue
+
+                    try:
+                        queue_url: dict = await aio_wrapper(
+                            sqs_client.get_queue_url, QueueName=resource_summary.name
+                        )
+                        resource_id = queue_url["QueueUrl"]
+                    except Exception as err:
+                        log.error(
+                            {
+                                "message": "Unable to retrieve SQS URL",
+                                "error": str(err),
+                                **log_data,
+                            }
+                        )
+                        continue
+
+                elif resource_summary.resource_type == "sns":
+                    resource_id = resource_summary.arn
+
+                else:
+                    resource_id = resource_summary.name
+
+                template_params = dict(
+                    resource_id=resource_id,
+                    resource_type=resource_summary.resource_type,
+                    resouce_service=resource_summary.service,
+                    policy_name=change.get("policy_name"),
+                    change_type=change_type.replace("_", " "),
+                )
+                cli_cmd = put_policy_cli_template.render(
+                    policy_document=cli_policy_document, **template_params
+                )
+                python_script = boto3_template.render(
+                    policy_document=boto_policy_document, **template_params
+                )
+
+            elif change_type == "managed_policy_resource":  # Defer
+                continue
+            elif change_type == "resource_tag":  # Defer
+                continue
+            elif change_type == "managed_policy":  # Defer
+                continue
+            elif change_type == "permissions_boundary":  # Defer
+                continue
+
+            if resource_summary.resource_type not in disabled_cli_cmd_map.get(
+                change_type, []
+            ):
+                self_dict["extended_request"]["changes"]["changes"][elem][
+                    "cli_command"
+                ] = cli_cmd
+
+            self_dict["extended_request"]["changes"]["changes"][elem][
+                "python_script"
+            ] = python_script
+
+        self.extended_request = self_dict["extended_request"]
