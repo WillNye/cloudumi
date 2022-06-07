@@ -1180,6 +1180,12 @@ components:
           default: false
         updated_by:
           type: string
+        cli_command:
+          type: string
+          readOnly: true
+        python_script:
+          type: string
+          readOnly: true
     GenericFileChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
