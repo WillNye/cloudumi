@@ -9,7 +9,10 @@ import {
   Dimmer,
 } from 'semantic-ui-react'
 import { useAuth } from '../../auth/AuthProviderDefault'
-import { validateApprovePolicy } from '../../helpers/utils'
+import {
+  getAllowedResourceAdmins,
+  validateApprovePolicy,
+} from '../../helpers/utils'
 import {
   AppliedNotification,
   CancelledNotification,
@@ -17,6 +20,7 @@ import {
   ReadOnlyNotification,
   ResponseNotification,
 } from './notificationMessages'
+import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 const TemporaryEscalationComponent = (props) => {
   const change = props.change
@@ -51,6 +55,8 @@ const TemporaryEscalationComponent = (props) => {
   const isOwner =
     validateApprovePolicy(props.changesConfig, change.id) ||
     props.config.can_approve_reject
+
+  const allowedAdmins = getAllowedResourceAdmins(props.changesConfig, change.id)
 
   const isReadonlyInfo =
     (props.requestReadOnly && change.status === 'not_applied') ||
@@ -96,6 +102,7 @@ const TemporaryEscalationComponent = (props) => {
 
   const policyChangeContent = change ? (
     <Grid fluid>
+      <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
       <Grid.Row columns='equal'>
         <Grid.Column>{requestDetailsContent}</Grid.Column>
       </Grid.Row>

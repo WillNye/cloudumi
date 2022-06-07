@@ -30,14 +30,14 @@ export const ErrorNotification = ({ messages }) =>
 export const ResponseNotification = ({ response }) =>
   response.length > 0 ? (
     <Grid.Column>
-      {response.map((message) =>
+      {response.map((message, index) =>
         message.status === 'error' ? (
-          <Message negative>
+          <Message negative key={index}>
             <Message.Header>An error occurred</Message.Header>
             <Message.Content>{message.message}</Message.Content>
           </Message>
         ) : (
-          <Message positive>
+          <Message positive key={index}>
             <Message.Header>Success</Message.Header>-
             <Message.Content>{message.message}</Message.Content>
           </Message>

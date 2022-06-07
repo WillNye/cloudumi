@@ -11,6 +11,7 @@ import {
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import {
+  getAllowedResourceAdmins,
   sortAndStringifyNestedJSONObject,
   validateApprovePolicy,
 } from '../../helpers/utils'
@@ -21,6 +22,7 @@ import {
   ReadOnlyNotification,
   ResponseNotification,
 } from './notificationMessages'
+import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 class AssumeRolePolicyChangeComponent extends Component {
   constructor(props) {
@@ -140,6 +142,8 @@ class AssumeRolePolicyChangeComponent extends Component {
       validateApprovePolicy(changesConfig, change.id) ||
       config.can_approve_reject
 
+    const allowedAdmins = getAllowedResourceAdmins(changesConfig, change.id)
+
     const headerContent = (
       <Header size='large'>Assume Role Policy Change</Header>
     )
@@ -198,8 +202,8 @@ class AssumeRolePolicyChangeComponent extends Component {
         <Message negative>
           <Message.Header>There was a problem with your request</Message.Header>
           <Message.List>
-            {messages.map((message) => (
-              <Message.Item>{message}</Message.Item>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
             ))}
           </Message.List>
         </Message>
@@ -212,6 +216,8 @@ class AssumeRolePolicyChangeComponent extends Component {
 
     const policyChangeContent = change ? (
       <Grid fluid>
+        <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
+
         <Grid.Row columns='equal'>
           <Grid.Column>
             <Header

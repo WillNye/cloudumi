@@ -8,9 +8,6 @@ import {
   Loader,
   Message,
   Segment,
-  Table,
-  Icon,
-  Accordion,
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import {
@@ -25,6 +22,7 @@ import {
   ReadOnlyNotification,
   ResponseNotification,
 } from './notificationMessages'
+import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 class InlinePolicyChangeComponent extends Component {
   constructor(props) {
@@ -54,13 +52,11 @@ class InlinePolicyChangeComponent extends Component {
       requestReadOnly,
       requestID,
       isLoading: false,
-      showAllowedAdmins: false,
     }
 
     this.onLintError = this.onLintError.bind(this)
     this.onValueChange = this.onValueChange.bind(this)
     this.onSubmitChange = this.onSubmitChange.bind(this)
-    this.handleShowAdmins = this.handleShowAdmins.bind(this)
     this.updatePolicyDocument = props.updatePolicyDocument
     this.reloadDataFromBackend = props.reloadDataFromBackend
   }
@@ -128,11 +124,6 @@ class InlinePolicyChangeComponent extends Component {
     applyChange()
   }
 
-  handleShowAdmins() {
-    const { showAllowedAdmins } = this.state
-    this.setState({ showAllowedAdmins: !showAllowedAdmins })
-  }
-
   render() {
     const {
       oldStatement,
@@ -146,7 +137,6 @@ class InlinePolicyChangeComponent extends Component {
       lastSavedStatement,
       isLoading,
       buttonResponseMessage,
-      showAllowedAdmins,
     } = this.state
 
     const isOwner =
@@ -226,8 +216,8 @@ class InlinePolicyChangeComponent extends Component {
         <Message negative>
           <Message.Header>There was a problem with your request</Message.Header>
           <Message.List>
-            {messages.map((message) => (
-              <Message.Item>{message}</Message.Item>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
             ))}
           </Message.List>
         </Message>
@@ -240,39 +230,7 @@ class InlinePolicyChangeComponent extends Component {
 
     const policyChangeContent = change ? (
       <Grid fluid>
-        <Grid.Row>
-          <Grid.Column>
-            <Accordion>
-              <Accordion.Title
-                active={showAllowedAdmins}
-                onClick={this.handleShowAdmins}
-              >
-                <Icon name='dropdown' />
-                Show Aprrovers
-              </Accordion.Title>
-              <Accordion.Content active={showAllowedAdmins}>
-                <Table celled>
-                  <Table.Header>
-                    <Table.Row>
-                      <Table.HeaderCell>User/Group</Table.HeaderCell>
-                      <Table.HeaderCell>Can Approve</Table.HeaderCell>
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {allowedAdmins.map((userGroup) => (
-                      <Table.Row>
-                        <Table.Cell>{userGroup}</Table.Cell>
-                        <Table.Cell positive>
-                          <Icon name='checkmark' />
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table>
-              </Accordion.Content>
-            </Accordion>
-          </Grid.Column>
-        </Grid.Row>
+        <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
 
         <Grid.Row columns='equal'>
           <Grid.Column>
