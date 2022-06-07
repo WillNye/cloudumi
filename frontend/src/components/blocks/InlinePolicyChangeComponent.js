@@ -306,6 +306,9 @@ class InlinePolicyChangeComponent extends Component {
               showIac={true}
               policyName={change.policy_name}
               principal={change.principal}
+              enableJSON={true}
+              enableTerraform={true}
+              enableCloudFormation={true}
               pythonScript={change?.python_script}
             />
           </Grid.Column>

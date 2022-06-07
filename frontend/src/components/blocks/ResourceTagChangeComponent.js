@@ -11,6 +11,7 @@ import {
 } from 'semantic-ui-react'
 import { useAuth } from '../../auth/AuthProviderDefault'
 import { validateApprovePolicy } from '../../helpers/utils'
+import MonacoDiffComponent from './MonacoDiffComponent'
 
 const ResourceTagChangeComponent = (props) => {
   const change = props.change
@@ -219,6 +220,22 @@ const ResourceTagChangeComponent = (props) => {
       </Grid.Row>
       <Grid.Row columns='equal'>
         <Grid.Column>{responseMessagesToShow}</Grid.Column>
+      </Grid.Row>
+      <Grid.Row>
+        <Grid.Column>
+          <MonacoDiffComponent
+            oldValue={''}
+            newValue={''}
+            readOnly={true}
+            onLintError={null}
+            onValueChange={null}
+            showIac={true}
+            pythonScript={change?.python_script}
+            enableJSON={false}
+            enableTerraform={false}
+            enableCloudFormation={false}
+          />
+        </Grid.Column>
       </Grid.Row>
       <Grid.Row columns='equal'>
         {applyChangesButton}

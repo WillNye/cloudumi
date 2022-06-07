@@ -23,7 +23,9 @@ const MonacoDiffComponent = (props) => {
   const modifiedEditorRef = useRef()
   const [language, setLanguage] = useState('json')
   const [languageDetected, setLanguageDetected] = useState(false)
-  const [activeItem, setActiveItem] = useState('JSON')
+  const [activeItem, setActiveItem] = useState(
+    props?.enableJSON ? 'JSON' : null
+  )
 
   const onChange = (newValue) => {
     onValueChange(newValue)
@@ -94,30 +96,36 @@ const MonacoDiffComponent = (props) => {
     return (
       <div>
         <Menu pointing secondary>
-          <Menu.Item
-            name='JSON'
-            content='JSON'
-            active={activeItem === 'JSON'}
-            onClick={() => {
-              setActiveItem('JSON')
-            }}
-          ></Menu.Item>
-          <Menu.Item
-            name='Terraform'
-            content='Terraform'
-            active={activeItem === 'Terraform'}
-            onClick={() => {
-              setActiveItem('Terraform')
-            }}
-          ></Menu.Item>
-          <Menu.Item
-            name='CloudFormation'
-            content='CloudFormation'
-            active={activeItem === 'CloudFormation'}
-            onClick={() => {
-              setActiveItem('CloudFormation')
-            }}
-          ></Menu.Item>
+          {props?.enableJSON ? (
+            <Menu.Item
+              name='JSON'
+              content='JSON'
+              active={activeItem === 'JSON'}
+              onClick={() => {
+                setActiveItem('JSON')
+              }}
+            ></Menu.Item>
+          ) : null}
+          {props?.enableTerraform ? (
+            <Menu.Item
+              name='Terraform'
+              content='Terraform'
+              active={activeItem === 'Terraform'}
+              onClick={() => {
+                setActiveItem('Terraform')
+              }}
+            ></Menu.Item>
+          ) : null}
+          {props?.enableCloudFormation ? (
+            <Menu.Item
+              name='CloudFormation'
+              content='CloudFormation'
+              active={activeItem === 'CloudFormation'}
+              onClick={() => {
+                setActiveItem('CloudFormation')
+              }}
+            ></Menu.Item>
+          ) : null}
           {props?.pythonScript ? (
             <Menu.Item
               name='Python'

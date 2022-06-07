@@ -289,7 +289,11 @@ class AssumeRolePolicyChangeComponent extends Component {
               }
               onLintError={this.onLintError}
               onValueChange={this.onValueChange}
+              showIac={true}
               pythonScript={change?.python_script}
+              enableJSON={true}
+              enableTerraform={false}
+              enableCloudFormation={false}
             />
           </Grid.Column>
         </Grid.Row>

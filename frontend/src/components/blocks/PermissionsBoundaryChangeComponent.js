@@ -10,6 +10,7 @@ import {
   Dimmer,
 } from 'semantic-ui-react'
 import { validateApprovePolicy } from '../../helpers/utils'
+import MonacoDiffComponent from './MonacoDiffComponent'
 
 class PermissionsBoundaryChangeComponent extends Component {
   constructor(props) {
@@ -63,6 +64,29 @@ class PermissionsBoundaryChangeComponent extends Component {
       'cancel_change'
     )
     cancelChange()
+  }
+
+  onLintError(lintErrors) {
+    if (lintErrors.length > 0) {
+      this.setState({
+        messages: lintErrors,
+        isError: true,
+      })
+    } else {
+      this.setState({
+        messages: [],
+        isError: false,
+      })
+    }
+  }
+
+  onValueChange(newValue) {
+    const { change } = this.state
+    this.setState({
+      newStatement: newValue,
+      buttonResponseMessage: [],
+    })
+    this.updatePolicyDocument(change.id, newValue)
   }
 
   render() {
@@ -209,6 +233,22 @@ class PermissionsBoundaryChangeComponent extends Component {
         </Grid.Row>
         <Grid.Row columns='equal'>
           <Grid.Column>{responseMessagesToShow}</Grid.Column>
+        </Grid.Row>
+        <Grid.Row>
+          <Grid.Column>
+            <MonacoDiffComponent
+              oldValue={''}
+              newValue={''}
+              readOnly={true}
+              onLintError={this.onLintError}
+              onValueChange={this.onValueChange}
+              showIac={true}
+              pythonScript={change?.python_script}
+              enableJSON={false}
+              enableTerraform={false}
+              enableCloudFormation={false}
+            />
+          </Grid.Column>
         </Grid.Row>
         <Grid.Row columns='equal'>
           {applyChangesButton}
