@@ -1,0 +1,56 @@
+import sys
+
+try:
+    import boto3
+except ImportError:
+    print("Run the following command and try again:\npip3 install boto3")
+    sys.exit(0)
+
+resource = "{{ resource_id }}"
+policy = """{{ policy_document }}"""
+
+if not input('Continue with {{ change_type }} change to {}? y/n: '.format(resource)).lower().startswith('y'):
+    print("Exiting")
+    sys.exit(0)
+
+session = boto3.session.Session()
+client = session.client("{{ resouce_service }}")
+
+try:
+    {% if resource_type == "s3" -%}
+    client.put_bucket_policy(
+        Bucket=resource,
+        Policy=policy
+    )
+    {% elif resource_type == "sns" -%}
+    client.set_topic_attributes(
+        TopicArn=resource,
+        AttributeName="Policy",
+        AttributeValue=policy
+    )
+    {% elif resource_type == "sqs" -%}
+    client.set_queue_attributes(
+        QueueUrl=resource,
+        Attributes={"Policy": policy}
+    )
+    {% elif resource_type == "iam" -%}
+    client.update_assume_role_policy(
+        RoleName=resource,
+        PolicyDocument=policy
+    )
+    {% elif resource_type == "role" -%}
+    client.put_role_policy(
+        RoleName=resource,
+        PolicyName="{{ policy_name }}",
+        PolicyDocument=policy
+    )
+    {% elif resource_type == "user" -%}
+    client.put_user_policy(
+        UserName=resource,
+        PolicyName="{{ policy_name }}",
+        PolicyDocument=policy
+    )
+    {% endif %}
+    print("Operation completed successfully")
+except Exception as err:
+    print("Unexpected error while executing command:\n{}".format(repr(err)))
