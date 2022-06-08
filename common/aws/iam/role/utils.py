@@ -892,7 +892,7 @@ async def update_role_access_config(
         get_host_iam_conn,
         host,
         account_id,
-        "update_role_tear_config",
+        "update_role_access_config",
         user=user,
         sts_client_kwargs=dict(
             region_name=config.region,
