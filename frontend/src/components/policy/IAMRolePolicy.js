@@ -182,7 +182,7 @@ const IAMRolePolicy = () => {
     })
   }
 
-  if (resource.elevated_access_config) {
+  if (resource.elevated_access_config || resource.role_access_config) {
     tabs.push({
       menuItem: {
         key: 'config_access',
@@ -193,6 +193,7 @@ const IAMRolePolicy = () => {
           <Tab.Pane>
             <ConfigureAccess
               elevated_access_config={resource.elevated_access_config}
+              role_access_config={resource.role_access_config}
             />
           </Tab.Pane>
         )

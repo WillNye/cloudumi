@@ -24,6 +24,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.models import (
     CloneRoleRequestModel,
     HubAccount,
+    PrincipalModelRoleAccessConfig,
     PrincipalModelTearConfig,
     RoleCreationRequestModel,
 )
@@ -878,3 +879,50 @@ async def get_roles_as_resource(host: str, viewable_accounts: set, resource_map:
         }
 
     return resource_map
+
+
+async def update_role_access_config(
+    host,
+    user,
+    role_name,
+    account_id: str,
+    role_access_config: PrincipalModelRoleAccessConfig,
+) -> [bool, str]:
+    client = await aio_wrapper(
+        get_host_iam_conn,
+        host,
+        account_id,
+        "update_role_access_config",
+        user=user,
+        sts_client_kwargs=dict(
+            region_name=config.region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+    )
+    tags_to_update = []
+
+    for group_tag in role_access_config.noq_authorized_cli_groups:
+        tags_to_update.append(
+            {
+                "Key": group_tag["tag_name"],
+                "Value": ":".join(group_tag["value"]),
+            }
+        )
+
+    for group_tag in role_access_config.noq_authorized_groups:
+        tags_to_update.append(
+            {
+                "Key": group_tag["tag_name"],
+                "Value": ":".join(group_tag["value"]),
+            }
+        )
+
+    try:
+        await aio_wrapper(
+            client.tag_role,
+            RoleName=role_name,
+            Tags=tags_to_update,
+        )
+        return True, ""
+    except Exception as err:
+        return False, repr(err)

@@ -3,14 +3,24 @@ import {
   Button,
   Grid,
   Header,
-  Message,
   Table,
   Segment,
   Loader,
   Dimmer,
 } from 'semantic-ui-react'
-import { validateApprovePolicy } from '../../helpers/utils'
+import {
+  getAllowedResourceAdmins,
+  validateApprovePolicy,
+} from '../../helpers/utils'
+import {
+  AppliedNotification,
+  CancelledNotification,
+  ExpiredNotification,
+  ReadOnlyNotification,
+  ResponseNotification,
+} from './notificationMessages'
 import MonacoDiffComponent from './MonacoDiffComponent'
+import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 class PermissionsBoundaryChangeComponent extends Component {
   constructor(props) {
@@ -103,6 +113,8 @@ class PermissionsBoundaryChangeComponent extends Component {
       validateApprovePolicy(changesConfig, change.id) ||
       config.can_approve_reject
 
+    const allowedAdmins = getAllowedResourceAdmins(changesConfig, change.id)
+
     const action =
       change.action === 'detach' ? (
         <span style={{ color: 'red' }}>Detach</span>
@@ -145,44 +157,6 @@ class PermissionsBoundaryChangeComponent extends Component {
     const isReadonlyInfo =
       (requestReadOnly && change.status === 'not_applied') ||
       (!config.can_update_cancel && !isOwner)
-    const viewOnlyInfo = isReadonlyInfo ? (
-      <Grid.Column>
-        <Message info>
-          <Message.Header>View only</Message.Header>
-          <p>This change is view only and can no longer be modified.</p>
-        </Message>
-      </Grid.Column>
-    ) : null
-
-    const changesAlreadyAppliedContent =
-      change.status === 'applied' ? (
-        <Grid.Column>
-          <Message positive>
-            <Message.Header>Change already applied</Message.Header>
-            <p>This change has already been applied and cannot be modified.</p>
-          </Message>
-        </Grid.Column>
-      ) : null
-
-    const changesAlreadyCancelledContent =
-      change.status === 'cancelled' ? (
-        <Grid.Column>
-          <Message negative>
-            <Message.Header>Change cancelled</Message.Header>
-            <p>This change has been cancelled and cannot be modified.</p>
-          </Message>
-        </Grid.Column>
-      ) : null
-
-    const changesExpiredContent =
-      change.status === 'expired' ? (
-        <Grid.Column>
-          <Message negative>
-            <Message.Header>Change expired</Message.Header>
-            <p>This change has expired and cannot be modified.</p>
-          </Message>
-        </Grid.Column>
-      ) : null
 
     const requestDetailsContent = change ? (
       <Table celled definition striped>
@@ -207,32 +181,16 @@ class PermissionsBoundaryChangeComponent extends Component {
       </Table>
     ) : null
 
-    const responseMessagesToShow =
-      buttonResponseMessage.length > 0 ? (
-        <Grid.Column>
-          {buttonResponseMessage.map((message) =>
-            message.status === 'error' ? (
-              <Message negative>
-                <Message.Header>An error occurred</Message.Header>
-                <Message.Content>{message.message}</Message.Content>
-              </Message>
-            ) : (
-              <Message positive>
-                <Message.Header>Success</Message.Header>
-                <Message.Content>{message.message}</Message.Content>
-              </Message>
-            )
-          )}
-        </Grid.Column>
-      ) : null
-
     const policyChangeContent = change ? (
       <Grid fluid>
+        <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
         <Grid.Row columns='equal'>
           <Grid.Column>{requestDetailsContent}</Grid.Column>
         </Grid.Row>
         <Grid.Row columns='equal'>
-          <Grid.Column>{responseMessagesToShow}</Grid.Column>
+          <Grid.Column>
+            <ResponseNotification response={buttonResponseMessage} />
+          </Grid.Column>
         </Grid.Row>
         <Grid.Row>
           <Grid.Column>
@@ -253,10 +211,10 @@ class PermissionsBoundaryChangeComponent extends Component {
         <Grid.Row columns='equal'>
           {applyChangesButton}
           {cancelChangesButton}
-          {viewOnlyInfo}
-          {changesAlreadyAppliedContent}
-          {changesAlreadyCancelledContent}
-          {changesExpiredContent}
+          <ReadOnlyNotification isReadonlyInfo={isReadonlyInfo} />
+          <AppliedNotification isApplied={change.status === 'applied'} />
+          <CancelledNotification isCancelled={change.status === 'cancelled'} />
+          <ExpiredNotification isExpired={change.status === 'expired'} />
         </Grid.Row>
       </Grid>
     ) : null

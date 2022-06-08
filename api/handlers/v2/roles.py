@@ -9,7 +9,7 @@ from furl import furl
 from pydantic import ValidationError
 
 from common.aws.iam.role.models import IAMRole
-from common.aws.iam.role.utils import update_role_tear_config
+from common.aws.iam.role.utils import update_role_access_config, update_role_tear_config
 from common.config import config
 from common.handlers.base import BaseAdminHandler, BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -25,6 +25,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.aws_principals import get_eligible_role_details, get_role_details
 from common.models import (
     CloneRoleRequestModel,
+    PrincipalModelRoleAccessConfig,
     PrincipalModelTearConfig,
     RoleCreationRequestModel,
     Status2,
@@ -61,6 +62,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             config.get_host_specific_key("aws.region", host, config.region),
         )
         redirect = arguments.get("redirect")
+        read_only = arguments.get("read_only", False)
         log_data = {
             "user": self.user,
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
@@ -172,6 +174,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 region=region,
                 user_role=user_role,
                 account_id=account_id,
+                read_only=read_only,
             )
         except Exception as e:
             log_data["message"] = f"Exception generating AWS console URL: {str(e)}"
@@ -869,6 +872,75 @@ class RoleTearConfigHandler(BaseAdminHandler):
 
         update_successful, err = await update_role_tear_config(
             host, self.user, role_name, account_id, tear_config
+        )
+        if not update_successful:
+            self.set_status(500, err)
+            return
+
+        try:
+            role_details = await get_role_details(
+                account_id,
+                role_name,
+                host,
+                extended=True,
+                force_refresh=True,
+                is_admin_request=self.is_admin,
+            )
+            self.write(role_details.json())
+        except Exception as e:
+            sentry_sdk.capture_exception()
+            log.error({**log_data, "error": e}, exc_info=True)
+            self.set_status(
+                500,
+                f"Update successful but error encountered when retrieving role: {str(e)}",
+            )
+
+
+class RoleAccessConfigHandler(BaseAdminHandler):
+    """Handler for /api/v2/roles/{accountNumber}/{roleName}/access
+
+    Allows an admin to update access to a specific role in an account.
+    """
+
+    allowed_methods = ["PUT"]
+
+    async def put(self, account_id, role_name):
+        """
+        PUT /api/v2/roles/{account_number}/{role_name}/access
+        """
+        host = self.ctx.host
+        log_data = {
+            "function": "RoleAccessConfigHandler.put",
+            "user": self.user,
+            "message": "Updating Role access Config",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "account_id": account_id,
+            "host": host,
+            "role_name": role_name,
+        }
+        log.debug(log_data)
+
+        try:
+            role_access_config = PrincipalModelRoleAccessConfig.parse_raw(
+                self.request.body
+            )
+        except ValidationError as e:
+            log_data["message"] = "Validation Exception"
+            log.error(log_data, exc_info=True)
+            stats.count(
+                f"{log_data['function']}.validation_exception",
+                tags={
+                    "user": self.user,
+                    "host": host,
+                },
+            )
+            sentry_sdk.capture_exception()
+            self.write_error(400, message="Error validating input: " + str(e))
+            return
+
+        update_successful, err = await update_role_access_config(
+            host, self.user, role_name, account_id, role_access_config
         )
         if not update_successful:
             self.set_status(500, err)

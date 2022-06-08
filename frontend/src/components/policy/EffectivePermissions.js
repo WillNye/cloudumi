@@ -66,6 +66,9 @@ const EffectivePermissions = () => {
                         null,
                         2
                       )}
+                      enableJSON={true}
+                      enableTerraform={false}
+                      enableCloudFormation={false}
                     />
                   ) : (
                     <ReadOnlyPolicyMonacoEditor

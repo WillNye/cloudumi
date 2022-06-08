@@ -2727,7 +2727,7 @@ async def parse_and_apply_policy_request_modification(
 
             specific_change_arn = specific_change.principal.principal_arn
             if specific_change.change_type in [
-                "managed_resource",
+                "managed_policy_resource",
                 "resource_policy",
                 "sts_resource_policy",
             ]:
@@ -2766,7 +2766,6 @@ async def parse_and_apply_policy_request_modification(
 
             specific_change_arn = specific_change.principal.principal_arn
             if specific_change.change_type in [
-                "managed_resource",
                 "resource_policy",
                 "sts_resource_policy",
             ]:

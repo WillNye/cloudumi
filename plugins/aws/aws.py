@@ -55,6 +55,8 @@ class Aws:
         user_role: bool = False,
         account_id: str = None,
         custom_ip_restrictions: list = None,
+        read_only: bool = False,
+        session_policies: list[str] = None,
     ) -> dict:
         """Get Credentials will return the list of temporary credentials from AWS."""
         log_data = {
@@ -79,6 +81,27 @@ class Aws:
             session_name=sanitize_session_name("noq_get_credentials"),
         )
 
+        assume_role_kwargs = dict(
+            RoleArn=role,
+            RoleSessionName=user.lower(),
+            DurationSeconds=config.get_host_specific_key(
+                "aws.session_duration", host, 3600
+            ),
+        )
+
+        session_policies = session_policies or set()
+        if read_only:
+            session_policies.update(
+                config.get_host_specific_key(
+                    "aws.policies.read_only_policies",
+                    host,
+                    ["arn:aws:iam::aws:policy/ReadOnlyAccess"],
+                )
+            )
+        if session_policies:
+            assume_role_kwargs["PolicyArns"] = [
+                {"arn": policy_arn} for policy_arn in session_policies
+            ]
         ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host)
         stats.count(
             "aws.get_credentials",
@@ -130,12 +153,14 @@ class Aws:
                     }
                 ]
                 transitive_tag_keys = [role_transitive_tag_key_identifying_user]
+                assume_role_kwargs["Tags"] = tags
+                assume_role_kwargs["TransitiveTagKeys"] = transitive_tag_keys
 
         try:
             if enforce_ip_restrictions and ip_restrictions:
                 # Used to further restrict user permissions
                 # https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
-                policy = json.dumps(
+                assume_role_kwargs["Policy"] = json.dumps(
                     dict(
                         Version="2012-10-17",
                         Statement=[
@@ -160,30 +185,8 @@ class Aws:
                         ],
                     )
                 )
-
-                credentials = await aio_wrapper(
-                    client.assume_role,
-                    RoleArn=role,
-                    RoleSessionName=user.lower(),
-                    Policy=policy,
-                    Tags=tags,
-                    TransitiveTagKeys=transitive_tag_keys,
-                    DurationSeconds=config.get_host_specific_key(
-                        "aws.session_duration", host, 3600
-                    ),
-                )
-                credentials["Credentials"]["Expiration"] = int(
-                    credentials["Credentials"]["Expiration"].timestamp()
-                )
-                log.debug(
-                    {
-                        **log_data,
-                        "access_key_id": credentials["Credentials"]["AccessKeyId"],
-                    }
-                )
-                return credentials
-            if custom_ip_restrictions:
-                policy = json.dumps(
+            elif custom_ip_restrictions:
+                assume_role_kwargs["Policy"] = json.dumps(
                     dict(
                         Version="2012-10-17",
                         Statement=[
@@ -211,37 +214,9 @@ class Aws:
                     )
                 )
 
-                credentials = await aio_wrapper(
-                    client.assume_role,
-                    RoleArn=role,
-                    RoleSessionName=user.lower(),
-                    Policy=policy,
-                    Tags=tags,
-                    TransitiveTagKeys=transitive_tag_keys,
-                    DurationSeconds=config.get_host_specific_key(
-                        "aws.session_duration", host, 3600
-                    ),
-                )
-                credentials["Credentials"]["Expiration"] = int(
-                    credentials["Credentials"]["Expiration"].timestamp()
-                )
-                log.debug(
-                    {
-                        **log_data,
-                        "access_key_id": credentials["Credentials"]["AccessKeyId"],
-                    }
-                )
-                return credentials
-
             credentials = await aio_wrapper(
                 client.assume_role,
-                RoleArn=role,
-                RoleSessionName=user.lower(),
-                Tags=tags,
-                TransitiveTagKeys=transitive_tag_keys,
-                DurationSeconds=config.get_host_specific_key(
-                    "aws.session_duration", host, 3600
-                ),
+                **assume_role_kwargs,
             )
             credentials["Credentials"]["Expiration"] = int(
                 credentials["Credentials"]["Expiration"].timestamp()
@@ -278,6 +253,7 @@ class Aws:
         region: str = "us-east-1",
         user_role: bool = False,
         account_id: str = None,
+        read_only: bool = False,
     ) -> str:
         """Generate URL will get temporary credentials and craft a URL with those credentials."""
         function = (
@@ -300,6 +276,7 @@ class Aws:
             user_role=user_role,
             account_id=account_id,
             enforce_ip_restrictions=ip_restrictions_enabled,
+            read_only=read_only,
         )
 
         credentials_d = {

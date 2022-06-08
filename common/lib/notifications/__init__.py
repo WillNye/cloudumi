@@ -8,6 +8,7 @@ import sentry_sdk
 
 from common.config import config
 from common.lib.asyncio import aio_wrapper
+from common.lib.auth import get_extended_request_allowed_approvers
 from common.lib.aws.session import get_session_for_tenant
 from common.lib.generic import generate_html, get_principal_friendly_name
 from common.lib.groups import get_group_url
@@ -382,14 +383,18 @@ async def send_policy_request_status_update_v2(
     sending_app="noq",
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    to_addresses = [extended_request.requester_email]
+    request_approvers = set()
+    request_approvers.add(extended_request.requester_email)
     principal = await get_principal_friendly_name(extended_request.principal)
 
     if extended_request.request_status == RequestStatus.pending:
         subject = f"{app_name}: Policy change request for {principal} has been created"
         message = f"A policy change request for {principal} has been created."
         # This is a new request, also send email to application admins
-        to_addresses.append(config.get_host_specific_key("application_admin", host))
+        resource_admins = await get_extended_request_allowed_approvers(
+            extended_request, host
+        )
+        request_approvers.update(resource_admins)
     else:
         subject = (
             f"{app_name}: Policy change request for {principal} has been "
@@ -418,6 +423,7 @@ async def send_policy_request_status_update_v2(
             <meta http-equiv="content-type" content="text/html; charset=UTF-8">
             </body>
             </html>"""
+    to_addresses = list(request_approvers)
     await send_email(to_addresses, subject, body, host, sending_app=sending_app)
 
 

@@ -11,9 +11,18 @@ import {
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import {
+  getAllowedResourceAdmins,
   sortAndStringifyNestedJSONObject,
   validateApprovePolicy,
 } from '../../helpers/utils'
+import {
+  AppliedNotification,
+  CancelledNotification,
+  ExpiredNotification,
+  ReadOnlyNotification,
+  ResponseNotification,
+} from './notificationMessages'
+import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 class InlinePolicyChangeComponent extends Component {
   constructor(props) {
@@ -134,6 +143,8 @@ class InlinePolicyChangeComponent extends Component {
       validateApprovePolicy(changesConfig, change.id) ||
       config.can_approve_reject
 
+    const allowedAdmins = getAllowedResourceAdmins(changesConfig, change.id)
+
     const newPolicy = change.new ? (
       <span style={{ color: 'red' }}>- New Policy</span>
     ) : null
@@ -199,74 +210,17 @@ class InlinePolicyChangeComponent extends Component {
     const isReadonlyInfo =
       (requestReadOnly && change.status === 'not_applied') ||
       (!config.can_update_cancel && !isOwner)
-    const readOnlyInfo = isReadonlyInfo ? (
-      <Grid.Column>
-        <Message info>
-          <Message.Header>View only</Message.Header>
-          <p>This change is view only and can no longer be modified.</p>
-        </Message>
-      </Grid.Column>
-    ) : null
 
     const messagesToShow =
       messages.length > 0 ? (
         <Message negative>
           <Message.Header>There was a problem with your request</Message.Header>
           <Message.List>
-            {messages.map((message) => (
-              <Message.Item>{message}</Message.Item>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
             ))}
           </Message.List>
         </Message>
-      ) : null
-
-    const responseMessagesToShow =
-      buttonResponseMessage.length > 0 ? (
-        <Grid.Column>
-          {buttonResponseMessage.map((message) =>
-            message.status === 'error' ? (
-              <Message negative>
-                <Message.Header>An error occurred</Message.Header>
-                <Message.Content>{message.message}</Message.Content>
-              </Message>
-            ) : (
-              <Message positive>
-                <Message.Header>Success</Message.Header>
-                <Message.Content>{message.message}</Message.Content>
-              </Message>
-            )
-          )}
-        </Grid.Column>
-      ) : null
-
-    const changesAlreadyAppliedContent =
-      change.status === 'applied' ? (
-        <Grid.Column>
-          <Message positive>
-            <Message.Header>Change already applied</Message.Header>
-            <p>This change has already been applied and cannot be modified.</p>
-          </Message>
-        </Grid.Column>
-      ) : null
-
-    const changesAlreadyCancelledContent =
-      change.status === 'cancelled' ? (
-        <Grid.Column>
-          <Message negative>
-            <Message.Header>Change cancelled</Message.Header>
-            <p>This change has been cancelled and cannot be modified.</p>
-          </Message>
-        </Grid.Column>
-      ) : null
-
-    const changesExpiredContent =
-      change.status === 'expired' ? (
-        <Grid.Column>
-          <Message negative>
-            <Message.Header>Change expired</Message.Header>
-            <p>This change has expired and cannot be modified.</p>
-          </Message>
-        </Grid.Column>
       ) : null
 
     const changeReadOnly =
@@ -276,6 +230,8 @@ class InlinePolicyChangeComponent extends Component {
 
     const policyChangeContent = change ? (
       <Grid fluid>
+        <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
+
         <Grid.Row columns='equal'>
           <Grid.Column>
             <Header
@@ -293,6 +249,7 @@ class InlinePolicyChangeComponent extends Component {
             />
           </Grid.Column>
         </Grid.Row>
+
         <Grid.Row>
           <Grid.Column>
             <MonacoDiffComponent
@@ -317,16 +274,18 @@ class InlinePolicyChangeComponent extends Component {
           <Grid.Column>{messagesToShow}</Grid.Column>
         </Grid.Row>
         <Grid.Row columns='equal'>
-          <Grid.Column>{responseMessagesToShow}</Grid.Column>
+          <Grid.Column>
+            <ResponseNotification response={buttonResponseMessage} />
+          </Grid.Column>
         </Grid.Row>
         <Grid.Row columns='equal'>
           {applyChangesButton}
           {updateChangesButton}
           {cancelChangesButton}
-          {readOnlyInfo}
-          {changesAlreadyAppliedContent}
-          {changesAlreadyCancelledContent}
-          {changesExpiredContent}
+          <ReadOnlyNotification isReadonlyInfo={isReadonlyInfo} />
+          <AppliedNotification isApplied={change.status === 'applied'} />
+          <CancelledNotification isCancelled={change.status === 'cancelled'} />
+          <ExpiredNotification isExpired={change.status === 'expired'} />
         </Grid.Row>
       </Grid>
     ) : null
