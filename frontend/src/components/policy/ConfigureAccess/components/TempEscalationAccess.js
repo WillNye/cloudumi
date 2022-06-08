@@ -71,7 +71,7 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
           Users who are members of the following groups will be able to request
           temporary access to this role. Approvals and notifications can be
           globally configured on the&nbsp;
-          <Link to='/config'>Config</Link> page.
+          <Link to='/settings'>settings</Link> page.
         </Header.Subheader>
       </Header>
 

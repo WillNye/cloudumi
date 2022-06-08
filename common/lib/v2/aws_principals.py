@@ -25,6 +25,7 @@ from common.models import (
     EligibleRolesModel,
     EligibleRolesModelArray,
     ExtendedAwsPrincipalModel,
+    PrincipalModelRoleAccessConfig,
     PrincipalModelTearConfig,
     S3DetailsModel,
     S3Error,
@@ -211,6 +212,68 @@ async def get_user_details(
         )
 
 
+async def get_noq_authorization_tag_groups(role, host: str) -> dict:
+
+    is_enabled = config.get_host_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.enabled",
+        host,
+        False,
+    )
+
+    authourized_tags = config.get_host_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.authorized_groups_tags",
+        host,
+        [],
+    )
+    cli_authourized_tags = config.get_host_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.authorized_groups_cli_only_tags",
+        host,
+        [],
+    )
+
+    role_access_data = {
+        "default_noq_authorized_tag": None,
+        "default_noq_authorized_cli_tag": None,
+        "is_valid_config": True,
+        "cli_authourized_groups": [],
+        "authourized_groups": [],
+    }
+
+    if is_enabled and len(cli_authourized_tags) and len(authourized_tags):
+        authourized_groups = []
+        cli_authourized_groups = []
+
+        role_access_data["default_noq_authorized_tag"] = authourized_tags[0]
+        role_access_data["default_noq_authorized_cli_tag"] = cli_authourized_tags[0]
+
+        for groups_tag in authourized_tags:
+            authourized_groups.append(
+                {
+                    "tag_name": groups_tag,
+                    "web_access": True,
+                    "source": "noq",
+                    "value": get_resource_tag(role, groups_tag, True, set()),
+                }
+            )
+        role_access_data["authourized_groups"] = authourized_groups
+
+        for groups_tag in cli_authourized_tags:
+            cli_authourized_groups.append(
+                {
+                    "tag_name": groups_tag,
+                    "web_access": False,
+                    "source": "noq",
+                    "value": get_resource_tag(role, groups_tag, True, set()),
+                }
+            )
+
+        role_access_data["cli_authourized_groups"] = cli_authourized_groups
+    else:
+        role_access_data["is_valid_config"] = False
+
+    return role_access_data
+
+
 async def get_role_details(
     account_id: str,
     role_name: str,
@@ -231,6 +294,7 @@ async def get_role_details(
         return None
     if extended:
         elevated_access_config = None
+        role_access_config = None
         template = await get_role_template(arn, host)
         tags = role["policy"]["Tags"]
         if config.get_host_specific_key(
@@ -246,6 +310,18 @@ async def get_role_details(
                     active_users=list(active_users),
                     supported_groups=list(supported_groups),
                 )
+
+        if is_admin_request:
+            role_access_data = await get_noq_authorization_tag_groups(role, host)
+            role_access_config = PrincipalModelRoleAccessConfig(
+                noq_authorized_tag=role_access_data["default_noq_authorized_tag"],
+                noq_authorized_cli_tag=role_access_data[
+                    "default_noq_authorized_cli_tag"
+                ],
+                noq_authorized_cli_groups=role_access_data["cli_authourized_groups"],
+                noq_authorized_groups=role_access_data["authourized_groups"],
+                is_valid_config=role_access_data["is_valid_config"],
+            )
 
         principal = ExtendedAwsPrincipalModel(
             name=role_name,
@@ -269,6 +345,7 @@ async def get_role_details(
             managed_policies=role["policy"]["AttachedManagedPolicies"],
             tags=tags,
             elevated_access_config=elevated_access_config,
+            role_access_config=role_access_config,
             templated=bool(template),
             template_link=template,
             created_time=role["policy"].get("CreateDate"),
