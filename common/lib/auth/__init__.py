@@ -280,7 +280,6 @@ async def get_extended_request_account_ids(
     for change in extended_request.changes.changes:
         arn = change.principal.principal_arn
         if change.change_type in [
-            "managed_resource",
             "resource_policy",
             "sts_resource_policy",
         ]:
@@ -297,7 +296,6 @@ async def get_extended_request_allowed_approvers(
     for change in extended_request.changes.changes:
         arn = change.principal.principal_arn
         if change.change_type in [
-            "managed_resource",
             "resource_policy",
             "sts_resource_policy",
         ]:
@@ -350,7 +348,6 @@ async def populate_approve_reject_policy(
     for change in extended_request.changes.changes:
         arn = change.principal.principal_arn
         if change.change_type in [
-            "managed_resource",
             "resource_policy",
             "sts_resource_policy",
         ]:
