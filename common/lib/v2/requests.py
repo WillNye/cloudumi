@@ -14,7 +14,7 @@ from policy_sentry.util.arns import parse_arn
 
 from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.role.models import IAMRole
-from common.aws.utils import get_resource_tag
+from common.aws.utils import ResourceSummary, get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -499,6 +499,18 @@ async def is_request_eligible_for_auto_approval(
     log_data["eligible_for_auto_approval"] = is_eligible
     log.info(log_data)
     return is_eligible
+
+
+async def update_resource_in_dynamo(host: str, arn: str, force_refresh: bool):
+    resource_summary = await ResourceSummary.set(host, arn)
+
+    if resource_summary.resource_type == "role":
+        await IAMRole.get(
+            host,
+            resource_summary.account,
+            resource_summary.arn,
+            force_refresh=force_refresh,
+        )
 
 
 async def generate_resource_policies(
@@ -2520,10 +2532,7 @@ async def apply_resource_policy_change(
                     change.policy.policy_document, escape_forward_slashes=False
                 ),
             )
-            # force refresh the role for which we just changed the assume role policy doc
-            await IAMRole.get(
-                host, resource_account, change.arn, force_refresh=force_refresh
-            )
+            await update_resource_in_dynamo(host, change.arn, force_refresh)
         response.action_results.append(
             ActionResult(
                 status="success",
@@ -2657,16 +2666,9 @@ async def maybe_approve_reject_request(
             visible=False,
         )
         await send_communications_policy_change_request_v2(extended_request, host)
-        account_id = await get_resource_account(
-            extended_request.principal.principal_arn, host
+        await update_resource_in_dynamo(
+            host, extended_request.principal.principal_arn, force_refresh
         )
-        if extended_request.principal.principal_arn.startswith("aws:aws:iam::"):
-            await IAMRole.get(
-                host,
-                account_id,
-                extended_request.principal.principal_arn,
-                force_refresh=force_refresh,
-            )
     return response
 
 
@@ -2706,6 +2708,7 @@ async def parse_and_apply_policy_request_modification(
 
     response = PolicyRequestModificationResponseModel(errors=0, action_results=[])
     request_changes = policy_request_model.modification_model
+    specific_change_arn = None
 
     if request_changes.command in [Command.update_change, Command.cancel_request]:
 
@@ -2995,19 +2998,11 @@ async def parse_and_apply_policy_request_modification(
                 await apply_changes_to_role(
                     extended_request, response, user, host, specific_change.id
                 )
-                account_id = await get_resource_account(
-                    extended_request.principal.principal_arn,
-                    host,
-                )
-                await IAMRole.get(
-                    host,
-                    account_id,
-                    extended_request.principal.principal_arn,
-                    force_refresh=force_refresh,
+                await update_resource_in_dynamo(
+                    host, extended_request.principal.principal_arn, force_refresh
                 )
             if specific_change.status == Status.applied:
                 # Change was successful, update in dynamo
-                account_id = specific_change_arn.split(":")[4]
                 success_message = "Successfully updated change in dynamo"
                 error_message = "Error updating change in dynamo"
                 specific_change.updated_by = user
@@ -3021,9 +3016,8 @@ async def parse_and_apply_policy_request_modification(
                     error_message,
                     visible=False,
                 )
-                await IAMRole.get(
-                    host, account_id, specific_change_arn, force_refresh=True
-                )
+                if specific_change_arn:
+                    await update_resource_in_dynamo(host, specific_change_arn, True)
         else:
             raise NoMatchingRequest(
                 "Unable to find a compatible non-applied change with "
@@ -3176,14 +3170,8 @@ async def parse_and_apply_policy_request_modification(
             visible=False,
         )
         await send_communications_policy_change_request_v2(extended_request, host)
-        account_id = await get_resource_account(
-            extended_request.principal.principal_arn, host
-        )
-        await IAMRole.get(
-            host,
-            account_id,
-            extended_request.principal.principal_arn,
-            force_refresh=force_refresh,
+        await update_resource_in_dynamo(
+            host, extended_request.principal.principal_arn, force_refresh
         )
 
     response = await maybe_approve_reject_request(

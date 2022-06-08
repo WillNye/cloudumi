@@ -19,6 +19,7 @@ import {
   ReadOnlyNotification,
   ResponseNotification,
 } from './notificationMessages'
+import MonacoDiffComponent from './MonacoDiffComponent'
 import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 class PermissionsBoundaryChangeComponent extends Component {
@@ -73,6 +74,29 @@ class PermissionsBoundaryChangeComponent extends Component {
       'cancel_change'
     )
     cancelChange()
+  }
+
+  onLintError(lintErrors) {
+    if (lintErrors.length > 0) {
+      this.setState({
+        messages: lintErrors,
+        isError: true,
+      })
+    } else {
+      this.setState({
+        messages: [],
+        isError: false,
+      })
+    }
+  }
+
+  onValueChange(newValue) {
+    const { change } = this.state
+    this.setState({
+      newStatement: newValue,
+      buttonResponseMessage: [],
+    })
+    this.updatePolicyDocument(change.id, newValue)
   }
 
   render() {
@@ -166,6 +190,22 @@ class PermissionsBoundaryChangeComponent extends Component {
         <Grid.Row columns='equal'>
           <Grid.Column>
             <ResponseNotification response={buttonResponseMessage} />
+          </Grid.Column>
+        </Grid.Row>
+        <Grid.Row>
+          <Grid.Column>
+            <MonacoDiffComponent
+              oldValue={''}
+              newValue={''}
+              readOnly={true}
+              onLintError={this.onLintError}
+              onValueChange={this.onValueChange}
+              showIac={true}
+              pythonScript={change?.python_script}
+              enableJSON={false}
+              enableTerraform={false}
+              enableCloudFormation={false}
+            />
           </Grid.Column>
         </Grid.Row>
         <Grid.Row columns='equal'>

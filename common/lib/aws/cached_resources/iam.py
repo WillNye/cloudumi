@@ -99,6 +99,9 @@ async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
     """
     from common.aws.utils import get_resource_tag
 
+    if not config.get_host_specific_key("elevated_access.enabled", host, False):
+        return []
+
     active_tear_roles = set()
     all_iam_roles = await IAMRole.query(host)
     tear_users_tag = get_active_tear_users_tag(host)
@@ -125,6 +128,9 @@ async def get_tear_supported_roles_by_tag(
     :return: A list of roles that can be used as part of the TEAR workflow
     """
     from common.aws.utils import get_resource_tag
+
+    if not config.get_host_specific_key("elevated_access.enabled", host, False):
+        return []
 
     escalated_roles = dict()
     all_iam_roles = await IAMRole.query(host)

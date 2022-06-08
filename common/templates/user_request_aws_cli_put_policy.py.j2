@@ -1,0 +1,16 @@
+# Add effective permissions
+
+{% if resource_type == "s3" -%}
+aws s3api put-bucket-policy --bucket {{ resource_id }} --policy "{{ policy_document }}" || { echo 'my_command failed' ; exit 1; }
+{% elif resource_type == "sns" -%}
+aws sns set-topic-attributes --topic-arn {{ resource_id }} --attribute-name 'Policy' --attribute-value '{{ policy_document }}' || { echo 'my_command failed' ; exit 1; }
+{% elif resource_type == "sqs" -%}
+# Does not work right now
+aws sqs set-queue-attributes --queue-url {{ resource_id }} --attributes  "{{ policy_document }}" || { echo 'my_command failed' ; exit 1; }
+{% elif resource_type == "iam" -%}
+aws iam update-assume-role-policy --role-name {{ resource_id }} --policy-document "{{ policy_document }}" || { echo 'my_command failed' ; exit 1; }
+{% elif resource_type == "role" -%}
+aws iam put-role-policy --role-name {{ resource_id }} --policy-name {{ policy_name }} --policy-document "{{ policy_document }}" || { echo 'my_command failed' ; exit 1; }
+{% elif resource_type == "user" -%}
+aws iam put-user-policy --user-name {{ resource_id }} --policy-name {{ policy_name }} --policy-document "{{ policy_document }}" || { echo 'my_command failed' ; exit 1; }
+{% endif %}
