@@ -68,8 +68,8 @@ from common.lib.aws.utils import (
     cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
-    remove_all_expired_requests,
     remove_expired_host_requests,
+    remove_expired_requests_for_hosts,
 )
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
@@ -2700,7 +2700,7 @@ def handle_expired_policies(self, host: str):
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
 def handle_expired_policies_for_all_hosts() -> Dict:
-    return async_to_sync(remove_all_expired_requests)()
+    return async_to_sync(remove_expired_requests_for_hosts)(get_all_hosts())
 
 
 schedule_30_minute = timedelta(seconds=1800)
