@@ -179,7 +179,7 @@ async def fetch_resource_details(
         return await fetch_sns_topic(account_id, region, resource_name, host, user)
     elif resource_type == "managed_policy":
         return await fetch_managed_policy_details(
-            account_id, resource_name, path, host, user
+            account_id, resource_name, host, user, path
         )
     else:
         return {}
@@ -1355,7 +1355,7 @@ async def remove_expired_request_changes(
         principal_arn = change.principal.principal_arn
 
         if change.change_type in [
-            "managed_resource",
+            "managed_policy_resource",
             "resource_policy",
             "sts_resource_policy",
         ]:
