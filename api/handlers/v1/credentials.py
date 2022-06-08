@@ -25,6 +25,7 @@ class CredentialsSchema(Schema):
     account = fields.Str()
     console_only = fields.Boolean(default=False, missing=False)
     no_ip_restrictions = fields.Boolean(default=False, missing=False)
+    read_only = fields.Boolean(default=False, missing=False)
     custom_ip_restrictions = fields.List(fields.Str(), required=False)
 
     @validates_schema
@@ -448,6 +449,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             user_role=False,
             account_id=None,
             custom_ip_restrictions=request.get("custom_ip_restrictions"),
+            read_only=request.get("read_only"),
         )
         self.set_header("Content-Type", "application/json")
         credentials.pop("ResponseMetadata", None)
@@ -545,6 +547,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 enforce_ip_restrictions=enforce_ip_restrictions,
                 user_role=user_role,
                 account_id=account_id,
+                read_only=request.get("read_only"),
             )
         except Exception as e:
             log_data["message"] = "Unable to get credentials for user"
@@ -672,6 +675,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     enforce_ip_restrictions=ip_restrictions_enabled,
                     user_role=user_role,
                     account_id=account_id,
+                    read_only=request.get("read_only"),
                 )
 
         if not credentials:
