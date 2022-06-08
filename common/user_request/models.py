@@ -287,6 +287,8 @@ class IAMRequest(NoqModel):
                 continue
             elif change_type == "permissions_boundary":  # Defer
                 continue
+            else:
+                continue
 
             if resource_summary.resource_type not in disabled_cli_cmd_map.get(
                 change_type, []
