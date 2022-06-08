@@ -62,6 +62,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             config.get_host_specific_key("aws.region", host, config.region),
         )
         redirect = arguments.get("redirect")
+        read_only = arguments.get("read_only", False)
         log_data = {
             "user": self.user,
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
@@ -173,6 +174,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 region=region,
                 user_role=user_role,
                 account_id=account_id,
+                read_only=read_only,
             )
         except Exception as e:
             log_data["message"] = f"Exception generating AWS console URL: {str(e)}"
