@@ -290,7 +290,26 @@ async def get_extended_request_account_ids(
     return accounts
 
 
-async def get_account_deleagted_admins(account_id, host):
+async def get_extended_request_allowed_approvers(
+    extended_request: ExtendedRequestModel, host: str
+):
+    allowed_admins = set()
+    for change in extended_request.changes.changes:
+        arn = change.principal.principal_arn
+        if change.change_type in [
+            "managed_resource",
+            "resource_policy",
+            "sts_resource_policy",
+        ]:
+            arn = change.arn
+
+        account_id = await get_resource_account(arn, host)
+        admins = await get_account_delegated_admins(account_id, host)
+        allowed_admins.update(admins)
+    return list(allowed_admins)
+
+
+async def get_account_delegated_admins(account_id, host):
     spoke_role_adapter = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", host)
@@ -340,7 +359,7 @@ async def populate_approve_reject_policy(
         account_id = await get_resource_account(arn, host)
 
         is_owner = await can_admin_policies(user, groups, host, [account_id])
-        allowed_admins = await get_account_deleagted_admins(account_id, host)
+        allowed_admins = await get_account_delegated_admins(account_id, host)
         request_config[change.id] = {
             "can_approve_policy": False if not is_owner else True,
             "allowed_admins": allowed_admins,
