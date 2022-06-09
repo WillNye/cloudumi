@@ -506,7 +506,7 @@ pymdown-extensions==9.3
     # via mkdocs-material
 pynacl==1.5.0
     # via pygithub
-pynamodax==6.1.0
+pynamodax==6.1.1
     # via -r ./common/requirements.in
 pyparsing==3.0.7
     # via
