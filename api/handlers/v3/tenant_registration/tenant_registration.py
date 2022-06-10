@@ -367,9 +367,7 @@ async def create_user_pool_client(user_pool_id, dev_domain_url):
             f"{dev_domain_url}/auth",
             f"{dev_domain_url}/oauth2/idpresponse",
         ],
-        LogoutURLs=[
-            # f'{dev_domain_url}/logout',
-        ],
+        LogoutURLs=[f"{dev_domain_url}" f"{dev_domain_url}/"],
         # DefaultRedirectURI=f'{dev_domain_url}/',
         AllowedOAuthFlows=[
             "code",
@@ -522,6 +520,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         dev_mode = config.get("_global_.development")
 
         dev_domain = data.get("domain", "").replace(".", "_")
+        cognito_url_domain = data.get("domain", "").replace(".", "-")
         available = False
         if dev_domain:
             if not config.get_tenant_static_config_from_dynamo(dev_domain):
@@ -648,6 +647,9 @@ get_user_by_oidc_settings:
   access_token_response_key: access_token
   access_token_audience: null
 auth:
+  extra_auth_cookies:
+    - AWSELBAuthSessionCookie
+  logout_redirect_url: https://{cognito_url_domain}.auth.{region}.amazoncognito.com/logout?client_id={cognito_client_id}&logout_uri={dev_domain_url}
   get_user_by_oidc: true
   force_redirect_to_identity_provider: false
   # get_user_by_password: true
