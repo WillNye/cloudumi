@@ -1566,7 +1566,11 @@ async def populate_old_managed_policies(
 
 async def populate_cross_account_resource_policy_for_change(
     change, extended_request, log_data, host: str, user, force_refresh: bool = False
-):
+) -> bool:
+    """
+    This function generates the action resource (or sts Assume Role Trust) policies associated with a policy
+    request. This modifies extended_request in memory, and returns a boolean.
+    """
     resource_policies_changed = False
     supported_resource_policies = config.get_host_specific_key(
         "policies.supported_resource_types_for_policy_application",
@@ -1658,7 +1662,7 @@ async def populate_cross_account_resource_policy_for_change(
                             ),
                         }
                     )
-                    return
+                    return False
                 old_policy = role.assume_role_policy_document
 
         old_policy_sha256 = sha256(
@@ -1666,7 +1670,7 @@ async def populate_cross_account_resource_policy_for_change(
         ).hexdigest()
         if change.old_policy and old_policy_sha256 == change.old_policy.policy_sha256:
             # Old policy hasn't changed since last refresh of page, no need to generate resource policy again
-            return
+            return False
         # Otherwise it has changed
         resource_policies_changed = True
         change.old_policy = PolicyModel(
@@ -1692,12 +1696,15 @@ async def populate_cross_account_resource_policy_for_change(
 
                     if change.arn in statement.get("Resource"):
                         statement_actions = statement.get("Action", [])
+                        # Normalize statement actions into a list
                         statement_actions = (
                             statement_actions
                             if isinstance(statement_actions, list)
                             else [statement_actions]
                         )
                         for action in statement_actions:
+                            # Only grab actions in the policy statement that are relevant for the resource.
+                            # Ex: Only grab "sqs:" actions if the resource is an sqs queue
                             if action.startswith(f"{resource_type}:") or (
                                 resource_type == "iam" and action.startswith("sts")
                             ):
