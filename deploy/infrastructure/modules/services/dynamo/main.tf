@@ -693,7 +693,8 @@ module "table_autoscaling_9" {
 module "table_autoscaling_10" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.cloudumi_iamroles_multitenant.id
+  table_name         = aws_dynamodb_table.cloudumi_iamroles_multitenant.id
+  write_min_capacity = 10
 }
 
 module "table_autoscaling_11" {
