@@ -41,7 +41,7 @@ class ResourceSummary:
         region: str,
         resource_type: str,
         name: str,
-        resource_path: str = None,
+        parent_name: str = None,
     ):
         self.host = host
         self.arn = arn
@@ -51,7 +51,7 @@ class ResourceSummary:
         self.region = region
         self.resource_type = resource_type
         self.name = name
-        self.path = resource_path
+        self.parent_name = parent_name
 
     @classmethod
     async def set(cls, host: str, arn: str) -> "ResourceSummary":
@@ -62,19 +62,27 @@ class ResourceSummary:
 
         parsed_arn = parse_arn(arn)
         parsed_arn["arn"] = arn
+        account_provided = bool(parsed_arn["account"])
 
-        if not parsed_arn["account"]:
+        if not account_provided:
             parsed_arn["account"] = await get_resource_account(arn, host)
             if not parsed_arn["account"]:
                 raise ValueError("Resource account not found")
 
         if parsed_arn["service"] == "s3":
-            parsed_arn["name"] = parsed_arn.pop("resource", "")
-            parsed_arn["resource_type"] = parsed_arn["service"]  # Maybe bucket?
+            parsed_arn["name"] = parsed_arn.pop("resource_path", None)
+            if not account_provided:  # Either a bucket or an object
+                if parsed_arn["name"]:
+                    bucket_name = parsed_arn.pop("resource", "")
+                    parsed_arn["resource_type"] = "object"
+                    parsed_arn["parent_name"] = bucket_name
+                else:
+                    bucket_name = parsed_arn.pop("resource", "")
+                    parsed_arn["resource_type"] = "bucket"
+                    parsed_arn["name"] = bucket_name
 
-            if not parsed_arn["region"]:
                 parsed_arn["region"] = await get_bucket_location_with_fallback(
-                    parsed_arn["name"], parsed_arn["account"], host
+                    bucket_name, parsed_arn["account"], host
                 )
         else:
             if not parsed_arn["region"]:
