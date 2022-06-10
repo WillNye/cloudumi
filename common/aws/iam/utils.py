@@ -1,10 +1,26 @@
 import copy
+import json
+import os
+import pathlib
 
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
 from common.models import SpokeAccount
+
+with open(
+    os.path.join(
+        pathlib.Path(__file__).parent.resolve(), "aws_resource_permission_map.json"
+    )
+) as f:
+    RESOURCE_PERMISSION_MAP = json.load(f)
+
+
+def get_supported_resource_permissions(service: str, resource_type: str = "all"):
+    if service == resource_type:
+        resource_type = "all"
+    return RESOURCE_PERMISSION_MAP[service][resource_type]
 
 
 def get_host_iam_conn(
