@@ -1626,6 +1626,8 @@ async def populate_cross_account_resource_policy_for_change(
     request. This modifies extended_request in memory, and returns a boolean.
     """
     resource_policies_changed = False
+    # TODO: Update this list to fully formed resources instead of the service. e.g. s3:bucket, sqs:queue, sns:topic
+    #   This will require refactor for all things that reference this.
     supported_resource_policies = config.get_host_specific_key(
         "policies.supported_resource_types_for_policy_application",
         host,
@@ -1653,71 +1655,64 @@ async def populate_cross_account_resource_policy_for_change(
         change.change_type == "resource_policy"
         or change.change_type == "sts_resource_policy"
     ):
-        # resource policy change or sts assume role policy change
-        resource_arn_parsed = parse_arn(change.arn)
-        resource_type = resource_arn_parsed["service"]
-        resource_name = resource_arn_parsed["resource"]
-        resource_region = resource_arn_parsed["region"]
-        resource_account = resource_arn_parsed["account"]
-        if not resource_account:
-            resource_account = await get_resource_account(change.arn, host)
-        if resource_type in supported_resource_policies:
-            change.supported = True
-        elif (
-            change.change_type == "sts_resource_policy"
-            and sts_resource_policy_supported
-        ):
-            change.supported = True
-        else:
-            change.supported = False
-
-        # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
-        # force the change to be not supported and default policy
-        if not resource_account:
+        try:
+            resource_summary = await ResourceSummary.set(host, change.arn)
+        except ValueError:
             change.supported = False
             old_policy = default_policy
             log_data["message"] = "Resource account couldn't be determined"
             log_data["resource_arn"] = change.arn
             log.warning(log_data)
-        elif resource_account not in all_accounts.keys():
-            # if we see the resource account, but it is not an account that we own
-            change.supported = False
-            old_policy = default_policy
-            log_data[
-                "message"
-            ] = "Resource account doesn't belong to organization's accounts"
-            log_data["resource_arn"] = change.arn
-            log.warning(log_data)
         else:
-            if change.change_type == "resource_policy":
-                old_policy = await get_resource_policy(
-                    account=resource_account,
-                    resource_type=resource_type,
-                    name=resource_name,
-                    region=resource_region,
-                    host=host,
-                    user=user,
-                )
+            # Right now supported_resource_policies is actually the service
+            if resource_summary.service in supported_resource_policies:
+                change.supported = True
+            elif (
+                change.change_type == "sts_resource_policy"
+                and sts_resource_policy_supported
+            ):
+                change.supported = True
             else:
-                role_name = resource_arn_parsed["resource_path"].split("/")[-1]
-                role = await get_role_details(
-                    resource_account,
-                    role_name,
-                    host,
-                    extended=True,
-                    force_refresh=force_refresh,
-                )
-                if not role:
-                    log.error(
-                        {
-                            **log_data,
-                            "message": (
-                                "Unable to retrieve role. Won't attempt to make cross-account policy."
-                            ),
-                        }
+                change.supported = False
+
+            if resource_summary.account not in all_accounts.keys():
+                # if we see the resource account, but it is not an account that we own
+                change.supported = False
+                old_policy = default_policy
+                log_data[
+                    "message"
+                ] = "Resource account doesn't belong to organization's accounts"
+                log_data["resource_arn"] = change.arn
+                log.warning(log_data)
+            else:
+                if change.change_type == "resource_policy":
+                    old_policy = await get_resource_policy(
+                        account=resource_summary.account,
+                        resource_type=resource_summary.service,
+                        name=resource_summary.name,
+                        region=resource_summary.region,
+                        host=host,
+                        user=user,
                     )
-                    return False
-                old_policy = role.assume_role_policy_document
+                else:
+                    role = await get_role_details(
+                        resource_summary.account,
+                        resource_summary.name,
+                        host,
+                        extended=True,
+                        force_refresh=force_refresh,
+                    )
+                    if not role:
+                        log.error(
+                            {
+                                **log_data,
+                                "message": (
+                                    "Unable to retrieve role. Won't attempt to make cross-account policy."
+                                ),
+                            }
+                        )
+                        return False
+                    old_policy = role.assume_role_policy_document
 
         old_policy_sha256 = sha256(
             json.dumps(old_policy, escape_forward_slashes=False).encode()
@@ -1759,8 +1754,9 @@ async def populate_cross_account_resource_policy_for_change(
                         for action in statement_actions:
                             # Only grab actions in the policy statement that are relevant for the resource.
                             # Ex: Only grab "sqs:" actions if the resource is an sqs queue
-                            if action.startswith(f"{resource_type}:") or (
-                                resource_type == "iam" and action.startswith("sts")
+                            if (
+                                action.startswith(f"{resource_summary.service}:")
+                                or resource_summary.resource_type == "sts"
                             ):
                                 if change.change_type == "sts_resource_policy":
                                     # only supported actions allowed for sts resource policy
