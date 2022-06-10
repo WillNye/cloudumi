@@ -518,6 +518,7 @@ class Configuration(metaclass=Singleton):
             "elasticsearch": "ERROR",
             "nose": "CRITICAL",
             "parso.python.diff": "WARNING",
+            "pynamodb": "WARNING",
             "raven.base.client": "WARNING",
             "s3transfer": "CRITICAL",
             "spectator.HttpClient": "WARNING",

@@ -2,257 +2,307 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://docs.noq.dev/docs/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/iam/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/tasks/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/credential_management/alfred_integration/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/credential_management/aws_cli_credentials/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/credential_management/aws_console_temporary_credentials/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/credential_management/chrome_integration/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/credential_management/ip_restricted_credentials/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/credential_management/transitive_session_tags/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/autogenerate_x_account_permissions/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/automatically_approve_low_risk_requests/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/customizable_policy_requests/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/decentralized_request_management/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/permissions_are_crud/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/restrict_viewers_of_account_resources/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/self_service_permissions/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/temporary_policy_requests/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/permissions_management_and_request_framework/typeaheads_across_known_resources/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/planned/2fa_step_up/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/planned/automatic_permissions_generation/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/planned/breakglass_role_access/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/planned/multi_role_wizard_selection/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/planned/multi_tag_wizard_request/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/features/planned/pagerduty_integration/</loc>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/planned/unused_permissions_removal/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/resource_management/clone_role/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/features/resource_management/create_role/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/1_connect_hub_account/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/3_connect_spoke_accounts/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/4_update_account_names/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/5_enable_credential_brokering/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/6_automatically_update_trust_policies/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/7_enable_ip_restrictions/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/8_configure_weep/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/9_connect_eventbridge/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/access_aws_console_with_assumed_roles/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/download_and_configure_weep/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/enable_users_to_assume_roles/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/noq_administration/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/noq_usage/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/self_serve_permissions/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/getting_started/weep_cli_overview/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/</loc>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/accessibility/</loc>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/active-verbs/</loc>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/active-voice/</loc>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/clause-order/</loc>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/examples/</loc>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/link-text/</loc>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/tone/</loc>
+         <lastmod>2022-06-10</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.noq.dev/docs/reference/style_guide/write-to-user/</loc>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/swagger/swagger/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/weep/credential_process/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/weep/emulate_imds/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/weep/export_credentials_to_file/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/weep/precedence_of_credential_sources/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/weep/weep_emulate_ecs_credential_provider/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/weep/weep_export_credentials_to_environment_variables/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/weep/weep_features/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.noq.dev/docs/weep/weep_list_roles/</loc>
-         <lastmod>2022-05-27</lastmod>
+         <lastmod>2022-06-10</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
