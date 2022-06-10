@@ -367,7 +367,7 @@ async def create_user_pool_client(user_pool_id, dev_domain_url):
             f"{dev_domain_url}/auth",
             f"{dev_domain_url}/oauth2/idpresponse",
         ],
-        LogoutURLs=[f"{dev_domain_url}" f"{dev_domain_url}/"],
+        LogoutURLs=[f"{dev_domain_url}", f"{dev_domain_url}/"],
         # DefaultRedirectURI=f'{dev_domain_url}/',
         AllowedOAuthFlows=[
             "code",
