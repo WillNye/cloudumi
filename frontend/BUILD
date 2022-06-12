@@ -110,7 +110,8 @@ react_scripts(
         "start",
     ],
     env = {
-        "DISABLE_ESLINT_PLUGIN": "true"
+        "DISABLE_ESLINT_PLUGIN": "true",
+        "FRONTEND_SENTRY_DSN": "https://e84b0649eb8e4d6fb6a6d813ddd9cd5d@o1134078.ingest.sentry.io/6498623"
     },
     data = _RUNTIME_DEPS,
     tags = [
