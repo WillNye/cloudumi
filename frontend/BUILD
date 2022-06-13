@@ -111,7 +111,7 @@ react_scripts(
     ],
     env = {
         "DISABLE_ESLINT_PLUGIN": "true",
-        "FRONTEND_SENTRY_DSN": "https://e84b0649eb8e4d6fb6a6d813ddd9cd5d@o1134078.ingest.sentry.io/6498623"
+        "FRONTEND_SENTRY_DSN": "https://5f3b026abb7649fe8b41e903dcb5820f@sentry.noq.dev:4443/2"
     },
     data = _RUNTIME_DEPS,
     tags = [
