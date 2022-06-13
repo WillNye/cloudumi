@@ -70,4 +70,4 @@ _global_:
           - host: noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com
             port: 6379
   sentry:
-    dsn: https://f446f0f25a74440db6e211ebe73c05f9@o1134078.ingest.sentry.io/6188334
+    dsn: "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
