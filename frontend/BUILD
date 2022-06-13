@@ -67,6 +67,8 @@ _RUNTIME_DEPS = [
     "@npm//react-toastify",
     "@npm//semantic-ui-css",
     "@npm//semantic-ui-react",
+    "@npm//@sentry/react",
+    "@npm//@sentry/tracing",
     "@npm//survey-react",
     "@npm//yaml",
     "@npm//eslint-config-react-app",
