@@ -31,7 +31,6 @@ module "tenant_networking" {
   source = "./modules/services/networking"
 
   allowed_inbound_cidr_blocks = var.allowed_inbound_cidr_blocks
-  noq_employee_cidr_blocks    = var.noq_employee_cidr_blocks
   attributes                  = var.attributes
   cluster_id                  = local.cluster_id
   convert_case                = var.convert_case
