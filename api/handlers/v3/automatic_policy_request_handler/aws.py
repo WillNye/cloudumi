@@ -2,7 +2,12 @@ import tornado.escape
 
 from common.handlers.base import BaseAdminHandler
 from common.lib.policies import automatic_request
-from common.models import AutomaticPolicyRequest, Status3, WebResponse
+from common.models import (
+    AutomaticPolicyRequest,
+    ExtendedAutomaticPolicyRequest,
+    Status3,
+    WebResponse,
+)
 
 
 class AutomaticPolicyRequestHandler(BaseAdminHandler):
@@ -16,7 +21,8 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
             raise Exception("Role ARN not defined")
 
         # TODO: Add support to config and handle support for permission_flow. Options: auto_apply, auto_request, review
-        permission_flow = "auto_apply"
+        # permission_flow = "auto_apply"
+        permission_flow = data.get("permissions_flow", "review")
 
         policy_request = await automatic_request.create_policy_request(
             host, self.user, AutomaticPolicyRequest(**data)
@@ -51,6 +57,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
         allowed_statuses = [
             Status3.applied_and_failure.value,
             Status3.applied_and_success.value,
+            Status3.approved,
         ]
         policy_request = await automatic_request.get_policy_request(
             self.ctx.host, account_id, self.user, policy_request_id
@@ -58,6 +65,9 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
         if not policy_request:
             self.set_status(404, "Policy Request not found")
             return
+
+        if data.get("policy_request"):
+            policy_request = ExtendedAutomaticPolicyRequest(data.get("policy_request"))
 
         if not data["status"] in allowed_statuses:
             self.set_status(400, f"Status must be one of {allowed_statuses}")

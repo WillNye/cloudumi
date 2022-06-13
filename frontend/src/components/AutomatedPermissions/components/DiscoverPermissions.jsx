@@ -1,10 +1,11 @@
 import React from 'react'
 import { Segment, Dimmer, Loader } from 'semantic-ui-react'
+import AutomaticPermissionsList from '../AutomaticPermissionsList'
 
-const DiscoverPermissions = () => {
+const DiscoverPermissions = ({ policyRequests }) => {
   return (
     <>
-      <Segment placeholder vertical>
+      <Segment placeholder basic>
         <Dimmer active inverted>
           <Loader size='massive'>
             <p className='loader-text'>
@@ -24,6 +25,9 @@ const DiscoverPermissions = () => {
           role, and Weep will transparently retry the request without ever
           return an access denied error.
         </p>
+        {policyRequests.map((policyRequest) => (
+          <AutomaticPermissionsList policyRequest={policyRequest} />
+        ))}
       </Segment>
     </>
   )

@@ -16,6 +16,7 @@ const AutomatedPermissions = () => {
 
   const [selectedTab, setSelectedTab] = useState(TABS_ENUM.STEP_ONE)
   const [automatedPolicy, setAutomatedpolicy] = useState({})
+  const [policyRequests, setPolicyRequests] = useState([])
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -26,26 +27,15 @@ const AutomatedPermissions = () => {
       )
 
       if (resJson && resJson.count) {
-        const policyRequests = (resJson.data || []).filter(
-          ({ last_updated, status }) => {
-            const lastUpdated = DateTime.fromISO(last_updated)
-            const currentTime = DateTime.utc().minus({ seconds: 10 })
-            const hasExpired = lastUpdated < currentTime
-
-            if (hasExpired && APPLIED_POLICY_STATUSES.includes(status)) {
-              return false
-            }
-            return true
-          }
-        )
-
-        if (policyRequests.length) {
-          setAutomatedpolicy(policyRequests[0])
-          setSelectedTab(TABS_ENUM.STEP_TWO)
-        } else {
-          setSelectedTab(TABS_ENUM.STEP_ONE)
-          setAutomatedpolicy({})
-        }
+        const requests = resJson.data || []
+        setPolicyRequests(requests)
+        // if (policyRequests.length) {
+        //   setAutomatedpolicy(policyRequests[0])
+        //   setSelectedTab(TABS_ENUM.STEP_TWO)
+        // } else {
+        //   setSelectedTab(TABS_ENUM.STEP_ONE)
+        //   setAutomatedpolicy({})
+        // }
       } else {
         setSelectedTab(TABS_ENUM.STEP_ONE)
         setAutomatedpolicy({})
@@ -59,10 +49,10 @@ const AutomatedPermissions = () => {
 
   const renderComponent = useMemo(() => {
     if (selectedTab === TABS_ENUM.STEP_ONE) {
-      return <DiscoverPermissions />
+      return <DiscoverPermissions policyRequests={policyRequests} />
     }
     return <GeneratePermissions automatedPolicy={automatedPolicy} />
-  }, [selectedTab, automatedPolicy])
+  }, [selectedTab, automatedPolicy, policyRequests])
 
   return (
     <div>
