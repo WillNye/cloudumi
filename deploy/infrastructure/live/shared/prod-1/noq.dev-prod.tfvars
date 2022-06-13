@@ -44,7 +44,7 @@ redis_node_type = "cache.t3.small"
 
 profile = "noq_prod"
 # Sentry
-sentry_dsn = "https://b56872bca2c548cb9200121ae436b87d@o1134078.ingest.sentry.io/6181194"
+sentry_dsn = "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
 
 s3_access_log_bucket = "s3-access-logs.940552945933.us-west-2"
 
