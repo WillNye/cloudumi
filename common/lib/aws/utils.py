@@ -1321,7 +1321,7 @@ def allowed_to_sync_role(
 async def remove_expired_request_changes(
     extended_request: ExtendedRequestModel,
     host: str,
-    user: str,
+    user: Optional[str],
     force_refresh: bool = False,
 ) -> None:
     """

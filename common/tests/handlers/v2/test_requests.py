@@ -587,6 +587,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                                     "principal_arn": "arn:aws:iam::123456789012:role/RoleNumber1",
                                 },
                                 "change_type": "inline_policy",
+                                "cli_command": None,
                                 "resources": [],
                                 "version": "3.0",
                                 "status": "not_applied",
@@ -594,6 +595,7 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
                                 "updated_by": None,
                                 "new": True,
                                 "action": "attach",
+                                "python_script": None,
                                 "policy": {
                                     "version": None,
                                     "policy_document": {
