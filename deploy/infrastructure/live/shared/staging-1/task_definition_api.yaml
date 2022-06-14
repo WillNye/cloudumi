@@ -22,6 +22,8 @@ containerDefinitions:
     environment:
       - name: CONFIG_LOCATION
         value: s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
+      - name: FRONTEND_SENTRY_DSN
+        value: "https://5f3b026abb7649fe8b41e903dcb5820f@sentry.noq.dev:4443/2"
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
     dnsServers: []

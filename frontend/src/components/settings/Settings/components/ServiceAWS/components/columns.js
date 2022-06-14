@@ -53,7 +53,7 @@ export const spokeAccountsColumns = ({ handleClick }) => [
     width: 80,
   },
   {
-    Header: 'Hub Role ARN',
+    Header: 'Spoke Role ARN',
     accessor: 'role_arn',
   },
   {

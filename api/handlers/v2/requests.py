@@ -690,6 +690,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             # Request format is not compatible with this endpoint version
             raise InvalidRequestParameter("Request with that ID is not a v2 request")
 
+        await request.set_commands_for_changes()
         extended_request = ExtendedRequestModel.parse_obj(
             request.extended_request.dict()
         )

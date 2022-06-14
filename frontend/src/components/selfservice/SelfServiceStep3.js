@@ -160,6 +160,9 @@ class SelfServiceStep3 extends Component {
         onLintError={this.onLintError}
         onValueChange={this.onValueChange}
         readOnly={false}
+        enableJSON={true}
+        enableTerraform={false}
+        enableCloudFormation={false}
       />
     )
   }
@@ -481,6 +484,9 @@ class SelfServiceStep3 extends Component {
             renderSideBySide={true}
             policyName={this.state.policyName}
             principal={role.principal}
+            enableJSON={true}
+            enableTerraform={true}
+            enableCloudFormation={true}
           />
         </Segment>
         <Divider />

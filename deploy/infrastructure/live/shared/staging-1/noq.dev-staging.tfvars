@@ -30,21 +30,7 @@ tags = {
 noq_core = true
 
 allowed_inbound_cidr_blocks = [
-  "70.187.228.241/32", # Curtis
-  "75.164.48.220/32",
-  "141.239.104.37/32", # Kris
-  "41.190.131.30/32",  # Kayizzi
-  "75.164.90.80/32",   # Matt
-  "47.221.213.96/32",  # Will
-]
-
-noq_employee_cidr_blocks = [
-  "70.187.228.241/32", # Curtis
-  "75.164.48.220/32",
-  "141.239.104.37/32", # Kris
-  "41.190.131.30/32",  # Kayizzi
-  "75.164.90.80/32",   # Matt
-  "47.221.213.96/32",  # Will
+  "0.0.0.0/0"
 ]
 
 # Can be extended by adding regions to the list below
@@ -59,7 +45,7 @@ redis_node_type = "cache.t3.micro"
 
 profile = "noq_staging"
 # Sentry
-sentry_dsn = "https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191"
+sentry_dsn = "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
 
 s3_access_log_bucket = "s3-access-logs.259868150464.us-west-2"
 

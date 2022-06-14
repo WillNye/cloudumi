@@ -20,6 +20,7 @@ import {
   ReadOnlyNotification,
   ResponseNotification,
 } from './notificationMessages'
+import MonacoDiffComponent from './MonacoDiffComponent'
 import ResourceChangeApprovers from './ResourceChangeApprovers'
 
 const ResourceTagChangeComponent = (props) => {
@@ -176,6 +177,22 @@ const ResourceTagChangeComponent = (props) => {
       <Grid.Row columns='equal'>
         <Grid.Column>
           <ResponseNotification response={buttonResponseMessage} />
+        </Grid.Column>
+      </Grid.Row>
+      <Grid.Row>
+        <Grid.Column>
+          <MonacoDiffComponent
+            oldValue={''}
+            newValue={''}
+            readOnly={true}
+            onLintError={null}
+            onValueChange={null}
+            showIac={true}
+            pythonScript={change?.python_script}
+            enableJSON={false}
+            enableTerraform={false}
+            enableCloudFormation={false}
+          />
         </Grid.Column>
       </Grid.Row>
       <Grid.Row columns='equal'>

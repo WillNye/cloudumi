@@ -38,7 +38,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
   - Mac: `brew install bazelisk`
 - Optionally install ibazel: https://github.com/bazelbuild/bazel-watcher/releases
 - Optionally install pyenv: https://github.com/pyenv/pyenv#basic-github-checkout
-- Install python 3.8.x & dependencies (requirements-test.lock)
+- Install python 3.9.x & dependencies (requirements-test.lock)
 - Install tfsec: https://github.com/aquasecurity/tfsec#installation
 
 ## Quick Start

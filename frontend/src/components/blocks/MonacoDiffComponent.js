@@ -10,6 +10,7 @@ import {
   convertToTerraform,
 } from '../../helpers/utils'
 import { Menu } from 'semantic-ui-react'
+import { ReadOnlyPolicyMonacoEditor } from '../policy/PolicyMonacoEditor'
 
 const MonacoDiffComponent = (props) => {
   const monaco = useMonaco()
@@ -22,7 +23,9 @@ const MonacoDiffComponent = (props) => {
   const modifiedEditorRef = useRef()
   const [language, setLanguage] = useState('json')
   const [languageDetected, setLanguageDetected] = useState(false)
-  const [activeItem, setActiveItem] = useState('JSON')
+  const [activeItem, setActiveItem] = useState(
+    props?.enableJSON ? 'JSON' : null
+  )
 
   const onChange = (newValue) => {
     onValueChange(newValue)
@@ -93,30 +96,46 @@ const MonacoDiffComponent = (props) => {
     return (
       <div>
         <Menu pointing secondary>
-          <Menu.Item
-            name='JSON'
-            content='JSON'
-            active={activeItem === 'JSON'}
-            onClick={() => {
-              setActiveItem('JSON')
-            }}
-          ></Menu.Item>
-          <Menu.Item
-            name='Terraform'
-            content='Terraform'
-            active={activeItem === 'Terraform'}
-            onClick={() => {
-              setActiveItem('Terraform')
-            }}
-          ></Menu.Item>
-          <Menu.Item
-            name='CloudFormation'
-            content='CloudFormation'
-            active={activeItem === 'CloudFormation'}
-            onClick={() => {
-              setActiveItem('CloudFormation')
-            }}
-          ></Menu.Item>
+          {props?.enableJSON ? (
+            <Menu.Item
+              name='JSON'
+              content='JSON'
+              active={activeItem === 'JSON'}
+              onClick={() => {
+                setActiveItem('JSON')
+              }}
+            ></Menu.Item>
+          ) : null}
+          {props?.enableTerraform ? (
+            <Menu.Item
+              name='Terraform'
+              content='Terraform'
+              active={activeItem === 'Terraform'}
+              onClick={() => {
+                setActiveItem('Terraform')
+              }}
+            ></Menu.Item>
+          ) : null}
+          {props?.enableCloudFormation ? (
+            <Menu.Item
+              name='CloudFormation'
+              content='CloudFormation'
+              active={activeItem === 'CloudFormation'}
+              onClick={() => {
+                setActiveItem('CloudFormation')
+              }}
+            ></Menu.Item>
+          ) : null}
+          {props?.pythonScript ? (
+            <Menu.Item
+              name='Python'
+              content='Python'
+              active={activeItem === 'Python'}
+              onClick={() => {
+                setActiveItem('Python')
+              }}
+            ></Menu.Item>
+          ) : null}
         </Menu>
         {activeItem === 'JSON' ? (
           <DiffEditor
@@ -166,6 +185,17 @@ const MonacoDiffComponent = (props) => {
             alwaysConsumeMouseWheel={false}
           />
         ) : null}
+        {activeItem === 'Python' ? (
+          <ReadOnlyPolicyMonacoEditor
+            policy={props?.pythonScript}
+            json={false}
+            defaultLanguage={'python'}
+            width='100%'
+            height='500px'
+            theme={editorTheme}
+            alwaysConsumeMouseWheel={false}
+          />
+        ) : null}
       </div>
     )
   } else {
@@ -191,7 +221,7 @@ const MonacoDiffComponent = (props) => {
 // 2. newValue = new value for the diff
 // 3. readOnly = whether the new value should be readOnly or not
 // 4. onLintError = method that will be called whenever a lint error is detected
-// 5. onChange = method that will be called whenever a chance occurs to upate the value
+// 5. onChange = method that will be called whenever a chance occurs to update the value
 
 MonacoDiffComponent.propTypes = {
   oldValue: PropTypes.string.isRequired,

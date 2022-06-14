@@ -234,7 +234,6 @@ class TestModels(TestCase):
         assert self.test_key_list in host_config
         spoke_accounts = host_config.get(self.test_key_list, [])
         assert spoke_accounts[0].get("name") == "test_model"
-        assert async_to_sync(model_adapter.delete_list)()
 
     def test_store_with_multiple_items_into_array(self):
         model_adapter = (
@@ -248,7 +247,6 @@ class TestModels(TestCase):
         spoke_accounts = host_config.get(self.test_key_list, [])
         assert any(x for x in spoke_accounts if x.get("name") == "test_model_one")
         assert any(x for x in spoke_accounts if x.get("name") == "test_model_two")
-        assert async_to_sync(model_adapter.delete_list)()
 
     def test_store_with_single_item_into_array(self):
         model_adapter = (

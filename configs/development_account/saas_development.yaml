@@ -30,7 +30,7 @@ _global_:
     cluster_id: dev
   dynamodb_server: http://cloudumi-dynamodb:8005
   sentry:
-    dsn: "https://48e9f51e93044d4ab6c7180bb03bd8d7@o1134078.ingest.sentry.io/6187869"
+    dsn: "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
     traces_sample_rate: 1.0
   integrations:
     aws:
