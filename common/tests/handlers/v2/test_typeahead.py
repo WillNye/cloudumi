@@ -194,7 +194,7 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         self.assertIsInstance(result, SelfServiceTypeaheadModelArray)
         self.assertGreater(len(result.typeahead_entries), 15)
         expected_entry = SelfServiceTypeaheadModel(
-            account="default_account",
+            account="default_account_2",
             details_endpoint="/api/v2/roles/123456789012/RoleNumber5",
             display_text="RoleNumber5",
             icon="user",
