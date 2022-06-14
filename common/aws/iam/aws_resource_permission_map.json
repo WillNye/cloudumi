@@ -23862,7 +23862,6 @@
       "ReceiveMessage",
       "RemovePermission",
       "SendMessage",
-      "SetQueueAttributes",
       "TagQueue",
       "UntagQueue"
     ]
