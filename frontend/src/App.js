@@ -27,6 +27,7 @@ import IdentityUserEdit from './components/identity/User'
 import { Settings } from './components/settings/Settings'
 import AutomatedPermissions from './components/AutomatedPermissions'
 import { MainProvider } from './MainProvider'
+import AutomatedPermissionsReview from 'components/AutomatedPermissions/AutomatedPermissionsReview'
 
 function App() {
   return (
@@ -166,6 +167,12 @@ function App() {
           exact
           path='/automated_permissions'
           component={AutomatedPermissions}
+        />
+        <ProtectedRoute
+          key='automated_permissions'
+          exact
+          path='/automated_permissions/:accountId/:policyId'
+          component={AutomatedPermissionsReview}
         />
         <ProtectedRoute key='logout' exact path='/logout' component={Logout} />
         <Route key='login' exact path='/login' component={Login} />

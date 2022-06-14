@@ -1,102 +1,90 @@
 import React, { useState } from 'react'
 import {
   Accordion,
-  Icon,
   List,
   Button,
   Label,
   Divider,
-  Segment,
   Table,
+  Card,
 } from 'semantic-ui-react'
 import ReactJson from 'react-json-view'
+import { Link } from 'react-router-dom'
 
 const AutomaticPermissionsList = ({ policyRequest }) => {
-  console.log(policyRequest, '++++++++++++++++++++======================')
   const [isActive, setIsActive] = useState(false)
 
   return (
-    <Segment>
-      <List>
+    <Card fluid>
+      <Card.Content>
         <List.Item>
-          <List.Content>
-            <List.Header as='h4'>
-              {policyRequest.role}
-              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              <Label
-                size='small'
-                color={policyRequest.status === 'approved' ? 'green' : 'blue'}
+          <List.Content floated='left'>
+            <Card.Header as='h4'>
+              <Link
+                to={`automated_permissions/${policyRequest.account.account_id}/${policyRequest.id}`}
               >
-                {policyRequest.status}
-              </Label>
-            </List.Header>
-            <Table basic='very'>
-              <Table.Body>
-                {/* <Table.Row>
-                    <Table.Cell collapsing>arn</Table.Cell>
-                    <Table.Cell>{policyRequest.role}</Table.Cell>
-                  </Table.Row> */}
-                {/* <Table.Row>
-                    <Table.Cell>Status</Table.Cell>
-                    <Table.Cell>
-                      <Label
-                        size='small'
-                        color={
-                          policyRequest.status === 'approved' ? 'green' : 'blue'
-                        }
-                      >
-                        {policyRequest.status}
-                      </Label>
-                    </Table.Cell>
-                  </Table.Row> */}
-                {/* <Table.Row>
-                    <Table.Cell>Requester</Table.Cell>
-                    <Table.Cell>{policyRequest.user}</Table.Cell>
-                  </Table.Row> */}
-              </Table.Body>
-            </Table>
+                Access Denied: {policyRequest.account.name}
+              </Link>
+            </Card.Header>
+          </List.Content>
+          <List.Content floated='right'>
+            <Label
+              size='small'
+              color={policyRequest.status === 'approved' ? 'green' : 'blue'}
+            >
+              {policyRequest.status}
+            </Label>
           </List.Content>
         </List.Item>
+        <Divider horizontal />
 
-        {/* <Divider horizontal /> */}
+        <Table basic='very'>
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell collapsing>arn</Table.Cell>
+              <Table.Cell>
+                <div className='break-all'>{policyRequest.role}</div>
+              </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Account</Table.Cell>
+              <Table.Cell>{policyRequest.account.account_name}</Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Account Number</Table.Cell>
+              <Table.Cell>{policyRequest.account.account_id}</Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table>
 
-        <List.Item>
-          <List.Content>
-            <Accordion>
-              <Accordion.Title
-                as='h1'
-                active={isActive}
-                onClick={() => setIsActive(!isActive)}
-                content={<Label content='View Generated Policy' />}
-              ></Accordion.Title>
-              <Accordion.Content active={isActive}>
-                <Divider />
-
-                <ReactJson
-                  displayDataTypes={false}
-                  displayObjectSize={false}
-                  collapseStringsAfterLength={50}
-                  indentWidth={4}
-                  name={false}
-                  src={policyRequest.policy}
-                />
-                <Divider />
-              </Accordion.Content>
-            </Accordion>
-          </List.Content>
-        </List.Item>
-
+        <Accordion>
+          <Accordion.Title
+            active={isActive}
+            onClick={() => setIsActive(!isActive)}
+            content='View Generated Policy'
+          ></Accordion.Title>
+          <Accordion.Content active={isActive}>
+            <ReactJson
+              displayDataTypes={false}
+              displayObjectSize={false}
+              collapseStringsAfterLength={50}
+              indentWidth={4}
+              name={false}
+              src={policyRequest.policy}
+            />
+          </Accordion.Content>
+        </Accordion>
+      </Card.Content>
+      <Card.Content>
         <List.Item>
           <List.Content floated='left'>
             <div>Requested By: {policyRequest.user}</div>
-
             <p>
               Created:&nbsp;
               {policyRequest.event_time &&
                 new Date(policyRequest.event_time).toUTCString()}
             </p>
           </List.Content>
-
           <List.Content floated='right'>
             <Button.Group size='tiny'>
               <Button color='green'>Approve</Button>
@@ -105,9 +93,8 @@ const AutomaticPermissionsList = ({ policyRequest }) => {
             </Button.Group>
           </List.Content>
         </List.Item>
-        {/* </List.Item> */}
-      </List>
-    </Segment>
+      </Card.Content>
+    </Card>
   )
 }
 

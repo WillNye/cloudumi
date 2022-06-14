@@ -1,14 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react'
-import { DateTime } from 'luxon'
+import { Icon, Step } from 'semantic-ui-react'
 import { useAuth } from '../../auth/AuthProviderDefault'
 import DiscoverPermissions from './components/DiscoverPermissions'
 import GeneratePermissions from './components/GeneratePermissions'
-import Tabs from './components/Tabs'
-import {
-  TABS_ENUM,
-  APPLIED_POLICY_STATUSES,
-  TIME_PER_INTERVAL,
-} from './constants'
+import { TABS_ENUM, TIME_PER_INTERVAL } from './constants'
 import './index.css'
 
 const AutomatedPermissions = () => {
@@ -29,13 +24,6 @@ const AutomatedPermissions = () => {
       if (resJson && resJson.count) {
         const requests = resJson.data || []
         setPolicyRequests(requests)
-        // if (policyRequests.length) {
-        //   setAutomatedpolicy(policyRequests[0])
-        //   setSelectedTab(TABS_ENUM.STEP_TWO)
-        // } else {
-        //   setSelectedTab(TABS_ENUM.STEP_ONE)
-        //   setAutomatedpolicy({})
-        // }
       } else {
         setSelectedTab(TABS_ENUM.STEP_ONE)
         setAutomatedpolicy({})
@@ -56,7 +44,15 @@ const AutomatedPermissions = () => {
 
   return (
     <div>
-      <Tabs selectedTab={selectedTab} />
+      <Step.Group fluid>
+        <Step>
+          <Icon name='assistive listening systems' color='blue' />
+          <Step.Content>
+            <Step.Title>Discover Permissions</Step.Title>
+            <Step.Description>Listen for access denied errors</Step.Description>
+          </Step.Content>
+        </Step>
+      </Step.Group>
       {renderComponent}
     </div>
   )

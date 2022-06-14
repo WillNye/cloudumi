@@ -1,20 +1,20 @@
 import React from 'react'
-import { Segment, Dimmer, Loader } from 'semantic-ui-react'
+import { Segment, Loader, Divider, Header } from 'semantic-ui-react'
 import AutomaticPermissionsList from '../AutomaticPermissionsList'
 
 const DiscoverPermissions = ({ policyRequests }) => {
   return (
     <>
-      <Segment placeholder basic>
-        <Dimmer active inverted>
-          <Loader size='massive'>
-            <p className='loader-text'>
-              <b> Listening for Access Denied errors</b>
-            </p>
-          </Loader>
-        </Dimmer>
+      <Segment size='massive' basic>
+        <Divider horizontal />
+        <Loader active size='massive'>
+          <p className='loader-text'>
+            <b> Listening for Access Denied errors</b>
+          </p>
+        </Loader>
+        <Divider horizontal />
       </Segment>
-      <Segment className='description-text' basic>
+      <div className='description-text'>
         <p>
           Configure Weep to run in proxy mode to automatically detect, generate,
           and request policies to resolve Access Denied errors.
@@ -25,6 +25,14 @@ const DiscoverPermissions = ({ policyRequests }) => {
           role, and Weep will transparently retry the request without ever
           return an access denied error.
         </p>
+      </div>
+      <Divider />
+
+      <Segment>
+        <Header as='h3' block textAlign='center'>
+          Generated Policy Requests
+        </Header>
+
         {policyRequests.map((policyRequest) => (
           <AutomaticPermissionsList policyRequest={policyRequest} />
         ))}
