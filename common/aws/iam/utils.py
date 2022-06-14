@@ -18,9 +18,16 @@ with open(
 
 
 def get_supported_resource_permissions(service: str, resource_type: str = "all"):
+    permission_map = RESOURCE_PERMISSION_MAP[service]
     if service == resource_type:
-        resource_type = "all"
-    return RESOURCE_PERMISSION_MAP[service][resource_type]
+        # If only one resource type exists, return the permissions for that resource type.
+        svc_resource_types = [srt for srt in permission_map.keys() if srt != "all"]
+        return (
+            permission_map["all"]
+            if len(svc_resource_types) != 1
+            else permission_map[svc_resource_types[0]]
+        )
+    return permission_map[resource_type]
 
 
 def get_host_iam_conn(
