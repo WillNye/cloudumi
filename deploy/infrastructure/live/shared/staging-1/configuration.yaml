@@ -39,6 +39,7 @@ _global_:
   environment: staging
   tornado:
     debug: true
+
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:
@@ -78,6 +79,6 @@ _global_:
           - host: staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com
             port: 6379
   sentry:
-    dsn: https://fb6ce9063023416592859491f2498fba@o1134078.ingest.sentry.io/6181191
+    dsn: https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3
   google_analytics:
     tracking_id: G-P5K1SQF3P6

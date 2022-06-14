@@ -367,7 +367,7 @@ class TestAwsLib(TestCase):
         account_id = "123456789012"
         current_dateint = datetime.today().strftime("%Y%m%d")
         past_dateint = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
-        future_dateint = (datetime.today() + timedelta(days=1)).strftime("%Y%m%d")
+        future_dateint = (datetime.today() + timedelta(days=5)).strftime("%Y%m%d")
 
         test_role_name = "TestRequestsLibV2RoleName"
         policy_name = "test_inline_policy_change"
@@ -420,8 +420,11 @@ class TestAwsLib(TestCase):
         extended_request.changes.changes[0].status = Status.applied
         async_to_sync(IAMRequest.write_v2)(extended_request, host)
         async_to_sync(remove_expired_host_requests)(host)
-        extended_request = async_to_sync(IAMRequest.get)(
+        iam_request = async_to_sync(IAMRequest.get)(
             host, request_id=extended_request.id
+        )
+        extended_request = ExtendedRequestModel.parse_obj(
+            iam_request.extended_request.dict()
         )
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
@@ -430,7 +433,15 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = past_dateint
         extended_request.changes.changes[0].status = Status.applied
+        async_to_sync(IAMRequest.write_v2)(extended_request, host)
         async_to_sync(remove_expired_host_requests)(host)
+        # Refresh the request
+        iam_request = async_to_sync(IAMRequest.get)(
+            host, request_id=extended_request.id
+        )
+        extended_request = ExtendedRequestModel.parse_obj(
+            iam_request.extended_request.dict()
+        )
         self.assertEqual(extended_request.request_status, RequestStatus.expired)
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
@@ -438,7 +449,15 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = future_dateint
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
+        async_to_sync(IAMRequest.write_v2)(extended_request, host)
         async_to_sync(remove_expired_host_requests)(host)
+        # Refresh the request
+        iam_request = async_to_sync(IAMRequest.get)(
+            host, request_id=extended_request.id
+        )
+        extended_request = ExtendedRequestModel.parse_obj(
+            iam_request.extended_request.dict()
+        )
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 
@@ -446,7 +465,15 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = None
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
+        async_to_sync(IAMRequest.write_v2)(extended_request, host)
         async_to_sync(remove_expired_host_requests)(host)
+        # Refresh the request
+        iam_request = async_to_sync(IAMRequest.get)(
+            host, request_id=extended_request.id
+        )
+        extended_request = ExtendedRequestModel.parse_obj(
+            iam_request.extended_request.dict()
+        )
         self.assertEqual(extended_request.request_status, RequestStatus.approved)
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
 

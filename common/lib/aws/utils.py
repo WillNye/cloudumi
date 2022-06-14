@@ -51,7 +51,6 @@ from common.lib.cache import (
 from common.lib.generic import sort_dict
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
-from common.lib.tenants import get_all_hosts
 from common.models import (
     ExtendedRequestModel,
     OrgAccount,
@@ -1322,7 +1321,7 @@ def allowed_to_sync_role(
 async def remove_expired_request_changes(
     extended_request: ExtendedRequestModel,
     host: str,
-    user: str,
+    user: Optional[str],
     force_refresh: bool = False,
 ) -> None:
     """
@@ -1741,9 +1740,8 @@ async def remove_expired_host_requests(host: str):
     # ])
 
 
-async def remove_all_expired_requests() -> dict:
+async def remove_expired_requests_for_hosts(hosts: list[str]) -> dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
     log_data = {
         "function": function,
         "message": "Spawning tasks",

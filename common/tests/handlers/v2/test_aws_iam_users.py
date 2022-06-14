@@ -48,7 +48,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
             {
                 "name": "TestUser",
                 "account_id": "123456789012",
-                "account_name": "default_account",
+                "account_name": "default_account_2",
                 "arn": "arn:aws:iam::123456789012:user/TestUser",
                 "inline_policies": [
                     {
@@ -79,6 +79,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
                     }
                 ],
                 "permissions_boundary": {},
+                "role_access_config": None,
                 "tags": [],
                 "effective_policy": None,
                 "effective_policy_repoed": None,
@@ -86,6 +87,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
                 "config_timeline_url": None,
                 "templated": False,
                 "template_link": None,
+                "terraform": None,
                 "updated_time": None,
                 "last_used_time": None,
                 "description": None,
