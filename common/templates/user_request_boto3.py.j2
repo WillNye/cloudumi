@@ -19,7 +19,7 @@ session = boto3.session.Session()
 client = session.client("{{ resouce_service }}")
 
 try:
-    {% if resource_type == "s3" -%}
+    {% if resouce_service == "s3" -%}
     client.put_bucket_policy(
         Bucket=resource,
         Policy=policy
