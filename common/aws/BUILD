@@ -9,11 +9,23 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "data_files",
+    srcs = glob([
+        "**/*.json"
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+
 py_library(
     name = "lib",
     srcs_version = "PY3",
     srcs = [
         ":src_files",
+    ],
+    data = [
+        ":data_files",
     ],
     deps = [
         "//common/lib",
