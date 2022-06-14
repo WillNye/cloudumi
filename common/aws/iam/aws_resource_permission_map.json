@@ -23736,7 +23736,6 @@
     ],
     "topic": [
       "AddPermission",
-      "ConfirmSubscription",
       "CreateTopic",
       "DeleteTopic",
       "GetTopicAttributes",
