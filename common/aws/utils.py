@@ -65,7 +65,13 @@ class ResourceSummary:
         account_provided = bool(parsed_arn["account"])
 
         if not account_provided:
-            parsed_arn["account"] = await get_resource_account(arn, host)
+            arn_as_resource = arn
+            if parsed_arn["service"] == "s3" and not account_provided:
+                arn_as_resource = arn_as_resource.replace(
+                    f"/{parsed_arn['resource_path']}", ""
+                )
+
+            parsed_arn["account"] = await get_resource_account(arn_as_resource, host)
             if not parsed_arn["account"]:
                 raise ValueError("Resource account not found")
 
