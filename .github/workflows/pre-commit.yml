@@ -80,7 +80,7 @@ jobs:
           go install github.com/aquasecurity/tfsec/cmd/tfsec@v1.15.4
 
           # terrascan - Moar Terraform security scanning
-          curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
+          curl -L "$(curl -s https://api.github.com/repos/tenable/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
           tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
           sudo install terrascan /usr/local/bin && rm terrascan
           # Set up terraform workspace in a subshell
