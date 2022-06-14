@@ -67,6 +67,8 @@ _RUNTIME_DEPS = [
     "@npm//react-toastify",
     "@npm//semantic-ui-css",
     "@npm//semantic-ui-react",
+    "@npm//@sentry/react",
+    "@npm//@sentry/tracing",
     "@npm//survey-react",
     "@npm//yaml",
     "@npm//eslint-config-react-app",
@@ -110,7 +112,8 @@ react_scripts(
         "start",
     ],
     env = {
-        "DISABLE_ESLINT_PLUGIN": "true"
+        "DISABLE_ESLINT_PLUGIN": "true",
+        "FRONTEND_SENTRY_DSN": "https://5f3b026abb7649fe8b41e903dcb5820f@sentry.noq.dev:4443/2"
     },
     data = _RUNTIME_DEPS,
     tags = [

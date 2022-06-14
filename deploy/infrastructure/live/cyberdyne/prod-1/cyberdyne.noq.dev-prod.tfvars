@@ -29,12 +29,7 @@ tags = {
 noq_core = true
 
 allowed_inbound_cidr_blocks = [
-  "70.187.228.241/32", # Curtis
-  "75.164.6.16/32",    # Matt
-  "141.239.104.37/32", # Kris
-  "41.190.131.30/32",  # Kayizzi
-  "189.4.77.125/32",   # Christian
-  "186.209.21.192/32", # Christian 2
+  "0.0.0.0/0"
 ]
 
 # Can be extended by adding regions to the list below
