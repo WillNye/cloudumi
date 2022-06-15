@@ -16,6 +16,7 @@ from common.exceptions.exceptions import TenantNoCentralRoleConfigured
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
+from common.models import SpokeAccount
 
 CACHE = {}
 
@@ -342,6 +343,7 @@ def boto3_cached_conn(
     :param sts_client_kwargs: Optional arguments to pass during STS client creation
     :return: boto3 client or resource connection
     """
+    from common.config.models import ModelAdapter
 
     log_data = {
         "function": sys._getframe().f_code.co_name,
@@ -459,7 +461,13 @@ def boto3_cached_conn(
         if session_policy_needs_to_be_applied:
             assume_role_kwargs["Policy"] = session_policy
 
-        if read_only:
+        account_info: SpokeAccount = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", host)
+            .with_query({"account_id": account_number})
+            .first
+        )
+        if account_info.read_only or read_only:
             assume_role_kwargs["PolicyArns"] = [
                 {"arn": "arn:aws:iam::aws:policy/ReadOnlyAccess"},
             ]

@@ -125,7 +125,7 @@ class IAMRequest(NoqModel):
             error = f"{log_data['message']}: {str(e)}"
             raise Exception(error)
 
-    async def set_commands_for_changes(self):
+    async def set_change_metadata(self):
         """Adds a boto3 script and an AWS CLI command for each change that can be leveraged by users.
 
         CLI support is currently disabled for the following commands to an issue escaping certain commands.
@@ -178,6 +178,42 @@ class IAMRequest(NoqModel):
                 escape_forward_slashes=False,
             )
 
+            # Resolve the change's resource summary (parse_arn) by change type
+            if change_type not in [
+                "resource_policy",
+                "sts_resource_policy",
+            ]:
+                resource_summary = principal_summary
+            else:
+                try:
+                    resource_summary = await ResourceSummary.set(
+                        self.host, change["arn"]
+                    )
+                except Exception as err:
+                    # Unable to resolve the resource details for the change so set to read only
+                    self_dict["extended_request"]["changes"]["changes"][elem][
+                        "read_only"
+                    ] = True
+                    log.error(
+                        {
+                            "message": "Unable to get resource info for change",
+                            "error": str(err),
+                            **log_data,
+                        }
+                    )
+                    continue
+
+            # Use the account the change will be applied to for determining if the change is read only
+            account_info: SpokeAccount = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", self.host)
+                .with_query({"account_id": resource_summary.account})
+                .first
+            )
+            self_dict["extended_request"]["changes"]["changes"][elem][
+                "read_only"
+            ] = account_info.read_only
+
             if change_type == "generic_file":
                 continue
             elif change_type in [
@@ -190,23 +226,6 @@ class IAMRequest(NoqModel):
                     put_policy_cli_template = template_env.get_template(
                         "user_request_aws_cli_put_policy.py.j2"
                     )
-
-                if change_type == "inline_policy":
-                    resource_summary = principal_summary
-                else:
-                    try:
-                        resource_summary = await ResourceSummary.set(
-                            self.host, change["arn"]
-                        )
-                    except Exception as err:
-                        log.error(
-                            {
-                                "message": "Unable to get resource info for change",
-                                "error": str(err),
-                                **log_data,
-                            }
-                        )
-                        continue
 
                 if change_type == "sts_resource_policy":
                     resource_summary.resource_type = "iam"
