@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import camelCase from 'lodash/camelCase'
 import startCase from 'lodash/startCase'
-import { useRouteMatch } from 'react-router-dom'
+import { useHistory, useRouteMatch } from 'react-router-dom'
 import { ReadOnlyPolicyMonacoEditor } from 'components/policy/PolicyMonacoEditor'
 import {
   Table,
@@ -10,39 +10,70 @@ import {
   Loader,
   Header,
   Divider,
+  Grid,
+  Button,
 } from 'semantic-ui-react'
 import { useAuth } from '../../../auth/AuthProviderDefault'
 import NoMatch from 'components/NoMatch'
+import { removePolicyRequest, approvePolicyRequest } from '../utils'
 
 const AutomatedPermissionsReview = () => {
+  const match = useRouteMatch()
+  const history = useHistory()
+  const { sendRequestCommon } = useAuth()
+
   const [automatedPolicy, setAutomatedPolicy] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
 
-  const match = useRouteMatch()
-  const { sendRequestCommon } = useAuth()
-
-  useEffect(() => {
-    setIsLoading(true)
+  const getPolicyRequest = async () => {
     const params = match.params
-    sendRequestCommon(
+    const res = await sendRequestCommon(
       null,
       `/api/v3/automatic_policy_request_handler/aws/${params.accountId}/${params.policyId}`,
       'get'
     )
-      .then((res) => {
-        if (res && res.data) {
-          setAutomatedPolicy(res.data)
-        } else {
-          setError(true)
-        }
-        setIsLoading(false)
-      })
-      .catch(() => {
-        setError(true)
-        setIsLoading(false)
-      })
+
+    if (res && res.data) {
+      setAutomatedPolicy(res.data)
+    } else {
+      setError(true)
+    }
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    setIsLoading(true)
+    getPolicyRequest().then()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const approveAutomaticPolicyRequest = async (accountId, policyId) => {
+    setIsLoading(true)
+    const resJson = await approvePolicyRequest(
+      sendRequestCommon,
+      accountId,
+      policyId
+    )
+
+    if (resJson && resJson.status_code === 200) {
+      await getPolicyRequest()
+    }
+    setIsLoading(false)
+  }
+
+  const deletePolicyRequest = async (accountId, policyId) => {
+    setIsLoading(true)
+    const resJson = await removePolicyRequest(
+      sendRequestCommon,
+      accountId,
+      policyId
+    )
+
+    if (resJson && resJson.status_code === 200) {
+      history.push('/automated_permissions')
+    }
+    setIsLoading(false)
+  }
 
   if (isLoading) {
     return (
@@ -114,9 +145,44 @@ const AutomatedPermissionsReview = () => {
           <Header as='h3' className='padded'>
             Generated Policy
           </Header>
-          {/* <div className='monaco-editor'> */}
-          <ReadOnlyPolicyMonacoEditor policy={automatedPolicy.policy || {}} />
-          {/* </div> */}
+          <Grid>
+            <Grid.Row>
+              <Grid.Column>
+                <ReadOnlyPolicyMonacoEditor
+                  policy={automatedPolicy.policy || {}}
+                />
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row columns='equal'>
+              <Grid.Column>
+                <Button
+                  content='Apply Change'
+                  positive
+                  fluid
+                  disabled={automatedPolicy.status === 'approved'}
+                  onClick={() =>
+                    approveAutomaticPolicyRequest(
+                      automatedPolicy.account.account_id,
+                      automatedPolicy.id
+                    )
+                  }
+                />
+              </Grid.Column>
+              <Grid.Column>
+                <Button
+                  content='Remove'
+                  negative
+                  fluid
+                  onClick={() =>
+                    deletePolicyRequest(
+                      automatedPolicy.account.account_id,
+                      automatedPolicy.id
+                    )
+                  }
+                />
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
         </div>
       </Segment>
     </div>

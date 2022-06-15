@@ -25,9 +25,9 @@ import IdentityRequestsTable from './components/identity/IdentityRequestsTable'
 import IdentityUsersTable from './components/identity/IdentityUsersTable'
 import IdentityUserEdit from './components/identity/User'
 import { Settings } from './components/settings/Settings'
-import AutomatedPermissions from './components/AutomatedPermissions'
 import { MainProvider } from './MainProvider'
 import AutomatedPermissionsReview from 'components/AutomatedPermissions/AutomatedPermissionsReview'
+import AutomatedPermissionsList from 'components/AutomatedPermissions/AutomatedPermissionsList'
 
 function App() {
   return (
@@ -166,7 +166,7 @@ function App() {
           key='automated_permissions'
           exact
           path='/automated_permissions'
-          component={AutomatedPermissions}
+          component={AutomatedPermissionsList}
         />
         <ProtectedRoute
           key='automated_permissions'
