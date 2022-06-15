@@ -1756,6 +1756,23 @@ components:
           type: string
         message:
           type: string
+    AWSCredentials:
+      type: object
+      required:
+        - access_key_id
+        - secret_access_key
+      properties:
+        access_key_id:
+          type: string
+        secret_access_key:
+          type: string
+        session_token:
+          type: string
+    CloudCredentials:
+      type: object
+      properties:
+        aws:
+          $ref: "#/components/schemas/AWSCredentials"
     CloneRoleRequestModel:
       type: object
       required:
@@ -1847,6 +1864,8 @@ components:
           type: integer
           example: 20210905
           description: Date to expire requested policy, in the format of YYYYmmdd
+        credentials:
+          $ref: "#/components/schemas/CloudCredentials"
     RequestCreationResponse:
       type: object
       properties:
@@ -1925,6 +1944,10 @@ components:
               type: object
             change_id:
               type: string
+            apps:
+              $ref: "#/components/schemas/AppDetailsArray"
+            credentials:
+              $ref: "#/components/schemas/CloudCredentials"
     CancelChangeModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
