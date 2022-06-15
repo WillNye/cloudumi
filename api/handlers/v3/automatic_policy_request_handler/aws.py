@@ -93,7 +93,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
         allowed_statuses = [
             Status3.applied_and_failure.value,
             Status3.applied_and_success.value,
-            Status3.approved,
+            Status3.approved.value,
         ]
         policy_request = await automatic_request.get_policy_request(
             self.ctx.host, account_id, self.user, policy_request_id

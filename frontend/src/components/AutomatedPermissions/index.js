@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Segment, Loader, Divider, Header, Step, Icon } from 'semantic-ui-react'
-import { useAuth } from '../../../auth/AuthProviderDefault'
+import { useAuth } from '../../auth/AuthProviderDefault'
 import PolicyRequestItem from './PolicyRequestItem'
-import { TIME_PER_INTERVAL } from '../constants'
-import { getAllPolicyRequests } from '../utils'
-import '../index.css'
+import { TIME_PER_INTERVAL } from './constants'
+import { getAllPolicyRequests } from './utils'
+import './index.css'
 
 const AutomaticPermissionsList = () => {
   const { sendRequestCommon } = useAuth()
@@ -26,7 +26,7 @@ const AutomaticPermissionsList = () => {
       await getAutomaticPermissionsRequets()
     }, TIME_PER_INTERVAL)
 
-    // get requests on mount
+    // get requests onMount
     getAutomaticPermissionsRequets().then()
 
     return () => {
@@ -68,28 +68,28 @@ const AutomaticPermissionsList = () => {
       </div>
       <Divider />
 
-      <Segment>
-        <Header as='h3' block textAlign='center'>
-          Generated Policy Requests
-        </Header>
+      {/* <Segment> */}
+      <Header as='h3' block textAlign='center'>
+        Generated Policy Requests
+      </Header>
 
-        {policyRequests.length ? (
-          policyRequests.map((policyRequest, index) => (
-            <PolicyRequestItem
-              key={index}
-              policyRequest={policyRequest}
-              getAutomaticPermissionsRequets={getAutomaticPermissionsRequets}
-              sendRequestCommon={sendRequestCommon}
-            />
-          ))
-        ) : (
-          <Segment placeholder>
-            <Header align='center' sub>
-              No Permissions detected yet
-            </Header>
-          </Segment>
-        )}
-      </Segment>
+      {policyRequests.length ? (
+        policyRequests.map((policyRequest, index) => (
+          <PolicyRequestItem
+            key={index}
+            policyRequest={policyRequest}
+            getAutomaticPermissionsRequets={getAutomaticPermissionsRequets}
+            sendRequestCommon={sendRequestCommon}
+          />
+        ))
+      ) : (
+        <Segment placeholder>
+          <Header align='center' sub>
+            No Permissions detected yet
+          </Header>
+        </Segment>
+      )}
+      {/* </Segment> */}
     </>
   )
 }
