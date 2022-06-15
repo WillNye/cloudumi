@@ -90,6 +90,18 @@ spoke_accounts:
     viewers: []
     delegate_admin_to_owner: false
     restrict_viewers_of_account_resources: false
+  - name: NoqSpokeRoleLocalDev
+    account_name: aws_org2_readonly
+    account_id: '793450268703'
+    role_arn: arn:aws:iam::793450268703:role/NoqSpokeRoleLocalDev
+    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+    hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+    master_for_account: false
+    owners: []
+    viewers: []
+    delegate_admin_to_owner: false
+    restrict_viewers_of_account_resources: false
+    read_only: true
 temporary_elevated_access_requests:
   enabled: true
   mfa:
@@ -213,6 +225,18 @@ spoke_accounts:
     viewers: []
     delegate_admin_to_owner: false
     restrict_viewers_of_account_resources: false
+  - name: NoqSpokeRoleLocalDev
+    account_name: aws_org2_readonly
+    account_id: '793450268703'
+    role_arn: arn:aws:iam::793450268703:role/NoqSpokeRoleLocalDev
+    external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+    hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
+    master_for_account: false
+    owners: []
+    viewers: []
+    delegate_admin_to_owner: false
+    restrict_viewers_of_account_resources: false
+    read_only: true
 tenant_details:
   external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
   creator: {override_email}
