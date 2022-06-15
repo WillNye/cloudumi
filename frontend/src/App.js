@@ -25,8 +25,8 @@ import IdentityRequestsTable from './components/identity/IdentityRequestsTable'
 import IdentityUsersTable from './components/identity/IdentityUsersTable'
 import IdentityUserEdit from './components/identity/User'
 import { Settings } from './components/settings/Settings'
-import AutomatedPermissions from './components/AutomatedPermissions'
 import { MainProvider } from './MainProvider'
+import AutomatedPermissions from 'components/AutomatedPermissions'
 
 function App() {
   return (

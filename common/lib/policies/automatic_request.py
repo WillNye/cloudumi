@@ -191,6 +191,7 @@ async def create_policy_request(
             role=policy_request.role,
             policy=policy_dict["policy"],
             event_time=datetime.utcnow().replace(tzinfo=pytz.utc),
+            last_updated=datetime.utcnow().replace(tzinfo=pytz.utc),
         )
         policy_request = format_extended_policy_request(extended_policy_request)
         await aio_wrapper(
