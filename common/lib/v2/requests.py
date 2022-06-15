@@ -69,6 +69,7 @@ from common.models import (
     CancelChangeModificationModel,
     ChangeModel,
     ChangeModelArray,
+    CloudCredentials,
     Command,
     CommentModel,
     CommentRequestModificationModel,
@@ -1830,6 +1831,7 @@ async def apply_managed_policy_resource_tag_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     host: str,
+    cloud_credentials: CloudCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource tagging changes for managed policies
@@ -1904,6 +1906,7 @@ async def apply_managed_policy_resource_tag_change(
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        custom_credentials=None if not cloud_credentials else cloud_credentials.aws,
     )
     principal_arn = change.principal.principal_arn
     if change.tag_action in [TagAction.create, TagAction.update]:
@@ -1992,6 +1995,7 @@ async def apply_non_iam_resource_tag_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     host: str,
+    cloud_credentials: CloudCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource tagging changes for supported non IAM role tags
@@ -2080,6 +2084,7 @@ async def apply_non_iam_resource_tag_change(
             ),
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
+            custom_credentials=None if not cloud_credentials else cloud_credentials.aws,
         )
 
         resource_details = await fetch_resource_details(
@@ -2288,6 +2293,7 @@ async def apply_managed_policy_resource_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     host: str,
+    cloud_credentials: CloudCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource policy change for managed policies
@@ -2351,6 +2357,7 @@ async def apply_managed_policy_resource_change(
         "session_name": sanitize_session_name(f"ConsoleMe_MP_{user}"),
         "client_kwargs": config.get_host_specific_key("boto3.client_kwargs", host, {}),
         "host": host,
+        "custom_credentials": None if not cloud_credentials else cloud_credentials.aws,
     }
 
     # Save current policy by populating "old" policies at the time of application for historical record
@@ -2434,6 +2441,7 @@ async def apply_resource_policy_change(
     user: str,
     host: str,
     force_refresh: bool = False,
+    cloud_credentials: CloudCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource policy change for supported changes
@@ -2537,6 +2545,7 @@ async def apply_resource_policy_change(
             ),
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
+            custom_credentials=None if not cloud_credentials else cloud_credentials.aws,
         )
         if resource_type == "s3":
             await aio_wrapper(
@@ -2726,6 +2735,7 @@ async def parse_and_apply_policy_request_modification(
     host: str,
     approval_probe_approved=False,
     force_refresh=False,
+    cloud_credentials: CloudCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Parses the policy request modification changes
@@ -3003,7 +3013,10 @@ async def parse_and_apply_policy_request_modification(
                 .first
             )
 
-            if account_info.read_only:
+            if account_info.read_only and (
+                specific_change.change_type == "tear_can_assume_role"
+                or not cloud_credentials
+            ):
                 specific_change.status = Status.applied
                 response.action_results.append(
                     ActionResult(
@@ -3016,7 +3029,12 @@ async def parse_and_apply_policy_request_modification(
                 or specific_change.change_type == "sts_resource_policy"
             ):
                 response = await apply_resource_policy_change(
-                    extended_request, specific_change, response, user, host
+                    extended_request,
+                    specific_change,
+                    response,
+                    user,
+                    host,
+                    cloud_credentials,
                 )
             elif (
                 specific_change.change_type == "resource_tag"
@@ -3025,7 +3043,12 @@ async def parse_and_apply_policy_request_modification(
                 )
             ):
                 response = await apply_non_iam_resource_tag_change(
-                    extended_request, specific_change, response, user, host
+                    extended_request,
+                    specific_change,
+                    response,
+                    user,
+                    host,
+                    cloud_credentials,
                 )
             elif (
                 specific_change.change_type == "resource_tag"
@@ -3034,7 +3057,12 @@ async def parse_and_apply_policy_request_modification(
                 )
             ):
                 response = await apply_managed_policy_resource_tag_change(
-                    extended_request, specific_change, response, user, host
+                    extended_request,
+                    specific_change,
+                    response,
+                    user,
+                    host,
+                    cloud_credentials,
                 )
             elif specific_change.change_type == "managed_policy_resource":
                 response = await apply_managed_policy_resource_change(
@@ -3043,14 +3071,11 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
+                    cloud_credentials,
                 )
             elif specific_change.change_type == "tear_can_assume_role":
                 response = await apply_tear_role_change(
-                    extended_request,
-                    specific_change,
-                    response,
-                    user,
-                    host,
+                    extended_request, specific_change, response, user, host
                 )
             else:
                 # Save current policy by populating "old" policies at the time of application for historical record
@@ -3058,7 +3083,12 @@ async def parse_and_apply_policy_request_modification(
                     extended_request, user, host
                 )
                 await apply_changes_to_role(
-                    extended_request, response, user, host, specific_change.id
+                    extended_request,
+                    response,
+                    user,
+                    host,
+                    specific_change.id,
+                    cloud_credentials,
                 )
                 await update_resource_in_dynamo(
                     host, extended_request.principal.principal_arn, force_refresh

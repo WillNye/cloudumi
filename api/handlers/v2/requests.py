@@ -517,6 +517,7 @@ class RequestHandler(BaseAPIV2Handler):
                         int(time.time()),
                         host,
                         approval_probe_approved=approval_probe_approved,
+                        cloud_credentials=changes.credentials,
                     )
                 )
                 response.errors = policy_apply_response.errors
@@ -889,6 +890,9 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 self.groups,
                 last_updated,
                 host,
+                cloud_credentials=getattr(
+                    request_changes.modification_model, "credentials", None
+                ),
             )
 
         except (
