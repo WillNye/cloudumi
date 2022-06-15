@@ -762,13 +762,24 @@ class RequestDetailHandler(BaseAPIV2Handler):
             updated_request = await IAMRequest.write_v2(extended_request, host)
             last_updated = updated_request.last_updated
 
-        populate_old_managed_policies_result = concurrent_results[2]
+            # Refresh the commands now that the policies in the script have changed
+            await updated_request.set_commands_for_changes()
+            extended_request = ExtendedRequestModel.parse_obj(
+                updated_request.extended_request.dict()
+            )
 
+        populate_old_managed_policies_result = concurrent_results[2]
         if populate_old_managed_policies_result["changed"]:
             extended_request = populate_old_managed_policies_result["extended_request"]
             # Update in dynamo with the latest resource policy changes
             updated_request = await IAMRequest.write_v2(extended_request, host)
             last_updated = updated_request.last_updated
+
+            # Refresh the commands now that the policies in the script have changed
+            await updated_request.set_commands_for_changes()
+            extended_request = ExtendedRequestModel.parse_obj(
+                updated_request.extended_request.dict()
+            )
 
         accounts_ids = await get_extended_request_account_ids(extended_request, host)
         can_approve_reject = await can_admin_policies(
