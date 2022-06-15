@@ -1,14 +1,7 @@
 import React, { useState } from 'react'
 import camelCase from 'lodash/camelCase'
 import startCase from 'lodash/startCase'
-import {
-  Table,
-  Segment,
-  Header,
-  Grid,
-  Button,
-  Accordion,
-} from 'semantic-ui-react'
+import { Table, Segment, Header, Grid, Button } from 'semantic-ui-react'
 import { removePolicyRequest, approvePolicyRequest } from './utils'
 import Editor from '@monaco-editor/react'
 import { APPLIED_POLICY_STATUSES, editorOptions } from './constants'
@@ -19,7 +12,6 @@ const PolicyRequestItem = ({
   sendRequestCommon,
 }) => {
   const [isLoading, setIsLoading] = useState(false)
-  const [isActive, setIsActive] = useState(false)
 
   const cantEditPolicy = APPLIED_POLICY_STATUSES.includes(policyRequest.status)
 
@@ -99,89 +91,79 @@ const PolicyRequestItem = ({
           </Table.Row>
         </Table.Body>
       </Table>
-
-      <Accordion>
-        <Accordion.Title
-          active={isActive}
-          onClick={() => setIsActive(!isActive)}
-          content='View Generated Policy'
-        ></Accordion.Title>
-        <Accordion.Content active={isActive}>
-          <Segment>
-            <div className='center-icons'>
-              <Header as='h3' className='padded'>
-                Generated Policy
-              </Header>
-              <Grid>
-                <Grid.Row>
-                  <Grid.Column>
-                    <Segment
-                      attached
-                      style={{
-                        border: 0,
-                        padding: 0,
-                      }}
-                    >
-                      <Editor
-                        height='450px'
-                        defaultLanguage='json'
-                        value={JSON.stringify(
-                          policyRequest.policy || {},
-                          null,
-                          '\t'
-                        )}
-                        onChange={() => {}}
-                        options={editorOptions}
-                        // onMount={handleEditorDidMount}
-                        textAlign='center'
-                      />
-                    </Segment>
-                  </Grid.Column>
-                </Grid.Row>
-                <Grid.Row columns='equal'>
-                  <Grid.Column>
-                    <Button
-                      content='Apply Change'
-                      positive
-                      fluid
-                      disabled={cantEditPolicy}
-                      onClick={() =>
-                        approveAutomaticPolicyRequest(
-                          policyRequest.account.account_id,
-                          policyRequest.id
-                        )
-                      }
-                    />
-                  </Grid.Column>
-                  <Grid.Column>
-                    <Button
-                      content='Update Change'
-                      positive
-                      fluid
-                      disabled={true}
-                      onClick={() => {}}
-                    />
-                  </Grid.Column>
-                  <Grid.Column>
-                    <Button
-                      content='Remove'
-                      negative
-                      fluid
-                      disabled={cantEditPolicy}
-                      onClick={() =>
-                        deletePolicyRequest(
-                          policyRequest.account.account_id,
-                          policyRequest.id
-                        )
-                      }
-                    />
-                  </Grid.Column>
-                </Grid.Row>
-              </Grid>
-            </div>
-          </Segment>
-        </Accordion.Content>
-      </Accordion>
+      <Segment>
+        <div className='center-icons'>
+          <Header as='h3' className='padded'>
+            Generated Policy
+          </Header>
+          <Grid>
+            <Grid.Row>
+              <Grid.Column>
+                <Segment
+                  attached
+                  style={{
+                    border: 0,
+                    padding: 0,
+                  }}
+                >
+                  <Editor
+                    height='450px'
+                    defaultLanguage='json'
+                    value={JSON.stringify(
+                      policyRequest.policy || {},
+                      null,
+                      '\t'
+                    )}
+                    onChange={() => {}}
+                    options={editorOptions}
+                    // onMount={handleEditorDidMount}
+                    textAlign='center'
+                  />
+                </Segment>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row columns='equal'>
+              <Grid.Column>
+                <Button
+                  content='Apply Change'
+                  positive
+                  fluid
+                  disabled={cantEditPolicy}
+                  onClick={() =>
+                    approveAutomaticPolicyRequest(
+                      policyRequest.account.account_id,
+                      policyRequest.id
+                    )
+                  }
+                />
+              </Grid.Column>
+              <Grid.Column>
+                <Button
+                  content='Update Change'
+                  positive
+                  fluid
+                  disabled={true}
+                  onClick={() => {}}
+                />
+              </Grid.Column>
+              <Grid.Column>
+                <Button
+                  content='Remove'
+                  negative
+                  fluid
+                  disabled={cantEditPolicy}
+                  onClick={() =>
+                    deletePolicyRequest(
+                      policyRequest.account.account_id,
+                      policyRequest.id
+                    )
+                  }
+                />
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+        </div>
+      </Segment>
     </Segment>
   )
 }
