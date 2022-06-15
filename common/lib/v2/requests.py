@@ -2994,7 +2994,24 @@ async def parse_and_apply_policy_request_modification(
                     apply_change_model.policy_document
                 )
             managed_policy_arn_regex = re.compile(r"^arn:aws:iam::\d{12}:policy/.+")
-            if (
+
+            resource_summary = await ResourceSummary.set(host, specific_change_arn)
+            account_info: SpokeAccount = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", host)
+                .with_query({"account_id": resource_summary.account})
+                .first
+            )
+
+            if account_info.read_only:
+                specific_change.status = Status.applied
+                response.action_results.append(
+                    ActionResult(
+                        status="success",
+                        message=f"Status updated to applied for {specific_change_arn}",
+                    )
+                )
+            elif (
                 specific_change.change_type == "resource_policy"
                 or specific_change.change_type == "sts_resource_policy"
             ):

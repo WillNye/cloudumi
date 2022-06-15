@@ -1186,6 +1186,10 @@ components:
         python_script:
           type: string
           readOnly: true
+        read_only:
+          type: boolean
+          readOnly: true
+          default: false
     GenericFileChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -2221,6 +2225,11 @@ components:
         external_id:
           type: string
           description: Designated external identifier to provide a safeguard against brute force attempts
+        read_only:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether Noq has the ability to modify resources on the hub account.
+          default: false
     SpokeAccount:
       type: object
       required:
@@ -2273,6 +2282,11 @@ components:
           description: |-
             Optional value (defaults to false) to indicate whether to restrict who can view resources from this account in Noq.
             If this is set, viewers will be restricted to the list of users or groups provided in the `viewers` field.
+          default: false
+        read_only:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether Noq has the ability to modify resources on the account.
           default: false
     OrgAccount:
       type: object

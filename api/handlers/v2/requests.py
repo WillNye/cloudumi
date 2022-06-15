@@ -690,7 +690,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             # Request format is not compatible with this endpoint version
             raise InvalidRequestParameter("Request with that ID is not a v2 request")
 
-        await request.set_commands_for_changes()
+        await request.set_change_metadata()
         extended_request = ExtendedRequestModel.parse_obj(
             request.extended_request.dict()
         )
@@ -763,7 +763,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             last_updated = updated_request.last_updated
 
             # Refresh the commands now that the policies in the script have changed
-            await updated_request.set_commands_for_changes()
+            await updated_request.set_change_metadata()
             extended_request = ExtendedRequestModel.parse_obj(
                 updated_request.extended_request.dict()
             )
@@ -776,7 +776,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             last_updated = updated_request.last_updated
 
             # Refresh the commands now that the policies in the script have changed
-            await updated_request.set_commands_for_changes()
+            await updated_request.set_change_metadata()
             extended_request = ExtendedRequestModel.parse_obj(
                 updated_request.extended_request.dict()
             )
