@@ -178,6 +178,7 @@ class IAMRequest(NoqModel):
                 escape_forward_slashes=False,
             )
 
+            # Resolve the change's resource summary (parse_arn) by change type
             if change_type not in [
                 "resource_policy",
                 "sts_resource_policy",
@@ -189,6 +190,10 @@ class IAMRequest(NoqModel):
                         self.host, change["arn"]
                     )
                 except Exception as err:
+                    # Unable to resolve the resource details for the change so set to read only
+                    self_dict["extended_request"]["changes"]["changes"][elem][
+                        "read_only"
+                    ] = True
                     log.error(
                         {
                             "message": "Unable to get resource info for change",
@@ -196,20 +201,18 @@ class IAMRequest(NoqModel):
                             **log_data,
                         }
                     )
-                    self_dict["extended_request"]["changes"]["changes"][elem][
-                        "read_only"
-                    ] = False
                     continue
-                else:
-                    account_info: SpokeAccount = (
-                        ModelAdapter(SpokeAccount)
-                        .load_config("spoke_accounts", self.host)
-                        .with_query({"account_id": resource_summary.account})
-                        .first
-                    )
-                    self_dict["extended_request"]["changes"]["changes"][elem][
-                        "read_only"
-                    ] = account_info.read_only
+
+            # Use the account the change will be applied to for determining if the change is read only
+            account_info: SpokeAccount = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", self.host)
+                .with_query({"account_id": resource_summary.account})
+                .first
+            )
+            self_dict["extended_request"]["changes"]["changes"][elem][
+                "read_only"
+            ] = account_info.read_only
 
             if change_type == "generic_file":
                 continue
