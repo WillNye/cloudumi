@@ -2251,7 +2251,7 @@ components:
         read_only:
           type: boolean
           description: |-
-            Optional value (defaults to false) to indicate whether Noq has the ability to modify resources on any spoke account.
+            Optional value (defaults to false) to indicate whether Noq has the ability to modify resources on the hub account.
           default: false
     SpokeAccount:
       type: object

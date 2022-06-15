@@ -3021,7 +3021,7 @@ async def parse_and_apply_policy_request_modification(
                 response.action_results.append(
                     ActionResult(
                         status="success",
-                        message=f"Successfully applied change to {specific_change_arn}",
+                        message=f"Status updated to applied for {specific_change_arn}",
                     )
                 )
             elif (
