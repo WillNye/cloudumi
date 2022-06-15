@@ -12,7 +12,6 @@ from botocore.config import Config
 from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
 from common.config import config as consoleme_config
-from common.config.models import ModelAdapter
 from common.exceptions.exceptions import TenantNoCentralRoleConfigured
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
@@ -345,6 +344,8 @@ def boto3_cached_conn(
     :param sts_client_kwargs: Optional arguments to pass during STS client creation
     :return: boto3 client or resource connection
     """
+    from common.config.models import ModelAdapter
+
     role = None
     sts_client_kwargs = sts_client_kwargs or {}
     use_custom_credentials = bool(custom_credentials)
