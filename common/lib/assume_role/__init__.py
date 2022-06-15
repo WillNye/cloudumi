@@ -17,7 +17,7 @@ from common.exceptions.exceptions import TenantNoCentralRoleConfigured
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
-from common.models import SpokeAccount
+from common.models import AWSCredentials, SpokeAccount
 
 CACHE = {}
 
@@ -308,6 +308,7 @@ def boto3_cached_conn(
     client_kwargs=None,
     session_policy=None,
     pre_assume_roles=None,
+    custom_credentials: AWSCredentials = None,
 ):
     """
     Used to obtain a boto3 client or resource connection.
@@ -344,6 +345,14 @@ def boto3_cached_conn(
     :param sts_client_kwargs: Optional arguments to pass during STS client creation
     :return: boto3 client or resource connection
     """
+    role = None
+    sts_client_kwargs = sts_client_kwargs or {}
+    use_custom_credentials = bool(custom_credentials)
+    client_config = Config(retries=dict(max_attempts=retry_max_attempts))
+    if not client_kwargs:
+        client_kwargs = {}
+    if config:
+        client_config = client_config.merge(config)
 
     log_data = {
         "function": sys._getframe().f_code.co_name,
@@ -360,7 +369,22 @@ def boto3_cached_conn(
         "client_kwargs": client_kwargs,
         "session_policy": session_policy,
         "pre_assume_roles": pre_assume_roles,
+        "use_custom_credentials": use_custom_credentials,
     }
+
+    if use_custom_credentials:
+        credentials_dict = custom_credentials.dict()
+        client_kwargs.update(**credentials_dict)
+
+        if service_type == "client":
+            conn = _client(service, region, role, client_config, client_kwargs)
+        elif service_type == "resource":
+            conn = _resource(service, region, role, client_config, client_kwargs)
+
+        conn = BotoClientWrapper(host, user, conn, region, service, "", "")
+        if return_credentials:
+            return conn, credentials_dict
+        return conn
 
     if host and pre_assume_roles is None:
         pre_assume_roles = []
@@ -372,7 +396,11 @@ def boto3_cached_conn(
     # TODO: This breaks when tenant employee attempts to retrieve credentials
     # if not assume_role and consoleme_config.get("_global_.environment") != "test":
     #     raise ValueError("Must provide role to assume")
-    if not pre_assume_roles and consoleme_config.get("_global_.environment") != "test":
+    if (
+        not use_custom_credentials
+        and not pre_assume_roles
+        and consoleme_config.get("_global_.environment") != "test"
+    ):
         raise TenantNoCentralRoleConfigured(
             "Tenant hasn't configured central role for Noq."
         )
@@ -391,11 +419,6 @@ def boto3_cached_conn(
         arn_partition,
         read_only,
     )
-    client_config = Config(retries=dict(max_attempts=retry_max_attempts))
-    if not client_kwargs:
-        client_kwargs = {}
-    if config:
-        client_config = client_config.merge(config)
     if key in CACHE:
         retval = _get_cached_creds(
             host,
@@ -412,12 +435,10 @@ def boto3_cached_conn(
         if retval:
             return retval
 
-    sts_client_kwargs = sts_client_kwargs or {}
     sts = None
     session = get_session_for_tenant(host)
     if assume_role or pre_assume_roles:
         sts = session.client("sts", **sts_client_kwargs)
-    role = None
     session_policy_needs_to_be_applied = True if session_policy else False
     if pre_assume_roles:
         for i in range(len(pre_assume_roles)):
@@ -467,7 +488,7 @@ def boto3_cached_conn(
             .with_query({"account_id": account_number})
             .first
         )
-        if account_info.read_only or read_only:
+        if read_only or account_info.read_only:
             assume_role_kwargs["PolicyArns"] = [
                 {"arn": "arn:aws:iam::aws:policy/ReadOnlyAccess"},
             ]
