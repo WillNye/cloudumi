@@ -66,6 +66,7 @@ from common.models import (
     ActionResult,
     ApplyChangeModificationModel,
     AssumeRolePolicyChangeModel,
+    AWSCredentials,
     CancelChangeModificationModel,
     ChangeModel,
     ChangeModelArray,
@@ -1005,7 +1006,7 @@ async def apply_changes_to_role(
     user: str,
     host: str,
     specific_change_id: str = None,
-    cloud_credentials: CloudCredentials = None,
+    custom_aws_credentials: AWSCredentials = None,
 ) -> None:
     """
     Applies changes based on the changes array in the request, in a best effort manner to a role
@@ -1066,7 +1067,7 @@ async def apply_changes_to_role(
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        custom_credentials=None if not cloud_credentials else cloud_credentials.aws,
+        custom_aws_credentials=custom_aws_credentials,
     )
     for change in extended_request.changes.changes:
         if change.status == Status.applied:
@@ -1593,7 +1594,6 @@ async def populate_old_managed_policies(
         "message": "Populating old managed policies",
     }
     log.debug(log_data)
-    managed_policy_resource = None
     result = {"changed": False}
 
     if extended_request.principal.principal_type == "AwsResource":
@@ -1833,7 +1833,7 @@ async def apply_managed_policy_resource_tag_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     host: str,
-    cloud_credentials: CloudCredentials = None,
+    custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource tagging changes for managed policies
@@ -1908,7 +1908,7 @@ async def apply_managed_policy_resource_tag_change(
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        custom_credentials=None if not cloud_credentials else cloud_credentials.aws,
+        custom_aws_credentials=custom_aws_credentials,
     )
     principal_arn = change.principal.principal_arn
     if change.tag_action in [TagAction.create, TagAction.update]:
@@ -1997,7 +1997,7 @@ async def apply_non_iam_resource_tag_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     host: str,
-    cloud_credentials: CloudCredentials = None,
+    custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource tagging changes for supported non IAM role tags
@@ -2086,7 +2086,7 @@ async def apply_non_iam_resource_tag_change(
             ),
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
-            custom_credentials=None if not cloud_credentials else cloud_credentials.aws,
+            custom_aws_credentials=custom_aws_credentials,
         )
 
         resource_details = await fetch_resource_details(
@@ -2295,7 +2295,7 @@ async def apply_managed_policy_resource_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     host: str,
-    cloud_credentials: CloudCredentials = None,
+    custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource policy change for managed policies
@@ -2359,7 +2359,7 @@ async def apply_managed_policy_resource_change(
         "session_name": sanitize_session_name(f"ConsoleMe_MP_{user}"),
         "client_kwargs": config.get_host_specific_key("boto3.client_kwargs", host, {}),
         "host": host,
-        "custom_credentials": None if not cloud_credentials else cloud_credentials.aws,
+        "custom_aws_credentials": custom_aws_credentials,
     }
 
     # Save current policy by populating "old" policies at the time of application for historical record
@@ -2443,7 +2443,7 @@ async def apply_resource_policy_change(
     user: str,
     host: str,
     force_refresh: bool = False,
-    cloud_credentials: CloudCredentials = None,
+    custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
     Applies resource policy change for supported changes
@@ -2547,7 +2547,7 @@ async def apply_resource_policy_change(
             ),
             client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
             retry_max_attempts=2,
-            custom_credentials=None if not cloud_credentials else cloud_credentials.aws,
+            custom_aws_credentials=custom_aws_credentials,
         )
         if resource_type == "s3":
             await aio_wrapper(
@@ -2749,6 +2749,8 @@ async def parse_and_apply_policy_request_modification(
     :param last_updated:
     :param approval_probe_approved: Whether this change was approved by an auto-approval probe. If not, user needs to be
         authorized to make the change.
+    :param cloud_credentials: User provided credentials
+        used to override the default credentials for interfacing with a cloud provider
     :return PolicyRequestModificationResponseModel
     """
 
@@ -2989,6 +2991,10 @@ async def parse_and_apply_policy_request_modification(
             )
 
     elif request_changes.command == Command.apply_change:
+        custom_aws_credentials: AWSCredentials = (
+            None if not cloud_credentials else cloud_credentials.aws
+        )
+
         apply_change_model = ApplyChangeModificationModel.parse_obj(request_changes)
         specific_change = await _get_specific_change(
             extended_request.changes, apply_change_model.change_id
@@ -3036,7 +3042,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
-                    cloud_credentials=cloud_credentials,
+                    custom_aws_credentials=custom_aws_credentials,
                 )
             elif (
                 specific_change.change_type == "resource_tag"
@@ -3050,7 +3056,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
-                    cloud_credentials=cloud_credentials,
+                    custom_aws_credentials=custom_aws_credentials,
                 )
             elif (
                 specific_change.change_type == "resource_tag"
@@ -3064,7 +3070,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
-                    cloud_credentials=cloud_credentials,
+                    custom_aws_credentials=custom_aws_credentials,
                 )
             elif specific_change.change_type == "managed_policy_resource":
                 response = await apply_managed_policy_resource_change(
@@ -3073,7 +3079,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
-                    cloud_credentials=cloud_credentials,
+                    custom_aws_credentials=custom_aws_credentials,
                 )
             elif specific_change.change_type == "tear_can_assume_role":
                 response = await apply_tear_role_change(
@@ -3090,7 +3096,7 @@ async def parse_and_apply_policy_request_modification(
                     user,
                     host,
                     specific_change.id,
-                    cloud_credentials=cloud_credentials,
+                    custom_aws_credentials=custom_aws_credentials,
                 )
                 await update_resource_in_dynamo(
                     host, extended_request.principal.principal_arn, force_refresh

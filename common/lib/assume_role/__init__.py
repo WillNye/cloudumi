@@ -307,7 +307,7 @@ def boto3_cached_conn(
     client_kwargs=None,
     session_policy=None,
     pre_assume_roles=None,
-    custom_credentials: AWSCredentials = None,
+    custom_aws_credentials: AWSCredentials = None,
 ):
     """
     Used to obtain a boto3 client or resource connection.
@@ -348,7 +348,7 @@ def boto3_cached_conn(
 
     role = None
     sts_client_kwargs = sts_client_kwargs or {}
-    use_custom_credentials = bool(custom_credentials)
+    use_custom_credentials = bool(custom_aws_credentials)
     client_config = Config(retries=dict(max_attempts=retry_max_attempts))
     if not client_kwargs:
         client_kwargs = {}
@@ -374,7 +374,7 @@ def boto3_cached_conn(
     }
 
     if use_custom_credentials:
-        credentials_dict = custom_credentials.dict()
+        credentials_dict = custom_aws_credentials.dict()
         client_kwargs.update(**credentials_dict)
 
         if service_type == "client":
