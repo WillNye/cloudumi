@@ -1759,14 +1759,14 @@ components:
     AWSCredentials:
       type: object
       required:
-        - access_key_id
-        - secret_access_key
+        - aws_access_key_id
+        - aws_secret_access_key
       properties:
-        access_key_id:
+        aws_access_key_id:
           type: string
-        secret_access_key:
+        aws_secret_access_key:
           type: string
-        session_token:
+        aws_session_token:
           type: string
     CloudCredentials:
       type: object
@@ -1888,6 +1888,8 @@ components:
       required:
         - command
       properties:
+        credentials:
+          $ref: "#/components/schemas/CloudCredentials"
         command:
           type: string
           enum:
