@@ -1005,6 +1005,7 @@ async def apply_changes_to_role(
     user: str,
     host: str,
     specific_change_id: str = None,
+    cloud_credentials: CloudCredentials = None,
 ) -> None:
     """
     Applies changes based on the changes array in the request, in a best effort manner to a role
@@ -1065,6 +1066,7 @@ async def apply_changes_to_role(
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
         client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        custom_credentials=None if not cloud_credentials else cloud_credentials.aws,
     )
     for change in extended_request.changes.changes:
         if change.status == Status.applied:
@@ -3034,7 +3036,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
-                    cloud_credentials,
+                    cloud_credentials=cloud_credentials,
                 )
             elif (
                 specific_change.change_type == "resource_tag"
@@ -3048,7 +3050,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
-                    cloud_credentials,
+                    cloud_credentials=cloud_credentials,
                 )
             elif (
                 specific_change.change_type == "resource_tag"
@@ -3062,7 +3064,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
-                    cloud_credentials,
+                    cloud_credentials=cloud_credentials,
                 )
             elif specific_change.change_type == "managed_policy_resource":
                 response = await apply_managed_policy_resource_change(
@@ -3071,7 +3073,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     host,
-                    cloud_credentials,
+                    cloud_credentials=cloud_credentials,
                 )
             elif specific_change.change_type == "tear_can_assume_role":
                 response = await apply_tear_role_change(
@@ -3088,7 +3090,7 @@ async def parse_and_apply_policy_request_modification(
                     user,
                     host,
                     specific_change.id,
-                    cloud_credentials,
+                    cloud_credentials=cloud_credentials,
                 )
                 await update_resource_in_dynamo(
                     host, extended_request.principal.principal_arn, force_refresh
