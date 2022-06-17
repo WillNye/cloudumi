@@ -99,7 +99,9 @@ async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
     """
     from common.aws.utils import get_resource_tag
 
-    if not config.get_host_specific_key("elevated_access.enabled", host, False):
+    if not config.get_host_specific_key(
+        "temporary_elevated_access_requests.enabled", host, False
+    ):
         return []
 
     active_tear_roles = set()
@@ -129,7 +131,9 @@ async def get_tear_supported_roles_by_tag(
     """
     from common.aws.utils import get_resource_tag
 
-    if not config.get_host_specific_key("elevated_access.enabled", host, False):
+    if not config.get_host_specific_key(
+        "temporary_elevated_access_requests.enabled", host, False
+    ):
         return []
 
     escalated_roles = dict()
