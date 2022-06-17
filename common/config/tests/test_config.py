@@ -3,7 +3,6 @@ import tempfile
 from unittest import TestCase
 
 import pytest
-from asgiref.sync import async_to_sync
 
 from common.lib.yaml import yaml
 
@@ -30,7 +29,7 @@ class TestConfig(TestCase):
         os.environ["CONFIG_LOCATION"] = config_file
         from common.config import config
 
-        async_to_sync(config.CONFIG.load_config)()
+        config.CONFIG.load_config()
         self.assertEqual(config.get("_global_.config_item_a"), "b")
         self.assertEqual(config.get("_global_.config_item_b"), "c")
         self.assertEqual(config.get("_global_.config_item_c"), None)
@@ -38,7 +37,7 @@ class TestConfig(TestCase):
         if original_config_location:
             os.environ["CONFIG_LOCATION"] = original_config_location
         os.unlink(tf.name)
-        async_to_sync(config.CONFIG.load_config)()
+        config.CONFIG.load_config()
 
     def test_config_recursion(self):
         original_config_location = os.environ.get("CONFIG_LOCATION")
@@ -156,7 +155,7 @@ class TestConfig(TestCase):
         os.environ["CONFIG_LOCATION"] = config_file
         from common.config import config
 
-        async_to_sync(config.CONFIG.load_config)()
+        config.CONFIG.load_config()
         del config.CONFIG.config["extends"]
         self.assertEqual(config.CONFIG.config, should_look_like_this)
         os.unlink(tf1.name)
@@ -165,4 +164,4 @@ class TestConfig(TestCase):
         del os.environ["CONFIG_LOCATION"]
         if original_config_location:
             os.environ["CONFIG_LOCATION"] = original_config_location
-        async_to_sync(config.CONFIG.load_config)()
+        config.CONFIG.load_config()
