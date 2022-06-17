@@ -62,8 +62,8 @@ class ConsoleMeCloudAux:
             return getattr(service_type, function_name)(**nargs)
 
         kwargs.update(self.conn_details)
-        if "tech" in kwargs:
-            del kwargs["tech"]
+        kwargs.pop("custom_aws_credentials", None)
+        kwargs.pop("tech", None)
         return wrapped_method(function_name, **kwargs)
 
 
@@ -397,11 +397,7 @@ def boto3_cached_conn(
     # TODO: This breaks when tenant employee attempts to retrieve credentials
     # if not assume_role and consoleme_config.get("_global_.environment") != "test":
     #     raise ValueError("Must provide role to assume")
-    if (
-        not use_custom_credentials
-        and not pre_assume_roles
-        and consoleme_config.get("_global_.environment") != "test"
-    ):
+    if not pre_assume_roles and consoleme_config.get("_global_.environment") != "test":
         raise TenantNoCentralRoleConfigured(
             "Tenant hasn't configured central role for Noq."
         )
@@ -520,6 +516,7 @@ def boto3_cached_conn(
         account_id = ""
     conn = BotoClientWrapper(host, user, conn, region, service, account_id, role_arn)
 
+    print("Returning a proper boto conn")
     if return_credentials:
         return conn, role["Credentials"]
     return conn
