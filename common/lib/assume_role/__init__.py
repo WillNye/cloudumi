@@ -516,7 +516,6 @@ def boto3_cached_conn(
         account_id = ""
     conn = BotoClientWrapper(host, user, conn, region, service, account_id, role_arn)
 
-    print("Returning a proper boto conn")
     if return_credentials:
         return conn, role["Credentials"]
     return conn
