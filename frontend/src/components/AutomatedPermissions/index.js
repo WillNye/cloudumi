@@ -68,7 +68,6 @@ const AutomaticPermissionsList = () => {
       </div>
       <Divider />
 
-      {/* <Segment> */}
       <Header as='h3' block textAlign='center'>
         Generated Policy Requests
       </Header>
@@ -89,7 +88,6 @@ const AutomaticPermissionsList = () => {
           </Header>
         </Segment>
       )}
-      {/* </Segment> */}
     </>
   )
 }

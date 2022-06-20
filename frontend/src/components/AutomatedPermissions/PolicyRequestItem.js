@@ -1,10 +1,12 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import camelCase from 'lodash/camelCase'
 import startCase from 'lodash/startCase'
+import isEqual from 'lodash/isEqual'
 import { Table, Segment, Header, Grid, Button } from 'semantic-ui-react'
 import { removePolicyRequest, approvePolicyRequest } from './utils'
 import Editor from '@monaco-editor/react'
 import { APPLIED_POLICY_STATUSES, editorOptions } from './constants'
+import { sortAndStringifyNestedJSONObject } from 'helpers/utils'
 
 const PolicyRequestItem = ({
   policyRequest,
@@ -12,6 +14,12 @@ const PolicyRequestItem = ({
   sendRequestCommon,
 }) => {
   const [isLoading, setIsLoading] = useState(false)
+  const existingPolicy = policyRequest.policy
+  const [modifiedPolicy, setModifiedPolicy] = useState(existingPolicy)
+
+  const noChangesDetected = isEqual(existingPolicy, modifiedPolicy)
+
+  console.log('======================', noChangesDetected)
 
   const cantEditPolicy = APPLIED_POLICY_STATUSES.includes(policyRequest.status)
 
@@ -114,9 +122,10 @@ const PolicyRequestItem = ({
                       null,
                       '\t'
                     )}
-                    onChange={() => {}}
-                    options={editorOptions}
-                    // onMount={handleEditorDidMount}
+                    onChange={(value) => {
+                      setModifiedPolicy(JSON.parse(value))
+                    }}
+                    options={{ ...editorOptions, readonly: cantEditPolicy }}
                     textAlign='center'
                   />
                 </Segment>
@@ -142,7 +151,7 @@ const PolicyRequestItem = ({
                   content='Update Change'
                   positive
                   fluid
-                  disabled={true}
+                  disabled={cantEditPolicy || noChangesDetected}
                   onClick={() => {}}
                 />
               </Grid.Column>
