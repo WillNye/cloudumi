@@ -88,7 +88,8 @@ async def handle_spoke_account_registration(body):
     account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
     host = body["ResourceProperties"].get("Host")
     external_id = body["ResourceProperties"].get("ExternalId")
-    read_only = body["ResourceProperties"].get("ReadOnly")
+    read_only = bool(body["ResourceProperties"].get("ReadOnlyMode") == "true")
+
     if not spoke_role_name or not account_id_for_role or not external_id or not host:
         error_message = (
             "Message is missing spoke_role_name, account_id_for_role, or host"
@@ -314,7 +315,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
     role_arn = body["ResourceProperties"].get("CentralRoleArn")
     external_id = body["ResourceProperties"].get("ExternalId")
     host = body["ResourceProperties"].get("Host")
-    read_only = body["ResourceProperties"].get("ReadOnly")
+    read_only = bool(body["ResourceProperties"].get("ReadOnlyMode") == "true")
 
     if (
         not spoke_role_name
