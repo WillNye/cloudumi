@@ -304,3 +304,6 @@ Outputs:
   RegistrationTopicArnParameter:
     Description: SNS Registration queue ARN
     Value: !Ref RegistrationTopicArnParameter
+  ReadOnly:
+    Description: Does NOQ only have read access to the account
+    Value: !Ref ReadOnlyModeParameter

@@ -38,7 +38,11 @@ Resources:
                   # enabled, the central account role will be used to assume into the target role to broker credentials.
                   - "sts:AssumeRole"
                   - "sts:TagSession"
-                Resource: "*"
+                Resource:
+                  Fn::If:
+                    - ReadOnlyModeEnabled
+                    - !Sub "arn:aws:iam::*:role/${SpokeRoleNameParameter}"
+                    - "*"
   SpokeRole:
     Type: "AWS::IAM::Role"
     DependsOn:
@@ -371,3 +375,6 @@ Outputs:
   RegistrationTopicArn:
     Description: SNS Registration topic ARN
     Value: !Ref RegistrationTopicArnParameter
+  ReadOnly:
+    Description: Does NOQ only have read access to the account
+    Value: !Ref ReadOnlyModeParameter

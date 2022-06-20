@@ -88,6 +88,7 @@ async def handle_spoke_account_registration(body):
     account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
     host = body["ResourceProperties"].get("Host")
     external_id = body["ResourceProperties"].get("ExternalId")
+    read_only = body["ResourceProperties"].get("ReadOnly")
     if not spoke_role_name or not account_id_for_role or not external_id or not host:
         error_message = (
             "Message is missing spoke_role_name, account_id_for_role, or host"
@@ -288,6 +289,7 @@ async def handle_spoke_account_registration(body):
         external_id=external_id,
         hub_account_arn=hub_account.role_arn,
         master_for_account=master_account,
+        read_only=read_only,
     )
     await models.ModelAdapter(SpokeAccount).load_config(
         "spoke_accounts", host
@@ -312,6 +314,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
     role_arn = body["ResourceProperties"].get("CentralRoleArn")
     external_id = body["ResourceProperties"].get("ExternalId")
     host = body["ResourceProperties"].get("Host")
+    read_only = body["ResourceProperties"].get("ReadOnly")
 
     if (
         not spoke_role_name
@@ -492,10 +495,12 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         account_id=account_id_for_role,
         role_arn=role_arn,
         external_id=external_id,
+        read_only=read_only,
     )
     await models.ModelAdapter(HubAccount).load_config("hub_account", host).from_model(
         hub_account
     ).store_item()
+
     spoke_account = SpokeAccount(
         name=spoke_role_name,
         account_name=account_name,
@@ -503,6 +508,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         role_arn=spoke_role_arn,
         external_id=external_id,
         hub_account_arn=hub_account.role_arn,
+        read_only=read_only,
     )
     await models.ModelAdapter(SpokeAccount).load_config(
         "spoke_accounts", host
