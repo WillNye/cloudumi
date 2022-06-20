@@ -175,7 +175,7 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
 
         matching = []
         for entry in typehead_data.get("typeahead_entries", []):
-            principal_arn = entry.get("principal", "").get("principal_arn", "")
+            principal_arn = entry.get("principal", {}).get("principal_arn", "")
             if (
                 principal_arn
                 and principal_arn.split(":")[4]
