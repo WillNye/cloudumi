@@ -17,7 +17,6 @@ import boto3
 import botocore.exceptions
 import logmatic
 import ujson as json
-from asgiref.sync import async_to_sync
 from pytz import timezone
 
 from common.lib.aws.aws_secret_manager import get_aws_secret
@@ -176,7 +175,7 @@ class Configuration(metaclass=Singleton):
             ):
                 break
 
-    async def merge_extended_paths(self, extends, dir_path):
+    def merge_extended_paths(self, extends, dir_path):
         for s in extends:
             extend_config = {}
             # This decode and YAML-load a string stored in AWS Secrets Manager
@@ -204,7 +203,7 @@ class Configuration(metaclass=Singleton):
 
             dict_merge(self.config, extend_config)
             if extend_config.get("extends"):
-                await self.merge_extended_paths(extend_config.get("extends"), dir_path)
+                self.merge_extended_paths(extend_config.get("extends"), dir_path)
         validate_config(self.config)
 
     def get_employee_photo_url(self, user, host):
@@ -274,7 +273,7 @@ class Configuration(metaclass=Singleton):
             f"configuration in these locations: {', '.join(config_locations)}"
         )
 
-    async def load_config(
+    def load_config(
         self,
         allow_start_background_threads=True,
     ):
@@ -294,7 +293,7 @@ class Configuration(metaclass=Singleton):
         dir_path = os.path.dirname(path)
 
         if extends:
-            await self.merge_extended_paths(extends, dir_path)
+            self.merge_extended_paths(extends, dir_path)
 
         if self.get("_global_.environment") != "test":
             self.raise_if_invalid_aws_credentials()
@@ -594,7 +593,7 @@ class ContextFilter(logging.Filter):
 
 
 CONFIG = Configuration()
-async_to_sync(CONFIG.load_config)()
+CONFIG.load_config()
 
 get = CONFIG.get
 get_logger = CONFIG.get_logger
