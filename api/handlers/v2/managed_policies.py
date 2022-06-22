@@ -1,7 +1,7 @@
 import sentry_sdk
 import tornado.escape
-import ujson as json
 
+import common.lib.noq_json as json
 from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.config import config
 from common.config.models import ModelAdapter

@@ -3,10 +3,10 @@ import unittest
 
 import boto3
 import pytest
-import ujson as json
 from mock import patch
 from pydantic import ValidationError
 
+import common.lib.noq_json as json
 from common.lib.assume_role import boto3_cached_conn
 from common.models import (
     Action,
@@ -1288,7 +1288,6 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                     ],
                     "Version": "2012-10-17",
                 },
-                escape_forward_slashes=False,
             ),
         )
         # Specify ID different from change -> No changes should happen
@@ -1346,9 +1345,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client.put_role_policy(
             RoleName=test_role_name,
             PolicyName=existing_policy_name,
-            PolicyDocument=json.dumps(
-                existing_policy_document, escape_forward_slashes=False
-            ),
+            PolicyDocument=json.dumps(existing_policy_document),
         )
 
         inline_policy_change = {
@@ -1443,9 +1440,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         for path in ["/", "/testpath/test2/"]:
             client.create_policy(
                 PolicyName=existing_policy_name + "managed",
-                PolicyDocument=json.dumps(
-                    existing_policy_document, escape_forward_slashes=False
-                ),
+                PolicyDocument=json.dumps(existing_policy_document),
                 Path=path,
             )
             policy_name_and_path = path + existing_policy_name + "managed"

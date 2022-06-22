@@ -5,8 +5,8 @@ from collections import defaultdict
 from typing import Dict
 
 import sentry_sdk
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.cache import (

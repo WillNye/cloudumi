@@ -5,8 +5,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 import sentry_sdk
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn

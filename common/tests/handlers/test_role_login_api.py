@@ -3,8 +3,8 @@ import os
 import sys
 
 import pytest
-import ujson as json
 
+import common.lib.noq_json as json
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

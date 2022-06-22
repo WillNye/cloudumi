@@ -1,8 +1,8 @@
 from typing import Optional
 
 import sentry_sdk
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable
 from common.handlers.base import BaseAPIV2Handler

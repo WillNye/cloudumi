@@ -3,11 +3,11 @@ from typing import Any, Dict, Optional
 
 import boto3
 import sentry_sdk
-import ujson as json
 from botocore.exceptions import ClientError
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 
+import common.lib.noq_json as json
 from common.config import config, models
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn

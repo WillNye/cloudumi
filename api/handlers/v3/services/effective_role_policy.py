@@ -1,6 +1,6 @@
 import sentry_sdk
-import ujson as json
 
+import common.lib.noq_json as json
 from common.handlers.base import BaseHandler
 from common.lib.aws.unused_permissions_remover import (
     calculate_unused_policy_for_identity,

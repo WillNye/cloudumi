@@ -16,9 +16,9 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 import botocore.exceptions
 import logmatic
-import ujson as json
 from pytz import timezone
 
+import common.lib.noq_json as json
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.aws.split_s3_path import split_s3_path
 from common.lib.singleton import Singleton
