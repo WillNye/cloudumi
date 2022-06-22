@@ -1,7 +1,6 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import camelCase from 'lodash/camelCase'
 import startCase from 'lodash/startCase'
-import _ from 'lodash'
 import {
   Table,
   Segment,
@@ -11,7 +10,11 @@ import {
   Form,
   Search,
 } from 'semantic-ui-react'
-import { removePolicyRequest, approvePolicyRequest } from './utils'
+import {
+  removePolicyRequest,
+  approvePolicyRequest,
+  updatePolicyRequest,
+} from './utils'
 import Editor from '@monaco-editor/react'
 import { APPLIED_POLICY_STATUSES, editorOptions } from './constants'
 
@@ -53,36 +56,59 @@ const PolicyRequestItem = ({
     getAllRoles(value)
   }
 
-  const handleResultSelect = (_e, { result }) => {
-    const value = _.isString(result.title) ? result.title.trim() : result.title
+  const handleResultSelect = useCallback(
+    (_e, { result }) => {
+      const value = result?.principal?.principal_arn || policyRequest.role
+      handleUpdateRequest(policyRequest.account.account_id, policyRequest.id, {
+        role: value,
+        policy: JSON.parse(modifiedPolicy),
+      })
+    },
+    [modifiedPolicy, policyRequest] // eslint-disable-line react-hooks/exhaustive-deps
+  )
+
+  const approveAutomaticPolicyRequest = (accountId, policyId) => {
+    setIsLoading(true)
+    approvePolicyRequest(sendRequestCommon, accountId, policyId)
+      .then(async () => {
+        await getAutomaticPermissionsRequets()
+      })
+      .catch(() => {
+        // handle errror
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }
 
-  const approveAutomaticPolicyRequest = async (accountId, policyId) => {
+  const deletePolicyRequest = (accountId, policyId) => {
     setIsLoading(true)
-    const resJson = await approvePolicyRequest(
-      sendRequestCommon,
-      accountId,
-      policyId
-    )
-
-    if (resJson && resJson.id) {
-      await getAutomaticPermissionsRequets()
-    }
-    setIsLoading(false)
+    removePolicyRequest(sendRequestCommon, accountId, policyId)
+      .then(async () => {
+        await getAutomaticPermissionsRequets()
+      })
+      .catch(() => {
+        // handle errror
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }
 
-  const deletePolicyRequest = async (accountId, policyId) => {
+  const handleUpdateRequest = (accountId, policyId, data) => {
     setIsLoading(true)
-    const resJson = await removePolicyRequest(
-      sendRequestCommon,
-      accountId,
-      policyId
-    )
-
-    if (resJson && resJson.status_code === 200) {
-      await getAutomaticPermissionsRequets()
-    }
-    setIsLoading(false)
+    updatePolicyRequest(sendRequestCommon, accountId, policyId, data)
+      .then(async () => {
+        setRoleValue(data.role)
+        await getAutomaticPermissionsRequets()
+      })
+      .catch(() => {
+        setRoleValue(policyRequest.role)
+        //handle error
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }
 
   return (
@@ -197,7 +223,16 @@ const PolicyRequestItem = ({
                   positive
                   fluid
                   disabled={cantEditPolicy || noChangesDetected}
-                  onClick={() => {}}
+                  onClick={() =>
+                    handleUpdateRequest(
+                      policyRequest.account.account_id,
+                      policyRequest.id,
+                      {
+                        role: policyRequest.role,
+                        policy: JSON.parse(modifiedPolicy),
+                      }
+                    )
+                  }
                 />
               </Grid.Column>
               <Grid.Column>

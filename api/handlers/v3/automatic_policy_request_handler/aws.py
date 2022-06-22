@@ -141,7 +141,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
         if policy_request:
 
             if not policy_request.status in non_allowed_statuses:
-                if data["role"] != data["role"]:
+                if data["role"] != policy_request.role:
                     new_account_id = policy_request.role.split(":")[4]
                     account = (
                         ModelAdapter(SpokeAccount)
