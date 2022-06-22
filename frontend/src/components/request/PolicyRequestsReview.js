@@ -44,7 +44,7 @@ class PolicyRequestReview extends Component {
     this.reloadDataFromBackend()
   }
 
-  async sendProposedPolicy(command) {
+  async sendProposedPolicy(command, credentials = null) {
     const { change, newStatement, requestID, newExpirationDate } = this.state
     this.setState(
       {
@@ -60,6 +60,9 @@ class PolicyRequestReview extends Component {
         if (newStatement) {
           request.modification_model.policy_document = JSON.parse(newStatement)
           request.modification_model.expiration_date = newExpirationDate
+        }
+        if (credentials) {
+          request.modification_model.credentials = { aws: credentials }
         }
         this.props
           .sendRequestCommon(request, '/api/v2/requests/' + requestID, 'PUT')
@@ -443,10 +446,11 @@ class PolicyRequestReview extends Component {
       extendedRequest.changes.changes &&
       extendedRequest.changes.changes.length > 0 ? (
         <>
-          {extendedRequest.changes.changes.map((change) => {
+          {extendedRequest.changes.changes.map((change, index) => {
             if (change.change_type === 'generic_file') {
               return (
                 <InlinePolicyChangeComponent
+                  key={index}
                   change={change}
                   config={requestConfig}
                   changesConfig={changesConfig}
@@ -465,6 +469,7 @@ class PolicyRequestReview extends Component {
             ) {
               return (
                 <InlinePolicyChangeComponent
+                  key={index}
                   change={change}
                   config={requestConfig}
                   changesConfig={changesConfig}
@@ -480,6 +485,7 @@ class PolicyRequestReview extends Component {
             if (change.change_type === 'managed_policy') {
               return (
                 <ManagedPolicyChangeComponent
+                  key={index}
                   change={change}
                   config={requestConfig}
                   changesConfig={changesConfig}
@@ -494,6 +500,7 @@ class PolicyRequestReview extends Component {
             if (change.change_type === 'permissions_boundary') {
               return (
                 <PermissionsBoundaryChangeComponent
+                  key={index}
                   change={change}
                   config={requestConfig}
                   changesConfig={changesConfig}
@@ -508,6 +515,7 @@ class PolicyRequestReview extends Component {
             if (change.change_type === 'assume_role_policy') {
               return (
                 <AssumeRolePolicyChangeComponent
+                  key={index}
                   change={change}
                   config={requestConfig}
                   changesConfig={changesConfig}
@@ -523,6 +531,7 @@ class PolicyRequestReview extends Component {
             if (change.change_type === 'resource_tag') {
               return (
                 <ResourceTagChangeComponent
+                  key={index}
                   change={change}
                   config={requestConfig}
                   changesConfig={changesConfig}
@@ -539,6 +548,7 @@ class PolicyRequestReview extends Component {
             ) {
               return (
                 <ResourcePolicyChangeComponent
+                  key={index}
                   change={change}
                   config={requestConfig}
                   changesConfig={changesConfig}
@@ -554,6 +564,7 @@ class PolicyRequestReview extends Component {
             if (change.change_type === 'tear_can_assume_role') {
               return (
                 <TemporaryEscalationComponent
+                  key={index}
                   change={change}
                   config={requestConfig}
                   changesConfig={changesConfig}
