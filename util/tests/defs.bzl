@@ -1,24 +1,20 @@
 load("@rules_python//python:defs.bzl", "py_test")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
-def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
+def pytest_test(name, srcs = [], args = [], deps = [], data = [], **kwargs):
     """
         Pytest Wrapper to simplify calling pytest for testing
     """
+    # whitelist = ",".join(whitelist)
     py_test(
         name = name,
         srcs = [
             "//util/tests:wrapper.py",
             "//util/tests/fixtures:fixtures.py",
             "//util/tests/fixtures:globals.py",
-        ] + srcs,
+        ],
         main = "//util/tests:wrapper.py",
-        args = [
-            "--capture=no",
-            # "--black",
-            # "--pylint",
-            # "--mypy",
-        ] + args + ["$(location :%s)" % x for x in srcs],
+        args = args,
         python_version = "PY3",
         srcs_version = "PY3",
         deps = deps + [
@@ -35,6 +31,7 @@ def pytest_test(name, srcs, deps = [], args = [], data = [], **kwargs):
         env = {
             "AWS_REGION": "us-west-2",
             "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
+            "AWS_PROFILE": "dev",
         },
         data = [
             "//util/tests:test_configuration.yaml",
