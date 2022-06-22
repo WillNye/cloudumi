@@ -1,4 +1,4 @@
-import json  # I don't think I can use ujson here
+import json
 from datetime import datetime
 from decimal import Decimal
 

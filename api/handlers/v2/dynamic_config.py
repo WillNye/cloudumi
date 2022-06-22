@@ -11,7 +11,7 @@ from common.handlers.base import BaseHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_edit_dynamic_config
 from common.lib.dynamo import RestrictedDynamoHandler
-from common.lib.json_encoder import SetEncoder
+from common.lib.noq_json import SetEncoder
 
 log = config.get_logger()
 

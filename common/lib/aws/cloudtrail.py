@@ -16,7 +16,7 @@ from common.lib.aws.utils import (
 )
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler
-from common.lib.json_encoder import SetEncoder
+from common.lib.noq_json import SetEncoder
 from common.lib.notifications.models import (
     ConsoleMeUserNotification,
     ConsoleMeUserNotificationAction,

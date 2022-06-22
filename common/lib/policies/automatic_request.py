@@ -11,7 +11,7 @@ from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
-from common.lib.json_encoder import SetEncoder
+from common.lib.noq_json import SetEncoder
 from common.lib.redis import RedisHandler, redis_get
 from common.models import (
     AutomaticPolicyRequest,
