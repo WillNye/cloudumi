@@ -1,11 +1,13 @@
 load("@rules_python//python:defs.bzl", "py_test")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
-def pytest_test(name, srcs = [], args = [], deps = [], data = [], **kwargs):
+def pytest_test(name, whitelist = [], srcs = [], args = [], deps = [], data = [], **kwargs):
     """
         Pytest Wrapper to simplify calling pytest for testing
     """
-    # whitelist = ",".join(whitelist)
+    whitelist = ",".join(whitelist)
+    if not whitelist:
+        whitelist = "--ignore"
     py_test(
         name = name,
         srcs = [
@@ -14,7 +16,7 @@ def pytest_test(name, srcs = [], args = [], deps = [], data = [], **kwargs):
             "//util/tests/fixtures:globals.py",
         ],
         main = "//util/tests:wrapper.py",
-        args = args,
+        args = [whitelist] + args,
         python_version = "PY3",
         srcs_version = "PY3",
         deps = deps + [
