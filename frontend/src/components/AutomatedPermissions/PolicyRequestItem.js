@@ -16,6 +16,7 @@ import {
   updatePolicyRequest,
 } from './utils'
 import Editor from '@monaco-editor/react'
+import { useToast } from 'lib/Toast'
 import { APPLIED_POLICY_STATUSES, editorOptions } from './constants'
 
 const PolicyRequestItem = ({
@@ -26,6 +27,8 @@ const PolicyRequestItem = ({
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState([])
   const [rolevalue, setRoleValue] = useState(policyRequest.role || '')
+
+  const { error, success } = useToast()
 
   const existingPolicy = JSON.stringify(policyRequest.policy || {}, null, '\t')
   const [modifiedPolicy, setModifiedPolicy] = useState(existingPolicy)
@@ -70,11 +73,12 @@ const PolicyRequestItem = ({
   const approveAutomaticPolicyRequest = (accountId, policyId) => {
     setIsLoading(true)
     approvePolicyRequest(sendRequestCommon, accountId, policyId)
-      .then(async () => {
-        await getAutomaticPermissionsRequets()
+      .then(() => {
+        getAutomaticPermissionsRequets().then()
+        success('Request successfully approved')
       })
       .catch(() => {
-        // handle errror
+        error('Unable to approve request')
       })
       .finally(() => {
         setIsLoading(false)
@@ -84,11 +88,12 @@ const PolicyRequestItem = ({
   const deletePolicyRequest = (accountId, policyId) => {
     setIsLoading(true)
     removePolicyRequest(sendRequestCommon, accountId, policyId)
-      .then(async () => {
-        await getAutomaticPermissionsRequets()
+      .then(() => {
+        getAutomaticPermissionsRequets().then()
+        success('Request successfully deleted')
       })
       .catch(() => {
-        // handle errror
+        error('Unable to remove request')
       })
       .finally(() => {
         setIsLoading(false)
@@ -98,13 +103,14 @@ const PolicyRequestItem = ({
   const handleUpdateRequest = (accountId, policyId, data) => {
     setIsLoading(true)
     updatePolicyRequest(sendRequestCommon, accountId, policyId, data)
-      .then(async () => {
-        setRoleValue(data.role)
-        await getAutomaticPermissionsRequets()
+      .then((res) => {
+        getAutomaticPermissionsRequets().then()
+        success('Request successfully update')
+        setRoleValue(res.role)
       })
       .catch(() => {
         setRoleValue(policyRequest.role)
-        //handle error
+        error('Unable to update request')
       })
       .finally(() => {
         setIsLoading(false)
