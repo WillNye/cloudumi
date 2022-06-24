@@ -220,20 +220,20 @@ def report_celery_last_success_metrics() -> bool:
 
 def get_celery_request_tags(**kwargs):
     request = kwargs.get("request")
-    sender_tenantname = "unknown"
+    sender_hostname = "unknown"
     sender = kwargs.get("sender")
 
     if sender:
         try:
-            sender_tenantname = sender.tenantname
+            sender_hostname = sender.hostname
         except AttributeError:
-            sender_tenantname = vars(sender.request).get("origin", "unknown")
+            sender_hostname = vars(sender.request).get("origin", "unknown")
     if request and not isinstance(
         request, Context
     ):  # unlike others, task_revoked sends a Context for `request`
         task_name = request.name
         task_id = request.id
-        receiver_tenantname = request.tenantname
+        receiver_hostname = request.hostname
         request_args = request.args
         request_kwargs = request.kwargs
     else:
@@ -246,9 +246,9 @@ def get_celery_request_tags(**kwargs):
         except AttributeError:
             task_id = kwargs.pop("id", "")
         try:
-            receiver_tenantname = sender.request.tenantname
+            receiver_hostname = sender.request.hostname
         except AttributeError:
-            receiver_tenantname = ""
+            receiver_hostname = ""
         try:
             request_args = sender.request.args
         except AttributeError:
@@ -262,8 +262,8 @@ def get_celery_request_tags(**kwargs):
     tags = {
         "task_name": task_name,
         "task_id": task_id,
-        "sender_tenantname": sender_tenantname,
-        "receiver_tenantname": receiver_tenantname,
+        "sender_hostname": sender_hostname,
+        "receiver_hostname": receiver_hostname,
         "request_args": request_args,
         "request_kwargs": request_kwargs,
     }
