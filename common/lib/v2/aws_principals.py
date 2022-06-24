@@ -36,35 +36,35 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger()
 
 
-async def get_config_timeline_url_for_role(role, account_id, host):
+async def get_config_timeline_url_for_role(role, account_id, tenant):
     resource_id = role.get("resourceId")
     if resource_id:
         config_history_url = await get_aws_config_history_url_for_resource(
-            account_id, resource_id, role["arn"], "AWS::IAM::Role", host
+            account_id, resource_id, role["arn"], "AWS::IAM::Role", tenant
         )
         return config_history_url
 
 
-async def get_cloudtrail_details_for_role(arn: str, host: str):
+async def get_cloudtrail_details_for_role(arn: str, tenant: str):
     """
     Retrieves CT details associated with role, if they exist exists
     :param arn:
     :return:
     """
     # internal_policies = get_plugin_by_name(
-    #     config.get_host_specific_key(
-    #         "plugins.internal_policies", host, "cmsaas_policies"
+    #     config.get_tenant_specific_key(
+    #         "plugins.internal_policies", tenant, "cmsaas_policies"
     #     )
     # )()
-    # error_url = config.get_host_specific_key(
-    #     "cloudtrail_errors.error_messages_by_role_uri", host, ""
+    # error_url = config.get_tenant_specific_key(
+    #     "cloudtrail_errors.error_messages_by_role_uri", tenant, ""
     # ).format(arn=arn)
     #
     # errors_unformatted = await internal_policies.get_errors_by_role(
     #     arn,
-    #     host,
-    #     config.get_host_specific_key(
-    #         "policies.number_cloudtrail_errors_to_display", host, 5
+    #     tenant,
+    #     config.get_tenant_specific_key(
+    #         "policies.number_cloudtrail_errors_to_display", tenant, 5
     #     ),
     # )
     #
@@ -90,7 +90,7 @@ async def get_cloudtrail_details_for_role(arn: str, host: str):
 
 
 async def get_s3_details_for_role(
-    account_id: str, role_name: str, host: str
+    account_id: str, role_name: str, tenant: str
 ) -> S3DetailsModel:
     """
     Retrieves s3 details associated with role, if it exists
@@ -98,17 +98,19 @@ async def get_s3_details_for_role(
     """
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
     yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
-    error_url = config.get_host_specific_key("s3.query_url", host, "").format(
+    error_url = config.get_tenant_specific_key("s3.query_url", tenant, "").format(
         yesterday=yesterday, role_name=f"'{role_name}'", account_id=f"'{account_id}'"
     )
-    query_url = config.get_host_specific_key("s3.non_error_query_url", host, "").format(
+    query_url = config.get_tenant_specific_key(
+        "s3.non_error_query_url", tenant, ""
+    ).format(
         yesterday=yesterday, role_name=f"'{role_name}'", account_id=f"'{account_id}'"
     )
 
-    s3_error_topic = config.get_host_specific_key(
-        "redis.s3_errors", host, f"{host}_S3_ERRORS"
+    s3_error_topic = config.get_tenant_specific_key(
+        "redis.s3_errors", tenant, f"{tenant}_S3_ERRORS"
     )
-    all_s3_errors = await redis_get(s3_error_topic, host)
+    all_s3_errors = await redis_get(s3_error_topic, tenant)
     s3_errors_unformatted = []
     if all_s3_errors:
         s3_errors_unformatted = json.loads(all_s3_errors).get(arn, [])
@@ -133,7 +135,7 @@ async def get_s3_details_for_role(
     )
 
 
-async def get_app_details_for_role(arn: str, host: str):
+async def get_app_details_for_role(arn: str, tenant: str):
     """
     Retrieves applications associated with role, if they exist
     :param arn:
@@ -141,21 +143,21 @@ async def get_app_details_for_role(arn: str, host: str):
     """
     return AppDetailsArray(app_details=[])
     # internal_policies = get_plugin_by_name(
-    #     config.get_host_specific_key(
-    #         "plugins.internal_policies", host, "cmsaas_policies"
+    #     config.get_tenant_specific_key(
+    #         "plugins.internal_policies", tenant, "cmsaas_policies"
     #     )
     # )()
-    # return await internal_policies.get_applications_associated_with_role(arn, host)
+    # return await internal_policies.get_applications_associated_with_role(arn, tenant)
 
 
-async def get_role_template(arn: str, host: str):
-    red = RedisHandler().redis_sync(host)
+async def get_role_template(arn: str, tenant: str):
+    red = RedisHandler().redis_sync(tenant)
     return await aio_wrapper(
         red.hget,
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "templated_roles.redis_key",
-            host,
-            f"{host}_TEMPLATED_ROLES_v2",
+            tenant,
+            f"{tenant}_TEMPLATED_ROLES_v2",
         ),
         arn.lower(),
     )
@@ -164,14 +166,14 @@ async def get_role_template(arn: str, host: str):
 async def get_user_details(
     account_id: str,
     user_name: str,
-    host: str,
+    tenant: str,
     extended: bool = False,
     force_refresh: bool = False,
 ) -> Optional[Union[ExtendedAwsPrincipalModel, AwsPrincipalModel]]:
-    account_ids_to_name = await get_account_id_to_name_mapping(host)
+    account_ids_to_name = await get_account_id_to_name_mapping(tenant)
     arn = f"arn:aws:iam::{account_id}:user/{user_name}"
 
-    user = await fetch_iam_user(account_id, arn, host)
+    user = await fetch_iam_user(account_id, arn, tenant)
     # requested user doesn't exist
     if not user:
         return None
@@ -183,15 +185,15 @@ async def get_user_details(
             arn=arn,
             inline_policies=user.get("UserPolicyList", []),
             config_timeline_url=await get_config_timeline_url_for_role(
-                user, account_id, host
+                user, account_id, tenant
             ),
-            cloudtrail_details=await get_cloudtrail_details_for_role(arn, host),
+            cloudtrail_details=await get_cloudtrail_details_for_role(arn, tenant),
             s3_details=await get_s3_details_for_role(
                 account_id=account_id,
                 role_name=user_name,
-                host=host,
+                tenant=tenant,
             ),
-            apps=await get_app_details_for_role(arn, host),
+            apps=await get_app_details_for_role(arn, tenant),
             managed_policies=user["AttachedManagedPolicies"],
             groups=user["Groups"],
             tags=user["Tags"],
@@ -212,22 +214,22 @@ async def get_user_details(
         )
 
 
-async def get_noq_authorization_tag_groups(role, host: str) -> dict:
+async def get_noq_authorization_tag_groups(role, tenant: str) -> dict:
 
-    is_enabled = config.get_host_specific_key(
+    is_enabled = config.get_tenant_specific_key(
         "cloud_credential_authorization_mapping.role_tags.enabled",
-        host,
+        tenant,
         False,
     )
 
-    authourized_tags = config.get_host_specific_key(
+    authourized_tags = config.get_tenant_specific_key(
         "cloud_credential_authorization_mapping.role_tags.authorized_groups_tags",
-        host,
+        tenant,
         [],
     )
-    cli_authourized_tags = config.get_host_specific_key(
+    cli_authourized_tags = config.get_tenant_specific_key(
         "cloud_credential_authorization_mapping.role_tags.authorized_groups_cli_only_tags",
-        host,
+        tenant,
         [],
     )
 
@@ -277,15 +279,15 @@ async def get_noq_authorization_tag_groups(role, host: str) -> dict:
 async def get_role_details(
     account_id: str,
     role_name: str,
-    host: str,
+    tenant: str,
     extended: bool = False,
     force_refresh: bool = False,
     is_admin_request: bool = False,
 ) -> Optional[Union[ExtendedAwsPrincipalModel, AwsPrincipalModel]]:
-    account_ids_to_name = await get_account_id_to_name_mapping(host)
+    account_ids_to_name = await get_account_id_to_name_mapping(tenant)
     arn = f"arn:aws:iam::{account_id}:role/{role_name}"
     role: IAMRole = await IAMRole.get(
-        host, account_id, arn, force_refresh=force_refresh
+        tenant, account_id, arn, force_refresh=force_refresh
     )
 
     role: dict = role.dict()
@@ -295,13 +297,13 @@ async def get_role_details(
     if extended:
         elevated_access_config = None
         role_access_config = None
-        template = await get_role_template(arn, host)
+        template = await get_role_template(arn, tenant)
         tags = role["policy"]["Tags"]
-        if config.get_host_specific_key(
-            "temporary_elevated_access_requests.enabled", host, False
+        if config.get_tenant_specific_key(
+            "temporary_elevated_access_requests.enabled", tenant, False
         ):
-            tear_support_tag = get_tear_support_groups_tag(host)
-            tear_users_tag = get_active_tear_users_tag(host)
+            tear_support_tag = get_tear_support_groups_tag(tenant)
+            tear_users_tag = get_active_tear_users_tag(tenant)
             if is_admin_request:
                 active_users = get_resource_tag(role, tear_users_tag, True, set())
                 supported_groups = get_resource_tag(role, tear_support_tag, True, set())
@@ -312,7 +314,7 @@ async def get_role_details(
                 )
 
         if is_admin_request:
-            role_access_data = await get_noq_authorization_tag_groups(role, host)
+            role_access_data = await get_noq_authorization_tag_groups(role, tenant)
             role_access_config = PrincipalModelRoleAccessConfig(
                 noq_authorized_tag=role_access_data["default_noq_authorized_tag"],
                 noq_authorized_cli_tag=role_access_data[
@@ -333,15 +335,15 @@ async def get_role_details(
             ),
             assume_role_policy_document=role["policy"]["AssumeRolePolicyDocument"],
             config_timeline_url=await get_config_timeline_url_for_role(
-                role, account_id, host
+                role, account_id, tenant
             ),
-            cloudtrail_details=await get_cloudtrail_details_for_role(arn, host),
+            cloudtrail_details=await get_cloudtrail_details_for_role(arn, tenant),
             s3_details=await get_s3_details_for_role(
                 account_id=account_id,
                 role_name=role_name,
-                host=host,
+                tenant=tenant,
             ),
-            apps=await get_app_details_for_role(arn, host),
+            apps=await get_app_details_for_role(arn, tenant),
             managed_policies=role["policy"]["AttachedManagedPolicies"],
             tags=tags,
             elevated_access_config=elevated_access_config,
@@ -367,9 +369,9 @@ async def get_role_details(
 
 async def get_eligible_role_details(
     eligible_roles: List[str],
-    host: str,
+    tenant: str,
 ) -> EligibleRolesModelArray:
-    account_ids_to_name = await get_account_id_to_name_mapping(host)
+    account_ids_to_name = await get_account_id_to_name_mapping(tenant)
     eligible_roles_detailed = []
     for role in eligible_roles:
         arn_parsed = parse_arn(role)
@@ -380,7 +382,7 @@ async def get_eligible_role_details(
             else arn_parsed["resource"]
         )
         account_friendly_name = account_ids_to_name.get(account_id, "Unknown")
-        role_apps = await get_app_details_for_role(role, host)
+        role_apps = await get_app_details_for_role(role, tenant)
         eligible_roles_detailed.append(
             EligibleRolesModel(
                 arn=role,

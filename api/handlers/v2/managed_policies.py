@@ -26,10 +26,10 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
     """
 
     async def get(self, arn):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
@@ -67,7 +67,7 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
             "account_id": account_id,
             "principal_name": principal_name,
             "principal_type": principal_type,
-            "host": host,
+            "tenant": tenant,
         }
 
         log.debug(log_data)
@@ -90,15 +90,15 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
                 {"RoleName": principal_name},
                 account_number=account_id,
                 assume_role=ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
+                .load_config("spoke_accounts", tenant)
                 .with_query({"account_id": account_id})
                 .first.name,
                 region=config.region,
                 retry_max_attempts=2,
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
                 ),
-                host=host,
+                tenant=tenant,
             )
         elif principal_type == "user":
             managed_policy_details = await aio_wrapper(
@@ -106,15 +106,15 @@ class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):
                 {"UserName": principal_name},
                 account_number=account_id,
                 assume_role=ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
+                .load_config("spoke_accounts", tenant)
                 .with_query({"account_id": account_id})
                 .first.name,
                 region=config.region,
                 retry_max_attempts=2,
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
                 ),
-                host=host,
+                tenant=tenant,
             )
         else:
             raise Exception("Invalid principal type")
@@ -134,16 +134,16 @@ class ManagedPoliciesHandler(BaseAPIV2Handler):
     """
 
     async def get(self, policy_arn: str):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
-            if self.user not in config.get_host_specific_key(
+            if self.user not in config.get_tenant_specific_key(
                 "groups.can_bypass_contractor_restrictions",
-                host,
+                tenant,
                 [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
@@ -153,12 +153,16 @@ class ManagedPoliciesHandler(BaseAPIV2Handler):
 
         if account_id == "aws":
             if (
-                len(ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list)
+                len(
+                    ModelAdapter(SpokeAccount)
+                    .load_config("spoke_accounts", tenant)
+                    .list
+                )
                 > 0
             ):
                 account_id = (
                     ModelAdapter(SpokeAccount)
-                    .load_config("spoke_accounts", host)
+                    .load_config("spoke_accounts", tenant)
                     .list[0]["account_id"]
                 )
 
@@ -181,13 +185,15 @@ class ManagedPoliciesHandler(BaseAPIV2Handler):
             policy_arn=policy_arn,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
             region=config.region,
             retry_max_attempts=2,
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-            host=host,
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
+            tenant=tenant,
         )
         res = WebResponse(
             status=Status2.success,
@@ -202,22 +208,22 @@ class ManagedPoliciesForAccountHandler(BaseAPIV2Handler):
         """
         Retrieve a list of managed policies for an account.
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
-            if self.user not in config.get_host_specific_key(
+            if self.user not in config.get_tenant_specific_key(
                 "groups.can_bypass_contractor_restrictions",
-                host,
+                tenant,
                 [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
         try:
             all_account_managed_policies = (
-                await get_all_iam_managed_policies_for_account(account_id, host)
+                await get_all_iam_managed_policies_for_account(account_id, tenant)
             )
         except Exception:
             sentry_sdk.capture_exception()

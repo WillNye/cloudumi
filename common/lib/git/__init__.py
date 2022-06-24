@@ -25,24 +25,24 @@ def clone_repo(git_url: str, tempdir):
 def store_iam_resources_in_git(
     iam_resources,
     account_id,
-    host,
+    tenant,
     git_message="[Automated] Update IAM Cache",
 ):
     """
     Experimental function to force-push discovered IAM resources into a Git repository's master branch.
     Use at your own risk.
     """
-    git_url = config.get_host_specific_key(
-        "cache_iam_resources_for_account.store_in_git.repo", host
+    git_url = config.get_tenant_specific_key(
+        "cache_iam_resources_for_account.store_in_git.repo", tenant
     )
-    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     tempdir = tempfile.mkdtemp()
     try:
         repo = clone_repo(git_url, tempdir)
         repo.config_writer().set_value("user", "name", "ConsoleMe").release()
-        email = config.get_host_specific_key(
+        email = config.get_tenant_specific_key(
             "cache_iam_resources_for_account.store_in_git.email",
-            host,
+            tenant,
         )
         if email:
             repo.config_writer().set_value("user", "email", email).release()

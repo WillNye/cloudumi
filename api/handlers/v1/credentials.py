@@ -81,27 +81,27 @@ class GetCredentialsHandler(BaseMtlsHandler):
         self.eligible_roles = []
 
     async def raise_if_certificate_too_old(self, role, stats, log_data=None):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         group_mapping = get_plugin_by_name(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "plugins.group_mapping",
-                host,
+                tenant,
                 "cmsaas_group_mapping",
             )
         )()
         log_data = (
             {
                 "function": sys._getframe().f_code.co_name,
-                "host": host,
+                "tenant": tenant,
                 "user": self.user,
                 "role": role,
             }
             if not log_data
             else log_data
         )
-        max_cert_age_message = config.get_host_specific_key(
+        max_cert_age_message = config.get_tenant_specific_key(
             "errors.custom_max_cert_age_message",
-            host,
+            tenant,
             "Please refresh your certificate.",
         )
         try:
@@ -131,7 +131,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": role,
                     "authorized": False,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             error = {
@@ -153,11 +153,11 @@ class GetCredentialsHandler(BaseMtlsHandler):
         self, request: dict, log_data: dict, stats, web_request
     ) -> str:
         """Get the requested role to complete the credentials fetching."""
-        host = web_request.host_name
+        tenant = web_request.host_name
         group_mapping = get_plugin_by_name(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "plugins.group_mapping",
-                host,
+                tenant,
                 "cmsaas_group_mapping",
             )
         )()
@@ -165,9 +165,9 @@ class GetCredentialsHandler(BaseMtlsHandler):
             return request["requested_role"]
         elif request.get("app_name"):
             internal_policies = get_plugin_by_name(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "plugins.internal_policies",
-                    host,
+                    tenant,
                     "cmsaas_policies",
                 )
             )()
@@ -181,7 +181,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                         "user": self.user,
                         "user_role": False,
                         "app_name": request["app_name"],
-                        "host": host,
+                        "tenant": tenant,
                     },
                 )
                 log_data["message"] = "No matching roles for provided app name."
@@ -212,7 +212,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                                 "user": self.user,
                                 "user_role": False,
                                 "account": request["account"],
-                                "host": host,
+                                "tenant": tenant,
                             },
                         )
                         log_data["message"] = "Can't find the passed in account."
@@ -259,7 +259,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     tags={
                         "user": self.user,
                         "user_role": False,
-                        "host": host,
+                        "tenant": tenant,
                     },
                 )
                 log_data["message"] = message
@@ -294,7 +294,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                             "user": self.user,
                             "user_role": True,
                             "account": request["account"],
-                            "host": host,
+                            "tenant": tenant,
                         },
                     )
                     log_data["message"] = "Can't find the passed in account."
@@ -328,7 +328,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 403:
                     description: No matching roles found, or user has failed authn/authz.
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -336,7 +336,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             "function": "GetCredentialsHandler.post",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
             "user": self.user,
         }
 
@@ -350,7 +350,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 tags={
                     "user": self.user,
                     "validation_error": str(ve),
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
 
@@ -381,21 +381,21 @@ class GetCredentialsHandler(BaseMtlsHandler):
         return
 
     async def get_credentials_app_flow(self, app_name, app, request, stats, log_data):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         aws = get_plugin_by_name(
-            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+            config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
         )()
         requested_role = request["requested_role"]
         log_data["requested_role"] = requested_role
         log_data["app"] = app_name
-        log_data["host"] = host
+        log_data["tenant"] = tenant
         log_data["message"] = "App is requesting role"
         log_data["custom_ip_restrictions"] = request.get("custom_ip_restrictions")
         log_data["request"] = json.dumps(request)
         log.debug(log_data)
         arn_parts = requested_role.split(":")
-        ip_restrictions_enabled = config.get_host_specific_key(
-            "policies.ip_restrictions", host, False
+        ip_restrictions_enabled = config.get_tenant_specific_key(
+            "policies.ip_restrictions", tenant, False
         )
         if (
             len(arn_parts) != 6
@@ -424,7 +424,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 "user": app_name,
                 "requested_role": requested_role,
                 "authorized": authorized,
-                "host": host,
+                "tenant": tenant,
             },
         )
 
@@ -444,7 +444,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
         credentials = await aws.get_credentials(
             app_name,
             requested_role,
-            host,
+            tenant,
             enforce_ip_restrictions=ip_restrictions_enabled,
             user_role=False,
             account_id=None,
@@ -473,13 +473,13 @@ class GetCredentialsHandler(BaseMtlsHandler):
         return (user_role, account_id)
 
     async def authorize_via_mfa(
-        self, request, host, requested_role, matching_roles, stats, log_data
+        self, request, tenant, requested_role, matching_roles, stats, log_data
     ):
         aws = get_plugin_by_name(
-            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+            config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
         )()
-        ip_restrictions_enabled = config.get_host_specific_key(
-            "policies.ip_restrictions", host, False
+        ip_restrictions_enabled = config.get_tenant_specific_key(
+            "policies.ip_restrictions", tenant, False
         )
         try:
             enforce_ip_restrictions = ip_restrictions_enabled
@@ -487,7 +487,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 # Duo prompt the user in order to get non IP-restricted credentials
                 mfa_success = await duo_mfa_user(
                     self.user.split("@")[0],
-                    host,
+                    tenant,
                     message="Noq Non-IP Restricted Credential Request",
                 )
 
@@ -498,7 +498,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                         tags={
                             "user": self.user,
                             "requested_role": requested_role,
-                            "host": host,
+                            "tenant": tenant,
                         },
                     )
                     log_data["message"] = "User requested non-IP-restricted credentials"
@@ -512,7 +512,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                         tags={
                             "user": self.user,
                             "requested_role": requested_role,
-                            "host": host,
+                            "tenant": tenant,
                         },
                     )
                     error = {
@@ -543,7 +543,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             return await aws.get_credentials(
                 self.user,
                 matching_roles[0],
-                host,
+                tenant,
                 enforce_ip_restrictions=enforce_ip_restrictions,
                 user_role=user_role,
                 account_id=account_id,
@@ -559,7 +559,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": False,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             error = {
@@ -576,16 +576,16 @@ class GetCredentialsHandler(BaseMtlsHandler):
             return None
 
     async def get_credentials_user_flow(self, user_email, request, stats, log_data):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         group_mapping = get_plugin_by_name(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "plugins.group_mapping",
-                host,
+                tenant,
                 "cmsaas_group_mapping",
             )
         )()
         aws = get_plugin_by_name(
-            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+            config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
         )()
         log_data["user"] = user_email
 
@@ -604,9 +604,9 @@ class GetCredentialsHandler(BaseMtlsHandler):
         log.debug(log_data)
         matching_roles = await group_mapping.filter_eligible_roles(requested_role, self)
 
-        auth_via_mfa = config.get_host_specific_key("auth.mfa", host, False)
-        ip_restrictions_enabled = config.get_host_specific_key(
-            "policies.ip_restrictions", host, False
+        auth_via_mfa = config.get_tenant_specific_key("auth.mfa", tenant, False)
+        ip_restrictions_enabled = config.get_tenant_specific_key(
+            "policies.ip_restrictions", tenant, False
         )
 
         log_data["matching_roles"] = matching_roles
@@ -620,7 +620,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": None,
                     "authorized": False,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data["message"] = "No matching roles"
@@ -641,7 +641,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": None,
                     "authorized": False,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data["message"] = "More than one matching role"
@@ -662,7 +662,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             )
             if auth_via_mfa:
                 credentials = await self.authorize_via_mfa(
-                    request, host, requested_role, matching_roles, stats, log_data
+                    request, tenant, requested_role, matching_roles, stats, log_data
                 )
             else:
                 user_role, account_id = await self.maybe_get_user_role_and_account_id(
@@ -671,7 +671,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 credentials = await aws.get_credentials(
                     self.user,
                     matching_roles[0],
-                    host,
+                    tenant,
                     enforce_ip_restrictions=ip_restrictions_enabled,
                     user_role=user_role,
                     account_id=account_id,
@@ -687,7 +687,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": False,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             error = {
@@ -709,7 +709,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     "user": self.user,
                     "requested_role": requested_role,
                     "authorized": True,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             credentials.pop("ResponseMetadata", None)

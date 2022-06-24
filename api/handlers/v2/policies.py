@@ -31,7 +31,7 @@ class PoliciesPageConfigHandler(BaseHandler):
                 200:
                     description: Returns Policies Page Configuration
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         default_configuration = {
             "pageName": "All Resources",
             "pageDescription": "View all of the resources we know about.",
@@ -74,9 +74,9 @@ class PoliciesPageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get_host_specific_key(
+        table_configuration = config.get_tenant_specific_key(
             "PoliciesTableConfigHandler.configuration",
-            host,
+            tenant,
             default_configuration,
         )
 
@@ -97,13 +97,13 @@ class PoliciesHandler(BaseAPIV2Handler):
         """
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         markdown = arguments.get("markdown")
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         arguments = json.loads(self.request.body)
         filters = arguments.get("filters")
         limit = arguments.get("limit", 1000)
         tags = {
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count("PoliciesHandler.post", tags=tags)
         log_data = {
@@ -114,29 +114,29 @@ class PoliciesHandler(BaseAPIV2Handler):
             "filters": filters,
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         all_policies = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get_host_specific_key(
+            redis_key=config.get_tenant_specific_key(
                 "policies.redis_policies_key",
-                host,
-                f"{host}_ALL_POLICIES",
+                tenant,
+                f"{tenant}_ALL_POLICIES",
             ),
-            s3_bucket=config.get_host_specific_key(
-                "cache_policies_table_details.s3.bucket", host
+            s3_bucket=config.get_tenant_specific_key(
+                "cache_policies_table_details.s3.bucket", tenant
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "cache_policies_table_details.s3.file",
-                host,
+                tenant,
                 "policies_table/cache_policies_table_details_v1.json.gz",
             ),
             default=[],
-            host=host,
+            tenant=tenant,
         )
 
         viewable_accounts = await get_accounts_user_can_view_resources_for(
-            self.user, self.groups, host
+            self.user, self.groups, tenant
         )
 
         total_count = len(all_policies)
@@ -146,7 +146,7 @@ class PoliciesHandler(BaseAPIV2Handler):
                 if arn := policy.get("arn"):
                     policies[arn] = policy
 
-        policies = await get_roles_as_resource(host, viewable_accounts, policies)
+        policies = await get_roles_as_resource(tenant, viewable_accounts, policies)
         policies = list(policies.values())
 
         if filters:
@@ -171,7 +171,7 @@ class PoliciesHandler(BaseAPIV2Handler):
                 try:
                     url = await get_url_for_resource(
                         policy["arn"],
-                        host,
+                        tenant,
                         policy["technology"],
                         policy["account_id"],
                         region,
@@ -203,7 +203,7 @@ class CheckPoliciesHandler(BaseAPIV2Handler):
         """
         POST /api/v2/policies/check
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         policy = tornado.escape.json_decode(self.request.body)
         if isinstance(policy, dict):
             policy = json.dumps(policy)
@@ -213,8 +213,8 @@ class CheckPoliciesHandler(BaseAPIV2Handler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "policy": policy,
-            "host": host,
+            "tenant": tenant,
         }
-        findings = await validate_iam_policy(policy, log_data, host)
+        findings = await validate_iam_policy(policy, log_data, tenant)
         self.write(json.dumps(findings))
         return

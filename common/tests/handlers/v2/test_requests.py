@@ -4,7 +4,7 @@ import pytest
 import ujson as json
 from deepdiff import DeepDiff
 
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
@@ -31,11 +31,11 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
     def test_get(self):
         # Method not allowed
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch("/api/v2/requests", method="GET", headers=headers)
@@ -64,11 +64,11 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         }
 
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -114,11 +114,11 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
         }
 
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -225,11 +225,11 @@ class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
     @pytest.mark.usefixtures("populate_caches")
     def test_post_new_managed_policy_resource_request(self):
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
 
@@ -832,8 +832,8 @@ class TestRequestDetailHandler(ConsoleMeAsyncHTTPTestCase):
         #     "message": "Get request details",
         # }
         # headers = {
-        #     config.get_host_specific_key("auth.user_header_name", host): "user@github.com",
-        #     config.get_host_specific_key("auth.groups_header_name", host): "groupa,groupb,groupc",
+        #     config.get_tenant_specific_key("auth.user_header_name", tenant): "user@github.com",
+        #     config.get_tenant_specific_key("auth.groups_header_name", tenant): "groupa,groupb,groupc",
         # }
         # response = self.fetch(
         #     "/api/v2/requests/16fd2706-8baf-433b-82eb-8c7fada847da",
@@ -852,8 +852,8 @@ class TestRequestDetailHandler(ConsoleMeAsyncHTTPTestCase):
         #     "message": "Update request details",
         # }
         # headers = {
-        #     config.get_host_specific_key("auth.user_header_name", host): "user@github.com",
-        #     config.get_host_specific_key("auth.groups_header_name", host): "groupa,groupb,groupc",
+        #     config.get_tenant_specific_key("auth.user_header_name", tenant): "user@github.com",
+        #     config.get_tenant_specific_key("auth.groups_header_name", tenant): "groupa,groupb,groupc",
         # }
         # response = self.fetch(
         #     "/api/v2/requests/16fd2706-8baf-433b-82eb-8c7fada847da",

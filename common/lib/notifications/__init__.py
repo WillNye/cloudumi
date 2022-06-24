@@ -23,19 +23,19 @@ async def send_email_via_ses(
     to_addresses: list[str],
     subject: str,
     body: str,
-    host: str,
+    tenant: str,
     sending_app: str = "noq",
     charset: str = "UTF-8",
 ) -> None:
-    region: str = config.get_host_specific_key("ses.region", host, config.region)
-    session = get_session_for_tenant(host)
+    region: str = config.get_tenant_specific_key("ses.region", tenant, config.region)
+    session = get_session_for_tenant(tenant)
     client = session.client(
         "ses",
         region_name=region,
-        **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     )
     sender = config.get(f"_global_.ses.{sending_app}.sender")
-    ses_arn = config.get_host_specific_key("ses.arn", host)
+    ses_arn = config.get_tenant_specific_key("ses.arn", tenant)
 
     log_data = {
         "to_user": to_addresses,
@@ -43,7 +43,7 @@ async def send_email_via_ses(
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "sender": sender,
         "subject": subject,
-        "host": host,
+        "tenant": tenant,
     }
 
     if not ses_arn:
@@ -135,7 +135,7 @@ async def send_email(
     to_addresses: List[str],
     subject: str,
     body: str,
-    host: str,
+    tenant: str,
     sending_app: str = "noq",
     charset: str = "UTF-8",
 ) -> None:
@@ -166,7 +166,7 @@ async def send_access_email_to_user(
     status: str,
     request_url: str,
     group_url: str,
-    host: str,
+    tenant: str,
     reviewer_comments: None = None,
     sending_app: str = "noq",
 ) -> None:
@@ -191,15 +191,15 @@ async def send_access_email_to_user(
     {reviewer_comments_section} <br>
     See your request here: {request_url}.<br>
     <br>
-    {config.get_host_specific_key('ses.support_reference', host, '')}
+    {config.get_tenant_specific_key('ses.support_reference', tenant, '')}
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     </body>
     </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+    await send_email(to_addresses, subject, body, tenant, sending_app=sending_app)
 
 
 async def send_request_created_to_user(
-    user, group, updated_by, status, request_url, host, sending_app="noq"
+    user, group, updated_by, status, request_url, tenant, sending_app="noq"
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Request for group {group} has been created"
@@ -217,11 +217,11 @@ async def send_request_created_to_user(
     <br>
     See your request here: {request_url}.<br>
     <br>
-    {config.get_host_specific_key('ses.support_reference', host, '')}
+    {config.get_tenant_specific_key('ses.support_reference', tenant, '')}
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     </body>
     </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+    await send_email(to_addresses, subject, body, tenant, sending_app=sending_app)
 
 
 async def send_request_to_secondary_approvers(
@@ -229,7 +229,7 @@ async def send_request_to_secondary_approvers(
     group,
     request_url,
     pending_requests_url,
-    host: str,
+    tenant: str,
     sending_app="noq",
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
@@ -248,15 +248,15 @@ async def send_request_to_secondary_approvers(
         <br>
         You can find all pending requests waiting your approval here: {pending_requests_url}. <br>
         <br>
-        {config.get_host_specific_key('ses.support_reference', host, '')}
+        {config.get_tenant_specific_key('ses.support_reference', tenant, '')}
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         </body>
         </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+    await send_email(to_addresses, subject, body, tenant, sending_app=sending_app)
 
 
 async def send_group_modification_notification(
-    groups, to_address, host, sending_app="noq"
+    groups, to_address, tenant, sending_app="noq"
 ):
     """
     Send an email containing group changes to a notification address
@@ -287,7 +287,7 @@ async def send_group_modification_notification(
     Admins may click the group link below to view and modify this configuration."""
     added_members_snippet = ""
     for group, added_members in groups.items():
-        group_url = get_group_url(group, host)
+        group_url = get_group_url(group, tenant)
         group_link = f"<a href={group_url}>{group}</a>"
         if added_members:
             added_members_snippet += f"""<b>Users added to {group_link}</a></b>: <br>
@@ -303,15 +303,15 @@ async def send_group_modification_notification(
          {added_members_snippet}<br>
         <br>
         <br>
-        {config.get_host_specific_key('ses.support_reference', host, '')}
+        {config.get_tenant_specific_key('ses.support_reference', tenant, '')}
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         </body>
         </html>"""
-    await send_email(to_address, subject, body, host, sending_app=sending_app)
+    await send_email(to_address, subject, body, tenant, sending_app=sending_app)
 
 
 async def send_new_aws_groups_notification(
-    to_addresses, new_aws_groups, host, sending_app="noq"
+    to_addresses, new_aws_groups, tenant, sending_app="noq"
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: New AWS groups detected"
@@ -333,15 +333,15 @@ async def send_new_aws_groups_notification(
          {added_groups_snippet}<br>
         <br>
         <br>
-        {config.get_host_specific_key('ses.support_reference', host, '')}
+        {config.get_tenant_specific_key('ses.support_reference', tenant, '')}
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         </body>
         </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+    await send_email(to_addresses, subject, body, tenant, sending_app=sending_app)
 
 
 async def send_policy_request_status_update(
-    request, policy_change_uri, host: str, sending_app="noq"
+    request, policy_change_uri, tenant: str, sending_app="noq"
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     subject = f"{app_name}: Policy change request for {request['arn']} has been {request['status']}"
@@ -369,17 +369,17 @@ async def send_policy_request_status_update(
             See the request here: {policy_change_uri}.<br>
             <br>
             <br>
-            {config.get_host_specific_key('ses.support_reference', host, '')}
+            {config.get_tenant_specific_key('ses.support_reference', tenant, '')}
             <meta http-equiv="content-type" content="text/html; charset=UTF-8">
             </body>
             </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+    await send_email(to_addresses, subject, body, tenant, sending_app=sending_app)
 
 
 async def send_policy_request_status_update_v2(
     extended_request: ExtendedRequestModel,
     policy_change_uri,
-    host,
+    tenant,
     sending_app="noq",
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
@@ -392,7 +392,7 @@ async def send_policy_request_status_update_v2(
         message = f"A policy change request for {principal} has been created."
         # This is a new request, also send email to application admins
         resource_admins = await get_extended_request_allowed_approvers(
-            extended_request, host
+            extended_request, tenant
         )
         request_approvers.update(resource_admins)
     else:
@@ -419,12 +419,12 @@ async def send_policy_request_status_update_v2(
             See the request here: {policy_change_uri}.<br>
             <br>
             <br>
-            {config.get_host_specific_key('ses.support_reference', host, '')}
+            {config.get_tenant_specific_key('ses.support_reference', tenant, '')}
             <meta http-equiv="content-type" content="text/html; charset=UTF-8">
             </body>
             </html>"""
     to_addresses = list(request_approvers)
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+    await send_email(to_addresses, subject, body, tenant, sending_app=sending_app)
 
 
 async def send_new_comment_notification(
@@ -432,7 +432,7 @@ async def send_new_comment_notification(
     to_addresses,
     user,
     policy_change_uri,
-    host,
+    tenant,
     sending_app="noq",
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
@@ -450,8 +450,8 @@ async def send_new_comment_notification(
                 See the request here: {policy_change_uri}.<br>
                 <br>
                 <br>
-                {config.get_host_specific_key('ses.support_reference', host, '')}
+                {config.get_tenant_specific_key('ses.support_reference', tenant, '')}
                 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
                 </body>
                 </html>"""
-    await send_email(to_addresses, subject, body, host, sending_app=sending_app)
+    await send_email(to_addresses, subject, body, tenant, sending_app=sending_app)

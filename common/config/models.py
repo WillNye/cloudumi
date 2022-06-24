@@ -16,7 +16,7 @@ class ModelAdapter:
         self._model_array = list()
         self._model_content = None
         self._key = None
-        self._host = None
+        self._tenant = None
         self._default = None
         self._updated_by = updated_by
         # By default compare all fields; this can be set using the with_object_key member function
@@ -44,14 +44,14 @@ class ModelAdapter:
         return config_item or default
 
     def __optimistic_loader(
-        self, key: str, host: str = None, default: Any = None
+        self, key: str, tenant: str = None, default: Any = None
     ) -> dict:
         config_item = dict()
-        if host:
-            config_item = config.get_host_specific_key(key, host, default)
+        if tenant:
+            config_item = config.get_tenant_specific_key(key, tenant, default)
             if not config_item:
                 config_item: dict = (
-                    config.get_tenant_static_config_from_dynamo(host) or dict()
+                    config.get_tenant_static_config_from_dynamo(tenant) or dict()
                 )
                 config_item = self.__access_subkey(config_item, key, default)
         else:
@@ -140,12 +140,12 @@ class ModelAdapter:
         )
         return config_item
 
-    def load_config(self, key: str, host: str = None, default: Any = None) -> object:
+    def load_config(self, key: str, tenant: str = None, default: Any = None) -> object:
         """Required to be run before using any other functions."""
         self._key = key
-        self._host = host
+        self._tenant = tenant
         self._default = default
-        config_item = self.__optimistic_loader(key, host, default)
+        config_item = self.__optimistic_loader(key, tenant, default)
         if config_item and isinstance(config_item, dict):
             self._model = self._model_class.parse_obj(config_item)
             self._model_content = "one"
@@ -306,7 +306,7 @@ class ModelAdapter:
         :param query: a dict that describes the item we would like to query and extract
         :return: a list of matches
         """
-        config_item = self.__optimistic_loader(self._key, self._host, self._default)
+        config_item = self.__optimistic_loader(self._key, self._tenant, self._default)
         if config_item is None:
             # Maybe a log?
             return None
@@ -365,49 +365,51 @@ class ModelAdapter:
     async def store_item(self) -> bool:
         """Break the chain; meant as an end state function."""
         ddb = RestrictedDynamoHandler()
-        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        tenant_config = config.get_tenant_static_config_from_dynamo(self._tenant)
         if not self._model:
             raise ValueError(
                 f"Consistency error: self._model is undefined: {self._model}"
             )
-        host_config = self.__nested_store(host_config, self._key, self._model)
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), self._updated_by, self._host
+        tenant_config = self.__nested_store(tenant_config, self._key, self._model)
+        await ddb.update_static_config_for_tenant(
+            yaml.dump(tenant_config), self._updated_by, self._tenant
         )
         return True
 
     async def store_list(self) -> bool:
         ddb = RestrictedDynamoHandler()
-        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        tenant_config = config.get_tenant_static_config_from_dynamo(self._tenant)
         if not self._model_array:
             raise ValueError(
                 f"Consistency error: self._model_array is empty: {self._model_array}"
             )
-        host_config = self.__nested_store_array(
-            host_config, self._key, self._model_array
+        tenant_config = self.__nested_store_array(
+            tenant_config, self._key, self._model_array
         )
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), self._updated_by, self._host
+        await ddb.update_static_config_for_tenant(
+            yaml.dump(tenant_config), self._updated_by, self._tenant
         )
         return True
 
     async def store_item_in_list(self) -> bool:
         ddb = RestrictedDynamoHandler()
-        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        tenant_config = config.get_tenant_static_config_from_dynamo(self._tenant)
         if not self._model:
             raise ValueError(
                 f"Consistency error: self._model is undefined: {self._model}"
             )
-        host_config = self.__nested_store_array(host_config, self._key, [self._model])
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), self._updated_by, self._host
+        tenant_config = self.__nested_store_array(
+            tenant_config, self._key, [self._model]
+        )
+        await ddb.update_static_config_for_tenant(
+            yaml.dump(tenant_config), self._updated_by, self._tenant
         )
         return True
 
     async def delete_key(self, delete_root: bool = False) -> bool:
         """Break the chain; meant as an end state function."""
         ddb = RestrictedDynamoHandler()
-        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        tenant_config = config.get_tenant_static_config_from_dynamo(self._tenant)
         if self._key is None:
             raise ValueError(
                 f"ModelAdapter in an invalid state, self._key ({self._key}) is not set"
@@ -416,7 +418,7 @@ class ModelAdapter:
         config_item = None
         if not delete_root:
             config_item = self.__access_subkey_parent(
-                host_config, self._key, self._default
+                tenant_config, self._key, self._default
             )
             key_to_delete = self._key.split(".")[-1]
         else:
@@ -424,8 +426,8 @@ class ModelAdapter:
         if not config_item:
             return False
         del config_item[key_to_delete]
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), self._updated_by, self._host
+        await ddb.update_static_config_for_tenant(
+            yaml.dump(tenant_config), self._updated_by, self._tenant
         )
         return True
 
@@ -438,7 +440,7 @@ class ModelAdapter:
         :return: True if the item was deleted, False if it wasn't
         """
         ddb = RestrictedDynamoHandler()
-        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        tenant_config = config.get_tenant_static_config_from_dynamo(self._tenant)
         if not self._key:
             raise ValueError(
                 f"ModelAdapter in an invalid state, self._key ({self._key}) is not set"
@@ -447,11 +449,11 @@ class ModelAdapter:
             raise ValueError(
                 f"Consistency error: self._model is undefined: {self._model}"
             )
-        host_config = self.__nested_delete_from_list(
-            host_config, self._key, [self._model]
+        tenant_config = self.__nested_delete_from_list(
+            tenant_config, self._key, [self._model]
         )
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), self._updated_by, self._host
+        await ddb.update_static_config_for_tenant(
+            yaml.dump(tenant_config), self._updated_by, self._tenant
         )
         return True
 
@@ -465,12 +467,12 @@ class ModelAdapter:
         :return: True if the list was deleted, False if it wasn't
         """
         ddb = RestrictedDynamoHandler()
-        host_config = config.get_tenant_static_config_from_dynamo(self._host)
+        tenant_config = config.get_tenant_static_config_from_dynamo(self._tenant)
         if self._key is None:
             raise ValueError(
                 f"ModelAdapter in an invalid state, self._key ({self._key}) is not set"
             )
-        config_items = self.__access_subkey(host_config, self._key, self._default)
+        config_items = self.__access_subkey(tenant_config, self._key, self._default)
         for model in self._model_array:
             if self.filter_on(self._model.dict()) in [
                 self.filter_on(x) for x in config_items
@@ -480,7 +482,7 @@ class ModelAdapter:
                         self.filter_on(self._model.dict())
                     )
                 )
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), self._updated_by, self._host
+        await ddb.update_static_config_for_tenant(
+            yaml.dump(tenant_config), self._updated_by, self._tenant
         )
         return True

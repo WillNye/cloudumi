@@ -95,7 +95,7 @@ class ConsoleMeTracer:
         frame.f_trace = self.trace_calls
 
     async def configure_tracing(
-        self, span_name, host, span_kind=SERVER, tags=None, annotations=None
+        self, span_name, tenant, span_kind=SERVER, tags=None, annotations=None
     ) -> Optional[ConsoleMeTracerObject]:
         if not config.get("_global_.tracing.enabled", False):
             return

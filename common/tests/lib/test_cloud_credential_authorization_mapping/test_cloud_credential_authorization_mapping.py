@@ -3,7 +3,7 @@ import unittest
 
 import pytest
 
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 
 @pytest.mark.usefixtures("redis")
@@ -23,7 +23,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         CONFIG.config = {
             **CONFIG.config,
             "aws": {
-                **CONFIG.get_host_specific_key("aws", host, {}),
+                **CONFIG.get_tenant_specific_key("aws", tenant, {}),
                 "iamroles_redis_key": "test_cache_iam_resources_for_account",
             },
             "cache_iam_resources_across_accounts": {
@@ -34,9 +34,9 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
                 }
             },
         }
-        cache_iam_resources_for_account("123456789012", host=host)
+        cache_iam_resources_for_account("123456789012", tenant=tenant)
         cache_iam_resources_across_accounts(
-            host=host, run_subtasks=False, wait_for_subtask_completion=False
+            tenant=tenant, run_subtasks=False, wait_for_subtask_completion=False
         )
         CONFIG.config = old_config
 
@@ -55,7 +55,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
             generate_and_store_credential_authorization_mapping,
         )
 
-        mapping = await generate_and_store_credential_authorization_mapping(host)
+        mapping = await generate_and_store_credential_authorization_mapping(tenant)
 
         expected = {
             "group8": RoleAuthorizations(
@@ -500,7 +500,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         }
 
         reverse_mapping = await generate_and_store_reverse_authorization_mapping(
-            authorization_mapping, host
+            authorization_mapping, tenant
         )
 
         expected = {
@@ -580,7 +580,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
         )
 
         authorization_mapping = await DynamicConfigAuthorizationMappingGenerator().generate_credential_authorization_mapping(
-            {}, host
+            {}, tenant
         )
 
         expected = {
@@ -619,7 +619,7 @@ class TestCloudCredentialAuthorizationMapping(unittest.IsolatedAsyncioTestCase):
             ),
         }
         authorization_mapping = await InternalPluginAuthorizationMappingGenerator().generate_credential_authorization_mapping(
-            expected, host
+            expected, tenant
         )
         for k, v in expected.items():
             self.assertEqual(authorization_mapping.get(k), v)

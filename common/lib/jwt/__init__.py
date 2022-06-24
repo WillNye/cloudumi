@@ -11,7 +11,7 @@ log = config.get_logger()
 async def generate_jwt_token(
     email,
     groups,
-    host,
+    tenant,
     roles=None,
     nbf=datetime.utcnow() - timedelta(seconds=5),
     iat=datetime.utcnow(),
@@ -19,22 +19,24 @@ async def generate_jwt_token(
 ):
     if not exp:
         exp = datetime.utcnow() + timedelta(
-            hours=config.get_host_specific_key("jwt.expiration_hours", host, 1)
+            hours=config.get_tenant_specific_key("jwt.expiration_hours", tenant, 1)
         )
-    jwt_secret = config.get_host_specific_key("secrets.jwt_secret", host)
+    jwt_secret = config.get_tenant_specific_key("secrets.jwt_secret", tenant)
     if not jwt_secret:
-        raise Exception(f"jwt_secret is not defined for {host}")
+        raise Exception(f"jwt_secret is not defined for {tenant}")
     session = {
         "nbf": nbf,
         "iat": iat,
         "exp": exp,
-        config.get_host_specific_key("jwt.attributes.email", host, "email"): email,
-        config.get_host_specific_key("jwt.attributes.groups", host, "groups"): groups,
-        config.get_host_specific_key(
-            "jwt.attributes.roles", host, "additional_roles"
+        config.get_tenant_specific_key("jwt.attributes.email", tenant, "email"): email,
+        config.get_tenant_specific_key(
+            "jwt.attributes.groups", tenant, "groups"
+        ): groups,
+        config.get_tenant_specific_key(
+            "jwt.attributes.roles", tenant, "additional_roles"
         ): roles
         or [],
-        "host": host,
+        "tenant": tenant,
     }
 
     encoded_cookie = await aio_wrapper(
@@ -44,36 +46,36 @@ async def generate_jwt_token(
     return encoded_cookie
 
 
-async def validate_and_return_jwt_token(auth_cookie, host):
-    jwt_secret = config.get_host_specific_key("secrets.jwt_secret", host)
+async def validate_and_return_jwt_token(auth_cookie, tenant):
+    jwt_secret = config.get_tenant_specific_key("secrets.jwt_secret", tenant)
     if not jwt_secret:
         raise Exception("jwt_secret is not defined")
     try:
         decoded_jwt = jwt.decode(auth_cookie, jwt_secret, algorithms="HS256")
         email = decoded_jwt.get(
-            config.get_host_specific_key("jwt.attributes.email", host, "email")
+            config.get_tenant_specific_key("jwt.attributes.email", tenant, "email")
         )
 
         if not email:
             return False
 
         roles = decoded_jwt.get(
-            config.get_host_specific_key(
-                "jwt.attributes.roles", host, "additional_roles"
+            config.get_tenant_specific_key(
+                "jwt.attributes.roles", tenant, "additional_roles"
             ),
             [],
         )
         groups = decoded_jwt.get(
-            config.get_host_specific_key("jwt.attributes.groups", host, "groups"),
+            config.get_tenant_specific_key("jwt.attributes.groups", tenant, "groups"),
             [],
         )
-        jwt_host = decoded_jwt.get(
-            config.get_host_specific_key("jwt.attributes.host", host, "host"),
+        jwt_tenant = decoded_jwt.get(
+            config.get_tenant_specific_key("jwt.attributes.tenant", tenant, "tenant"),
             "",
         )
-        # Security check, do not remove. Host specified in JWT must match the host the user is currently connected
+        # Security check, do not remove. tenant specified in JWT must match the tenant the user is currently connected
         # to.
-        if jwt_host != host:
+        if jwt_tenant != tenant:
             return False
 
         exp = decoded_jwt.get("exp")
@@ -81,7 +83,7 @@ async def validate_and_return_jwt_token(auth_cookie, host):
         return {
             "user": email,
             "groups": groups,
-            "host": host,
+            "tenant": tenant,
             "additional_roles": roles,
             "iat": decoded_jwt.get("iat"),
             "exp": exp,

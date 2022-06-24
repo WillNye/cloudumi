@@ -4,7 +4,7 @@ from common.config import config
 
 
 async def get_custom_page_header(
-    user: str, user_groups: List[str], host: str
+    user: str, user_groups: List[str], tenant: str
 ) -> Dict[str, str]:
     """
     Args:
@@ -27,20 +27,22 @@ async def get_custom_page_header(
             message: Read this!
         ```
     """
-    if config.get_host_specific_key("example_config.is_example_config", host, False):
+    if config.get_tenant_specific_key(
+        "example_config.is_example_config", tenant, False
+    ):
         return {
-            "custom_header_message_title": config.get_host_specific_key(
-                "example_config.title", host
+            "custom_header_message_title": config.get_tenant_specific_key(
+                "example_config.title", tenant
             ),
-            "custom_header_message_text": config.get_host_specific_key(
-                "example_config.text", host
+            "custom_header_message_text": config.get_tenant_specific_key(
+                "example_config.text", tenant
             ),
-            "custom_header_message_route": config.get_host_specific_key(
-                "example_config.routes", host
+            "custom_header_message_route": config.get_tenant_specific_key(
+                "example_config.routes", tenant
             ),
         }
-    custom_headers_for_group_members = config.get_host_specific_key(
-        "dynamic_config.custom_headers_for_group_members", host, []
+    custom_headers_for_group_members = config.get_tenant_specific_key(
+        "dynamic_config.custom_headers_for_group_members", tenant, []
     )
     for custom_header in custom_headers_for_group_members:
         for header_group in custom_header.get("users_or_groups", []):
@@ -51,13 +53,13 @@ async def get_custom_page_header(
                     "custom_header_message_route": custom_header.get("route", ".*"),
                 }
     return {
-        "custom_header_message_title": config.get_host_specific_key(
-            "headers.custom_header_message.title", host, ""
+        "custom_header_message_title": config.get_tenant_specific_key(
+            "headers.custom_header_message.title", tenant, ""
         ),
-        "custom_header_message_text": config.get_host_specific_key(
-            "headers.custom_header_message.text", host, ""
+        "custom_header_message_text": config.get_tenant_specific_key(
+            "headers.custom_header_message.text", tenant, ""
         ),
-        "custom_header_message_route": config.get_host_specific_key(
-            "headers.custom_header_message.route", host, ".*"
+        "custom_header_message_route": config.get_tenant_specific_key(
+            "headers.custom_header_message.route", tenant, ".*"
         ),
     }

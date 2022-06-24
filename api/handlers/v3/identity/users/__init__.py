@@ -14,7 +14,7 @@ from common.models import DataTableResponse, WebResponse
 from identity.lib.groups.models import OktaIdentityProvider
 from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 from identity.lib.users.users import (
-    cache_identity_users_for_host,
+    cache_identity_users_for_tenant,
     get_identity_user_storage_keys,
     get_user_by_name,
 )
@@ -34,7 +34,7 @@ class IdentityUsersPageConfigHandler(BaseHandler):
                 200:
                     description: Returns Policies Page Configuration
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         default_configuration = {
             "pageName": "User Manager",
             "pageDescription": "",
@@ -64,9 +64,9 @@ class IdentityUsersPageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get_host_specific_key(
+        table_configuration = config.get_tenant_specific_key(
             "IdentityGroupTableConfigHandler.configuration",
-            host,
+            tenant,
             default_configuration,
         )
 
@@ -82,9 +82,9 @@ class IdentityUsersTableHandler(BaseHandler):
         """
         POST /api/v2/identity/users
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
-        config_keys = get_identity_user_storage_keys(host)
+        config_keys = get_identity_user_storage_keys(tenant)
         arguments = json.loads(self.request.body)
         filters = arguments.get("filters")
         # TODO: Add server-side sorting
@@ -92,7 +92,7 @@ class IdentityUsersTableHandler(BaseHandler):
         limit = arguments.get("limit", 1000)
         tags = {
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count("IdentityUsersTableHandler.post", tags=tags)
         log_data = {
@@ -103,16 +103,16 @@ class IdentityUsersTableHandler(BaseHandler):
             "filters": filters,
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         # TODO: Cache if out-of-date, otherwise return cached data
-        await cache_identity_users_for_host(host)
+        await cache_identity_users_for_tenant(tenant)
         items_d = await retrieve_json_data_from_redis_or_s3(
             config_keys["redis_key"],
             s3_bucket=config_keys["s3_bucket"],
             s3_key=config_keys["s3_key"],
-            host=host,
+            tenant=tenant,
             default={},
         )
         items = list(items_d.values())
@@ -151,7 +151,7 @@ class IdentityUserHandler(BaseHandler):
     """
 
     async def get(self, _idp, _user_name):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "IdentityUserHandler.get",
             "user": self.user,
@@ -160,11 +160,11 @@ class IdentityUserHandler(BaseHandler):
             "user_name": _user_name,
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         # TODO: Authz check? this is a read only endpoint but some companies might not want all employees seeing users
-        user = await get_user_by_name(host, _idp, _user_name)
+        user = await get_user_by_name(tenant, _idp, _user_name)
         if not user:
             raise Exception("User not found")
         headers = [
@@ -179,12 +179,12 @@ class IdentityUserHandler(BaseHandler):
             {
                 "headers": headers,
                 "user": json.loads(user.json()),
-                "can_admin_groups": can_admin_identity(self.user, self.groups, host),
+                "can_admin_groups": can_admin_identity(self.user, self.groups, tenant),
             }
         )
 
     async def post(self, _idp, _user_name):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         from common.celery_tasks.celery_tasks import app as celery_app
 
         log_data = {
@@ -195,11 +195,11 @@ class IdentityUserHandler(BaseHandler):
             "request_id": self.request_uuid,
             "idp": _idp,
             "user_name": _user_name,
-            "host": host,
+            "tenant": tenant,
         }
         # Checks authz levels of current user
         generic_error_message = "Unable to update user"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -209,14 +209,14 @@ class IdentityUserHandler(BaseHandler):
 
         data = tornado.escape.json_decode(self.request.body)
 
-        idp_d = config.get_host_specific_key(
-            "identity.identity_providers", host, default={}
+        idp_d = config.get_tenant_specific_key(
+            "identity.identity_providers", tenant, default={}
         ).get(_idp)
         if not idp_d:
             raise Exception("Invalid IDP specified")
         if idp_d["idp_type"] == "okta":
             idp = OktaIdentityProvider.parse_obj(idp_d)
-            idp_plugin = OktaGroupManagementPlugin(host, idp)
+            idp_plugin = OktaGroupManagementPlugin(tenant, idp)
         else:
             raise Exception("IDP type is not supported.")
         user = await idp_plugin.get_user(_user_name)
@@ -231,7 +231,7 @@ class IdentityUserHandler(BaseHandler):
 
         # user.attributes = UserAttributes.parse_obj(data)
 
-        ddb = UserDynamoHandler(host)
+        ddb = UserDynamoHandler(tenant)
         ddb.identity_users_table.put_item(Item=ddb._data_to_dynamo_replace(user.dict()))
 
         res = WebResponse(
@@ -241,7 +241,7 @@ class IdentityUserHandler(BaseHandler):
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         celery_app.send_task(
-            "common.celery_tasks.celery_tasks.cache_identity_users_for_host_t",
-            kwargs={"host": host},
+            "common.celery_tasks.celery_tasks.cache_identity_users_for_tenant_t",
+            kwargs={"tenant": tenant},
         )
         return

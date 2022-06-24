@@ -21,7 +21,7 @@ from common.models import (
     UserModel,
 )
 from util.tests.fixtures.fixtures import create_future
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 ROLE = {
     "Arn": "arn:aws:iam::123456789012:role/TestInstanceProfile",
@@ -74,7 +74,7 @@ class TestAwsLib(TestCase):
             },
         ]
         for tc in test_cases:
-            result = loop.run_until_complete(get_resource_account(tc["arn"], host))
+            result = loop.run_until_complete(get_resource_account(tc["arn"], tenant))
             self.assertEqual(
                 tc["expected"], result, f"Test case failed: {tc['description']}"
             )
@@ -89,7 +89,7 @@ class TestAwsLib(TestCase):
             json.dumps(aws_config_resources_test_case_redis_result)
         )
         result = async_to_sync(get_resource_account)(
-            aws_config_resources_test_case["arn"], host
+            aws_config_resources_test_case["arn"], tenant
         )
         self.assertEqual(
             aws_config_resources_test_case["expected"],
@@ -193,7 +193,7 @@ class TestAwsLib(TestCase):
         from common.lib.aws.utils import fetch_managed_policy_details
 
         result = async_to_sync(fetch_managed_policy_details)(
-            "123456789012", "policy-one", host, None
+            "123456789012", "policy-one", tenant, None
         )
         self.assertDictEqual(
             result["Policy"],
@@ -206,7 +206,7 @@ class TestAwsLib(TestCase):
 
         with pytest.raises(Exception) as e:
             async_to_sync(fetch_managed_policy_details)(
-                "123456789012", "policy-non-existent", host, None
+                "123456789012", "policy-non-existent", tenant, None
             )
 
         self.assertIn("NoSuchEntity", str(e))
@@ -215,7 +215,7 @@ class TestAwsLib(TestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         policy_name = "policy_with_paths"
         policy_path = "/testpath/testpath2/"
@@ -225,7 +225,7 @@ class TestAwsLib(TestCase):
             PolicyDocument=json.dumps(result["Policy"]),
         )
         result = async_to_sync(fetch_managed_policy_details)(
-            "123456789012", policy_name, host, None, path="testpath/testpath2"
+            "123456789012", policy_name, tenant, None, path="testpath/testpath2"
         )
         self.assertDictEqual(
             result["Policy"],
@@ -247,14 +247,14 @@ class TestAwsLib(TestCase):
         ]
 
         self.assertEqual(
-            allowed_to_sync_role(test_role_arn, test_role_tags, host), True
+            allowed_to_sync_role(test_role_arn, test_role_tags, tenant), True
         )
 
         # Allow - allowed_tags exists in role
         CONFIG.config = {
             **CONFIG.config,
             "site_configs": {
-                host: {
+                tenant: {
                     "roles": {
                         "allowed_tags": {"testtag": "testtagv"},
                     },
@@ -263,14 +263,14 @@ class TestAwsLib(TestCase):
         }
 
         self.assertEqual(
-            allowed_to_sync_role(test_role_arn, test_role_tags, host), True
+            allowed_to_sync_role(test_role_arn, test_role_tags, tenant), True
         )
 
         # Reject, one of the tags doesn't exist on role
         CONFIG.config = {
             **CONFIG.config,
             "site_configs": {
-                host: {
+                tenant: {
                     "roles": {
                         "allowed_tags": {
                             "testtag": "testtagv",
@@ -282,14 +282,14 @@ class TestAwsLib(TestCase):
         }
 
         self.assertEqual(
-            allowed_to_sync_role(test_role_arn, test_role_tags, host), False
+            allowed_to_sync_role(test_role_arn, test_role_tags, tenant), False
         )
 
         # Allow - Role has all allowed_tags, doesn't matter that allowed_arns doesn't have our role ARN
         CONFIG.config = {
             **CONFIG.config,
             "site_configs": {
-                host: {
+                tenant: {
                     "roles": {
                         "allowed_tags": {"testtag": "testtagv"},
                         "allowed_arns": [
@@ -301,14 +301,14 @@ class TestAwsLib(TestCase):
         }
 
         self.assertEqual(
-            allowed_to_sync_role(test_role_arn, test_role_tags, host), True
+            allowed_to_sync_role(test_role_arn, test_role_tags, tenant), True
         )
 
         # Allow - Role has all allowed_tags
         CONFIG.config = {
             **CONFIG.config,
             "site_configs": {
-                host: {
+                tenant: {
                     "roles": {
                         "allowed_tags": {"testtag": "testtagv"},
                         "allowed_arns": ["arn:aws:iam::111111111111:role/BADROLENAME"],
@@ -318,14 +318,14 @@ class TestAwsLib(TestCase):
         }
 
         self.assertEqual(
-            allowed_to_sync_role(test_role_arn, test_role_tags, host), True
+            allowed_to_sync_role(test_role_arn, test_role_tags, tenant), True
         )
 
         # Reject - No tag
         CONFIG.config = {
             **CONFIG.config,
             "site_configs": {
-                host: {
+                tenant: {
                     "roles": {
                         "allowed_tags": {"a": "b"},
                     },
@@ -334,14 +334,14 @@ class TestAwsLib(TestCase):
         }
 
         self.assertEqual(
-            allowed_to_sync_role(test_role_arn, test_role_tags, host), False
+            allowed_to_sync_role(test_role_arn, test_role_tags, tenant), False
         )
 
         # Allow by ARN
         CONFIG.config = {
             **CONFIG.config,
             "site_configs": {
-                host: {
+                tenant: {
                     "roles": {
                         "allowed_arns": [
                             "arn:aws:iam::111111111111:role/role-name-here-1"
@@ -352,7 +352,7 @@ class TestAwsLib(TestCase):
         }
 
         self.assertEqual(
-            allowed_to_sync_role(test_role_arn, test_role_tags, host), True
+            allowed_to_sync_role(test_role_arn, test_role_tags, tenant), True
         )
 
         CONFIG.config = old_config
@@ -361,7 +361,7 @@ class TestAwsLib(TestCase):
     @pytest.mark.usefixtures("redis")
     @pytest.mark.usefixtures("iam")
     def test_remove_temp_policies(self):
-        from common.lib.aws.utils import remove_expired_host_requests
+        from common.lib.aws.utils import remove_expired_tenant_requests
         from common.user_request.models import IAMRequest
 
         account_id = "123456789012"
@@ -418,10 +418,10 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = current_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(IAMRequest.write_v2)(extended_request, host)
-        async_to_sync(remove_expired_host_requests)(host)
+        async_to_sync(IAMRequest.write_v2)(extended_request, tenant)
+        async_to_sync(remove_expired_tenant_requests)(tenant)
         iam_request = async_to_sync(IAMRequest.get)(
-            host, request_id=extended_request.id
+            tenant, request_id=extended_request.id
         )
         extended_request = ExtendedRequestModel.parse_obj(
             iam_request.extended_request.dict()
@@ -433,11 +433,11 @@ class TestAwsLib(TestCase):
         extended_request.request_status = RequestStatus.approved
         extended_request.expiration_date = past_dateint
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(IAMRequest.write_v2)(extended_request, host)
-        async_to_sync(remove_expired_host_requests)(host)
+        async_to_sync(IAMRequest.write_v2)(extended_request, tenant)
+        async_to_sync(remove_expired_tenant_requests)(tenant)
         # Refresh the request
         iam_request = async_to_sync(IAMRequest.get)(
-            host, request_id=extended_request.id
+            tenant, request_id=extended_request.id
         )
         extended_request = ExtendedRequestModel.parse_obj(
             iam_request.extended_request.dict()
@@ -449,11 +449,11 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = future_dateint
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(IAMRequest.write_v2)(extended_request, host)
-        async_to_sync(remove_expired_host_requests)(host)
+        async_to_sync(IAMRequest.write_v2)(extended_request, tenant)
+        async_to_sync(remove_expired_tenant_requests)(tenant)
         # Refresh the request
         iam_request = async_to_sync(IAMRequest.get)(
-            host, request_id=extended_request.id
+            tenant, request_id=extended_request.id
         )
         extended_request = ExtendedRequestModel.parse_obj(
             iam_request.extended_request.dict()
@@ -465,11 +465,11 @@ class TestAwsLib(TestCase):
         extended_request.expiration_date = None
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
-        async_to_sync(IAMRequest.write_v2)(extended_request, host)
-        async_to_sync(remove_expired_host_requests)(host)
+        async_to_sync(IAMRequest.write_v2)(extended_request, tenant)
+        async_to_sync(remove_expired_tenant_requests)(tenant)
         # Refresh the request
         iam_request = async_to_sync(IAMRequest.get)(
-            host, request_id=extended_request.id
+            tenant, request_id=extended_request.id
         )
         extended_request = ExtendedRequestModel.parse_obj(
             iam_request.extended_request.dict()

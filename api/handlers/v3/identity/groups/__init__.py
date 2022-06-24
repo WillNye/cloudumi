@@ -8,7 +8,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.timeout import Timeout
 from common.models import DataTableResponse
 from identity.lib.groups.groups import (
-    cache_identity_groups_for_host,
+    cache_identity_groups_for_tenant,
     get_identity_group_storage_keys,
 )
 
@@ -27,7 +27,7 @@ class IdentityGroupPageConfigHandler(BaseHandler):
                 200:
                     description: Returns Policies Page Configuration
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         default_configuration = {
             "pageName": "Group Manager",
             "pageDescription": "",
@@ -76,9 +76,9 @@ class IdentityGroupPageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get_host_specific_key(
+        table_configuration = config.get_tenant_specific_key(
             "IdentityGroupTableConfigHandler.configuration",
-            host,
+            tenant,
             default_configuration,
         )
 
@@ -99,9 +99,9 @@ class IdentityGroupsTableHandler(BaseHandler):
         """
         POST /api/v2/identity/groups
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
-        config_keys = get_identity_group_storage_keys(host)
+        config_keys = get_identity_group_storage_keys(tenant)
         arguments = json.loads(self.request.body)
         filters = arguments.get("filters")
         # TODO: Add server-side sorting
@@ -109,7 +109,7 @@ class IdentityGroupsTableHandler(BaseHandler):
         limit = arguments.get("limit", 1000)
         tags = {
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count("IdentityGroupsTableHandler.post", tags=tags)
         log_data = {
@@ -120,16 +120,16 @@ class IdentityGroupsTableHandler(BaseHandler):
             "filters": filters,
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         # TODO: Cache if out-of-date, otherwise return cached data
-        await cache_identity_groups_for_host(host)
+        await cache_identity_groups_for_tenant(tenant)
         items_d = await retrieve_json_data_from_redis_or_s3(
             config_keys["redis_key"],
             s3_bucket=config_keys["s3_bucket"],
             s3_key=config_keys["s3_key"],
-            host=host,
+            tenant=tenant,
             default={},
         )
         items = list(items_d.values())
@@ -172,7 +172,7 @@ class IdentityGroupsTableHandler(BaseHandler):
 
 class IdentityGroupsHandler(BaseHandler):
     """
-    Shows all groups associated with a given host
+    Shows all groups associated with a given tenant
     """
 
     pass

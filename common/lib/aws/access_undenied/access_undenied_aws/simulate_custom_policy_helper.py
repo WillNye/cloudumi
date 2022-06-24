@@ -188,12 +188,12 @@ def simulate_custom_policies(
     account_id = event_permission_data_.principal.account_id
     role = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": account_id})
         .first.name
     )
     iam_client = boto3_cached_conn(
-        "iam", config.host, None, account_number=account_id, assume_role=role
+        "iam", config.tenant, None, account_number=account_id, assume_role=role
     )
     for guardrail_policy in iam_policy_data_.guardrail_policies or [None]:
         deny_result = _simulate_custom_policy(

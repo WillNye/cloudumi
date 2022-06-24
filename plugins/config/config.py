@@ -27,10 +27,10 @@ class Config:
             if config_location.startswith("s3://"):
                 import boto3
 
-                # TODO: Need host specific configuration?
+                # TODO: Need tenant specific configuration?
                 client = boto3.client("s3")
                 bucket, key = split_s3_path(config_location)
-                obj = client.get_object(Bucket=bucket, Key=key, host="_global_")
+                obj = client.get_object(Bucket=bucket, Key=key, tenant="_global_")
                 s3_object_content = obj["Body"].read()
                 with open(default_save_location, "w") as f:
                     f.write(s3_object_content.decode())

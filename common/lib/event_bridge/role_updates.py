@@ -11,17 +11,17 @@ from common.lib.aws.sanitize import sanitize_session_name
 log = config.get_logger()
 
 
-def detect_role_changes_and_update_cache(celery_app, host):
+def detect_role_changes_and_update_cache(celery_app, tenant):
     """
     This function detects role changes through event bridge rules, and forces a refresh of the roles.
     """
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "host": host,
+        "tenant": tenant,
     }
-    queue_arn = config.get_host_specific_key(
+    queue_arn = config.get_tenant_specific_key(
         "event_bridge.detect_role_changes_and_update_cache.queue_arn",
-        host,
+        tenant,
         "",
     ).format(region=config.region)
 
@@ -34,21 +34,21 @@ def detect_role_changes_and_update_cache(celery_app, host):
     queue_account_number = queue_arn.split(":")[4]
     queue_region = queue_arn.split(":")[3]
     # Optionally assume a role before receiving messages from the queue
-    queue_assume_role = config.get_host_specific_key(
+    queue_assume_role = config.get_tenant_specific_key(
         "event_bridge.detect_role_changes_and_update_cache.assume_role",
-        host,
+        tenant,
     )
 
     sqs_client = boto3_cached_conn(
         "sqs",
-        host,
+        tenant,
         None,
         service_type="client",
         region=queue_region,
         retry_max_attempts=2,
         account_number=queue_account_number,
         assume_role=queue_assume_role,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         session_name=sanitize_session_name("consoleme_sqs_role_updates"),
     )
 
@@ -91,7 +91,7 @@ def detect_role_changes_and_update_cache(celery_app, host):
                 if role_arn not in roles_to_update:
                     celery_app.send_task(
                         "common.celery_tasks.celery_tasks.refresh_iam_role",
-                        args=[role_arn, host],
+                        args=[role_arn, tenant],
                     )
                 roles_to_update.add(role_arn)
             except Exception as e:

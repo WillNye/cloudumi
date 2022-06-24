@@ -30,13 +30,13 @@ class SimulateCustomPolicyContextGenerator(object):
     ):
         role_name = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", config.host)
+            .load_config("spoke_accounts", config.tenant)
             .with_query({"account_id": config.account_id})
             .first.name
         )
         self.iam_client = boto3_cached_conn(
             "iam",
-            config.host,
+            config.tenant,
             None,
             account_number=config.account_id,
             assume_role=role_name,

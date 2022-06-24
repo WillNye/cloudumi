@@ -124,22 +124,24 @@ class Auth:
 
     async def get_user(self, request_object):
         """Get the user identity."""
-        host = request_object.get_host_name()
+        tenant = request_object.get_tenant_name()
         headers = request_object.request.headers
-        if config.get_host_specific_key("auth.get_user_by_header", host):
+        if config.get_tenant_specific_key("auth.get_user_by_header", tenant):
             return await self.get_user_by_header(headers, request_object)
         else:
             raise Exception("auth.get_user not configured")
 
     async def get_user_by_header(self, headers: dict, request_object):
         """Get the user identity via plaintext header."""
-        host = request_object.get_host_name()
+        tenant = request_object.get_tenant_name()
         if not headers:
             raise Exception(
                 "auth.get_user_by_header enabled, but no headers were passed in"
             )
 
-        user_header_name = config.get_host_specific_key("auth.user_header_name", host)
+        user_header_name = config.get_tenant_specific_key(
+            "auth.user_header_name", tenant
+        )
         if not user_header_name:
             raise Exception(
                 "auth.user_header_name configuration not set, but auth.get_user_by_header is enabled."
@@ -160,20 +162,20 @@ class Auth:
         only_direct=True,
     ):
         """Get the user's groups."""
-        host = request_object.get_host_name()
-        groups_to_add_for_all_users = config.get_host_specific_key(
-            "auth.groups_to_add_for_all_users", host, []
+        tenant = request_object.get_tenant_name()
+        groups_to_add_for_all_users = config.get_tenant_specific_key(
+            "auth.groups_to_add_for_all_users", tenant, []
         )
-        if get_header_groups or config.get_host_specific_key(
-            "auth.get_groups_by_header", host
+        if get_header_groups or config.get_tenant_specific_key(
+            "auth.get_groups_by_header", tenant
         ):
             header_groups = await self.get_groups_by_header(headers, request_object)
             if header_groups:
                 groups.extend(header_groups)
-        elif config.get_host_specific_key("auth.get_groups_from_google", host):
+        elif config.get_tenant_specific_key("auth.get_groups_from_google", tenant):
             from common.lib.google import get_group_memberships
 
-            google_groups = await get_group_memberships(host, user)
+            google_groups = await get_group_memberships(tenant, user)
             if google_groups:
                 groups.extend(google_groups)
         if groups_to_add_for_all_users:
@@ -186,13 +188,13 @@ class Auth:
                 },
                 exc_info=True,
             )
-        if config.get_host_specific_key("auth.force_groups_lowercase", host, False):
+        if config.get_tenant_specific_key("auth.force_groups_lowercase", tenant, False):
             groups = [x.lower() for x in groups]
         return list(set(groups))
 
     async def get_groups_by_header(self, headers: dict, request_object):
         """Get the user's groups by plaintext header."""
-        host = request_object.get_host_name()
+        tenant = request_object.get_tenant_name()
         groups = []
 
         if not headers:
@@ -203,8 +205,8 @@ class Auth:
             log.debug(log_data, exc_info=True)
             return groups
 
-        groups_header_name = config.get_host_specific_key(
-            "auth.groups_header_name", host, None
+        groups_header_name = config.get_tenant_specific_key(
+            "auth.groups_header_name", tenant, None
         )
         if not groups_header_name:
             log_data = {
@@ -236,9 +238,9 @@ class Auth:
 
     async def validate_certificate(self, request_object):
         headers = request_object.request.headers
-        host = request_object.get_host_name()
-        cli_auth_required_headers = config.get_host_specific_key(
-            "cli_auth.required_headers", host
+        tenant = request_object.get_tenant_name()
+        cli_auth_required_headers = config.get_tenant_specific_key(
+            "cli_auth.required_headers", tenant
         )
         if not cli_auth_required_headers:
             raise MissingConfigurationValue(
@@ -265,9 +267,9 @@ class Auth:
     async def is_user_contractor(self, user):
         return False
 
-    async def validate_and_return_api_caller(self, headers: dict, host: str):
-        cli_auth_required_headers = config.get_host_specific_key(
-            "cli_auth.required_headers", host
+    async def validate_and_return_api_caller(self, headers: dict, tenant: str):
+        cli_auth_required_headers = config.get_tenant_specific_key(
+            "cli_auth.required_headers", tenant
         )
         if not cli_auth_required_headers:
             raise MissingConfigurationValue(
@@ -282,13 +284,13 @@ class Auth:
                     )
         cert = await self.extract_user_from_certificate(headers)
         user = cert.get("name")
-        if not user or user not in config.get_host_specific_key(
-            "api_auth.valid_entities", host, []
+        if not user or user not in config.get_tenant_specific_key(
+            "api_auth.valid_entities", tenant, []
         ):
             raise Exception("Not authorized to call this API with that certificate.")
         return user
 
-    async def get_user_info(self, user: str, host: str, object: bool = False):
+    async def get_user_info(self, user: str, tenant: str, object: bool = False):
         """
         Retrieve details about a user from an authorative source
         :param user:
@@ -306,7 +308,7 @@ class Auth:
             "primaryEmail": user,
         }
 
-    async def get_group_info(self, host, group, members=True):
+    async def get_group_info(self, tenant, group, members=True):
         raise NotImplementedError()
 
     async def put_group_attribute(self, group, attribute_name, attribute_value):
@@ -321,13 +323,13 @@ class Auth:
     async def is_requestable(self, group):
         raise NotImplementedError()
 
-    async def does_user_exist(self, host, user):
+    async def does_user_exist(self, tenant, user):
         raise NotImplementedError()
 
     async def get_group_attribute(self, group, attribute_name):
         raise NotImplementedError()
 
-    async def get_secondary_approvers(self, group, host):
+    async def get_secondary_approvers(self, group, tenant):
         """Return a list of secondary approvers for a group."""
         raise NotImplementedError()
 

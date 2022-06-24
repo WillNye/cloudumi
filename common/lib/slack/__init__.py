@@ -19,12 +19,12 @@ async def send_slack_notification_new_request(
     extended_request: ExtendedRequestModel,
     admin_approved,
     approval_probe_approved,
-    host,
+    tenant,
 ):
     """
     Sends a notification using specified webhook URL about a new request created
     """
-    if not config.get_host_specific_key("slack.notifications_enabled", host, False):
+    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
         return
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -35,7 +35,7 @@ async def send_slack_notification_new_request(
         tags={
             "user": requester,
             "arn": arn,
-            "host": host,
+            "tenant": tenant,
         },
     )
 
@@ -43,20 +43,25 @@ async def send_slack_notification_new_request(
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "user": requester,
         "arn": arn,
-        "host": host,
+        "tenant": tenant,
         "message": "Incoming request for slack notification",
         "request": extended_request.dict(),
         "admin_approved": admin_approved,
         "approval_probe_approved": approval_probe_approved,
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_host_specific_key("slack.webhook_url", host)
+    slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
     if not slack_webhook_url:
         log_data["message"] = "Missing webhook URL for slack notification"
         log.error(log_data)
         return
     payload = await get_payload(
-        extended_request, requester, arn, admin_approved, approval_probe_approved, host
+        extended_request,
+        requester,
+        arn,
+        admin_approved,
+        approval_probe_approved,
+        tenant,
     )
     http_headers = HTTPHeaders({"Content-Type": "application/json"})
     http_req = HTTPRequest(
@@ -82,9 +87,9 @@ async def get_payload(
     arn: str,
     admin_approved: bool,
     approval_probe_approved: bool,
-    host: str,
+    tenant: str,
 ):
-    request_uri = await get_policy_request_uri_v2(extended_request, host)
+    request_uri = await get_policy_request_uri_v2(extended_request, tenant)
     pre_text = "A new request has been created"
     if admin_approved:
         pre_text += " and auto-approved by admin"
@@ -133,13 +138,13 @@ async def get_payload(
 
 
 async def send_slack_notification_new_group_request(
-    host,
+    tenant,
     request: GroupRequest,
 ):
     """
     Sends a notification using specified webhook URL about a new identity request
     """
-    if not config.get_host_specific_key("slack.notifications_enabled", host, False):
+    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
         return
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -152,18 +157,18 @@ async def send_slack_notification_new_group_request(
         "requester": requester,
         "requested_users": requested_users,
         "requested_groups": requested_groups,
-        "host": host,
+        "tenant": tenant,
         "message": "Incoming request for slack notification",
         "request": json.loads(request.json()),
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_host_specific_key("slack.webhook_url", host)
+    slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
     if not slack_webhook_url:
         log_data["message"] = "Missing webhook URL for slack notification"
         log.error(log_data)
         return
     payload = await get_payload_for_group_request(
-        request, requester, requested_users, requested_groups, host
+        request, requester, requested_users, requested_groups, tenant
     )
     http_headers = HTTPHeaders({"Content-Type": "application/json"})
     http_req = HTTPRequest(
@@ -184,12 +189,12 @@ async def send_slack_notification_new_group_request(
 
 
 async def get_payload_for_group_request(
-    request, requester, requested_users, requested_groups, host
+    request, requester, requested_users, requested_groups, tenant
 ):
-    host_url = config.get_host_specific_key("url", host)
-    if not host_url:
-        raise Exception("No host URI")
-    request_uri = f"{host_url}/{request.request_url}".replace("//", "/")
+    tenant_url = config.get_tenant_specific_key("url", tenant)
+    if not tenant_url:
+        raise Exception("No tenant URI")
+    request_uri = f"{tenant_url}/{request.request_url}".replace("//", "/")
 
     pre_text = "A new request has been created"
 
@@ -292,19 +297,19 @@ async def get_payload_for_policy_notification(
 
 
 async def send_slack_notification_new_notification(
-    host, arn, event_call, resource, source_ip, session_name, encoded_request_url
+    tenant, arn, event_call, resource, source_ip, session_name, encoded_request_url
 ):
     """
     Sends a notification using specified webhook URL about a new identity request
     """
-    if not config.get_host_specific_key("slack.notifications_enabled", host, False):
+    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
         return
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
 
     log_data: dict = {
         "function": function,
-        "host": host,
+        "tenant": tenant,
         "arn": arn,
         "event_call": event_call,
         "resource": resource,
@@ -312,13 +317,13 @@ async def send_slack_notification_new_notification(
         "session_name": session_name,
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_host_specific_key("slack.webhook_url", host)
+    slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
     if not slack_webhook_url:
         log_data["message"] = "Missing webhook URL for slack notification"
         log.error(log_data)
         return
     message = "We've generated a policy to resolve a detected permissions error"
-    request_url = config.get_host_specific_key("url", host) + encoded_request_url
+    request_url = config.get_tenant_specific_key("url", tenant) + encoded_request_url
     payload = await get_payload_for_policy_notification(
         message, session_name, arn, event_call, resource, source_ip, request_url
     )

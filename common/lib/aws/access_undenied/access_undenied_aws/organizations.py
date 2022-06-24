@@ -51,13 +51,13 @@ def _get_management_account_organizations_client(
 ) -> Optional[OrganizationsClient]:
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": management_account_id})
         .first.name
     )
     sts_client = boto3_cached_conn(
         "sts",
-        config.host,
+        config.tenant,
         None,
         account_number=management_account_id,
         assume_role=cross_account_role_name,
@@ -70,7 +70,7 @@ def _get_management_account_organizations_client(
 
     org_client = boto3_cached_conn(
         "organizations",
-        config.host,
+        config.tenant,
         None,
         account_number=config.account_id,
         assume_role=cross_account_role_name,
@@ -90,7 +90,7 @@ def _get_management_account_organizations_client(
     try:
         org_client = boto3_cached_conn(
             "organizations",
-            config.host,
+            config.tenant,
             None,
             account_number=management_account_id,
             assume_role=management_role_arn.split("/")[-1],
@@ -203,13 +203,13 @@ def _get_target_policies_with_policy_document(
 def initialize_organization_data(config: common.Config, scp_file_content: str) -> None:
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": config.account_id})
         .first.name
     )
     org_client = boto3_cached_conn(
         "organizations",
-        config.host,
+        config.tenant,
         None,
         account_number=config.account_id,
         assume_role=cross_account_role_name,

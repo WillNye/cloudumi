@@ -69,11 +69,11 @@ PERMISSIONS_SEPARATOR = "||"
 
 
 async def get_resource_policy(
-    account: str, resource_type: str, name: str, region: str, host: str, user: str
+    account: str, resource_type: str, name: str, region: str, tenant: str, user: str
 ):
     try:
         details = await fetch_resource_details(
-            account, resource_type, name, region, host, user
+            account, resource_type, name, region, tenant, user
         )
     except ClientError:
         # We don't have access to this resource, so we can't get the policy.
@@ -94,7 +94,7 @@ async def get_resource_policies(
     principal_arn: str,
     resource_actions: Dict[str, Dict[str, Any]],
     account: str,
-    host: str,
+    tenant: str,
 ) -> Tuple[List[Dict], bool]:
     resource_policies: List[Dict] = []
     cross_account_request: bool = False
@@ -110,7 +110,7 @@ async def get_resource_policies(
                 resource_type,
                 resource_name,
                 resource_region,
-                host,
+                tenant,
                 None,
             )
             arns = resource_info.get("arns", [])
@@ -166,31 +166,31 @@ async def fetch_resource_details(
     resource_type: str,
     resource_name: str,
     region: str,
-    host,
+    tenant,
     user,
     path: str = None,
 ) -> dict:
     if resource_type == "s3":
-        return await fetch_s3_bucket(account_id, resource_name, host, user)
+        return await fetch_s3_bucket(account_id, resource_name, tenant, user)
     elif resource_type == "sqs":
-        return await fetch_sqs_queue(account_id, region, resource_name, host, user)
+        return await fetch_sqs_queue(account_id, region, resource_name, tenant, user)
     elif resource_type == "sns":
-        return await fetch_sns_topic(account_id, region, resource_name, host, user)
+        return await fetch_sns_topic(account_id, region, resource_name, tenant, user)
     elif resource_type == "managed_policy":
         return await fetch_managed_policy_details(
-            account_id, resource_name, host, user, path
+            account_id, resource_name, tenant, user, path
         )
     else:
         return {}
 
 
 async def fetch_managed_policy_details(
-    account_id: str, resource_name: str, host: str, user: str, path: str = None
+    account_id: str, resource_name: str, tenant: str, user: str, path: str = None
 ) -> Optional[Dict]:
     from common.lib.policies import get_aws_config_history_url_for_resource
 
-    if not host:
-        raise Exception("host not configured")
+    if not tenant:
+        raise Exception("tenant not configured")
     if path:
         resource_name = path + "/" + resource_name
     policy_arn: str = f"arn:aws:iam::{account_id}:policy/{resource_name}"
@@ -200,13 +200,13 @@ async def fetch_managed_policy_details(
         policy_arn=policy_arn,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         region=config.region,
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        host=host,
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
+        tenant=tenant,
         user=user,
     )
     policy_details = await aio_wrapper(
@@ -214,13 +214,13 @@ async def fetch_managed_policy_details(
         policy_arn=policy_arn,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         region=config.region,
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        host=host,
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
+        tenant=tenant,
         user=user,
     )
 
@@ -233,7 +233,7 @@ async def fetch_managed_policy_details(
         policy_arn,
         resource_name,
         "AWS::IAM::ManagedPolicy",
-        host,
+        tenant,
         region=config.region,
     )
 
@@ -241,11 +241,11 @@ async def fetch_managed_policy_details(
 
 
 async def fetch_sns_topic(
-    account_id: str, region: str, resource_name: str, host: str, user: str
+    account_id: str, region: str, resource_name: str, tenant: str, user: str
 ) -> dict:
     from common.lib.policies import get_aws_config_history_url_for_resource
 
-    regions = await get_enabled_regions_for_account(account_id, host)
+    regions = await get_enabled_regions_for_account(account_id, tenant)
     if region not in regions:
         raise InvalidInvocationArgument(
             f"Region '{region}' is not valid region on account '{account_id}'."
@@ -255,11 +255,11 @@ async def fetch_sns_topic(
     client = await aio_wrapper(
         boto3_cached_conn,
         "sns",
-        host,
+        tenant,
         user,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         region=region,
@@ -267,7 +267,7 @@ async def fetch_sns_topic(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         retry_max_attempts=2,
     )
 
@@ -275,7 +275,7 @@ async def fetch_sns_topic(
         get_topic_attributes,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         TopicArn=arn,
@@ -284,9 +284,9 @@ async def fetch_sns_topic(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         retry_max_attempts=2,
-        host=host,
+        tenant=tenant,
         user=user,
     )
 
@@ -300,18 +300,18 @@ async def fetch_sns_topic(
         arn,
         resource_name,
         "AWS::SNS::Topic",
-        host,
+        tenant,
         region=region,
     )
     return result
 
 
 async def fetch_sqs_queue(
-    account_id: str, region: str, resource_name: str, host: str, user: str
+    account_id: str, region: str, resource_name: str, tenant: str, user: str
 ) -> dict:
     from common.lib.policies import get_aws_config_history_url_for_resource
 
-    regions = await get_enabled_regions_for_account(account_id, host)
+    regions = await get_enabled_regions_for_account(account_id, tenant)
     if region not in regions:
         raise InvalidInvocationArgument(
             f"Region '{region}' is not valid region on account '{account_id}'."
@@ -321,7 +321,7 @@ async def fetch_sqs_queue(
         get_queue_url,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         region=region,
@@ -330,9 +330,9 @@ async def fetch_sqs_queue(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         retry_max_attempts=2,
-        host=host,
+        tenant=tenant,
         user=user,
     )
 
@@ -340,7 +340,7 @@ async def fetch_sqs_queue(
         get_queue_attributes,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         region=region,
@@ -350,9 +350,9 @@ async def fetch_sqs_queue(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         retry_max_attempts=2,
-        host=host,
+        tenant=tenant,
         user=user,
     )
 
@@ -360,7 +360,7 @@ async def fetch_sqs_queue(
         list_queue_tags,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         region=region,
@@ -369,9 +369,9 @@ async def fetch_sqs_queue(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         retry_max_attempts=2,
-        host=host,
+        tenant=tenant,
         user=user,
     )
     result["TagSet"]: list = []
@@ -396,14 +396,14 @@ async def fetch_sqs_queue(
         queue_url_manual,
         resource_name,
         "AWS::SQS::Queue",
-        host,
+        tenant,
         region=region,
     )
     return result
 
 
 async def get_bucket_location_with_fallback(
-    bucket_name: str, account_id: str, host, fallback_region: str = "us-east-1"
+    bucket_name: str, account_id: str, tenant, fallback_region: str = "us-east-1"
 ) -> str:
     try:
         bucket_location_res = await aio_wrapper(
@@ -411,7 +411,7 @@ async def get_bucket_location_with_fallback(
             Bucket=bucket_name,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
             region=config.region,
@@ -419,9 +419,11 @@ async def get_bucket_location_with_fallback(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             retry_max_attempts=2,
-            host=host,
+            tenant=tenant,
         )
         bucket_location = bucket_location_res.get("LocationConstraint", fallback_region)
         if not bucket_location:
@@ -438,7 +440,7 @@ async def get_bucket_location_with_fallback(
 
 
 async def fetch_s3_bucket(
-    account_id: str, bucket_name: str, host: str, user: str
+    account_id: str, bucket_name: str, tenant: str, user: str
 ) -> dict:
     """Fetch S3 Bucket and applicable policies
 
@@ -464,7 +466,7 @@ async def fetch_s3_bucket(
             bucket_name,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
             region=config.region,
@@ -472,9 +474,11 @@ async def fetch_s3_bucket(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             retry_max_attempts=2,
-            host=host,
+            tenant=tenant,
             user=user,
         )
         created_time_stamp = bucket_resource.creation_date
@@ -484,13 +488,13 @@ async def fetch_s3_bucket(
         sentry_sdk.capture_exception()
     try:
         bucket_location = await get_bucket_location_with_fallback(
-            bucket_name, account_id, host
+            bucket_name, account_id, tenant
         )
         policy: Dict = await aio_wrapper(
             get_bucket_policy,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
             region=bucket_location,
@@ -499,9 +503,11 @@ async def fetch_s3_bucket(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             retry_max_attempts=2,
-            host=host,
+            tenant=tenant,
             user=user,
         )
     except ClientError as e:
@@ -514,7 +520,7 @@ async def fetch_s3_bucket(
             get_bucket_tagging,
             account_number=account_id,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
             region=bucket_location,
@@ -523,9 +529,11 @@ async def fetch_s3_bucket(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             retry_max_attempts=2,
-            host=host,
+            tenant=tenant,
             user=user,
         )
     except ClientError as e:
@@ -540,7 +548,7 @@ async def fetch_s3_bucket(
         bucket_name,
         bucket_name,
         "AWS::S3::Bucket",
-        host,
+        tenant,
         region=bucket_location,
     )
     result["Policy"] = json.loads(result["Policy"])
@@ -548,12 +556,14 @@ async def fetch_s3_bucket(
     return result
 
 
-async def raise_if_background_check_required_and_no_background_check(role, user, host):
+async def raise_if_background_check_required_and_no_background_check(
+    role, user, tenant
+):
     auth = get_plugin_by_name(
-        config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
+        config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
     )()
-    for compliance_account_id in config.get_host_specific_key(
-        "aws.compliance_account_ids", host, []
+    for compliance_account_id in config.get_tenant_specific_key(
+        "aws.compliance_account_ids", tenant, []
     ):
         if compliance_account_id == role.split(":")[4]:
             user_info = await auth.get_user_info(user, object=True)
@@ -572,20 +582,20 @@ async def raise_if_background_check_required_and_no_background_check(role, user,
                         "function": function,
                         "user": user,
                         "role": role,
-                        "host": host,
+                        "tenant": tenant,
                     },
                 )
                 raise BackgroundCheckNotPassedException(
-                    config.get_host_specific_key(
+                    config.get_tenant_specific_key(
                         "aws.background_check_not_passed",
-                        host,
+                        tenant,
                         "You must have passed a background check to access role "
                         "{role}.",
                     ).format(role=role)
                 )
 
 
-async def delete_iam_user(account_id, iam_user_name, username, host: str) -> bool:
+async def delete_iam_user(account_id, iam_user_name, username, tenant: str) -> bool:
     """
     This function assumes the user has already been pre-authorized to delete an IAM user. it will detach all managed
     policies, delete all inline policies, delete all access keys, and finally delete the IAM user.
@@ -603,7 +613,7 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
         "user": username,
     }
     log.info(log_data)
-    iam_user = await fetch_iam_user_details(account_id, iam_user_name, host, username)
+    iam_user = await fetch_iam_user_details(account_id, iam_user_name, tenant, username)
 
     # Detach managed policies
     for policy in await aio_wrapper(iam_user.attached_policies.all):
@@ -640,7 +650,7 @@ async def delete_iam_user(account_id, iam_user_name, username, host: str) -> boo
         f"{log_data['function']}.success",
         tags={
             "iam_user_name": iam_user_name,
-            "host": host,
+            "tenant": tenant,
         },
     )
     return True
@@ -680,7 +690,7 @@ async def prune_iam_resource_tag(
         )
 
 
-async def fetch_iam_user_details(account_id, iam_user_name, host, user):
+async def fetch_iam_user_details(account_id, iam_user_name, tenant, user):
     """
     Fetches details about an IAM user from AWS. If spoke_accounts configuration
     is set, the hub (central) account ConsoleMeInstanceProfile role will assume the
@@ -695,24 +705,24 @@ async def fetch_iam_user_details(account_id, iam_user_name, host, user):
         "message": "Attempting to fetch role details",
         "account": account_id,
         "iam_user_name": iam_user_name,
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
     iam_resource = await aio_wrapper(
         boto3_cached_conn,
         "iam",
-        host,
+        tenant,
         user,
         service_type="resource",
         account_number=account_id,
         region=config.region,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         session_name=sanitize_session_name("fetch_iam_user_details"),
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     )
     try:
         iam_user = await aio_wrapper(iam_resource.User, iam_user_name)
@@ -750,35 +760,37 @@ def get_service_from_arn(arn):
     return result["service"]
 
 
-async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str]:
+async def get_enabled_regions_for_account(account_id: str, tenant: str) -> Set[str]:
     """
     Returns a list of regions enabled for an account based on an EC2 Describe Regions call. Can be overridden with a
     global configuration of static regions (Configuration key: `celery.sync_regions`), or a configuration of specific
     regions per account (Configuration key:  `get_enabled_regions_for_account.{account_id}`)
     """
-    enabled_regions_for_account = config.get_host_specific_key(
-        f"get_enabled_regions_for_account.{account_id}", host
+    enabled_regions_for_account = config.get_tenant_specific_key(
+        f"get_enabled_regions_for_account.{account_id}", tenant
     )
     if enabled_regions_for_account:
         return enabled_regions_for_account
 
-    celery_sync_regions = config.get_host_specific_key("celery.sync_regions", host, [])
+    celery_sync_regions = config.get_tenant_specific_key(
+        "celery.sync_regions", tenant, []
+    )
     if celery_sync_regions:
         return celery_sync_regions
 
     client = await aio_wrapper(
         boto3_cached_conn,
         "ec2",
-        host,
+        tenant,
         None,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         read_only=True,
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     )
 
     regions = await aio_wrapper(client.describe_regions)
@@ -786,16 +798,16 @@ async def get_enabled_regions_for_account(account_id: str, host: str) -> Set[str
 
 
 async def access_analyzer_validate_policy(
-    policy: str, log_data, host, policy_type: str = "IDENTITY_POLICY"
+    policy: str, log_data, tenant, policy_type: str = "IDENTITY_POLICY"
 ) -> List[Dict[str, Any]]:
-    session = get_session_for_tenant(host)
+    session = get_session_for_tenant(tenant)
     try:
         enhanced_findings = []
         client = await aio_wrapper(
             session.client,
             "accessanalyzer",
             region_name=config.region,
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         access_analyzer_response = await aio_wrapper(
             client.validate_policy,
@@ -858,59 +870,59 @@ async def parliament_validate_iam_policy(policy: str) -> List[Dict[str, Any]]:
     return enhanced_findings
 
 
-async def validate_iam_policy(policy: str, log_data: Dict, host: str):
+async def validate_iam_policy(policy: str, log_data: Dict, tenant: str):
     parliament_findings: List = await parliament_validate_iam_policy(policy)
     access_analyzer_findings: List = await access_analyzer_validate_policy(
-        policy, log_data, host, policy_type="IDENTITY_POLICY"
+        policy, log_data, tenant, policy_type="IDENTITY_POLICY"
     )
     return parliament_findings + access_analyzer_findings
 
 
 async def get_all_scps(
-    host: str, force_sync=False
+    tenant: str, force_sync=False
 ) -> Dict[str, List[ServiceControlPolicyModel]]:
     """Retrieve a dictionary containing all Service Control Policies across organizations
 
     Args:
         force_sync: force a cache update
     """
-    redis_key = config.get_host_specific_key(
+    redis_key = config.get_tenant_specific_key(
         "cache_scps_across_organizations.redis.key.all_scps_key",
-        host,
-        f"{host}_ALL_AWS_SCPS",
+        tenant,
+        f"{tenant}_ALL_AWS_SCPS",
     )
     scps = await retrieve_json_data_from_redis_or_s3(
         redis_key,
-        s3_bucket=config.get_host_specific_key(
-            "cache_scps_across_organizations.s3.bucket", host
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_scps_across_organizations.s3.bucket", tenant
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_scps_across_organizations.s3.file",
-            host,
+            tenant,
             "scps/cache_scps_v1.json.gz",
         ),
         default={},
         max_age=86400,
-        host=host,
+        tenant=tenant,
     )
     if force_sync or not scps:
-        scps = await cache_all_scps(host)
+        scps = await cache_all_scps(tenant)
     scp_models = {}
     for account, org_scps in scps.items():
         scp_models[account] = [ServiceControlPolicyModel(**scp) for scp in org_scps]
     return scp_models
 
 
-async def cache_all_scps(host) -> Dict[str, Any]:
+async def cache_all_scps(tenant) -> Dict[str, Any]:
     """Store a dictionary of all Service Control Policies across organizations in the cache"""
     all_scps = {}
     for organization in (
-        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
+        ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
     ):
         org_account_id = organization.account_id
         role_to_assume = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": org_account_id})
             .first.name
         )
@@ -928,75 +940,75 @@ async def cache_all_scps(host) -> Dict[str, Any]:
                 "from AWS Organizations. please set the appropriate configuration value."
             )
         org_scps = await retrieve_scps_for_organization(
-            org_account_id, host, role_to_assume=role_to_assume, region=config.region
+            org_account_id, tenant, role_to_assume=role_to_assume, region=config.region
         )
         all_scps[org_account_id] = org_scps
-    redis_key = config.get_host_specific_key(
+    redis_key = config.get_tenant_specific_key(
         "cache_scps_across_organizations.redis.key.all_scps_key",
-        host,
-        f"{host}_ALL_AWS_SCPS",
+        tenant,
+        f"{tenant}_ALL_AWS_SCPS",
     )
     s3_bucket = None
     s3_key = None
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key(
-            "cache_scps_across_organizations.s3.bucket", host
+        s3_bucket = config.get_tenant_specific_key(
+            "cache_scps_across_organizations.s3.bucket", tenant
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "cache_scps_across_organizations.s3.file",
-            host,
+            tenant,
             "scps/cache_scps_v1.json.gz",
         )
     await store_json_results_in_redis_and_s3(
-        all_scps, redis_key=redis_key, s3_bucket=s3_bucket, s3_key=s3_key, host=host
+        all_scps, redis_key=redis_key, s3_bucket=s3_bucket, s3_key=s3_key, tenant=tenant
     )
     return all_scps
 
 
-async def get_org_structure(host, force_sync=False) -> Dict[str, Any]:
+async def get_org_structure(tenant, force_sync=False) -> Dict[str, Any]:
     """Retrieve a dictionary containing the organization structure
 
     Args:
         force_sync: force a cache update
     """
-    redis_key = config.get_host_specific_key(
+    redis_key = config.get_tenant_specific_key(
         "cache_organization_structure.redis.key.org_structure_key",
-        host,
-        f"{host}_AWS_ORG_STRUCTURE",
+        tenant,
+        f"{tenant}_AWS_ORG_STRUCTURE",
     )
     org_structure = await retrieve_json_data_from_redis_or_s3(
         redis_key,
-        s3_bucket=config.get_host_specific_key(
-            "cache_organization_structure.s3.bucket", host
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_organization_structure.s3.bucket", tenant
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_organization_structure.s3.file",
-            host,
+            tenant,
             "scps/cache_org_structure_v1.json.gz",
         ),
         default={},
-        host=host,
+        tenant=tenant,
     )
     if force_sync or not org_structure:
-        org_structure = await cache_org_structure(host)
+        org_structure = await cache_org_structure(tenant)
     return org_structure
 
 
-async def cache_org_structure(host: str) -> Dict[str, Any]:
+async def cache_org_structure(tenant: str) -> Dict[str, Any]:
     """Store a dictionary of the organization structure in the cache"""
     all_org_structure = {}
     for organization in (
-        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
+        ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
     ):
         org_account_id = organization.account_id
         role_to_assume = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": org_account_id})
             .first.name
         )
@@ -1013,28 +1025,28 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
                 "from AWS Organizations. please set the appropriate configuration value."
             )
         org_structure = await retrieve_org_structure(
-            org_account_id, host, role_to_assume=role_to_assume, region=config.region
+            org_account_id, tenant, role_to_assume=role_to_assume, region=config.region
         )
         all_org_structure.update(org_structure)
-    redis_key = config.get_host_specific_key(
+    redis_key = config.get_tenant_specific_key(
         "cache_organization_structure.redis.key.org_structure_key",
-        host,
-        f"{host}_AWS_ORG_STRUCTURE",
+        tenant,
+        f"{tenant}_AWS_ORG_STRUCTURE",
     )
     s3_bucket = None
     s3_key = None
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key(
-            "cache_organization_structure.s3.bucket", host
+        s3_bucket = config.get_tenant_specific_key(
+            "cache_organization_structure.s3.bucket", tenant
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "cache_organization_structure.s3.file",
-            host,
+            tenant,
             "scps/cache_org_structure_v1.json.gz",
         )
     await store_json_results_in_redis_and_s3(
@@ -1042,7 +1054,7 @@ async def cache_org_structure(host: str) -> Dict[str, Any]:
         redis_key=redis_key,
         s3_bucket=s3_bucket,
         s3_key=s3_key,
-        host=host,
+        tenant=tenant,
     )
     return all_org_structure
 
@@ -1071,14 +1083,14 @@ async def _is_member_of_ou(
 
 async def get_organizational_units_for_account(
     identifier: str,
-    host: str,
+    tenant: str,
 ) -> Set[str]:
     """Return a set of Organizational Unit IDs for a given account or OU ID
 
     Args:
         identifier: AWS account or OU ID
     """
-    all_orgs = await get_org_structure(host)
+    all_orgs = await get_org_structure(tenant)
     organizational_units = set()
     for org_id, org_structure in all_orgs.items():
         found, organizational_units = await _is_member_of_ou(identifier, org_structure)
@@ -1106,15 +1118,15 @@ async def _scp_targets_account_or_ou(
 
 
 async def get_scps_for_account_or_ou(
-    identifier: str, host: str
+    identifier: str, tenant: str
 ) -> ServiceControlPolicyArrayModel:
     """Retrieve a list of Service Control Policies for the account or OU specified by the identifier
 
     Args:
         identifier: AWS account or OU ID
     """
-    all_scps = await get_all_scps(host)
-    account_ous = await get_organizational_units_for_account(identifier, host)
+    all_scps = await get_all_scps(tenant)
+    account_ous = await get_organizational_units_for_account(identifier, tenant)
     scps_for_account = []
     for org_account_id, scps in all_scps.items():
         # Iterate through each org's SCPs and see if the provided account_id is in the targets
@@ -1260,7 +1272,7 @@ async def normalize_policies(policies: List[Any]) -> List[Any]:
 def allowed_to_sync_role(
     role_arn: str,
     role_tags: List[Optional[Dict[str, str]]],
-    host: str,
+    tenant: str,
 ) -> bool:
     """
     This function determines whether ConsoleMe is allowed to sync or otherwise manipulate an IAM role. By default,
@@ -1295,8 +1307,8 @@ def allowed_to_sync_role(
 
     :return: boolean specifying whether ConsoleMe is allowed to sync / access the role
     """
-    allowed_tags = config.get_host_specific_key("roles.allowed_tags", host, {})
-    allowed_arns = config.get_host_specific_key("roles.allowed_arns", host, [])
+    allowed_tags = config.get_tenant_specific_key("roles.allowed_tags", tenant, {})
+    allowed_arns = config.get_tenant_specific_key("roles.allowed_arns", tenant, [])
     if not allowed_tags and not allowed_arns:
         return True
 
@@ -1320,7 +1332,7 @@ def allowed_to_sync_role(
 
 async def remove_expired_request_changes(
     extended_request: ExtendedRequestModel,
-    host: str,
+    tenant: str,
     user: Optional[str],
     force_refresh: bool = False,
 ) -> None:
@@ -1370,11 +1382,11 @@ async def remove_expired_request_changes(
         resource_account = arn_parsed["account"]
 
         if not resource_account:
-            resource_account = await get_resource_account(principal_arn, host)
+            resource_account = await get_resource_account(principal_arn, tenant)
 
         if resource_type == "s3" and not resource_region:
             resource_region = await get_bucket_location_with_fallback(
-                resource_name, resource_account, host
+                resource_name, resource_account, tenant
             )
 
         if not resource_account:
@@ -1387,13 +1399,13 @@ async def remove_expired_request_changes(
         client = await aio_wrapper(
             boto3_cached_conn,
             resource_type,
-            host,
+            tenant,
             user,
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
@@ -1403,7 +1415,9 @@ async def remove_expired_request_changes(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             retry_max_attempts=2,
         )
 
@@ -1550,7 +1564,7 @@ async def remove_expired_request_changes(
                     client,
                     "role",
                     principal_name,
-                    get_active_tear_users_tag(host),
+                    get_active_tear_users_tag(tenant),
                     request_user,
                 )
                 change.status = Status.expired
@@ -1595,7 +1609,7 @@ async def remove_expired_request_changes(
                         resource_type,
                         resource_name,
                         resource_region,
-                        host,
+                        tenant,
                         user,
                     )
 
@@ -1603,7 +1617,7 @@ async def remove_expired_request_changes(
                     role = await get_role_details(
                         resource_account,
                         principal_name,
-                        host,
+                        tenant,
                         extended=True,
                         force_refresh=force_refresh,
                     )
@@ -1696,11 +1710,11 @@ async def remove_expired_request_changes(
     if should_update_policy_request:
         try:
             extended_request.request_status = RequestStatus.expired
-            await IAMRequest.write_v2(extended_request, host)
+            await IAMRequest.write_v2(extended_request, tenant)
 
             if resource_name == "role":
                 await IAMRole.get(
-                    host,
+                    tenant,
                     resource_account,
                     principal_arn,
                     force_refresh=force_refresh,
@@ -1711,7 +1725,7 @@ async def remove_expired_request_changes(
                 await fetch_iam_user(
                     resource_account,
                     principal_arn,
-                    host,
+                    tenant,
                     force_refresh=force_refresh,
                     run_sync=True,
                 )
@@ -1723,37 +1737,41 @@ async def remove_expired_request_changes(
             sentry_sdk.capture_exception()
 
 
-async def remove_expired_host_requests(host: str):
+async def remove_expired_tenant_requests(tenant: str):
     all_requests = await IAMRequest.query(
-        host, filter_condition=(IAMRequest.status == "approved")
+        tenant, filter_condition=(IAMRequest.status == "approved")
     )
 
     for request in all_requests:
         await remove_expired_request_changes(
-            ExtendedRequestModel.parse_obj(request.extended_request.dict()), host, None
+            ExtendedRequestModel.parse_obj(request.extended_request.dict()),
+            tenant,
+            None,
         )
 
     # Can swap back to this once it's thread safe
     # await asyncio.gather(*[
-    #     remove_expired_request_changes(ExtendedRequestModel.parse_obj(request["extended_request"]), host, None)
+    #     remove_expired_request_changes(ExtendedRequestModel.parse_obj(request["extended_request"]), tenant, None)
     #     for request in all_policy_requests
     # ])
 
 
-async def remove_expired_requests_for_hosts(hosts: list[str]) -> dict:
+async def remove_expired_requests_for_tenants(tenants: list[str]) -> dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    await asyncio.gather(*[remove_expired_host_requests(host) for host in hosts])
+    await asyncio.gather(
+        *[remove_expired_tenant_requests(tenant) for tenant in tenants]
+    )
 
     return log_data
 
 
-def get_aws_principal_owner(role_details: Dict[str, Any], host: str) -> Optional[str]:
+def get_aws_principal_owner(role_details: Dict[str, Any], tenant: str) -> Optional[str]:
     """
     Identifies the owning user/group of an AWS principal based on one or more trusted and configurable principal tags.
     `owner` is used to notify application owners of permission problems with their detected AWS principals or resources
@@ -1762,7 +1780,7 @@ def get_aws_principal_owner(role_details: Dict[str, Any], host: str) -> Optional
     :return: owner: str
     """
     owner = None
-    owner_tag_names = config.get_host_specific_key("aws.tags.owner", host, [])
+    owner_tag_names = config.get_tenant_specific_key("aws.tags.owner", tenant, [])
     if not owner_tag_names:
         return owner
     if isinstance(owner_tag_names, str):
@@ -1777,7 +1795,7 @@ def get_aws_principal_owner(role_details: Dict[str, Any], host: str) -> Optional
 
 async def resource_arn_known_in_aws_config(
     resource_arn: str,
-    host: str,
+    tenant: str,
     run_query: bool = True,
     run_query_with_aggregator: bool = True,
 ) -> bool:
@@ -1796,20 +1814,20 @@ async def resource_arn_known_in_aws_config(
     :param run_query_with_aggregator: Should we run the AWS Config query on our AWS Config aggregator?
     :return:
     """
-    red = RedisHandler().redis_sync(host)
-    expiration_seconds: int = config.get_host_specific_key(
+    red = RedisHandler().redis_sync(tenant)
+    expiration_seconds: int = config.get_tenant_specific_key(
         "aws.resource_arn_known_in_aws_config.expiration_seconds",
-        host,
+        tenant,
         3600,
     )
     known_arn = False
     if not resource_arn.startswith("arn:aws:"):
         return known_arn
 
-    resources_from_aws_config_redis_key: str = config.get_host_specific_key(
+    resources_from_aws_config_redis_key: str = config.get_tenant_specific_key(
         "aws_config_cache.redis_key",
-        host,
-        f"{host}_AWSCONFIG_RESOURCE_CACHE",
+        tenant,
+        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
     )
 
     if red.exists(resources_from_aws_config_redis_key) and red.hget(
@@ -1817,15 +1835,15 @@ async def resource_arn_known_in_aws_config(
     ):
         return True
 
-    resource_arn_exists_temp_matches_redis_key: str = config.get_host_specific_key(
+    resource_arn_exists_temp_matches_redis_key: str = config.get_tenant_specific_key(
         "resource_arn_known_in_aws_config.redis.temp_matches_key",
-        host,
-        f"{host}_TEMP_QUERIED_RESOURCE_ARN_CACHE",
+        tenant,
+        f"{tenant}_TEMP_QUERIED_RESOURCE_ARN_CACHE",
     )
 
     # To prevent repetitive queries against AWS config, first see if we've already ran a query recently
     result = await redis_hgetex(
-        resource_arn_exists_temp_matches_redis_key, resource_arn, host
+        resource_arn_exists_temp_matches_redis_key, resource_arn, tenant
     )
     if result:
         return result["known"]
@@ -1836,7 +1854,7 @@ async def resource_arn_known_in_aws_config(
     r = await aio_wrapper(
         query,
         f"select arn where arn = '{resource_arn}'",
-        host,
+        tenant,
         use_aggregator=run_query_with_aggregator,
     )
     if r:
@@ -1847,7 +1865,7 @@ async def resource_arn_known_in_aws_config(
         resource_arn,
         {"known": known_arn},
         expiration_seconds,
-        host,
+        tenant,
     )
 
     return known_arn
@@ -1858,7 +1876,7 @@ async def simulate_iam_principal_action(
     action,
     resource_arn,
     source_ip,
-    host,
+    tenant,
     user,
     expiration_seconds: Optional[int] = None,
 ):
@@ -1869,24 +1887,24 @@ async def simulate_iam_principal_action(
     """
     if not expiration_seconds:
         expiration_seconds = (
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "aws.simulate_iam_principal_action.expiration_seconds",
-                host,
+                tenant,
                 3600,
             ),
         )
     # simulating IAM principal policies is expensive.
     # Temporarily cache and return results by principal_arn, action, and resource_arn. We don't consider source_ip
     # when caching because it could vary greatly for application roles running on multiple instances/containers.
-    resource_arn_exists_temp_matches_redis_key: str = config.get_host_specific_key(
+    resource_arn_exists_temp_matches_redis_key: str = config.get_tenant_specific_key(
         "resource_arn_known_in_aws_config.redis.temp_matches_key",
-        host,
-        f"{host}_TEMP_POLICY_SIMULATION_CACHE",
+        tenant,
+        f"{tenant}_TEMP_POLICY_SIMULATION_CACHE",
     )
 
     cache_key = f"{principal_arn}-{action}-{resource_arn}"
     result = await redis_hgetex(
-        resource_arn_exists_temp_matches_redis_key, cache_key, host
+        resource_arn_exists_temp_matches_redis_key, cache_key, tenant
     )
     if result:
         return result
@@ -1905,11 +1923,11 @@ async def simulate_iam_principal_action(
     client = await aio_wrapper(
         boto3_cached_conn,
         "iam",
-        host,
+        tenant,
         user,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         sts_client_kwargs=dict(
@@ -1941,7 +1959,7 @@ async def simulate_iam_principal_action(
             resource_arn,
             response["EvaluationResults"],
             expiration_seconds,
-            host,
+            tenant,
         )
     except Exception:
         sentry_sdk.capture_exception()
@@ -1949,7 +1967,7 @@ async def simulate_iam_principal_action(
     return response["EvaluationResults"]
 
 
-async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str]:
+async def get_iam_principal_owner(arn: str, aws: Any, tenant: str) -> Optional[str]:
     from common.aws.iam.role.models import IAMRole
 
     principal_details = {}
@@ -1957,47 +1975,47 @@ async def get_iam_principal_owner(arn: str, aws: Any, host: str) -> Optional[str
     account_id = await get_account_id_from_arn(arn)
     # trying to find principal for subsequent queries
     if principal_type == "role":
-        principal_details = (await IAMRole.get(host, account_id, arn)).dict()
+        principal_details = (await IAMRole.get(tenant, account_id, arn)).dict()
     elif principal_type == "user":
-        principal_details = await fetch_iam_user(account_id, arn, host)
+        principal_details = await fetch_iam_user(account_id, arn, tenant)
     return principal_details.get("owner")
 
 
-async def get_resource_account(arn: str, host: str) -> str:
+async def get_resource_account(arn: str, tenant: str) -> str:
     """Return the AWS account ID that owns a resource.
 
     In most cases, this will pull the ID directly from the ARN.
     If we are unsuccessful in pulling the account from ARN, we try to grab it from our resources cache
     """
-    red = await RedisHandler().redis(host)
+    red = await RedisHandler().redis(tenant)
     resource_account: str = get_account_from_arn(arn)
     if resource_account:
         return resource_account
 
-    resources_from_aws_config_redis_key: str = config.get_host_specific_key(
+    resources_from_aws_config_redis_key: str = config.get_tenant_specific_key(
         "aws_config_cache.redis_key",
-        host,
-        f"{host}_AWSCONFIG_RESOURCE_CACHE",
+        tenant,
+        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
     )
 
     if not red.exists(resources_from_aws_config_redis_key):
         # This will force a refresh of our redis cache if the data exists in S3
         await retrieve_json_data_from_redis_or_s3(
             redis_key=resources_from_aws_config_redis_key,
-            s3_bucket=config.get_host_specific_key(
-                "aws_config_cache_combined.s3.bucket", host
+            s3_bucket=config.get_tenant_specific_key(
+                "aws_config_cache_combined.s3.bucket", tenant
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "aws_config_cache_combined.s3.file",
-                host,
+                tenant,
                 "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
             ),
             redis_data_type="hash",
-            host=host,
+            tenant=tenant,
             default={},
         )
 
-    resource_info = await redis_hget(resources_from_aws_config_redis_key, arn, host)
+    resource_info = await redis_hget(resources_from_aws_config_redis_key, arn, tenant)
     if resource_info:
         return json.loads(resource_info).get("accountId", "")
     elif "arn:aws:s3:::" in arn:
@@ -2005,11 +2023,11 @@ async def get_resource_account(arn: str, host: str) -> str:
         # retrieved this info from our AWS Config cache, but we've encountered problems with AWS Config historically
         # that have necessitated this code.
         s3_cache = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get_host_specific_key(
-                "redis.s3_buckets_key", host, f"{host}_S3_BUCKETS"
+            redis_key=config.get_tenant_specific_key(
+                "redis.s3_buckets_key", tenant, f"{tenant}_S3_BUCKETS"
             ),
             redis_data_type="hash",
-            host=host,
+            tenant=tenant,
         )
         search_bucket_name = arn.split(":")[-1]
         for bucket_account_id, buckets in s3_cache.items():

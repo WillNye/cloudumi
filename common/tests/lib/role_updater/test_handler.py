@@ -6,7 +6,7 @@ import boto3
 import pytest
 from asgiref.sync import async_to_sync
 
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 os.environ["AWS_ACCESS_KEY_ID"] = "testing"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
@@ -41,7 +41,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "role_name"
         client.create_role(RoleName=role_name, AssumeRolePolicyDocument="{}")
@@ -50,7 +50,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         role_name = "role_name"
         from common.aws.iam.role.utils import _delete_iam_role
 
-        await _delete_iam_role("123456789012", role_name, "consoleme-unit-test", host)
+        await _delete_iam_role("123456789012", role_name, "consoleme-unit-test", tenant)
 
     async def test_parse_account_id_from_arn(self):
         arn = "arn:aws:iam::123456789012:role/testrole"
@@ -73,7 +73,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "role_name"
 
@@ -90,7 +90,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "role_name"
         attach_policy = {
@@ -116,7 +116,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "role_name"
         policy = {
@@ -131,7 +131,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "role_name"
         attach_policy = {
@@ -155,7 +155,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "role_name"
         policy = {
@@ -178,7 +178,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "role_name"
         tag = {"action": "add", "key": "testkey", "value": "testvalue"}
@@ -190,14 +190,14 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "role_name"
         tag = {"action": "remove", "key": "testkey"}
         async_to_sync(self.handler.update_tags)(client, role_name, tag)
 
     def test_handler(self):
-        host = "localhost"
+        tenant = "localhost"
         event = [
             {
                 "arn": "arn:aws:iam::123456789012:role/ConsoleMe",
@@ -226,7 +226,7 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
                 "tags": [{"action": "add", "key": "Key", "value": "Value"}],
             }
         ]
-        async_to_sync(self.handler.update_role)(event, host, None)
+        async_to_sync(self.handler.update_role)(event, tenant, None)
 
     def test_handler_d(self):
         event = [
@@ -257,4 +257,4 @@ class TestHandler(unittest.IsolatedAsyncioTestCase):
                 "tags": [{"action": "add", "key": "Key", "value": "Value"}],
             }
         ]
-        async_to_sync(self.handler.update_role)(event, host, None)
+        async_to_sync(self.handler.update_role)(event, tenant, None)

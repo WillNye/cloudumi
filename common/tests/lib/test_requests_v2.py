@@ -28,7 +28,7 @@ from common.models import (
     UserModel,
 )
 from util.tests.fixtures.fixtures import create_future
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 test_role_name = "TestRequestsLibV2RoleName"
 test_role_arn = f"arn:aws:iam::123456789012:role/{test_role_name}"
@@ -111,7 +111,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = test_role_name
         try:
@@ -127,7 +127,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         role_name = test_role_name
         from common.aws.iam.role.utils import _delete_iam_role
 
-        await _delete_iam_role("123456789012", role_name, "consoleme-unit-test", host)
+        await _delete_iam_role("123456789012", role_name, "consoleme-unit-test", tenant)
 
     async def test_validate_inline_policy_change(self):
         from common.exceptions.exceptions import InvalidRequestParameter
@@ -580,9 +580,9 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         from common.lib.v2.requests import generate_resource_policies
 
         # Redis is globally mocked. Let's store and retrieve a fake value
-        red = RedisHandler().redis_sync(host)
+        red = RedisHandler().redis_sync(tenant)
         red.hmset(
-            f"{host}_AWSCONFIG_RESOURCE_CACHE",
+            f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
             {
                 "arn:aws:s3:::test_bucket": json.dumps({"accountId": "123456789013"}),
                 "arn:aws:s3:::test_bucket_2": json.dumps({"accountId": "123456789013"}),
@@ -732,7 +732,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         len_before_call = len(extended_request.changes.changes)
         number_of_resources = 5
         await generate_resource_policies(
-            extended_request, extended_request.requester_email, host
+            extended_request, extended_request.requester_email, tenant
         )
 
         self.assertEqual(
@@ -782,7 +782,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(seen_resource_two)
         self.assertTrue(seen_resource_three)
         self.assertTrue(seen_resource_four)
-        red.delete(f"{host}_AWSCONFIG_RESOURCE_CACHE")
+        red.delete(f"{tenant}_AWSCONFIG_RESOURCE_CACHE")
 
     async def test_apply_changes_to_role_inline_policy(self):
         from common.config import config
@@ -859,12 +859,12 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         # Detaching inline policy that isn't attached -> error
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(1, response.errors)
         self.assertIn(
@@ -880,7 +880,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             changes=[inline_policy_change_model]
         )
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(0, response.errors)
         self.assertIn(
@@ -908,7 +908,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             changes=[inline_policy_change_model]
         )
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(0, response.errors)
         self.assertIn(
@@ -936,7 +936,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             changes=[inline_policy_change_model]
         )
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(0, response.errors)
         with pytest.raises(client.exceptions.NoSuchEntityException) as e:
@@ -993,12 +993,12 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         # Detaching a managed policy that's not attached
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(1, response.errors)
         self.assertIn(
@@ -1014,7 +1014,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             changes=[managed_policy_change_model]
         )
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(1, response.errors)
         self.assertIn(
@@ -1038,7 +1038,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         response.action_results = []
         response.errors = 0
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(0, response.errors)
         # Make sure it attached
@@ -1060,7 +1060,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             changes=[managed_policy_change_model]
         )
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(0, response.errors)
         # Make sure it detached
@@ -1131,12 +1131,12 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         # Attach the assume role policy document -> no errors
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(0, response.errors)
         # Make sure it attached
@@ -1201,7 +1201,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
         # Not supported change -> Error
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host
+            extended_request, response, extended_request.requester_email, tenant
         )
         self.assertEqual(1, response.errors)
         self.assertIn("Error occurred", dict(response.action_results[0]).get("message"))
@@ -1270,7 +1270,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         client.update_assume_role_policy(
             RoleName=test_role_name,
@@ -1293,7 +1293,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
         # Specify ID different from change -> No changes should happen
         await apply_changes_to_role(
-            extended_request, response, extended_request.requester_email, host, "1234"
+            extended_request, response, extended_request.requester_email, tenant, "1234"
         )
         self.assertEqual(0, response.errors)
         self.assertEqual(0, len(response.action_results))
@@ -1321,7 +1321,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             extended_request,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
             assume_role_policy_change_model.id,
         )
         self.assertEqual(0, response.errors)
@@ -1341,7 +1341,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         client.put_role_policy(
             RoleName=test_role_name,
@@ -1410,7 +1410,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(None, extended_request.changes.changes[0].old_policy)
 
         extended_request = await populate_old_policies(
-            extended_request, extended_request.requester_email, host
+            extended_request, extended_request.requester_email, tenant
         )
 
         # assert after calling this function that old policy is None, we shouldn't modify changes that are already
@@ -1422,7 +1422,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(None, extended_request.changes.changes[0].old_policy)
 
         extended_request = await populate_old_policies(
-            extended_request, extended_request.requester_email, host
+            extended_request, extended_request.requester_email, tenant
         )
 
         # assert after calling the function that the old policies populated properly
@@ -1438,7 +1438,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         for path in ["/", "/testpath/test2/"]:
             client.create_policy(
@@ -1490,7 +1490,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(None, extended_request.changes.changes[0].old_policy)
 
             await populate_old_managed_policies(
-                extended_request, extended_request.requester_email, host
+                extended_request, extended_request.requester_email, tenant
             )
 
             # assert after calling this function that old policy is None, we shouldn't modify changes that are already
@@ -1502,7 +1502,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(None, extended_request.changes.changes[0].old_policy)
 
             await populate_old_managed_policies(
-                extended_request, extended_request.requester_email, host
+                extended_request, extended_request.requester_email, tenant
             )
 
             # assert after calling the function that the old policies populated properly
@@ -1518,7 +1518,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         for path in ["/", "/testpath/test2/"]:
             policy_name_and_path = path + existing_policy_name + "managed2"
@@ -1568,7 +1568,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 managed_policy_resource_change,
                 response,
                 "test@example.com",
-                host,
+                tenant,
             )
 
             self.assertEqual(0, response.errors)
@@ -1620,7 +1620,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 managed_policy_resource_change,
                 response,
                 "test@example.com",
-                host,
+                tenant,
             )
 
             self.assertEqual(0, response.errors)
@@ -1650,7 +1650,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     # async def test_apply_managed_policy_resource_tag_change(self):
     #     from common.lib.v2.requests import apply_managed_policy_resource_tag_change
     #
-    #     client = boto3.client("iam", region_name="us-east-1", **config.get_host_specific_key("boto3.client_kwargs", host, {}))
+    #     client = boto3.client("iam", region_name="us-east-1", **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}))
     #
     #     managed_policy_resource_tag_change = {
     #         "principal": {
@@ -1760,7 +1760,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
 
         self.assertEqual(1, response.errors)
@@ -1836,7 +1836,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
 
         self.assertEqual(1, response.errors)
@@ -1847,7 +1847,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "test_2"
         client.create_role(RoleName=role_name, AssumeRolePolicyDocument="{}")
@@ -1860,7 +1860,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
         self.assertEqual(0, response.errors)
         # Make sure it attached
@@ -1950,7 +1950,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
 
         self.assertEqual(1, response.errors)
@@ -1960,7 +1960,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         conn = boto3.resource(
             "s3",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         conn.create_bucket(Bucket="test_bucket")
         response.errors = 0
@@ -1971,7 +1971,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
 
         self.assertEqual(0, response.errors)
@@ -2051,7 +2051,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
 
         self.assertEqual(1, response.errors)
@@ -2063,7 +2063,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "sqs",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         client.create_queue(QueueName="test_sqs")
         response.errors = 0
@@ -2074,7 +2074,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
 
         self.assertEqual(0, response.errors)
@@ -2157,7 +2157,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
 
         self.assertEqual(1, response.errors)
@@ -2167,7 +2167,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "sns",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         client.create_topic(Name="test_sns")
         response.errors = 0
@@ -2178,7 +2178,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             resource_policy_change_model,
             response,
             extended_request.requester_email,
-            host,
+            tenant,
         )
 
         self.assertEqual(0, response.errors)
@@ -2218,7 +2218,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user2@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertIn("validation error", str(e))
 
@@ -2235,7 +2235,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user2@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
         self.assertEqual(0, response.errors)
         # Make sure comment got added to the request
@@ -2274,7 +2274,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             "user2@example.com",
             [],
             last_updated,
-            host,
+            tenant,
         )
         self.assertEqual(0, response.errors)
         self.assertEqual(extended_request.expiration_date, None)
@@ -2289,7 +2289,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             "user2@example.com",
             [],
             last_updated,
-            host,
+            tenant,
         )
         self.assertEqual(0, response.errors)
         self.assertEqual(extended_request.expiration_date, 20220407)
@@ -2341,7 +2341,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user2@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertIn("Unauthorized", str(e))
 
@@ -2358,7 +2358,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertIn("Unable to find", str(e))
 
@@ -2372,7 +2372,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             "user@example.com",
             [],
             last_updated,
-            host,
+            tenant,
         )
         self.assertEqual(0, response.errors)
         # Make sure change got updated in the request
@@ -2430,7 +2430,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         # Trying to apply while not being authorized
@@ -2441,7 +2441,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertIn("Unauthorized", str(e))
 
@@ -2459,7 +2459,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "consoleme_admins@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertIn("Unable to find", str(e))
 
@@ -2476,7 +2476,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
                 approval_probe_approved=True,
             )
 
@@ -2529,7 +2529,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user2@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertIn("Unauthorized", str(e))
 
@@ -2544,7 +2544,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertIn(
                 res.action_results[0].message,
@@ -2562,7 +2562,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                     "user@example.com",
                     [],
                     last_updated,
-                    host,
+                    tenant,
                 )
                 self.assertIn("cannot be cancelled", str(e))
 
@@ -2574,7 +2574,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertEqual(0, response.errors)
             # Make sure request got cancelled
@@ -2612,7 +2612,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                     "user2@example.com",
                     [],
                     last_updated,
-                    host,
+                    tenant,
                 )
                 self.assertIn("Unauthorized", str(e))
             extended_request.changes.changes[0].status = Status.applied
@@ -2623,7 +2623,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "consoleme_admins@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertEqual(
                 res.action_results[0].message,
@@ -2641,7 +2641,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                     "consoleme_admins@example.com",
                     [],
                     last_updated,
-                    host,
+                    tenant,
                 )
                 self.assertIn("cannot be rejected", str(e))
 
@@ -2653,7 +2653,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "consoleme_admins@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertEqual(0, response.errors)
             # Make sure request got rejected
@@ -2671,7 +2671,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                     "user2@example.com",
                     [],
                     last_updated,
-                    host,
+                    tenant,
                 )
                 self.assertIn("Cannot move this request back to pending", str(e))
 
@@ -2683,7 +2683,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "consoleme_admins@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertEqual(0, response.errors)
             # Make sure request got moved back
@@ -2716,9 +2716,9 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         from common.lib.v2.requests import parse_and_apply_policy_request_modification
 
         # Redis is globally mocked. Let's store and retrieve a fake value
-        red = RedisHandler().redis_sync(host)
+        red = RedisHandler().redis_sync(tenant)
         red.hmset(
-            f"{host}_AWSCONFIG_RESOURCE_CACHE",
+            f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
             {
                 "arn:aws:s3:::test_bucket": json.dumps({"accountId": "123456789013"}),
                 "arn:aws:s3:::test_bucket_2": json.dumps({"accountId": "123456789013"}),
@@ -2728,7 +2728,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         s3_client = await aio_wrapper(
             boto3_cached_conn,
             "s3",
-            host,
+            tenant,
             None,
             service_type="client",
             future_expiration_minutes=15,
@@ -2736,7 +2736,9 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             region="us-east-1",
             session_name="ConsoleMe_UnitTest",
             arn_partition="aws",
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
         )
         s3_client.create_bucket(Bucket="test_bucket")
 
@@ -2804,7 +2806,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         # Trying to approve while not being authorized
@@ -2815,7 +2817,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "user2@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
             self.assertIn("Unauthorized", str(e))
 
@@ -2829,7 +2831,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             "consoleme_admins@example.com",
             [],
             last_updated,
-            host,
+            tenant,
         )
 
         # 0 errors for approving the request, which doesn't apply any resource policy changes
@@ -2857,7 +2859,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             "consoleme_admins@example.com",
             [],
             last_updated,
-            host,
+            tenant,
         )
 
         self.assertEqual(extended_request.changes.changes[0].status, Status.applied)
@@ -2900,7 +2902,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "consoleme_admins@example.com",
                 [],
                 last_updated,
-                host,
+                tenant,
             )
 
         self.assertEqual(response.action_results[0].status, "success")
@@ -2908,5 +2910,5 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             response.action_results[0].message,
             "Successfully updated resource policy for arn:aws:s3:::test_bucket",
         )
-        red.delete(f"{host}_AWSCONFIG_RESOURCE_CACHE")
+        red.delete(f"{tenant}_AWSCONFIG_RESOURCE_CACHE")
         s3_client.delete_bucket(Bucket="test_bucket")

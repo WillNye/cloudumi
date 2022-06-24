@@ -37,7 +37,7 @@ auth = get_plugin_by_name(config.get("_global_.plugins.auth", "cmsaas_auth"))()
 
 
 async def add_user_to_group_task(
-    host: str,
+    tenant: str,
     member: str,
     group: str,
     requesting_user: str,
@@ -54,7 +54,7 @@ async def add_user_to_group_task(
                 "member": member,
                 "group": group,
                 "requesting_user": requesting_user,
-                "host": host,
+                "tenant": tenant,
             },
         )
         member = member.strip()
@@ -67,14 +67,14 @@ async def add_user_to_group_task(
         log_data = {
             "function": f"{__name__, sys._getframe().f_code.co_name}",
             "action": "Add user",
-            "host": host,
+            "tenant": tenant,
             "member": member,
             "group": group,
         }
         try:
-            group_info = await auth.get_group_info(host, group, members=False)
+            group_info = await auth.get_group_info(tenant, group, members=False)
             can_add_remove_members = can_modify_members(
-                host, requesting_user, requesting_users_groups, group_info
+                tenant, requesting_user, requesting_users_groups, group_info
             )
 
             if not can_add_remove_members:
@@ -97,7 +97,7 @@ async def add_user_to_group_task(
 
             if (
                 not group_info.allow_third_party_users
-                and not await auth.does_user_exist(host, member)
+                and not await auth.does_user_exist(tenant, member)
             ):
                 result[
                     "Result"
@@ -109,7 +109,7 @@ async def add_user_to_group_task(
                 return result
 
             await add_user_to_group(
-                host, member, group, requesting_user, service=service
+                tenant, member, group, requesting_user, service=service
             )
             result["Result"] = "Successfully added user to group"
             return result
@@ -124,7 +124,7 @@ async def add_user_to_group_task(
 
 
 async def remove_user_from_group_task(
-    host: str,
+    tenant: str,
     member: str,
     group: str,
     requesting_user: str,
@@ -141,7 +141,7 @@ async def remove_user_from_group_task(
                 "member": member,
                 "group": group,
                 "requesting_user": requesting_user,
-                "host": host,
+                "tenant": tenant,
             },
         )
         member = member.strip()
@@ -157,13 +157,13 @@ async def remove_user_from_group_task(
             "action": "Remove user",
             "member": member,
             "group": group,
-            "host": host,
+            "tenant": tenant,
         }
 
         try:
-            group_info = await auth.get_group_info(host, group, members=False)
+            group_info = await auth.get_group_info(tenant, group, members=False)
             can_add_remove_members = can_modify_members(
-                host, requesting_user, requesting_users_groups, group_info
+                tenant, requesting_user, requesting_users_groups, group_info
             )
 
             if not can_add_remove_members:
@@ -188,7 +188,7 @@ async def remove_user_from_group_task(
                 return result
 
             await remove_user_from_group(
-                host, member, group, requesting_user, service=service
+                tenant, member, group, requesting_user, service=service
             )
             result["Result"] = "Successfully removed user from group"
             return result
@@ -203,7 +203,7 @@ async def remove_user_from_group_task(
 
 
 async def get_service(
-    host: str, service_name: str, service_path: str, group: str
+    tenant: str, service_name: str, service_path: str, group: str
 ) -> Resource:
     """
     Get a service connection to Google. You'll need to generate a GCP service account first from instructions here:
@@ -238,26 +238,26 @@ async def get_service(
         "function": function,
         "service_name": service_name,
         "service_path": service_path,
-        "host": host,
+        "tenant": tenant,
         "group": group,
         "message": f"Building service connection for {service_name} / {service_path}",
     }
     log.debug(log_data)
-    if config.get_host_specific_key("google.service_key_file", host):
+    if config.get_tenant_specific_key("google.service_key_file", tenant):
         admin_credentials = service_account.Credentials.from_service_account_file(
-            config.get_host_specific_key("google.service_key_file", host),
-            scopes=config.get_host_specific_key(
+            config.get_tenant_specific_key("google.service_key_file", tenant),
+            scopes=config.get_tenant_specific_key(
                 "google.admin_scopes",
-                host,
+                tenant,
                 ["https://www.googleapis.com/auth/admin.directory.group"],
             ),
         )
-    elif config.get_host_specific_key("secrets.google.service_key_dict", host):
+    elif config.get_tenant_specific_key("secrets.google.service_key_dict", tenant):
         admin_credentials = service_account.Credentials.from_service_account_info(
-            config.get_host_specific_key("secrets.google.service_key_dict", host),
-            scopes=config.get_host_specific_key(
+            config.get_tenant_specific_key("secrets.google.service_key_dict", tenant),
+            scopes=config.get_tenant_specific_key(
                 "google.admin_scopes",
-                host,
+                tenant,
                 ["https://www.googleapis.com/auth/admin.directory.group"],
             ),
         )
@@ -268,8 +268,8 @@ async def get_service(
         )
 
     # Change credential subject based on group domain
-    credential_subjects = config.get_host_specific_key(
-        "secrets.google.credential_subject", host
+    credential_subjects = config.get_tenant_specific_key(
+        "secrets.google.credential_subject", tenant
     )
     credential_subject = None
     for k, v in credential_subjects.items():
@@ -282,7 +282,7 @@ async def get_service(
             "Error: Unable to find Google credential subject for domain {}. "
             "{}".format(
                 group.split("@")[1],
-                config.get_host_specific_key("ses.support_reference", host, ""),
+                config.get_tenant_specific_key("ses.support_reference", tenant, ""),
             )
         )
 
@@ -306,7 +306,7 @@ async def list_group_members_call(service, email):
 
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
 async def list_group_members(
-    host, email: str, dry_run: None = None, service: Optional[Resource] = None
+    tenant, email: str, dry_run: None = None, service: Optional[Resource] = None
 ) -> List[str]:
     """List all members of a group."""
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -318,7 +318,7 @@ async def list_group_members(
     }
     log.debug(log_data)
     if not service:
-        service = await get_service(host, "admin", "directory_v1", email)
+        service = await get_service(tenant, "admin", "directory_v1", email)
 
     if not dry_run:
         try:
@@ -345,19 +345,19 @@ async def list_user_groups_call(service, user_email, page_token=None):
     return results
 
 
-async def get_group_memberships(host, user_email, dry_run=None, service=None):
+async def get_group_memberships(tenant, user_email, dry_run=None, service=None):
     """Get group memberships for a user"""
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     stats.count(function)
     log_data = {
         "function": function,
         "user": user_email,
-        "host": host,
+        "tenant": tenant,
         "message": "Getting list of groups for user",
     }
     log.debug(log_data)
     if not service:
-        service = await get_service(host, "admin", "directory_v1", user_email)
+        service = await get_service(tenant, "admin", "directory_v1", user_email)
     groups = []
     if not dry_run:
         try:
@@ -379,13 +379,13 @@ async def get_group_memberships(host, user_email, dry_run=None, service=None):
 
 
 async def raise_if_requires_bgcheck_and_no_bgcheck(
-    host: str, user: str, group_info: Any
+    tenant: str, user: str, group_info: Any
 ) -> bool:
     """Check if group requires a background check, and if the user has completed the
     background check. Will raise if the user requires a background check but has not
     completed one.
     """
-    if not does_group_require_bg_check(group_info, host):
+    if not does_group_require_bg_check(group_info, tenant):
         return True
 
     user_info = await auth.get_user_info(user, object=True)
@@ -395,7 +395,7 @@ async def raise_if_requires_bgcheck_and_no_bgcheck(
     log_data = {
         "function": function,
         "user": user,
-        "host": host,
+        "tenant": tenant,
         "group": group_info.name,
         "backgroundcheck_required": group_info.backgroundcheck_required,
     }
@@ -404,15 +404,15 @@ async def raise_if_requires_bgcheck_and_no_bgcheck(
     if user_info.passed_background_check:
         return True
     raise BackgroundCheckNotPassedException(
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "google.background_check_fail_message",
-            host,
+            tenant,
             "User {user} has not passed background check Group {group_name} requires a background check.",
         ).format(user=user, group_name=group_info.name)
     )
 
 
-async def raise_if_not_same_domain(host: str, user: str, group_info: Any) -> None:
+async def raise_if_not_same_domain(tenant: str, user: str, group_info: Any) -> None:
     """Check if user is in the same domain as the group. Consoleme will refuse to add users to groups under a different
     domain if the allow_cross_domain_users or allow_third_party_users attributes are not set to "true" for a group.
     """
@@ -421,7 +421,7 @@ async def raise_if_not_same_domain(host: str, user: str, group_info: Any) -> Non
     log_data = {
         "function": function,
         "user": user,
-        "host": host,
+        "tenant": tenant,
         "group": group_info.name,
         "allow_cross_domain_users": group_info.allow_cross_domain_users,
     }
@@ -435,15 +435,15 @@ async def raise_if_not_same_domain(host: str, user: str, group_info: Any) -> Non
 
     if user.split("@")[1] != group_info.name.split("@")[1]:
         raise DifferentUserGroupDomainException(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "google.different_domain_fail_message",
-                host,
+                tenant,
                 "Unable to add user to a group that is in a different domain. User: {user}. Group: {group_name}",
             ).format(user=user, group_name=group_info.name)
         )
 
 
-async def raise_if_restricted(host: str, user: str, group_info: Any) -> None:
+async def raise_if_restricted(tenant: str, user: str, group_info: Any) -> None:
     """Check if the group is a restricted group. Currently, Consoleme is not able to add users to
     restricted groups.
     """
@@ -452,7 +452,7 @@ async def raise_if_restricted(host: str, user: str, group_info: Any) -> None:
     log_data = {
         "function": function,
         "user": user,
-        "host": host,
+        "tenant": tenant,
         "group": group_info.name,
         "restricted": group_info.restricted,
         "compliance_restricted": group_info.compliance_restricted,
@@ -468,7 +468,7 @@ async def raise_if_restricted(host: str, user: str, group_info: Any) -> None:
 
 
 async def raise_if_bulk_add_disabled_and_no_request(
-    host: str, group_info: Any, request: Optional[Dict[str, Union[int, str]]]
+    tenant: str, group_info: Any, request: Optional[Dict[str, Union[int, str]]]
 ) -> bool:
     """Check if the group has prevent_bulk_add flag. If so, a request must have been passed in for the user to be
     added to the group.
@@ -477,14 +477,14 @@ async def raise_if_bulk_add_disabled_and_no_request(
     stats.count(function)
     log_data = {
         "function": function,
-        "host": host,
+        "tenant": tenant,
         "group": group_info.name,
         "request": str(request),
     }
     log.debug(log_data)
-    error = config.get_host_specific_key(
+    error = config.get_tenant_specific_key(
         "google.bulk_add_disabled_fail_message",
-        host,
+        tenant,
         "Group {group_name} has an attribute to prevent manually adding users to it. "
         "Users must manually request access to it".format(group_name=group_info.name),
     )
@@ -506,7 +506,7 @@ async def insert_group_members_call(service, google_group_email, user_email, rol
 
 
 async def add_user_to_group(
-    host: str,
+    tenant: str,
     user_email: str,
     google_group_email: str,
     updated_by: Optional[str] = None,
@@ -516,7 +516,7 @@ async def add_user_to_group(
     request: Optional[Dict[str, Union[int, str]]] = None,
 ) -> Dict[str, bool]:
     """Add user member to group."""
-    dynamo = UserDynamoHandler(host)
+    dynamo = UserDynamoHandler(tenant)
     result = {"done": True}
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     stats.count(function)
@@ -526,13 +526,13 @@ async def add_user_to_group(
         "google_group_email": google_group_email,
         "updated_by": updated_by,
         "role": role,
-        "host": host,
+        "tenant": tenant,
         "dry_run": dry_run,
         "message": "Adding user to group",
     }
     if not service:
-        service = await get_service(host, "admin", "directory_v1", google_group_email)
-    existing = await list_group_members(host, google_group_email, dry_run=dry_run)
+        service = await get_service(tenant, "admin", "directory_v1", google_group_email)
+    existing = await list_group_members(tenant, google_group_email, dry_run=dry_run)
 
     if user_email in existing:
         log_data["message"] = "Unable to add user to group. User is already a member."
@@ -541,11 +541,11 @@ async def add_user_to_group(
         result["message"] = log_data["message"]
         raise UserAlreadyAMemberOfGroupException(result["message"])
 
-    group_info = await auth.get_group_info(host, google_group_email, members=False)
-    await raise_if_requires_bgcheck_and_no_bgcheck(host, user_email, group_info)
-    await raise_if_not_same_domain(host, user_email, group_info)
-    await raise_if_restricted(host, user_email, group_info)
-    await raise_if_bulk_add_disabled_and_no_request(host, group_info, request)
+    group_info = await auth.get_group_info(tenant, google_group_email, members=False)
+    await raise_if_requires_bgcheck_and_no_bgcheck(tenant, user_email, group_info)
+    await raise_if_not_same_domain(tenant, user_email, group_info)
+    await raise_if_restricted(tenant, user_email, group_info)
+    await raise_if_bulk_add_disabled_and_no_request(tenant, group_info, request)
 
     if not dry_run:
         stats.count(
@@ -554,32 +554,32 @@ async def add_user_to_group(
                 "user_email": user_email,
                 "google_group_email": google_group_email,
                 "updated_by": updated_by,
-                "host": host,
+                "tenant": tenant,
             },
         )
 
         await insert_group_members_call(service, google_group_email, user_email, role)
         await dynamo.create_group_log_entry(
-            google_group_email, user_email, updated_by, "Added", host
+            google_group_email, user_email, updated_by, "Added", tenant
         )
         log.info(log_data)
     return result
 
 
-async def api_add_user_to_group_or_raise(host, group_name, member_name, actor):
+async def api_add_user_to_group_or_raise(tenant, group_name, member_name, actor):
     try:
-        group_info = await auth.get_group_info(host, group_name, members=False)
+        group_info = await auth.get_group_info(tenant, group_name, members=False)
     except Exception:
         raise NoGroupsException("Unable to retrieve the specified group")
 
     actor_groups = await auth.get_groups(actor)
-    can_add_remove_members = can_modify_members(host, actor, actor_groups, group_info)
+    can_add_remove_members = can_modify_members(tenant, actor, actor_groups, group_info)
 
     if not can_add_remove_members:
         raise UnauthorizedToAccess("Unauthorized to modify members of this group.")
 
     try:
-        await add_user_to_group(host, member_name, group_name, actor)
+        await add_user_to_group(tenant, member_name, group_name, actor)
     except HttpError as e:
         # Inconsistent GG API error - ignore failure for user already existing
         if e.resp.reason == "duplicate":
@@ -587,12 +587,12 @@ async def api_add_user_to_group_or_raise(host, group_name, member_name, actor):
     except UserAlreadyAMemberOfGroupException:
         pass
     except BulkAddPrevented:
-        dynamo_handler = UserDynamoHandler(host, actor)
+        dynamo_handler = UserDynamoHandler(tenant, actor)
         dynamo_handler.add_request(
             member_name,
             group_name,
             f"{actor} requesting on behalf of {member_name} from a bulk operation",
-            host,
+            tenant,
             updated_by=actor,
         )
         return "REQUESTED"
@@ -610,7 +610,7 @@ async def delete_group_members_call(service, google_group_email, user_email):
 
 
 async def remove_user_from_group(
-    host: str,
+    tenant: str,
     user_email: str,
     google_group_email: str,
     updated_by: Optional[str] = None,
@@ -619,7 +619,7 @@ async def remove_user_from_group(
 ) -> Dict[str, bool]:
     """Remove user member to group."""
     result = {"done": True}
-    dynamo = UserDynamoHandler(host)
+    dynamo = UserDynamoHandler(tenant)
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     stats.count(function)
     log_data = {
@@ -628,16 +628,16 @@ async def remove_user_from_group(
         "group": google_group_email,
         "updated_by": updated_by,
         "dry_run": dry_run,
-        "host": host,
+        "tenant": tenant,
         "message": "Removing user from group",
     }
     log.debug(log_data)
 
-    group_info = await auth.get_group_info(host, google_group_email, members=False)
-    await raise_if_restricted(host, user_email, group_info)
+    group_info = await auth.get_group_info(tenant, google_group_email, members=False)
+    await raise_if_restricted(tenant, user_email, group_info)
     if not service:
-        service = await get_service(host, "admin", "directory_v1", google_group_email)
-    existing = await list_group_members(host, google_group_email, dry_run=dry_run)
+        service = await get_service(tenant, "admin", "directory_v1", google_group_email)
+    existing = await list_group_members(tenant, google_group_email, dry_run=dry_run)
 
     if user_email in existing:
         if not dry_run:
@@ -647,12 +647,12 @@ async def remove_user_from_group(
                     "user_email": user_email,
                     "google_group_email": google_group_email,
                     "updated_by": updated_by,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             await delete_group_members_call(service, google_group_email, user_email)
             await dynamo.create_group_log_entry(
-                google_group_email, user_email, updated_by, "Removed", host
+                google_group_email, user_email, updated_by, "Removed", tenant
             )
     else:
         log_data[

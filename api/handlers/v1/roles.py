@@ -31,7 +31,7 @@ class GetRolesHandler(BaseMtlsHandler):
                     description: User has failed authn/authz.
         """
         self.user: str = self.requester["email"]
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         include_all_roles = self.get_arguments("all")
         console_only = True
@@ -41,7 +41,7 @@ class GetRolesHandler(BaseMtlsHandler):
         log_data = {
             "function": "GetRolesHandler.get",
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
             "console_only": console_only,
             "message": "Writing all eligible user roles",
             "user-agent": self.request.headers.get("User-Agent"),
@@ -52,7 +52,7 @@ class GetRolesHandler(BaseMtlsHandler):
             "GetRolesHandler.get",
             tags={
                 "user": self.user,
-                "host": host,
+                "tenant": tenant,
             },
         )
 

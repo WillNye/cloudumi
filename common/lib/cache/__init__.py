@@ -19,9 +19,9 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
 from common.lib.s3_helpers import get_object, put_object
 
-# TODO: Assume role to S3 based on host Prefix
+# TODO: Assume role to S3 based on tenant Prefix
 # We need to optionally perform nested assume-role calls. On the last assume-role call, we need to pass in a session
-# policy that restricts S3 access to the host's prefix
+# policy that restricts S3 access to the tenant's prefix
 # Ex: https://awsfeed.com/whats-new/security/implement-tenant-isolation-for-amazon-s3-and-aurora-postgresql-by-using-abac
 
 
@@ -44,7 +44,7 @@ async def store_json_results_in_redis_and_s3(
     s3_key: str = None,
     json_encoder=None,
     s3_expires: int = None,
-    host: str = None,
+    tenant: str = None,
     redis_field: str = None,
 ):
     """
@@ -58,17 +58,17 @@ async def store_json_results_in_redis_and_s3(
     :param s3_key: S3 key to store data
     :return:
     """
-    if not host:
-        raise Exception("Invalid host")
-    red = RedisHandler().redis_sync(host)
+    if not tenant:
+        raise Exception("Invalid tenant")
+    red = RedisHandler().redis_sync(tenant)
     stats = get_plugin_by_name(
         config.get("_global_.plugins.metrics", "cmsaas_metrics")
     )()
 
-    last_updated_redis_key = config.get_host_specific_key(
+    last_updated_redis_key = config.get_tenant_specific_key(
         "store_json_results_in_redis_and_s3.last_updated_redis_key",
-        host,
-        f"{host}_STORE_JSON_RESULTS_IN_REDIS_AND_S3_LAST_UPDATED",
+        tenant,
+        f"{tenant}_STORE_JSON_RESULTS_IN_REDIS_AND_S3_LAST_UPDATED",
     )
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -80,19 +80,19 @@ async def store_json_results_in_redis_and_s3(
             "redis_key": redis_key,
             "s3_bucket": s3_bucket,
             "s3_key": s3_key,
-            "host": host,
+            "tenant": tenant,
         },
     )
 
-    # Force prefixing by host
+    # Force prefixing by tenant
     if s3_key:
-        s3_key = f"{host}/{s3_key}"
+        s3_key = f"{tenant}/{s3_key}"
 
     # If we've defined an S3 key, but not a bucket, let's use the default bucket if it's defined in configuration.
     if s3_key and not s3_bucket:
-        s3_bucket = config.get_host_specific_key(
+        s3_bucket = config.get_tenant_specific_key(
             "s3_cache_bucket",
-            host,
+            tenant,
             config.get("_global_.s3_cache_bucket"),
         )
 
@@ -139,7 +139,7 @@ async def store_json_results_in_redis_and_s3(
             Bucket=s3_bucket,
             Key=s3_key,
             Body=data_for_s3,
-            host=host,
+            tenant=tenant,
             region=s3_bucket_region,
             **s3_extra_kwargs,
         )
@@ -155,7 +155,7 @@ async def retrieve_json_data_from_redis_or_s3(
     default: Optional[Any] = None,
     json_object_hook: Optional[Any] = None,
     json_encoder: Optional[Any] = None,
-    host: str = None,
+    tenant: str = None,
     redis_field: str = None,  # Optional field for Redis hash
 ):
     """
@@ -170,15 +170,15 @@ async def retrieve_json_data_from_redis_or_s3(
     :return:
     """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    last_updated_redis_key = config.get_host_specific_key(
+    last_updated_redis_key = config.get_tenant_specific_key(
         "store_json_results_in_redis_and_s3.last_updated_redis_key",
-        host,
-        f"{host}_STORE_JSON_RESULTS_IN_REDIS_AND_S3_LAST_UPDATED",
+        tenant,
+        f"{tenant}_STORE_JSON_RESULTS_IN_REDIS_AND_S3_LAST_UPDATED",
     )
 
-    if not host:
-        raise Exception("Invalid host")
-    red = RedisHandler().redis_sync(host)
+    if not tenant:
+        raise Exception("Invalid tenant")
+    red = RedisHandler().redis_sync(tenant)
     stats = get_plugin_by_name(
         config.get("_global_.plugins.metrics", "cmsaas_metrics")
     )()
@@ -188,20 +188,20 @@ async def retrieve_json_data_from_redis_or_s3(
             "redis_key": redis_key,
             "s3_bucket": s3_bucket,
             "s3_key": s3_key,
-            "host": host,
+            "tenant": tenant,
         },
     )
     s3_bucket_region: str = config.get("_global_.s3_cache_bucket_region", config.region)
 
-    # Force prefixing by host
+    # Force prefixing by tenant
     if s3_key:
-        s3_key = f"{host}/{s3_key}"
+        s3_key = f"{tenant}/{s3_key}"
 
     # If we've defined an S3 key, but not a bucket, let's use the default bucket if it's defined in configuration.
     if s3_key and not s3_bucket:
-        s3_bucket = config.get_host_specific_key(
+        s3_bucket = config.get_tenant_specific_key(
             "s3_cache_bucket",
-            host,
+            tenant,
             config.get("_global_.s3_cache_bucket"),
         )
 
@@ -231,7 +231,7 @@ async def retrieve_json_data_from_redis_or_s3(
     if not data and s3_bucket and s3_key:
         try:
             s3_object = get_object(
-                Bucket=s3_bucket, Key=s3_key, host=host, region=s3_bucket_region
+                Bucket=s3_bucket, Key=s3_key, tenant=tenant, region=s3_bucket_region
             )
         except ClientError as e:
             if str(e) == (
@@ -260,7 +260,7 @@ async def retrieve_json_data_from_redis_or_s3(
                 redis_key=redis_key,
                 redis_data_type=redis_data_type,
                 json_encoder=json_encoder,
-                host=host,
+                tenant=tenant,
                 redis_field=redis_field,
             )
 
@@ -277,7 +277,7 @@ async def retrieve_json_data_from_s3_bulk(
     max_age: Optional[int] = None,
     json_object_hook: Optional[Any] = None,
     json_encoder: Optional[Any] = None,
-    host: str = None,
+    tenant: str = None,
 ):
     """
     Retrieve data from multiple S3 keys in the same bucket, and combine the data. Useful for combining output of
@@ -288,13 +288,13 @@ async def retrieve_json_data_from_s3_bulk(
     :param s3_keys: S3 keys to retrieve data from
     :return:
     """
-    if not host:
-        raise Exception("No host specified")
+    if not tenant:
+        raise Exception("No tenant specified")
     tasks = []
     for s3_key in s3_keys:
-        # Force prefixing by host
+        # Force prefixing by tenant
         if s3_key:
-            s3_key = f"{host}/{s3_key}"
+            s3_key = f"{tenant}/{s3_key}"
 
         tasks.append(
             {
@@ -305,7 +305,7 @@ async def retrieve_json_data_from_s3_bulk(
                     "max_age": max_age,
                     "json_object_hook": json_object_hook,
                     "json_encoder": json_encoder,
-                    "host": host,
+                    "tenant": tenant,
                 },
             }
         )

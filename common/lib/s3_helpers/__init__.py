@@ -19,10 +19,10 @@ log = config.get_logger("cloudumi")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
-async def get_s3_bucket_for_host(host):
-    return config.get_host_specific_key(
+async def get_s3_bucket_for_tenant(tenant):
+    return config.get_tenant_specific_key(
         "s3_cache_bucket",
-        host,
+        tenant,
         config.get("_global_.s3_cache_bucket"),
     )
 
@@ -30,7 +30,7 @@ async def get_s3_bucket_for_host(host):
 async def is_object_older_than_seconds(
     s3_key: str,
     older_than_seconds: int,
-    host: str,
+    tenant: str,
     bucket: Optional[str] = None,
     s3_client=None,
 ) -> bool:
@@ -39,23 +39,23 @@ async def is_object_older_than_seconds(
     exist, this function will return True.
     """
     if not bucket:
-        bucket = await get_s3_bucket_for_host(host)
+        bucket = await get_s3_bucket_for_tenant(tenant)
     if not bucket:
         raise MissingConfigurationValue(
             "`bucket` not defined, and we can't find the default bucket in "
             "the configuration key `s3_cache_bucket`."
         )
 
-    # Force prefixing by host
+    # Force prefixing by tenant
     if s3_key:
-        s3_key = f"{host}/{s3_key}"
+        s3_key = f"{tenant}/{s3_key}"
 
     now = datetime.utcnow().replace(tzinfo=pytz.utc)
     if not s3_client:
-        session = get_session_for_tenant(host)
+        session = get_session_for_tenant(tenant)
         s3_client = session.client(
             "s3",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
     try:
         res = await aio_wrapper(s3_client.head_object, Bucket=bucket, Key=s3_key)
@@ -70,15 +70,15 @@ async def is_object_older_than_seconds(
     return False
 
 
-async def does_object_exist(bucket: str, key: str, host: str, s3_client=None) -> bool:
+async def does_object_exist(bucket: str, key: str, tenant: str, s3_client=None) -> bool:
     """
     This function checks if an S3 object exists.
     """
     if not s3_client:
-        session = get_session_for_tenant(host)
+        session = get_session_for_tenant(tenant)
         s3_client = session.client(
             "s3",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
     try:
         await aio_wrapper(s3_client.head_object, Bucket=bucket, Key=key)
@@ -94,9 +94,9 @@ async def does_object_exist(bucket: str, key: str, host: str, s3_client=None) ->
 # @sts_conn("s3")
 # def put_object(client=None, **kwargs):
 #     """Create an S3 object -- calls wrapped with CloudAux."""
-#     host = kwargs.get("host")
-#     if not host:
-#         raise Exception("No host specified")
+#     tenant = kwargs.get("tenant")
+#     if not tenant:
+#         raise Exception("No tenant specified")
 #     client_kwargs = config.get(
 #         "boto3.client_kwargs", {}
 #     )
@@ -105,7 +105,7 @@ async def does_object_exist(bucket: str, key: str, host: str, s3_client=None) ->
 
 def put_object(**kwargs):
     """Create an S3 object -- calls wrapped with CloudAux."""
-    host = kwargs.pop("host")
+    tenant = kwargs.pop("tenant")
     client = kwargs.pop("client", None)
     assume_role = kwargs.pop("assume_role", None)
     region = kwargs.pop("region", config.region)
@@ -114,25 +114,25 @@ def put_object(**kwargs):
         if assume_role:
             client = boto3_cached_conn(
                 "s3",
-                host,
+                tenant,
                 kwargs.pop("user", None),
                 account_number=kwargs.get("account_number"),
                 assume_role=assume_role,
                 session_name=sanitize_session_name("consoleme_s3_put_object"),
                 region=region,
                 retry_max_attempts=2,
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
                 ),
             )
-        elif config.get_host_specific_key(
-            "policies.s3.store_data_plane_in_tenant_account", host
+        elif config.get_tenant_specific_key(
+            "policies.s3.store_data_plane_in_tenant_account", tenant
         ):
-            session = get_session_for_tenant(host)
+            session = get_session_for_tenant(tenant)
             client = session.client(
                 "s3",
                 region_name=region,
-                **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+                **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
             )
         else:
             client = boto3.client("s3", region_name=region)
@@ -140,30 +140,30 @@ def put_object(**kwargs):
 
 
 def get_object(**kwargs):
-    host = kwargs.pop("host")
+    tenant = kwargs.pop("tenant")
     client = kwargs.get("client")
     assume_role = kwargs.get("assume_role")
     if not client:
         if assume_role:
             client = boto3_cached_conn(
                 "s3",
-                host,
+                tenant,
                 kwargs.pop("user", None),
                 account_number=kwargs.get("account_number"),
                 assume_role=assume_role,
                 session_name=sanitize_session_name("consoleme_s3_get_object"),
                 region=kwargs.get("region", config.region),
                 retry_max_attempts=2,
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
                 ),
             )
         else:
-            session = get_session_for_tenant(host)
+            session = get_session_for_tenant(tenant)
             client = session.client(
                 "s3",
                 region_name=kwargs.get("region", config.region),
-                **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+                **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
             )
     return client.get_object(Bucket=kwargs.get("Bucket"), Key=kwargs.get("Key"))
 
@@ -174,7 +174,7 @@ async def get_object_async(**kwargs):
 
 
 async def fetch_json_object_from_s3(
-    bucket: str, object: str, host: str
+    bucket: str, object: str, tenant: str
 ) -> Union[Dict[str, Any], List[dict]]:
     """
     Fetch and load a JSON-formatted object in S3
@@ -186,7 +186,7 @@ async def fetch_json_object_from_s3(
         Bucket=bucket,
         Key=object,
         region=config.region,
-        host=host,
+        tenant=tenant,
     )
     object_content = s3_object["Body"].read()
     data = json.loads(object_content)

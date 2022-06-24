@@ -59,7 +59,7 @@ def _write_to_output_buffer(
     Output result to file, stdout, or both - as per the configuration.
     """
     if not config.suppress_output:
-        print(str(result))
+        logger.debug(str(result))
     if config.output_file:
         config.output_json.get("Results", []).append(json.loads(str(result)))
 

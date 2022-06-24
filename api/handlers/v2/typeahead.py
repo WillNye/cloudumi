@@ -16,8 +16,8 @@ from common.models import ArnArray
 
 class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
     async def get(self):
-        host = self.ctx.host
-        red = await RedisHandler().redis(host)
+        tenant = self.ctx.tenant
+        red = await RedisHandler().redis(tenant)
         try:
             type_ahead: Optional[str] = (
                 self.request.arguments.get("typeahead")[0].decode("utf-8").lower()
@@ -60,25 +60,25 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
         except TypeError:
             ui_formatted = False
 
-        resource_redis_cache_key = config.get_host_specific_key(
+        resource_redis_cache_key = config.get_tenant_specific_key(
             "aws_config_cache.redis_key",
-            host,
-            f"{host}_AWSCONFIG_RESOURCE_CACHE",
+            tenant,
+            f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
         )
         all_resource_arns = await aio_wrapper(red.hkeys, resource_redis_cache_key)
         # Fall back to DynamoDB or S3?
         if not all_resource_arns:
-            s3_bucket = config.get_host_specific_key(
-                "aws_config_cache_combined.s3.bucket", host
+            s3_bucket = config.get_tenant_specific_key(
+                "aws_config_cache_combined.s3.bucket", tenant
             )
-            s3_key = config.get_host_specific_key(
+            s3_key = config.get_tenant_specific_key(
                 "aws_config_cache_combined.s3.file",
-                host,
+                tenant,
                 "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
             )
             try:
                 all_resources = await retrieve_json_data_from_redis_or_s3(
-                    s3_bucket=s3_bucket, s3_key=s3_key, host=host, default={}
+                    s3_bucket=s3_bucket, s3_key=s3_key, tenant=tenant, default={}
                 )
                 all_resource_arns = all_resources.keys()
                 if all_resources:
@@ -91,10 +91,12 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
 
         # Fall back to All Resource ARN Cache
         if not all_resource_arns:
-            all_resource_arns = await get_all_resource_arns(host)
+            all_resource_arns = await get_all_resource_arns(tenant)
 
         allowed_accounts_for_viewing_resources = (
-            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+            await get_accounts_user_can_view_resources_for(
+                self.user, self.groups, tenant
+            )
         )
 
         matching = set()
@@ -124,7 +126,7 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
 
 class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         try:
             # Get type ahead request arg
             type_ahead: Optional[str] = (
@@ -135,9 +137,9 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
         if not type_ahead:
             self.write(json.dumps([]))
             return
-        max_limit: int = config.get_host_specific_key(
+        max_limit: int = config.get_tenant_specific_key(
             "self_service_step_1_resource_typeahead.max_limit",
-            host,
+            tenant,
             10000,
         )
         limit: int = 20
@@ -152,25 +154,27 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
             pass
 
         typehead_data = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get_host_specific_key(
+            redis_key=config.get_tenant_specific_key(
                 "cache_self_service_typeahead.redis.key",
-                host,
-                f"{host}_cache_self_service_typeahead_v1",
+                tenant,
+                f"{tenant}_cache_self_service_typeahead_v1",
             ),
-            s3_bucket=config.get_host_specific_key(
-                "cache_self_service_typeahead.s3.bucket", host
+            s3_bucket=config.get_tenant_specific_key(
+                "cache_self_service_typeahead.s3.bucket", tenant
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "cache_self_service_typeahead.s3.file",
-                host,
+                tenant,
                 "cache_self_service_typeahead/cache_self_service_typeahead_v1.json.gz",
             ),
-            host=host,
+            tenant=tenant,
             default={},
         )
 
         allowed_accounts_for_viewing_resources = (
-            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+            await get_accounts_user_can_view_resources_for(
+                self.user, self.groups, tenant
+            )
         )
 
         matching = []

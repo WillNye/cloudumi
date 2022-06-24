@@ -263,9 +263,9 @@ async def get_secret_hash(username, client_id, client_secret):
     return base64.b64encode(dig).decode()
 
 
-async def get_external_id(host, username):
+async def get_external_id(tenant, username):
     dig = hmac.new(
-        str(host).encode("utf-8"),
+        str(tenant).encode("utf-8"),
         msg=str(username).encode("utf-8"),
         digestmod=hashlib.sha256,
     ).hexdigest()
@@ -660,7 +660,9 @@ auth:
 
         ddb = RestrictedDynamoHandler()
 
-        await ddb.update_static_config_for_host(tenant_config, tenant.email, dev_domain)
+        await ddb.update_static_config_for_tenant(
+            tenant_config, tenant.email, dev_domain
+        )
         self.write(
             {
                 "success": True,

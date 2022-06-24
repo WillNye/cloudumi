@@ -15,7 +15,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
         pass
 
     async def post(self, account_id=None, policy_request_id=None):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         data = tornado.escape.json_decode(self.request.body)
 
         is_existing_policy = bool(account_id and policy_request_id)
@@ -28,12 +28,12 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
 
         if is_existing_policy:
             policy_request = await automatic_request.get_policy_request(
-                self.ctx.host, account_id, self.user, policy_request_id
+                self.ctx.tenant, account_id, self.user, policy_request_id
             )
 
             if policy_request and permission_flow == "approve":
                 policy_request = await automatic_request.approve_policy_request(
-                    host,
+                    tenant,
                     policy_request.account.account_id,
                     self.user,
                     policy_request.id,
@@ -44,12 +44,12 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
                 return self.write(policy_request.dict())
 
         policy_request = await automatic_request.create_policy_request(
-            host, self.user, AutomaticPolicyRequest(**data)
+            tenant, self.user, AutomaticPolicyRequest(**data)
         )
 
         if permission_flow == "auto_apply":
             policy_request = await automatic_request.approve_policy_request(
-                host, policy_request.account.account_id, self.user, policy_request.id
+                tenant, policy_request.account.account_id, self.user, policy_request.id
             )
 
         policy_request = automatic_request.format_extended_policy_request(
@@ -61,7 +61,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
 
         if account_id and policy_request_id:
             policy_request = await automatic_request.get_policy_request(
-                self.ctx.host, account_id, self.user, policy_request_id
+                self.ctx.tenant, account_id, self.user, policy_request_id
             )
             if not policy_request:
                 self.set_status(404, "Policy Request not found")
@@ -76,7 +76,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
             )
 
         policy_requests = await automatic_request.get_policy_requests(
-            self.ctx.host, user=self.user
+            self.ctx.tenant, user=self.user
         )
         policy_requests = [policy_request.dict() for policy_request in policy_requests]
         self.write(
@@ -96,7 +96,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
             Status3.approved.value,
         ]
         policy_request = await automatic_request.get_policy_request(
-            self.ctx.host, account_id, self.user, policy_request_id
+            self.ctx.tenant, account_id, self.user, policy_request_id
         )
         if not policy_request:
             self.set_status(404, "Policy Request not found")
@@ -117,7 +117,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
         else:
             policy_request.status = Status3[data["status"]]
             if await automatic_request.update_policy_request(
-                self.ctx.host, policy_request
+                self.ctx.tenant, policy_request
             ):
                 policy_request = automatic_request.format_extended_policy_request(
                     policy_request
@@ -130,14 +130,14 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
 
         if account_id and policy_request_id:
             policy_request = await automatic_request.get_policy_request(
-                self.ctx.host, account_id, self.user, policy_request_id
+                self.ctx.tenant, account_id, self.user, policy_request_id
             )
             if not policy_request:
                 self.set_status(404, "Policy Request not found")
                 return
 
             deleted = await automatic_request.remove_policy_request(
-                self.ctx.host, account_id, self.user, policy_request_id
+                self.ctx.tenant, account_id, self.user, policy_request_id
             )
 
             if deleted:

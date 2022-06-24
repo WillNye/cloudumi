@@ -46,20 +46,20 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             302:
                 description: Redirects to AWS console
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         role = role.lower()
         group_mapping = get_plugin_by_name(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "plugins.group_mapping",
-                host,
+                tenant,
                 "cmsaas_group_mapping",
             )
         )()
         selected_roles = await group_mapping.filter_eligible_roles(role, self)
         region = arguments.get(
             "r",
-            config.get_host_specific_key("aws.region", host, config.region),
+            config.get_tenant_specific_key("aws.region", tenant, config.region),
         )
         redirect = arguments.get("redirect")
         read_only = arguments.get("read_only", False)
@@ -72,7 +72,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             "region": region,
             "redirect": redirect,
             "ip": self.ip,
-            "host": host,
+            "tenant": tenant,
         }
 
         log_data["role"] = role
@@ -85,7 +85,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                     "role": role,
                     "authorized": False,
                     "redirect": bool(redirect),
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data[
@@ -103,7 +103,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 "role": role,
                 "authorized": True,
                 "redirect": bool(redirect),
-                "host": host,
+                "tenant": tenant,
             },
         )
 
@@ -116,7 +116,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                     "role": role,
                     "authorized": False,
                     "redirect": bool(redirect),
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data[
@@ -165,12 +165,12 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 user_role = True
                 account_id = selected_role.split("arn:aws:iam::")[1].split(":role")[0]
             aws = get_plugin_by_name(
-                config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+                config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
             )()
             url = await aws.generate_url(
                 self.user,
                 selected_role,
-                host,
+                tenant,
                 region=region,
                 user_role=user_role,
                 account_id=account_id,
@@ -180,7 +180,9 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             log_data["message"] = f"Exception generating AWS console URL: {str(e)}"
             log_data["error"] = str(e)
             log.error(log_data, exc_info=True)
-            stats.count("index.post.exception", tags={"host": host, "error": str(e)})
+            stats.count(
+                "index.post.exception", tags={"tenant": tenant, "error": str(e)}
+            )
             self.write(
                 {
                     "type": "console_url",
@@ -221,23 +223,23 @@ class RolesHandler(BaseAPIV2Handler):
             return
         from common.celery_tasks.celery_tasks import app as celery_app
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         # Force refresh of crednetial authorization mapping after the dynamic config sync period to ensure all workers
         # have the updated configuration
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_policies_table_details",
-            kwargs={"host": host},
+            kwargs={"tenant": tenant},
         )
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
-            kwargs={"host": host},
+            kwargs={"tenant": tenant},
         )
 
     async def get(self):
         payload = {
             "eligible_roles": self.eligible_roles,
             "escalated_roles": await get_tear_supported_roles_by_tag(
-                self.eligible_roles, self.groups, self.ctx.host
+                self.eligible_roles, self.groups, self.ctx.tenant
             ),
         }
         self.set_header("Content-Type", "application/json")
@@ -245,23 +247,23 @@ class RolesHandler(BaseAPIV2Handler):
         await self.finish()
 
     async def post(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "user": self.user,
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "ip": self.ip,
-            "host": host,
+            "tenant": tenant,
         }
-        can_create_role = can_create_roles(self.user, self.groups, host)
+        can_create_role = can_create_roles(self.user, self.groups, tenant)
         if not can_create_role:
             stats.count(
                 f"{log_data['function']}.unauthorized",
                 tags={
                     "user": self.user,
                     "authorized": can_create_role,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data["message"] = "User is unauthorized to create a role"
@@ -279,7 +281,7 @@ class RolesHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             sentry_sdk.capture_exception()
@@ -287,7 +289,7 @@ class RolesHandler(BaseAPIV2Handler):
             return
 
         try:
-            _, results = await IAMRole.create(host, self.user, create_model)
+            _, results = await IAMRole.create(tenant, self.user, create_model)
         except Exception as e:
             log_data["message"] = f"Exception creating role: {str(e)}"
             log_data["error"] = str(e)
@@ -300,7 +302,7 @@ class RolesHandler(BaseAPIV2Handler):
                     "user": self.user,
                     "account_id": create_model.account_id,
                     "role_name": create_model.role_name,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             sentry_sdk.capture_exception()
@@ -314,7 +316,7 @@ class RolesHandler(BaseAPIV2Handler):
                 "user": self.user,
                 "account_id": create_model.account_id,
                 "role_name": create_model.role_name,
-                "host": host,
+                "tenant": tenant,
             },
         )
         self.write(results)
@@ -360,7 +362,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
         """
         GET /api/v2/roles/{account_number}/{role_name}
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "RoleDetailHandler.get",
             "user": self.user,
@@ -377,7 +379,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
                 "user": self.user,
                 "account_id": account_id,
                 "role_name": role_name,
-                "host": host,
+                "tenant": tenant,
             },
         )
         log.debug(log_data)
@@ -390,7 +392,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
         try:
             allowed_accounts_for_viewing_resources = (
                 await get_accounts_user_can_view_resources_for(
-                    self.user, self.groups, host
+                    self.user, self.groups, tenant
                 )
             )
             if account_id not in allowed_accounts_for_viewing_resources:
@@ -400,7 +402,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
             role_details = await get_role_details(
                 account_id,
                 role_name,
-                host,
+                tenant,
                 extended=True,
                 force_refresh=force_refresh,
                 is_admin_request=self.is_admin,
@@ -414,7 +416,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
             error = str(e)
 
         if role_details:
-            if not allowed_to_sync_role(role_details.arn, role_details.tags, host):
+            if not allowed_to_sync_role(role_details.arn, role_details.tags, tenant):
                 role_details = None
 
         if not role_details:
@@ -447,7 +449,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
             self.write_error(403, message="No user detected")
             return
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         account_id = tornado.escape.xhtml_escape(account_id)
         role_name = tornado.escape.xhtml_escape(role_name)
@@ -462,9 +464,11 @@ class RoleDetailHandler(BaseAPIV2Handler):
             "role": role_name,
         }
         allowed_accounts_for_viewing_resources = (
-            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+            await get_accounts_user_can_view_resources_for(
+                self.user, self.groups, tenant
+            )
         )
-        can_delete_role = can_delete_iam_principals(self.user, self.groups, host)
+        can_delete_role = can_delete_iam_principals(self.user, self.groups, tenant)
         if (
             account_id not in allowed_accounts_for_viewing_resources
             or not can_delete_role
@@ -477,7 +481,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
                     "role": role_name,
                     "authorized": can_delete_role,
                     "ip": self.ip,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data["message"] = "User is unauthorized to delete a role"
@@ -485,7 +489,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
             self.write_error(403, message="User is unauthorized to delete a role")
             return
         try:
-            await IAMRole.delete_role(host, account_id, role_name, self.user)
+            await IAMRole.delete_role(tenant, account_id, role_name, self.user)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -497,7 +501,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
                     "role": role_name,
                     "authorized": can_delete_role,
                     "ip": self.ip,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             self.write_error(500, message="Error occurred deleting role: " + str(e))
@@ -506,7 +510,7 @@ class RoleDetailHandler(BaseAPIV2Handler):
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
 
-        await IAMRole.get(host, account_id, arn, force_refresh=True)
+        await IAMRole.get(tenant, account_id, arn, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",
@@ -532,7 +536,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
         """
         DELETE /api/v2/mtls/roles/{account_id}/{role_name}
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         account_id = tornado.escape.xhtml_escape(account_id)
         role_name = tornado.escape.xhtml_escape(role_name)
         log_data = {
@@ -541,7 +545,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             "request_id": self.request_uuid,
             "account_id": account_id,
             "role_name": role_name,
-            "host": host,
+            "tenant": tenant,
         }
         requester_type = self.requester.get("type")
         if requester_type != "application":
@@ -554,9 +558,11 @@ class RoleDetailAppHandler(BaseMtlsHandler):
 
         app_name = self.requester.get("name")
         allowed_accounts_for_viewing_resources = (
-            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+            await get_accounts_user_can_view_resources_for(
+                self.user, self.groups, tenant
+            )
         )
-        can_delete_role = can_delete_iam_principals_app(app_name, host)
+        can_delete_role = can_delete_iam_principals_app(app_name, tenant)
 
         if (
             account_id not in allowed_accounts_for_viewing_resources
@@ -569,7 +575,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
                     "account_id": account_id,
                     "role_name": role_name,
                     "authorized": can_delete_role,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data["message"] = "App is unauthorized to delete a role"
@@ -578,7 +584,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             return
 
         try:
-            await IAMRole.delete_role(host, account_id, role_name, app_name)
+            await IAMRole.delete_role(tenant, account_id, role_name, app_name)
         except Exception as e:
             log_data["message"] = "Exception deleting role"
             log.error(log_data, exc_info=True)
@@ -589,7 +595,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
                     "account_id": account_id,
                     "role_name": role_name,
                     "authorized": can_delete_role,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             self.write_error(500, message="Error occurred deleting role: " + str(e))
@@ -597,7 +603,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
 
         # if here, role has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        await IAMRole.get(host, account_id, arn, force_refresh=True)
+        await IAMRole.get(tenant, account_id, arn, force_refresh=True)
         response_json = {
             "status": "success",
             "message": "Successfully deleted role from account",
@@ -610,7 +616,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
         """
         GET /api/v2/mtls/roles/{account_id}/{role_name}
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         account_id = tornado.escape.xhtml_escape(account_id)
         role_name = tornado.escape.xhtml_escape(role_name)
         log_data = {
@@ -629,7 +635,7 @@ class RoleDetailAppHandler(BaseMtlsHandler):
                 "requester": app_name,
                 "account_id": account_id,
                 "role_name": role_name,
-                "host": host,
+                "tenant": tenant,
             },
         )
         log.debug(log_data)
@@ -642,13 +648,17 @@ class RoleDetailAppHandler(BaseMtlsHandler):
         try:
             allowed_accounts_for_viewing_resources = (
                 await get_accounts_user_can_view_resources_for(
-                    self.user, self.groups, host
+                    self.user, self.groups, tenant
                 )
             )
             if account_id not in allowed_accounts_for_viewing_resources:
                 raise Exception("User is not authorized to view this resource")
             role_details = await get_role_details(
-                account_id, role_name, host, extended=True, force_refresh=force_refresh
+                account_id,
+                role_name,
+                tenant,
+                extended=True,
+                force_refresh=force_refresh,
             )
         except Exception as e:
             sentry_sdk.capture_exception()
@@ -674,24 +684,24 @@ class RoleCloneHandler(BaseAPIV2Handler):
     allowed_methods = ["POST"]
 
     async def post(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "user": self.user,
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "ip": self.ip,
-            "host": host,
+            "tenant": tenant,
         }
 
-        can_create_role = can_create_roles(self.user, self.groups, host)
+        can_create_role = can_create_roles(self.user, self.groups, tenant)
         if not can_create_role:
             stats.count(
                 f"{log_data['function']}.unauthorized",
                 tags={
                     "user": self.user,
                     "authorized": can_create_role,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data["message"] = "User is unauthorized to clone a role"
@@ -708,7 +718,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             sentry_sdk.capture_exception()
@@ -716,7 +726,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
             return
 
         try:
-            _, results = await IAMRole.clone(host, self.user, clone_model)
+            _, results = await IAMRole.clone(tenant, self.user, clone_model)
         except Exception as e:
             log_data["message"] = "Exception cloning role"
             log_data["error"] = str(e)
@@ -729,7 +739,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
                     "user": self.user,
                     "account_id": clone_model.account_id,
                     "role_name": clone_model.role_name,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             sentry_sdk.capture_exception()
@@ -788,7 +798,7 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
                     }
                 }
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         self.user: str = self.requester["email"]
 
         include_all_roles = self.get_arguments("all")
@@ -803,21 +813,21 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
             "message": "Getting all eligible user roles",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         stats.count(
             "GetRolesMTLSHandler.get",
             tags={
                 "user": self.user,
-                "host": host,
+                "tenant": tenant,
             },
         )
 
         await self.authorization_flow(user=self.user, console_only=console_only)
         eligible_roles_details_array = await get_eligible_role_details(
             sorted(self.eligible_roles),
-            host,
+            tenant,
         )
 
         res = WebResponse(
@@ -841,7 +851,7 @@ class RoleTearConfigHandler(BaseAdminHandler):
         """
         PUT /api/v2/roles/{account_number}/{role_name}/elevated-access-config
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "RoleDetailHandler.put",
             "user": self.user,
@@ -849,7 +859,7 @@ class RoleTearConfigHandler(BaseAdminHandler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "account_id": account_id,
-            "host": host,
+            "tenant": tenant,
             "role_name": role_name,
         }
         log.debug(log_data)
@@ -863,7 +873,7 @@ class RoleTearConfigHandler(BaseAdminHandler):
                 f"{log_data['function']}.validation_exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             sentry_sdk.capture_exception()
@@ -871,7 +881,7 @@ class RoleTearConfigHandler(BaseAdminHandler):
             return
 
         update_successful, err = await update_role_tear_config(
-            host, self.user, role_name, account_id, tear_config
+            tenant, self.user, role_name, account_id, tear_config
         )
         if not update_successful:
             self.set_status(500, err)
@@ -881,7 +891,7 @@ class RoleTearConfigHandler(BaseAdminHandler):
             role_details = await get_role_details(
                 account_id,
                 role_name,
-                host,
+                tenant,
                 extended=True,
                 force_refresh=True,
                 is_admin_request=self.is_admin,
@@ -908,7 +918,7 @@ class RoleAccessConfigHandler(BaseAdminHandler):
         """
         PUT /api/v2/roles/{account_number}/{role_name}/access
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "RoleAccessConfigHandler.put",
             "user": self.user,
@@ -916,7 +926,7 @@ class RoleAccessConfigHandler(BaseAdminHandler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "account_id": account_id,
-            "host": host,
+            "tenant": tenant,
             "role_name": role_name,
         }
         log.debug(log_data)
@@ -932,7 +942,7 @@ class RoleAccessConfigHandler(BaseAdminHandler):
                 f"{log_data['function']}.validation_exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             sentry_sdk.capture_exception()
@@ -940,7 +950,7 @@ class RoleAccessConfigHandler(BaseAdminHandler):
             return
 
         update_successful, err = await update_role_access_config(
-            host, self.user, role_name, account_id, role_access_config
+            tenant, self.user, role_name, account_id, role_access_config
         )
         if not update_successful:
             self.set_status(500, err)
@@ -950,7 +960,7 @@ class RoleAccessConfigHandler(BaseAdminHandler):
             role_details = await get_role_details(
                 account_id,
                 role_name,
-                host,
+                tenant,
                 extended=True,
                 force_refresh=True,
                 is_admin_request=self.is_admin,

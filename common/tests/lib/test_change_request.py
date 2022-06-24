@@ -16,7 +16,7 @@ from common.models import (
     InlinePolicyChangeModel,
     ResourceModel,
 )
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 
 @pytest.mark.usefixtures("aws_credentials")
@@ -31,9 +31,9 @@ class TestChangeRequestLib(AsyncTestCase):
     @tornado.testing.gen_test
     async def test_generate_policy_name(self):
 
-        random_sid = await generate_policy_name(None, "username@example.com", host)
+        random_sid = await generate_policy_name(None, "username@example.com", tenant)
         self.assertRegex(random_sid, "^noq_username_\d{10}_[a-z]{4}$")  # noqa
-        explicit = await generate_policy_name("blah", "username@example.com", host)
+        explicit = await generate_policy_name("blah", "username@example.com", tenant)
         self.assertRegex(explicit, "blah")
 
     @tornado.testing.gen_test
@@ -243,6 +243,6 @@ class TestChangeRequestLib(AsyncTestCase):
         ]
         user = "username@example.com"
         result = await _generate_inline_policy_change_model(
-            principal, resources, statements, user, "host", is_new, policy_name
+            principal, resources, statements, user, "tenant", is_new, policy_name
         )
         self.assertIsInstance(result, InlinePolicyChangeModel)

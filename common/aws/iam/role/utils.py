@@ -11,7 +11,7 @@ from common.aws.iam.role.config import (
     get_active_tear_users_tag,
     get_tear_support_groups_tag,
 )
-from common.aws.iam.utils import get_host_iam_conn
+from common.aws.iam.utils import get_tenant_iam_conn
 from common.config import config, models
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.account_indexers import get_account_id_to_name_mapping
@@ -34,28 +34,32 @@ log = config.get_logger(__name__)
 
 
 def _get_iam_role_sync(
-    account_id, role_name, conn, host: str
+    account_id, role_name, conn, tenant: str
 ) -> Optional[Dict[str, Any]]:
-    client = get_host_iam_conn(
-        host, account_id, "consoleme_get_iam_role", read_only=True
+    client = get_tenant_iam_conn(
+        tenant, account_id, "consoleme_get_iam_role", read_only=True
     )
     role = client.get_role(RoleName=role_name)["Role"]
     role["ManagedPolicies"] = get_role_managed_policies(
-        {"RoleName": role_name}, host=host, **conn
+        {"RoleName": role_name}, tenant=tenant, **conn
     )
     role["InlinePolicies"] = get_role_inline_policies(
-        {"RoleName": role_name}, host=host, **conn
+        {"RoleName": role_name}, tenant=tenant, **conn
     )
-    role["Tags"] = list_role_tags({"RoleName": role_name}, host=host, **conn)
+    role["Tags"] = list_role_tags({"RoleName": role_name}, tenant=tenant, **conn)
     return role
 
 
 async def _get_iam_role_async(
-    account_id, role_name, conn, host: str
+    account_id, role_name, conn, tenant: str
 ) -> Optional[Dict[str, Any]]:
     tasks = []
     client = await aio_wrapper(
-        get_host_iam_conn, host, account_id, "consoleme_get_iam_role", read_only=True
+        get_tenant_iam_conn,
+        tenant,
+        account_id,
+        "consoleme_get_iam_role",
+        read_only=True,
     )
     role_details = asyncio.ensure_future(
         aio_wrapper(client.get_role, RoleName=role_name)
@@ -84,13 +88,16 @@ async def _get_iam_role_async(
         loop.run_in_executor(
             executor,
             functools.partial(
-                get_role_managed_policies, {"RoleName": role_name}, host=host, **conn
+                get_role_managed_policies,
+                {"RoleName": role_name},
+                tenant=tenant,
+                **conn,
             ),
         ),
         loop.run_in_executor(
             executor,
             functools.partial(
-                get_role_inline_policies, {"RoleName": role_name}, host=host, **conn
+                get_role_inline_policies, {"RoleName": role_name}, tenant=tenant, **conn
             ),
         ),
     ]
@@ -99,9 +106,9 @@ async def _get_iam_role_async(
     results = await asyncio.gather(*tasks)
     # results = await run_io_tasks_in_parallel_v2(executor, [
     #     lambda: {"Role": client.get_role(RoleName=role_name)},
-    #     lambda: {"ManagedPolicies": get_role_managed_policies({"RoleName": role_name}, host=host, **conn)},
-    #     lambda: {"InlinePolicies": get_role_inline_policies({"RoleName": role_name}, host=host, **conn)},
-    #     lambda: {"Tags": list_role_tags({"RoleName": role_name}, host=host, **conn)}]
+    #     lambda: {"ManagedPolicies": get_role_managed_policies({"RoleName": role_name}, tenant=tenant, **conn)},
+    #     lambda: {"InlinePolicies": get_role_inline_policies({"RoleName": role_name}, tenant=tenant, **conn)},
+    #     lambda: {"Tags": list_role_tags({"RoleName": role_name}, tenant=tenant, **conn)}]
     #
     # )
 
@@ -121,7 +128,7 @@ async def _get_iam_role_async(
 
 
 async def _create_iam_role(
-    create_model: RoleCreationRequestModel, username: str, host: str
+    create_model: RoleCreationRequestModel, username: str, tenant: str
 ):
     """
     Creates IAM role.
@@ -141,13 +148,13 @@ async def _create_iam_role(
         "account_id": create_model.account_id,
         "role_name": create_model.role_name,
         "user": username,
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
 
-    default_trust_policy = config.get_host_specific_key(
+    default_trust_policy = config.get_tenant_specific_key(
         "user_role_creator.default_trust_policy",
-        host,
+        tenant,
         {
             "Version": "2012-10-17",
             "Statement": [
@@ -164,8 +171,8 @@ async def _create_iam_role(
             "Missing Default Assume Role Policy Configuration"
         )
 
-    default_max_session_duration = config.get_host_specific_key(
-        "user_role_creator.default_max_session_duration", host, 3600
+    default_max_session_duration = config.get_tenant_specific_key(
+        "user_role_creator.default_max_session_duration", tenant, 3600
     )
 
     if create_model.description:
@@ -174,7 +181,7 @@ async def _create_iam_role(
         description = f"Role created by {username} through ConsoleMe"
 
     iam_client = await aio_wrapper(
-        get_host_iam_conn, host, create_model.account_id, f"create_role_{username}"
+        get_tenant_iam_conn, tenant, create_model.account_id, f"create_role_{username}"
     )
 
     results = {"errors": 0, "role_created": "false", "action_results": []}
@@ -264,7 +271,7 @@ async def _create_iam_role(
         f"{log_data['function']}.success",
         tags={
             "role_name": create_model.role_name,
-            "host": host,
+            "tenant": tenant,
         },
     )
     log_data["message"] = "Successfully created role"
@@ -273,7 +280,7 @@ async def _create_iam_role(
     return results
 
 
-async def _fetch_role_resource(account_id, role_name, host, user):
+async def _fetch_role_resource(account_id, role_name, tenant, user):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "message": "Attempting to fetch role details",
@@ -282,8 +289,8 @@ async def _fetch_role_resource(account_id, role_name, host, user):
     }
     log.info(log_data)
     iam_resource = await aio_wrapper(
-        get_host_iam_conn,
-        host,
+        get_tenant_iam_conn,
+        tenant,
         account_id,
         "_fetch_role_resource",
         user=user,
@@ -300,17 +307,17 @@ async def _fetch_role_resource(account_id, role_name, host, user):
     return iam_role
 
 
-async def _delete_iam_role(account_id, role_name, username, host):
+async def _delete_iam_role(account_id, role_name, username, tenant):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "message": "Attempting to delete role",
         "account_id": account_id,
         "role_name": role_name,
         "user": username,
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
-    role = await _fetch_role_resource(account_id, role_name, host, username)
+    role = await _fetch_role_resource(account_id, role_name, tenant, username)
 
     for instance_profile in await aio_wrapper(role.instance_profiles.all):
         await aio_wrapper(instance_profile.load)
@@ -354,12 +361,12 @@ async def _delete_iam_role(account_id, role_name, username, host):
         f"{log_data['function']}.success",
         tags={
             "role_name": role_name,
-            "host": host,
+            "tenant": tenant,
         },
     )
 
 
-async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
+async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, tenant):
     """
     Clones IAM role within same account or across account, always creating and attaching instance profile if one exists
     on the source role.
@@ -394,15 +401,15 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         "dest_account_id": clone_model.dest_account_id,
         "dest_role_name": clone_model.dest_role_name,
         "user": username,
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
     role = await _fetch_role_resource(
-        clone_model.account_id, clone_model.role_name, host, username
+        clone_model.account_id, clone_model.role_name, tenant, username
     )
 
-    default_trust_policy = config.get_host_specific_key(
-        "user_role_creator.default_trust_policy", host
+    default_trust_policy = config.get_tenant_specific_key(
+        "user_role_creator.default_trust_policy", tenant
     )
     trust_policy = (
         role.assume_role_policy_document
@@ -414,8 +421,8 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
             "Missing Default Assume Role Policy Configuration"
         )
 
-    default_max_session_duration = config.get_host_specific_key(
-        "user_role_creator.default_max_session_duration", host, 3600
+    default_max_session_duration = config.get_tenant_specific_key(
+        "user_role_creator.default_max_session_duration", tenant, 3600
     )
 
     max_session_duration = (
@@ -440,8 +447,8 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
 
     tags = role.tags if clone_model.options.tags and role.tags else []
     iam_client = await aio_wrapper(
-        get_host_iam_conn,
-        host,
+        get_tenant_iam_conn,
+        tenant,
         clone_model.dest_account_id,
         f"clone_role_{username}",
         user=username,
@@ -559,7 +566,7 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
     # other optional attributes to copy over after role has been successfully created
 
     cloned_role = await _fetch_role_resource(
-        clone_model.dest_account_id, clone_model.dest_role_name, host, username
+        clone_model.dest_account_id, clone_model.dest_role_name, tenant, username
     )
 
     # Copy inline policies
@@ -625,7 +632,7 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, host):
         f"{log_data['function']}.success",
         tags={
             "role_name": clone_model.role_name,
-            "host": host,
+            "tenant": tenant,
         },
     )
     log_data["message"] = "Successfully cloned role"
@@ -715,13 +722,13 @@ def get_role_managed_policy_documents(role, client=None, **kwargs):
 
 
 async def update_role_tear_config(
-    host, user, role_name, account_id: str, tear_config: PrincipalModelTearConfig
+    tenant, user, role_name, account_id: str, tear_config: PrincipalModelTearConfig
 ) -> [bool, str]:
     from common.aws.iam.role.models import IAMRole
 
     client = await aio_wrapper(
-        get_host_iam_conn,
-        host,
+        get_tenant_iam_conn,
+        tenant,
         account_id,
         "update_role_tear_config",
         user=user,
@@ -737,11 +744,11 @@ async def update_role_tear_config(
             RoleName=role_name,
             Tags=[
                 {
-                    "Key": get_active_tear_users_tag(host),
+                    "Key": get_active_tear_users_tag(tenant),
                     "Value": ":".join(tear_config.active_users),
                 },
                 {
-                    "Key": get_tear_support_groups_tag(host),
+                    "Key": get_tear_support_groups_tag(tenant),
                     "Value": ":".join(tear_config.supported_groups),
                 },
             ],
@@ -750,15 +757,15 @@ async def update_role_tear_config(
         return False, repr(err)
     else:
         await IAMRole.get(
-            host, account_id, f"arn:aws:iam::{account_id}:role/{role_name}", True
+            tenant, account_id, f"arn:aws:iam::{account_id}:role/{role_name}", True
         )
         return True, ""
 
 
-async def update_assume_role_policy_trust_noq(host, user, role_name, account_id):
+async def update_assume_role_policy_trust_noq(tenant, user, role_name, account_id):
     client = await aio_wrapper(
-        get_host_iam_conn,
-        host,
+        get_tenant_iam_conn,
+        tenant,
         account_id,
         "noq_update_assume_role_policy_trust",
         user=user,
@@ -772,7 +779,9 @@ async def update_assume_role_policy_trust_noq(host, user, role_name, account_id)
     assume_role_trust_policy = role.get("Role", {}).get("AssumeRolePolicyDocument", {})
     if not assume_role_trust_policy:
         return False
-    hub_account = models.ModelAdapter(HubAccount).load_config("hub_account", host).model
+    hub_account = (
+        models.ModelAdapter(HubAccount).load_config("hub_account", tenant).model
+    )
     if not hub_account:
         return False
 
@@ -791,16 +800,16 @@ async def update_assume_role_policy_trust_noq(host, user, role_name, account_id)
 
 
 async def get_authorized_group_map(
-    authorization_mapping: Dict[str, RoleAuthorizations], host
+    authorization_mapping: Dict[str, RoleAuthorizations], tenant
 ) -> Dict[str, RoleAuthorizations]:
     from common.aws.iam.role.models import IAMRole
 
-    required_trust_policy_entity = config.get_host_specific_key(
+    required_trust_policy_entity = config.get_tenant_specific_key(
         "cloud_credential_authorization_mapping.role_tags.required_trust_policy_entity",
-        host,
+        tenant,
     )
 
-    for iam_role in await IAMRole.query(host):
+    for iam_role in await IAMRole.query(tenant):
         if (
             required_trust_policy_entity
             and required_trust_policy_entity.lower()
@@ -812,20 +821,20 @@ async def get_authorized_group_map(
             continue
 
         role_tag_config = "cloud_credential_authorization_mapping.role_tags"
-        authorized_group_tags = config.get_host_specific_key(
-            f"{role_tag_config}.authorized_groups_tags", host, []
+        authorized_group_tags = config.get_tenant_specific_key(
+            f"{role_tag_config}.authorized_groups_tags", tenant, []
         )
-        authorized_cli_group_tags = config.get_host_specific_key(
-            f"{role_tag_config}.authorized_groups_cli_only_tags", host, []
+        authorized_cli_group_tags = config.get_tenant_specific_key(
+            f"{role_tag_config}.authorized_groups_cli_only_tags", tenant, []
         )
 
         for tag in iam_role.tags:
             if tag["Key"] in authorized_group_tags:
                 splitted_groups = tag["Value"].split(":")
                 for group in splitted_groups:
-                    if config.get_host_specific_key(
+                    if config.get_tenant_specific_key(
                         "auth.force_groups_lowercase",
-                        host,
+                        tenant,
                         False,
                     ):
                         group = group.lower()
@@ -840,9 +849,9 @@ async def get_authorized_group_map(
             if tag["Key"] in authorized_cli_group_tags:
                 splitted_groups = tag["Value"].split(":")
                 for group in splitted_groups:
-                    if config.get_host_specific_key(
+                    if config.get_tenant_specific_key(
                         "auth.force_groups_lowercase",
-                        host,
+                        tenant,
                         False,
                     ):
                         group = group.lower()
@@ -859,13 +868,15 @@ async def get_authorized_group_map(
     return authorization_mapping
 
 
-async def get_roles_as_resource(host: str, viewable_accounts: set, resource_map: dict):
+async def get_roles_as_resource(
+    tenant: str, viewable_accounts: set, resource_map: dict
+):
     from common.aws.iam.role.models import IAMRole
 
-    account_map = await get_account_id_to_name_mapping(host)
+    account_map = await get_account_id_to_name_mapping(tenant)
 
     iam_roles = await IAMRole.query(
-        host,
+        tenant,
         filter_condition=IAMRole.accountId.is_in(*viewable_accounts),
         attributes_to_get=["accountId", "arn", "templated"],
     )
@@ -882,15 +893,15 @@ async def get_roles_as_resource(host: str, viewable_accounts: set, resource_map:
 
 
 async def update_role_access_config(
-    host,
+    tenant,
     user,
     role_name,
     account_id: str,
     role_access_config: PrincipalModelRoleAccessConfig,
 ) -> [bool, str]:
     client = await aio_wrapper(
-        get_host_iam_conn,
-        host,
+        get_tenant_iam_conn,
+        tenant,
         account_id,
         "update_role_access_config",
         user=user,

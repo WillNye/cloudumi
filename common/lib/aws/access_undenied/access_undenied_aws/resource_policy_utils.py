@@ -22,13 +22,13 @@ def _get_ecr_resource_policy(
 ) -> Optional[common.Policy]:
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": resource.account_id})
         .first.name
     )
     repository_policy_response = boto3_cached_conn(
         "ecr",
-        config.host,
+        config.tenant,
         None,
         region_name=region,
         account_number=resource.account_id,
@@ -49,14 +49,14 @@ def _get_iam_resource_policy(
 ) -> Optional[common.Policy]:
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": resource.account_id})
         .first.name
     )
     resource_policy_document = json.dumps(
         boto3_cached_conn(
             "iam",
-            config.host,
+            config.tenant,
             None,
             account_number=resource.account_id,
             assume_role=cross_account_role_name,
@@ -82,13 +82,13 @@ def _get_kms_resource_policy(
 ) -> Optional[common.Policy]:
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": resource.account_id})
         .first.name
     )
     key_policy_document = boto3_cached_conn(
         "kms",
-        config.host,
+        config.tenant,
         None,
         region_name=region,
         account_number=resource.account_id,
@@ -114,13 +114,13 @@ def _get_lambda_resource_policy(
 ) -> Optional[common.Policy]:
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": resource.account_id})
         .first.name
     )
     lambda_function_policy_response = boto3_cached_conn(
         "lambda",
-        config.host,
+        config.tenant,
         None,
         region_name=region,
         account_number=resource.account_id,
@@ -143,7 +143,7 @@ def _get_resource_account_session(
         return config.session
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": resource.account_id})
         .first.name
     )
@@ -151,7 +151,7 @@ def _get_resource_account_session(
     try:
         return boto3_cached_conn(
             "sts",
-            config.host,
+            config.tenant,
             None,
             account_number=resource.account_id,
             assume_role=cross_account_role_name,
@@ -175,13 +175,13 @@ def _get_s3_resource_policy(
     bucket_name = arn_match.group("resource_type") or arn_match.group("resource_id")
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": resource.account_id})
         .first.name
     )
     s3_client = boto3_cached_conn(
         "s3",
-        config.host,
+        config.tenant,
         None,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
@@ -210,13 +210,13 @@ def _get_secretsmanager_resource_policy(
 ) -> Optional[common.Policy]:
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": resource.account_id})
         .first.name
     )
     secretsmanager_client = boto3_cached_conn(
         "secretsmanager",
-        config.host,
+        config.tenant,
         None,
         region_name=region,
         account_number=resource.account_id,

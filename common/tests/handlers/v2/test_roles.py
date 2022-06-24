@@ -3,7 +3,7 @@ import ujson as json
 from mock import patch
 
 from util.tests.fixtures.fixtures import create_future
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
@@ -23,11 +23,11 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
 
     def test_get(self):
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch("/api/v2/roles", method="GET", headers=headers)
@@ -125,11 +125,11 @@ class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
             "message": "Get roles by account",
         }
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -207,7 +207,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "fake_account_admin"
         account_id = "123456789012"
@@ -311,7 +311,7 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "fake_account_admin"
         client.create_role(

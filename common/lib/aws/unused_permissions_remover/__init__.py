@@ -28,11 +28,14 @@ log = config.get_logger()
 
 
 async def calculate_unused_policy_for_identity(
-    host: str, account_id: str, identity_name: str, identity_type: Optional[str] = None
+    tenant: str,
+    account_id: str,
+    identity_name: str,
+    identity_type: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Generates and stories effective and unused policies for an identity.
 
-    :param host: Tenant ID
+    :param tenant: Tenant ID
     :param account_id: AWS Account ID
     :param identity_name: IAM Identity Name (Role name or User name)
     :param identity_type: "role" or "user", defaults to None
@@ -43,27 +46,27 @@ async def calculate_unused_policy_for_identity(
         raise Exception("Unable to generate unused policy without identity type")
     arn = f"arn:aws:iam::{account_id}:{identity_type}/{identity_name}"
 
-    s3_bucket = config.get_host_specific_key(
+    s3_bucket = config.get_tenant_specific_key(
         "calculate_unused_policy_for_identity.s3.bucket",
-        host,
+        tenant,
         config.get(
             "_global_.s3_cache_bucket",
         ),
     )
 
-    s3_key = config.get_host_specific_key(
+    s3_key = config.get_tenant_specific_key(
         "calculate_unused_policy_for_identity.s3.file",
-        host,
+        tenant,
         f"calculate_unused_policy_for_identity/{arn}.json.gz",
     )
 
     if not await is_object_older_than_seconds(
-        s3_key, bucket=s3_bucket, host=host, older_than_seconds=86400
+        s3_key, bucket=s3_bucket, tenant=tenant, older_than_seconds=86400
     ):
         return await retrieve_json_data_from_redis_or_s3(
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
 
     identity_type_string = "RoleName" if identity_type == "role" else "UserName"
@@ -72,25 +75,27 @@ async def calculate_unused_policy_for_identity(
             get_role_managed_policy_documents,
             {identity_type_string: identity_name},
             account_number=account_id,
-            assume_role=config.get_host_specific_key("policies.role_name", host),
+            assume_role=config.get_tenant_specific_key("policies.role_name", tenant),
             region=config.region,
             retry_max_attempts=2,
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-            host=host,
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
+            tenant=tenant,
         )
     except Exception:
         sentry_sdk.capture_exception()
         raise
 
     effective_identity_permissions = await calculate_unused_policy_for_identities(
-        host,
+        tenant,
         [arn],
         managed_policy_details,
         account_id=account_id,
     )
     await store_json_results_in_redis_and_s3(
         effective_identity_permissions[arn],
-        host=host,
+        tenant=tenant,
         s3_bucket=s3_bucket,
         s3_key=s3_key,
     )
@@ -149,7 +154,7 @@ async def generate_permission_removal_commands(
 
 
 async def calculate_unused_policy_for_identities(
-    host: str,
+    tenant: str,
     arns: List[str],
     managed_policy_details: Dict[str, Any],
     access_advisor_data: Optional[Dict[str, Any]] = None,
@@ -158,7 +163,7 @@ async def calculate_unused_policy_for_identities(
 ) -> Dict[str, Dict[str, Any]]:
     """Generates effective and unused policies for a list of identities.
 
-    :param host: Tenant ID
+    :param tenant: Tenant ID
     :param arns: A list of ARNs to calculate unused policies for
     :param managed_policy_details: A dictionary of managed policy and managed policy statement for an account
     :param access_advisor_data: A dictionary of access adivisor data per ARN, defaults to None
@@ -173,21 +178,21 @@ async def calculate_unused_policy_for_identities(
             raise Exception("Unable to retrieve access advisor data without account ID")
 
         access_advisor_data = await retrieve_json_data_from_redis_or_s3(
-            s3_bucket=config.get_host_specific_key(
+            s3_bucket=config.get_tenant_specific_key(
                 "access_advisor.s3.bucket",
-                host,
+                tenant,
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "access_advisor.s3.file",
-                host,
+                tenant,
                 "access_advisor/cache_access_advisor_{account_id}_v1.json.gz",
             ).format(account_id=account_id),
-            host=host,
+            tenant=tenant,
             max_age=86400,
         )
 
-    minimum_age = config.get_host_specific_key(
-        "aws.calculate_unused_policy_for_identities.max_unused_age", host, 90
+    minimum_age = config.get_tenant_specific_key(
+        "aws.calculate_unused_policy_for_identities.max_unused_age", tenant, 90
     )
     ago = datetime.timedelta(minimum_age)
     now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -201,7 +206,7 @@ async def calculate_unused_policy_for_identities(
             continue
         account_id = await get_account_id_from_arn(arn)
         role = await IAMRole.get(
-            host,
+            tenant,
             account_id,
             arn,
             force_refresh=force_refresh,
@@ -283,7 +288,7 @@ async def calculate_unused_policy_for_identities(
 
         role_permissions_data[arn] = {
             "arn": arn,
-            "host": host,
+            "tenant": tenant,
             "effective_policy": effective_policy,
             "effective_policy_unused_permissions_removed": effective_policy_unused_permissions_removed,
             "individual_role_inline_policy_changes": individual_role_inline_policy_changes,

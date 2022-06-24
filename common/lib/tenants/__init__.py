@@ -6,7 +6,7 @@ from common.lib.dynamo import RestrictedDynamoHandler
 ddb = RestrictedDynamoHandler()
 
 
-def get_all_hosts() -> List[str]:
-    hosts = ddb.get_all_hosts()
-    hosts.extend(list(config.get("site_configs", {}).keys()))
-    return list(set(hosts))
+def get_all_tenants() -> List[str]:
+    tenants = ddb.get_all_tenants()
+    tenants.extend(list(config.get("site_configs", {}).keys()))
+    return list(set(tenants))

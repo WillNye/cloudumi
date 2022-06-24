@@ -9,26 +9,26 @@ from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
 
 
-def get_host_config():
+def get_tenant_config():
     return config.get_tenant_static_config_from_dynamo("host")
 
 
-def set_host_config(**kwargs):
+def set_tenant_config(**kwargs):
     ddb = RestrictedDynamoHandler()
-    host_config = get_host_config()
-    host_config.update(kwargs)
-    async_to_sync(ddb.update_static_config_for_host)(
-        yaml.dump(dict(host_config)), "test", "host"  # type: ignore
+    tenant_config = get_tenant_config()
+    tenant_config.update(kwargs)
+    async_to_sync(ddb.update_static_config_for_tenant)(
+        yaml.dump(dict(tenant_config)), "test", "host"  # type: ignore
     )
 
 
 def delete_role_access():
     ddb = RestrictedDynamoHandler()
-    host_config = get_host_config()
-    if "cloud_credential_authorization_mapping" in host_config:
-        del host_config["cloud_credential_authorization_mapping"]
-    async_to_sync(ddb.update_static_config_for_host)(
-        yaml.dump(dict(host_config)), "test", "host"  # type: ignore
+    tenant_config = get_tenant_config()
+    if "cloud_credential_authorization_mapping" in tenant_config:
+        del tenant_config["cloud_credential_authorization_mapping"]
+    async_to_sync(ddb.update_static_config_for_tenant)(
+        yaml.dump(dict(tenant_config)), "test", "host"  # type: ignore
     )
 
 
@@ -45,7 +45,7 @@ class TestRoleAccess(TestCase):
     def test_enable_role_access_credential_brokering(self):
         async_to_sync(role_access.toggle_role_access_credential_brokering)("host", True)
         assert (
-            get_host_config()["cloud_credential_authorization_mapping"]["role_tags"][
+            get_tenant_config()["cloud_credential_authorization_mapping"]["role_tags"][
                 "enabled"
             ]
             is True
@@ -56,7 +56,7 @@ class TestRoleAccess(TestCase):
             "host", False
         )
         assert (
-            get_host_config()["cloud_credential_authorization_mapping"]["role_tags"][
+            get_tenant_config()["cloud_credential_authorization_mapping"]["role_tags"][
                 "enabled"
             ]
             is False
@@ -67,7 +67,8 @@ class TestRoleAccess(TestCase):
             "host", True
         )
         assert (
-            get_host_config()["aws"]["automatically_update_role_trust_policies"] is True
+            get_tenant_config()["aws"]["automatically_update_role_trust_policies"]
+            is True
         )
 
     def test_disable_role_access_automatic_policy_update(self):
@@ -75,7 +76,7 @@ class TestRoleAccess(TestCase):
             "host", False
         )
         assert (
-            get_host_config()["aws"]["automatically_update_role_trust_policies"]
+            get_tenant_config()["aws"]["automatically_update_role_trust_policies"]
             is False
         )
 
@@ -83,12 +84,12 @@ class TestRoleAccess(TestCase):
         async_to_sync(role_access.upsert_authorized_groups_tag)(
             "host", "test_tag", True
         )
-        assert get_host_config()["cloud_credential_authorization_mapping"]["role_tags"][
-            "authorized_groups_tags"
-        ] == ["test_tag"]
+        assert get_tenant_config()["cloud_credential_authorization_mapping"][
+            "role_tags"
+        ]["authorized_groups_tags"] == ["test_tag"]
 
     def test_delete_authorized_groups_tags(self):
-        set_host_config(
+        set_tenant_config(
             **{
                 "cloud_credential_authorization_mapping": {
                     "role_tags": {"authorized_groups_tags": ["test_tag"]}
@@ -98,7 +99,7 @@ class TestRoleAccess(TestCase):
         async_to_sync(role_access.delete_authorized_groups_tag)("host", "test_tag")
         assert (
             len(
-                get_host_config()["cloud_credential_authorization_mapping"][
+                get_tenant_config()["cloud_credential_authorization_mapping"][
                     "role_tags"
                 ]["authorized_groups_tags"]
             )
@@ -109,14 +110,14 @@ class TestRoleAccess(TestCase):
         async_to_sync(role_access.upsert_authorized_groups_tag)(
             "host", "test_tag", True
         )
-        assert get_host_config()["cloud_credential_authorization_mapping"]["role_tags"][
-            "authorized_groups_tags"
-        ] == ["test_tag"]
+        assert get_tenant_config()["cloud_credential_authorization_mapping"][
+            "role_tags"
+        ]["authorized_groups_tags"] == ["test_tag"]
 
     def test_upsert_authorized_groups_tags_cli_only(self):
         async_to_sync(role_access.upsert_authorized_groups_tag)(
             "host", "test_tag", False
         )
-        assert get_host_config()["cloud_credential_authorization_mapping"]["role_tags"][
-            "authorized_groups_cli_only_tags"
-        ] == ["test_tag"]
+        assert get_tenant_config()["cloud_credential_authorization_mapping"][
+            "role_tags"
+        ]["authorized_groups_cli_only_tags"] == ["test_tag"]

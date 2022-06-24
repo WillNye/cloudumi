@@ -36,7 +36,7 @@ class UserDetailHandler(BaseAPIV2Handler):
         """
         GET /api/v2/users/{account_number}/{user_name}
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "UsersDetailHandler.get",
             "user": self.user,
@@ -46,7 +46,7 @@ class UserDetailHandler(BaseAPIV2Handler):
             "request_id": self.request_uuid,
             "account_id": account_id,
             "user_name": user_name,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count(
             "UsersDetailHandler.get",
@@ -54,7 +54,7 @@ class UserDetailHandler(BaseAPIV2Handler):
                 "user": self.user,
                 "account_id": account_id,
                 "user_name": user_name,
-                "host": host,
+                "tenant": tenant,
             },
         )
         log.debug(log_data)
@@ -67,7 +67,7 @@ class UserDetailHandler(BaseAPIV2Handler):
         try:
             allowed_accounts_for_viewing_resources = (
                 await get_accounts_user_can_view_resources_for(
-                    self.user, self.groups, host
+                    self.user, self.groups, tenant
                 )
             )
             if account_id not in allowed_accounts_for_viewing_resources:
@@ -75,7 +75,11 @@ class UserDetailHandler(BaseAPIV2Handler):
                     f"User does not have permission to view resources for account {account_id}"
                 )
             user_details = await get_user_details(
-                account_id, user_name, host, extended=True, force_refresh=force_refresh
+                account_id,
+                user_name,
+                tenant,
+                extended=True,
+                force_refresh=force_refresh,
             )
         except Exception as e:
             sentry_sdk.capture_exception()
@@ -97,7 +101,7 @@ class UserDetailHandler(BaseAPIV2Handler):
         """
         account_id = tornado.escape.xhtml_escape(account_id)
         iam_user_name = tornado.escape.xhtml_escape(iam_user_name)
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         if not self.user:
             self.write_error(403, message="No user detected")
@@ -111,13 +115,15 @@ class UserDetailHandler(BaseAPIV2Handler):
             "ip": self.ip,
             "account": account_id,
             "iam_user_name": iam_user_name,
-            "host": host,
+            "tenant": tenant,
         }
         allowed_accounts_for_viewing_resources = (
-            await get_accounts_user_can_view_resources_for(self.user, self.groups, host)
+            await get_accounts_user_can_view_resources_for(
+                self.user, self.groups, tenant
+            )
         )
 
-        can_delete_principal = can_delete_iam_principals(self.user, self.groups, host)
+        can_delete_principal = can_delete_iam_principals(self.user, self.groups, tenant)
         if (
             account_id not in allowed_accounts_for_viewing_resources
             or not can_delete_principal
@@ -130,7 +136,7 @@ class UserDetailHandler(BaseAPIV2Handler):
                     "iam_user_name": iam_user_name,
                     "authorized": can_delete_principal,
                     "ip": self.ip,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             log_data["message"] = "User is unauthorized to delete an AWS IAM User"
@@ -140,7 +146,7 @@ class UserDetailHandler(BaseAPIV2Handler):
             )
             return
         try:
-            await delete_iam_user(account_id, iam_user_name, self.user, host)
+            await delete_iam_user(account_id, iam_user_name, self.user, tenant)
         except Exception as e:
             log_data["message"] = "Exception deleting AWS IAM User"
             log.error(log_data, exc_info=True)
@@ -152,7 +158,7 @@ class UserDetailHandler(BaseAPIV2Handler):
                     "iam_user_name": iam_user_name,
                     "authorized": can_delete_principal,
                     "ip": self.ip,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             self.write_error(500, message="Error occurred deleting IAM user: " + str(e))
@@ -160,7 +166,7 @@ class UserDetailHandler(BaseAPIV2Handler):
 
         # if here, user has been successfully deleted
         arn = f"arn:aws:iam::{account_id}:user/{iam_user_name}"
-        await fetch_iam_user(account_id, arn, host)
+        await fetch_iam_user(account_id, arn, tenant)
         response_json = {
             "status": "success",
             "message": "Successfully deleted AWS IAM user from account",

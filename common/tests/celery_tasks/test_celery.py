@@ -12,7 +12,7 @@ from asgiref.sync import async_to_sync
 from common.aws.iam.role.models import IAMRole
 from common.lib.aws.access_undenied.access_undenied_aws import common, result_details
 from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
@@ -37,14 +37,14 @@ class TestCelerySync(TestCase):
         from common.config.config import CONFIG
         from common.lib.redis import RedisHandler
 
-        red = RedisHandler().redis_sync(host)
+        red = RedisHandler().redis_sync(tenant)
 
         # Set the config value for the redis cache location
         old_config = copy.deepcopy(CONFIG.config)
         CONFIG.config = {
             **CONFIG.config,
             "aws": {
-                **CONFIG.get_host_specific_key("aws", host, {}),
+                **CONFIG.get_tenant_specific_key("aws", tenant, {}),
                 "iamroles_redis_key": "cache_iam_resources_for_account",
             },
             "cache_iam_resources_across_accounts": {
@@ -64,10 +64,10 @@ class TestCelerySync(TestCase):
         # Clear out the existing cache from Redis:
         red.delete("cache_iam_resources_for_account")
         # Run it:
-        self.celery.cache_iam_resources_for_account("123456789012", host=host)
+        self.celery.cache_iam_resources_for_account("123456789012", tenant=tenant)
 
         # Verify that everything is there:
-        results = async_to_sync(IAMRole.query)(host)
+        results = async_to_sync(IAMRole.query)(tenant)
 
         remaining_roles = [
             "arn:aws:iam::123456789012:role/ConsoleMe",
@@ -87,7 +87,7 @@ class TestCelerySync(TestCase):
             self.assertIsNotNone(json.loads(i["policy"]))
             self.assertEqual(
                 json.loads(
-                    red.hget(f"{host}_cache_iam_resources_for_account", i["arn"])
+                    red.hget(f"{tenant}_cache_iam_resources_for_account", i["arn"])
                 )["policy"],
                 i["policy"],
             )
@@ -103,7 +103,7 @@ class TestCelerySync(TestCase):
         red.delete("cache_iam_resources_for_account")
 
         # This should spin off extra fake celery tasks
-        res = self.celery.cache_iam_resources_across_accounts(host)
+        res = self.celery.cache_iam_resources_across_accounts(tenant)
         self.assertEqual(
             res,
             {
@@ -113,7 +113,7 @@ class TestCelerySync(TestCase):
                 "num_accounts": 1,
             },
         )  # This should spin off extra fake celery tasks
-        res = self.celery.cache_iam_resources_across_accounts(host)
+        res = self.celery.cache_iam_resources_across_accounts(tenant)
         self.assertEqual(
             res,
             {
@@ -130,13 +130,13 @@ class TestCelerySync(TestCase):
 
     def test_trigger_credential_mapping_refresh_from_role_changes(self):
         res = self.celery.trigger_credential_mapping_refresh_from_role_changes(
-            host=host
+            tenant=tenant
         )
         self.assertEqual(
             res,
             {
                 "function": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes",
-                "host": "example_com",
+                "tenant": "example_com",
                 "message": "Successfully checked role changes",
                 "num_roles_changed": 2,
             },
@@ -167,12 +167,13 @@ class TestCelerySync(TestCase):
                 ),
             ),
         ):
-            res = self.celery.cache_cloudtrail_denies(host)
+            res = self.celery.cache_cloudtrail_denies(tenant)
+
         self.assertEqual(
             res,
             {
                 "function": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies",
-                "host": host,
+                "tenant": tenant,
                 "message": "Successfully cached cloudtrail denies",
                 "num_new_cloudtrail_denies": 1,
                 "num_cloudtrail_denies": 1,

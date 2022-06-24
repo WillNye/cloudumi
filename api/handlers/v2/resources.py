@@ -26,11 +26,11 @@ class ResourceDetailHandler(BaseAPIV2Handler):
     async def get(self, account_id, resource_type, region=None, resource_name=None):
         if not self.user:
             return
-        host = self.ctx.host
-        red = await RedisHandler().redis(host)
+        tenant = self.ctx.tenant
+        red = await RedisHandler().redis(tenant)
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
@@ -41,7 +41,7 @@ class ResourceDetailHandler(BaseAPIV2Handler):
         read_only = False
 
         can_save_delete = await can_admin_policies(
-            self.user, self.groups, host, [account_id]
+            self.user, self.groups, tenant, [account_id]
         )
 
         account_id_for_arn: str = account_id
@@ -62,7 +62,7 @@ class ResourceDetailHandler(BaseAPIV2Handler):
             tags={
                 "user": self.user,
                 "arn": arn,
-                "host": host,
+                "tenant": tenant,
             },
         )
 
@@ -74,7 +74,7 @@ class ResourceDetailHandler(BaseAPIV2Handler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "arn": arn,
-            "host": host,
+            "tenant": tenant,
         }
 
         log.debug(log_data)
@@ -84,7 +84,7 @@ class ResourceDetailHandler(BaseAPIV2Handler):
         try:
             allowed_accounts_for_viewing_resources = (
                 await get_accounts_user_can_view_resources_for(
-                    self.user, self.groups, host
+                    self.user, self.groups, tenant
                 )
             )
             if account_id not in allowed_accounts_for_viewing_resources:
@@ -96,7 +96,7 @@ class ResourceDetailHandler(BaseAPIV2Handler):
                 resource_type,
                 resource_name,
                 region,
-                host,
+                tenant,
                 self.user,
                 path=path,
             )
@@ -120,14 +120,14 @@ class ResourceDetailHandler(BaseAPIV2Handler):
         yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
         s3_query_url = None
         if resource_type == "s3":
-            s3_query_url = config.get_host_specific_key("s3.bucket_query_url", host)
+            s3_query_url = config.get_tenant_specific_key("s3.bucket_query_url", tenant)
         all_s3_errors = None
         if s3_query_url:
             s3_query_url = s3_query_url.format(
                 yesterday=yesterday, bucket_name=f"'{resource_name}'"
             )
-            s3_error_topic = config.get_host_specific_key(
-                "redis.s3_errors", host, f"{host}_S3_ERRORS"
+            s3_error_topic = config.get_tenant_specific_key(
+                "redis.s3_errors", tenant, f"{tenant}_S3_ERRORS"
             )
             all_s3_errors = red.get(s3_error_topic)
 
@@ -135,7 +135,7 @@ class ResourceDetailHandler(BaseAPIV2Handler):
         if all_s3_errors:
             s3_errors = json.loads(all_s3_errors).get(arn, [])
 
-        account_ids_to_name = await get_account_id_to_name_mapping(host)
+        account_ids_to_name = await get_account_id_to_name_mapping(tenant)
         # TODO(ccastrapel/psanders): Make a Swagger spec for this
         self.write(
             dict(
@@ -174,8 +174,8 @@ class GetResourceURLHandler(BaseMtlsHandler):
                     description: Forbidden
         """
         self.user: str = self.requester["email"]
-        host = self.ctx.host
-        red = await RedisHandler().redis(host)
+        tenant = self.ctx.tenant
+        red = await RedisHandler().redis(tenant)
         arn: str = self.get_argument("arn", None)
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
@@ -184,14 +184,14 @@ class GetResourceURLHandler(BaseMtlsHandler):
             "message": "Generating URL for resource",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         stats.count(
             "GetResourceURL.get",
             tags={
                 "user": self.user,
-                "host": host,
+                "tenant": tenant,
             },
         )
         if not arn:
@@ -206,32 +206,32 @@ class GetResourceURLHandler(BaseMtlsHandler):
             # parse_arn will raise an exception on invalid arns
             parse_arn(arn)
 
-            resources_from_aws_config_redis_key = config.get_host_specific_key(
+            resources_from_aws_config_redis_key = config.get_tenant_specific_key(
                 "aws_config_cache.redis_key",
-                host,
-                f"{host}_AWSCONFIG_RESOURCE_CACHE",
+                tenant,
+                f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
             )
             if not red.exists(resources_from_aws_config_redis_key):
                 # This will force a refresh of our redis cache if the data exists in S3
                 await retrieve_json_data_from_redis_or_s3(
                     redis_key=resources_from_aws_config_redis_key,
-                    s3_bucket=config.get_host_specific_key(
-                        "aws_config_cache_combined.s3.bucket", host
+                    s3_bucket=config.get_tenant_specific_key(
+                        "aws_config_cache_combined.s3.bucket", tenant
                     ),
-                    s3_key=config.get_host_specific_key(
+                    s3_key=config.get_tenant_specific_key(
                         "aws_config_cache_combined.s3.file",
-                        host,
+                        tenant,
                         "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
                     ),
                     redis_data_type="hash",
-                    host=host,
+                    tenant=tenant,
                 )
             resource_info = await redis_hget(
-                resources_from_aws_config_redis_key, arn, host
+                resources_from_aws_config_redis_key, arn, tenant
             )
             if not resource_info:
                 raise ValueError("Resource not found in organization cache")
-            resource_url = await get_url_for_resource(arn, host)
+            resource_url = await get_url_for_resource(arn, tenant)
             if not resource_url:
                 raise ValueError("This resource type is currently not supported")
         except (ResourceNotFound, ValueError) as e:

@@ -9,34 +9,34 @@ from common.lib.redis import RedisHandler
 log = config.get_logger()
 
 
-async def delete_expired_challenges(all_challenges, host):
+async def delete_expired_challenges(all_challenges, tenant):
     current_time = int(datetime.utcnow().replace(tzinfo=pytz.UTC).timestamp())
     expired_challenge_tokens = []
-    red = await RedisHandler().redis(host)
+    red = await RedisHandler().redis(tenant)
     for token, challenge_j in all_challenges.items():
         challenge = json.loads(challenge_j)
         if challenge.get("ttl", 0) < current_time:
             expired_challenge_tokens.append(token)
     if expired_challenge_tokens:
         red.hdel(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "challenge_url.redis_key",
-                host,
-                f"{host}_TOKEN_CHALLENGES_TEMP",
+                tenant,
+                f"{tenant}_TOKEN_CHALLENGES_TEMP",
             ),
             *expired_challenge_tokens,
         )
 
 
-async def retrieve_user_challenge(request, requested_challenge_token, log_data, host):
-    red = await RedisHandler().redis(host)
+async def retrieve_user_challenge(request, requested_challenge_token, log_data, tenant):
+    red = await RedisHandler().redis(tenant)
     current_time = int(datetime.utcnow().replace(tzinfo=pytz.UTC).timestamp())
     # Get fresh challenge for user's request
     user_challenge_j = red.hget(
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "challenge_url.redis_key",
-            host,
-            f"{host}_TOKEN_CHALLENGES_TEMP",
+            tenant,
+            f"{tenant}_TOKEN_CHALLENGES_TEMP",
         ),
         requested_challenge_token,
     )

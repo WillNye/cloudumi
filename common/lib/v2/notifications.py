@@ -29,30 +29,32 @@ class RetrieveNotifications(metaclass=Singleton):
         self.last_update = 0
         self.all_notifications = []
 
-    async def retrieve_all_notifications(self, host, force_refresh=False):
+    async def retrieve_all_notifications(self, tenant, force_refresh=False):
         if force_refresh or (
             int(time.time()) - self.last_update
-            > config.get_host_specific_key(
+            > config.get_tenant_specific_key(
                 "get_notifications_for_user.notification_retrieval_interval",
-                host,
+                tenant,
                 20,
             )
         ):
             self.all_notifications = await retrieve_json_data_from_redis_or_s3(
-                redis_key=config.get_host_specific_key(
+                redis_key=config.get_tenant_specific_key(
                     "notifications.redis_key",
-                    host,
-                    f"{host}_ALL_NOTIFICATIONS",
+                    tenant,
+                    f"{tenant}_ALL_NOTIFICATIONS",
                 ),
                 redis_data_type="hash",
-                s3_bucket=config.get_host_specific_key("notifications.s3.bucket", host),
-                s3_key=config.get_host_specific_key(
+                s3_bucket=config.get_tenant_specific_key(
+                    "notifications.s3.bucket", tenant
+                ),
+                s3_key=config.get_tenant_specific_key(
                     "notifications.s3.key",
-                    host,
+                    tenant,
                     "notifications/all_notifications_v1.json.gz",
                 ),
                 default={},
-                host=host,
+                tenant=tenant,
             )
             self.last_update = int(time.time())
         return self.all_notifications
@@ -61,7 +63,7 @@ class RetrieveNotifications(metaclass=Singleton):
 async def get_notifications_for_user(
     user,
     groups,
-    host,
+    tenant,
     max_notifications,
     force_refresh=False,
 ) -> GetNotificationsForUserResponse:
@@ -71,12 +73,12 @@ async def get_notifications_for_user(
         "user": user,
         "max_notifications": max_notifications,
         "force_refresh": force_refresh,
-        "host": host,
+        "tenant": tenant,
     }
 
     current_time = int(time.time())
     all_notifications = await RetrieveNotifications().retrieve_all_notifications(
-        host, force_refresh=force_refresh
+        tenant, force_refresh=force_refresh
     )
     unread_count = 0
     notifications_for_user = []
@@ -142,21 +144,21 @@ async def get_notifications_for_user(
     )
 
 
-async def fetch_notification(notification_id: str, host: str):
-    ddb = UserDynamoHandler(host=host)
+async def fetch_notification(notification_id: str, tenant: str):
+    ddb = UserDynamoHandler(tenant=tenant)
     notification = await aio_wrapper(
         ddb.notifications_table.get_item,
-        Key={"host": host, "predictable_id": notification_id},
+        Key={"tenant": tenant, "predictable_id": notification_id},
     )
     if notification.get("Item"):
         return ConsoleMeUserNotification.parse_obj(notification["Item"])
 
 
-async def cache_notifications_to_redis_s3(host) -> Dict[str, int]:
+async def cache_notifications_to_redis_s3(tenant) -> Dict[str, int]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     current_time = int(time.time())
     log_data = {"function": function}
-    ddb = UserDynamoHandler(host=host)
+    ddb = UserDynamoHandler(tenant=tenant)
     notifications_by_user_group = defaultdict(list)
     all_notifications_l = await ddb.parallel_scan_table_async(ddb.notifications_table)
     changed_notifications = []
@@ -176,19 +178,19 @@ async def cache_notifications_to_redis_s3(host) -> Dict[str, int]:
             notifications_by_user_group[k] = original_json.dumps(v, cls=SetEncoder)
         await store_json_results_in_redis_and_s3(
             notifications_by_user_group,
-            redis_key=config.get_host_specific_key(
+            redis_key=config.get_tenant_specific_key(
                 "notifications.redis_key",
-                host,
-                f"{host}_ALL_NOTIFICATIONS",
+                tenant,
+                f"{tenant}_ALL_NOTIFICATIONS",
             ),
             redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key("notifications.s3.bucket", host),
-            s3_key=config.get_host_specific_key(
+            s3_bucket=config.get_tenant_specific_key("notifications.s3.bucket", tenant),
+            s3_key=config.get_tenant_specific_key(
                 "notifications.s3.key",
-                host,
+                tenant,
                 "notifications/all_notifications_v1.json.gz",
             ),
-            host=host,
+            tenant=tenant,
         )
     log_data["num_user_groups_for_notifications"] = len(
         notifications_by_user_group.keys()
@@ -201,11 +203,11 @@ async def cache_notifications_to_redis_s3(host) -> Dict[str, int]:
     }
 
 
-async def write_notification(notification: ConsoleMeUserNotification, host):
-    ddb = UserDynamoHandler(host=host)
+async def write_notification(notification: ConsoleMeUserNotification, tenant):
+    ddb = UserDynamoHandler(tenant=tenant)
     await aio_wrapper(
         ddb.notifications_table.put_item,
         Item=ddb._data_to_dynamo_replace(notification.dict()),
     )
-    await cache_notifications_to_redis_s3(host)
+    await cache_notifications_to_redis_s3(tenant)
     return True

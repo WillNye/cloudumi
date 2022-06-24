@@ -10,18 +10,22 @@ from common.lib.cloud_credential_authorization_mapping.models import (
 
 class DynamicConfigAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
     async def generate_credential_authorization_mapping(
-        self, authorization_mapping: Dict[user_or_group, RoleAuthorizations], host: str
+        self,
+        authorization_mapping: Dict[user_or_group, RoleAuthorizations],
+        tenant: str,
     ) -> Dict[user_or_group, RoleAuthorizations]:
         """This will list accounts that meet the account attribute search criteria."""
-        group_mapping_configuration = config.get_host_specific_key(
-            "dynamic_config.group_mapping", host
+        group_mapping_configuration = config.get_tenant_specific_key(
+            "dynamic_config.group_mapping", tenant
         )
 
         if not group_mapping_configuration:
             return authorization_mapping
 
         for group, role_mapping in group_mapping_configuration.items():
-            if config.get_host_specific_key("auth.force_groups_lowercase", host, False):
+            if config.get_tenant_specific_key(
+                "auth.force_groups_lowercase", tenant, False
+            ):
                 group = group.lower()
             if not authorization_mapping.get(group):
                 authorization_mapping[group] = RoleAuthorizations.parse_obj(

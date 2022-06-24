@@ -26,13 +26,13 @@ log = get_logger("cloudumi")
 
 class IAMRequestArnIndex(GlobalSecondaryIndex):
     class Meta:
-        index_name = "arn-host-index"
+        index_name = "arn-tenant-index"
         read_capacity_units = 1
         write_capacity_units = 1
         projection = AllProjection()
         region = region
 
-    host = UnicodeAttribute(hash_key=True)
+    tenant = UnicodeAttribute(hash_key=True)
     arn = UnicodeAttribute(range_key=True)
 
 
@@ -45,7 +45,7 @@ class IAMRequest(NoqModel):
         fallback_to_dynamodb = True
         region = region
 
-    host = UnicodeAttribute(hash_key=True)
+    tenant = UnicodeAttribute(hash_key=True)
     request_id = UnicodeAttribute(range_key=True)
     arn = UnicodeAttribute()
     extended_request = NoqMapAttribute()
@@ -60,7 +60,7 @@ class IAMRequest(NoqModel):
     arn_index = IAMRequestArnIndex()
 
     @classmethod
-    async def get(cls, host: str, arn=None, request_id=None):
+    async def get(cls, tenant: str, arn=None, request_id=None):
         """Reads a policy request from the appropriate DynamoDB table"""
         if not arn and not request_id:
             raise Exception("Must pass in ARN or Policy Request ID")
@@ -68,15 +68,15 @@ class IAMRequest(NoqModel):
             raise Exception("Only ARN OR Policy Request ID can be provided")
 
         if request_id:
-            return await super(IAMRequest, cls).get(host, request_id)
+            return await super(IAMRequest, cls).get(tenant, request_id)
 
-        results = await aio_wrapper(cls.arn_index.query, host, cls.arn == arn)
+        results = await aio_wrapper(cls.arn_index.query, tenant, cls.arn == arn)
         results = [r for r in results]
         if len(results) == 1:
             return results[0]
 
     @classmethod
-    async def write_v2(cls, extended_request: ExtendedRequestModel, host: str):
+    async def write_v2(cls, extended_request: ExtendedRequestModel, tenant: str):
         """
         Writes a policy request v2 to the appropriate DynamoDB table
         """
@@ -90,7 +90,7 @@ class IAMRequest(NoqModel):
             "version": "2",
             "extended_request": json.loads(extended_request.json()),
             "username": extended_request.requester_email,
-            "host": host,
+            "tenant": tenant,
         }
 
         if extended_request.principal.principal_type == "AwsResource":
@@ -106,7 +106,7 @@ class IAMRequest(NoqModel):
             "function": f"{__name__}.{cls.__name__}.{sys._getframe().f_code.co_name}",
             "message": "Writing policy request v2 to Dynamo",
             "request": new_request,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
@@ -136,7 +136,7 @@ class IAMRequest(NoqModel):
         log_data: dict = {
             "function": f"{__name__}.{sys._getframe().f_code.co_name}",
             "request": self.extended_request.dict(),
-            "host": self.host,
+            "tenant": self.tenant,
         }
         self_dict = self.dict()
         principal = self_dict["principal"]
@@ -151,7 +151,7 @@ class IAMRequest(NoqModel):
             return
 
         principal_arn = principal.get("principal_arn")
-        principal_summary = await ResourceSummary.set(self.host, principal_arn)
+        principal_summary = await ResourceSummary.set(self.tenant, principal_arn)
 
         template_env = Environment(
             loader=FileSystemLoader("common/templates"),
@@ -187,7 +187,7 @@ class IAMRequest(NoqModel):
             else:
                 try:
                     resource_summary = await ResourceSummary.set(
-                        self.host, change["arn"]
+                        self.tenant, change["arn"]
                     )
                 except Exception as err:
                     # Unable to resolve the resource details for the change so set to read only
@@ -206,7 +206,7 @@ class IAMRequest(NoqModel):
             # Use the account the change will be applied to for determining if the change is read only
             account_info: SpokeAccount = (
                 ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", self.host)
+                .load_config("spoke_accounts", self.tenant)
                 .with_query({"account_id": resource_summary.account})
                 .first
             )
@@ -236,11 +236,11 @@ class IAMRequest(NoqModel):
                             sqs_client = await aio_wrapper(
                                 boto3_cached_conn,
                                 resource_summary.resource_type,
-                                self.host,
+                                self.tenant,
                                 None,
                                 account_number=resource_summary.account,
                                 assume_role=ModelAdapter(SpokeAccount)
-                                .load_config("spoke_accounts", self.host)
+                                .load_config("spoke_accounts", self.tenant)
                                 .with_query({"account_id": resource_summary.account})
                                 .first.name,
                                 region=resource_summary.region or config.region,
@@ -249,8 +249,8 @@ class IAMRequest(NoqModel):
                                     region_name=config.region,
                                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",
                                 ),
-                                client_kwargs=config.get_host_specific_key(
-                                    "boto3.client_kwargs", self.host, {}
+                                client_kwargs=config.get_tenant_specific_key(
+                                    "boto3.client_kwargs", self.tenant, {}
                                 ),
                                 read_only=True,
                             )

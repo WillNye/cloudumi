@@ -106,7 +106,7 @@ log = config.get_logger()
 async def generate_request_from_change_model_array(
     request_creation: RequestCreationModel,
     user: str,
-    host: str,
+    tenant: str,
 ) -> ExtendedRequestModel:
     """
     Compiles an ChangeModelArray and returns a filled out ExtendedRequestModel based on the changes
@@ -121,11 +121,11 @@ async def generate_request_from_change_model_array(
         "user": user,
         "request": request_creation.dict(),
         "message": "Incoming request",
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
     auth = get_plugin_by_name(
-        config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
+        config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
     )()
     primary_principal = None
     change_models = request_creation.changes
@@ -147,9 +147,9 @@ async def generate_request_from_change_model_array(
 
     extended_request_uuid = str(uuid.uuid4())
     incremental_change_id = 0
-    supported_resource_policies = config.get_host_specific_key(
+    supported_resource_policies = config.get_tenant_specific_key(
         "policies.supported_resource_types_for_policy_application",
-        host,
+        tenant,
         ["s3", "sqs", "sns"],
     )
 
@@ -224,7 +224,7 @@ async def generate_request_from_change_model_array(
 
     if primary_principal.principal_type == "AwsResource":
         # TODO: Separate this out into another function
-        account_id = await get_resource_account(primary_principal.principal_arn, host)
+        account_id = await get_resource_account(primary_principal.principal_arn, tenant)
         arn_parsed = parse_arn(primary_principal.principal_arn)
         arn_type = arn_parsed["service"]
         arn_name = (
@@ -236,7 +236,7 @@ async def generate_request_from_change_model_array(
         try:
             arn_url = await get_url_for_resource(
                 arn=primary_principal.principal_arn,
-                host=host,
+                tenant=tenant,
                 resource_type=arn_type,
                 account_id=account_id,
                 region=arn_region,
@@ -292,11 +292,11 @@ async def generate_request_from_change_model_array(
             try:
                 managed_policy_resource = await aio_wrapper(
                     get_managed_policy_document,
-                    host=host,
+                    tenant=tenant,
                     policy_arn=primary_principal.principal_arn,
                     account_number=account_id,
                     assume_role=ModelAdapter(SpokeAccount)
-                    .load_config("spoke_accounts", host)
+                    .load_config("spoke_accounts", tenant)
                     .with_query({"account_id": account_id})
                     .first.name,
                     region=config.region,
@@ -342,11 +342,11 @@ async def generate_request_from_change_model_array(
             principal_details = None
             if arn_parsed["resource"] == "role":
                 principal_details = await get_role_details(
-                    account_id, principal_name, host, extended=True
+                    account_id, principal_name, tenant, extended=True
                 )
             elif arn_parsed["resource"] == "user":
                 principal_details = await get_user_details(
-                    account_id, principal_name, host, extended=True
+                    account_id, principal_name, tenant, extended=True
                 )
             if not principal_details:
                 log_data["message"] = "Principal not found"
@@ -356,7 +356,7 @@ async def generate_request_from_change_model_array(
                 inline_policy_change.policy_name = await generate_policy_name(
                     inline_policy_change.policy_name,
                     user,
-                    host,
+                    tenant,
                     request_creation.expiration_date,
                 )
                 await validate_inline_policy_change(
@@ -409,31 +409,31 @@ async def generate_request_from_change_model_array(
             changes=request_changes,
             requester_info=UserModel(
                 email=user,
-                extended_info=await auth.get_user_info(user, host),
-                details_url=config.get_employee_info_url(user, host),
-                photo_url=config.get_employee_photo_url(user, host),
+                extended_info=await auth.get_user_info(user, tenant),
+                details_url=config.get_employee_info_url(user, tenant),
+                photo_url=config.get_employee_photo_url(user, tenant),
             ),
             comments=[],
             cross_account=False,
             arn_url=arn_url,
         )
         extended_request = await populate_old_policies(
-            extended_request, user, host, role
+            extended_request, user, tenant, role
         )
         extended_request = await generate_resource_policies(
-            extended_request, user, host
+            extended_request, user, tenant
         )
         if len(managed_policy_resource_changes) > 0:
-            await populate_old_managed_policies(extended_request, user, host)
+            await populate_old_managed_policies(extended_request, user, tenant)
 
     elif primary_principal.principal_type == "HoneybeeAwsResourceTemplate":
         # TODO: Generate extended request from HB template
         extended_request = await generate_honeybee_request_from_change_model_array(
-            request_creation, user, extended_request_uuid, host
+            request_creation, user, extended_request_uuid, tenant
         )
     elif primary_principal.principal_type == "TerraformAwsResource":
         extended_request = await generate_terraform_request_from_change_model_array(
-            request_creation, user, extended_request_uuid, host
+            request_creation, user, extended_request_uuid, tenant
         )
     # TODO: Support Terraform!!
     else:
@@ -504,12 +504,12 @@ async def is_request_eligible_for_auto_approval(
     return is_eligible
 
 
-async def update_resource_in_dynamo(host: str, arn: str, force_refresh: bool):
-    resource_summary = await ResourceSummary.set(host, arn)
+async def update_resource_in_dynamo(tenant: str, arn: str, force_refresh: bool):
+    resource_summary = await ResourceSummary.set(tenant, arn)
 
     if resource_summary.resource_type == "role":
         await IAMRole.get(
-            host,
+            tenant,
             resource_summary.account,
             resource_summary.arn,
             force_refresh=force_refresh,
@@ -517,7 +517,7 @@ async def update_resource_in_dynamo(host: str, arn: str, force_refresh: bool):
 
 
 async def update_autogenerated_policy_change_model(
-    host: str,
+    tenant: str,
     principal_arn: str,
     change: Union[
         InlinePolicyChangeModel,
@@ -530,9 +530,9 @@ async def update_autogenerated_policy_change_model(
     is_sts_change = bool(change.change_type == "sts_resource_policy")
     if is_sts_change:
         # Maybe allow admin to define full list of policies to trust or not trust in config
-        supported_trust_policy_permissions = config.get_host_specific_key(
+        supported_trust_policy_permissions = config.get_tenant_specific_key(
             "policies.supported_trust_policy_permissions",
-            host,
+            tenant,
             [
                 "sts:assumerole",
                 "sts:tagsession",
@@ -569,7 +569,7 @@ async def update_autogenerated_policy_change_model(
             resource_arns.add(resource)
 
             # Use the resource it hit on to catch thing like S3 Bucket + Object
-            source_summary = await ResourceSummary.set(host, resource)
+            source_summary = await ResourceSummary.set(tenant, resource)
             service = source_summary.service if not is_sts_change else "sts"
             supported_permissions = get_supported_resource_permissions(
                 service, source_summary.resource_type
@@ -615,7 +615,7 @@ async def update_autogenerated_policy_change_model(
 
 
 async def generate_resource_policies(
-    extended_request: ExtendedRequestModel, user: str, host: str
+    extended_request: ExtendedRequestModel, user: str, tenant: str
 ):
     """
     Generates the resource policies and adds it to the extended request.
@@ -634,14 +634,14 @@ async def generate_resource_policies(
     }
     log.debug(log_data)
 
-    supported_resource_policies = config.get_host_specific_key(
+    supported_resource_policies = config.get_tenant_specific_key(
         "policies.supported_resource_types_for_policy_application",
-        host,
+        tenant,
         ["s3", "sqs", "sns"],
     )
-    supported_trust_policy_permissions = config.get_host_specific_key(
+    supported_trust_policy_permissions = config.get_tenant_specific_key(
         "policies.supported_trust_policy_permissions",
-        host,
+        tenant,
         [
             "sts:assumerole",
             "sts:tagsession",
@@ -652,7 +652,7 @@ async def generate_resource_policies(
 
     if extended_request.principal.principal_type == "AwsResource":
         principal_arn = extended_request.principal.principal_arn
-        role_account_id = await get_resource_account(principal_arn, host)
+        role_account_id = await get_resource_account(principal_arn, tenant)
         arn_parsed = parse_arn(principal_arn)
 
         if arn_parsed["service"] != "iam" or arn_parsed["resource"] != "role":
@@ -681,10 +681,12 @@ async def generate_resource_policies(
         for policy_change in extended_request.changes.changes:
             if policy_change.change_type == "inline_policy":
                 policy_change.resources = await get_resources_from_policy_change(
-                    policy_change, host
+                    policy_change, tenant
                 )
                 for resource in policy_change.resources:
-                    resource_account_id = await get_resource_account(resource.arn, host)
+                    resource_account_id = await get_resource_account(
+                        resource.arn, tenant
+                    )
                     if (
                         resource_account_id != role_account_id
                         and resource.resource_type != "iam"
@@ -1004,7 +1006,7 @@ async def apply_changes_to_role(
     extended_request: ExtendedRequestModel,
     response: Union[RequestCreationResponse, PolicyRequestModificationResponseModel],
     user: str,
-    host: str,
+    tenant: str,
     specific_change_id: str = None,
     custom_aws_credentials: AWSCredentials = None,
 ) -> None:
@@ -1026,7 +1028,7 @@ async def apply_changes_to_role(
         "request": extended_request.dict(),
         "message": "Applying request changes",
         "specific_change_id": specific_change_id,
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
 
@@ -1046,18 +1048,18 @@ async def apply_changes_to_role(
 
     principal_name = arn_parsed["resource_path"].split("/")[-1]
     account_id = await get_resource_account(
-        extended_request.principal.principal_arn, host
+        extended_request.principal.principal_arn, tenant
     )
     iam_client = await aio_wrapper(
         boto3_cached_conn,
         "iam",
-        host,
+        tenant,
         user,
         service_type="client",
         account_number=account_id,
         region=config.region,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         session_name=sanitize_session_name("principal-updater-" + user),
@@ -1066,7 +1068,7 @@ async def apply_changes_to_role(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         custom_aws_credentials=custom_aws_credentials,
     )
     for change in extended_request.changes.changes:
@@ -1482,7 +1484,7 @@ async def apply_changes_to_role(
 async def populate_old_policies(
     extended_request: ExtendedRequestModel,
     user: str,
-    host: str,
+    tenant: str,
     principal: Optional[ExtendedAwsPrincipalModel] = None,
     force_refresh=False,
 ) -> ExtendedRequestModel:
@@ -1501,13 +1503,13 @@ async def populate_old_policies(
         "principal": extended_request.principal,
         "request": extended_request.dict(),
         "message": "Populating old policies",
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
 
     if extended_request.principal.principal_type == "AwsResource":
         principal_arn = extended_request.principal.principal_arn
-        role_account_id = await get_resource_account(principal_arn, host)
+        role_account_id = await get_resource_account(principal_arn, tenant)
         arn_parsed = parse_arn(principal_arn)
 
         if arn_parsed["service"] != "iam" or arn_parsed["resource"] not in [
@@ -1526,7 +1528,7 @@ async def populate_old_policies(
                 principal = await get_role_details(
                     role_account_id,
                     principal_name,
-                    host,
+                    tenant,
                     extended=True,
                     force_refresh=force_refresh,
                 )
@@ -1534,7 +1536,7 @@ async def populate_old_policies(
                 principal = await get_user_details(
                     role_account_id,
                     principal_name,
-                    host,
+                    tenant,
                     extended=True,
                     force_refresh=force_refresh,
                 )
@@ -1576,7 +1578,7 @@ async def populate_old_policies(
 async def populate_old_managed_policies(
     extended_request: ExtendedRequestModel,
     user: str,
-    host: str,
+    tenant: str,
 ) -> Dict:
     """
     Populates the old policies for a managed policy resource change.
@@ -1610,11 +1612,11 @@ async def populate_old_managed_policies(
         try:
             managed_policy_resource = await aio_wrapper(
                 get_managed_policy_document,
-                host=host,
+                tenant=tenant,
                 policy_arn=principal_arn,
                 account_number=arn_parsed["account"],
                 assume_role=ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
+                .load_config("spoke_accounts", tenant)
                 .with_query({"account_id": arn_parsed["account"]})
                 .first.name,
                 region=config.region,
@@ -1667,7 +1669,7 @@ async def populate_old_managed_policies(
 
 
 async def populate_cross_account_resource_policy_for_change(
-    change, extended_request, log_data, host: str, user, force_refresh: bool = False
+    change, extended_request, log_data, tenant: str, user, force_refresh: bool = False
 ) -> bool:
     """
     This function generates the action resource (or sts Assume Role Trust) policies associated with a policy
@@ -1676,15 +1678,15 @@ async def populate_cross_account_resource_policy_for_change(
     resource_policies_changed = False
     # TODO: Update this list to fully formed resources instead of the service. e.g. s3:bucket, sqs:queue, sns:topic
     #   This will require refactor for all things that reference this.
-    supported_resource_policies = config.get_host_specific_key(
+    supported_resource_policies = config.get_tenant_specific_key(
         "policies.supported_resource_types_for_policy_application",
-        host,
+        tenant,
         ["s3", "sqs", "sns"],
     )
-    sts_resource_policy_supported = config.get_host_specific_key(
-        "policies.sts_resource_policy_supported", host, True
+    sts_resource_policy_supported = config.get_tenant_specific_key(
+        "policies.sts_resource_policy_supported", tenant, True
     )
-    all_accounts = await get_account_id_to_name_mapping(host, status=None)
+    all_accounts = await get_account_id_to_name_mapping(tenant, status=None)
     default_policy = {"Version": "2012-10-17", "Statement": []}
     if change.status == Status.applied:
         # Skip any changes that have already been applied so we don't overwrite any historical records
@@ -1694,7 +1696,7 @@ async def populate_cross_account_resource_policy_for_change(
         or change.change_type == "sts_resource_policy"
     ):
         try:
-            resource_summary = await ResourceSummary.set(host, change.arn)
+            resource_summary = await ResourceSummary.set(tenant, change.arn)
         except ValueError:
             change.supported = False
             old_policy = default_policy
@@ -1729,14 +1731,14 @@ async def populate_cross_account_resource_policy_for_change(
                         resource_type=resource_summary.service,
                         name=resource_summary.name,
                         region=resource_summary.region,
-                        host=host,
+                        tenant=tenant,
                         user=user,
                     )
                 else:
                     role = await get_role_details(
                         resource_summary.account,
                         resource_summary.name,
-                        host,
+                        tenant,
                         extended=True,
                         force_refresh=force_refresh,
                     )
@@ -1777,7 +1779,7 @@ async def populate_cross_account_resource_policy_for_change(
                 return False
 
             await update_autogenerated_policy_change_model(
-                host=host,
+                tenant=tenant,
                 principal_arn=extended_request.principal.principal_arn,
                 change=change,
                 source_policy=source_change[0].policy.policy_document,
@@ -1789,7 +1791,7 @@ async def populate_cross_account_resource_policy_for_change(
 
 
 async def populate_cross_account_resource_policies(
-    extended_request: ExtendedRequestModel, user: str, host: str
+    extended_request: ExtendedRequestModel, user: str, tenant: str
 ) -> Dict:
     """
     Populates the cross-account resource policies for supported resources for each inline policy.
@@ -1806,7 +1808,7 @@ async def populate_cross_account_resource_policies(
         "arn": extended_request.principal.principal_arn,
         "request": extended_request.dict(),
         "message": "Populating cross-account resource policies",
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
 
@@ -1814,7 +1816,7 @@ async def populate_cross_account_resource_policies(
     for change in extended_request.changes.changes:
         concurrent_tasks.append(
             populate_cross_account_resource_policy_for_change(
-                change, extended_request, log_data, host, user
+                change, extended_request, log_data, tenant, user
             )
         )
     concurrent_tasks_results = await asyncio.gather(*concurrent_tasks)
@@ -1832,7 +1834,7 @@ async def apply_managed_policy_resource_tag_change(
     change: ResourceTagChangeModel,
     response: PolicyRequestModificationResponseModel,
     user: str,
-    host: str,
+    tenant: str,
     custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
@@ -1860,7 +1862,7 @@ async def apply_managed_policy_resource_tag_change(
     resource_account = resource_arn_parsed["account"]
     if not resource_account:
         resource_account = await get_resource_account(
-            change.principal.principal_arn, host
+            change.principal.principal_arn, tenant
         )
 
     if not resource_account:
@@ -1892,13 +1894,13 @@ async def apply_managed_policy_resource_tag_change(
     iam_client = await aio_wrapper(
         boto3_cached_conn,
         "iam",
-        host,
+        tenant,
         user,
         service_type="client",
         account_number=resource_account,
         region=config.region,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": resource_account})
         .first.name,
         session_name=sanitize_session_name("tag-updater-" + user),
@@ -1907,7 +1909,7 @@ async def apply_managed_policy_resource_tag_change(
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         custom_aws_credentials=custom_aws_credentials,
     )
     principal_arn = change.principal.principal_arn
@@ -1996,7 +1998,7 @@ async def apply_non_iam_resource_tag_change(
     change: ResourceTagChangeModel,
     response: PolicyRequestModificationResponseModel,
     user: str,
-    host: str,
+    tenant: str,
     custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
@@ -2025,11 +2027,11 @@ async def apply_non_iam_resource_tag_change(
     resource_account = resource_arn_parsed["account"]
     if not resource_account:
         resource_account = await get_resource_account(
-            change.principal.principal_arn, host
+            change.principal.principal_arn, tenant
         )
     if resource_type == "s3" and not resource_region:
         resource_region = await get_bucket_location_with_fallback(
-            resource_name, resource_account, host
+            resource_name, resource_account, tenant
         )
 
     if not resource_account:
@@ -2046,9 +2048,9 @@ async def apply_non_iam_resource_tag_change(
         )
         return response
 
-    supported_resource_types = config.get_host_specific_key(
+    supported_resource_types = config.get_tenant_specific_key(
         "policies.supported_resource_types_for_policy_application",
-        host,
+        tenant,
         ["s3", "sqs", "sns"],
     )
 
@@ -2068,13 +2070,13 @@ async def apply_non_iam_resource_tag_change(
         client = await aio_wrapper(
             boto3_cached_conn,
             resource_type,
-            host,
+            tenant,
             user,
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
@@ -2084,7 +2086,9 @@ async def apply_non_iam_resource_tag_change(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             retry_max_attempts=2,
             custom_aws_credentials=custom_aws_credentials,
         )
@@ -2094,7 +2098,7 @@ async def apply_non_iam_resource_tag_change(
             resource_type,
             resource_name,
             resource_region or config.region,
-            host,
+            tenant,
             user,
         )
 
@@ -2220,7 +2224,7 @@ async def apply_tear_role_change(
     change: ManagedPolicyResourceChangeModel,
     response: PolicyRequestModificationResponseModel,
     user: str,
-    host: str,
+    tenant: str,
 ) -> PolicyRequestModificationResponseModel:
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -2228,12 +2232,12 @@ async def apply_tear_role_change(
         "change": change.dict(),
         "message": "Granting TEAR support to user",
         "request": extended_request.dict(),
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
 
     account_id = await get_resource_account(
-        extended_request.principal.principal_arn, host
+        extended_request.principal.principal_arn, tenant
     )
     parsed_arn = parse_arn(change.principal.principal_arn)
     principal_name = parsed_arn["resource_path"].split("/")[-1]
@@ -2242,13 +2246,13 @@ async def apply_tear_role_change(
         iam_client = await aio_wrapper(
             boto3_cached_conn,
             "iam",
-            host,
+            tenant,
             user,
             service_type="client",
             account_number=account_id,
             region=config.region,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
             session_name=sanitize_session_name("principal-updater-" + user),
@@ -2257,9 +2261,11 @@ async def apply_tear_role_change(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
         )
-        tear_users_tag = get_active_tear_users_tag(host)
+        tear_users_tag = get_active_tear_users_tag(tenant)
         role_tags = await aio_wrapper(
             iam_client.list_role_tags, RoleName=principal_name
         )
@@ -2294,7 +2300,7 @@ async def apply_managed_policy_resource_change(
     change: ManagedPolicyResourceChangeModel,
     response: PolicyRequestModificationResponseModel,
     user: str,
-    host: str,
+    tenant: str,
     custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
@@ -2307,7 +2313,7 @@ async def apply_managed_policy_resource_change(
     :param extended_request: ExtendedRequestModel
     :param user: Str - requester's email address
     :param response: RequestCreationResponse
-    :param host: Tenant ID
+    :param tenant: Tenant ID
 
     """
 
@@ -2317,7 +2323,7 @@ async def apply_managed_policy_resource_change(
         "change": change.dict(),
         "message": "Applying managed policy resource change",
         "request": extended_request.dict(),
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
 
@@ -2353,18 +2359,20 @@ async def apply_managed_policy_resource_change(
     conn_details = {
         "account_number": resource_account,
         "assume_role": ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": resource_account})
         .first.name,
         "session_name": sanitize_session_name(f"ConsoleMe_MP_{user}"),
-        "client_kwargs": config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        "host": host,
+        "client_kwargs": config.get_tenant_specific_key(
+            "boto3.client_kwargs", tenant, {}
+        ),
+        "tenant": tenant,
         "custom_aws_credentials": custom_aws_credentials,
     }
 
     # Save current policy by populating "old" policies at the time of application for historical record
     populate_old_managed_policies_results = await populate_old_managed_policies(
-        extended_request, user, host
+        extended_request, user, tenant
     )
     if populate_old_managed_policies_results["changed"]:
         extended_request = populate_old_managed_policies_results["extended_request"]
@@ -2380,7 +2388,7 @@ async def apply_managed_policy_resource_change(
                 policy_name=policy_name,
                 policy_arn=extended_request.principal.principal_arn,
                 description=description,
-                host=host,
+                tenant=tenant,
                 conn_details=conn_details,
                 policy_path=policy_path,
             )
@@ -2410,7 +2418,7 @@ async def apply_managed_policy_resource_change(
                 policy_name=policy_name,
                 policy_arn=extended_request.principal.principal_arn,
                 description="",
-                host=host,
+                tenant=tenant,
                 conn_details=conn_details,
                 existing_policy=True,
             )
@@ -2441,7 +2449,7 @@ async def apply_resource_policy_change(
     change: ResourcePolicyChangeModel,
     response: PolicyRequestModificationResponseModel,
     user: str,
-    host: str,
+    tenant: str,
     force_refresh: bool = False,
     custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
@@ -2464,7 +2472,7 @@ async def apply_resource_policy_change(
         "change": change.dict(),
         "message": "Applying resource policy change changes",
         "request": extended_request.dict(),
-        "host": host,
+        "tenant": tenant,
     }
     log.info(log_data)
 
@@ -2474,10 +2482,10 @@ async def apply_resource_policy_change(
     resource_region = resource_arn_parsed["region"]
     resource_account = resource_arn_parsed["account"]
     if not resource_account:
-        resource_account = await get_resource_account(change.arn, host)
+        resource_account = await get_resource_account(change.arn, tenant)
     if resource_type == "s3" and not resource_region:
         resource_region = await get_bucket_location_with_fallback(
-            resource_name, resource_account, host
+            resource_name, resource_account, tenant
         )
 
     if not resource_account:
@@ -2494,13 +2502,13 @@ async def apply_resource_policy_change(
         )
         return response
 
-    supported_resource_types = config.get_host_specific_key(
+    supported_resource_types = config.get_tenant_specific_key(
         "policies.supported_resource_types_for_policy_application",
-        host,
+        tenant,
         ["s3", "sqs", "sns"],
     )
-    sts_resource_policy_supported = config.get_host_specific_key(
-        "policies.sts_resource_policy_supported", host, True
+    sts_resource_policy_supported = config.get_tenant_specific_key(
+        "policies.sts_resource_policy_supported", tenant, True
     )
 
     if (
@@ -2529,13 +2537,13 @@ async def apply_resource_policy_change(
         client = await aio_wrapper(
             boto3_cached_conn,
             resource_type,
-            host,
+            tenant,
             user,
             service_type="client",
             future_expiration_minutes=15,
             account_number=resource_account,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
@@ -2545,7 +2553,9 @@ async def apply_resource_policy_change(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             retry_max_attempts=2,
             custom_aws_credentials=custom_aws_credentials,
         )
@@ -2588,7 +2598,7 @@ async def apply_resource_policy_change(
                     change.policy.policy_document, escape_forward_slashes=False
                 ),
             )
-            await update_resource_in_dynamo(host, change.arn, force_refresh)
+            await update_resource_in_dynamo(tenant, change.arn, force_refresh)
         response.action_results.append(
             ActionResult(
                 status="success",
@@ -2637,7 +2647,7 @@ async def _add_error_to_response(
 
 async def _update_dynamo_with_change(
     user: str,
-    host: str,
+    tenant: str,
     extended_request: ExtendedRequestModel,
     log_data: Dict,
     response: PolicyRequestModificationResponseModel,
@@ -2646,7 +2656,7 @@ async def _update_dynamo_with_change(
     visible: bool = True,
 ):
     try:
-        await IAMRequest.write_v2(extended_request, host)
+        await IAMRequest.write_v2(extended_request, tenant)
         response.action_results.append(
             ActionResult(status="success", message=success_message, visible=visible)
         )
@@ -2675,7 +2685,7 @@ async def maybe_approve_reject_request(
     user: str,
     log_data: Dict,
     response: PolicyRequestModificationResponseModel,
-    host: str,
+    tenant: str,
     force_refresh: bool = False,
 ) -> PolicyRequestModificationResponseModel:
     any_changes_applied = False
@@ -2713,7 +2723,7 @@ async def maybe_approve_reject_request(
         extended_request.reviewer = user
         response = await _update_dynamo_with_change(
             user,
-            host,
+            tenant,
             extended_request,
             log_data,
             response,
@@ -2721,9 +2731,9 @@ async def maybe_approve_reject_request(
             "Error updating request in dynamo",
             visible=False,
         )
-        await send_communications_policy_change_request_v2(extended_request, host)
+        await send_communications_policy_change_request_v2(extended_request, tenant)
         await update_resource_in_dynamo(
-            host, extended_request.principal.principal_arn, force_refresh
+            tenant, extended_request.principal.principal_arn, force_refresh
         )
     return response
 
@@ -2734,7 +2744,7 @@ async def parse_and_apply_policy_request_modification(
     user: str,
     user_groups,
     last_updated,
-    host: str,
+    tenant: str,
     approval_probe_approved=False,
     force_refresh=False,
     cloud_credentials: CloudCredentials = None,
@@ -2760,7 +2770,7 @@ async def parse_and_apply_policy_request_modification(
         "request": extended_request.dict(),
         "request_changes": policy_request_model.dict(),
         "message": "Parsing request modification changes",
-        "host": host,
+        "tenant": tenant,
     }
 
     log.debug(log_data)
@@ -2792,12 +2802,14 @@ async def parse_and_apply_policy_request_modification(
             ]:
                 specific_change_arn = specific_change.arn
 
-            account_ids = [await get_resource_account(specific_change_arn, host)]
+            account_ids = [await get_resource_account(specific_change_arn, tenant)]
         else:
-            account_ids = await get_extended_request_account_ids(extended_request, host)
+            account_ids = await get_extended_request_account_ids(
+                extended_request, tenant
+            )
 
         can_update_cancel = await can_update_cancel_requests_v2(
-            extended_request, user, user_groups, host, account_ids
+            extended_request, user, user_groups, tenant, account_ids
         )
         if not can_update_cancel:
             raise Unauthorized(
@@ -2810,7 +2822,9 @@ async def parse_and_apply_policy_request_modification(
         Command.reject_request,
     ]:
         if request_changes.command in [Command.approve_request, Command.reject_request]:
-            account_ids = await get_extended_request_account_ids(extended_request, host)
+            account_ids = await get_extended_request_account_ids(
+                extended_request, tenant
+            )
 
         if request_changes.command == Command.apply_change:
             apply_change_model = ApplyChangeModificationModel.parse_obj(request_changes)
@@ -2830,10 +2844,10 @@ async def parse_and_apply_policy_request_modification(
             ]:
                 specific_change_arn = specific_change.arn
 
-            account_ids = [await get_resource_account(specific_change_arn, host)]
+            account_ids = [await get_resource_account(specific_change_arn, tenant)]
 
         can_manage_policy_request = await can_admin_policies(
-            user, user_groups, host, account_ids
+            user, user_groups, tenant, account_ids
         )
         # Authorization required if the policy wasn't approved by an auto-approval probe.
         should_apply_because_auto_approved = (
@@ -2845,7 +2859,7 @@ async def parse_and_apply_policy_request_modification(
 
     if request_changes.command == Command.move_back_to_pending:
         can_move_back_to_pending = await can_move_back_to_pending_v2(
-            extended_request, last_updated, user, user_groups, host
+            extended_request, last_updated, user, user_groups, tenant
         )
         if not can_move_back_to_pending:
             raise Unauthorized("Cannot move this request back to pending")
@@ -2868,7 +2882,7 @@ async def parse_and_apply_policy_request_modification(
 
     if request_changes.command == Command.add_comment:
         auth = get_plugin_by_name(
-            config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
+            config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
         )()
         # TODO: max comment size? prevent spamming?
         comment_model = CommentRequestModificationModel.parse_obj(request_changes)
@@ -2878,7 +2892,7 @@ async def parse_and_apply_policy_request_modification(
             user_email=user,
             user=UserModel(
                 email=user,
-                extended_info=await auth.get_user_info(user, host),
+                extended_info=await auth.get_user_info(user, tenant),
                 details_url="",
                 photo_url="",
             ),
@@ -2890,7 +2904,7 @@ async def parse_and_apply_policy_request_modification(
         error_message = "Error occurred adding comment"
         response = await _update_dynamo_with_change(
             user,
-            host,
+            tenant,
             extended_request,
             log_data,
             response,
@@ -2899,13 +2913,13 @@ async def parse_and_apply_policy_request_modification(
         )
         if user == extended_request.requester_email:
             # User who created the request adding a comment, notification should go to reviewers
-            await send_communications_new_comment(extended_request, user, host)
+            await send_communications_new_comment(extended_request, user, tenant)
         else:
             # A reviewer or someone else making the comment, notification should go to original requester
             await send_communications_new_comment(
                 extended_request,
                 user,
-                host,
+                tenant,
                 to_addresses=[extended_request.requester_email],
             )
 
@@ -2919,7 +2933,7 @@ async def parse_and_apply_policy_request_modification(
         for change in extended_request.changes.changes:
             if change.change_type in ["inline_policy"]:
                 change.policy_name = await generate_policy_name(
-                    None, user, host, expiration_date
+                    None, user, tenant, expiration_date
                 )
 
             if change.change_type in ["resource_policy", "sts_resource_policy"]:
@@ -2936,7 +2950,7 @@ async def parse_and_apply_policy_request_modification(
         error_message = "Error occurred updating expiration date"
         response = await _update_dynamo_with_change(
             user,
-            host,
+            tenant,
             extended_request,
             log_data,
             response,
@@ -2977,7 +2991,7 @@ async def parse_and_apply_policy_request_modification(
             specific_change.updated_by = user
             response = await _update_dynamo_with_change(
                 user,
-                host,
+                tenant,
                 extended_request,
                 log_data,
                 response,
@@ -3013,10 +3027,10 @@ async def parse_and_apply_policy_request_modification(
                 )
             managed_policy_arn_regex = re.compile(r"^arn:aws:iam::\d{12}:policy/.+")
 
-            resource_summary = await ResourceSummary.set(host, specific_change_arn)
+            resource_summary = await ResourceSummary.set(tenant, specific_change_arn)
             account_info: SpokeAccount = (
                 ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
+                .load_config("spoke_accounts", tenant)
                 .with_query({"account_id": resource_summary.account})
                 .first
             )
@@ -3041,7 +3055,7 @@ async def parse_and_apply_policy_request_modification(
                     specific_change,
                     response,
                     user,
-                    host,
+                    tenant,
                     custom_aws_credentials=custom_aws_credentials,
                 )
             elif (
@@ -3055,7 +3069,7 @@ async def parse_and_apply_policy_request_modification(
                     specific_change,
                     response,
                     user,
-                    host,
+                    tenant,
                     custom_aws_credentials=custom_aws_credentials,
                 )
             elif (
@@ -3069,7 +3083,7 @@ async def parse_and_apply_policy_request_modification(
                     specific_change,
                     response,
                     user,
-                    host,
+                    tenant,
                     custom_aws_credentials=custom_aws_credentials,
                 )
             elif specific_change.change_type == "managed_policy_resource":
@@ -3078,28 +3092,28 @@ async def parse_and_apply_policy_request_modification(
                     specific_change,
                     response,
                     user,
-                    host,
+                    tenant,
                     custom_aws_credentials=custom_aws_credentials,
                 )
             elif specific_change.change_type == "tear_can_assume_role":
                 response = await apply_tear_role_change(
-                    extended_request, specific_change, response, user, host
+                    extended_request, specific_change, response, user, tenant
                 )
             else:
                 # Save current policy by populating "old" policies at the time of application for historical record
                 extended_request = await populate_old_policies(
-                    extended_request, user, host
+                    extended_request, user, tenant
                 )
                 await apply_changes_to_role(
                     extended_request,
                     response,
                     user,
-                    host,
+                    tenant,
                     specific_change.id,
                     custom_aws_credentials=custom_aws_credentials,
                 )
                 await update_resource_in_dynamo(
-                    host, extended_request.principal.principal_arn, force_refresh
+                    tenant, extended_request.principal.principal_arn, force_refresh
                 )
             if specific_change.status == Status.applied:
                 # Change was successful, update in dynamo
@@ -3108,7 +3122,7 @@ async def parse_and_apply_policy_request_modification(
                 specific_change.updated_by = user
                 response = await _update_dynamo_with_change(
                     user,
-                    host,
+                    tenant,
                     extended_request,
                     log_data,
                     response,
@@ -3117,7 +3131,7 @@ async def parse_and_apply_policy_request_modification(
                     visible=False,
                 )
                 if specific_change_arn:
-                    await update_resource_in_dynamo(host, specific_change_arn, True)
+                    await update_resource_in_dynamo(tenant, specific_change_arn, True)
         else:
             raise NoMatchingRequest(
                 "Unable to find a compatible non-applied change with "
@@ -3138,7 +3152,7 @@ async def parse_and_apply_policy_request_modification(
             error_message = "Error updating change in dynamo"
             response = await _update_dynamo_with_change(
                 user,
-                host,
+                tenant,
                 extended_request,
                 log_data,
                 response,
@@ -3171,7 +3185,7 @@ async def parse_and_apply_policy_request_modification(
                     )
                 )
                 response = await maybe_approve_reject_request(
-                    extended_request, user, log_data, response, host
+                    extended_request, user, log_data, response, tenant
                 )
                 return response
 
@@ -3181,14 +3195,14 @@ async def parse_and_apply_policy_request_modification(
         extended_request.reviewer = user
         response = await _update_dynamo_with_change(
             user,
-            host,
+            tenant,
             extended_request,
             log_data,
             response,
             success_message,
             error_message,
         )
-        await send_communications_policy_change_request_v2(extended_request, host)
+        await send_communications_policy_change_request_v2(extended_request, tenant)
 
     elif request_changes.command == Command.reject_request:
         if extended_request.request_status != RequestStatus.pending:
@@ -3209,7 +3223,7 @@ async def parse_and_apply_policy_request_modification(
                     )
                 )
                 response = await maybe_approve_reject_request(
-                    extended_request, user, log_data, response, host
+                    extended_request, user, log_data, response, tenant
                 )
                 return response
 
@@ -3219,14 +3233,14 @@ async def parse_and_apply_policy_request_modification(
         extended_request.reviewer = user
         response = await _update_dynamo_with_change(
             user,
-            host,
+            tenant,
             extended_request,
             log_data,
             response,
             success_message,
             error_message,
         )
-        await send_communications_policy_change_request_v2(extended_request, host)
+        await send_communications_policy_change_request_v2(extended_request, tenant)
 
     elif request_changes.command == Command.move_back_to_pending:
         extended_request.request_status = RequestStatus.pending
@@ -3234,7 +3248,7 @@ async def parse_and_apply_policy_request_modification(
         error_message = "Error moving request back to pending"
         response = await _update_dynamo_with_change(
             user,
-            host,
+            tenant,
             extended_request,
             log_data,
             response,
@@ -3252,7 +3266,7 @@ async def parse_and_apply_policy_request_modification(
             )
 
         # Save current policy by populating "old" policies at the time of application for historical record
-        extended_request = await populate_old_policies(extended_request, user, host)
+        extended_request = await populate_old_policies(extended_request, user, tenant)
         extended_request.request_status = RequestStatus.approved
         extended_request.reviewer = user
 
@@ -3261,7 +3275,7 @@ async def parse_and_apply_policy_request_modification(
 
         response = await _update_dynamo_with_change(
             user,
-            host,
+            tenant,
             extended_request,
             log_data,
             response,
@@ -3269,13 +3283,13 @@ async def parse_and_apply_policy_request_modification(
             error_message,
             visible=False,
         )
-        await send_communications_policy_change_request_v2(extended_request, host)
+        await send_communications_policy_change_request_v2(extended_request, tenant)
         await update_resource_in_dynamo(
-            host, extended_request.principal.principal_arn, force_refresh
+            tenant, extended_request.principal.principal_arn, force_refresh
         )
 
     response = await maybe_approve_reject_request(
-        extended_request, user, log_data, response, host
+        extended_request, user, log_data, response, tenant
     )
 
     log_data["message"] = "Done parsing/applying request modification changes"
@@ -3286,7 +3300,7 @@ async def parse_and_apply_policy_request_modification(
     return response
 
 
-async def get_resources_from_policy_change(change: ChangeModel, host):
+async def get_resources_from_policy_change(change: ChangeModel, tenant):
     """Returns a dict of resources affected by a list of policy changes along with
     the actions and other data points that are relevant to them.
 
@@ -3303,9 +3317,9 @@ async def get_resources_from_policy_change(change: ChangeModel, host):
     """
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "host": host,
+        "tenant": tenant,
     }
-    accounts_d: dict = await get_account_id_to_name_mapping(host)
+    accounts_d: dict = await get_account_id_to_name_mapping(tenant)
     resource_actions: List = []
     if change.change_type not in ["inline_policy"]:
         return []
@@ -3338,7 +3352,7 @@ async def get_resources_from_policy_change(change: ChangeModel, host):
             resource_action = {
                 "arn": resource,
                 "name": resource_name,
-                "account_id": await get_resource_account(resource, host),
+                "account_id": await get_resource_account(resource, tenant),
                 "region": get_region_from_arn(resource),
                 "resource_type": get_service_from_arn(resource),
             }

@@ -10,23 +10,23 @@ from common.lib.aws.utils import (
 
 
 async def calculate_effective_policy_for_identity(
-    host, arn, managed_policies, force_refresh=False
+    tenant, arn, managed_policies, force_refresh=False
 ):
     """
-    Calculate the effective policy for a given host and arn
+    Calculate the effective policy for a given tenant and arn
     """
     account_id = await get_account_id_from_arn(arn)
     identity_type = await get_identity_type_from_arn(arn)
     if identity_type == "role":
         identity = (
             await IAMRole.get(
-                host, account_id, arn, force_refresh=force_refresh, run_sync=True
+                tenant, account_id, arn, force_refresh=force_refresh, run_sync=True
             )
         ).dict()
         identity_policy_list_name = "RolePolicyList"
         identity_name_parameter = "RoleName"
     elif identity_type == "user":
-        identity = await fetch_iam_user(account_id, arn, host, run_sync=True)
+        identity = await fetch_iam_user(account_id, arn, tenant, run_sync=True)
         identity_policy_list_name = "UserPolicyList"
         identity_name_parameter = "UserName"
     else:
@@ -38,11 +38,11 @@ async def calculate_effective_policy_for_identity(
     managed_policy_details = get_role_managed_policy_documents(
         {identity_name_parameter: identity_name},
         account_number=account_id,
-        assume_role=config.get_host_specific_key("policies.role_name", host),
+        assume_role=config.get_tenant_specific_key("policies.role_name", tenant),
         region=config.region,
         retry_max_attempts=2,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
-        host=host,
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
+        tenant=tenant,
     )
     combined_policy_statements = []
     for policy in identity["policy"].get(identity_policy_list_name, []):

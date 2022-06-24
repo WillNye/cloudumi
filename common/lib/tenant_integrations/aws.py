@@ -26,7 +26,7 @@ async def return_cf_response(
     stack_id: str,
     request_id: str,
     logical_resource_id: str,
-    host: Optional[str] = None,
+    tenant: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Emit an S3 error event to CloudFormation.
@@ -36,7 +36,7 @@ async def return_cf_response(
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "status": status,
         "status_message": status_message,
-        "host": host,
+        "tenant": tenant,
         "physical_resource_id": physical_resource_id,
         "message": "Responding to CloudFormation",
     }
@@ -86,13 +86,13 @@ async def handle_spoke_account_registration(body):
 
     spoke_role_name = body["ResourceProperties"].get("SpokeRoleName")
     account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
-    host = body["ResourceProperties"].get("Host")
+    tenant = body["ResourceProperties"].get("Host")
     external_id = body["ResourceProperties"].get("ExternalId")
     read_only = bool(body["ResourceProperties"].get("ReadOnlyMode") == "true")
 
-    if not spoke_role_name or not account_id_for_role or not external_id or not host:
+    if not spoke_role_name or not account_id_for_role or not external_id or not tenant:
         error_message = (
-            "Message is missing spoke_role_name, account_id_for_role, or host"
+            "Message is missing spoke_role_name, account_id_for_role, or tenant"
         )
         sentry_sdk.capture_message(
             error_message,
@@ -105,7 +105,7 @@ async def handle_spoke_account_registration(body):
                 "cf_message": body,
                 "spoke_role_name": spoke_role_name,
                 "account_id_for_role": account_id_for_role,
-                "host": host,
+                "tenant": tenant,
                 "external_id": external_id,
             }
         )
@@ -115,13 +115,13 @@ async def handle_spoke_account_registration(body):
         }
 
     # Verify External ID
-    external_id_in_config = config.get_host_specific_key(
-        "tenant_details.external_id", host
+    external_id_in_config = config.get_tenant_specific_key(
+        "tenant_details.external_id", tenant
     )
 
     if external_id != external_id_in_config:
         error_message = (
-            "External ID from CF doesn't match host's external ID configuration"
+            "External ID from CF doesn't match tenant's external ID configuration"
         )
         sentry_sdk.capture_message(
             error_message,
@@ -134,7 +134,7 @@ async def handle_spoke_account_registration(body):
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
-                "host": host,
+                "tenant": tenant,
             }
         )
         return {
@@ -144,9 +144,11 @@ async def handle_spoke_account_registration(body):
 
     spoke_role_arn = f"arn:aws:iam::{account_id_for_role}:role/{spoke_role_name}"
 
-    external_id = config.get_host_specific_key("tenant_details.external_id", host)
+    external_id = config.get_tenant_specific_key("tenant_details.external_id", tenant)
     # Get central role arn
-    hub_account = models.ModelAdapter(HubAccount).load_config("hub_account", host).model
+    hub_account = (
+        models.ModelAdapter(HubAccount).load_config("hub_account", tenant).model
+    )
     if not hub_account:
         error_message = "No Central Role ARN detected in configuration."
         sentry_sdk.capture_message(
@@ -160,7 +162,7 @@ async def handle_spoke_account_registration(body):
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
-                "host": host,
+                "tenant": tenant,
             }
         )
         return {
@@ -170,7 +172,7 @@ async def handle_spoke_account_registration(body):
 
     # Assume role from noq_dev_central_role
     try:
-        sts_client = await aio_wrapper(boto3_cached_conn, "sts", host, None)
+        sts_client = await aio_wrapper(boto3_cached_conn, "sts", tenant, None)
         for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
             with attempt:
                 central_role_credentials = await aio_wrapper(
@@ -189,7 +191,7 @@ async def handle_spoke_account_registration(body):
                 "message": error_message,
                 "cf_message": body,
                 "external_id": external_id,
-                "host": host,
+                "tenant": tenant,
                 "error": str(e),
             }
         )
@@ -225,7 +227,7 @@ async def handle_spoke_account_registration(body):
                 "message": error_message,
                 "cf_message": body,
                 "external_id": external_id,
-                "host": host,
+                "tenant": tenant,
                 "error": str(e),
             }
         )
@@ -293,7 +295,7 @@ async def handle_spoke_account_registration(body):
         read_only=read_only,
     )
     await models.ModelAdapter(SpokeAccount).load_config(
-        "spoke_accounts", host
+        "spoke_accounts", tenant
     ).from_model(spoke_account).store_item_in_list()
     return {
         "success": True,
@@ -303,7 +305,7 @@ async def handle_spoke_account_registration(body):
 
 async def handle_central_account_registration(body) -> Dict[str, Any]:
     # TODO: Fix "policies.role_name" configuration and validation
-    # host_config["policies"]["role_name"] = spoke_role_name
+    # tenant_config["policies"]["role_name"] = spoke_role_name
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
@@ -314,7 +316,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
     account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
     role_arn = body["ResourceProperties"].get("CentralRoleArn")
     external_id = body["ResourceProperties"].get("ExternalId")
-    host = body["ResourceProperties"].get("Host")
+    tenant = body["ResourceProperties"].get("Host")
     read_only = bool(body["ResourceProperties"].get("ReadOnlyMode") == "true")
 
     if (
@@ -322,9 +324,9 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         or not account_id_for_role
         or not role_arn
         or not external_id
-        or not host
+        or not tenant
     ):
-        error_message = "Missing spoke_role_name, account_id_for_role, role_arn, external_id, or host in message body"
+        error_message = "Missing spoke_role_name, account_id_for_role, role_arn, external_id, or tenant in message body"
         sentry_sdk.capture_message(
             error_message,
             "error",
@@ -338,7 +340,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
                 "account_id_for_role": account_id_for_role,
                 "role_arn": role_arn,
                 "external_id": external_id,
-                "host": host,
+                "tenant": tenant,
             }
         )
         return {
@@ -347,13 +349,13 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         }
 
     # Verify External ID
-    external_id_in_config = config.get_host_specific_key(
-        "tenant_details.external_id", host
+    external_id_in_config = config.get_tenant_specific_key(
+        "tenant_details.external_id", tenant
     )
 
     if external_id != external_id_in_config:
         error_message = (
-            "External ID from CF doesn't match host's external ID configuration"
+            "External ID from CF doesn't match tenant's external ID configuration"
         )
         sentry_sdk.capture_message(
             error_message,
@@ -366,7 +368,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
-                "host": host,
+                "tenant": tenant,
             }
         )
         return {
@@ -395,7 +397,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
-                "host": host,
+                "tenant": tenant,
                 "error": str(e),
             }
         )
@@ -435,7 +437,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
                 "cf_message": body,
                 "external_id_from_cf": external_id,
                 "external_id_in_config": external_id_in_config,
-                "host": host,
+                "tenant": tenant,
                 "error": str(e),
             }
         )
@@ -498,7 +500,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         external_id=external_id,
         read_only=read_only,
     )
-    await models.ModelAdapter(HubAccount).load_config("hub_account", host).from_model(
+    await models.ModelAdapter(HubAccount).load_config("hub_account", tenant).from_model(
         hub_account
     ).store_item()
 
@@ -512,7 +514,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         read_only=read_only,
     )
     await models.ModelAdapter(SpokeAccount).load_config(
-        "spoke_accounts", host
+        "spoke_accounts", tenant
     ).from_model(spoke_account).store_item_in_list()
     return {"success": True}
 
@@ -588,7 +590,7 @@ async def handle_tenant_integration_queue(
                 request_type = body.get("RequestType")
                 response_url = body.get("ResponseURL")
                 resource_properties = body.get("ResourceProperties", {})
-                host = resource_properties.get("Host")
+                tenant = resource_properties.get("Host")
                 external_id = resource_properties.get("ExternalId")
                 physical_resource_id = external_id
                 stack_id = body.get("StackId")
@@ -599,7 +601,7 @@ async def handle_tenant_integration_queue(
                     body
                     or physical_resource_id
                     or response_url
-                    or host
+                    or tenant
                     or external_id
                     or resource_properties
                     or stack_id
@@ -617,7 +619,7 @@ async def handle_tenant_integration_queue(
                             "cf_message": body,
                             "physical_resource_id": physical_resource_id,
                             "response_url": response_url,
-                            "host": host,
+                            "tenant": tenant,
                             "external_id": external_id,
                             "resource_properties": resource_properties,
                             "stack_id": stack_id,
@@ -631,7 +633,7 @@ async def handle_tenant_integration_queue(
                         and stack_id
                         and request_id
                         and logical_resource_id
-                        and host
+                        and tenant
                     ):
                         await return_cf_response(
                             "SUCCESS",
@@ -641,7 +643,7 @@ async def handle_tenant_integration_queue(
                             stack_id,
                             request_id,
                             logical_resource_id,
-                            host,
+                            tenant,
                         )
                     continue
 
@@ -662,7 +664,7 @@ async def handle_tenant_integration_queue(
                         stack_id,
                         request_id,
                         logical_resource_id,
-                        host,
+                        tenant,
                     )
                     continue
 
@@ -676,7 +678,7 @@ async def handle_tenant_integration_queue(
                         stack_id,
                         request_id,
                         logical_resource_id,
-                        host,
+                        tenant,
                     )
                     # TODO: Handle deletion in Noq. It's okay if this is manual for now.
                     continue
@@ -696,7 +698,7 @@ async def handle_tenant_integration_queue(
                             "action_type": action_type,
                             "physical_resource_id": physical_resource_id,
                             "response_url": response_url,
-                            "host": host,
+                            "tenant": tenant,
                             "external_id": external_id,
                             "resource_properties": resource_properties,
                             "stack_id": stack_id,
@@ -712,7 +714,7 @@ async def handle_tenant_integration_queue(
                         stack_id,
                         request_id,
                         logical_resource_id,
-                        host,
+                        tenant,
                     )
                     continue
 
@@ -725,7 +727,7 @@ async def handle_tenant_integration_queue(
                         stack_id,
                         request_id,
                         logical_resource_id,
-                        host,
+                        tenant,
                     )
                 else:
                     await return_cf_response(
@@ -736,7 +738,7 @@ async def handle_tenant_integration_queue(
                         stack_id,
                         request_id,
                         logical_resource_id,
-                        host,
+                        tenant,
                     )
                     continue
                 # TODO: Refresh configuration
@@ -746,32 +748,32 @@ async def handle_tenant_integration_queue(
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
                     args=[account_id_for_role],
-                    kwargs={"host": host},
+                    kwargs={"tenant": tenant},
                 )
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
                     args=[account_id_for_role],
-                    kwargs={"host": host},
+                    kwargs={"tenant": tenant},
                 )
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
                     args=[account_id_for_role],
-                    kwargs={"host": host},
+                    kwargs={"tenant": tenant},
                 )
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
                     args=[account_id_for_role],
-                    kwargs={"host": host},
+                    kwargs={"tenant": tenant},
                 )
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
                     args=[account_id_for_role],
-                    kwargs={"host": host},
+                    kwargs={"tenant": tenant},
                 )
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
                     args=[account_id_for_role],
-                    kwargs={"host": host},
+                    kwargs={"tenant": tenant},
                 )
 
             except Exception:

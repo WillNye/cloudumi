@@ -145,7 +145,7 @@ celery:
 
 ddb = RestrictedDynamoHandler()
 
-async_to_sync(ddb.update_static_config_for_host)(
+async_to_sync(ddb.update_static_config_for_tenant)(
     tenant_config, override_email, "localhost"
 )
 
@@ -301,7 +301,7 @@ celery:
 
 ddb = RestrictedDynamoHandler()
 
-async_to_sync(ddb.update_static_config_for_host)(
+async_to_sync(ddb.update_static_config_for_tenant)(
     cloudumi_config, override_email, "cloudumidev_com"
 )
 

@@ -12,10 +12,10 @@ class Policies:
     Policies internal plugin
     """
 
-    async def get_errors_by_role(self, arn, host, n=5):
-        dynamo = UserDynamoHandler(host=host)
+    async def get_errors_by_role(self, arn, tenant, n=5):
+        dynamo = UserDynamoHandler(tenant=tenant)
         try:
-            return await dynamo.get_top_cloudtrail_errors_by_arn(arn, host, n=n)
+            return await dynamo.get_top_cloudtrail_errors_by_arn(arn, tenant, n=n)
         except Exception:
             sentry_sdk.capture_exception()
             return {}
@@ -23,7 +23,7 @@ class Policies:
     async def get_applications_associated_with_role(
         self,
         arn: str,
-        host: str,
+        tenant: str,
     ) -> AppDetailsArray:
         """
         This function returns applications associated with a role from configuration. You may want to override this
@@ -35,8 +35,8 @@ class Policies:
 
         apps_formatted = []
 
-        application_details = config.get_host_specific_key(
-            "application_details", host, {}
+        application_details = config.get_tenant_specific_key(
+            "application_details", tenant, {}
         )
 
         for app, details in application_details.items():

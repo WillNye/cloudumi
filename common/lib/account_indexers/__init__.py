@@ -17,7 +17,7 @@ log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
-async def cache_cloud_accounts(host) -> CloudAccountModelArray:
+async def cache_cloud_accounts(tenant) -> CloudAccountModelArray:
     """
     Gets Cloud Account Information from either ConsoleMe's configuration, AWS Organizations, or Swag,
     depending on configuration
@@ -25,36 +25,40 @@ async def cache_cloud_accounts(host) -> CloudAccountModelArray:
     """
     account_mapping = None
     # Get the accounts
-    if config.get_host_specific_key(
-        "cache_cloud_accounts.from_aws_organizations", host
+    if config.get_tenant_specific_key(
+        "cache_cloud_accounts.from_aws_organizations", tenant
     ):
-        account_mapping = await retrieve_accounts_from_aws_organizations(host)
-    elif config.get_host_specific_key("cache_cloud_accounts.from_config", host, True):
-        account_mapping = await retrieve_accounts_from_config(host)
+        account_mapping = await retrieve_accounts_from_aws_organizations(tenant)
+    elif config.get_tenant_specific_key(
+        "cache_cloud_accounts.from_config", tenant, True
+    ):
+        account_mapping = await retrieve_accounts_from_config(tenant)
 
     account_id_to_name = {}
 
     for account in account_mapping.accounts:
         account_id_to_name[account.id] = account.name
 
-    redis_key = config.get_host_specific_key(
+    redis_key = config.get_tenant_specific_key(
         "cache_cloud_accounts.redis.key.all_accounts_key",
-        host,
-        f"{host}_ALL_AWS_ACCOUNTS",
+        tenant,
+        f"{tenant}_ALL_AWS_ACCOUNTS",
     )
 
     s3_bucket = None
     s3_key = None
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
-    ) or config.get("_global_.environment", host) in [
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
+    ) or config.get("_global_.environment", tenant) in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key("cache_cloud_accounts.s3.bucket", host)
-        s3_key = config.get_host_specific_key(
+        s3_bucket = config.get_tenant_specific_key(
+            "cache_cloud_accounts.s3.bucket", tenant
+        )
+        s3_key = config.get_tenant_specific_key(
             "cache_cloud_accounts.s3.file",
-            host,
+            tenant,
             "cache_cloud_accounts/accounts_v1.json.gz",
         )
     # Store full mapping of the model
@@ -66,32 +70,32 @@ async def cache_cloud_accounts(host) -> CloudAccountModelArray:
         redis_key=redis_key,
         s3_bucket=s3_bucket,
         s3_key=s3_key,
-        host=host,
+        tenant=tenant,
     )
 
     return account_mapping
 
 
 async def get_cloud_account_model_array(
-    host, status="active", environment=None, force_sync=False
+    tenant, status="active", environment=None, force_sync=False
 ):
-    redis_key = config.get_host_specific_key(
+    redis_key = config.get_tenant_specific_key(
         "cache_cloud_accounts.redis.key.all_accounts_key",
-        host,
-        f"{host}_ALL_AWS_ACCOUNTS",
+        tenant,
+        f"{tenant}_ALL_AWS_ACCOUNTS",
     )
     accounts = await retrieve_json_data_from_redis_or_s3(
         redis_key,
         default={},
-        host=host,
+        tenant=tenant,
     )
     if force_sync or not accounts or not accounts.get("accounts"):
         # Force a re-sync and then retry
-        await cache_cloud_accounts(host)
+        await cache_cloud_accounts(tenant)
         accounts = await retrieve_json_data_from_redis_or_s3(
             redis_key,
             default={},
-            host=host,
+            tenant=tenant,
         )
     all_accounts = CloudAccountModelArray.parse_obj(accounts)
     filtered_accounts = CloudAccountModelArray(accounts=[])
@@ -108,7 +112,7 @@ async def get_cloud_account_model_array(
 
 
 async def get_account_id_to_name_mapping(
-    host, status="active", environment=None, force_sync=False
+    tenant, status="active", environment=None, force_sync=False
 ):
-    accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).models
+    accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).models
     return {account.account_id: account.account_name for account in accounts}

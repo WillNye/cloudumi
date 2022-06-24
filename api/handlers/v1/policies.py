@@ -27,16 +27,16 @@ class AutocompleteHandler(BaseAPIV1Handler):
                 200:
                     description: Returns a list of the matching permissions.
         """
-        host = self.get_host_name()
+        tenant = self.get_tenant_name()
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
-            if self.user not in config.get_host_specific_key(
+            if self.user not in config.get_tenant_specific_key(
                 "groups.can_bypass_contractor_restrictions",
-                host,
+                tenant,
                 [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
@@ -82,7 +82,7 @@ async def filter_resources(filter, resources, max=20):
 
 
 async def handle_resource_type_ahead_request(cls):
-    host = cls.get_host_name()
+    tenant = cls.get_tenant_name()
     try:
         search_string: str = cls.request.arguments.get("search")[0].decode("utf-8")
     except TypeError:
@@ -118,47 +118,47 @@ async def handle_resource_type_ahead_request(cls):
         if account_id:
             filter_condition = IAMRole.accountId == account_id
         iam_roles = await IAMRole.query(
-            host,
+            tenant,
             filter_condition=filter_condition,
-            attributes_to_get=["host", "accountId", "name", "arn", "resourceId"],
+            attributes_to_get=["tenant", "accountId", "name", "arn", "resourceId"],
         )
         data = {iam_role.arn: iam_role.dict() for iam_role in iam_roles}
     else:
         if resource_type == "s3":
-            topic = config.get_host_specific_key(
-                "redis.s3_bucket_key", host, f"{host}_S3_BUCKETS"
+            topic = config.get_tenant_specific_key(
+                "redis.s3_bucket_key", tenant, f"{tenant}_S3_BUCKETS"
             )
-            s3_bucket = config.get_host_specific_key(
-                "account_resource_cache.s3_combined.bucket", host
+            s3_bucket = config.get_tenant_specific_key(
+                "account_resource_cache.s3_combined.bucket", tenant
             )
-            s3_key = config.get_host_specific_key(
+            s3_key = config.get_tenant_specific_key(
                 "account_resource_cache.s3_combined.file",
-                host,
+                tenant,
                 "account_resource_cache/cache_s3_combined_v1.json.gz",
             )
         elif resource_type == "sqs":
-            topic = config.get_host_specific_key(
-                "redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
+            topic = config.get_tenant_specific_key(
+                "redis.sqs_queues_key", tenant, f"{tenant}_SQS_QUEUES"
             )
-            s3_bucket = config.get_host_specific_key(
-                "account_resource_cache.sqs_combined.bucket", host
+            s3_bucket = config.get_tenant_specific_key(
+                "account_resource_cache.sqs_combined.bucket", tenant
             )
-            s3_key = config.get_host_specific_key(
+            s3_key = config.get_tenant_specific_key(
                 "account_resource_cache.sqs_combined.file",
-                host,
+                tenant,
                 "account_resource_cache/cache_sqs_queues_combined_v1.json.gz",
             )
         elif resource_type == "sns":
-            topic = config.get_host_specific_key(
-                "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
+            topic = config.get_tenant_specific_key(
+                "redis.sns_topics_key", tenant, f"{tenant}_SNS_TOPICS"
             )
-            s3_bucket = config.get_host_specific_key(
+            s3_bucket = config.get_tenant_specific_key(
                 "account_resource_cache.sns_topics_combined.bucket",
-                host,
+                tenant,
             )
-            s3_key = config.get_host_specific_key(
+            s3_key = config.get_tenant_specific_key(
                 "account_resource_cache.sns_topics_topics_combined.file",
-                host,
+                tenant,
                 "account_resource_cache/cache_sns_topics_combined_v1.json.gz",
             )
         elif resource_type == "account":
@@ -167,10 +167,10 @@ async def handle_resource_type_ahead_request(cls):
             s3_key = None
             topic_is_hash = False
         elif resource_type == "app":
-            topic = config.get_host_specific_key(
+            topic = config.get_tenant_specific_key(
                 "celery.apps_to_roles.redis_key",
-                host,
-                f"{host}_APPS_TO_ROLES",
+                tenant,
+                f"{tenant}_APPS_TO_ROLES",
             )
             s3_bucket = None
             s3_key = None
@@ -188,10 +188,10 @@ async def handle_resource_type_ahead_request(cls):
                 redis_data_type="hash",
                 s3_bucket=s3_bucket,
                 s3_key=s3_key,
-                host=host,
+                tenant=tenant,
             )
         elif topic:
-            data = await redis_get(topic, host)
+            data = await redis_get(topic, tenant)
 
     results: List[Dict] = []
 
@@ -199,7 +199,7 @@ async def handle_resource_type_ahead_request(cls):
 
     if resource_type == "account":
         account_and_id_list = []
-        account_ids_to_names = await get_account_id_to_name_mapping(host)
+        account_ids_to_names = await get_account_id_to_name_mapping(tenant)
         for account_id, account_name in account_ids_to_names.items():
             account_and_id_list.append(f"{account_name} ({account_id})")
         for account in account_and_id_list:
@@ -211,13 +211,13 @@ async def handle_resource_type_ahead_request(cls):
         if account_id:
             filter_condition = IAMRole.accountId == account_id
         iam_role_arns = await IAMRole.query(
-            host, filter_condition=filter_condition, attributes_to_get=["arn"]
+            tenant, filter_condition=filter_condition, attributes_to_get=["arn"]
         )
         all_role_arns = [role.arn for role in iam_role_arns]
         # Noq (Account: Test, Arn: arn)
         # TODO: Make this OSS compatible and configurable
         try:
-            accounts = await get_account_id_to_name_mapping(host)
+            accounts = await get_account_id_to_name_mapping(tenant)
         except Exception as e:  # noqa
             accounts = {}
 
@@ -294,9 +294,9 @@ async def handle_resource_type_ahead_request(cls):
 
 class ApiResourceTypeAheadHandler(BaseMtlsHandler):
     async def get(self):
-        host = self.get_host_name()
-        if self.requester["name"] not in config.get_host_specific_key(
-            "api_auth.valid_entities", host, []
+        tenant = self.get_tenant_name()
+        if self.requester["name"] not in config.get_tenant_specific_key(
+            "api_auth.valid_entities", tenant, []
         ):
             raise Exception("Call does not originate from a valid API caller")
         results = await handle_resource_type_ahead_request(self)
@@ -305,16 +305,16 @@ class ApiResourceTypeAheadHandler(BaseMtlsHandler):
 
 class ResourceTypeAheadHandler(BaseHandler):
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
-            if self.user not in config.get_host_specific_key(
+            if self.user not in config.get_tenant_specific_key(
                 "groups.can_bypass_contractor_restrictions",
-                host,
+                tenant,
                 [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")

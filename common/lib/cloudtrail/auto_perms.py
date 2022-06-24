@@ -22,7 +22,7 @@ from common.models import (
 log = config.get_logger()
 
 
-def process_event(event: Dict[str, Any], account_id: str, host: str):
+def process_event(event: Dict[str, Any], account_id: str, tenant: str):
     access_undenied_config = access_undenied.common.Config()
     access_undenied_config.session = boto3.Session()
     access_undenied_config.account_id = access_undenied_config.session.client(
@@ -30,15 +30,15 @@ def process_event(event: Dict[str, Any], account_id: str, host: str):
     ).get_caller_identity()["Account"]
     spoke_account_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name
     )
-    access_undenied_config.host = host
+    access_undenied_config.tenant = tenant
     access_undenied_config.region = config.region
     access_undenied_config.iam_client = boto3_cached_conn(
         "iam",
-        access_undenied_config.host,
+        access_undenied_config.tenant,
         None,
         account_number=account_id,
         assume_role=spoke_account_name,
@@ -98,15 +98,15 @@ def get_resource_from_cloudtrail_deny(
 
 async def detect_cloudtrail_denies_and_update_cache(
     celery_app: object,
-    host: str,
+    tenant: str,
 ) -> Dict[str, Any]:
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "host": host,
+        "tenant": tenant,
     }
     configuration = (
         ModelAdapter(CloudtrailDetectionConfiguration)
-        .load_config("cloudtrail", host)
+        .load_config("cloudtrail", tenant)
         .model
     )
     if not configuration:
@@ -117,10 +117,10 @@ async def detect_cloudtrail_denies_and_update_cache(
         log_data["message"] = "Cloudtrail detection is disabled for this account."
     event_ttl = configuration.event_ttl
     max_num_messages_to_process = configuration.max_messages_to_process
-    dynamo = UserDynamoHandler(host=host)
+    dynamo = UserDynamoHandler(tenant=tenant)
     queue_arn = (
         ModelAdapter(CloudtrailDetectionConfiguration)
-        .load_config("cloudtrail", host)
+        .load_config("cloudtrail", tenant)
         .model.queue_arn
     )
 
@@ -131,20 +131,20 @@ async def detect_cloudtrail_denies_and_update_cache(
     # Optionally assume a role before receiving messages from the queue
     queue_assume_role = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": queue_account_number})
         .first.name
     )
     sqs_client = boto3_cached_conn(
         "sqs",
-        host,
+        tenant,
         None,
         service_type="client",
         region=queue_region,
         retry_max_attempts=2,
         account_number=queue_account_number,
         assume_role=queue_assume_role,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     )
 
     queue_url_res = sqs_client.get_queue_url(QueueName=queue_name)
@@ -185,9 +185,9 @@ async def detect_cloudtrail_denies_and_update_cache(
                 continue
             event_name = decoded_message.get("eventName")
             event_source = decoded_message.get("eventSource")
-            for event_source_substitution in config.get_host_specific_key(
+            for event_source_substitution in config.get_tenant_specific_key(
                 "event_bridge.detect_cloudtrail_denies_and_update_cache.event_bridge_substitutions",
-                host,
+                tenant,
                 [".amazonaws.com"],
             ):
                 event_source = event_source.replace(event_source_substitution, "")
@@ -214,7 +214,7 @@ async def detect_cloudtrail_denies_and_update_cache(
             event_call = f"{event_source}:{event_name}"
 
             event = CloudtrailDetection(
-                host=host,
+                tenant=tenant,
                 error_code=decoded_message.get("errorCode"),
                 error_message=decoded_message.get("errorMessage"),
                 arn=principal_arn,
@@ -232,7 +232,7 @@ async def detect_cloudtrail_denies_and_update_cache(
                 f"{principal_arn}-{session_name}-{event_call}-{event.resource}"
             )
             generated_policy = process_event(
-                decoded_message, decoded_message.get("recipientAccountId"), host
+                decoded_message, decoded_message.get("recipientAccountId"), tenant
             )
 
             if generated_policy is None:
@@ -312,7 +312,7 @@ async def detect_cloudtrail_denies_and_update_cache(
 
         dynamo.batch_write_cloudtrail_events(
             all_cloudtrail_denies.values(),
-            host,
+            tenant,
         )
         messages_awaitable = sqs_client.receive_message(
             QueueUrl=queue_url, MaxNumberOfMessages=10
@@ -322,7 +322,7 @@ async def detect_cloudtrail_denies_and_update_cache(
         # We hit our limit. Let's spawn another task immediately to process remaining messages
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_cloudtrail_denies",
-            args=(host,),
+            args=(tenant,),
         )
     log_data["message"] = "Successfully cached Cloudtrail Access Denies"
     log_data["num_events"] = num_events

@@ -51,7 +51,7 @@ def escape_json(code):
 
 
 async def parse_policy_change_request(
-    user: str, arn: str, role: str, data_list: list, host: str
+    user: str, arn: str, role: str, data_list: list, tenant: str
 ) -> dict:
     result: dict = {"status": "success"}
 
@@ -63,7 +63,7 @@ async def parse_policy_change_request(
             "user": user,
             "arn": arn,
             "role": role,
-            "host": host,
+            "tenant": tenant,
         },
     )
 
@@ -224,19 +224,19 @@ async def parse_policy_change_request(
     return result
 
 
-async def can_move_back_to_pending(request, current_user, groups, host):
+async def can_move_back_to_pending(request, current_user, groups, tenant):
     if request.get("status") in ["cancelled", "rejected"]:
         # Don't allow returning requests to pending state if more than a day has passed since the last update
         if request.get("last_updated", 0) < int(time.time()) - 86400:
             return False
         # Allow admins to return requests back to pending state
-        if await can_admin_policies(current_user, groups, host):
+        if await can_admin_policies(current_user, groups, tenant):
             return True
     return False
 
 
 async def can_move_back_to_pending_v2(
-    extended_request: ExtendedRequestModel, last_updated, current_user, groups, host
+    extended_request: ExtendedRequestModel, last_updated, current_user, groups, tenant
 ):
     if extended_request.request_status in [
         RequestStatus.cancelled,
@@ -246,26 +246,26 @@ async def can_move_back_to_pending_v2(
         if last_updated < int(time.time()) - 86400:
             return False
         # Allow admins to return requests back to pending state
-        account_ids = await get_extended_request_account_ids(extended_request, host)
-        if await can_admin_policies(current_user, groups, host, account_ids):
+        account_ids = await get_extended_request_account_ids(extended_request, tenant)
+        if await can_admin_policies(current_user, groups, tenant, account_ids):
             return True
     return False
 
 
-async def can_update_requests(request, user, groups, host):
+async def can_update_requests(request, user, groups, tenant):
     # Users can update their own requests
     can_update = user in request["username"]
 
     # Allow admins to return requests back to pending state
     if not can_update:
-        if await can_admin_policies(user, groups, host):
+        if await can_admin_policies(user, groups, tenant):
             return True
 
     return can_update
 
 
 async def can_update_cancel_requests_v2(
-    extended_request: ExtendedRequestModel, user, groups, host, account_ids=None
+    extended_request: ExtendedRequestModel, user, groups, tenant, account_ids=None
 ):
     # Users can update their own requests
     can_update = user == extended_request.requester_email
@@ -273,14 +273,16 @@ async def can_update_cancel_requests_v2(
     # Allow admins to update / cancel requests
     if not can_update:
         if not account_ids:
-            account_ids = await get_extended_request_account_ids(extended_request, host)
-        if await can_admin_policies(user, groups, host, account_ids):
+            account_ids = await get_extended_request_account_ids(
+                extended_request, tenant
+            )
+        if await can_admin_policies(user, groups, tenant, account_ids):
             return True
 
     return can_update
 
 
-async def update_role_policy(events, host: str, user: str):
+async def update_role_policy(events, tenant: str, user: str):
     result = {"status": "success"}
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -289,7 +291,7 @@ async def update_role_policy(events, host: str, user: str):
 
     log_data = {"function": function, "message": "Updating role policy"}
 
-    response = await update_role(events, host, user)
+    response = await update_role(events, tenant, user)
     log_data["message"] = "Received Response"
     log_data["response"] = response
     log.debug(log_data)
@@ -305,10 +307,12 @@ async def update_role_policy(events, host: str, user: str):
     return result
 
 
-async def get_policy_request_uri_v2(extended_request: ExtendedRequestModel, host: str):
+async def get_policy_request_uri_v2(
+    extended_request: ExtendedRequestModel, tenant: str
+):
     if extended_request.request_url:
         return extended_request.request_url
-    return f"{config.get_host_specific_key('url', host)}/policies/request/{extended_request.id}"
+    return f"{config.get_tenant_specific_key('url', tenant)}/policies/request/{extended_request.id}"
 
 
 async def validate_policy_name(policy_name):
@@ -322,7 +326,7 @@ async def validate_policy_name(policy_name):
 
 
 async def get_resources_from_events(
-    policy_changes: List[Dict], host: str
+    policy_changes: List[Dict], tenant: str
 ) -> Dict[str, dict]:
     """Returns a dict of resources affected by a list of policy changes along with
     the actions and other data points that are relevant to them.
@@ -361,7 +365,7 @@ async def get_resources_from_events(
                         if not resource_actions[resource_name]["account"]:
                             resource_actions[resource_name][
                                 "account"
-                            ] = await get_resource_account(resource, host)
+                            ] = await get_resource_account(resource, tenant)
                         if not resource_actions[resource_name]["type"]:
                             resource_actions[resource_name][
                                 "type"
@@ -402,12 +406,12 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
 
 
 async def get_formatted_policy_changes(
-    account_id, arn, request, host, force_refresh=False
+    account_id, arn, request, tenant, force_refresh=False
 ):
     from common.aws.iam.role.models import IAMRole
 
     existing_role: IAMRole = await IAMRole.get(
-        account_id, arn, host, force_refresh=force_refresh
+        account_id, arn, tenant, force_refresh=force_refresh
     )
     policy_changes: list = json.loads(request.get("policy_changes"))
     formatted_policy_changes = []
@@ -512,23 +516,23 @@ async def get_formatted_policy_changes(
 
 
 async def should_auto_approve_policy_v2(
-    extended_request: ExtendedRequestModel, user, user_groups, host
+    extended_request: ExtendedRequestModel, user, user_groups, tenant
 ):
     """
     This uses your fancy internal logic to determine if a request should be auto-approved or not. The default plugin
     set included in ConsoleMe OSS will return False.
     """
     aws = get_plugin_by_name(
-        config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+        config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
     )()
     return await aws.should_auto_approve_policy_v2(
-        extended_request, user, user_groups, host
+        extended_request, user, user_groups, tenant
     )
 
 
 async def send_communications_policy_change_request_v2(
     extended_request: ExtendedRequestModel,
-    host: str,
+    tenant: str,
 ):
     """
         Send an email for a status change for a policy request
@@ -536,12 +540,12 @@ async def send_communications_policy_change_request_v2(
     :param extended_request: ExtendedRequestModel
     :return:
     """
-    request_uri = await get_policy_request_uri_v2(extended_request, host)
-    await send_policy_request_status_update_v2(extended_request, request_uri, host)
+    request_uri = await get_policy_request_uri_v2(extended_request, tenant)
+    await send_policy_request_status_update_v2(extended_request, request_uri, tenant)
 
 
 async def send_communications_new_comment(
-    extended_request: ExtendedRequestModel, user: str, host: str, to_addresses=None
+    extended_request: ExtendedRequestModel, user: str, tenant: str, to_addresses=None
 ):
     """
             Send an email for a new comment.
@@ -554,13 +558,13 @@ async def send_communications_new_comment(
     :return:
     """
     if not to_addresses:
-        to_addresses = config.get_host_specific_key(
-            "groups.fallback_policy_request_reviewers", host, []
+        to_addresses = config.get_tenant_specific_key(
+            "groups.fallback_policy_request_reviewers", tenant, []
         )
 
-    request_uri = await get_policy_request_uri_v2(extended_request, host)
+    request_uri = await get_policy_request_uri_v2(extended_request, tenant)
     await send_new_comment_notification(
-        extended_request, to_addresses, user, request_uri, host
+        extended_request, to_addresses, user, request_uri, tenant
     )
 
 
@@ -589,7 +593,7 @@ async def get_resource_sub_type_for_arn(arn: str) -> str:
 
 async def get_url_for_resource(
     arn,
-    host,
+    tenant,
     resource_type=None,
     account_id=None,
     region=None,
@@ -599,7 +603,7 @@ async def get_url_for_resource(
     if not resource_type:
         resource_type = await get_resource_type_for_arn(arn)
     if not account_id:
-        account_id = await get_resource_account(arn, host)
+        account_id = await get_resource_account(arn, tenant)
     if not region:
         region = await get_region_for_arn(arn)
     if not resource_name:
@@ -890,17 +894,17 @@ async def get_aws_config_history_url_for_resource(
     resource_id,
     resource_name,
     technology,
-    host: str,
+    tenant: str,
     region: Optional[str] = None,
 ):
     if not region:
-        region = (config.get_host_specific_key("aws.region", host, config.region),)
-    if config.get_host_specific_key(
+        region = (config.get_tenant_specific_key("aws.region", tenant, config.region),)
+    if config.get_tenant_specific_key(
         "get_aws_config_history_url_for_resource.generate_conglomo_url",
-        host,
+        tenant,
     ):
         return await get_conglomo_url_for_resource(
-            account_id, resource_id, technology, host, region
+            account_id, resource_id, technology, tenant, region
         )
 
     encoded_redirect = urllib.parse.quote_plus(
@@ -913,11 +917,11 @@ async def get_aws_config_history_url_for_resource(
 
 
 async def get_conglomo_url_for_resource(
-    account_id, resource_id, technology, host, region="global"
+    account_id, resource_id, technology, tenant, region="global"
 ):
-    conglomo_url = config.get_host_specific_key(
+    conglomo_url = config.get_tenant_specific_key(
         "get_aws_config_history_url_for_resource.conglomo_url",
-        host,
+        tenant,
     )
     if not conglomo_url:
         raise MissingConfigurationValue(

@@ -15,7 +15,7 @@ SUPPORTED_OKTA_FACTORS = [okta_models.FactorType.PUSH]
 
 
 async def okta_verify(
-    host: str, user: str, url: str, api_token: str, **kwargs
+    tenant: str, user: str, url: str, api_token: str, **kwargs
 ) -> tuple[bool, Union[None, str]]:
     """Send a push notification to a user via okta"""
     # kwargs is to support things like passcode based authentication down the road
@@ -93,7 +93,7 @@ async def okta_verify(
             "message": "Unable to authenticate user",
             "error": repr(err),
             "user": user,
-            "host": host,
+            "tenant": tenant,
         }
     )
 

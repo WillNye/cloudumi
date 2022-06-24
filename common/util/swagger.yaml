@@ -2476,7 +2476,7 @@ components:
           description: assigns Cognito group memberships to user account; these groups *must* exist before they can be assigned
           items:
             type: string
-            description: CognitoGroup by GroupName - must match with an existing group in the host / tenant
+            description: CognitoGroup by GroupName - must match with an existing group in the tenant
         UserStatus:
           type: string
           description: Can be UNCONFIRMED, CONFIRMED, ARCHIVED, COMPROMISED, UNKNOWN, RESET_REQUIRED, FORCE_CHANGE_PASSWORD, EXTERNAL_PROVIDER
@@ -2533,7 +2533,7 @@ components:
     CloudtrailDetection:
       type: object
       properties:
-        host:
+        tenant:
           type: string
           description: TODO
         error_code:

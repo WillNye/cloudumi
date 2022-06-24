@@ -36,7 +36,7 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
         self.reverse_mapping = defaultdict(dict)
 
     async def retrieve_credential_authorization_mapping(
-        self, host, max_age: Optional[int] = None
+        self, tenant, max_age: Optional[int] = None
     ):
         """
         This function retrieves the credential authorization mapping. This is a mapping of users/groups to the IAM roles
@@ -46,30 +46,30 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
         `max_age` seconds, this function will raise an exception and return an empty mapping.
         """
         if (
-            not self.authorization_mapping.get(host, {}).get("authorization_mapping")
+            not self.authorization_mapping.get(tenant, {}).get("authorization_mapping")
             or int(time.time())
-            - self.authorization_mapping.get(host, {}).get("last_update", 0)
+            - self.authorization_mapping.get(tenant, {}).get("last_update", 0)
             > 60
         ):
-            redis_topic = config.get_host_specific_key(
+            redis_topic = config.get_tenant_specific_key(
                 "generate_and_store_credential_authorization_mapping.redis_key",
-                host,
-                f"{host}_CREDENTIAL_AUTHORIZATION_MAPPING_V1",
+                tenant,
+                f"{tenant}_CREDENTIAL_AUTHORIZATION_MAPPING_V1",
             )
-            s3_bucket = config.get_host_specific_key(
+            s3_bucket = config.get_tenant_specific_key(
                 "generate_and_store_credential_authorization_mapping.s3.bucket",
-                host,
+                tenant,
                 config.get(
                     "_global_.s3_cache_bucket",
                 ),
             )
-            s3_key = config.get_host_specific_key(
+            s3_key = config.get_tenant_specific_key(
                 "generate_and_store_credential_authorization_mapping.s3.file",
-                host,
+                tenant,
                 "credential_authorization_mapping/credential_authorization_mapping_v1.json.gz",
             )
             try:
-                self.authorization_mapping[host][
+                self.authorization_mapping[tenant][
                     "authorization_mapping"
                 ] = await retrieve_json_data_from_redis_or_s3(
                     redis_topic,
@@ -78,25 +78,25 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
                     json_object_hook=RoleAuthorizationsDecoder,
                     json_encoder=pydantic_encoder,
                     max_age=max_age,
-                    host=host,
+                    tenant=tenant,
                     default={},
                 )
-                self.authorization_mapping[host]["last_update"] = int(time.time())
+                self.authorization_mapping[tenant]["last_update"] = int(time.time())
             except Exception as e:
                 sentry_sdk.capture_exception()
                 log.error(
                     {
                         "function": f"{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
                         "error": f"Error loading cloud credential mapping. Returning empty mapping: {e}",
-                        "host": host,
+                        "tenant": tenant,
                     },
                     exc_info=True,
                 )
                 return {}
-        return self.authorization_mapping[host]["authorization_mapping"]
+        return self.authorization_mapping[tenant]["authorization_mapping"]
 
     async def retrieve_reverse_authorization_mapping(
-        self, host, max_age: Optional[int] = None
+        self, tenant, max_age: Optional[int] = None
     ):
         """
         This function retrieves the inverse of the credential authorization mapping. This is a mapping of IAM roles
@@ -106,27 +106,27 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
         than `max_age` seconds, this function will raise an exception and return an empty mapping.
         """
         if (
-            not self.reverse_mapping.get(host, {}).get("reverse_mapping")
+            not self.reverse_mapping.get(tenant, {}).get("reverse_mapping")
             or int(time.time())
-            - self.reverse_mapping.get(host, {}).get("last_update", 0)
+            - self.reverse_mapping.get(tenant, {}).get("last_update", 0)
             > 60
         ):
-            redis_topic = config.get_host_specific_key(
+            redis_topic = config.get_tenant_specific_key(
                 "generate_and_store_reverse_authorization_mapping.redis_key",
-                host,
-                f"{host}_REVERSE_AUTHORIZATION_MAPPING_V1",
+                tenant,
+                f"{tenant}_REVERSE_AUTHORIZATION_MAPPING_V1",
             )
-            s3_bucket = config.get_host_specific_key(
+            s3_bucket = config.get_tenant_specific_key(
                 "generate_and_store_reverse_authorization_mapping.s3.bucket",
-                host,
+                tenant,
             )
-            s3_key = config.get_host_specific_key(
+            s3_key = config.get_tenant_specific_key(
                 "generate_and_store_reverse_authorization_mapping.s3.file",
-                host,
+                tenant,
                 "reverse_authorization_mapping/reverse_authorization_mapping_v1.json.gz",
             )
             try:
-                self.reverse_mapping[host][
+                self.reverse_mapping[tenant][
                     "reverse_mapping"
                 ] = await retrieve_json_data_from_redis_or_s3(
                     redis_topic,
@@ -135,9 +135,9 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
                     json_object_hook=RoleAuthorizationsDecoder,
                     json_encoder=pydantic_encoder,
                     max_age=max_age,
-                    host=host,
+                    tenant=tenant,
                 )
-                self.reverse_mapping[host]["last_update"] = int(time.time())
+                self.reverse_mapping[tenant]["last_update"] = int(time.time())
             except Exception as e:
                 sentry_sdk.capture_exception()
                 log.error(
@@ -148,17 +148,17 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
                     exc_info=True,
                 )
                 return {}
-        return self.reverse_mapping[host]["reverse_mapping"]
+        return self.reverse_mapping[tenant]["reverse_mapping"]
 
-    async def retrieve_all_roles(self, host: str, max_age: Optional[int] = None):
+    async def retrieve_all_roles(self, tenant: str, max_age: Optional[int] = None):
         from common.aws.iam.role.models import IAMRole
 
         if (
-            not self._all_roles[host]
-            or int(time.time()) - self._all_roles_last_update.get(host, 0) > 600
+            not self._all_roles[tenant]
+            or int(time.time()) - self._all_roles_last_update.get(tenant, 0) > 600
         ):
             try:
-                all_roles = await IAMRole.query(host, attributes_to_get=["arn"])
+                all_roles = await IAMRole.query(tenant, attributes_to_get=["arn"])
                 all_roles = [role.arn for role in all_roles]
             except Exception as e:
                 sentry_sdk.capture_exception()
@@ -170,33 +170,33 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
                     exc_info=True,
                 )
                 return []
-            self._all_roles[host] = all_roles
-            self._all_roles_count[host] = len(self._all_roles)
-            self._all_roles_last_update[host] = int(time.time())
-        return self._all_roles[host]
+            self._all_roles[tenant] = all_roles
+            self._all_roles_count[tenant] = len(self._all_roles)
+            self._all_roles_last_update[tenant] = int(time.time())
+        return self._all_roles[tenant]
 
-    async def all_roles(self, host, paginate=False, page=None, count=None):
-        return await self.retrieve_all_roles(host)
+    async def all_roles(self, tenant, paginate=False, page=None, count=None):
+        return await self.retrieve_all_roles(tenant)
 
-    async def number_roles(self, host) -> int:
-        _ = await self.retrieve_all_roles(host)
-        return self._all_roles_count.get(host, 0)
+    async def number_roles(self, tenant) -> int:
+        _ = await self.retrieve_all_roles(tenant)
+        return self._all_roles_count.get(tenant, 0)
 
     async def determine_role_authorized_groups(
-        self, account_id: str, role_name: str, host: str
+        self, account_id: str, role_name: str, tenant: str
     ):
         arn = f"arn:aws:iam::{account_id}:role/{role_name.lower()}"
-        reverse_mapping = await self.retrieve_reverse_authorization_mapping(host)
+        reverse_mapping = await self.retrieve_reverse_authorization_mapping(tenant)
         groups = reverse_mapping.get(arn, [])
         return set(groups)
 
     async def determine_users_authorized_roles(
-        self, user, groups, host, include_cli=False
+        self, user, groups, tenant, include_cli=False
     ):
         if not groups:
             groups = []
         authorization_mapping = await self.retrieve_credential_authorization_mapping(
-            host
+            tenant
         )
         authorized_roles = set()
         user_mapping = authorization_mapping.get(user, [])
@@ -214,7 +214,7 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
 
 
 async def generate_and_store_reverse_authorization_mapping(
-    authorization_mapping: Dict[user_or_group, RoleAuthorizations], host
+    authorization_mapping: Dict[user_or_group, RoleAuthorizations], tenant
 ) -> Dict[str, List[user_or_group]]:
     reverse_mapping = defaultdict(list)
     for identity, roles in authorization_mapping.items():
@@ -224,26 +224,26 @@ async def generate_and_store_reverse_authorization_mapping(
             reverse_mapping[role.lower()].append(identity)
 
     # Store in S3 and Redis
-    redis_topic = config.get_host_specific_key(
+    redis_topic = config.get_tenant_specific_key(
         "generate_and_store_reverse_authorization_mapping.redis_key",
-        host,
-        f"{host}_REVERSE_AUTHORIZATION_MAPPING_V1",
+        tenant,
+        f"{tenant}_REVERSE_AUTHORIZATION_MAPPING_V1",
     )
     s3_bucket = None
     s3_key = None
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("environment") in ["dev", "test"]:
-        s3_bucket = config.get_host_specific_key(
+        s3_bucket = config.get_tenant_specific_key(
             "generate_and_store_credential_authorization_mapping.s3.bucket",
-            host,
+            tenant,
             config.get(
                 "_global_.s3_cache_bucket",
             ),
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "generate_and_store_reverse_authorization_mapping.s3.file",
-            host,
+            tenant,
             "reverse_authorization_mapping/reverse_authorization_mapping_v1.json.gz",
         )
     await store_json_results_in_redis_and_s3(
@@ -252,68 +252,68 @@ async def generate_and_store_reverse_authorization_mapping(
         s3_bucket=s3_bucket,
         s3_key=s3_key,
         json_encoder=pydantic_encoder,
-        host=host,
+        tenant=tenant,
     )
     return reverse_mapping
 
 
 async def generate_and_store_credential_authorization_mapping(
-    host,
+    tenant,
 ) -> Dict[user_or_group, RoleAuthorizations]:
     from common.aws.iam.role.utils import get_authorized_group_map
 
     authorization_mapping: Dict[user_or_group, RoleAuthorizations] = {}
 
-    if config.get_host_specific_key(
+    if config.get_tenant_specific_key(
         "cloud_credential_authorization_mapping.role_tags.enabled",
-        host,
+        tenant,
         True,
     ):
         authorization_mapping = await get_authorized_group_map(
-            authorization_mapping, host
+            authorization_mapping, tenant
         )
 
-    if config.get_host_specific_key(
+    if config.get_tenant_specific_key(
         "cloud_credential_authorization_mapping.dynamic_config.enabled",
-        host,
+        tenant,
         True,
     ):
         authorization_mapping = await DynamicConfigAuthorizationMappingGenerator().generate_credential_authorization_mapping(
-            authorization_mapping, host
+            authorization_mapping, tenant
         )
-    if config.get_host_specific_key(
+    if config.get_tenant_specific_key(
         "cloud_credential_authorization_mapping.internal_plugin.enabled",
-        host,
+        tenant,
         False,
     ):
         authorization_mapping = await InternalPluginAuthorizationMappingGenerator().generate_credential_authorization_mapping(
-            authorization_mapping, host
+            authorization_mapping, tenant
         )
     # Store in S3 and Redis
-    redis_topic = config.get_host_specific_key(
+    redis_topic = config.get_tenant_specific_key(
         "generate_and_store_credential_authorization_mapping.redis_key",
-        host,
-        f"{host}_CREDENTIAL_AUTHORIZATION_MAPPING_V1",
+        tenant,
+        f"{tenant}_CREDENTIAL_AUTHORIZATION_MAPPING_V1",
     )
     s3_bucket = None
     s3_key = None
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key(
+        s3_bucket = config.get_tenant_specific_key(
             "generate_and_store_credential_authorization_mapping.s3.bucket",
-            host,
+            tenant,
             config.get(
                 "_global_.s3_cache_bucket",
             ),
         )
 
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "generate_and_store_credential_authorization_mapping.s3.file",
-            host,
+            tenant,
             "credential_authorization_mapping/credential_authorization_mapping_v1.json.gz",
         )
 
@@ -323,6 +323,6 @@ async def generate_and_store_credential_authorization_mapping(
         s3_bucket=s3_bucket,
         s3_key=s3_key,
         json_encoder=pydantic_encoder,
-        host=host,
+        tenant=tenant,
     )
     return authorization_mapping

@@ -32,10 +32,10 @@ async def generate_random_password(uchars=3, lchars=3, dchars=2, schars=2):
     return random_str
 
 
-async def wait_after_authentication_failure(user, host) -> str:
+async def wait_after_authentication_failure(user, tenant) -> str:
     redix_key_expiration = 60
-    redis_key = f"{host}_wait_after_authentication_failure_{user}"
-    red = RedisHandler().redis_sync(host)
+    redis_key = f"{tenant}_wait_after_authentication_failure_{user}"
+    red = RedisHandler().redis_sync(tenant)
     num_password_failures = red.get(redis_key)
     if not num_password_failures:
         num_password_failures = 0
@@ -51,23 +51,27 @@ async def wait_after_authentication_failure(user, host) -> str:
 
 async def check_password_strength(
     password,
-    host: str,
+    tenant: str,
 ) -> Optional[Union[Dict[str, str], Dict[str, List[str]]]]:
     password_policy_args = {
-        "strength": config.get_host_specific_key(
-            "auth.password_policy.strength", host, 0.5
+        "strength": config.get_tenant_specific_key(
+            "auth.password_policy.strength", tenant, 0.5
         ),
-        "entropy_bits": config.get_host_specific_key(
-            "auth.password_policy.entry_bits", host
+        "entropy_bits": config.get_tenant_specific_key(
+            "auth.password_policy.entry_bits", tenant
         ),
-        "length": config.get_host_specific_key("auth.password_policy.length", host),
-        "uppercase": config.get_host_specific_key(
-            "auth.password_policy.uppercase", host
+        "length": config.get_tenant_specific_key("auth.password_policy.length", tenant),
+        "uppercase": config.get_tenant_specific_key(
+            "auth.password_policy.uppercase", tenant
         ),
-        "numbers": config.get_host_specific_key("auth.password_policy.numbers", host),
-        "special": config.get_host_specific_key("auth.password_policy.special", host),
-        "nonletters": config.get_host_specific_key(
-            "auth.password_policy.nonletters", host
+        "numbers": config.get_tenant_specific_key(
+            "auth.password_policy.numbers", tenant
+        ),
+        "special": config.get_tenant_specific_key(
+            "auth.password_policy.special", tenant
+        ),
+        "nonletters": config.get_tenant_specific_key(
+            "auth.password_policy.nonletters", tenant
         ),
     }
 

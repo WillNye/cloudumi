@@ -1,7 +1,7 @@
 import ujson as json
 
 
-def get_session_policy_for_host(host):
+def get_session_policy_for_tenant(tenant):
     return json.dumps(
         {
             "Version": "2012-10-17",
@@ -12,7 +12,7 @@ def get_session_policy_for_host(host):
                     "Resource": ["*"],
                     "Condition": {
                         "ForAllValues:StringEquals": {
-                            "dynamodb:LeadingKeys": [f"{host}"]
+                            "dynamodb:LeadingKeys": [f"{tenant}"]
                         }
                     },
                 }

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
@@ -107,7 +107,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
         user_name = "test_delete_user_forbidden"
         iam = boto3.client(
             "iam",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         iam.create_user(UserName=user_name)
         response = self.fetch(
@@ -132,7 +132,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
         user_name = "test_delete_user_allowed"
         iam = boto3.client(
             "iam",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         iam.create_user(UserName=user_name)
         response = self.fetch(

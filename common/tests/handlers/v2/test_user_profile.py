@@ -5,7 +5,7 @@ import sys
 import pytest
 import ujson as json
 
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -26,11 +26,11 @@ class TestUserProfile(ConsoleMeAsyncHTTPTestCase):
 
         self.maxDiff = None
         headers = {
-            config.get_host_specific_key(
-                "auth.user_header_name", host
+            config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@example.com",
-            config.get_host_specific_key(
-                "auth.groups_header_name", host
+            config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
 
