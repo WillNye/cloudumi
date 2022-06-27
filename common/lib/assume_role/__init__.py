@@ -374,7 +374,7 @@ def boto3_cached_conn(
     }
 
     if use_custom_credentials:
-        credentials_dict = custom_aws_credentials.dict()
+        credentials_dict = custom_aws_credentials.dict(exclude_secrets=False)
         client_kwargs.update(**credentials_dict)
 
         if service_type == "client":
