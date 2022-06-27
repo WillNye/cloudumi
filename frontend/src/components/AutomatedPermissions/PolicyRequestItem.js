@@ -21,7 +21,7 @@ import { APPLIED_POLICY_STATUSES, editorOptions } from './constants'
 
 const PolicyRequestItem = ({
   policyRequest,
-  getAutomaticPermissionsRequets,
+  getAutomaticPermissionsRequests,
   sendRequestCommon,
 }) => {
   const [isLoading, setIsLoading] = useState(false)
@@ -74,7 +74,7 @@ const PolicyRequestItem = ({
     setIsLoading(true)
     approvePolicyRequest(sendRequestCommon, accountId, policyId)
       .then(() => {
-        getAutomaticPermissionsRequets().then()
+        getAutomaticPermissionsRequests().then()
         success('Request successfully approved')
       })
       .catch(() => {
@@ -89,7 +89,7 @@ const PolicyRequestItem = ({
     setIsLoading(true)
     removePolicyRequest(sendRequestCommon, accountId, policyId)
       .then(() => {
-        getAutomaticPermissionsRequets().then()
+        getAutomaticPermissionsRequests().then()
         success('Request successfully deleted')
       })
       .catch(() => {
@@ -104,7 +104,7 @@ const PolicyRequestItem = ({
     setIsLoading(true)
     updatePolicyRequest(sendRequestCommon, accountId, policyId, data)
       .then((res) => {
-        getAutomaticPermissionsRequets().then()
+        getAutomaticPermissionsRequests().then()
         success('Request successfully update')
         setRoleValue(res.role)
       })
