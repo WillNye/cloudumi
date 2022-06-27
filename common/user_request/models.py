@@ -1,11 +1,11 @@
 import sys
 import time
 
-import ujson as json
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pynamodax.attributes import NumberAttribute, UnicodeAttribute
 from pynamodax.indexes import AllProjection, GlobalSecondaryIndex
 
+import common.lib.noq_json as json
 from common.aws.utils import ResourceSummary
 from common.config import config
 from common.config.config import (
@@ -170,12 +170,10 @@ class IAMRequest(NoqModel):
             python_script = ""
             cli_policy_document = json.dumps(
                 change.get("policy", {}).get("policy_document", {}),
-                escape_forward_slashes=False,
             )
             boto_policy_document = json.dumps(
                 change.get("policy", {}).get("policy_document", {}),
                 indent=2,
-                escape_forward_slashes=False,
             )
 
             # Resolve the change's resource summary (parse_arn) by change type

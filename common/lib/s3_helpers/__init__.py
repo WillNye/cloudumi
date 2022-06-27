@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional, Union
 
 import boto3
 import pytz
-import ujson as json
 from botocore.exceptions import ClientError
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn

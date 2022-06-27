@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional, Union
 from urllib.parse import unquote_plus
 
 import pandas as pd
-import ujson as json
 from dateutil import parser
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingRequestParameter
 from common.models import (

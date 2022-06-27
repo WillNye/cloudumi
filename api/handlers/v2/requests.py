@@ -4,10 +4,10 @@ import time
 import uuid
 
 import sentry_sdk
-import ujson as json
 from policy_sentry.util.arns import parse_arn
 from pydantic import ValidationError
 
+import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.exceptions.exceptions import (

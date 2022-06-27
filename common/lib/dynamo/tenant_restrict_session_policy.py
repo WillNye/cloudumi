@@ -1,4 +1,4 @@
-import ujson as json
+import common.lib.noq_json as json
 
 
 def get_session_policy_for_tenant(tenant):

@@ -1,9 +1,9 @@
 import sys
 import traceback
 
-import ujson as json
 from botocore.exceptions import ClientError
 
+import common.lib.noq_json as json
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
@@ -33,9 +33,7 @@ async def update_role(event, tenant, user):
     for d in event:
         for i in d.get("inline_policies", []):
             if i.get("policy_document") and isinstance(i.get("policy_document"), dict):
-                i["policy_document"] = json.dumps(
-                    i["policy_document"], escape_forward_slashes=False
-                )
+                i["policy_document"] = json.dumps(i["policy_document"])
 
         if d.get("assume_role_policy_document", {}):
             if isinstance(
@@ -48,7 +46,6 @@ async def update_role(event, tenant, user):
                     "assume_role_policy_document"
                 ] = json.dumps(
                     d["assume_role_policy_document"]["assume_role_policy_document"],
-                    escape_forward_slashes=False,
                 )
 
     bad_validation = RoleUpdaterRequest().validate(event, many=True)

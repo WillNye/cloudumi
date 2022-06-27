@@ -1,9 +1,9 @@
 import re
 from typing import Dict, List, Optional
 
-import ujson as json
 from policyuniverse.expander_minimizer import _expand_wildcard_action
 
+import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.exceptions.exceptions import InvalidRequestParameter, MustBeFte

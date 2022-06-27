@@ -1,8 +1,8 @@
 from datetime import datetime
 
-import ujson as json
 from asgiref.sync import async_to_sync
 
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,

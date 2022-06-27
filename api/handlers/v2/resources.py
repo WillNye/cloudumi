@@ -2,9 +2,9 @@ import sys
 from datetime import datetime, timedelta
 
 import sentry_sdk
-import ujson as json
 from policy_sentry.util.arns import parse_arn
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MustBeFte, ResourceNotFound
 from common.handlers.base import BaseAPIV2Handler, BaseMtlsHandler

@@ -10,7 +10,7 @@ from datetime import timedelta
 from celery import Celery
 
 from common.config import config
-from common.lib.json_encoder import SetEncoder
+from common.lib.noq_json import SetEncoder
 from common.lib.redis import RedisHandler
 from common.lib.timeout import Timeout
 

@@ -1,6 +1,9 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
 # consoleme/models.py:
-# `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel ; black ../models.py`
+# `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' ; black ../models.py`
+
+# To exclude a property from being returned when calling model.dict() by default add the property is_secret: true
+
 openapi: 3.0.0
 info:
   description: ConsoleMe API definition
@@ -758,7 +761,7 @@ components:
             - $ref: "#/components/schemas/HoneybeeAwsResourceTemplatePrincipalModel"
             - $ref: "#/components/schemas/TerraformAwsResourcePrincipalModel"
         generator_type:
-          type: string
+          type: stringPolicyRequestModificationRequestModel
           enum:
             - advanced
             - crud_lookup
@@ -1773,6 +1776,7 @@ components:
       properties:
         aws:
           $ref: "#/components/schemas/AWSCredentials"
+          is_secret: true
     CloneRoleRequestModel:
       type: object
       required:
@@ -1866,6 +1870,7 @@ components:
           description: Date to expire requested policy, in the format of YYYYmmdd
         credentials:
           $ref: "#/components/schemas/CloudCredentials"
+          is_secret: true
     RequestCreationResponse:
       type: object
       properties:
@@ -1890,6 +1895,7 @@ components:
       properties:
         credentials:
           $ref: "#/components/schemas/CloudCredentials"
+          is_secret: true
         command:
           type: string
           enum:
@@ -1948,8 +1954,6 @@ components:
               type: string
             apps:
               $ref: "#/components/schemas/AppDetailsArray"
-            credentials:
-              $ref: "#/components/schemas/CloudCredentials"
     CancelChangeModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"

@@ -1,6 +1,6 @@
 import tornado.web
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.handlers.base import (
     AuthenticatedStaticFileHandler,

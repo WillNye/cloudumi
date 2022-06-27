@@ -6,11 +6,11 @@ from typing import Any, Optional
 
 import boto3
 import redis
-import ujson as json
 from redis.client import Redis
 from rediscluster import RedisCluster
 from rediscluster.exceptions import ClusterDownError
 
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.plugins import get_plugin_by_name

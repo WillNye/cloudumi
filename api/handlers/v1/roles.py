@@ -1,5 +1,4 @@
-import ujson as json
-
+import common.lib.noq_json as json
 from common.config import config
 from common.handlers.base import BaseMtlsHandler
 from common.lib.plugins import get_plugin_by_name

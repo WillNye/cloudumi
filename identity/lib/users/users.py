@@ -1,7 +1,6 @@
 import sys
 
-import ujson as json
-
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler

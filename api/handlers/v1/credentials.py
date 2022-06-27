@@ -3,9 +3,9 @@ import sys
 import sentry_sdk
 import tornado.escape
 import tornado.web
-import ujson as json
 from marshmallow import Schema, ValidationError, fields, validates_schema
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import CertTooOldException
 from common.handlers.base import BaseMtlsHandler

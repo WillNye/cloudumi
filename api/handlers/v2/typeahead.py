@@ -1,8 +1,8 @@
 from typing import Optional
 
 import sentry_sdk
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable
 from common.handlers.base import BaseAPIV2Handler
@@ -179,7 +179,7 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
 
         matching = []
         for entry in typehead_data.get("typeahead_entries", []):
-            principal_arn = entry.get("principal", "").get("principal_arn", "")
+            principal_arn = entry.get("principal", {}).get("principal_arn", "")
             if (
                 principal_arn
                 and principal_arn.split(":")[4]

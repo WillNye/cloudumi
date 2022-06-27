@@ -1,10 +1,10 @@
 import sys
 
 import tornado.escape
-import ujson as json
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 from tornado.httputil import HTTPHeaders
 
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_policy_request_uri_v2

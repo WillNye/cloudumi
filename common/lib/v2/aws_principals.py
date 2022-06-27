@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from typing import List, Optional, Union
 
-import ujson as json
 from policy_sentry.util.arns import parse_arn
 
+import common.lib.noq_json as json
 from common.aws.iam.role.config import (
     get_active_tear_users_tag,
     get_tear_support_groups_tag,

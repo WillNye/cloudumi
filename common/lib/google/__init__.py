@@ -4,13 +4,13 @@ import sys
 from typing import Any, Dict, List, Optional, Union
 
 import googleapiclient.discovery
-import ujson as json
 from google.oauth2 import service_account
 from googleapiclient.discovery import Resource
 from googleapiclient.errors import HttpError
 from retrying import retry
 from validate_email import validate_email
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import (
     BackgroundCheckNotPassedException,

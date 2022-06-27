@@ -3,8 +3,8 @@ import os
 import sys
 
 import pytest
-import ujson as json
 
+import common.lib.noq_json as json
 from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 

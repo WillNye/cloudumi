@@ -1,13 +1,10 @@
 import tornado.escape
 
+from common.config.models import ModelAdapter
+from common.exceptions.exceptions import NoMatchingRequest
 from common.handlers.base import BaseAdminHandler
 from common.lib.policies import automatic_request
-from common.models import (
-    AutomaticPolicyRequest,
-    ExtendedAutomaticPolicyRequest,
-    Status3,
-    WebResponse,
-)
+from common.models import AutomaticPolicyRequest, SpokeAccount, Status3, WebResponse
 
 
 class AutomaticPolicyRequestHandler(BaseAdminHandler):
@@ -102,9 +99,6 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
             self.set_status(404, "Policy Request not found")
             return
 
-        if data.get("policy_request"):
-            policy_request = ExtendedAutomaticPolicyRequest(data.get("policy_request"))
-
         if not data["status"] in allowed_statuses:
             self.set_status(400, f"Status must be one of {allowed_statuses}")
         elif (
@@ -126,7 +120,52 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
             else:
                 self.set_status(500, "Unable to update the policy status")
 
-    async def delete(self, account_id=None, policy_request_id=None):
+    async def put(self, account_id, policy_request_id):
+        data = tornado.escape.json_decode(self.request.body)
+
+        non_allowed_statuses = [
+            Status3.applied_and_failure.value,
+            Status3.applied_and_success.value,
+            Status3.approved.value,
+        ]
+
+        policy_request = await automatic_request.get_policy_request(
+            self.ctx.host, account_id, self.user, policy_request_id
+        )
+        if policy_request:
+
+            if policy_request.status not in non_allowed_statuses:
+                if data["role"] != policy_request.role:
+                    new_account_id = policy_request.role.split(":")[4]
+                    account = (
+                        ModelAdapter(SpokeAccount)
+                        .load_config("spoke_accounts", self.ctx.host)
+                        .with_query({"account_id": new_account_id})
+                        .first
+                    )
+                    policy_request.role = data["role"]
+                    policy_request.account = account
+                policy_request.policy = data["policy"]
+                if await automatic_request.update_policy_request(
+                    self.ctx.host, policy_request
+                ):
+                    policy_request = automatic_request.format_extended_policy_request(
+                        policy_request
+                    )
+                    self.write(policy_request.dict())
+                else:
+                    self.set_status(500, "Unable to update the policy status")
+            else:
+                self.set_status(
+                    400, "Request has already been applied and cannot be modified"
+                )
+        else:
+            raise NoMatchingRequest(
+                "Unable to find a compatible non-applied change with "
+                "that ID in this policy request"
+            )
+
+    async def delete(self, account_id, policy_request_id):
 
         if account_id and policy_request_id:
             policy_request = await automatic_request.get_policy_request(

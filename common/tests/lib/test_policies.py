@@ -1,10 +1,10 @@
 from unittest import TestCase
 
 import pytest
-import ujson as json
 from asgiref.sync import async_to_sync
 from mock import MagicMock, patch
 
+import common.lib.noq_json as json
 from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import tenant
 

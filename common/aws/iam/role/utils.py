@@ -3,10 +3,10 @@ import sys
 from typing import Any, Dict, Optional
 
 import sentry_sdk
-import ujson as json
 from botocore.exceptions import ClientError
 from joblib import Parallel, delayed
 
+import common.lib.noq_json as json
 from common.aws.iam.role.config import (
     get_active_tear_users_tag,
     get_tear_support_groups_tag,
@@ -815,7 +815,6 @@ async def get_authorized_group_map(
             and required_trust_policy_entity.lower()
             not in json.dumps(
                 iam_role.policy["AssumeRolePolicyDocument"],
-                escape_forward_slashes=False,
             ).lower()
         ):
             continue

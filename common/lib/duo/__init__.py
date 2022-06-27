@@ -1,8 +1,8 @@
 import sys
 
-import ujson as json
 from botocore.exceptions import ClientError
 
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.session import get_session_for_tenant

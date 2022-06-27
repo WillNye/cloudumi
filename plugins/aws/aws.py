@@ -4,11 +4,11 @@ import sys
 import bleach
 import requests as requests_sync
 import tenacity
-import ujson as json
 from botocore.exceptions import ClientError
 from tornado.httpclient import AsyncHTTPClient
 from tornado.httputil import url_concat
 
+import common.lib.noq_json as json
 from common.aws.iam.role.utils import update_assume_role_policy_trust_noq
 from common.config import config
 from common.exceptions.exceptions import (

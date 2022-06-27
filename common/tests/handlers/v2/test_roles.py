@@ -1,7 +1,7 @@
 import pytest
-import ujson as json
 from mock import patch
 
+import common.lib.noq_json as json
 from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase

@@ -2,9 +2,9 @@ import time
 from hashlib import sha256
 from typing import Dict, List, Optional
 
-import ujson as json
 from policy_sentry.querying.actions import get_actions_with_access_level
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,

@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 
 import pytz
 import tornado.escape
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.handlers.base import BaseHandler, TornadoRequestHandler

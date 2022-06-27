@@ -13,10 +13,10 @@ import sentry_sdk
 import tornado.httpclient
 import tornado.httputil
 import tornado.web
-import ujson as json
 from rediscluster.exceptions import ClusterDownError
 from tornado import httputil
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidCertificateException,

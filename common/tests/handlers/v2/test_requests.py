@@ -1,9 +1,9 @@
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
-import ujson as json
 from deepdiff import DeepDiff
 
+import common.lib.noq_json as json
 from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 

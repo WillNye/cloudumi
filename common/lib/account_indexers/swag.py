@@ -1,9 +1,9 @@
 import sys
 from typing import List
 
-import ujson as json
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.plugins import get_plugin_by_name
