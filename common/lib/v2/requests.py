@@ -99,6 +99,7 @@ from common.models import (
     UserModel,
 )
 from common.user_request.models import IAMRequest
+from common.user_request.utils import update_extended_request_expiration_date
 
 log = config.get_logger()
 
@@ -2913,24 +2914,9 @@ async def parse_and_apply_policy_request_modification(
         expiration_date_model = ExpirationDateRequestModificationModel.parse_obj(
             request_changes
         )
-        expiration_date = expiration_date_model.expiration_date
-        extended_request.expiration_date = expiration_date
-
-        for change in extended_request.changes.changes:
-            if change.change_type in ["inline_policy"]:
-                change.policy_name = await generate_policy_name(
-                    None, user, host, expiration_date
-                )
-
-            if change.change_type in ["resource_policy", "sts_resource_policy"]:
-                new_statement = []
-                Statements = change.policy.policy_document.get("Statement", [])
-
-                for statement in Statements:
-                    statement["Sid"] = await generate_policy_sid(user, expiration_date)
-                    new_statement.append(statement)
-
-                change.policy.policy_document["Statement"] = new_statement
+        extended_request = await update_extended_request_expiration_date(
+            host, user, extended_request, expiration_date_model.expiration_date
+        )
 
         success_message = "Successfully updated expiration date"
         error_message = "Error occurred updating expiration date"
