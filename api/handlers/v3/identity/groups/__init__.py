@@ -1,5 +1,4 @@
-import ujson as json
-
+import common.lib.noq_json as json
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.cache import retrieve_json_data_from_redis_or_s3

@@ -2,10 +2,10 @@ import datetime
 from typing import Any, Dict, List, Optional
 
 import sentry_sdk
-import ujson as json
 from jinja2 import Environment, FileSystemLoader
 from jinja2.utils import select_autoescape
 
+import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.config import config

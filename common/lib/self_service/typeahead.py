@@ -1,5 +1,4 @@
-import ujson as json
-
+import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping

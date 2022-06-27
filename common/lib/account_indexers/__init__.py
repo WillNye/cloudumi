@@ -1,5 +1,4 @@
-import ujson as json
-
+import common.lib.noq_json as json
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.account_indexers.aws_organizations import (

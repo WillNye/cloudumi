@@ -3,9 +3,9 @@ import os
 import sys
 
 import pytest
-import ujson as json
 from mock import MagicMock, patch
 
+import common.lib.noq_json as json
 from util.tests.fixtures.fixtures import MockRedisHandler, create_future
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 

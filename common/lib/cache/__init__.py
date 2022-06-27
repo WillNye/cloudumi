@@ -14,7 +14,7 @@ from common.exceptions.exceptions import (
     UnsupportedRedisDataType,
 )
 from common.lib.asyncio import aio_wrapper, run_in_parallel
-from common.lib.json_encoder import SetEncoder
+from common.lib.noq_json import SetEncoder
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
 from common.lib.s3_helpers import get_object, put_object

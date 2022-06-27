@@ -1,8 +1,8 @@
 import sys
 
 import tornado.escape
-import ujson as json
 
+import common.lib.noq_json as json
 from common.aws.iam.role.utils import get_roles_as_resource
 from common.config import config
 from common.exceptions.exceptions import ResourceNotFound
