@@ -68,9 +68,7 @@ def port_dynamo_data(table_map: dict, **kwargs):
             fill_table(new_table, normalize_items(old_data, **kwargs))
 
 
-def get_existing_tables(
-    prefix: str = "staging-noq-dev-shared-staging-1", exclude_suffix: str = None
-) -> list:
+def get_existing_tables(prefix: str = None, exclude_suffix: str = None) -> list[str]:
     import boto3
 
     dynamodb = boto3.resource("dynamodb")
