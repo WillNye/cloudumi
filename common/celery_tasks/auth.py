@@ -13,14 +13,16 @@ LOG = config.get_logger()
 @app.task
 def synchronize_account_ids_to_name(context: dict) -> bool:
     LOG.info("Synchronizing account id-name aliases")
-    host = context.get("host")
-    static_config = config.get_tenant_static_config_from_dynamo(host)
-    spoke_accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list
+    tenant = context.get("tenant")
+    static_config = config.get_tenant_static_config_from_dynamo(tenant)
+    spoke_accounts = (
+        ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).list
+    )
     static_config["account_ids_to_name"] = {
         y.get("account_id"): y.get("name") for y in spoke_accounts
     }
     ddb = RestrictedDynamoHandler()
-    async_to_sync(ddb.update_static_config_for_host)(
-        yaml.dump(static_config), "celery worker", host
+    async_to_sync(ddb.update_static_config_for_tenant)(
+        yaml.dump(static_config), "celery worker", tenant
     )
     return True

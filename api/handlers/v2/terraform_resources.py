@@ -6,9 +6,9 @@ from common.models import Status2, WebResponse
 class TerraformResourceDetailHandler(BaseAPIV2Handler):
     async def get(self, repository_name, resource):
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         matching_resource = await retrieve_cached_terraform_resources(
-            host,
+            tenant,
             repository_name=repository_name,
             resource=resource,
             return_first_result=True,

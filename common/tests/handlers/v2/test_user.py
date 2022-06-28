@@ -3,7 +3,7 @@ import json
 import pytest
 from asgiref.sync import async_to_sync
 
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
@@ -15,10 +15,10 @@ class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
 
-        config.CONFIG.config["site_configs"][host]["auth"][
+        config.CONFIG.config["site_configs"][tenant]["auth"][
             "get_user_by_password"
         ] = True
-        config.CONFIG.config["site_configs"][host]["auth"][
+        config.CONFIG.config["site_configs"][tenant]["auth"][
             "allow_user_registration"
         ] = True
         from api.routes import make_app
@@ -28,10 +28,10 @@ class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
     def tearDown(self) -> None:
         from common.config import config
 
-        config.CONFIG.config["site_configs"][host]["auth"][
+        config.CONFIG.config["site_configs"][tenant]["auth"][
             "get_user_by_password"
         ] = False
-        config.CONFIG.config["site_configs"][host]["auth"][
+        config.CONFIG.config["site_configs"][tenant]["auth"][
             "allow_user_registration"
         ] = False
 
@@ -82,10 +82,10 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
 
-        config.CONFIG.config["site_configs"][host]["auth"][
+        config.CONFIG.config["site_configs"][tenant]["auth"][
             "get_user_by_password"
         ] = True
-        config.CONFIG.config["site_configs"][host]["auth"]["set_auth_cookie"] = True
+        config.CONFIG.config["site_configs"][tenant]["auth"]["set_auth_cookie"] = True
         from api.routes import make_app
 
         return make_app(jwt_validator=lambda x: {})
@@ -93,10 +93,10 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
     def tearDown(self) -> None:
         from common.config import config
 
-        config.CONFIG.config["site_configs"][host]["auth"][
+        config.CONFIG.config["site_configs"][tenant]["auth"][
             "get_user_by_password"
         ] = False
-        config.CONFIG.config["site_configs"][host]["auth"]["set_auth_cookie"] = False
+        config.CONFIG.config["site_configs"][tenant]["auth"]["set_auth_cookie"] = False
 
     def test_login_post_no_user(self):
         body = json.dumps(
@@ -120,9 +120,9 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
     def test_login_post_invalid_password(self):
         from common.lib.dynamo import UserDynamoHandler
 
-        ddb = UserDynamoHandler(host=host)
+        ddb = UserDynamoHandler(tenant=tenant)
         ddb.create_user(
-            "testuser", host, "correctpassword", ["group1", "group2@example.com"]
+            "testuser", tenant, "correctpassword", ["group1", "group2@example.com"]
         )
         body = json.dumps(
             {"username": "testuser", "password": "wrongpass", "after_redirect_uri": "/"}
@@ -145,9 +145,9 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
     def test_login_post_success(self):
         from common.lib.dynamo import UserDynamoHandler
 
-        ddb = UserDynamoHandler(host=host)
+        ddb = UserDynamoHandler(tenant=tenant)
         ddb.create_user(
-            "testuser2", host, "correctpassword", ["group1", "group2@example.com"]
+            "testuser2", tenant, "correctpassword", ["group1", "group2@example.com"]
         )
         body = json.dumps(
             {
@@ -209,12 +209,14 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
         from common.lib.dynamo import UserDynamoHandler
         from common.models import LoginAttemptModel
 
-        ddb = UserDynamoHandler(host=host)
+        ddb = UserDynamoHandler(tenant=tenant)
         login_attempt_success = LoginAttemptModel(
             username="testuser3", password=user_password
         )
 
-        should_pass = async_to_sync(ddb.authenticate_user)(login_attempt_success, host)
+        should_pass = async_to_sync(ddb.authenticate_user)(
+            login_attempt_success, tenant
+        )
         self.assertEqual(
             should_pass.dict(),
             {
@@ -228,7 +230,7 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
             username="testuser3", password="wrongpassword"
         )
 
-        should_fail = async_to_sync(ddb.authenticate_user)(login_attempt_fail, host)
+        should_fail = async_to_sync(ddb.authenticate_user)(login_attempt_fail, tenant)
 
         self.assertEqual(
             should_fail.dict(),

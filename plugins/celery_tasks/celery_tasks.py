@@ -61,22 +61,24 @@ if config.get("_global_.celery.purge") and not config.get(
 
 
 @app.task(soft_time_limit=600)
-def cache_application_information(host):
+def cache_application_information(tenant):
     """
     This task retrieves application information from configuration. You may want to override this function to
     utilize your organization's CI/CD pipeline for this information.
     :return:
     """
     apps_to_roles = {}
-    for k, v in config.get_host_specific_key("application_settings", host, {}).items():
+    for k, v in config.get_tenant_specific_key(
+        "application_settings", tenant, {}
+    ).items():
         apps_to_roles[k] = v.get("roles", [])
 
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     red.set(
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "celery.apps_to_roles.redis_key",
-            host,
-            f"{host}_APPS_TO_ROLES",
+            tenant,
+            f"{tenant}_APPS_TO_ROLES",
         ),
         json.dumps(apps_to_roles, cls=SetEncoder),
     )

@@ -10,13 +10,13 @@ log = config.get_logger()
 
 class LogOutHandler(BaseHandler):
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "message": "Attempting to log out user",
             "user-agent": self.request.headers.get("User-Agent"),
             "ip": self.ip,
-            "host": host,
+            "tenant": tenant,
         }
         if not config.get("_global_.auth.set_auth_cookie", True):
             await handle_generic_error_response(
@@ -53,14 +53,14 @@ class LogOutHandler(BaseHandler):
             return
         self.clear_cookie(cookie_name)
 
-        extra_auth_cookies: list = config.get_host_specific_key(
-            "auth.extra_auth_cookies", host, []
+        extra_auth_cookies: list = config.get_tenant_specific_key(
+            "auth.extra_auth_cookies", tenant, []
         )
         for cookie in extra_auth_cookies:
             self.clear_cookie(cookie)
 
-        redirect_url: str = config.get_host_specific_key(
-            "auth.logout_redirect_url", host, "/"
+        redirect_url: str = config.get_tenant_specific_key(
+            "auth.logout_redirect_url", tenant, "/"
         )
         res = WebResponse(
             status="redirect",

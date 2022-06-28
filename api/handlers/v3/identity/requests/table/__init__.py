@@ -7,7 +7,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.timeout import Timeout
 from common.models import DataTableResponse
 from identity.lib.groups.groups import (
-    cache_identity_requests_for_host,
+    cache_identity_requests_for_tenant,
     get_identity_request_storage_keys,
 )
 
@@ -26,7 +26,7 @@ class IdentityRequestsPageConfigHandler(BaseHandler):
                 200:
                     description: Returns Identity Requests Page Configuration
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         default_configuration = {
             "pageName": "Group Requests",
             "pageDescription": "",
@@ -74,9 +74,9 @@ class IdentityRequestsPageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get_host_specific_key(
+        table_configuration = config.get_tenant_specific_key(
             "IdentityRequestsPageConfigHandler.configuration",
-            host,
+            tenant,
             default_configuration,
         )
 
@@ -97,9 +97,9 @@ class IdentityRequestsTableHandler(BaseHandler):
         """
         POST /api/v2/identity/requests
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
-        config_keys = get_identity_request_storage_keys(host)
+        config_keys = get_identity_request_storage_keys(tenant)
         arguments = json.loads(self.request.body)
         filters = arguments.get("filters")
         # TODO: Add server-side sorting
@@ -107,7 +107,7 @@ class IdentityRequestsTableHandler(BaseHandler):
         limit = arguments.get("limit", 1000)
         tags = {
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count("IdentityRequestsTableHandler.post", tags=tags)
         log_data = {
@@ -118,16 +118,16 @@ class IdentityRequestsTableHandler(BaseHandler):
             "filters": filters,
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         # TODO: Cache if out-of-date, otherwise return cached data
-        await cache_identity_requests_for_host(host)
+        await cache_identity_requests_for_tenant(tenant)
         items_d = await retrieve_json_data_from_redis_or_s3(
             config_keys["redis_key"],
             s3_bucket=config_keys["s3_bucket"],
             s3_key=config_keys["s3_key"],
-            host=host,
+            tenant=tenant,
             default={},
         )
         items = list(items_d.values())

@@ -31,25 +31,25 @@ class ConfigurationCrudHandler(BaseHandler):
     async def _retrieve(self) -> dict:
         return (
             ModelAdapter(self._model_class)
-            .load_config(self._config_key, self.ctx.host)
+            .load_config(self._config_key, self.ctx.tenant)
             .dict
         )
 
     async def _create(self, data):
         await ModelAdapter(self._model_class).load_config(
-            self._config_key, self.ctx.host
+            self._config_key, self.ctx.tenant
         ).from_dict(data).with_object_key(self._identifying_keys).store_item()
 
     async def _delete(self) -> bool:
         return (
             await ModelAdapter(self._model_class)
-            .load_config(self._config_key, self.ctx.host)
+            .load_config(self._config_key, self.ctx.tenant)
             .with_object_key(self._identifying_keys)
             .delete_key()
         )
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         self.__validate_class_vars()
 
         log_data = {
@@ -60,12 +60,12 @@ class ConfigurationCrudHandler(BaseHandler):
             "request_id": self.request_uuid,
             "model_class": self._model_class,
             "config_key": self._config_key,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = f"Cannot call GET on {type(self).__name__}"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -110,7 +110,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
     async def post(self):
         self.__validate_class_vars()
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -120,12 +120,12 @@ class ConfigurationCrudHandler(BaseHandler):
             "request_id": self.request_uuid,
             "model_class": self._model_class,
             "config_key": self._config_key,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = f"Unable to call POST on {type(self).__name__}"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -134,7 +134,9 @@ class ConfigurationCrudHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        external_id = config.get_host_specific_key("tenant_details.external_id", host)
+        external_id = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
         data["external_id"] = external_id
 
         try:
@@ -164,7 +166,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
     async def delete(self):
         self.__validate_class_vars()
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -174,12 +176,12 @@ class ConfigurationCrudHandler(BaseHandler):
             "request_id": self.request_uuid,
             "model_class": self._model_class,
             "config_key": self._config_key,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = "Unable to delete data"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -243,26 +245,26 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
     async def _retrieve(self) -> list[dict]:
         return (
             ModelAdapter(self._model_class)
-            .load_config(self._config_key, self.ctx.host)
+            .load_config(self._config_key, self.ctx.tenant)
             .list
         )
 
     async def _create(self, data):
         await ModelAdapter(self._model_class).load_config(
-            self._config_key, self.ctx.host
+            self._config_key, self.ctx.tenant
         ).from_dict(data).with_object_key(self._identifying_keys).store_item_in_list()
 
     async def _delete(self, data):
         return (
             await ModelAdapter(self._model_class)
-            .load_config(self._config_key, self.ctx.host)
+            .load_config(self._config_key, self.ctx.tenant)
             .from_dict(data)
             .with_object_key(self._identifying_keys)
             .delete_list()
         )
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         self.__validate_class_vars()
 
         log_data = {
@@ -273,13 +275,13 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             "request_id": self.request_uuid,
             "model_class": self._model_class,
             "config_key": self._config_key,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
         # Checks authz levels of current user
         generic_error_message = f"Cannot call GET on {type(self).__name__}"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -306,7 +308,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
     async def post(self):
         self.__validate_class_vars()
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -316,12 +318,12 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             "request_id": self.request_uuid,
             "model_class": self._model_class,
             "config_key": self._config_key,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = f"Unable to call POST on {type(self).__name__}"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -330,7 +332,9 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        external_id = config.get_host_specific_key("tenant_details.external_id", host)
+        external_id = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
         data["external_id"] = external_id
 
         # Note: we are accepting one item posted at a time; in the future we might support
@@ -362,7 +366,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
     async def delete(self):
         self.__validate_class_vars()
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -372,12 +376,12 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             "request_id": self.request_uuid,
             "model_class": self._model_class,
             "config_key": self._config_key,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = "Unable to delete data"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -386,7 +390,9 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         log.debug(log_data)
 
         data = tornado.escape.json_decode(self.request.body)
-        external_id = config.get_host_specific_key("tenant_details.external_id", host)
+        external_id = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
         data["external_id"] = external_id
 
         # Note: we are accepting one item posted at a time; in the future we might support

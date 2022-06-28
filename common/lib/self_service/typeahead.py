@@ -18,27 +18,27 @@ from common.models import (
 )
 
 
-async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelArray:
+async def cache_self_service_typeahead(tenant: str) -> SelfServiceTypeaheadModelArray:
     from common.lib.templated_resources import retrieve_cached_resource_templates
 
-    app_name_tag = config.get_host_specific_key(
-        "cache_self_service_typeahead.app_name_tag", host
+    app_name_tag = config.get_tenant_specific_key(
+        "cache_self_service_typeahead.app_name_tag", tenant
     )
     # Cache role and app information
-    role_data = await IAMRole.query(host)
+    role_data = await IAMRole.query(tenant)
 
-    accounts_d = await get_account_id_to_name_mapping(host)
+    accounts_d = await get_account_id_to_name_mapping(tenant)
 
     typeahead_entries = []
 
     # We want templates to appear in Self-Service ahead of IAM roles, so we will cache them in that order.
 
-    if config.get_host_specific_key(
+    if config.get_tenant_specific_key(
         "cache_self_service_typeahead.cache_resource_templates",
-        host,
+        tenant,
     ):
         resource_templates = await retrieve_cached_resource_templates(
-            host, resource_type="iam_role", template_language="honeybee"
+            tenant, resource_type="iam_role", template_language="honeybee"
         )
 
         if resource_templates:
@@ -60,7 +60,7 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                 )
 
         terraform_resources = await retrieve_cached_terraform_resources(
-            host, resource_type="aws_iam_role"
+            tenant, resource_type="aws_iam_role"
         )
         if terraform_resources:
             for terraform_resource in terraform_resources.terraform_resources:
@@ -96,9 +96,9 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                 if tag["Key"] != app_name_tag:
                     continue
                 app_name = tag["Value"]
-                app_url = config.get_host_specific_key(
+                app_url = config.get_tenant_specific_key(
                     "cache_self_service_typeahead.app_url",
-                    host,
+                    tenant,
                     "",
                 ).format(app_name=app_name)
         typeahead_entries.append(
@@ -117,23 +117,23 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
         )
 
     user_data = await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get_host_specific_key(
+        redis_key=config.get_tenant_specific_key(
             "aws.iamroles_redis_key",
-            host,
-            f"{host}_IAM_USER_CACHE",
+            tenant,
+            f"{tenant}_IAM_USER_CACHE",
         ),
         redis_data_type="hash",
-        s3_bucket=config.get_host_specific_key(
+        s3_bucket=config.get_tenant_specific_key(
             "cache_iam_resources_across_accounts.all_users_combined.s3.bucket",
-            host,
+            tenant,
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_iam_resources_across_accounts.all_users_combined.s3.file",
-            host,
+            tenant,
             "account_resource_cache/cache_all_users_v1.json.gz",
         ),
         default={},
-        host=host,
+        tenant=tenant,
     )
 
     for user, details_j in user_data.items():
@@ -149,9 +149,9 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
                 if tag["Key"] != app_name_tag:
                     continue
                 app_name = tag["Value"]
-                app_url = config.get_host_specific_key(
+                app_url = config.get_tenant_specific_key(
                     "cache_self_service_typeahead.app_url",
-                    host,
+                    tenant,
                     "",
                 ).format(app_name=app_name)
         typeahead_entries.append(
@@ -172,19 +172,19 @@ async def cache_self_service_typeahead(host: str) -> SelfServiceTypeaheadModelAr
     typeahead_data = SelfServiceTypeaheadModelArray(typeahead_entries=typeahead_entries)
     await store_json_results_in_redis_and_s3(
         json.loads(typeahead_data.json()),
-        redis_key=config.get_host_specific_key(
+        redis_key=config.get_tenant_specific_key(
             "cache_self_service_typeahead.redis.key",
-            host,
-            f"{host}_cache_self_service_typeahead_v1",
+            tenant,
+            f"{tenant}_cache_self_service_typeahead_v1",
         ),
-        s3_bucket=config.get_host_specific_key(
-            "cache_self_service_typeahead.s3.bucket", host
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_self_service_typeahead.s3.bucket", tenant
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_self_service_typeahead.s3.file",
-            host,
+            tenant,
             "cache_self_service_typeahead/cache_self_service_typeahead_v1.json.gz",
         ),
-        host=host,
+        tenant=tenant,
     )
     return typeahead_data

@@ -19,7 +19,7 @@ from common.models import (
 )
 
 
-async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArray:
+async def retrieve_accounts_from_aws_organizations(tenant) -> CloudAccountModelArray:
     """
     Polls AWS Organizations for our Account ID to Account Name mapping
     :param: null
@@ -28,11 +28,11 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
 
     cloud_accounts = []
     for organization in (
-        ModelAdapter(OrgAccount).load_config("org_accounts", host).models
+        ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
     ):
         role_to_assume = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": organization.account_id})
             .first.name
         )
@@ -52,7 +52,7 @@ async def retrieve_accounts_from_aws_organizations(host) -> CloudAccountModelArr
         client = await aio_wrapper(
             boto3_cached_conn,
             "organizations",
-            host,
+            tenant,
             None,
             account_number=organization.account_id,
             assume_role=role_to_assume,
@@ -246,7 +246,7 @@ def _get_children_for_ou(ca: ConsoleMeCloudAux, root_id: str) -> Dict[str, Any]:
 
 async def retrieve_org_structure(
     org_account_id: str,
-    host,
+    tenant,
     role_to_assume: str = "NoqSpokeRole",
     region: str = "us-east-1",
 ) -> Dict[str, Any]:
@@ -263,8 +263,10 @@ async def retrieve_org_structure(
         "account_number": org_account_id,
         "session_name": "ConsoleMeSCPSync",
         "region": region,
-        "host": host,
-        "client_kwargs": config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        "tenant": tenant,
+        "client_kwargs": config.get_tenant_specific_key(
+            "boto3.client_kwargs", tenant, {}
+        ),
     }
     ca = ConsoleMeCloudAux(**conn_details)
     roots = _list_org_roots(ca)
@@ -278,7 +280,7 @@ async def retrieve_org_structure(
 
 async def retrieve_scps_for_organization(
     org_account_id: str,
-    host: str,
+    tenant: str,
     role_to_assume: str = "ConsoleMe",
     region: str = "us-east-1",
 ) -> List[ServiceControlPolicyModel]:
@@ -289,12 +291,14 @@ async def retrieve_scps_for_organization(
         region: AWS region
     """
     conn_details = {
-        "host": host,
+        "tenant": tenant,
         "assume_role": role_to_assume,
         "account_number": org_account_id,
         "session_name": "ConsoleMeSCPSync",
         "region": region,
-        "client_kwargs": config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        "client_kwargs": config.get_tenant_specific_key(
+            "boto3.client_kwargs", tenant, {}
+        ),
     }
     ca = ConsoleMeCloudAux(**conn_details)
     all_scp_metadata = await aio_wrapper(_list_service_control_policies, ca)

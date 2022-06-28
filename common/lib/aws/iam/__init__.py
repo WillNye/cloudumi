@@ -83,7 +83,7 @@ def get_policy(policy_arn, client=None, **kwargs):
 
 
 @rate_limited()
-def create_managed_policy(cloudaux, name, path, policy, description, host):
+def create_managed_policy(cloudaux, name, path, policy, description, tenant):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "cloudaux": cloudaux,
@@ -92,7 +92,7 @@ def create_managed_policy(cloudaux, name, path, policy, description, host):
         "policy": policy,
         "description": "description",
         "message": "Creating Managed Policy",
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
 
@@ -192,7 +192,7 @@ async def create_or_update_managed_policy(
     policy_name,
     policy_arn,
     description,
-    host,
+    tenant,
     conn_details,
     policy_path="/",
     existing_policy=None,
@@ -206,7 +206,7 @@ async def create_or_update_managed_policy(
         "policy_path": policy_path,
         "existing_policy": existing_policy,
         "conn_details": conn_details,
-        "host": host,
+        "tenant": tenant,
     }
 
     ca = await aio_wrapper(ConsoleMeCloudAux, **conn_details)
@@ -221,7 +221,7 @@ async def create_or_update_managed_policy(
             policy_path,
             new_policy,
             description,
-            host,
+            tenant,
         )
         return
 
@@ -231,38 +231,38 @@ async def create_or_update_managed_policy(
     await update_managed_policy(ca, policy_name, new_policy, policy_arn)
 
 
-async def get_all_iam_managed_policies_for_account(account_id, host):
+async def get_all_iam_managed_policies_for_account(account_id, tenant):
     global ALL_IAM_MANAGED_POLICIES
     # TODO: Use redis clusters for this type of thing and not a global var
-    policy_key: str = config.get_host_specific_key(
+    policy_key: str = config.get_tenant_specific_key(
         "redis.iam_managed_policies_key",
-        host,
-        f"{host}_IAM_MANAGED_POLICIES",
+        tenant,
+        f"{tenant}_IAM_MANAGED_POLICIES",
     )
     current_time = time.time()
-    if current_time - ALL_IAM_MANAGED_POLICIES[host].get("last_update", 0) > 500:
-        red = await RedisHandler().redis(host)
-        ALL_IAM_MANAGED_POLICIES[host]["managed_policies"] = await aio_wrapper(
+    if current_time - ALL_IAM_MANAGED_POLICIES[tenant].get("last_update", 0) > 500:
+        red = await RedisHandler().redis(tenant)
+        ALL_IAM_MANAGED_POLICIES[tenant]["managed_policies"] = await aio_wrapper(
             red.hgetall, policy_key
         )
-        ALL_IAM_MANAGED_POLICIES[host]["last_update"] = current_time
+        ALL_IAM_MANAGED_POLICIES[tenant]["last_update"] = current_time
 
-    if ALL_IAM_MANAGED_POLICIES[host].get("managed_policies"):
+    if ALL_IAM_MANAGED_POLICIES[tenant].get("managed_policies"):
         return json.loads(
-            ALL_IAM_MANAGED_POLICIES[host]["managed_policies"].get(account_id, "[]")
+            ALL_IAM_MANAGED_POLICIES[tenant]["managed_policies"].get(account_id, "[]")
         )
     else:
-        s3_bucket = config.get_host_specific_key(
-            "account_resource_cache.s3.bucket", host
+        s3_bucket = config.get_tenant_specific_key(
+            "account_resource_cache.s3.bucket", tenant
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "account_resource_cache.s3.file",
-            host,
+            tenant,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="managed_policies", account_id=account_id)
         return await retrieve_json_data_from_redis_or_s3(
             s3_bucket=s3_bucket,
             s3_key=s3_key,
             default=[],
-            host=host,
+            tenant=tenant,
         )

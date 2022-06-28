@@ -16,7 +16,7 @@ from common.models import (
     InlinePolicyChangeModel,
     ResourceModel,
 )
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 
 @pytest.mark.usefixtures("aws_credentials")
@@ -26,15 +26,15 @@ class TestChangeRequestLib(AsyncTestCase):
     async def test_generate_policy_sid(self):
 
         random_sid = await generate_policy_sid("username@example.com")
-        self.assertRegex(random_sid, "^noqusername\d{10}[a-z]{4}$")  # noqa
+        self.assertRegex(random_sid, r"^noqusername\d{10}[a-z]{4}$")  # noqa
 
     @tornado.testing.gen_test
     async def test_generate_policy_name(self):
 
-        random_sid = await generate_policy_name(None, "username@example.com", host)
-        self.assertRegex(random_sid, "^noq_username_\d{10}_[a-z]{4}$")  # noqa
-        explicit = await generate_policy_name("blah", "username@example.com", host)
-        self.assertRegex(explicit, "blah")
+        random_sid = await generate_policy_name(None, "username@example.com", tenant)
+        self.assertRegex(random_sid, r"^noq_username_\d{10}_[a-z]{4}$")  # noqa
+        explicit = await generate_policy_name("blah", "username@example.com", tenant)
+        self.assertRegex(explicit, r"blah")
 
     @tornado.testing.gen_test
     async def test_generate_inline_policy_model_from_statements(self):
@@ -243,6 +243,6 @@ class TestChangeRequestLib(AsyncTestCase):
         ]
         user = "username@example.com"
         result = await _generate_inline_policy_change_model(
-            principal, resources, statements, user, "host", is_new, policy_name
+            principal, resources, statements, user, "tenant", is_new, policy_name
         )
         self.assertIsInstance(result, InlinePolicyChangeModel)

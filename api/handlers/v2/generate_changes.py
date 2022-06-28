@@ -74,14 +74,14 @@ class GenerateChangesHandler(BaseAPIV2Handler):
             ]
         }
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "user": self.user,
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "user-agent": self.request.headers.get("User-Agent"),
             "ip": self.ip,
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
         try:
@@ -94,7 +94,7 @@ class GenerateChangesHandler(BaseAPIV2Handler):
 
             # Loop through the raw json object to retrieve attributes that would be parsed out in the
             # ChangeGeneratorModelArray, such as bucket_prefix for S3ChangeGeneratorModel
-            change_model_array = await generate_change_model_array(changes, host)
+            change_model_array = await generate_change_model_array(changes, tenant)
         except (InvalidRequestParameter, ValidationError) as e:
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
@@ -102,7 +102,7 @@ class GenerateChangesHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             self.write_error(400, message="Error validating input: " + str(e))
@@ -114,7 +114,7 @@ class GenerateChangesHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             sentry_sdk.capture_exception(tags={"user": self.user})
@@ -127,7 +127,7 @@ class GenerateChangesHandler(BaseAPIV2Handler):
             f"{log_data['function']}.success",
             tags={
                 "user": self.user,
-                "host": host,
+                "tenant": tenant,
             },
         )
         self.write(change_model_array.json())

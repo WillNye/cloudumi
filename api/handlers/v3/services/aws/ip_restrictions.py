@@ -19,7 +19,7 @@ class IpRestrictionsHandler(BaseHandler):
     """
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -27,12 +27,12 @@ class IpRestrictionsHandler(BaseHandler):
             "message": "Retrieving configured ip restrictions",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
         generic_error_message = "Cannot access ip restrictions information"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -40,7 +40,7 @@ class IpRestrictionsHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        cidrs = await ip_restrictions.get_ip_restrictions(host)
+        cidrs = await ip_restrictions.get_ip_restrictions(tenant)
         res = WebResponse(
             status="success",
             status_code=200,
@@ -51,7 +51,7 @@ class IpRestrictionsHandler(BaseHandler):
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -59,12 +59,12 @@ class IpRestrictionsHandler(BaseHandler):
             "message": "Updating ip restrictions",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = "Unable to update authorized groups tags"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -95,7 +95,7 @@ class IpRestrictionsHandler(BaseHandler):
             self.write(res.json(exclude_unset=True, exclude_none=True))
             return
 
-        await ip_restrictions.set_ip_restriction(host, cidr)
+        await ip_restrictions.set_ip_restriction(tenant, cidr)
 
         res = WebResponse(
             status="success",
@@ -106,7 +106,7 @@ class IpRestrictionsHandler(BaseHandler):
         return
 
     async def delete(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         data = tornado.escape.json_decode(self.request.body)
         _cidr = data.get("cidr")
@@ -117,12 +117,12 @@ class IpRestrictionsHandler(BaseHandler):
             "message": "Deleting ip restrictions",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = "Unable to delete ip restrictions"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -130,7 +130,7 @@ class IpRestrictionsHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        deleted = await ip_restrictions.delete_ip_restriction(host, _cidr)
+        deleted = await ip_restrictions.delete_ip_restriction(tenant, _cidr)
 
         res = WebResponse(
             status="success" if deleted else "error",
@@ -149,7 +149,7 @@ class IpRestrictionsToggleHandler(BaseHandler):
     """
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -157,12 +157,12 @@ class IpRestrictionsToggleHandler(BaseHandler):
             "message": "Retrieving configured ip restrictions",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
         generic_error_message = "Cannot access ip restrictions toggle"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -170,7 +170,7 @@ class IpRestrictionsToggleHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        enabled = await ip_restrictions.get_ip_restrictions_toggle(host)
+        enabled = await ip_restrictions.get_ip_restrictions_toggle(tenant)
         res = WebResponse(
             status="success",
             status_code=200,
@@ -180,7 +180,7 @@ class IpRestrictionsToggleHandler(BaseHandler):
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self, _enabled):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         enabled = _enabled == "enable"
 
@@ -191,12 +191,12 @@ class IpRestrictionsToggleHandler(BaseHandler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "enabled": _enabled,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = "Unable to toggle ip restrictions"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -204,7 +204,7 @@ class IpRestrictionsToggleHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        await ip_restrictions.toggle_ip_restrictions(host, enabled)
+        await ip_restrictions.toggle_ip_restrictions(tenant, enabled)
 
         res = WebResponse(
             status="success",
@@ -221,7 +221,7 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
     """
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -229,12 +229,12 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
             "message": "Retrieving configured ip restrictions toggle on requester ip only",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
         generic_error_message = "Cannot access ip restrictions toggle"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -243,7 +243,7 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
         log.debug(log_data)
 
         enabled = await ip_restrictions.get_ip_restrictions_on_requester_ip_only_toggle(
-            host
+            tenant
         )
         res = WebResponse(
             status="success",
@@ -254,7 +254,7 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self, _enabled):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         enabled = _enabled == "enable"
 
@@ -265,12 +265,12 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "enabled": enabled,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = "Unable to toggle ip restrictions"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -279,7 +279,7 @@ class IpRestrictionsRequesterIpOnlyToggleHandler(BaseHandler):
         log.debug(log_data)
 
         await ip_restrictions.toggle_ip_restrictions_on_requester_ip_only(
-            host, _enabled
+            tenant, _enabled
         )
 
         res = WebResponse(

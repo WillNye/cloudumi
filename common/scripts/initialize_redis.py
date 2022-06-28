@@ -8,7 +8,7 @@ from asgiref.sync import async_to_sync
 
 from common.celery_tasks import celery_tasks as celery
 from common.lib.account_indexers import get_account_id_to_name_mapping
-from common.lib.tenants import get_all_hosts
+from common.lib.tenants import get_all_tenants
 
 start_time = int(time.time())
 
@@ -40,24 +40,24 @@ if args.use_celery:
     # run this locally with the following command:
     # `celery -A common.celery_tasks.celery_tasks worker -l DEBUG -B -E --concurrency=8`
 
-    celery.cache_iam_resources_across_accounts_for_all_hosts()
-    celery.cache_s3_buckets_across_accounts_for_all_hosts()
-    celery.cache_sns_topics_across_accounts_for_all_hosts()
-    celery.cache_sqs_queues_across_accounts_for_all_hosts()
-    celery.cache_managed_policies_across_accounts_for_all_hosts()
-    celery.cache_resources_from_aws_config_across_accounts_for_all_hosts()
-    celery.cache_policies_table_details_for_all_hosts.apply_async(countdown=180)
-    celery.cache_access_advior_across_accounts_for_all_hosts()
-    celery.cache_credential_authorization_mapping_for_all_hosts.apply_async(
+    celery.cache_iam_resources_across_accounts_for_all_tenants()
+    celery.cache_s3_buckets_across_accounts_for_all_tenants()
+    celery.cache_sns_topics_across_accounts_for_all_tenants()
+    celery.cache_sqs_queues_across_accounts_for_all_tenants()
+    celery.cache_managed_policies_across_accounts_for_all_tenants()
+    celery.cache_resources_from_aws_config_across_accounts_for_all_tenants()
+    celery.cache_policies_table_details_for_all_tenants.apply_async(countdown=180)
+    celery.cache_access_advior_across_accounts_for_all_tenants()
+    celery.cache_credential_authorization_mapping_for_all_tenants.apply_async(
         countdown=180
     )
 
 else:
-    hosts = get_all_hosts()
-    for host in hosts:
-        celery.cache_cloud_account_mapping(host)
+    tenants = get_all_tenants()
+    for tenant in tenants:
+        celery.cache_cloud_account_mapping(tenant)
         accounts_d = async_to_sync(get_account_id_to_name_mapping)(
-            host, force_sync=True
+            tenant, force_sync=True
         )
         if parallel:
             executor = ThreadPoolExecutor(max_workers=os.cpu_count())
@@ -66,27 +66,29 @@ else:
                 futures.extend(
                     [
                         executor.submit(
-                            celery.cache_iam_resources_for_account, account_id, host
+                            celery.cache_iam_resources_for_account, account_id, tenant
                         ),
                         executor.submit(
-                            celery.cache_s3_buckets_for_account, account_id, host
+                            celery.cache_s3_buckets_for_account, account_id, tenant
                         ),
                         executor.submit(
-                            celery.cache_sns_topics_for_account, account_id, host
+                            celery.cache_sns_topics_for_account, account_id, tenant
                         ),
                         executor.submit(
-                            celery.cache_sqs_queues_for_account, account_id, host
+                            celery.cache_sqs_queues_for_account, account_id, tenant
                         ),
                         executor.submit(
-                            celery.cache_managed_policies_for_account, account_id, host
+                            celery.cache_managed_policies_for_account,
+                            account_id,
+                            tenant,
                         ),
                         executor.submit(
-                            celery.cache_access_advisor_for_account, host, account_id
+                            celery.cache_access_advisor_for_account, tenant, account_id
                         ),
                         executor.submit(
                             celery.cache_resources_from_aws_config_for_account,
                             account_id,
-                            host,
+                            tenant,
                         ),
                     ]
                 )
@@ -97,32 +99,32 @@ else:
                     print("%r generated an exception: %s" % (future, exc))
         else:
             for account_id in accounts_d.keys():
-                celery.cache_iam_resources_for_account(account_id, host)
-                celery.cache_s3_buckets_for_account(account_id, host)
-                celery.cache_sns_topics_for_account(account_id, host)
-                celery.cache_sqs_queues_for_account(account_id, host)
-                celery.cache_managed_policies_for_account(account_id, host)
-                celery.cache_access_advisor_for_account(host, account_id)
-                celery.cache_resources_from_aws_config_for_account(account_id, host)
+                celery.cache_iam_resources_for_account(account_id, tenant)
+                celery.cache_s3_buckets_for_account(account_id, tenant)
+                celery.cache_sns_topics_for_account(account_id, tenant)
+                celery.cache_sqs_queues_for_account(account_id, tenant)
+                celery.cache_managed_policies_for_account(account_id, tenant)
+                celery.cache_access_advisor_for_account(tenant, account_id)
+                celery.cache_resources_from_aws_config_for_account(account_id, tenant)
         # Forces writing config to S3
         celery.cache_iam_resources_across_accounts(
-            host, wait_for_subtask_completion=False, run_subtasks=False
+            tenant, wait_for_subtask_completion=False, run_subtasks=False
         )
         celery.cache_s3_buckets_across_accounts(
-            host, wait_for_subtask_completion=False, run_subtasks=False
+            tenant, wait_for_subtask_completion=False, run_subtasks=False
         )
         celery.cache_sns_topics_across_accounts(
-            host, wait_for_subtask_completion=False, run_subtasks=False
+            tenant, wait_for_subtask_completion=False, run_subtasks=False
         )
         celery.cache_sqs_queues_across_accounts(
-            host, wait_for_subtask_completion=False, run_subtasks=False
+            tenant, wait_for_subtask_completion=False, run_subtasks=False
         )
         celery.cache_resources_from_aws_config_across_accounts(
-            host, wait_for_subtask_completion=False, run_subtasks=False
+            tenant, wait_for_subtask_completion=False, run_subtasks=False
         )
-        celery.cache_resource_templates_task(host)
-        celery.cache_self_service_typeahead_task(host)
-        celery.cache_policies_table_details(host)
-        celery.cache_credential_authorization_mapping(host)
+        celery.cache_resource_templates_task(tenant)
+        celery.cache_self_service_typeahead_task(tenant)
+        celery.cache_policies_table_details(tenant)
+        celery.cache_credential_authorization_mapping(tenant)
 total_time = int(time.time()) - start_time
 print(f"Done caching data in Redis. It took {total_time} seconds")

@@ -13,11 +13,11 @@ from common.lib.cache import (
 
 
 async def get_identity_arns_for_account(
-    host: str, account_id: str, identity_type: str = "role"
+    tenant: str, account_id: str, identity_type: str = "role"
 ) -> List[str]:
     """Retrieves a list of all IAM role ARNs for a given account.
 
-    :param host: Tenant ID
+    :param tenant: Tenant ID
     :param account_id: AWS Account ID
     :param identity_type: "user" (indicating AWS IAM User) or "role" (Indicating AWS IAM Role), defaults to "role"
     :raises NotImplementedError: When identity type is not supported
@@ -26,7 +26,7 @@ async def get_identity_arns_for_account(
     if identity_type != "role":
         raise NotImplementedError(f"identity_type {identity_type} not implemented")
 
-    all_roles = await IAMRole.query(host, attributes_to_get=["arn"])
+    all_roles = await IAMRole.query(tenant, attributes_to_get=["arn"])
     matching_roles = set()
     for role in all_roles:
         if ":role/service-role/" in role.arn:
@@ -36,47 +36,49 @@ async def get_identity_arns_for_account(
     return list(matching_roles)
 
 
-async def store_iam_managed_policies_for_host(
-    host: str, iam_policies: Any, account_id: str
+async def store_iam_managed_policies_for_tenant(
+    tenant: str, iam_policies: Any, account_id: str
 ) -> bool:
     """Store all managed policies for an account in S3.
 
-    :param host: Tenant ID
+    :param tenant: Tenant ID
     :param iam_policies: A struct containing all managed policies for an account
     :param account_id: AWS Account ID
     :return: A boolean indicating success
     """
     await store_json_results_in_redis_and_s3(
         iam_policies,
-        s3_bucket=config.get_host_specific_key(
+        s3_bucket=config.get_tenant_specific_key(
             "cache_iam_resources_for_account.iam_policies.s3.bucket",
-            host,
+            tenant,
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_iam_resources_for_account.iam_policies.s3.file",
-            host,
+            tenant,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="iam_policies", account_id=account_id),
-        host=host,
+        tenant=tenant,
     )
     return True
 
 
-async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> bool:
+async def retrieve_iam_managed_policies_for_tenant(
+    tenant: str, account_id: str
+) -> bool:
     """
     Retrieves all managed policies for an account from S3
     """
     managed_policies = await retrieve_json_data_from_redis_or_s3(
-        s3_bucket=config.get_host_specific_key(
+        s3_bucket=config.get_tenant_specific_key(
             "cache_iam_resources_for_account.iam_policies.s3.bucket",
-            host,
+            tenant,
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_iam_resources_for_account.iam_policies.s3.file",
-            host,
+            tenant,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="iam_policies", account_id=account_id),
-        host=host,
+        tenant=tenant,
     )
     formatted_policies = {}
     for policy in managed_policies:
@@ -89,24 +91,24 @@ async def retrieve_iam_managed_policies_for_host(host: str, account_id: str) -> 
     return formatted_policies
 
 
-async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
+async def get_user_active_tear_roles_by_tag(user: str, tenant: str) -> list[str]:
     """Get active TEAR roles for a given user
 
     :param user: List of groups to check against
-    :param host: The host/tenant to check against
+    :param tenant: The tenant to check against
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
     from common.aws.utils import get_resource_tag
 
-    if not config.get_host_specific_key(
-        "temporary_elevated_access_requests.enabled", host, False
+    if not config.get_tenant_specific_key(
+        "temporary_elevated_access_requests.enabled", tenant, False
     ):
         return []
 
     active_tear_roles = set()
-    all_iam_roles = await IAMRole.query(host)
-    tear_users_tag = get_active_tear_users_tag(host)
+    all_iam_roles = await IAMRole.query(tenant)
+    tear_users_tag = get_active_tear_users_tag(tenant)
 
     for iam_role in all_iam_roles:
         if active_tear_users := get_resource_tag(
@@ -119,32 +121,32 @@ async def get_user_active_tear_roles_by_tag(user: str, host: str) -> list[str]:
 
 
 async def get_tear_supported_roles_by_tag(
-    eligible_roles: list[str], groups: list[str], host: str
+    eligible_roles: list[str], groups: list[str], tenant: str
 ) -> list[dict]:
     """Get TEAR supported roles given a list of groups and already usable roles
 
     :param eligible_roles: Roles that are already accessible and can be ignored
     :param groups: List of groups to check against
-    :param host: The host/tenant to check against
+    :param tenant: The tenant to check against
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
     from common.aws.utils import get_resource_tag
 
-    if not config.get_host_specific_key(
-        "temporary_elevated_access_requests.enabled", host, False
+    if not config.get_tenant_specific_key(
+        "temporary_elevated_access_requests.enabled", tenant, False
     ):
         return []
 
     escalated_roles = dict()
-    all_iam_roles = await IAMRole.query(host)
+    all_iam_roles = await IAMRole.query(tenant)
 
     for iam_role in all_iam_roles:
         if iam_role.arn in eligible_roles:
             continue
 
         role = iam_role.dict()
-        tear_support_tag = get_tear_support_groups_tag(host)
+        tear_support_tag = get_tear_support_groups_tag(tenant)
         if tear_groups := get_resource_tag(role, tear_support_tag, True, set()):
             if any(group in tear_groups for group in groups):
                 escalated_roles[iam_role.arn] = role

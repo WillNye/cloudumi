@@ -19,16 +19,16 @@ class ServiceControlPolicyHandler(BaseAPIV2Handler):
     allowed_methods = ["GET"]
 
     async def get(self, identifier):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
-            if self.user not in config.get_host_specific_key(
+            if self.user not in config.get_tenant_specific_key(
                 "groups.can_bypass_contractor_restrictions",
-                host,
+                tenant,
                 [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
@@ -40,12 +40,12 @@ class ServiceControlPolicyHandler(BaseAPIV2Handler):
             "identifier": identifier,
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
         log.debug(log_data)
         try:
-            scps = await get_scps_for_account_or_ou(identifier, host)
+            scps = await get_scps_for_account_or_ou(identifier, tenant)
         except Exception as e:
             sentry_sdk.capture_exception()
             response = WebResponse(

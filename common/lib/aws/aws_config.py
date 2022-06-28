@@ -17,18 +17,21 @@ log = config.get_logger()
 
 
 def query(
-    query: str, host: str, use_aggregator: bool = True, account_id: Optional[str] = None
+    query: str,
+    tenant: str,
+    use_aggregator: bool = True,
+    account_id: Optional[str] = None,
 ) -> List:
     resources = []
-    session = get_session_for_tenant(host)
+    session = get_session_for_tenant(tenant)
     if use_aggregator:
         config_client = session.client(
             "config",
             region_name=config.region,
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
-        configuration_aggregator_name: str = config.get_host_specific_key(
-            "aws_config.configuration_aggregator.name", host
+        configuration_aggregator_name: str = config.get_tenant_specific_key(
+            "aws_config.configuration_aggregator.name", tenant
         ).format(region=config.region)
         if not configuration_aggregator_name:
             raise MissingConfigurationValue("Invalid configuration for aws_config")
@@ -59,11 +62,11 @@ def query(
         for region in regions:
             config_client = boto3_cached_conn(
                 "config",
-                host,
+                tenant,
                 None,
                 account_number=account_id,
                 assume_role=ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
+                .load_config("spoke_accounts", tenant)
                 .with_query({"account_id": account_id})
                 .first.name,
                 region=region,
@@ -71,8 +74,8 @@ def query(
                     region_name=config.region,
                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",
                 ),
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
                 ),
                 session_name=sanitize_session_name("consoleme_aws_config_query"),
             )
@@ -99,7 +102,7 @@ def query(
                         "account_id": account_id,
                         "region": region,
                         "error": str(e),
-                        "host": host,
+                        "tenant": tenant,
                     },
                     exc_info=True,
                 )

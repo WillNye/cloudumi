@@ -1,7 +1,7 @@
 import pytest
 
 import common.lib.noq_json as json
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
@@ -21,11 +21,11 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
     def test_get(self):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -37,11 +37,11 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
     def test_put(self):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -53,11 +53,11 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
     def test_post(self):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -69,11 +69,11 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
     def test_patch(self):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -85,11 +85,11 @@ class TestNotFoundHandler(ConsoleMeAsyncHTTPTestCase):
     def test_delete(self):
         expected = {"status": 404, "title": "Not Found", "message": "Not Found"}
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(

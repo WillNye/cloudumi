@@ -30,16 +30,16 @@ class NotificationsHandler(BaseAPIV2Handler):
     """
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         try:
-            max_notifications = config.get_host_specific_key(
+            max_notifications = config.get_tenant_specific_key(
                 "get_notifications_for_user.max_notifications",
-                host,
+                tenant,
                 5,
             )
             notification_response: GetNotificationsForUserResponse = (
                 await get_notifications_for_user(
-                    self.user, self.groups, host, max_notifications
+                    self.user, self.groups, tenant, max_notifications
                 )
             )
             notifications: List[
@@ -78,11 +78,11 @@ class NotificationsHandler(BaseAPIV2Handler):
         change = ConsoleMeNotificationUpdateRequest.parse_raw(self.request.body)
         errors = []
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         for untrusted_notification in change.notifications:
             notification = await fetch_notification(
-                untrusted_notification.predictable_id, host
+                untrusted_notification.predictable_id, tenant
             )
             if not notification:
                 errors.append("Unable to find matching notification")
@@ -132,17 +132,21 @@ class NotificationsHandler(BaseAPIV2Handler):
                 notification.hidden_for_all = not notification.hidden_for_all
             else:
                 raise Exception("Unknown or unsupported change action.")
-            await write_notification(notification, host)
+            await write_notification(notification, tenant)
         try:
             # Retrieve and return updated notifications for user
-            max_notifications = config.get_host_specific_key(
+            max_notifications = config.get_tenant_specific_key(
                 "get_notifications_for_user.max_notifications",
-                host,
+                tenant,
                 5,
             )
             notification_response: GetNotificationsForUserResponse = (
                 await get_notifications_for_user(
-                    self.user, self.groups, host, max_notifications, force_refresh=True
+                    self.user,
+                    self.groups,
+                    tenant,
+                    max_notifications,
+                    force_refresh=True,
                 )
             )
             notifications: List[

@@ -30,7 +30,7 @@ class GroupMapping:
         username: str,
         groups: list,
         user_role: str,
-        host: str,
+        tenant: str,
         console_only: bool,
         **kwargs,
     ) -> list:
@@ -40,7 +40,7 @@ class GroupMapping:
 
         roles.extend(
             await credential_authz_mapping.determine_users_authorized_roles(
-                username, groups, host, include_cli
+                username, groups, tenant, include_cli
             )
         )
 
@@ -63,12 +63,12 @@ class GroupMapping:
 
     async def get_eligible_accounts(self, request_object):
         """Get eligible accounts for user."""
-        host = request_object.get_host_name()
+        tenant = request_object.get_tenant_name()
         role_arns = request_object.eligible_roles
         stats.count("get_eligible_accounts")
         account_ids = {}
 
-        friendly_names = await get_account_id_to_name_mapping(host)
+        friendly_names = await get_account_id_to_name_mapping(tenant)
         for r in role_arns:
             try:
                 account_id = r.split(":")[4]
@@ -93,8 +93,10 @@ class GroupMapping:
         """Get a dictionary with all of the account mappings (friendly names -> ID and ID -> names)."""
         return {}
 
-    async def get_secondary_approvers(self, group, host, return_default=False):
-        return config.get_host_specific_key("access_requests.default_approver", host)
+    async def get_secondary_approvers(self, group, tenant, return_default=False):
+        return config.get_tenant_specific_key(
+            "access_requests.default_approver", tenant
+        )
 
     def get_account_names_to_ids(self, force_refresh: bool = False) -> dict:
         """Get account name to id mapping"""

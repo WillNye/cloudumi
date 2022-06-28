@@ -17,8 +17,8 @@ log = config.get_logger()
 
 
 class OktaGroupManagementPlugin(GroupManagementPlugin):
-    def __init__(self, host, idp: OktaIdentityProvider):
-        self.host = host
+    def __init__(self, tenant, idp: OktaIdentityProvider):
+        self.tenant = tenant
         self.identity_provider_name = idp.name
         okta_org_url = idp.org_url
         if not okta_org_url:
@@ -31,7 +31,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
                 "API Key not found in configuration. It is required to instantiate an Okta client"
             )
         self.okta_client = OktaClient({"orgUrl": okta_org_url, "token": okta_api_token})
-        self.ddb = UserDynamoHandler(self.host)
+        self.ddb = UserDynamoHandler(self.tenant)
         super(OktaGroupManagementPlugin, self).__init__()
 
     async def create_group_request(
@@ -48,7 +48,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
     async def list_all_users(self) -> List[User]:
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-            "host": self.host,
+            "tenant": self.tenant,
             "identity_provider_name": self.identity_provider_name,
         }
         users, resp, err = await self.okta_client.list_users()
@@ -70,7 +70,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
             users_to_return.append(
                 User(
                     idp_name=self.identity_provider_name,
-                    host=self.host,
+                    tenant=self.tenant,
                     username=user.profile.login,
                     status=user.status.value.lower(),
                     user_id=f"{self.identity_provider_name}-{user.profile.login}",
@@ -85,7 +85,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
     async def list_all_groups(self):
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-            "host": self.host,
+            "tenant": self.tenant,
             "identity_provider_name": self.identity_provider_name,
         }
         groups, resp, err = await self.okta_client.list_groups()
@@ -107,7 +107,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
             group_id = f"{self.identity_provider_name}-{group.profile.name}"
             groups_to_return[group_id] = Group(
                 idp_name=self.identity_provider_name,
-                host=self.host,
+                tenant=self.tenant,
                 name=group.profile.name,
                 description=group.profile.description,
                 group_id=group_id,
@@ -124,7 +124,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
 
         user_obj = User(
             idp_name=self.identity_provider_name,
-            host=self.host,
+            tenant=self.tenant,
             username=user.profile.login,
             status=user.status.value.lower(),
             user_id=f"{self.identity_provider_name}-{user.profile.login}",
@@ -140,7 +140,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
     async def get_user_group_memberships(self, user: User) -> List[str]:
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-            "host": self.host,
+            "tenant": self.tenant,
             "identity_provider_name": self.identity_provider_name,
             "username": user.username,
         }
@@ -177,12 +177,12 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
         # TODO: Get Members, or use separate API call?
 
         self.ddb.identity_groups_table.get_item(
-            Key={"host": self.host, "group_id": group_id}
+            Key={"tenant": self.tenant, "group_id": group_id}
         )
 
         group = Group(
             idp_name=self.identity_provider_name,
-            host=self.host,
+            tenant=self.tenant,
             name=matching_group.profile.name,
             description=matching_group.profile.description,
             group_id=group_id,
@@ -240,7 +240,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
     async def list_group_users(self, group: Group):
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-            "host": self.host,
+            "tenant": self.tenant,
             "identity_provider_name": self.identity_provider_name,
             "group_id": group.group_id,
         }
@@ -266,7 +266,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
             users_to_return.append(
                 User(
                     idp_name=self.identity_provider_name,
-                    host=self.host,
+                    tenant=self.tenant,
                     username=user.profile.login,
                     status=user.status.value.lower(),
                     user_id=f"{self.identity_provider_name}-{user.profile.login}",
@@ -342,7 +342,7 @@ class OktaGroupManagementPlugin(GroupManagementPlugin):
 # For testing
 # async def main():
 #     # TODO: Fix
-#     a = OktaGroupManagementPlugin(host="localhost", idp=OktaIdentityProvider.parse_obj(
+#     a = OktaGroupManagementPlugin(tenant="localhost", idp=OktaIdentityProvider.parse_obj(
 #         config.get("identity.identity_providers.okta_test")
 #     ))
 #     # res = await a.list_all_groups()

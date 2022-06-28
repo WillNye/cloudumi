@@ -4,7 +4,7 @@ from common.lib.pydantic import BaseModel
 
 
 class RequestContext(BaseModel):
-    host: str
+    tenant: str
     user: Optional[str]
     groups: Optional[List[str]]
     request_uuid: str

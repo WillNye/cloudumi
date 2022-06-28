@@ -10,13 +10,13 @@ from asgiref.sync import async_to_sync
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.aws.session import get_session_for_tenant
-from common.lib.tenants import get_all_hosts
+from common.lib.tenants import get_all_tenants
 
 # TODO: Generate fake cloudtrail messages for SQS
 from common.lib.timeout import Timeout
 
 disable_creation_for_real_aws = True
-hosts = get_all_hosts()
+tenants = get_all_tenants()
 
 SAMPLE = Counter(
     {
@@ -155,55 +155,57 @@ def randomword():
     return "".join(segments)
 
 
-for host in hosts:
+for tenant in tenants:
     with Timeout(seconds=20):
-        accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
-        session = get_session_for_tenant(host)
+        accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
+        session = get_session_for_tenant(tenant)
         authz_tags = [
             {
                 "Key": "consoleme-authorized",
                 "Value": "ccastrapel@gmail.com:bayareasec@gmail.com",
             },
         ]
-        boto_kwargs = config.get_host_specific_key("boto3.client_kwargs", host, {})
-        session_kwargs = config.get_host_specific_key("boto3.session_kwargs", host, {})
+        boto_kwargs = config.get_tenant_specific_key("boto3.client_kwargs", tenant, {})
+        session_kwargs = config.get_tenant_specific_key(
+            "boto3.session_kwargs", tenant, {}
+        )
         if disable_creation_for_real_aws and not boto_kwargs.get("endpoint_url"):
             print(
-                f"Refusing to create resources for {host} because there's no custom boto3 endpoint URL"
+                f"Refusing to create resources for {tenant} because there's no custom boto3 endpoint URL"
             )
             continue
-        print(f"Creating resources for: {host}.")
+        print(f"Creating resources for: {tenant}.")
         print("Custom Boto3 client kwargs: " + json.dumps(boto_kwargs))
         print("Custom Session kwargs: " + json.dumps(session_kwargs))
         sts = session.client(
             "sts",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         current_role = sts.get_caller_identity()
         account_id = current_role["Account"]
         sqs = session.client(
             "sqs",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         sns = session.client(
             "sns",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         s3 = session.client(
             "s3",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         iam = session.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
 
         assume_role_1 = {

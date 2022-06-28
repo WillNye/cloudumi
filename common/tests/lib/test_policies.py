@@ -6,7 +6,7 @@ from mock import MagicMock, patch
 
 import common.lib.noq_json as json
 from util.tests.fixtures.fixtures import create_future
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 mock_aws_config_resources_redis = MagicMock(
     return_value=create_future(json.dumps({"accountId": "123456789012"}))
@@ -133,5 +133,5 @@ class TestPoliciesLib(TestCase):
             },
         }
         self.maxDiff = None
-        result = async_to_sync(get_resources_from_events)(policy_changes, host)
+        result = async_to_sync(get_resources_from_events)(policy_changes, tenant)
         self.assertDictEqual(expected, result)

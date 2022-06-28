@@ -68,7 +68,7 @@ class ConsoleMeCloudAux:
 
 
 def _get_cached_creds(
-    host,
+    tenant,
     user,
     key,
     service,
@@ -95,7 +95,7 @@ def _get_cached_creds(
         except IndexError:
             account_id = ""
         conn = BotoClientWrapper(
-            host, user, conn, region, service, account_id, role_arn
+            tenant, user, conn, region, service, account_id, role_arn
         )
 
         if return_credentials:
@@ -148,7 +148,7 @@ class BotoCallableWrapper:
 
     def __init__(
         self,
-        host,
+        tenant,
         user,
         boto_conn,
         region,
@@ -164,7 +164,7 @@ class BotoCallableWrapper:
         self._fnc_name = fnc_name
         self._account_id = account_id
         self._role = role
-        self._host = host
+        self._tenant = tenant
 
     def __call__(self, *args, **kwargs):
         try:
@@ -186,7 +186,7 @@ class BotoCallableWrapper:
 
             log.info(
                 {
-                    "host": self._host,
+                    "tenant": self._tenant,
                     "account_id": self._account_id,
                     "user": self._user,
                     "role": self._role,
@@ -213,9 +213,9 @@ class BotoCallableWrapper:
 
 class BotoClientWrapper:
     def __init__(
-        self, host, user, boto_conn, region, service, account_id=None, role=None
+        self, tenant, user, boto_conn, region, service, account_id=None, role=None
     ):
-        self._host = host
+        self._tenant = tenant
         self._user = user
         self._boto_conn = boto_conn
         self._region = region
@@ -228,7 +228,7 @@ class BotoClientWrapper:
             return self.__getattribute__(item)
         except AttributeError:
             return BotoCallableWrapper(
-                self._host,
+                self._tenant,
                 self._user,
                 self._boto_conn,
                 self._region,
@@ -241,7 +241,7 @@ class BotoClientWrapper:
 
 async def get_boto3_instance(
     service,
-    host,
+    tenant,
     account_id,
     session_name,
     assume_role,
@@ -256,7 +256,7 @@ async def get_boto3_instance(
     assume the `spoke role` on the target `account_id`, then create the boto3 instance on the target account.
 
     :param service: AWS service name (ie: iam, ec2, etc)
-    :param host: Tenant ID
+    :param tenant: Tenant ID
     :param account_id: AWS Account ID
     :param session_name: Session Name to use when assuming role. This is logged to Cloudtrail
     :param region: Region to create instance in, defaults to consoleme_config.region
@@ -268,7 +268,7 @@ async def get_boto3_instance(
     return await aio_wrapper(
         boto3_cached_conn,
         service,
-        host,
+        tenant,
         user,
         service_type=service_type,
         account_number=account_id,
@@ -280,8 +280,8 @@ async def get_boto3_instance(
             region_name=consoleme_config.region,
             endpoint_url=f"https://sts.{consoleme_config.region}.amazonaws.com",
         ),
-        client_kwargs=consoleme_config.get_host_specific_key(
-            "boto3.client_kwargs", host, {}
+        client_kwargs=consoleme_config.get_tenant_specific_key(
+            "boto3.client_kwargs", tenant, {}
         ),
         session_name=sanitize_session_name(session_name),
     )
@@ -289,7 +289,7 @@ async def get_boto3_instance(
 
 def boto3_cached_conn(
     service,
-    host,
+    tenant,
     user,
     service_type="client",
     future_expiration_minutes=15,
@@ -317,13 +317,13 @@ def boto3_cached_conn(
 
     # Same Account:
     client = boto3_cached_conn('iam')
-    resource = boto3_cached_conn('iam', host, user, service_type='resource')
+    resource = boto3_cached_conn('iam', tenant, user, service_type='resource')
 
     # Cross Account Client:
-    client = boto3_cached_conn('iam', host, user, account_number='000000000000', assume_role='role_name')
+    client = boto3_cached_conn('iam', tenant, user, account_number='000000000000', assume_role='role_name')
 
     # Cross Account Resource:
-    resource = boto3_cached_conn('iam', host, user, service_type='resource', account_number='000000000000', assume_role='role_name')
+    resource = boto3_cached_conn('iam', tenant, user, service_type='resource', account_number='000000000000', assume_role='role_name')
 
     :param service: AWS service (i.e. 'iam', 'ec2', 'kms')
     :param service_type: 'client' or 'resource'
@@ -358,7 +358,7 @@ def boto3_cached_conn(
     log_data = {
         "function": sys._getframe().f_code.co_name,
         "service": service,
-        "host": host,
+        "tenant": tenant,
         "service_type": service_type,
         "account_number": account_number,
         "assume_role": assume_role,
@@ -382,14 +382,14 @@ def boto3_cached_conn(
         elif service_type == "resource":
             conn = _resource(service, region, role, client_config, client_kwargs)
 
-        conn = BotoClientWrapper(host, user, conn, region, service, "", "")
+        conn = BotoClientWrapper(tenant, user, conn, region, service, "", "")
         if return_credentials:
             return conn, credentials_dict
         return conn
 
-    if host and pre_assume_roles is None:
+    if tenant and pre_assume_roles is None:
         pre_assume_roles = []
-        hub_role = consoleme_config.get_host_specific_key("hub_account", host)
+        hub_role = consoleme_config.get_tenant_specific_key("hub_account", tenant)
         if hub_role:
             pre_assume_roles.append(hub_role)
     elif pre_assume_roles is None:
@@ -404,7 +404,7 @@ def boto3_cached_conn(
 
     log.debug({**log_data, "message": "Retrieving boto3 client in tenant account"})
     key = (
-        host,
+        tenant,
         account_number,
         str(pre_assume_roles),
         assume_role,
@@ -418,7 +418,7 @@ def boto3_cached_conn(
     )
     if key in CACHE:
         retval = _get_cached_creds(
-            host,
+            tenant,
             user,
             key,
             service,
@@ -433,7 +433,7 @@ def boto3_cached_conn(
             return retval
 
     sts = None
-    session = get_session_for_tenant(host)
+    session = get_session_for_tenant(tenant)
     if assume_role or pre_assume_roles:
         sts = session.client("sts", **sts_client_kwargs)
     session_policy_needs_to_be_applied = True if session_policy else False
@@ -481,7 +481,7 @@ def boto3_cached_conn(
 
         account_info: SpokeAccount = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_number})
             .first
         )
@@ -514,7 +514,7 @@ def boto3_cached_conn(
         account_id = role_arn.split(":")[4]
     except IndexError:
         account_id = ""
-    conn = BotoClientWrapper(host, user, conn, region, service, account_id, role_arn)
+    conn = BotoClientWrapper(tenant, user, conn, region, service, account_id, role_arn)
 
     if return_credentials:
         return conn, role["Credentials"]
@@ -599,7 +599,7 @@ def sts_conn(
             else:
                 kwargs[service_type] = boto3_cached_conn(
                     service,
-                    kwargs.pop("host"),
+                    kwargs.pop("tenant"),
                     kwargs.pop("user", None),
                     service_type=service_type,
                     future_expiration_minutes=future_expiration_minutes,

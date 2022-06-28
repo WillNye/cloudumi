@@ -43,14 +43,14 @@ class AuthenticatedResponse:
 async def generate_auth_token(
     user, ip, challenge_uuid, request_object, expiration=None
 ):
-    host = request_object.get_host_name()
+    tenant = request_object.get_tenant_name()
     stats = get_plugin_by_name(
         config.get("_global_.plugins.metrics", "cmsaas_metrics")
     )()
     stats.count("generate_auth_token")
     if not expiration:
-        expiration = config.get_host_specific_key(
-            "challenge.token_expiration", host, 3600
+        expiration = config.get_tenant_specific_key(
+            "challenge.token_expiration", tenant, 3600
         )
     log_data = {
         "user": user,
@@ -58,7 +58,7 @@ async def generate_auth_token(
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "message": "Generating token for user",
         "challenge_uuid": challenge_uuid,
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
     current_time = int(time.time())
@@ -71,14 +71,14 @@ async def generate_auth_token(
         "challenge_uuid": challenge_uuid,
         "valid_before": valid_before,
         "valid_after": valid_after,
-        "host": host,
+        "tenant": tenant,
     }
 
     to_sign = (
         "{{'user': '{0}', 'ip': '{1}', 'challenge_uuid'': '{2}', "
-        "'valid_before'': '{3}', 'valid_after'': '{4}', 'host'': '{5}'}}"
-    ).format(user, ip, challenge_uuid, valid_before, valid_after, host)
-    crypto = CryptoSign(host)
+        "'valid_before'': '{3}', 'valid_after'': '{4}', 'tenant'': '{5}'}}"
+    ).format(user, ip, challenge_uuid, valid_before, valid_after, tenant)
+    crypto = CryptoSign(tenant)
     sig = crypto.sign(to_sign)
 
     auth_token["sig"] = sig
@@ -86,7 +86,7 @@ async def generate_auth_token(
 
 
 async def validate_auth_token(user, ip, token, request_object):
-    host = request_object.get_host_name()
+    tenant = request_object.get_tenant_name()
     stats = get_plugin_by_name(
         config.get("_global_.plugins.metrics", "cmsaas_metrics")
     )()
@@ -96,7 +96,7 @@ async def validate_auth_token(user, ip, token, request_object):
         "ip": ip,
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "message": "Validating token for user",
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
     if not token:
@@ -132,24 +132,24 @@ async def validate_auth_token(user, ip, token, request_object):
         log.error(msg, exc_info=True)
         raise Exception(msg)
 
-    if auth_token.get("host") != host:
-        stats.count("validate_auth_token.invalid_host")
-        msg = f"Auth token has a different host: {auth_token.get('host')}. Host passed to function: {host}"
+    if auth_token.get("tenant") != tenant:
+        stats.count("validate_auth_token.invalid_tenant")
+        msg = f"Auth token has a different tenant: {auth_token.get('tenant')}. tenant passed to function: {tenant}"
         log.error(msg, exc_info=True)
         raise Exception(msg)
 
     to_verify = (
         "{{'user': '{0}', 'ip': '{1}', 'challenge_uuid'': '{2}', "
-        "'valid_before'': '{3}', 'valid_after'': '{4}', 'host'': '{5}'}}"
+        "'valid_before'': '{3}', 'valid_after'': '{4}', 'tenant'': '{5}'}}"
     ).format(
         auth_token.get("user"),
         auth_token.get("ip"),
         auth_token.get("challenge_uuid"),
         auth_token.get("valid_before"),
         auth_token.get("valid_after"),
-        auth_token.get("host"),
+        auth_token.get("tenant"),
     )
-    crypto = CryptoSign(host)
+    crypto = CryptoSign(tenant)
     token_details = {
         "valid": crypto.verify(to_verify, auth_token.get("sig")),
         "user": auth_token.get("user"),
@@ -158,8 +158,8 @@ async def validate_auth_token(user, ip, token, request_object):
     return token_details
 
 
-def can_admin_all(user: str, user_groups: List[str], host: str):
-    application_admin = config.get_host_specific_key("application_admin", host)
+def can_admin_all(user: str, user_groups: List[str], tenant: str):
+    application_admin = config.get_tenant_specific_key("application_admin", tenant)
     if application_admin:
         if user == application_admin or application_admin in user_groups:
             return True
@@ -167,19 +167,21 @@ def can_admin_all(user: str, user_groups: List[str], host: str):
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_admin", host, []),
-            *config.get_host_specific_key("dynamic_config.groups.can_admin", host, []),
+            *config.get_tenant_specific_key("groups.can_admin", tenant, []),
+            *config.get_tenant_specific_key(
+                "dynamic_config.groups.can_admin", tenant, []
+            ),
         ],
     ):
         return True
     return False
 
 
-async def get_accounts_user_can_view_resources_for(user, groups, host) -> set[str]:
-    spoke_roles = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list
+async def get_accounts_user_can_view_resources_for(user, groups, tenant) -> set[str]:
+    spoke_roles = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).list
     allowed = set()
     for spoke_role in spoke_roles:
-        if can_admin_all(user, groups, host):
+        if can_admin_all(user, groups, tenant):
             allowed.add(spoke_role.get("account_id"))
             continue
         if not spoke_role.get("restrict_viewers_of_account_resources"):
@@ -199,8 +201,8 @@ async def get_accounts_user_can_view_resources_for(user, groups, host) -> set[st
     return allowed
 
 
-async def get_accounts_user_can_edit_resources_for(user, groups, host) -> set[str]:
-    spoke_roles = ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).list
+async def get_accounts_user_can_edit_resources_for(user, groups, tenant) -> set[str]:
+    spoke_roles = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).list
     allowed_accounts = set()
     for spoke_role in spoke_roles:
         if not spoke_role.get("delegate_admin_to_owner"):
@@ -215,16 +217,16 @@ async def get_accounts_user_can_edit_resources_for(user, groups, host) -> set[st
     return allowed_accounts
 
 
-async def user_can_edit_resources(user, groups, host, account_ids) -> bool:
+async def user_can_edit_resources(user, groups, tenant, account_ids) -> bool:
     can_edit_resource = False
-    if can_admin_all(user, groups, host):
+    if can_admin_all(user, groups, tenant):
         return True
 
     if len(account_ids) == 0:
         return can_edit_resource
 
     allowed_accounts = await get_accounts_user_can_edit_resources_for(
-        user, groups, host
+        user, groups, tenant
     )
     for account_id in account_ids:
         if account_id in allowed_accounts:
@@ -236,17 +238,17 @@ async def user_can_edit_resources(user, groups, host, account_ids) -> bool:
     return can_edit_resource
 
 
-def can_admin_identity(user: str, user_groups: List[str], host: str):
-    if can_admin_all(user, user_groups, host):
+def can_admin_identity(user: str, user_groups: List[str], tenant: str):
+    if can_admin_all(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_admin_identity", host, []),
-            *config.get_host_specific_key(
+            *config.get_tenant_specific_key("groups.can_admin_identity", tenant, []),
+            *config.get_tenant_specific_key(
                 "dynamic_config.groups.can_admin_identity",
-                host,
+                tenant,
                 [],
             ),
         ],
@@ -255,16 +257,16 @@ def can_admin_identity(user: str, user_groups: List[str], host: str):
     return False
 
 
-def can_create_roles(user: str, user_groups: List[str], host: str) -> bool:
-    if can_admin_all(user, user_groups, host):
+def can_create_roles(user: str, user_groups: List[str], tenant: str) -> bool:
+    if can_admin_all(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_create_roles", host, []),
-            *config.get_host_specific_key(
-                "dynamic_config.groups.can_create_roles", host, []
+            *config.get_tenant_specific_key("groups.can_create_roles", tenant, []),
+            *config.get_tenant_specific_key(
+                "dynamic_config.groups.can_create_roles", tenant, []
             ),
         ],
     ):
@@ -273,7 +275,7 @@ def can_create_roles(user: str, user_groups: List[str], host: str) -> bool:
 
 
 async def get_extended_request_account_ids(
-    extended_request: ExtendedRequestModel, host: str
+    extended_request: ExtendedRequestModel, tenant: str
 ) -> set[str]:
     accounts = []
 
@@ -285,12 +287,12 @@ async def get_extended_request_account_ids(
         ]:
             arn = change.arn
 
-        await get_resource_account(arn, host)
+        await get_resource_account(arn, tenant)
     return accounts
 
 
 async def get_extended_request_allowed_approvers(
-    extended_request: ExtendedRequestModel, host: str
+    extended_request: ExtendedRequestModel, tenant: str
 ):
     allowed_admins = set()
     for change in extended_request.changes.changes:
@@ -301,16 +303,16 @@ async def get_extended_request_allowed_approvers(
         ]:
             arn = change.arn
 
-        account_id = await get_resource_account(arn, host)
-        admins = await get_account_delegated_admins(account_id, host)
+        account_id = await get_resource_account(arn, tenant)
+        admins = await get_account_delegated_admins(account_id, tenant)
         allowed_admins.update(admins)
     return list(allowed_admins)
 
 
-async def get_account_delegated_admins(account_id, host):
+async def get_account_delegated_admins(account_id, tenant):
     spoke_role_adapter = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
     )
     allowed_admins = set()
@@ -323,15 +325,15 @@ async def get_account_delegated_admins(account_id, host):
         # Spoke account not available
         pass
 
-    application_admin = config.get_host_specific_key("application_admin", host)
+    application_admin = config.get_tenant_specific_key("application_admin", tenant)
     if application_admin:
         allowed_admins.add(application_admin)
 
     admin_groups = [
-        *config.get_host_specific_key("groups.can_admin_policies", host, []),
-        *config.get_host_specific_key(
+        *config.get_tenant_specific_key("groups.can_admin_policies", tenant, []),
+        *config.get_tenant_specific_key(
             "dynamic_config.groups.can_admin_policies",
-            host,
+            tenant,
             [],
         ),
     ]
@@ -341,7 +343,7 @@ async def get_account_delegated_admins(account_id, host):
 
 
 async def populate_approve_reject_policy(
-    extended_request: ExtendedRequestModel, groups, host, user: str
+    extended_request: ExtendedRequestModel, groups, tenant, user: str
 ) -> bool:
     request_config = {}
 
@@ -353,10 +355,10 @@ async def populate_approve_reject_policy(
         ]:
             arn = change.arn
 
-        account_id = await get_resource_account(arn, host)
+        account_id = await get_resource_account(arn, tenant)
 
-        is_owner = await can_admin_policies(user, groups, host, [account_id])
-        allowed_admins = await get_account_delegated_admins(account_id, host)
+        is_owner = await can_admin_policies(user, groups, tenant, [account_id])
+        allowed_admins = await get_account_delegated_admins(account_id, tenant)
         request_config[change.id] = {
             "can_approve_policy": False if not is_owner else True,
             "allowed_admins": allowed_admins,
@@ -365,18 +367,18 @@ async def populate_approve_reject_policy(
 
 
 async def can_admin_policies(
-    user: str, user_groups: List[str], host: str, account_ids: set[str] = []
+    user: str, user_groups: List[str], tenant: str, account_ids: set[str] = []
 ) -> bool:
-    if await user_can_edit_resources(user, user_groups, host, account_ids):
+    if await user_can_edit_resources(user, user_groups, tenant, account_ids):
         return True
     if is_in_group(
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_admin_policies", host, []),
-            *config.get_host_specific_key(
+            *config.get_tenant_specific_key("groups.can_admin_policies", tenant, []),
+            *config.get_tenant_specific_key(
                 "dynamic_config.groups.can_admin_policies",
-                host,
+                tenant,
                 [],
             ),
         ],
@@ -385,11 +387,11 @@ async def can_admin_policies(
     return False
 
 
-def can_delete_iam_principals_app(app_name, host):
+def can_delete_iam_principals_app(app_name, tenant):
     if app_name in [
-        *config.get_host_specific_key("groups.can_delete_roles_apps", host, []),
-        *config.get_host_specific_key(
-            "dynamic_config.groups.can_delete_roles_apps", host, []
+        *config.get_tenant_specific_key("groups.can_delete_roles_apps", tenant, []),
+        *config.get_tenant_specific_key(
+            "dynamic_config.groups.can_delete_roles_apps", tenant, []
         ),
     ]:
         return True
@@ -399,24 +401,26 @@ def can_delete_iam_principals_app(app_name, host):
 def can_delete_iam_principals(
     user: str,
     user_groups: List[str],
-    host: str,
+    tenant: str,
 ) -> bool:
-    if can_admin_all(user, user_groups, host):
+    if can_admin_all(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
         user_groups,
         [
             # TODO: Officially deprecate groups.can_delete_roles config key
-            *config.get_host_specific_key("groups.can_delete_roles", host, []),
+            *config.get_tenant_specific_key("groups.can_delete_roles", tenant, []),
             # TODO: Officially deprecate dynamic_config.groups.can_delete_roles config key
-            *config.get_host_specific_key(
-                "dynamic_config.groups.can_delete_roles", host, []
+            *config.get_tenant_specific_key(
+                "dynamic_config.groups.can_delete_roles", tenant, []
             ),
-            *config.get_host_specific_key("groups.can_delete_iam_principals", host, []),
-            *config.get_host_specific_key(
+            *config.get_tenant_specific_key(
+                "groups.can_delete_iam_principals", tenant, []
+            ),
+            *config.get_tenant_specific_key(
                 "dynamic_config.groups.can_delete_iam_principals",
-                host,
+                tenant,
                 [],
             ),
         ],
@@ -425,16 +429,16 @@ def can_delete_iam_principals(
     return False
 
 
-def can_edit_dynamic_config(user: str, user_groups: List[str], host: str) -> bool:
-    if can_admin_all(user, user_groups, host):
+def can_edit_dynamic_config(user: str, user_groups: List[str], tenant: str) -> bool:
+    if can_admin_all(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_edit_config", host, []),
-            *config.get_host_specific_key(
-                "dynamic_config.groups.can_edit_config", host, []
+            *config.get_tenant_specific_key("groups.can_edit_config", tenant, []),
+            *config.get_tenant_specific_key(
+                "dynamic_config.groups.can_edit_config", tenant, []
             ),
         ],
     ):
@@ -446,19 +450,19 @@ def can_edit_attributes(
     user: str,
     user_groups: List[str],
     group_info: Optional[Any],
-    host: str,
+    tenant: str,
 ) -> bool:
-    if can_admin_all(user, user_groups, host):
+    if can_admin_all(user, user_groups, tenant):
         return True
 
     if is_in_group(
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_admin_restricted", host, []),
-            *config.get_host_specific_key(
+            *config.get_tenant_specific_key("groups.can_admin_restricted", tenant, []),
+            *config.get_tenant_specific_key(
                 "dynamic_config.groups.can_admin_restricted",
-                host,
+                tenant,
                 [],
             ),
         ],
@@ -468,10 +472,10 @@ def can_edit_attributes(
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_edit_attributes", host, []),
-            *config.get_host_specific_key(
+            *config.get_tenant_specific_key("groups.can_edit_attributes", tenant, []),
+            *config.get_tenant_specific_key(
                 "dynamic_config.groups.can_edit_attributes",
-                host,
+                tenant,
                 [],
             ),
         ],
@@ -481,23 +485,23 @@ def can_edit_attributes(
 
 
 def can_modify_members(
-    host: str, user: str, user_groups: List[str], group_info: Optional[Any]
+    tenant: str, user: str, user_groups: List[str], group_info: Optional[Any]
 ) -> bool:
     # No users can modify members on restricted groups
     if group_info and group_info.restricted:
         return False
 
-    if can_admin_all(user, user_groups, host):
+    if can_admin_all(user, user_groups, tenant):
         return True
 
     if is_in_group(
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_admin_restricted", host, []),
-            *config.get_host_specific_key(
+            *config.get_tenant_specific_key("groups.can_admin_restricted", tenant, []),
+            *config.get_tenant_specific_key(
                 "dynamic_config.groups.can_admin_restricted",
-                host,
+                tenant,
                 [],
             ),
         ],
@@ -508,10 +512,10 @@ def can_modify_members(
         user,
         user_groups,
         [
-            *config.get_host_specific_key("groups.can_modify_members", host, []),
-            *config.get_host_specific_key(
+            *config.get_tenant_specific_key("groups.can_modify_members", tenant, []),
+            *config.get_tenant_specific_key(
                 "dynamic_config.groups.can_modify_members",
-                host,
+                tenant,
                 [],
             ),
         ],
@@ -521,20 +525,20 @@ def can_modify_members(
 
 
 def can_edit_sensitive_attributes(
-    user: str, user_groups: List[str], group_info: Optional[Any], host: str
+    user: str, user_groups: List[str], group_info: Optional[Any], tenant: str
 ) -> bool:
-    if can_admin_all(user, user_groups, host):
+    if can_admin_all(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
         user_groups,
         [
-            *config.get_host_specific_key(
-                "groups.can_edit_sensitive_attributes", host, []
+            *config.get_tenant_specific_key(
+                "groups.can_edit_sensitive_attributes", tenant, []
             ),
-            *config.get_host_specific_key(
+            *config.get_tenant_specific_key(
                 "dynamic_config.groups.can_edit_sensitive_attributes",
-                host,
+                tenant,
                 [],
             ),
         ],
@@ -543,20 +547,20 @@ def can_edit_sensitive_attributes(
     return False
 
 
-def is_sensitive_attr(attribute, host):
+def is_sensitive_attr(attribute, tenant):
     for attr in [
-        *config.get_host_specific_key("groups.attributes.boolean", host, []),
-        *config.get_host_specific_key(
-            "dynamic_config.groups.attributes.boolean", host, []
+        *config.get_tenant_specific_key("groups.attributes.boolean", tenant, []),
+        *config.get_tenant_specific_key(
+            "dynamic_config.groups.attributes.boolean", tenant, []
         ),
     ]:
         if attr.get("name") == attribute:
             return attr.get("sensitive", False)
 
     for attr in [
-        *config.get_host_specific_key("groups.attributes.list", host, []),
-        *config.get_host_specific_key(
-            "dynamic_config.groups.attributes.list", host, []
+        *config.get_tenant_specific_key("groups.attributes.list", tenant, []),
+        *config.get_tenant_specific_key(
+            "dynamic_config.groups.attributes.list", tenant, []
         ),
     ]:
         if attr.get("name") == attribute:

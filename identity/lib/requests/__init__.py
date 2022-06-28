@@ -11,41 +11,41 @@ from identity.lib.groups.models import (
 )
 
 
-async def get_request_by_id(host, request_id):
+async def get_request_by_id(tenant, request_id):
     """
     Get a request by ID.
     """
-    ddb = UserDynamoHandler(host)
-    request_j = await ddb.get_identity_group_request_by_id(host, request_id)
+    ddb = UserDynamoHandler(tenant)
+    request_j = await ddb.get_identity_group_request_by_id(tenant, request_id)
     request = GroupRequest.parse_obj(request_j)
     return request
 
 
-async def cancel_group_request(host, request, actor, reviewer_comments):
+async def cancel_group_request(tenant, request, actor, reviewer_comments):
     """
     Approve a request to access a group.
     """
-    ddb = UserDynamoHandler(host)
+    ddb = UserDynamoHandler(tenant)
     await ddb.change_request_status_by_id(
-        host, request.request_id, "cancelled", actor, reviewer_comments
+        tenant, request.request_id, "cancelled", actor, reviewer_comments
     )
-    # await send_slack_notification_new_group_request(host, request, actor)
+    # await send_slack_notification_new_group_request(tenant, request, actor)
 
 
-async def approve_group_request(host, request, actor, reviewer_comments):
+async def approve_group_request(tenant, request, actor, reviewer_comments):
     """
     Approve a request to access a group.
     """
-    await add_users_to_groups(host, request.users, request.groups, actor)
-    ddb = UserDynamoHandler(host)
+    await add_users_to_groups(tenant, request.users, request.groups, actor)
+    ddb = UserDynamoHandler(tenant)
     await ddb.change_request_status_by_id(
-        host, request.request_id, "approved", actor, reviewer_comments
+        tenant, request.request_id, "approved", actor, reviewer_comments
     )
-    # await send_slack_notification_new_group_request(host, request, actor)
+    # await send_slack_notification_new_group_request(tenant, request, actor)
 
 
 async def request_access_to_group(
-    host,
+    tenant,
     user,
     actor,
     actor_groups,
@@ -59,7 +59,7 @@ async def request_access_to_group(
     """
 
     # TODO: Support multiple users being added to multiple groups
-    ddb = UserDynamoHandler(host, user)
+    ddb = UserDynamoHandler(tenant, user)
     errors = []
     user_id = f"{idp_name}-{user}"
     # TODO: get user's groups, and not actor's groups, to determine if user is in the group
@@ -69,7 +69,7 @@ async def request_access_to_group(
     #     continue
 
     # Get the group
-    group = await get_group_by_name(host, idp_name, group_name)
+    group = await get_group_by_name(tenant, idp_name, group_name)
     if not group:
         raise Exception("Group not found: {group_name}")
 
@@ -78,7 +78,7 @@ async def request_access_to_group(
 
     # TODO: Check for existing pending requests
     pending_requests = await ddb.get_pending_identity_group_requests(
-        host, user=user, group=group, status="pending"
+        tenant, user=user, group=group, status="pending"
     )
     if pending_requests:
         errors.append(
@@ -89,7 +89,7 @@ async def request_access_to_group(
         idp_name=idp_name,
         user_id=user_id,
         username=user,
-        host=host,
+        tenant=tenant,
         background_check_status=False,
     )
     # Create the request
@@ -131,7 +131,7 @@ async def request_access_to_group(
     groups = [group]
     request = GroupRequest(
         request_id=request_uuid,
-        host=host,
+        tenant=tenant,
         users=users,
         groups=groups,
         requester=user_obj,
@@ -146,9 +146,9 @@ async def request_access_to_group(
     )
 
     # Create request in DynamoDB
-    ddb = UserDynamoHandler(host, user=user)
-    await ddb.create_identity_group_request(host, user, request)
-    # await send_slack_notification_new_group_request(host, request)
+    ddb = UserDynamoHandler(tenant, user=user)
+    await ddb.create_identity_group_request(tenant, user, request)
+    # await send_slack_notification_new_group_request(tenant, request)
 
     # TODO: Notify approvers via Slack/Email
     # https://github.com/Netflix/consoleme/commit/8b1f020253dc4f90ef2b336a8b75032eab66f241

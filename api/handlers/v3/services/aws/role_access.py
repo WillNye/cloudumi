@@ -18,7 +18,7 @@ class CredentialBrokeringHandler(BaseHandler):
     """
 
     async def post(self, _enabled: str):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         enabled = True if _enabled == "enable" else False
 
         log_data = {
@@ -27,10 +27,10 @@ class CredentialBrokeringHandler(BaseHandler):
             "message": "Enabling role access" if enabled else "Disabling role access",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self,
@@ -46,7 +46,7 @@ class CredentialBrokeringHandler(BaseHandler):
         verb = "enabled" if enabled else "disabled"
 
         try:
-            await role_access.toggle_role_access_credential_brokering(host, enabled)
+            await role_access.toggle_role_access_credential_brokering(tenant, enabled)
         except Exception as exc:
             sentry_sdk.capture_exception()
             log.error(exc)
@@ -73,7 +73,7 @@ class CredentialBrokeringCurrentStateHandler(BaseHandler):
     """
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": "CredentialBrokeringCurrentStateHandler.get",
@@ -81,10 +81,10 @@ class CredentialBrokeringCurrentStateHandler(BaseHandler):
             "message": "Retrieving current credential brokering state.",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self,
@@ -97,7 +97,7 @@ class CredentialBrokeringCurrentStateHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        current_state = await role_access.get_role_access_credential_brokering(host)
+        current_state = await role_access.get_role_access_credential_brokering(tenant)
         res = WebResponse(
             status="success",
             status_code=200,
@@ -114,7 +114,7 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
     """
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": "AuthorizedGroupsTags.get",
@@ -122,12 +122,12 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
             "message": "Retrieving authorized groups tags",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
         generic_error_message = "Cannot access authorized groups tags information"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -135,7 +135,7 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        authorized_groups_tags = await role_access.get_authorized_groups_tags(host)
+        authorized_groups_tags = await role_access.get_authorized_groups_tags(tenant)
         res = WebResponse(
             status="success",
             status_code=200,
@@ -146,7 +146,7 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": "AuthorizedGroupsTags.post",
@@ -154,12 +154,12 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
             "message": "Updating authorized groups tags",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = "Unable to update authorized groups tags"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -180,7 +180,7 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
             self.write(res.json(exclude_unset=True, exclude_none=True))
             return
 
-        await role_access.upsert_authorized_groups_tag(host, tag_name, webaccess)
+        await role_access.upsert_authorized_groups_tag(tenant, tag_name, webaccess)
 
         res = WebResponse(
             status="success",
@@ -197,7 +197,7 @@ class AuthorizedGroupsTagsDeleteHandler(BaseHandler):
     """
 
     async def delete(self, _tag_name):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": "AuthorizedGroupsTagsDeleteHandler.delete",
@@ -206,12 +206,12 @@ class AuthorizedGroupsTagsDeleteHandler(BaseHandler):
             "message": "Deleting authorized groups tags",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
         # Checks authz levels of current user
         generic_error_message = "Unable to delete authorized groups tags"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -219,7 +219,7 @@ class AuthorizedGroupsTagsDeleteHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        deleted = await role_access.delete_authorized_groups_tag(host, _tag_name)
+        deleted = await role_access.delete_authorized_groups_tag(tenant, _tag_name)
 
         res = WebResponse(
             status="success" if deleted else "error",
@@ -238,7 +238,7 @@ class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
     """
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         log_data = {
             "function": "AutomaticPolicyUpdateHandler.get",
@@ -246,12 +246,12 @@ class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
             "message": "Retrieving automatic policy update handler state",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
         generic_error_message = "Cannot access automatic policy update handler state"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -260,7 +260,7 @@ class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
         log.debug(log_data)
 
         automatic_update = await role_access.get_role_access_automatic_policy_update(
-            host
+            tenant
         )
         res = WebResponse(
             status="success",
@@ -271,7 +271,7 @@ class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self, _enabled: str):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         enabled = True if _enabled == "enable" else False
 
         log_data = {
@@ -282,10 +282,10 @@ class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
             else "Disabling automatic updates",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self,
@@ -301,7 +301,9 @@ class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
         verb = "enabled" if enabled else "disabled"
 
         try:
-            await role_access.toggle_role_access_automatic_policy_update(host, enabled)
+            await role_access.toggle_role_access_automatic_policy_update(
+                tenant, enabled
+            )
         except Exception as exc:
             sentry_sdk.capture_exception()
             log.error(exc)

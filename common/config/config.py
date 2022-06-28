@@ -100,24 +100,27 @@ class Configuration(metaclass=Singleton):
             )
 
     def load_dynamic_config_from_redis(
-        self, log_data: Dict[str, Any], host: str, red=None
+        self, log_data: Dict[str, Any], tenant: str, red=None
     ):
         if not red:
             from common.lib.redis import RedisHandler
 
-            red = RedisHandler().redis_sync(host)
-        dynamic_config = red.get(f"{host}_DYNAMIC_CONFIG_CACHE")
+            red = RedisHandler().redis_sync(tenant)
+        dynamic_config = red.get(f"{tenant}_DYNAMIC_CONFIG_CACHE")
         if not dynamic_config:
             return
         dynamic_config_j = json.loads(dynamic_config)
-        if self.get_host_specific_key("dynamic_config", host, {}) != dynamic_config_j:
+        if (
+            self.get_tenant_specific_key("dynamic_config", tenant, {})
+            != dynamic_config_j
+        ):
             self.get_logger("config").debug(
                 {
                     **log_data,
                     "message": "Refreshing dynamic configuration from Redis",
                 }
             )
-            self.config["site_configs"][host]["dynamic_config"] = dynamic_config_j
+            self.config["site_configs"][tenant]["dynamic_config"] = dynamic_config_j
 
     def load_tenant_configurations_from_redis_or_s3(self):
         """
@@ -132,7 +135,7 @@ class Configuration(metaclass=Singleton):
         or caches specific tenant configuration on-demand. We need to take care to delete Redis hash keys for tenants
         that are no longer valid
          2) Celery workers that need all tenant configuration will pull it all in to their configuration
-         3) Web hosts will pull configuration from Redis, and fall back to "s3 -> cache to redis" on demand
+         3) Web tenants will pull configuration from Redis, and fall back to "s3 -> cache to redis" on demand
         :return:
         """
         # TODO: Validate layout of each Tenant configuration. It should not be able to override any other tenant config
@@ -141,11 +144,11 @@ class Configuration(metaclass=Singleton):
         # tag to restrict access to specific configuration item
         pass
 
-    def load_tenant_configuration_from_redis_or_s3(self, host):
+    def load_tenant_configuration_from_redis_or_s3(self, tenant):
         """
         Loads a single tenant static configuration from S3. TODO: Support S3 access points and custom assume role
         policies to prevent one tenant from pulling another tenant's configuration
-        :param host: host, aka tenant, ID
+        :param tenant: tenant, aka tenant, ID
         :return:
         """
         pass
@@ -206,14 +209,14 @@ class Configuration(metaclass=Singleton):
                 self.merge_extended_paths(extend_config.get("extends"), dir_path)
         validate_config(self.config)
 
-    def get_employee_photo_url(self, user, host):
+    def get_employee_photo_url(self, user, tenant):
         import hashlib
         import urllib.parse
 
         # Try to get a custom employee photo url by formatting a string provided through configuration
 
-        custom_employee_photo_url = self.get_host_specific_key(
-            "get_employee_photo_url.custom_employee_url", host, ""
+        custom_employee_photo_url = self.get_tenant_specific_key(
+            "get_employee_photo_url.custom_employee_url", tenant, ""
         ).format(user=user)
         if custom_employee_photo_url:
             return custom_employee_photo_url
@@ -229,7 +232,7 @@ class Configuration(metaclass=Singleton):
         return gravatar_url
 
     @staticmethod
-    def get_employee_info_url(user, host):
+    def get_employee_info_url(user, tenant):
         return None
 
     @staticmethod
@@ -240,7 +243,7 @@ class Configuration(metaclass=Singleton):
             if config_location.startswith("s3://"):
                 import boto3
 
-                # TODO: Need host specific configuration?
+                # TODO: Need tenant specific configuration?
                 client = boto3.client("s3")
                 bucket, key = split_s3_path(config_location)
                 obj = client.get_object(Bucket=bucket, Key=key)
@@ -279,7 +282,6 @@ class Configuration(metaclass=Singleton):
     ):
         """Load configuration"""
         path = self.get_config_location()
-
         try:
             with open(path, "r") as ymlfile:
                 self.config = yaml.load(ymlfile)
@@ -312,7 +314,7 @@ class Configuration(metaclass=Singleton):
     ) -> Any:
         """Get value for configuration entry in dot notation."""
         value = default
-        # Only support keys that explicitly call out a host
+        # Only support keys that explicitly call out a tenant
         if key not in ["extends", "site_configs"] and (
             not key.startswith("site_configs.") and not key.startswith("_global_.")
         ):
@@ -329,7 +331,7 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
-    def get_tenant_static_config_from_dynamo(self, host, safe=False):
+    def get_tenant_static_config_from_dynamo(self, tenant, safe=False):
         """
         Get tenant static configuration from DynamoDB.
         configuration.
@@ -347,7 +349,9 @@ class Configuration(metaclass=Singleton):
         )
         current_config = {}
         try:
-            current_config = config_table.get_item(Key={"host": host, "id": "master"})
+            current_config = config_table.get_item(
+                Key={"tenant": tenant, "id": "master"}
+            )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "ResourceNotFoundException":
                 return {}
@@ -361,51 +365,54 @@ class Configuration(metaclass=Singleton):
             return yaml_safe.load(tenant_config)
         return yaml.load(tenant_config)
 
-    def is_host_configured(self, host) -> bool:
+    def is_tenant_configured(self, tenant) -> bool:
         """
-        Check if host is configured in DynamoDB.
+        Check if tenant is configured in DynamoDB.
         """
-        host_config_base_key = f"site_configs.{host}"
-        if self.get(host_config_base_key):
+        tenant_config_base_key = f"site_configs.{tenant}"
+        if self.get(tenant_config_base_key):
             return True
         from common.lib.redis import RedisHandler
 
-        red = RedisHandler().redis_sync(host)
-        if red.get(f"{host}_STATIC_CONFIGURATION"):
+        red = RedisHandler().redis_sync(tenant)
+        if red.get(f"{tenant}_STATIC_CONFIGURATION"):
             return True
-        if self.get_tenant_static_config_from_dynamo(host):
+        if self.get_tenant_static_config_from_dynamo(tenant):
             return True
         if self.get("_global_.environment") == "test":
             return True
         return False
 
-    def copy_tenant_config_dynamo_to_redis(self, host):
-        config_item = self.get_tenant_static_config_from_dynamo(host, safe=True)
+    def copy_tenant_config_dynamo_to_redis(self, tenant):
+        config_item = self.get_tenant_static_config_from_dynamo(tenant, safe=True)
         if config_item:
             from common.lib.redis import RedisHandler
 
-            red = RedisHandler().redis_sync(host)
-            self.tenant_configs[host]["config"] = config_item
-            self.tenant_configs[host]["last_updated"] = int(time.time())
+            red = RedisHandler().redis_sync(tenant)
+            self.tenant_configs[tenant]["config"] = config_item
+            self.tenant_configs[tenant]["last_updated"] = int(time.time())
             red.set(
-                f"{host}_STATIC_CONFIGURATION",
-                json.dumps(self.tenant_configs[host], default=str),
+                f"{tenant}_STATIC_CONFIGURATION",
+                json.dumps(self.tenant_configs[tenant], default=str),
             )
 
-    def load_tenant_config_from_redis(self, host):
+    def load_tenant_config_from_redis(self, tenant):
         from common.lib.redis import RedisHandler
 
-        red = RedisHandler().redis_sync(host)
-        return json.loads(red.get(f"{host}_STATIC_CONFIGURATION") or "{}")
+        red = RedisHandler().redis_sync(tenant)
+        return json.loads(red.get(f"{tenant}_STATIC_CONFIGURATION") or "{}")
 
-    def get_host_specific_key(self, key: str, host: str, default: Any = None) -> Any:
+    def get_tenant_specific_key(
+        self, key: str, tenant: str, default: Any = None
+    ) -> Any:
         """
-        Get a host/"tenant" specific value for configuration entry in dot notation.
+        Get a tenant specific value for configuration entry in dot notation.
         """
-        # Only support keys that explicitly call out a host in development mode
+        # Only support keys that explicitly call out a tenant in development mode
+
         if self.get("_global_.development"):
-            static_config_key = f"site_configs.{host}.{key}"
-            # If we've defined a static config yaml file for the host, that takes precedence over
+            static_config_key = f"site_configs.{tenant}.{key}"
+            # If we've defined a static config yaml file for the tenant, that takes precedence over
             # anything in Dynamo, even if the static config doesn't actually have the config
             # key the user is querying.
             if self.get(static_config_key):
@@ -414,26 +421,28 @@ class Configuration(metaclass=Singleton):
         # Otherwise, we need to get the config from local variable,
         # fall back to Redis cache, and lastly fall back to Dynamo
         current_time = int(time.time())
-        last_updated = self.tenant_configs[host].get("last_updated", 0)
+        last_updated = self.tenant_configs[tenant].get("last_updated", 0)
         if current_time - last_updated > 5:
-            tenant_config = self.load_tenant_config_from_redis(host)
+            tenant_config = self.load_tenant_config_from_redis(tenant)
             last_updated = int(tenant_config.get("last_updated", 0))
-            # If Redis config cache for host is newer than 60 seconds, update in-memory variables
+            # If Redis config cache for tenant is newer than 60 seconds, update in-memory variables
             if current_time - last_updated < 60:
-                self.tenant_configs[host]["config"] = tenant_config["config"]
-                self.tenant_configs[host]["last_updated"] = last_updated
-        # If local variables and Redis config cache for the host are still older than 60 seconds,
+                self.tenant_configs[tenant]["config"] = tenant_config["config"]
+                self.tenant_configs[tenant]["last_updated"] = last_updated
+        # If local variables and Redis config cache for the tenant are still older than 60 seconds,
         # pull from Dynamo, update local cache, redis cache, and in-memory variables
         if current_time - last_updated > 60:
-            self.copy_tenant_config_dynamo_to_redis(host)
+            self.copy_tenant_config_dynamo_to_redis(tenant)
 
         # Convert commented map to dictionary
-        c = self.tenant_configs[host].get("config")
+        c = self.tenant_configs[tenant].get("config")
         if not c:
             return default
-        value = json.loads(json.dumps(self.tenant_configs[host].get("config")))
+
+        value = json.loads(json.dumps(self.tenant_configs[tenant].get("config")))
         if not value:
             return default
+
         for k in key.split("."):
             try:
                 value = value[k]
@@ -570,7 +579,7 @@ class Configuration(metaclass=Singleton):
             raise RuntimeError(
                 f"Unable to read configuration - cannot get {cluster_id_key}"
             )
-        return f"{cluster_id}_{namespace}_{table_name}"
+        return f"{cluster_id}_{namespace}_{table_name}_v2"
 
     def dynamodb_host(self):
         return self.get(
@@ -597,11 +606,11 @@ CONFIG.load_config()
 
 get = CONFIG.get
 get_logger = CONFIG.get_logger
-get_host_specific_key = CONFIG.get_host_specific_key
+get_tenant_specific_key = CONFIG.get_tenant_specific_key
 get_employee_photo_url = CONFIG.get_employee_photo_url
 get_employee_info_url = CONFIG.get_employee_info_url
 get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dynamo
-is_host_configured = CONFIG.is_host_configured
+is_tenant_configured = CONFIG.is_tenant_configured
 get_dynamo_table_name = CONFIG.get_dynamo_table_name
 # Set logging levels
 CONFIG.set_logging_levels()

@@ -15,7 +15,7 @@ streams_enabled = config.get("_global_.dynamodb.streams_enabled", True)
 ttl_enabled = config.get("_global_.dynamodb.ttl_enabled", True)
 
 session = restricted_get_session_for_saas()
-# TODO: Do we need a boto3 session by host here?
+# TODO: Do we need a boto3 session by tenant here?
 ddb = session.client(
     "dynamodb",
     endpoint_url=config.get(
@@ -30,11 +30,11 @@ try:
     ddb.create_table(
         TableName=table_name,
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "entity_id", "AttributeType": "S"},
         ],
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "entity_id", "KeyType": "RANGE"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
@@ -44,10 +44,10 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],
@@ -107,12 +107,12 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
             {"AttributeName": "id", "AttributeType": "S"},
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
         StreamSpecification={
@@ -121,10 +121,10 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],
@@ -150,19 +150,19 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "request_id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "request_id", "AttributeType": "S"},
             {"AttributeName": "arn", "AttributeType": "S"},
         ],
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "arn-host-index",
+                "IndexName": "arn-tenant-index",
                 "KeySchema": [
-                    {"AttributeName": "host", "KeyType": "HASH"},
+                    {"AttributeName": "tenant", "KeyType": "HASH"},
                     {"AttributeName": "arn", "KeyType": "RANGE"},
                 ],
                 "Projection": {"ProjectionType": "ALL"},
@@ -190,19 +190,19 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "entity_id", "KeyType": "RANGE"},  # Sort key
         ],  # Partition key
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "entity_id", "AttributeType": "S"},
             {"AttributeName": "arn", "AttributeType": "S"},
         ],
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host-arn-index",
+                "IndexName": "tenant-arn-index",
                 "KeySchema": [
-                    {"AttributeName": "host", "KeyType": "HASH"},
+                    {"AttributeName": "tenant", "KeyType": "HASH"},
                     {"AttributeName": "arn", "KeyType": "RANGE"},
                 ],
                 "Projection": {"ProjectionType": "ALL"},
@@ -212,8 +212,8 @@ try:
                 },
             },
             {
-                "IndexName": "host-index",
-                "KeySchema": [{"AttributeName": "host", "KeyType": "HASH"}],
+                "IndexName": "tenant-index",
+                "KeySchema": [{"AttributeName": "tenant", "KeyType": "HASH"}],
                 "Projection": {"ProjectionType": "ALL"},
                 "ProvisionedThroughput": {
                     "ReadCapacityUnits": 1,
@@ -239,11 +239,11 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "request_id", "KeyType": "RANGE"},
         ],
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "request_id", "AttributeType": "S"},
             {"AttributeName": "arn", "AttributeType": "S"},
         ],
@@ -254,9 +254,9 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host-arn-index",
+                "IndexName": "tenant-arn-index",
                 "KeySchema": [
-                    {"AttributeName": "host", "KeyType": "HASH"},
+                    {"AttributeName": "tenant", "KeyType": "HASH"},
                     {"AttributeName": "arn", "KeyType": "RANGE"},
                 ],
                 "Projection": {"ProjectionType": "ALL"},
@@ -313,11 +313,11 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "username", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "username", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
@@ -339,11 +339,11 @@ try:
     ddb.create_table(
         TableName=table_name,
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "predictable_id", "AttributeType": "S"},
         ],
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "predictable_id", "KeyType": "RANGE"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
@@ -366,12 +366,12 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
             {"AttributeName": "id", "AttributeType": "S"},
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
         StreamSpecification={
@@ -380,10 +380,10 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],
@@ -409,12 +409,12 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "group_id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
             {"AttributeName": "group_id", "AttributeType": "S"},
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
         StreamSpecification={
@@ -423,10 +423,10 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],
@@ -452,11 +452,11 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "user_id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "user_id", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
@@ -466,10 +466,10 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],
@@ -495,12 +495,12 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "request_id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
             {"AttributeName": "request_id", "AttributeType": "S"},
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
         StreamSpecification={
@@ -509,10 +509,10 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],
@@ -538,12 +538,12 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "api_key", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
             {"AttributeName": "api_key", "AttributeType": "S"},
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "id", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
@@ -553,10 +553,10 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],
@@ -569,10 +569,10 @@ try:
                 },
             },
             {
-                "IndexName": "host_id_index",
+                "IndexName": "tenant_id_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                     {
@@ -634,11 +634,11 @@ try:
     ddb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "aws_account_id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "aws_account_id", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
@@ -648,10 +648,10 @@ try:
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],

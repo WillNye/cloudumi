@@ -20,20 +20,20 @@ def get_secret_hash(username, client_id, client_secret):
     return d2
 
 
-def initiate_auth(host, username, password):
+def initiate_auth(tenant, username, password):
     client = boto3.client("cognito-idp")
-    user_pool_id = config.get_host_specific_key(
-        "secrets.cognito.config.user_pool_id", host
+    user_pool_id = config.get_tenant_specific_key(
+        "secrets.cognito.config.user_pool_id", tenant
     )
     if not user_pool_id:
         raise Exception("User pool is not defined")
-    client_id = config.get_host_specific_key(
-        "secrets.cognito.config.user_pool_client_id", host
+    client_id = config.get_tenant_specific_key(
+        "secrets.cognito.config.user_pool_client_id", tenant
     )
     if not client_id:
         raise Exception("Client ID is not defined")
-    client_secret = config.get_host_specific_key(
-        "secrets.cognito.config.user_pool_client_secret", host
+    client_secret = config.get_tenant_specific_key(
+        "secrets.cognito.config.user_pool_client_secret", tenant
     )
     if not client_secret:
         raise Exception("Client secret is not defined")

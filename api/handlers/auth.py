@@ -11,15 +11,15 @@ log = config.get_logger()
 
 class AuthHandler(BaseHandler):
     async def prepare(self):
-        host = self.get_host_name()
-        if not config.is_host_configured(host):
+        tenant = self.get_tenant_name()
+        if not config.is_tenant_configured(tenant):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
             log_data = {
                 "function": function,
-                "message": "Invalid host specified. Redirecting to main page",
-                "host": host,
+                "message": "Invalid tenant specified. Redirecting to main page",
+                "tenant": tenant,
             }
             log.debug(log_data)
             self.set_status(403)
@@ -28,10 +28,10 @@ class AuthHandler(BaseHandler):
                     "type": "redirect",
                     "redirect_url": "https://noq.dev",
                     "reason": "unauthenticated",
-                    "message": "Invalid host specified",
+                    "message": "Invalid tenant specified",
                 }
             )
-            raise Finish("Invalid host specified.")
+            raise Finish("Invalid tenant specified.")
         try:
             if self.request.method.lower() in ["options", "post"]:
                 return

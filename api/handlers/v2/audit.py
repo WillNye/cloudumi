@@ -35,12 +35,12 @@ class AuditRolesHandler(BaseMtlsHandler):
         """
         GET /api/v2/audit/roles
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
         page = self.get_argument("page", "0")
@@ -69,14 +69,14 @@ class AuditRolesHandler(BaseMtlsHandler):
             "AuditRoleHandler.get",
             tags={
                 "requester": app_name,
-                "host": host,
+                "tenant": tenant,
             },
         )
 
         roles = await credential_mapping.all_roles(
-            host, paginate=True, page=page, count=count
+            tenant, paginate=True, page=page, count=count
         )
-        total_roles = await credential_mapping.number_roles(host)
+        total_roles = await credential_mapping.number_roles(tenant)
         start = page * count
         end = start + count
         end = min(end, total_roles)
@@ -110,14 +110,14 @@ class AuditRolesAccessHandler(BaseMtlsHandler):
         """
         GET /api/v2/audit/roles/{accountNumber}/{roleName}/access
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "account_id": account_id,
             "role_name": role_name,
-            "host": host,
+            "tenant": tenant,
         }
         app_name = self.requester.get("name") or self.requester.get("username")
         stats.count(
@@ -126,12 +126,12 @@ class AuditRolesAccessHandler(BaseMtlsHandler):
                 "requester": app_name,
                 "account_id": account_id,
                 "role_name": role_name,
-                "host": host,
+                "tenant": tenant,
             },
         )
 
         groups = await credential_mapping.determine_role_authorized_groups(
-            account_id, role_name, host
+            account_id, role_name, tenant
         )
         if not groups:
             log_data[

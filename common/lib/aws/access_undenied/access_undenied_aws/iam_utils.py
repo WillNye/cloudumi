@@ -105,13 +105,13 @@ def _get_cross_account_iam_client(
     try:
         cross_account_role_name = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", config.host)
+            .load_config("spoke_accounts", config.tenant)
             .with_query({"account_id": target_account})
             .first.name
         )
         iam_client = boto3_cached_conn(
             "iam",
-            config.host,
+            config.tenant,
             None,
             account_number=target_account,
             assume_role=cross_account_role_name,
@@ -260,7 +260,7 @@ def get_iam_client_in_account(
 
     cross_account_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", config.host)
+        .load_config("spoke_accounts", config.tenant)
         .with_query({"account_id": account_id})
         .first.name
     )

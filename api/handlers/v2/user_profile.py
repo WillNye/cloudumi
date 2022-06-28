@@ -27,17 +27,17 @@ class UserProfileHandler(BaseAPIV1Handler):
         Provide information about site configuration for the frontend
         :return:
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         is_contractor = False  # TODO: Support other option
 
-        security_logo = config.get_host_specific_key("security_logo.image", host)
+        security_logo = config.get_tenant_specific_key("security_logo.image", tenant)
         if security_logo:
             try:
                 validators.url(security_logo)
             except ValidationFailure:
                 security_logo = None
                 sentry_sdk.capture_exception()
-        favicon = config.get_host_specific_key("favicon.image", host)
+        favicon = config.get_tenant_specific_key("favicon.image", tenant)
         if favicon:
             try:
                 validators.url(favicon)
@@ -46,20 +46,22 @@ class UserProfileHandler(BaseAPIV1Handler):
                 sentry_sdk.capture_exception()
 
         site_config = {
-            "consoleme_logo": await get_random_security_logo(host),
+            "consoleme_logo": await get_random_security_logo(tenant),
             "google_analytics": {
                 "tracking_id": config.get("_global_.google_analytics.tracking_id"),
                 "options": config.get("_global_.google_analytics.options", {}),
             },
-            "documentation_url": config.get_host_specific_key(
+            "documentation_url": config.get_tenant_specific_key(
                 "documentation_page",
-                host,
+                tenant,
                 "/docs",
             ),
-            "support_contact": config.get_host_specific_key("support_contact", host),
-            "support_chat_url": config.get_host_specific_key(
+            "support_contact": config.get_tenant_specific_key(
+                "support_contact", tenant
+            ),
+            "support_chat_url": config.get_tenant_specific_key(
                 "support_chat_url",
-                host,
+                tenant,
                 "https://communityinviter.com/apps/noqcommunity/noq",
             ),
             "security_logo": security_logo,
@@ -67,22 +69,24 @@ class UserProfileHandler(BaseAPIV1Handler):
             "security_url": None,
             # If site_config.landing_url is set, users will be redirected to the landing URL after authenticating
             # on the frontend.
-            "landing_url": config.get_host_specific_key("landing_url", host),
+            "landing_url": config.get_tenant_specific_key("landing_url", tenant),
             "notifications": {
-                "enabled": config.get_host_specific_key("notifications.enabled", host),
-                "request_interval": config.get_host_specific_key(
+                "enabled": config.get_tenant_specific_key(
+                    "notifications.enabled", tenant
+                ),
+                "request_interval": config.get_tenant_specific_key(
                     "notifications.request_interval",
-                    host,
+                    tenant,
                     60,
                 ),
             },
-            "temp_policy_support": config.get_host_specific_key(
-                "policies.temp_policy_support", host, True
+            "temp_policy_support": config.get_tenant_specific_key(
+                "policies.temp_policy_support", tenant, True
             ),
         }
 
         custom_page_header: Dict[str, str] = await get_custom_page_header(
-            self.user, self.groups, host
+            self.user, self.groups, tenant
         )
 
         user_profile = {
@@ -94,11 +98,11 @@ class UserProfileHandler(BaseAPIV1Handler):
             "employee_info_url": "",  # TODO: Support custom employee info url
             "authorization": {
                 "can_edit_policies": await can_admin_policies(
-                    self.user, self.groups, host, []
+                    self.user, self.groups, tenant, []
                 ),
-                "can_create_roles": can_create_roles(self.user, self.groups, host),
+                "can_create_roles": can_create_roles(self.user, self.groups, tenant),
                 "can_delete_iam_principals": can_delete_iam_principals(
-                    self.user, self.groups, host
+                    self.user, self.groups, tenant
                 ),
             },
             "pages": {
@@ -114,34 +118,34 @@ class UserProfileHandler(BaseAPIV1Handler):
                     ),
                 },
                 "role_login": {
-                    "enabled": config.get_host_specific_key(
-                        "headers.role_login.enabled", host, True
+                    "enabled": config.get_tenant_specific_key(
+                        "headers.role_login.enabled", tenant, True
                     )
                 },
                 "groups": {
-                    "enabled": config.get_host_specific_key(
-                        "headers.group_access.enabled", host, False
+                    "enabled": config.get_tenant_specific_key(
+                        "headers.group_access.enabled", tenant, False
                     )
                 },
                 "identity": {
-                    "enabled": config.get_host_specific_key(
-                        "headers.identity.enabled", host, False
+                    "enabled": config.get_tenant_specific_key(
+                        "headers.identity.enabled", tenant, False
                     )
                 },
                 "users": {
-                    "enabled": config.get_host_specific_key(
-                        "headers.group_access.enabled", host, False
+                    "enabled": config.get_tenant_specific_key(
+                        "headers.group_access.enabled", tenant, False
                     )
                 },
                 "policies": {
-                    "enabled": config.get_host_specific_key(
-                        "headers.policies.enabled", host, True
+                    "enabled": config.get_tenant_specific_key(
+                        "headers.policies.enabled", tenant, True
                     )
                     and not is_contractor
                 },
                 "self_service": {
-                    "enabled": config.get_host_specific_key(
-                        "enable_self_service", host, True
+                    "enabled": config.get_tenant_specific_key(
+                        "enable_self_service", tenant, True
                     )
                     and not is_contractor
                 },
@@ -149,9 +153,9 @@ class UserProfileHandler(BaseAPIV1Handler):
                     "enabled": is_in_group(
                         self.user,
                         self.groups,
-                        config.get_host_specific_key(
+                        config.get_tenant_specific_key(
                             "groups.can_edit_health_alert",
-                            host,
+                            tenant,
                             [],
                         ),
                     )
@@ -160,14 +164,14 @@ class UserProfileHandler(BaseAPIV1Handler):
                     "enabled": is_in_group(
                         self.user,
                         self.groups,
-                        config.get_host_specific_key("groups.can_audit", host, []),
+                        config.get_tenant_specific_key("groups.can_audit", tenant, []),
                     )
                 },
                 "config": {
-                    "enabled": can_edit_dynamic_config(self.user, self.groups, host)
+                    "enabled": can_edit_dynamic_config(self.user, self.groups, tenant)
                 },
             },
-            "accounts": await get_account_id_to_name_mapping(host),
+            "accounts": await get_account_id_to_name_mapping(tenant),
         }
 
         self.set_header("Content-Type", "application/json")

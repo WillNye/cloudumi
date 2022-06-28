@@ -47,7 +47,7 @@ class IAMRole(NoqModel):
         fallback_to_dynamodb = True
         region = config.region
 
-    host = UnicodeAttribute(hash_key=True)
+    tenant = UnicodeAttribute(hash_key=True)
     entity_id = UnicodeAttribute(range_key=True)
     accountId = UnicodeAttribute()
     name = UnicodeAttribute()
@@ -63,7 +63,7 @@ class IAMRole(NoqModel):
 
     @property
     def role_id(self):
-        return f"{self.arn}||{self.host}"
+        return f"{self.arn}||{self.tenant}"
 
     @property
     def assume_role_policy_document(self):
@@ -119,7 +119,7 @@ class IAMRole(NoqModel):
     @classmethod
     async def get(
         cls,
-        host: str,
+        tenant: str,
         account_id: str,
         arn: str,
         force_refresh: bool = False,
@@ -130,21 +130,21 @@ class IAMRole(NoqModel):
         stat_tags = {
             "account_id": account_id,
             "role_arn": arn,
-            "host": host,
+            "tenant": tenant,
         }
         log_data: dict = {
             "function": f"{sys._getframe().f_code.co_name}",
             "role_arn": arn,
             "account_id": account_id,
             "force_refresh": force_refresh,
-            "host": host,
+            "tenant": tenant,
         }
         iam_role = None
-        entity_id = f"{arn}||{host}"
+        entity_id = f"{arn}||{tenant}"
 
         if not force_refresh:
             try:
-                iam_role: IAMRole = await super(IAMRole, cls).get(host, entity_id)
+                iam_role: IAMRole = await super(IAMRole, cls).get(tenant, entity_id)
             except DoesNotExist:
                 log_data["message"] = "Role is missing in DDB. Going out to AWS."
                 stats.count("aws.fetch_iam_role.missing_dynamo", tags=stat_tags)
@@ -163,18 +163,20 @@ class IAMRole(NoqModel):
                 conn = {
                     "account_number": account_id,
                     "assume_role": ModelAdapter(SpokeAccount)
-                    .load_config("spoke_accounts", host)
+                    .load_config("spoke_accounts", tenant)
                     .with_query({"account_id": account_id})
                     .first.name,
                     "region": config.region,
-                    "client_kwargs": config.get_host_specific_key(
-                        "boto3.client_kwargs", host, {}
+                    "client_kwargs": config.get_tenant_specific_key(
+                        "boto3.client_kwargs", tenant, {}
                     ),
                 }
                 if run_sync:
-                    role = _get_iam_role_sync(account_id, role_name, conn, host)
+                    role = _get_iam_role_sync(account_id, role_name, conn, tenant)
                 else:
-                    role = await _get_iam_role_async(account_id, role_name, conn, host)
+                    role = await _get_iam_role_async(
+                        account_id, role_name, conn, tenant
+                    )
 
             except ClientError as ce:
                 if ce.response["Error"]["Code"] == "NoSuchEntity":
@@ -199,14 +201,14 @@ class IAMRole(NoqModel):
             iam_role = cls(
                 arn=role.get("Arn"),
                 entity_id=entity_id,
-                host=host,
+                tenant=tenant,
                 name=role.get("RoleName"),
                 resourceId=role.get("RoleId"),
                 accountId=account_id,
                 tags=[TagMap(**tag) for tag in role.get("Tags", [])],
                 policy=cls().dump_json_attr(role),
                 permissions_boundary=role.get("PermissionsBoundary", {}),
-                owner=get_aws_principal_owner(role, host),
+                owner=get_aws_principal_owner(role, tenant),
                 last_updated=last_updated,
                 ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
             )
@@ -229,38 +231,38 @@ class IAMRole(NoqModel):
 
     @classmethod
     async def create(
-        cls, host: str, username: str, create_model: RoleCreationRequestModel
+        cls, tenant: str, username: str, create_model: RoleCreationRequestModel
     ):
-        results = await _create_iam_role(create_model, username, host)
+        results = await _create_iam_role(create_model, username, tenant)
         if results["role_created"] == "false":
             return None, results
 
         arn = f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
-        iam_role = await cls.get(host, create_model.account_id, arn, True)
+        iam_role = await cls.get(tenant, create_model.account_id, arn, True)
         return iam_role, results
 
     @classmethod
     async def delete_role(
-        cls, host: str, account_id: str, role_name: str, username: str
+        cls, tenant: str, account_id: str, role_name: str, username: str
     ):
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
-        iam_role = await cls.get(host, account_id, arn)
-        await _delete_iam_role(account_id, role_name, username, host)
+        iam_role = await cls.get(tenant, account_id, arn)
+        await _delete_iam_role(account_id, role_name, username, tenant)
         return await iam_role.delete()
 
     @classmethod
-    async def clone(cls, host, username, clone_model: CloneRoleRequestModel):
-        results = await _clone_iam_role(clone_model, username, host)
+    async def clone(cls, tenant, username, clone_model: CloneRoleRequestModel):
+        results = await _clone_iam_role(clone_model, username, tenant)
         if results["role_created"] == "false":
             return None, results
 
         arn = f"arn:aws:iam::{clone_model.dest_account_id}:role/{clone_model.dest_role_name}"
-        iam_role = await cls.get(host, clone_model.dest_account_id, arn, True)
+        iam_role = await cls.get(tenant, clone_model.dest_account_id, arn, True)
         return iam_role, results
 
     @classmethod
     async def _batch_write_role(
-        cls, host: str, account_id: str, filtered_iam_roles: list[dict]
+        cls, tenant: str, account_id: str, filtered_iam_roles: list[dict]
     ):
         # Don't use this. It doesn't work but the implementation looks good.
         # When this is stable we'll replace existing logic which just calls save for each role
@@ -270,19 +272,19 @@ class IAMRole(NoqModel):
 
         with cls.batch_write() as batch:
             for role in filtered_iam_roles:
-                entity_id = f"{role.get('Arn')}||{host}"
+                entity_id = f"{role.get('Arn')}||{tenant}"
                 batch.save(
                     cls(
                         arn=role.get("Arn"),
                         entity_id=entity_id,
-                        host=host,
+                        tenant=tenant,
                         name=role.get("RoleName"),
                         resourceId=role.get("RoleId"),
                         accountId=account_id,
                         tags=[TagMap(**tag) for tag in role.get("Tags", [])],
                         policy=cls().dump_json_attr(role),
                         permissions_boundary=role.get("PermissionsBoundary", {}),
-                        owner=get_aws_principal_owner(role, host),
+                        owner=get_aws_principal_owner(role, tenant),
                         last_updated=last_updated,
                         ttl=ttl,
                     )
@@ -290,10 +292,10 @@ class IAMRole(NoqModel):
 
     @classmethod
     async def sync_account_roles(
-        cls, host: str, account_id: str, iam_roles: list[dict]
+        cls, tenant: str, account_id: str, iam_roles: list[dict]
     ):
         aws = get_plugin_by_name(
-            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+            config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
         )()
         last_updated: int = int((datetime.utcnow()).timestamp())
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
@@ -301,22 +303,22 @@ class IAMRole(NoqModel):
         for role in iam_roles:
             arn = role.get("Arn", "")
             tags = role.get("Tags", [])
-            if allowed_to_sync_role(arn, tags, host):
+            if allowed_to_sync_role(arn, tags, tenant):
                 filtered_iam_roles.append(role)
 
         for role in filtered_iam_roles:
-            entity_id = f"{role.get('Arn')}||{host}"
+            entity_id = f"{role.get('Arn')}||{tenant}"
             await cls(
                 arn=role.get("Arn"),
                 entity_id=entity_id,
-                host=host,
+                tenant=tenant,
                 name=role.get("RoleName"),
                 resourceId=role.get("RoleId"),
                 accountId=account_id,
                 tags=[TagMap(**tag) for tag in role.get("Tags", [])],
                 policy=cls().dump_json_attr(role),
                 permissions_boundary=role.get("PermissionsBoundary", {}),
-                owner=get_aws_principal_owner(role, host),
+                owner=get_aws_principal_owner(role, tenant),
                 last_updated=last_updated,
                 ttl=ttl,
             ).save()

@@ -25,22 +25,22 @@ from common.lib.slack import send_slack_notification_new_notification
 
 
 class CloudTrail:
-    async def process_cloudtrail_errors(self, aws, host, user) -> object:
+    async def process_cloudtrail_errors(self, aws, tenant, user) -> object:
         """
         Processes Cloudtrail Errors that were cached by the `cache_cloudtrail_denies` celery task. Generates and returns
         count data. If configured, generates notifications to end-users based on policies that can be generated
 
         :return:
         """
-        notification_ttl_seconds = config.get_host_specific_key(
+        notification_ttl_seconds = config.get_tenant_specific_key(
             "process_cloudtrail_errors.notification_ttl",
-            host,
+            tenant,
             86400,
         )
         notification_type = "cloudtrail_generated_policy"
         expiration = int(time.time() + notification_ttl_seconds)
 
-        ddb = UserDynamoHandler(host=host)
+        ddb = UserDynamoHandler(tenant=tenant)
         # Get all existing cloudtrail_generated_policy notifications
         all_notifications = {}
         all_notifications_l = await ddb.parallel_scan_table_async(
@@ -63,7 +63,7 @@ class CloudTrail:
         new_or_changed_notifications = {}
         for cloudtrail_error in cloudtrail_errors:
             arn = cloudtrail_error.get("arn", "")
-            principal_owner = await get_iam_principal_owner(arn, aws, host)
+            principal_owner = await get_iam_principal_owner(arn, aws, tenant)
             session_name = cloudtrail_error.get("session_name", "")
             principal_type = "iam" + await get_identity_type_from_arn(arn)
             account_id = await get_account_id_from_arn(arn)
@@ -114,9 +114,9 @@ class CloudTrail:
                 json.dumps(generated_request).encode()
             ).decode("utf-8")
             encoded_request_url = f"/selfservice?encoded_request={encoded_request}"
-            notification_message = config.get_host_specific_key(
+            notification_message = config.get_tenant_specific_key(
                 "process_cloudtrail_errors.generate_notifications.message",
-                host,
+                tenant,
                 """We've generated a policy suggestion for a recent permissions error with **[{arn}]({url_role_path})**.
 Please click the button below to review it.
 
@@ -138,7 +138,7 @@ was detected. This notification will disappear when a similar error has not occu
             ]
 
             generated_notification = ConsoleMeUserNotification(
-                host=host,
+                tenant=tenant,
                 predictable_id=predictable_id,
                 type=notification_type,
                 users_or_groups=set(),
@@ -173,9 +173,9 @@ was detected. This notification will disappear when a similar error has not occu
                 # Maybe Add IAM policy simulation result to the CloudTrail event, and in turn, the notification details
                 # We don't want to simulate events for every single update of a notification, just one time for
                 # Initial creation
-                if config.get_host_specific_key(
+                if config.get_tenant_specific_key(
                     "process_cloudtrail_errors.simulate_iam_principal_action",
-                    host,
+                    tenant,
                 ):
                     generated_notification.details[
                         "iam_policy_simulation"
@@ -184,11 +184,11 @@ was detected. This notification will disappear when a similar error has not occu
                         event_call,
                         resource,
                         cloudtrail_error.get("source_ip"),
-                        host,
+                        tenant,
                         user,
                     )
                 await send_slack_notification_new_notification(
-                    host,
+                    tenant,
                     arn,
                     event_call,
                     resource,
@@ -219,9 +219,9 @@ was detected. This notification will disappear when a similar error has not occu
             # Optionally add development users to the notification
             new_or_changed_notifications[predictable_id].users_or_groups.update(
                 set(
-                    config.get_host_specific_key(
+                    config.get_tenant_specific_key(
                         "process_cloudtrail_errors.additional_notify_users",
-                        host,
+                        tenant,
                         [],
                     )
                 )
@@ -241,19 +241,21 @@ was detected. This notification will disappear when a similar error has not occu
                 notifications_by_user_group[k] = original_json.dumps(v, cls=SetEncoder)
             await store_json_results_in_redis_and_s3(
                 notifications_by_user_group,
-                redis_key=config.get_host_specific_key(
+                redis_key=config.get_tenant_specific_key(
                     "notifications.redis_key",
-                    host,
-                    f"{host}_ALL_NOTIFICATIONS",
+                    tenant,
+                    f"{tenant}_ALL_NOTIFICATIONS",
                 ),
                 redis_data_type="hash",
-                s3_bucket=config.get_host_specific_key("notifications.s3.bucket", host),
-                s3_key=config.get_host_specific_key(
+                s3_bucket=config.get_tenant_specific_key(
+                    "notifications.s3.bucket", tenant
+                ),
+                s3_key=config.get_tenant_specific_key(
                     "notifications.s3.key",
-                    host,
+                    tenant,
                     "notifications/all_notifications_v1.json.gz",
                 ),
-                host=host,
+                tenant=tenant,
             )
         return {
             "error_count_by_role": error_count,

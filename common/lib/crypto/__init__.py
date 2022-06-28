@@ -11,11 +11,11 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 
 
 class CryptoSign:
-    def __init__(self, host) -> None:
-        self.load_secrets(host)
+    def __init__(self, tenant) -> None:
+        self.load_secrets(tenant)
 
-    def load_secrets(self, host) -> None:
-        if not config.get_host_specific_key("ed25519.signing_key", host):
+    def load_secrets(self, tenant) -> None:
+        if not config.get_tenant_specific_key("ed25519.signing_key", tenant):
             # Generating keys on demand. This is useful for unit tests
             self.signing_key, self.verifying_key = ed25519.create_keypair(
                 entropy=os.urandom
@@ -23,7 +23,7 @@ class CryptoSign:
             return
 
         signing_key_file = os.path.expanduser(
-            config.get_host_specific_key("ed25519.signing_key", host)
+            config.get_tenant_specific_key("ed25519.signing_key", tenant)
         )
         try:
             with open(signing_key_file, "rb") as signing_file:
@@ -33,7 +33,9 @@ class CryptoSign:
             log.error(msg, exc_info=True)
             raise Exception(msg)
         self.signing_key = ed25519.SigningKey(signing_key_str)
-        verifying_key_file = config.get_host_specific_key("ed25519.verifying_key", host)
+        verifying_key_file = config.get_tenant_specific_key(
+            "ed25519.verifying_key", tenant
+        )
         try:
             verifying_key_str = open(verifying_key_file, "rb").read()
         except FileNotFoundError:

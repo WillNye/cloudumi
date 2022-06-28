@@ -56,7 +56,7 @@ def raise_if_key_doesnt_start_with_prefix(key, prefix):
         raise Exception("Redis Key Name doesn't start with the required prefix.")
 
 
-# ToDo - Everything in ConsoleMeRedis needs to lock out unauthorized hosts
+# ToDo - Everything in ConsoleMeRedis needs to lock out unauthorized tenants
 class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
     """
     ConsoleMeRedis is a simple wrapper around redis.StrictRedis. It was created to allow Redis to be optional.
@@ -69,6 +69,9 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
     def __init__(self, *args, **kwargs):
         self.required_key_prefix = kwargs.pop("required_key_prefix")
         self.enabled = True
+        if host := kwargs.pop("host", None):
+            kwargs["host"] = host
+
         if not cluster_mode:
             if kwargs["host"] is None or kwargs["port"] is None or kwargs["db"] is None:
                 self.enabled = False
@@ -403,7 +406,7 @@ class RedisHandler:
         if self.host is None or self.port is None or self.db is None:
             self.enabled = False
 
-    async def redis(self, host, db: int = 0) -> Redis:
+    async def redis(self, tenant, db: int = 0) -> Redis:
         if config.get("_global_.redis.use_redislite"):
             REDIS_DB_PATH = os.path.join(
                 config.get(
@@ -416,7 +419,7 @@ class RedisHandler:
                 ConsoleMeRedis,
                 startup_nodes=cluster_mode_nodes,
                 decode_responses=True,
-                required_key_prefix=host,
+                required_key_prefix=tenant,
                 skip_full_coverage_check=True,
             )
         else:
@@ -425,26 +428,26 @@ class RedisHandler:
                 host=self.host,
                 port=self.port,
                 db=self.db,
-                charset="utf-8",
+                encoding="utf-8",
                 decode_responses=True,
-                required_key_prefix=host,
+                required_key_prefix=tenant,
             )
         return self.red
 
-    def redis_sync(self, host, db: int = 0) -> Redis:
+    def redis_sync(self, tenant, db: int = 0) -> Redis:
         if config.get("_global_.redis.use_redislite"):
             REDIS_DB_PATH = os.path.join(
                 config.get(
                     "_global_.redis.redislite.db_path", default_redislite_db_path
                 )
             )
-            # Warning: We do not restrict Redis keys by hostname when using RedisLite
+            # Warning: We do not restrict Redis keys by tenant when using RedisLite
             return redislite.StrictRedis(REDIS_DB_PATH, decode_responses=True)
         if cluster_mode:
             self.red = ConsoleMeRedis(
                 startup_nodes=cluster_mode_nodes,
                 decode_responses=True,
-                required_key_prefix=host,
+                required_key_prefix=tenant,
                 skip_full_coverage_check=True,
             )
         else:
@@ -452,45 +455,45 @@ class RedisHandler:
                 host=self.host,
                 port=self.port,
                 db=self.db,
-                charset="utf-8",
+                encoding="utf-8",
                 decode_responses=True,
-                required_key_prefix=host,
+                required_key_prefix=tenant,
             )
         return self.red
 
 
 async def redis_get(
-    key: str, host: str, default: Optional[str] = None
+    key: str, tenant: str, default: Optional[str] = None
 ) -> Optional[str]:
-    raise_if_key_doesnt_start_with_prefix(key, host)
-    red = await RedisHandler().redis(host)
+    raise_if_key_doesnt_start_with_prefix(key, tenant)
+    red = await RedisHandler().redis(tenant)
     v = await aio_wrapper(red.get, key)
     if not v:
         return default
     return v
 
 
-async def redis_hgetall(key: str, host: str, default=None):
-    raise_if_key_doesnt_start_with_prefix(key, host)
-    red = await RedisHandler().redis(host)
+async def redis_hgetall(key: str, tenant: str, default=None):
+    raise_if_key_doesnt_start_with_prefix(key, tenant)
+    red = await RedisHandler().redis(tenant)
     v = await aio_wrapper(red.hgetall, key)
     if not v:
         return default
     return v
 
 
-async def redis_hget(name: str, key: str, host: str, default=None):
-    raise_if_key_doesnt_start_with_prefix(name, host)
-    red = await RedisHandler().redis(host)
+async def redis_hget(name: str, key: str, tenant: str, default=None):
+    raise_if_key_doesnt_start_with_prefix(name, tenant)
+    red = await RedisHandler().redis(tenant)
     v = await aio_wrapper(red.hget, name, key)
     if not v:
         return default
     return v
 
 
-def redis_get_sync(key: str, host: str, default: None = None) -> Optional[str]:
-    raise_if_key_doesnt_start_with_prefix(key, host)
-    red = RedisHandler().redis_sync(host)
+def redis_get_sync(key: str, tenant: str, default: None = None) -> Optional[str]:
+    raise_if_key_doesnt_start_with_prefix(key, tenant)
+    red = RedisHandler().redis_sync(tenant)
     try:
         v = red.get(key)
     except (redis.exceptions.ConnectionError, ClusterDownError):
@@ -501,7 +504,7 @@ def redis_get_sync(key: str, host: str, default: None = None) -> Optional[str]:
 
 
 async def redis_hsetex(
-    name: str, key: str, value: Any, expiration_seconds: int, host: str
+    name: str, key: str, value: Any, expiration_seconds: int, tenant: str
 ):
     """
     Lazy way to set Redis hash keys with an expiration. Warning: Entries set here only get deleted when redis_hgetex
@@ -513,16 +516,16 @@ async def redis_hsetex(
     :param expiration_seconds: Number of seconds to consider entry expired
     :return:
     """
-    raise_if_key_doesnt_start_with_prefix(name, host)
+    raise_if_key_doesnt_start_with_prefix(name, tenant)
     expiration = int(time.time()) + expiration_seconds
-    red = await RedisHandler().redis(host)
+    red = await RedisHandler().redis(tenant)
     v = await aio_wrapper(
         red.hset, name, key, json.dumps({"value": value, "ttl": expiration})
     )
     return v
 
 
-async def redis_hgetex(name: str, key: str, host: str, default=None):
+async def redis_hgetex(name: str, key: str, tenant: str, default=None):
     """
     Lazy way to retrieve an entry from a Redis Hash, and delete it if it's due to expire.
 
@@ -531,8 +534,8 @@ async def redis_hgetex(name: str, key: str, host: str, default=None):
     :param default:
     :return:
     """
-    raise_if_key_doesnt_start_with_prefix(name, host)
-    red = await RedisHandler().redis(host)
+    raise_if_key_doesnt_start_with_prefix(name, tenant)
+    red = await RedisHandler().redis(tenant)
     if not red.exists(name):
         return default
     result_j = await aio_wrapper(red.hget, name, key)
