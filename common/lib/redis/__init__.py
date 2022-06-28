@@ -428,7 +428,7 @@ class RedisHandler:
                 host=self.host,
                 port=self.port,
                 db=self.db,
-                charset="utf-8",
+                encoding="utf-8",
                 decode_responses=True,
                 required_key_prefix=tenant,
             )
@@ -455,7 +455,7 @@ class RedisHandler:
                 host=self.host,
                 port=self.port,
                 db=self.db,
-                charset="utf-8",
+                encoding="utf-8",
                 decode_responses=True,
                 required_key_prefix=tenant,
             )

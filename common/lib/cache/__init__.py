@@ -113,7 +113,7 @@ async def store_json_results_in_redis_and_s3(
                         data_str = data
                     red.hset(redis_key, redis_field, data_str)
                 else:
-                    red.hmset(redis_key, data)
+                    red.hset(redis_key, mapping=data)
         else:
             raise UnsupportedRedisDataType("Unsupported redis_data_type passed")
         red.hset(last_updated_redis_key, redis_key, last_updated)

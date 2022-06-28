@@ -13,7 +13,7 @@ from common.lib.pydantic import BaseModel
 from common.lib.yaml import yaml
 
 
-class TestModel(BaseModel):
+class UnitTestModel(BaseModel):
     name: str = Field(
         ...,
         description="Customer-specified or default spoke account name (NoqSpokeRole); note this must be unique for each account",
@@ -70,31 +70,31 @@ def safe_name() -> str:
 @pytest.mark.usefixtures("dynamodb")
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
-class TestModels(TestCase):
+class UnitTestModels(TestCase):
     """Docstring in public class."""
 
     def setUp(self):
-        super(TestModels, self).setUp()
+        super(UnitTestModels, self).setUp()
         self.client = AsyncHTTPClient(force_instance=True)
         self.test_key = "spoke_account"
         self.test_key_list = "spoke_accounts"
 
     def test_load_from_config(self):
-        obj = ModelAdapter(TestModel).load_config("spoke_accounts", safe_name())
+        obj = ModelAdapter(UnitTestModel).load_config("spoke_accounts", safe_name())
         assert isinstance(obj, ModelAdapter)
 
     def test_get_model(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key, safe_name())
             .from_dict(test_model_dict)
         )
-        assert isinstance(model_adapter.model, TestModel)
+        assert isinstance(model_adapter.model, UnitTestModel)
         assert model_adapter.model.name == "test_model"
 
     def test_get_dict(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key, safe_name())
             .from_dict(test_model_dict)
         )
@@ -103,7 +103,7 @@ class TestModels(TestCase):
 
     def test_store_and_delete(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key, safe_name())
             .from_dict(test_model_dict)
         )
@@ -137,7 +137,7 @@ class TestModels(TestCase):
             yaml.dump(tenant_config), "test", safe_name()
         )
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config("auth.test.nested", safe_name())
             .from_dict(test_model_dict)
         )
@@ -147,7 +147,7 @@ class TestModels(TestCase):
 
     def test_nested_store_op(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config("auth.test.nested", safe_name())
             .from_dict(test_model_dict)
         )
@@ -171,7 +171,7 @@ class TestModels(TestCase):
             "master_for_account": True,
         }
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config("auth.test.nested", safe_name())
             .from_dict(test_model_dict)
         )
@@ -213,7 +213,7 @@ class TestModels(TestCase):
         if not tenant_config.get("auth", {}).get("other", {}).get("something"):
             cluster_run_hack = True
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config("auth.test.nested", safe_name())
             .from_dict(test_model_dict)
         )
@@ -228,7 +228,7 @@ class TestModels(TestCase):
 
     def test_store_with_one_item_into_array(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .add_dict(test_model_dict)
         )
@@ -240,7 +240,7 @@ class TestModels(TestCase):
 
     def test_store_with_multiple_items_into_array(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .from_list(test_model_list_dict)
         )
@@ -253,7 +253,7 @@ class TestModels(TestCase):
 
     def test_store_with_single_item_into_array(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .from_dict(test_model_dict)
         )
@@ -266,12 +266,12 @@ class TestModels(TestCase):
 
     def test_query(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .from_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.store_item_in_list)()
-        model_adapter = ModelAdapter(TestModel).load_config(
+        model_adapter = ModelAdapter(UnitTestModel).load_config(
             self.test_key_list, safe_name()
         )
         items = model_adapter.query({"name": "test_model"})
@@ -279,12 +279,12 @@ class TestModels(TestCase):
 
     def test_query_return_first(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
-        model_adapter = ModelAdapter(TestModel).load_config(
+        model_adapter = ModelAdapter(UnitTestModel).load_config(
             self.test_key_list, safe_name()
         )
         items = model_adapter.with_query({"account_id": "123456789012"}).first
@@ -292,12 +292,12 @@ class TestModels(TestCase):
 
     def test_query_return_last(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
-        model_adapter = ModelAdapter(TestModel).load_config(
+        model_adapter = ModelAdapter(UnitTestModel).load_config(
             self.test_key_list, safe_name()
         )
         items = model_adapter.with_query({"account_id": "123456789012"}).last
@@ -305,13 +305,13 @@ class TestModels(TestCase):
 
     def test_query_multiple_accounts_find_right_one(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .from_dict(
                 {
@@ -325,7 +325,7 @@ class TestModels(TestCase):
             )
         )
         assert async_to_sync(model_adapter.store_item_in_list)()
-        model_adapter = ModelAdapter(TestModel).load_config(
+        model_adapter = ModelAdapter(UnitTestModel).load_config(
             self.test_key_list, safe_name()
         )
         items = model_adapter.with_query({"account_id": "012345678901"}).first
@@ -333,14 +333,14 @@ class TestModels(TestCase):
 
     def test_store_with_specific_key_overwrite_in_list(self):
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .with_object_key(["name", "account_id"])
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
         model_adapter = (
-            ModelAdapter(TestModel)
+            ModelAdapter(UnitTestModel)
             .load_config(self.test_key_list, safe_name())
             .with_object_key(["name", "account_id"])
             .from_dict(

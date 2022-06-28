@@ -43,9 +43,9 @@ class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
         from common.lib.redis import RedisHandler
 
         red = RedisHandler().redis_sync(tenant)
-        red.hmset(
+        red.hset(
             f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
-            {
+            mapping={
                 "arn:aws:ec2:us-west-2:123456789013:security-group/12345": json.dumps(
                     {
                         "resourceType": "AWS::EC2::SecurityGroup",

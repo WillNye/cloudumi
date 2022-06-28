@@ -581,9 +581,9 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
 
         # Redis is globally mocked. Let's store and retrieve a fake value
         red = RedisHandler().redis_sync(tenant)
-        red.hmset(
+        red.hset(
             f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
-            {
+            mapping={
                 "arn:aws:s3:::test_bucket": json.dumps({"accountId": "123456789013"}),
                 "arn:aws:s3:::test_bucket_2": json.dumps({"accountId": "123456789013"}),
             },

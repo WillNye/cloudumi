@@ -1171,8 +1171,11 @@ def user_iam_role(iamrole_table, www_user):
         ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
         policy=IAMRole().dump_json_attr(www_user),
         tenant=tenant,
+        entity_id=f"{www_user.get('Arn')}||{tenant}",
+        last_updated=int((datetime.utcnow()).timestamp()),
+        resourceId=www_user.get("RoleId"),
     )
-    role_entry.save()
+    async_to_sync(role_entry.save)()
 
 
 @pytest.fixture(autouse=False, scope="session")
