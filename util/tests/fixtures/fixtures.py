@@ -1252,7 +1252,7 @@ def populate_caches(
     # Running cache_iam_resources_across_accounts ensures that all of the pre-existing roles in our
     # role cache are stored in (mock) S3
     celery.cache_iam_resources_across_accounts(
-        tenant=tenant, wait_for_subtask_completion=False, run_subtasks=False
+        tenant=tenant, wait_for_subtask_completion=False
     )
     celery.cache_policies_table_details(tenant=tenant)
     celery.cache_credential_authorization_mapping(tenant=tenant)
