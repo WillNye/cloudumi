@@ -1,4 +1,5 @@
 import datetime
+import sys
 from typing import Any, Dict, List, Optional
 
 import sentry_sdk
@@ -9,6 +10,7 @@ import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.access_advisor import get_epoch_authenticated
 from common.lib.aws.utils import (
@@ -23,6 +25,7 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.s3_helpers import is_object_older_than_seconds
+from common.models import SpokeAccount
 
 log = config.get_logger()
 
@@ -42,6 +45,12 @@ async def calculate_unused_policy_for_identity(
     :raises Exception: Raises an exception if there is a validation error
     :return: Returns a dictionary of effective and "repoed" policy documents.
     """
+
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "account_id": account_id,
+        "tenant": tenant,
+    }
     if not identity_type:
         raise Exception("Unable to generate unused policy without identity type")
     arn = f"arn:aws:iam::{account_id}:{identity_type}/{identity_name}"
@@ -71,11 +80,21 @@ async def calculate_unused_policy_for_identity(
 
     identity_type_string = "RoleName" if identity_type == "role" else "UserName"
     try:
+        spoke_role_name = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", tenant)
+            .with_query({"account_id": account_id})
+            .first.name
+        )
+        if not spoke_role_name:
+            log.error({**log_data, "message": "No spoke role name found"})
+            raise
+
         managed_policy_details = await aio_wrapper(
             get_role_managed_policy_documents,
             {identity_type_string: identity_name},
             account_number=account_id,
-            assume_role=config.get_tenant_specific_key("policies.role_name", tenant),
+            assume_role=spoke_role_name,
             region=config.region,
             retry_max_attempts=2,
             client_kwargs=config.get_tenant_specific_key(
