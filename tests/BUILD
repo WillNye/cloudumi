@@ -8,4 +8,7 @@ pytest_test(
         "//common/config/tests:test_files",
         "//util/tests:test_dependencies_lib",
     ],
+    whitelist = [
+        "common",
+    ],
 )

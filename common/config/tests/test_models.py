@@ -62,6 +62,10 @@ test_model_list_dict = [
 ]
 
 
+def safe_name() -> str:
+    return safe_name().replace(".", "_")
+
+
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("dynamodb")
 @pytest.mark.usefixtures("redis")
@@ -76,13 +80,13 @@ class TestModels(TestCase):
         self.test_key_list = "spoke_accounts"
 
     def test_load_from_config(self):
-        obj = ModelAdapter(TestModel).load_config("spoke_accounts", __name__)
+        obj = ModelAdapter(TestModel).load_config("spoke_accounts", safe_name())
         assert isinstance(obj, ModelAdapter)
 
     def test_get_model(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key, __name__)
+            .load_config(self.test_key, safe_name())
             .from_dict(test_model_dict)
         )
         assert isinstance(model_adapter.model, TestModel)
@@ -91,7 +95,7 @@ class TestModels(TestCase):
     def test_get_dict(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key, __name__)
+            .load_config(self.test_key, safe_name())
             .from_dict(test_model_dict)
         )
         assert isinstance(model_adapter.dict, dict)
@@ -100,19 +104,19 @@ class TestModels(TestCase):
     def test_store_and_delete(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key, __name__)
+            .load_config(self.test_key, safe_name())
             .from_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.store_item)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert self.test_key in host_config
         assert host_config.get(self.test_key, {}).get("name") == "test_model"
         assert async_to_sync(model_adapter.delete_key)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert self.test_key not in host_config
 
     def test_nested_delete(self):
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         host_config["auth"] = dict()
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
@@ -130,33 +134,33 @@ class TestModels(TestCase):
         }
         ddb = RestrictedDynamoHandler()
         async_to_sync(ddb.update_static_config_for_host)(
-            yaml.dump(host_config), "test", __name__
+            yaml.dump(host_config), "test", safe_name()
         )
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config("auth.test.nested", __name__)
+            .load_config("auth.test.nested", safe_name())
             .from_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.delete_key)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert host_config.get("auth", {}).get("test", {}).get("nested") is None
 
     def test_nested_store_op(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config("auth.test.nested", __name__)
+            .load_config("auth.test.nested", safe_name())
             .from_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.store_item)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert (
             host_config.get("auth", {}).get("test", {}).get("nested", {})
             == test_model_dict
         )
 
     def test_nested_store_op_with_overwrite(self):
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         host_config["auth"] = dict()
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
@@ -169,11 +173,11 @@ class TestModels(TestCase):
         }
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config("auth.test.nested", __name__)
+            .load_config("auth.test.nested", safe_name())
             .from_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.store_item)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert (
             host_config.get("auth", {}).get("test", {}).get("nested", {})
             == test_model_dict
@@ -186,7 +190,7 @@ class TestModels(TestCase):
         assert is only executed if retrieving after an update actually finds the auth.other.something subkey
         """
         cluster_run_hack = False
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         host_config["auth"] = dict()
         host_config["auth"]["test"] = dict()
         host_config["auth"]["test"]["nested"] = {
@@ -204,18 +208,18 @@ class TestModels(TestCase):
         }
         ddb = RestrictedDynamoHandler()
         async_to_sync(ddb.update_static_config_for_host)(
-            yaml.dump(host_config), "test", __name__
+            yaml.dump(host_config), "test", safe_name()
         )
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         if not host_config.get("auth", {}).get("other", {}).get("something"):
             cluster_run_hack = True
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config("auth.test.nested", __name__)
+            .load_config("auth.test.nested", safe_name())
             .from_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.store_item)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert (
             host_config.get("auth", {}).get("test", {}).get("nested", {})
             == test_model_dict
@@ -226,11 +230,11 @@ class TestModels(TestCase):
     def test_store_with_one_item_into_array(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .add_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert self.test_key_list in host_config
         spoke_accounts = host_config.get(self.test_key_list, [])
         assert spoke_accounts[0].get("name") == "test_model"
@@ -238,11 +242,11 @@ class TestModels(TestCase):
     def test_store_with_multiple_items_into_array(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert self.test_key_list in host_config
         spoke_accounts = host_config.get(self.test_key_list, [])
         assert any(x for x in spoke_accounts if x.get("name") == "test_model_one")
@@ -251,11 +255,11 @@ class TestModels(TestCase):
     def test_store_with_single_item_into_array(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .from_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.store_item_in_list)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert self.test_key_list in host_config
         spoke_accounts = host_config.get(self.test_key_list, [])
         assert spoke_accounts[0].get("name") == "test_model"
@@ -264,12 +268,12 @@ class TestModels(TestCase):
     def test_query(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .from_dict(test_model_dict)
         )
         assert async_to_sync(model_adapter.store_item_in_list)()
         model_adapter = ModelAdapter(TestModel).load_config(
-            self.test_key_list, __name__
+            self.test_key_list, safe_name()
         )
         items = model_adapter.query({"name": "test_model"})
         assert len(items) == 1
@@ -277,12 +281,12 @@ class TestModels(TestCase):
     def test_query_return_first(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
         model_adapter = ModelAdapter(TestModel).load_config(
-            self.test_key_list, __name__
+            self.test_key_list, safe_name()
         )
         items = model_adapter.with_query({"account_id": "123456789012"}).first
         assert items.name == "test_model_one"
@@ -290,12 +294,12 @@ class TestModels(TestCase):
     def test_query_return_last(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
         model_adapter = ModelAdapter(TestModel).load_config(
-            self.test_key_list, __name__
+            self.test_key_list, safe_name()
         )
         items = model_adapter.with_query({"account_id": "123456789012"}).last
         assert items.name == "test_model_two"
@@ -303,13 +307,13 @@ class TestModels(TestCase):
     def test_query_multiple_accounts_find_right_one(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .from_dict(
                 {
                     "name": "test_model_three",
@@ -323,7 +327,7 @@ class TestModels(TestCase):
         )
         assert async_to_sync(model_adapter.store_item_in_list)()
         model_adapter = ModelAdapter(TestModel).load_config(
-            self.test_key_list, __name__
+            self.test_key_list, safe_name()
         )
         items = model_adapter.with_query({"account_id": "012345678901"}).first
         assert items.name == "test_model_three"
@@ -331,14 +335,14 @@ class TestModels(TestCase):
     def test_store_with_specific_key_overwrite_in_list(self):
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .with_object_key(["name", "account_id"])
             .from_list(test_model_list_dict)
         )
         assert async_to_sync(model_adapter.store_list)()
         model_adapter = (
             ModelAdapter(TestModel)
-            .load_config(self.test_key_list, __name__)
+            .load_config(self.test_key_list, safe_name())
             .with_object_key(["name", "account_id"])
             .from_dict(
                 {
@@ -352,7 +356,7 @@ class TestModels(TestCase):
             )
         )
         assert async_to_sync(model_adapter.store_item_in_list)()
-        host_config = config.get_tenant_static_config_from_dynamo(__name__)
+        host_config = config.get_tenant_static_config_from_dynamo(safe_name())
         assert self.test_key_list in host_config
         spoke_accounts = host_config.get(self.test_key_list, [])
         test_model_one = test_model_two = dict()
