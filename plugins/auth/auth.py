@@ -2,8 +2,7 @@ import sys
 import time
 from typing import List
 
-import ujson as json
-
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidCertificateException,

@@ -10,12 +10,12 @@ from typing import Any
 import jwt
 import pytz
 import tornado.httpclient
-import ujson as json
 from furl import furl
 from jwt.algorithms import ECAlgorithm, RSAAlgorithm
 from jwt.exceptions import DecodeError
 from tornado import httputil
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
 from common.lib.generic import should_force_redirect

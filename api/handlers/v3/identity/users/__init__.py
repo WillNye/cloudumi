@@ -1,6 +1,6 @@
 import tornado.escape
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.auth import can_admin_all, can_admin_identity

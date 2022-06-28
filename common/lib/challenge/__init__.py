@@ -1,8 +1,8 @@
 from datetime import datetime
 
 import pytz
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.redis import RedisHandler
 

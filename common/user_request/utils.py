@@ -1,7 +1,57 @@
+import asyncio
+import json
 import time
+from hashlib import sha1
 
 from common.config import config
 from common.lib.auth import can_admin_all
+from common.models import ExtendedRequestModel
+
+
+async def generate_dict_hash(dict_obj: dict) -> str:
+    return sha1(
+        json.dumps(dict_obj, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
+
+
+async def update_extended_request_expiration_date(
+    host: str, user: str, extended_request: ExtendedRequestModel, expiration_date: int
+) -> ExtendedRequestModel:
+    from common.lib.change_request import generate_policy_name, generate_policy_sid
+
+    extended_request.expiration_date = expiration_date
+
+    for change in extended_request.changes.changes:
+        if change.change_type in ["inline_policy"]:
+            change.policy_name = await generate_policy_name(
+                None, user, host, expiration_date
+            )
+
+        if change.change_type in ["resource_policy", "sts_resource_policy"]:
+            new_statement = []
+            old_statement_hashes = []
+            statements = change.policy.policy_document.get("Statement", [])
+
+            if change.old_policy:
+                old_statement_hashes = await asyncio.gather(
+                    *[
+                        generate_dict_hash(s)
+                        for s in change.old_policy.policy_document.get("Statement", [])
+                    ]
+                )
+
+            for statement in statements:
+                if (
+                    not old_statement_hashes
+                    or not (await generate_dict_hash(statement)) in old_statement_hashes
+                ):
+                    statement["Sid"] = await generate_policy_sid(user, expiration_date)
+
+                new_statement.append(statement)
+
+            change.policy.policy_document["Statement"] = new_statement
+
+    return extended_request
 
 
 async def can_approve_reject_request(user, secondary_approvers, groups, host):

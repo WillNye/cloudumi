@@ -1,8 +1,8 @@
 import pytest
-import ujson as json
 from asgiref.sync import async_to_sync
 from mock import Mock, patch
 
+import common.lib.noq_json as json
 from common.lib.self_service.models import (
     SelfServiceTypeaheadModel,
     SelfServiceTypeaheadModelArray,

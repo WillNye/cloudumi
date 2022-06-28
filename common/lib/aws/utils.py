@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import sentry_sdk
-import ujson
 from botocore.exceptions import ClientError, ParamValidationError
 from deepdiff import DeepDiff
 from parliament import analyze_policy_string, enhance_finding
@@ -26,6 +25,7 @@ from common.exceptions.exceptions import (
     InvalidInvocationArgument,
     MissingConfigurationValue,
 )
+from common.lib import noq_json as ujson
 from common.lib.account_indexers.aws_organizations import (
     retrieve_org_structure,
     retrieve_scps_for_organization,
@@ -1639,18 +1639,14 @@ async def remove_expired_request_changes(
                         await aio_wrapper(
                             client.put_bucket_policy,
                             Bucket=resource_name,
-                            Policy=ujson.dumps(
-                                existing_policy, escape_forward_slashes=False
-                            ),
+                            Policy=ujson.dumps(existing_policy),
                         )
                 elif resource_type == "sns":
                     await aio_wrapper(
                         client.set_topic_attributes,
                         TopicArn=change.arn,
                         AttributeName="Policy",
-                        AttributeValue=ujson.dumps(
-                            existing_policy, escape_forward_slashes=False
-                        ),
+                        AttributeValue=ujson.dumps(existing_policy),
                     )
                 elif resource_type == "sqs":
                     queue_url: dict = await aio_wrapper(
@@ -1668,20 +1664,13 @@ async def remove_expired_request_changes(
                         await aio_wrapper(
                             client.set_queue_attributes,
                             QueueUrl=queue_url.get("QueueUrl"),
-                            Attributes={
-                                "Policy": ujson.dumps(
-                                    existing_policy,
-                                    escape_forward_slashes=False,
-                                )
-                            },
+                            Attributes={"Policy": ujson.dumps(existing_policy)},
                         )
                 elif resource_type == "iam":
                     await aio_wrapper(
                         client.update_assume_role_policy,
                         RoleName=principal_name,
-                        PolicyDocument=ujson.dumps(
-                            existing_policy, escape_forward_slashes=False
-                        ),
+                        PolicyDocument=ujson.dumps(existing_policy),
                     )
 
                 change.status = Status.expired

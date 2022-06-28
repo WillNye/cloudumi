@@ -5,8 +5,8 @@ from collections import defaultdict
 from typing import Dict
 
 import sentry_sdk
-import ujson as json
 
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.cache import (
@@ -14,7 +14,7 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.dynamo import UserDynamoHandler
-from common.lib.json_encoder import SetEncoder
+from common.lib.noq_json import SetEncoder
 from common.lib.notifications.models import (
     ConsoleMeUserNotification,
     GetNotificationsForUserResponse,

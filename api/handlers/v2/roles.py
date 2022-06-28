@@ -4,10 +4,10 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import sentry_sdk
 import tornado.escape
-import ujson as json
 from furl import furl
 from pydantic import ValidationError
 
+import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.role.utils import update_role_access_config, update_role_tear_config
 from common.config import config
@@ -241,7 +241,7 @@ class RolesHandler(BaseAPIV2Handler):
             ),
         }
         self.set_header("Content-Type", "application/json")
-        self.write(json.dumps(payload, escape_forward_slashes=False))
+        self.write(json.dumps(payload))
         await self.finish()
 
     async def post(self):

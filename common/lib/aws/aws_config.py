@@ -2,9 +2,9 @@ import sys
 from typing import List, Optional
 
 import sentry_sdk
-import ujson as json
 from botocore.exceptions import ClientError
 
+import common.lib.noq_json as json
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
