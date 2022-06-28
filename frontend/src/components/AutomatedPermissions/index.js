@@ -10,7 +10,7 @@ const AutomaticPermissionsList = () => {
   const { sendRequestCommon } = useAuth()
   const [policyRequests, setPolicyRequests] = useState([])
 
-  const getAutomaticPermissionsRequets = async () => {
+  const getAutomaticPermissionsRequests = async () => {
     const resJson = await getAllPolicyRequests(sendRequestCommon)
 
     if (resJson && resJson.count) {
@@ -23,11 +23,11 @@ const AutomaticPermissionsList = () => {
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      await getAutomaticPermissionsRequets()
+      await getAutomaticPermissionsRequests()
     }, TIME_PER_INTERVAL)
 
     // get requests onMount
-    getAutomaticPermissionsRequets().then()
+    getAutomaticPermissionsRequests().then()
 
     return () => {
       clearInterval(interval)
@@ -77,7 +77,7 @@ const AutomaticPermissionsList = () => {
           <PolicyRequestItem
             key={index}
             policyRequest={policyRequest}
-            getAutomaticPermissionsRequets={getAutomaticPermissionsRequets}
+            getAutomaticPermissionsRequests={getAutomaticPermissionsRequests}
             sendRequestCommon={sendRequestCommon}
           />
         ))

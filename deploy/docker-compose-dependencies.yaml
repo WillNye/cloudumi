@@ -9,7 +9,7 @@ services:
     image: "redis:alpine"
 
   cloudumi-dynamodb:
-    image: "cnadiminti/dynamodb-local"
+    image: "amazon/dynamodb-local"
     container_name: cloudumi-dynamodb
     entrypoint: java
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data -port 8005"

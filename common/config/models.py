@@ -68,7 +68,7 @@ class ModelAdapter:
         segmented_key = key.split(".")
         if len(segmented_key) == 1:
             # Base Condition
-            if isinstance(config_item[key], dict):
+            if isinstance(config_item.get(key), dict):
                 config_item[key].update(value.dict())
             config_item[key] = dict(value)
             return config_item
