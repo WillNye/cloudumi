@@ -4,13 +4,7 @@ from common.config.models import ModelAdapter
 from common.exceptions.exceptions import NoMatchingRequest
 from common.handlers.base import BaseAdminHandler
 from common.lib.policies import automatic_request
-from common.models import (
-    AutomaticPolicyRequest,
-    ExtendedAutomaticPolicyRequest,
-    SpokeAccount,
-    Status3,
-    WebResponse,
-)
+from common.models import AutomaticPolicyRequest, SpokeAccount, Status3, WebResponse
 
 
 class AutomaticPolicyRequestHandler(BaseAdminHandler):
@@ -140,7 +134,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
         )
         if policy_request:
 
-            if not policy_request.status in non_allowed_statuses:
+            if policy_request.status not in non_allowed_statuses:
                 if data["role"] != policy_request.role:
                     new_account_id = policy_request.role.split(":")[4]
                     account = (
@@ -163,7 +157,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
                     self.set_status(500, "Unable to update the policy status")
             else:
                 self.set_status(
-                    400, f"Request has already been applied and cannot be modified"
+                    400, "Request has already been applied and cannot be modified"
                 )
         else:
             raise NoMatchingRequest(
