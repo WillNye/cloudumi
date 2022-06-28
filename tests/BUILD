@@ -10,5 +10,6 @@ pytest_test(
     ],
     whitelist = [
         "common",
+        "api",
     ],
 )
