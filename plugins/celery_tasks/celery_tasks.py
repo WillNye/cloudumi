@@ -4,7 +4,6 @@ the external tasks
 
 """
 import json
-import os
 from datetime import timedelta
 
 from celery import Celery
@@ -28,23 +27,6 @@ app = Celery(
     ),
 )
 
-if config.get("_global_.redis.use_redislite"):
-    import tempfile
-
-    import redislite
-
-    redislite_db_path = os.path.join(
-        config.get(
-            "_global_.redis.redislite.db_path", tempfile.NamedTemporaryFile().name
-        )
-    )
-    redislite_client = redislite.Redis(redislite_db_path)
-    redislite_socket_path = f"redis+socket://{redislite_client.socket_file}"
-    app = Celery(
-        "tasks",
-        broker=f"{redislite_socket_path}?virtual_host=1",
-        backend=f"{redislite_socket_path}?virtual_host=2",
-    )
 
 app.conf.result_expires = config.get("_global_.celery.result_expires", 60)
 app.conf.worker_prefetch_multiplier = config.get(
@@ -52,9 +34,7 @@ app.conf.worker_prefetch_multiplier = config.get(
 )
 app.conf.task_acks_late = config.get("_global_.celery.task_acks_late", True)
 
-if config.get("_global_.celery.purge") and not config.get(
-    "_global_.redis.use_redislite"
-):
+if config.get("_global_.celery.purge"):
     # Useful to clear celery queue in development
     with Timeout(seconds=5, error_message="Timeout: Are you sure Redis is running?"):
         app.control.purge()

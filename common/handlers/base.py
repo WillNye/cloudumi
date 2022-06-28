@@ -13,7 +13,6 @@ import sentry_sdk
 import tornado.httpclient
 import tornado.httputil
 import tornado.web
-from rediscluster.exceptions import ClusterDownError
 from tornado import httputil
 
 import common.lib.noq_json as json
@@ -570,7 +569,10 @@ class BaseHandler(TornadoRequestHandler):
             try:
                 red = await RedisHandler().redis(tenant)
                 cache_r = red.get(f"{tenant}_USER-{self.user}-CONSOLE-{console_only}")
-            except (redis.exceptions.ConnectionError, ClusterDownError):
+            except (
+                redis.exceptions.ConnectionError,
+                redis.exceptions.ClusterDownError,
+            ):
                 cache_r = None
             if cache_r:
                 log_data["message"] = "Loading from cache"
@@ -671,7 +673,10 @@ class BaseHandler(TornadoRequestHandler):
                         }
                     ),
                 )
-            except (redis.exceptions.ConnectionError, ClusterDownError):
+            except (
+                redis.exceptions.ConnectionError,
+                redis.exceptions.ClusterDownError,
+            ):
                 pass
         if not self.get_cookie(config.get("_global_.auth.cookie.name", "noq_auth")):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(

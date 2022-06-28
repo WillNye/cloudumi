@@ -18,7 +18,6 @@ pytest-mock
 pytest-timeout
 pytest-tornado
 pytest-xdist
-# redislite (Doesn't work on M1 Mac and it isn't required for dev)
 readme_renderer
 tornado
 tox

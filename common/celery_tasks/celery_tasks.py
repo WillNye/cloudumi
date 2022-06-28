@@ -10,7 +10,6 @@ command: celery -A consoleme.celery_tasks.celery_tasks worker --loglevel=info -l
 from __future__ import absolute_import
 
 import json  # We use a separate SetEncoder here so we cannot use ujson
-import os
 import sys
 import time
 from collections import defaultdict
@@ -144,24 +143,6 @@ app = Celery(
         config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/2"),
     ),
 )
-
-if config.get("_global_.redis.use_redislite"):
-    import tempfile
-
-    import redislite
-
-    redislite_db_path = os.path.join(
-        config.get(
-            "_global_.redis.redislite.db_path", tempfile.NamedTemporaryFile().name
-        )
-    )
-    redislite_client = redislite.Redis(redislite_db_path)
-    redislite_socket_path = f"redis+socket://{redislite_client.socket_file}"
-    app = Celery(
-        "tasks",
-        broker=f"{redislite_socket_path}?virtual_tenant=1",
-        backend=f"{redislite_socket_path}?virtual_tenant=2",
-    )
 
 app.conf.result_expires = config.get("_global_.celery.result_expires", 60)
 app.conf.worker_prefetch_multiplier = config.get(
