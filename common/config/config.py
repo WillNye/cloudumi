@@ -579,7 +579,7 @@ class Configuration(metaclass=Singleton):
             raise RuntimeError(
                 f"Unable to read configuration - cannot get {cluster_id_key}"
             )
-        return f"{cluster_id}_{namespace}_{table_name}"
+        return f"{cluster_id}_{namespace}_{table_name}_v2"
 
     def dynamodb_host(self):
         return self.get(
