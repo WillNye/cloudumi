@@ -63,7 +63,7 @@ test_model_list_dict = [
 
 
 def safe_name() -> str:
-    return safe_name().replace(".", "_")
+    return __name__.replace(".", "_")
 
 
 @pytest.mark.usefixtures("redis")
