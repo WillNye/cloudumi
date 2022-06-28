@@ -6,10 +6,10 @@ import urllib
 from collections import defaultdict
 from typing import Dict, List, Optional
 
-import ujson as json
 from deepdiff import DeepDiff
 from policy_sentry.util.actions import get_service_from_action
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,

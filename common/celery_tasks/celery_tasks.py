@@ -19,7 +19,6 @@ from typing import Any, Dict, List, Tuple, Union
 
 import celery
 import sentry_sdk
-import ujson
 from asgiref.sync import async_to_sync
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import group
@@ -48,6 +47,7 @@ from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
+from common.lib import noq_json as ujson
 from common.lib.account_indexers import (
     cache_cloud_accounts,
     get_account_id_to_name_mapping,

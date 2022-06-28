@@ -1,5 +1,4 @@
-import ujson as json
-
+import common.lib.noq_json as json
 from common.lib.assume_role import rate_limited, sts_conn
 
 

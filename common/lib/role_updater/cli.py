@@ -2,9 +2,9 @@ import getpass
 import platform
 
 import click
-import ujson as json
 from asgiref.sync import async_to_sync
 
+import common.lib.noq_json as json
 from common.lib.role_updater.handler import log
 from common.lib.role_updater.handler import update_role as update_role_handler
 

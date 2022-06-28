@@ -7,10 +7,10 @@ from unittest import TestCase
 import boto3
 import pytest
 import pytz
-import ujson as json
 from asgiref.sync import async_to_sync
 from mock import patch
 
+import common.lib.noq_json as json
 from common.lib.aws.utils import condense_statements
 from common.models import (
     ChangeModelArray,
