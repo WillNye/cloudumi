@@ -22,7 +22,7 @@ class ConfigHandler(BaseHandler):
             res = WebResponse(status_code=400, message="External ID not found")
             self.write(res.json(exclude_unset=True, exclude_none=True))
             return
-        noq_cluster_role = config.get("_global_.integrations.aws.node_role", tenant)
+        noq_cluster_role = config.get("_global_.integrations.aws.node_role", None)
         central_role_trust_policy = {
             "Version": "2012-10-17",
             "Statement": [

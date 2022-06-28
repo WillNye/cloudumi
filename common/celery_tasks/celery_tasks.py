@@ -2095,7 +2095,7 @@ def cache_resources_from_aws_config_across_accounts(
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all tenant accounts
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment", tenant) in [
+        if config.get("_global_.environment", None) in [
             "prod",
             "dev",
         ]:

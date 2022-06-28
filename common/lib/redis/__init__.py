@@ -69,7 +69,7 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
     def __init__(self, *args, **kwargs):
         self.required_key_prefix = kwargs.pop("required_key_prefix")
         self.enabled = True
-        if host := kwargs.pop("tenant", None):
+        if host := kwargs.pop("host", None):
             kwargs["host"] = host
 
         if not cluster_mode:
@@ -391,19 +391,19 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
 class RedisHandler:
     def __init__(
         self,
-        tenant: str = config.get(
-            "_global_.redis.tenant.{}".format(region),
-            config.get("_global_.redis.tenant.global", "localhost"),
+        host: str = config.get(
+            "_global_.redis.host.{}".format(region),
+            config.get("_global_.redis.host.global", "localhost"),
         ),
         port: int = config.get("_global_.redis.port", 6379),
         db: int = config.get("_global_.redis.db", 0),
     ) -> None:
         self.red = None
-        self.tenant = tenant
+        self.host = host
         self.port = port
         self.db = db
         self.enabled = True
-        if self.tenant is None or self.port is None or self.db is None:
+        if self.host is None or self.port is None or self.db is None:
             self.enabled = False
 
     async def redis(self, tenant, db: int = 0) -> Redis:
@@ -425,7 +425,7 @@ class RedisHandler:
         else:
             self.red = await aio_wrapper(
                 ConsoleMeRedis,
-                tenant=self.tenant,
+                host=self.host,
                 port=self.port,
                 db=self.db,
                 charset="utf-8",
@@ -452,7 +452,7 @@ class RedisHandler:
             )
         else:
             self.red = ConsoleMeRedis(
-                tenant=self.tenant,
+                host=self.host,
                 port=self.port,
                 db=self.db,
                 charset="utf-8",
