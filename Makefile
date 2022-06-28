@@ -28,6 +28,8 @@ clean:
 	rm -rf dist/ || echo $?
 	rm -rf build/ || echo $?
 	rm -rf *.egg-info || echo $?
+	rm -rf .eggs/ || echo $?
+	rm -rf .pytest_cache/ || echo $?
 	rm -f celerybeat-schedule.db || echo $?
 	rm -f celerybeat-schedule || echo $?
 	rm -rf ui/.npmrc ui/.yarnrc || echo $?

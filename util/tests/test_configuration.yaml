@@ -12,6 +12,13 @@ _global_:
     debug: false
     port: 8081
     xsrf: false
+  celery:
+    broker:
+      global: filesystem://.pytest_cache/0
+    broker_transport_options:
+      data_folder_in: .pytest_cache/celery_data_folder_in
+      data_folder_out: .pytest_cache/celery_data_folder_out
+      data_folder_processed: .pytest_cache/celery_data_folder_processed
 
 site_configs:
   example_com:

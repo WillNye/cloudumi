@@ -23,10 +23,13 @@ app = Celery(
     ),
     backend=config.get(
         f"_global_.celery.backend.{config.region}",
-        config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/2"),
+        config.get("_global_.celery.backend.global"),
     ),
 )
 
+broker_transport_options = config.get("_global_.celery.broker_transport_options")
+if broker_transport_options:
+    app.conf.update({"broker_transport_options": dict(broker_transport_options)})
 
 app.conf.result_expires = config.get("_global_.celery.result_expires", 60)
 app.conf.worker_prefetch_multiplier = config.get(
