@@ -1,7 +1,7 @@
 # Build from the directory above this with:
 # docker build . -f cloudumi_base_docker/Dockerfile -t cloudumi_base_docker
 
-FROM python:3.9.7
+FROM python:3.10
 RUN mkdir -p /apps
 RUN apt-get update
 RUN apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y
@@ -14,12 +14,12 @@ RUN bash -c 'sudo apt-get update && sudo apt-get install logstash'
 RUN systemctl enable logstash
 RUN systemctl start logstash
 
-# Metricsbeat (System metrics)
-RUN curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb
-RUN dpkg -i metricbeat-7.14.2-amd64.deb
-RUN rm -rf metricbeat-7.14.2-amd64.deb
+# Metricsbeat (System metrics) for AMD64
+# RUN curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb
+# RUN dpkg -i metricbeat-7.14.2-amd64.deb
+# RUN rm -rf metricbeat-7.14.2-amd64.deb
 
-COPY cloudumi_base_docker/root/ /
+COPY docker/base/root/ /
 
 # TODO: Filebeat (elasticsearch to ingest system logs.)
 #RUN curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.14.2-amd64.deb

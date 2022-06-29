@@ -17,9 +17,9 @@ RUN systemctl enable logstash
 RUN systemctl start logstash
 
 # Metricsbeat (System metrics)
-RUN curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb
-RUN dpkg -i metricbeat-7.14.2-amd64.deb
-RUN rm -rf metricbeat-7.14.2-amd64.deb
+# RUN curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb
+# RUN dpkg -i metricbeat-7.14.2-amd64.deb
+# RUN rm -rf metricbeat-7.14.2-amd64.deb
 
 # TODO: Filebeat (elasticsearch to ingest system logs.)
 #RUN curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.14.2-amd64.deb
