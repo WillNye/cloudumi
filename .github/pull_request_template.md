@@ -2,13 +2,18 @@ Please use this PR template for new features, or an abbreviated version for smal
 
 ### Branch name
 
-- [ ] Does your branch name follow the naming convention: [fix/feat/task/etc]/[task-label]
+- [ ] Does your branch name follow the naming convention: [fix,feat,task,bug]/[task-label]
       (ex: feat/new-share-implementation)
 
 ### Title
 
 - [ ] Does your PR title reference a ticket, and a short description?
-      (ex: KEY-10, KEY-11 - New share implementation + Improvements)?
+      (ex: EN-10, EN-11 - New share implementation + Improvements)?
+
+### Testing and Pre-Commit
+
+- [ ] Did you resolve all pre-commit issues? (Run `pre-commit run -a`)
+- [ ] Did the unit tests pass? (Run `make test`)
 
 ### Description
 
