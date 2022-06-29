@@ -32,7 +32,6 @@ pydantic
 PyGithub
 pyjwt
 python-terraform
-python3_saml
 pytz
 PyYAML
 requests

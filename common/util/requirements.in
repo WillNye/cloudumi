@@ -30,7 +30,6 @@ policy_sentry # For telling us all the possible AWS actions and resources
 pydantic # For models
 pdpyras # Pagerduty
 pyjwt
-python3-saml
 pytz
 PyYAML
 redis

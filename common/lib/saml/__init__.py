@@ -3,9 +3,13 @@ import sys
 
 import tornado.httputil
 from furl import furl
-from onelogin.saml2.auth import OneLogin_Saml2_Auth
-from onelogin.saml2.errors import OneLogin_Saml2_Error
-from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
+
+try:
+    from onelogin.saml2.auth import OneLogin_Saml2_Auth
+    from onelogin.saml2.errors import OneLogin_Saml2_Error
+    from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
+except ImportError:
+    pass
 
 from common.config import config
 from common.config.config import dict_merge
