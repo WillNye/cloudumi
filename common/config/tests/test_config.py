@@ -9,6 +9,7 @@ from common.lib.yaml import yaml
 
 @pytest.mark.usefixtures("aws_credentials")
 @pytest.mark.usefixtures("dynamodb")
+@pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("with_test_configuration_tenant_static_config_data")
 class TestConfig(TestCase):
     def test_config(self):

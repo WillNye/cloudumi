@@ -11,7 +11,7 @@ import signal
 if os.getenv("NOQ_CONTAINER"):
     import sys
 
-    sys.path.insert(0, "/usr/local/lib/python3.9/site-packages")
+    sys.path.insert(0, "/usr/local/lib/python3.10/site-packages")
 if os.getenv("DEBUG"):
     os.system("systemctl start ssh")
 #############

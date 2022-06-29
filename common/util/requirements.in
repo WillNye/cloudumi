@@ -30,12 +30,9 @@ policy_sentry # For telling us all the possible AWS actions and resources
 pydantic # For models
 pdpyras # Pagerduty
 pyjwt
-python3-saml
 pytz
 PyYAML
 redis
-redis-py-cluster
-# redislite (Doesn't work on M1 Mac and it isn't required for dev)
 retrying
 ruamel.yaml
 sentry_sdk # Send errors and exceptions to Sentry

@@ -7,13 +7,13 @@ import uuid
 from datetime import datetime, timedelta
 
 import boto3
+import fakeredis
 import pytest
-import redislite
 from asgiref.sync import async_to_sync
 from mock import MagicMock, Mock, patch
 from moto import (
     mock_config,
-    mock_dynamodb2,
+    mock_dynamodb,
     mock_iam,
     mock_s3,
     mock_ses,
@@ -425,7 +425,7 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
 @pytest.fixture(autouse=False, scope="session")
 def dynamodb(aws_credentials):
     """Mocked DynamoDB Fixture."""
-    with mock_dynamodb2():
+    with mock_dynamodb():
         # Remove the config value for the DynamoDB Server
         from common.config.config import CONFIG
 
@@ -1069,27 +1069,36 @@ def www_user():
     )
 
 
-class FakeRedis(redislite.StrictRedis):
-    def __init__(self, *args, **kwargs):
-        if kwargs.get("connection_pool"):
-            del kwargs["connection_pool"]
-        super(FakeRedis, self).__init__(
-            MOCK_REDIS_DB_PATH, *args, **kwargs, decode_responses=True
-        )
+fakeredis_server = fakeredis.FakeServer()
+
+fake_redis = fakeredis.FakeRedis(server=fakeredis_server, decode_responses=True)
+
+fake_strict_redis = fakeredis.FakeStrictRedis(
+    server=fakeredis_server, decode_responses=True
+)
+
+# class FakeRedis(fakeredis.FakeStrictRedis):
+#     def __init__(self, *args, **kwargs):
+#         super(FakeRedis, self).__init__(*args, **kwargs, server=fakeredis_server, connection_pool=None)
 
 
 @pytest.fixture(autouse=False, scope="session")
 def redis(session_mocker):
-    session_mocker.patch("redis.Redis", FakeRedis)
-    session_mocker.patch("redis.StrictRedis", FakeRedis)
-    session_mocker.patch("common.lib.redis.redis.StrictRedis", FakeRedis)
-    session_mocker.patch("common.lib.redis.redis.Redis", FakeRedis)
+    from common.config import config
+
+    if folder_configuration := config.get("_global_.celery.broker_transport_options"):
+        for v in folder_configuration.values():
+            os.makedirs(v, exist_ok=True)
+    session_mocker.patch("redis.Redis", return_value=fake_redis)
+    session_mocker.patch("redis.StrictRedis", return_value=fake_strict_redis)
     session_mocker.patch(
-        "common.lib.redis.RedisHandler.redis_sync", return_value=FakeRedis()
+        "common.lib.redis.redis.StrictRedis", return_value=fake_strict_redis
     )
+    session_mocker.patch("common.lib.redis.redis.Redis", return_value=fake_redis)
     session_mocker.patch(
-        "common.lib.redis.RedisHandler.redis", return_value=FakeRedis()
+        "common.lib.redis.RedisHandler.redis_sync", return_value=fake_redis
     )
+    session_mocker.patch("common.lib.redis.RedisHandler.redis", return_value=fake_redis)
     return True
 
 
@@ -1202,7 +1211,7 @@ def mock_async_http_client():
     p_return_value.body = "{}"
     p = patch("tornado.httpclient.AsyncHTTPClient")
 
-    p.return_value.fetch.return_value = create_future(p_return_value)
+    p.return_value.fetch.return_value = p_return_value
 
     yield p.start()
 

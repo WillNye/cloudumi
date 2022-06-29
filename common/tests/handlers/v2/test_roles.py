@@ -2,7 +2,6 @@ import pytest
 from mock import patch
 
 import common.lib.noq_json as json
-from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
@@ -152,7 +151,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
 
     @patch("api.handlers.v2.roles.RoleDetailHandler.authorization_flow")
     def test_delete_no_user(self, mock_auth):
-        mock_auth.return_value = create_future(None)
+        mock_auth.return_value = None
         expected = {"status": 403, "title": "Forbidden", "message": "No user detected"}
         response = self.fetch(
             "/api/v2/roles/012345678901/fake_account_admin", method="DELETE"

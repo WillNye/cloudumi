@@ -26,7 +26,6 @@ py_library(
         requirement("redis"),
         requirement("tornado"),
         requirement("ujson"),
-        requirement("redis-py-cluster"),
     ],
     visibility = ["//visibility:public"],
 )
