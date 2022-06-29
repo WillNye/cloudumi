@@ -1,7 +1,7 @@
 workspace(name = "cloudumi")
 
 # To download http stuff
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 ### PKG Rules - notice order matters here because Python brings it own rules_pkg
 http_archive(
@@ -95,7 +95,6 @@ container_pull(
     architecture = "amd64",
     registry = "index.docker.io",
     repository = "library/python",
-    digest = "sha256:743d52e1c66f456f40d1e673fe580d0ebda7b97a926c81678dedfed2d4a3fd31",
     tag = "3.10.5",
 )
 
@@ -175,12 +174,8 @@ yarn_install(
 )
 
 # Weep
-http_archive(
-    name = "netflix_weep",
-    sha256 = "8cab1473704035de8674e77b21002130c9cd987e206443c15d2596699285929f",
-    urls = ["https://github.com/Netflix/weep/releases/download/v0.3.26/weep_0.3.26_linux_x86_64.tar.gz"],
-    strip_prefix = "/bin/linux_amd64",
-    build_file_content = """exports_files(['weep'])
-visibility=['//visibility:public']"""
-    #strip_prefix = "/bin/linux_amd64",
+http_file(
+    name = "weep",
+    urls = ["https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/weep"],
+    sha256 = "532004cb40f48d5c8b7f37db87ea41e82619376e72761e1e9657dde63d1fae19",
 )
