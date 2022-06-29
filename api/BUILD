@@ -78,7 +78,6 @@ EXT_DEPS = [
     requirement("ujson"),
     requirement("uvloop"),
     requirement("validators"),
-    requirement("xmlsec"),
 ]
 
 REQUIRES = [
@@ -114,7 +113,6 @@ REQUIRES = [
     "tornado",
     "ujson",
     "uvloop",
-    "xmlsec",
 ]
 
 py_library(
