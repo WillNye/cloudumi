@@ -1,6 +1,6 @@
 # TODO: @ccastrapel: I don't think we need this anymore
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.9.11
+FROM python:3.10
 RUN mkdir -p /apps
 RUN apt clean
 RUN apt update
