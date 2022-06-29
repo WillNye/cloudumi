@@ -7,7 +7,7 @@ fakeredis
 flake8
 flake8-docstrings
 flake8-import-order
-mock<4 # Mock 4 breaks a bunch of unit tests
+mock
 moto
 mypy
 pre-commit

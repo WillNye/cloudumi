@@ -6,7 +6,6 @@ import pytest
 from mock import patch
 
 import common.lib.noq_json as json
-from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
@@ -53,7 +52,7 @@ class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
     def test_policies_check_api(self, mock_access_analyzer_validate_policy):
         from common.config import config
 
-        mock_access_analyzer_validate_policy.return_value = create_future([])
+        mock_access_analyzer_validate_policy.return_value = []
 
         headers = {
             config.get_tenant_specific_key(

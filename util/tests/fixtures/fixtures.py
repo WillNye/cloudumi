@@ -13,7 +13,7 @@ from asgiref.sync import async_to_sync
 from mock import MagicMock, Mock, patch
 from moto import (
     mock_config,
-    mock_dynamodb2,
+    mock_dynamodb,
     mock_iam,
     mock_s3,
     mock_ses,
@@ -425,7 +425,7 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
 @pytest.fixture(autouse=False, scope="session")
 def dynamodb(aws_credentials):
     """Mocked DynamoDB Fixture."""
-    with mock_dynamodb2():
+    with mock_dynamodb():
         # Remove the config value for the DynamoDB Server
         from common.config.config import CONFIG
 
@@ -1211,7 +1211,7 @@ def mock_async_http_client():
     p_return_value.body = "{}"
     p = patch("tornado.httpclient.AsyncHTTPClient")
 
-    p.return_value.fetch.return_value = create_future(p_return_value)
+    p.return_value.fetch.return_value = p_return_value
 
     yield p.start()
 
