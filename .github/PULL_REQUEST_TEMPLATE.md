@@ -12,6 +12,7 @@ Please use this PR template for new features, or an abbreviated version for smal
 
 ### Testing and Pre-Commit
 
+- [ ] Did you merge with the latest main branch? (Run `git pull origin main`)
 - [ ] Did you resolve all pre-commit issues? (Run `pre-commit run -a`)
 - [ ] Did the unit tests pass? (Run `make test`)
 
