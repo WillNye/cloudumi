@@ -21,11 +21,11 @@ from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuth
 log = config.get_logger()
 
 
-async def populate_oidc_config(host):
+async def populate_oidc_config(tenant):
     http_client = tornado.httpclient.AsyncHTTPClient()
-    metadata_url = config.get_host_specific_key(
+    metadata_url = config.get_tenant_specific_key(
         "get_user_by_aws_alb_auth_settings.access_token_validation.metadata_url",
-        host,
+        tenant,
     )
 
     if metadata_url:
@@ -39,9 +39,9 @@ async def populate_oidc_config(host):
         )
         oidc_config = json.loads(res.body)
     else:
-        jwks_uri = config.get_host_specific_key(
+        jwks_uri = config.get_tenant_specific_key(
             "get_user_by_aws_alb_auth_settings.access_token_validation.jwks_uri",
-            host,
+            tenant,
         )
         if not jwks_uri:
             raise MissingConfigurationValue("Missing OIDC Configuration.")
@@ -67,23 +67,23 @@ async def populate_oidc_config(host):
             oidc_config["jwt_keys"][key_id] = RSAAlgorithm.from_jwk(json.dumps(k))
         elif key_type == "EC":
             oidc_config["jwt_keys"][key_id] = ECAlgorithm.from_jwk(json.dumps(k))
-    oidc_config["aud"] = config.get_host_specific_key(
+    oidc_config["aud"] = config.get_tenant_specific_key(
         "get_user_by_aws_alb_auth_settings.access_token_validation.client_id",
-        host,
+        tenant,
     )
     return oidc_config
 
 
 async def authenticate_user_by_alb_auth(request):
-    host = request.get_host_name()
-    aws_alb_auth_header_name = config.get_host_specific_key(
+    tenant = request.get_tenant_name()
+    aws_alb_auth_header_name = config.get_tenant_specific_key(
         "get_user_by_aws_alb_auth_settings.aws_alb_auth_header_name",
-        host,
+        tenant,
         "X-Amzn-Oidc-Data",
     )
-    aws_alb_claims_header_name = config.get_host_specific_key(
+    aws_alb_claims_header_name = config.get_tenant_specific_key(
         "get_user_by_aws_alb_auth_settings.aws_alb_claims_header_name",
-        host,
+        tenant,
         "X-Amzn-Oidc-Accesstoken",
     )
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -107,9 +107,9 @@ async def authenticate_user_by_alb_auth(request):
     # Step 3: Get the payload
     payload = jwt.decode(encoded_auth_jwt, pub_key, algorithms=["ES256"])
     email = payload.get(
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "get_user_by_aws_alb_auth_settings.jwt_email_key",
-            host,
+            tenant,
             "email",
         )
     )
@@ -120,15 +120,15 @@ async def authenticate_user_by_alb_auth(request):
     # Step 4: Parse the Access Token
     # User has already passed ALB auth and successfully authenticated
     access_token_pub_key = None
-    jwt_verify = config.get_host_specific_key(
-        "get_user_by_aws_alb_auth_settings.jwt_verify", host, True
+    jwt_verify = config.get_tenant_specific_key(
+        "get_user_by_aws_alb_auth_settings.jwt_verify", tenant, True
     )
     access_token_verify_options = {"verify_signature": jwt_verify}
     oidc_config = {}
     algorithm = None
     try:
         if jwt_verify:
-            oidc_config = await populate_oidc_config(host)
+            oidc_config = await populate_oidc_config(tenant)
             header = jwt.get_unverified_header(access_token)
             key_id = header["kid"]
             algorithm = header["alg"]
@@ -143,8 +143,8 @@ async def authenticate_user_by_alb_auth(request):
             access_token_pub_key,
             algorithms=[algorithm],
             options=access_token_verify_options,
-            audience=oidc_config.get_host_specific_key("aud", host),
-            issuer=oidc_config.get_host_specific_key("issuer", host),
+            audience=oidc_config.get_tenant_specific_key("aud", tenant),
+            issuer=oidc_config.get_tenant_specific_key("issuer", tenant),
         )
         # Step 5: Verify the access token.
         if not jwt_verify:
@@ -154,9 +154,9 @@ async def authenticate_user_by_alb_auth(request):
         # Extract groups from tokens, checking both because IdPs aren't consistent here
         for token in [decoded_access_token, payload]:
             groups = token.get(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "get_user_by_aws_alb_auth_settings.jwt_groups_key",
-                    host,
+                    tenant,
                     "groups",
                 )
             )

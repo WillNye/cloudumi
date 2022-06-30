@@ -25,38 +25,38 @@ from common.lib.terraform.models import (
 log = config.get_logger()
 
 
-async def cache_terraform_resources(host):
+async def cache_terraform_resources(tenant):
     terraform_resources = TerraformResourceModelArray(terraform_resources=[])
 
-    for repository in config.get_host_specific_key(
-        "cache_resource_templates.repositories", host, []
+    for repository in config.get_tenant_specific_key(
+        "cache_resource_templates.repositories", tenant, []
     ):
         if repository.get("type") == "git":
-            result = await cache_terraform_resources_for_repository(repository, host)
+            result = await cache_terraform_resources_for_repository(repository, tenant)
             terraform_resources.terraform_resources.extend(result.terraform_resources)
 
     await store_json_results_in_redis_and_s3(
         terraform_resources.dict(),
-        redis_key=config.get_host_specific_key(
+        redis_key=config.get_tenant_specific_key(
             "cache_terraform_resources.redis.key",
-            host,
-            f"{host}_cache_terraform_resources_v1",
+            tenant,
+            f"{tenant}_cache_terraform_resources_v1",
         ),
-        s3_bucket=config.get_host_specific_key(
-            "cache_terraform_resources.s3.bucket", host
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_terraform_resources.s3.bucket", tenant
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_terraform_resources.s3.file",
-            host,
+            tenant,
             "cache_terraform_resources/cache_terraform_resources_v1.json.gz",
         ),
-        host=host,
+        tenant=tenant,
     )
     return terraform_resources
 
 
 async def retrieve_cached_terraform_resources(
-    host,
+    tenant,
     resource_type: Optional[str] = None,
     resource: Optional[str] = None,
     repository_name: Optional[str] = None,
@@ -64,20 +64,20 @@ async def retrieve_cached_terraform_resources(
 ) -> Optional[Union[TerraformResourceModelArray, TerraformResourceModel]]:
     matching_resources = []
     terraform_resources_d = await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get_host_specific_key(
+        redis_key=config.get_tenant_specific_key(
             "cache_terraform_resources.redis.key",
-            host,
-            f"{host}_cache_terraform_resources_v1",
+            tenant,
+            f"{tenant}_cache_terraform_resources_v1",
         ),
-        s3_bucket=config.get_host_specific_key(
-            "cache_terraform_resources.s3.bucket", host
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_terraform_resources.s3.bucket", tenant
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_terraform_resources.s3.file",
-            host,
+            tenant,
             "cache_terraform_resources/cache_terraform_resources_v1.json.gz",
         ),
-        host=host,
+        tenant=tenant,
         default={"terraform_resources": []},
     )
 
@@ -98,7 +98,7 @@ async def retrieve_cached_terraform_resources(
 
 
 async def cache_terraform_resources_for_repository(
-    repository, host
+    repository, tenant
 ) -> TerraformResourceModelArray:
     """
     Example configuration:
@@ -121,7 +121,7 @@ async def cache_terraform_resources_for_repository(
     log_data = {
         "function": function,
         "repository": repository,
-        "host": host,
+        "tenant": tenant,
     }
     if repository["type"] not in ["git"]:
         raise Exception("Unsupported repository type")

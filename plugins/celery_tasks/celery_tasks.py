@@ -4,7 +4,6 @@ the external tasks
 
 """
 import json
-import os
 from datetime import timedelta
 
 from celery import Celery
@@ -24,27 +23,13 @@ app = Celery(
     ),
     backend=config.get(
         f"_global_.celery.backend.{config.region}",
-        config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/2"),
+        config.get("_global_.celery.backend.global"),
     ),
 )
 
-if config.get("_global_.redis.use_redislite"):
-    import tempfile
-
-    import redislite
-
-    redislite_db_path = os.path.join(
-        config.get(
-            "_global_.redis.redislite.db_path", tempfile.NamedTemporaryFile().name
-        )
-    )
-    redislite_client = redislite.Redis(redislite_db_path)
-    redislite_socket_path = f"redis+socket://{redislite_client.socket_file}"
-    app = Celery(
-        "tasks",
-        broker=f"{redislite_socket_path}?virtual_host=1",
-        backend=f"{redislite_socket_path}?virtual_host=2",
-    )
+broker_transport_options = config.get("_global_.celery.broker_transport_options")
+if broker_transport_options:
+    app.conf.update({"broker_transport_options": dict(broker_transport_options)})
 
 app.conf.result_expires = config.get("_global_.celery.result_expires", 60)
 app.conf.worker_prefetch_multiplier = config.get(
@@ -52,31 +37,31 @@ app.conf.worker_prefetch_multiplier = config.get(
 )
 app.conf.task_acks_late = config.get("_global_.celery.task_acks_late", True)
 
-if config.get("_global_.celery.purge") and not config.get(
-    "_global_.redis.use_redislite"
-):
+if config.get("_global_.celery.purge"):
     # Useful to clear celery queue in development
     with Timeout(seconds=5, error_message="Timeout: Are you sure Redis is running?"):
         app.control.purge()
 
 
 @app.task(soft_time_limit=600)
-def cache_application_information(host):
+def cache_application_information(tenant):
     """
     This task retrieves application information from configuration. You may want to override this function to
     utilize your organization's CI/CD pipeline for this information.
     :return:
     """
     apps_to_roles = {}
-    for k, v in config.get_host_specific_key("application_settings", host, {}).items():
+    for k, v in config.get_tenant_specific_key(
+        "application_settings", tenant, {}
+    ).items():
         apps_to_roles[k] = v.get("roles", [])
 
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     red.set(
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "celery.apps_to_roles.redis_key",
-            host,
-            f"{host}_APPS_TO_ROLES",
+            tenant,
+            f"{tenant}_APPS_TO_ROLES",
         ),
         json.dumps(apps_to_roles, cls=SetEncoder),
     )

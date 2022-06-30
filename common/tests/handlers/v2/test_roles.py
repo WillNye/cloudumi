@@ -2,8 +2,7 @@ import pytest
 from mock import patch
 
 import common.lib.noq_json as json
-from util.tests.fixtures.fixtures import create_future
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 
@@ -23,11 +22,11 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
 
     def test_get(self):
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch("/api/v2/roles", method="GET", headers=headers)
@@ -125,11 +124,11 @@ class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
             "message": "Get roles by account",
         }
         headers = {
-            self.config.get_host_specific_key(
-                "auth.user_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@github.com",
-            self.config.get_host_specific_key(
-                "auth.groups_header_name", host
+            self.config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         response = self.fetch(
@@ -152,7 +151,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
 
     @patch("api.handlers.v2.roles.RoleDetailHandler.authorization_flow")
     def test_delete_no_user(self, mock_auth):
-        mock_auth.return_value = create_future(None)
+        mock_auth.return_value = None
         expected = {"status": 403, "title": "Forbidden", "message": "No user detected"}
         response = self.fetch(
             "/api/v2/roles/012345678901/fake_account_admin", method="DELETE"
@@ -207,7 +206,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "fake_account_admin"
         account_id = "123456789012"
@@ -311,7 +310,7 @@ class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
         client = boto3.client(
             "iam",
             region_name="us-east-1",
-            **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         )
         role_name = "fake_account_admin"
         client.create_role(

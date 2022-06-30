@@ -13,7 +13,6 @@ import sentry_sdk
 import tornado.httpclient
 import tornado.httputil
 import tornado.web
-from rediscluster.exceptions import ClusterDownError
 from tornado import httputil
 
 import common.lib.noq_json as json
@@ -64,24 +63,24 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
 
     def prepare(self):
         unprotected_routes = ["/healthcheck", "/api/v3/tenant_registration"]
-        host = self.get_host_name()
-        # Ensure request is for a valid host / tenant
-        if config.is_host_configured(host):
+        tenant = self.get_tenant_name()
+        # Ensure request is for a valid tenant
+        if config.is_tenant_configured(tenant):
             return
 
         # Ignore unprotected routes, like /healthcheck
         if self.request.uri in unprotected_routes:
             return
 
-        # Complain loudly that we don't have a configuration for the host/tenant. Instruct
+        # Complain loudly that we don't have a configuration for the tenant. Instruct
         # frontend to redirect to main page
         function: str = (
             f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
         )
         log_data = {
             "function": function,
-            "message": "Invalid host specified. Redirecting to main page",
-            "host": host,
+            "message": "Invalid tenant specified. Redirecting to main page",
+            "tenant": tenant,
         }
         log.debug(log_data)
         self.set_status(403)
@@ -90,12 +89,12 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
                 "type": "redirect",
                 "redirect_url": "https://noq.dev",  # TODO: Make this URL configurable?
                 "reason": "unauthenticated",
-                "message": "Invalid host specified",
+                "message": "Invalid tenant specified",
             }
         )
         return
 
-    def get_host(self):
+    def get_tenant(self):
         if config.get("_global_.development"):
             x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
             if x_forwarded_host:
@@ -103,13 +102,13 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
 
         return self.request.host
 
-    def get_host_name(self):
-        return self.get_host().split(":")[0].replace(".", "_")
+    def get_tenant_name(self):
+        return self.get_tenant().split(":")[0].replace(".", "_")
 
     def get_request_ip(self):
-        host = self.get_host_name()
-        trusted_remote_ip_header = config.get_host_specific_key(
-            "auth.remote_ip.trusted_remote_ip_header", host
+        tenant = self.get_tenant_name()
+        trusted_remote_ip_header = config.get_tenant_specific_key(
+            "auth.remote_ip.trusted_remote_ip_header", tenant
         )
         if not trusted_remote_ip_header:
             trusted_remote_ip_header = config.get(
@@ -146,15 +145,15 @@ class BaseJSONHandler(TornadoRequestHandler):
         self.finish()
 
     async def prepare(self):
-        host = self.get_host_name()
-        if not config.is_host_configured(host):
+        tenant = self.get_tenant_name()
+        if not config.is_tenant_configured(tenant):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
             log_data = {
                 "function": function,
-                "message": "Invalid host specified. Redirecting to main page",
-                "host": host,
+                "message": "Invalid tenant specified. Redirecting to main page",
+                "tenant": tenant,
             }
             log.debug(log_data)
             self.set_status(403)
@@ -163,7 +162,7 @@ class BaseJSONHandler(TornadoRequestHandler):
                     "type": "redirect",
                     "redirect_url": "https://noq.dev",
                     "reason": "unauthenticated",
-                    "message": "Invalid host specified",
+                    "message": "Invalid tenant specified",
                 }
             )
             return
@@ -191,13 +190,13 @@ class BaseJSONHandler(TornadoRequestHandler):
         )
 
     def get_current_user(self):
-        host = self.get_host_name()
+        tenant = self.get_tenant_name()
         try:
-            if config.get("_global_.development") and config.get_host_specific_key(
-                "json_authentication_override", host
+            if config.get("_global_.development") and config.get_tenant_specific_key(
+                "json_authentication_override", tenant
             ):
-                return config.get_host_specific_key(
-                    "json_authentication_override", host
+                return config.get_tenant_specific_key(
+                    "json_authentication_override", tenant
                 )
             tkn_header = self.request.headers["authorization"]
         except KeyError:
@@ -222,7 +221,7 @@ class BaseHandler(TornadoRequestHandler):
             super(BaseHandler, self).log_exception(*args, **kwargs)
 
     def write_error(self, status_code: int, **kwargs: Any) -> None:
-        host = self.get_host_name()
+        tenant = self.get_tenant_name()
         if self.settings.get("serve_traceback") and "exc_info" in kwargs:
             # in debug mode, try to send a traceback
             self.set_header("Content-Type", "text/plain")
@@ -235,7 +234,7 @@ class BaseHandler(TornadoRequestHandler):
                 "<body>%(code)d: %(message)s</body></html>"
                 % {
                     "code": status_code,
-                    "message": f"{self._reason} - {config.get_host_specific_key('errors.custom_website_error_message', host, '')}",
+                    "message": f"{self._reason} - {config.get_tenant_specific_key('errors.custom_website_error_message', tenant, '')}",
                 }
             )
 
@@ -250,15 +249,15 @@ class BaseHandler(TornadoRequestHandler):
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
-        host = self.get_host_name()
-        if not config.is_host_configured(host):
+        tenant = self.get_tenant_name()
+        if not config.is_tenant_configured(tenant):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
             log_data = {
                 "function": function,
-                "message": "Invalid host specified. Redirecting to main page",
-                "host": host,
+                "message": "Invalid tenant specified. Redirecting to main page",
+                "tenant": tenant,
             }
             log.debug(log_data)
             self.set_status(403)
@@ -267,7 +266,7 @@ class BaseHandler(TornadoRequestHandler):
                     "type": "redirect",
                     "redirect_url": "https://noq.dev",
                     "reason": "unauthenticated",
-                    "message": "Invalid host specified",
+                    "message": "Invalid tenant specified",
                 }
             )
             await self.finish()
@@ -291,9 +290,9 @@ class BaseHandler(TornadoRequestHandler):
         return await self.authorization_flow()
 
     def write(self, chunk: Union[str, bytes, dict]) -> None:
-        # host = self.get_host_name()
-        # if config.get_host_specific_key(
-        #     "_security_risk_full_debugging.enabled", host
+        # tenant = self.get_tenant_name()
+        # if config.get_tenant_specific_key(
+        #     "_security_risk_full_debugging.enabled", tenant
         # ):
         #     if not hasattr(self, "responses"):
         #         self.responses = []
@@ -301,7 +300,7 @@ class BaseHandler(TornadoRequestHandler):
         super(BaseHandler, self).write(chunk)
 
     async def configure_tracing(self):
-        host = self.get_host_name()
+        tenant = self.get_tenant_name()
         self.tracer = ConsoleMeTracer()
         primary_span_name = "{0} {1}".format(
             self.request.method.upper(), self.request.path
@@ -314,14 +313,14 @@ class BaseHandler(TornadoRequestHandler):
             "http.url": self.request.full_url(),
         }
         tracer = await self.tracer.configure_tracing(
-            primary_span_name, host, tags=tracer_tags
+            primary_span_name, tenant, tags=tracer_tags
         )
         if tracer:
             for k, v in tracer.headers.items():
                 self.set_header(k, v)
 
     def on_finish(self) -> None:
-        # host = self.get_host_name()
+        # tenant = self.get_tenant_name()
         if hasattr(self, "tracer") and self.tracer:
             asyncio.ensure_future(
                 self.tracer.set_additional_tags({"http.status_code": self.get_status()})
@@ -331,7 +330,7 @@ class BaseHandler(TornadoRequestHandler):
 
         super(BaseHandler, self).on_finish()
 
-    async def attempt_sso_authn(self, host) -> bool:
+    async def attempt_sso_authn(self, tenant) -> bool:
         """
         ConsoleMe's configuration allows authenticating users by user/password, SSO, or both.
         This function helps determine how ConsoleMe should authenticate a user. If user/password login is allowed,
@@ -343,7 +342,9 @@ class BaseHandler(TornadoRequestHandler):
          allow authenticating users by a combination of user/password and SSO. In this case, we need to tell
         Returns: boolean
         """
-        if not config.get_host_specific_key("auth.get_user_by_password", host, False):
+        if not config.get_tenant_specific_key(
+            "auth.get_user_by_password", tenant, False
+        ):
             return True
 
         # force_use_sso indicates the user's intent to authenticate via SSO
@@ -370,16 +371,16 @@ class BaseHandler(TornadoRequestHandler):
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
-        host = self.get_host_name()
+        tenant = self.get_tenant_name()
         group_mapping = get_plugin_by_name(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "plugins.group_mapping",
-                host,
+                tenant,
                 "cmsaas_group_mapping",
             )
         )()
         auth = get_plugin_by_name(
-            config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
+            config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
         )()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
@@ -387,7 +388,7 @@ class BaseHandler(TornadoRequestHandler):
         refresh_cache = (
             self.request.arguments.get("refresh_cache", [False])[0] or refresh_cache
         )
-        attempt_sso_authn = await self.attempt_sso_authn(host)
+        attempt_sso_authn = await self.attempt_sso_authn(tenant)
 
         refreshed_user_roles_from_cache = False
 
@@ -408,7 +409,7 @@ class BaseHandler(TornadoRequestHandler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "message": "Incoming request",
-            "host": host,
+            "tenant": tenant,
         }
 
         log.debug(log_data)
@@ -420,29 +421,33 @@ class BaseHandler(TornadoRequestHandler):
 
         # Validate auth cookie and use it to retrieve group information
         if auth_cookie:
-            res = await validate_and_return_jwt_token(auth_cookie, host)
+            res = await validate_and_return_jwt_token(auth_cookie, tenant)
             if res and isinstance(res, dict):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
 
-        # if host in ["localhost", "127.0.0.1"] and not self.user:
+        # if tenant in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
-        if config.get("_global_.development") and config.get_host_specific_key(
-            "_development_user_override", host
+        if config.get("_global_.development") and config.get_tenant_specific_key(
+            "_development_user_override", tenant
         ):
-            self.user = config.get_host_specific_key("_development_user_override", host)
-        if config.get("_global_.development") and config.get_host_specific_key(
-            "_development_groups_override", host
+            self.user = config.get_tenant_specific_key(
+                "_development_user_override", tenant
+            )
+        if config.get("_global_.development") and config.get_tenant_specific_key(
+            "_development_groups_override", tenant
         ):
-            self.groups = config.get_host_specific_key(
-                "_development_groups_override", host
+            self.groups = config.get_tenant_specific_key(
+                "_development_groups_override", tenant
             )
 
         if not self.user:
             # Authenticate user by API Key
-            if config.get_host_specific_key("auth.get_user_by_api_key", host, False):
+            if config.get_tenant_specific_key(
+                "auth.get_user_by_api_key", tenant, False
+            ):
                 api_key = self.request.headers.get("X-API-Key")
                 api_user = self.request.headers.get("X-API-User")
                 if bool(api_key) != bool(api_user):
@@ -450,15 +455,15 @@ class BaseHandler(TornadoRequestHandler):
                         "X-API-Key and X-API-User must be both present or both absent"
                     )
                 if api_key and api_user:
-                    ddb = UserDynamoHandler(host)
-                    self.user = await ddb.verify_api_key(api_key, api_user, host)
+                    ddb = UserDynamoHandler(tenant)
+                    self.user = await ddb.verify_api_key(api_key, api_user, tenant)
 
         if not self.user:
             # SAML flow. If user has a JWT signed by ConsoleMe, and SAML is enabled in configuration, user will go
             # through this flow.
 
             if (
-                config.get_host_specific_key("auth.get_user_by_saml", host, False)
+                config.get_tenant_specific_key("auth.get_user_by_saml", tenant, False)
                 and attempt_sso_authn
             ):
                 res = await authenticate_user_by_saml(self)
@@ -475,7 +480,7 @@ class BaseHandler(TornadoRequestHandler):
 
         if not self.user:
             if (
-                config.get_host_specific_key("auth.get_user_by_oidc", host, False)
+                config.get_tenant_specific_key("auth.get_user_by_oidc", tenant, False)
                 and attempt_sso_authn
             ):
                 res = await authenticate_user_by_oidc(self)
@@ -489,8 +494,8 @@ class BaseHandler(TornadoRequestHandler):
                     self.groups = res.get("groups")
 
         if not self.user:
-            if config.get_host_specific_key(
-                "auth.get_user_by_aws_alb_auth", host, False
+            if config.get_tenant_specific_key(
+                "auth.get_user_by_aws_alb_auth", tenant, False
             ):
                 res = await authenticate_user_by_alb_auth(self)
                 if not res:
@@ -501,7 +506,9 @@ class BaseHandler(TornadoRequestHandler):
 
         if not self.user:
             # Username/Password authn flow
-            if config.get_host_specific_key("auth.get_user_by_password", host, False):
+            if config.get_tenant_specific_key(
+                "auth.get_user_by_password", tenant, False
+            ):
                 after_redirect_uri = self.request.arguments.get("redirect_url", [""])[0]
                 if after_redirect_uri and isinstance(after_redirect_uri, bytes):
                     after_redirect_uri = after_redirect_uri.decode("utf-8")
@@ -543,7 +550,7 @@ class BaseHandler(TornadoRequestHandler):
                         "request_path": self.request.uri,
                         "ip": self.ip,
                         "user_agent": self.request.headers.get("User-Agent"),
-                        "host": host,
+                        "tenant": tenant,
                     },
                 )
                 log_data["message"] = "No user detected. Check configuration."
@@ -554,13 +561,18 @@ class BaseHandler(TornadoRequestHandler):
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
         if (
-            config.get_host_specific_key("auth.cache_user_info_server_side", host, True)
+            config.get_tenant_specific_key(
+                "auth.cache_user_info_server_side", tenant, True
+            )
             and not refresh_cache
         ):
             try:
-                red = await RedisHandler().redis(host)
-                cache_r = red.get(f"{host}_USER-{self.user}-CONSOLE-{console_only}")
-            except (redis.exceptions.ConnectionError, ClusterDownError):
+                red = await RedisHandler().redis(tenant)
+                cache_r = red.get(f"{tenant}_USER-{self.user}-CONSOLE-{console_only}")
+            except (
+                redis.exceptions.ConnectionError,
+                redis.exceptions.ClusterDownError,
+            ):
                 cache_r = None
             if cache_r:
                 log_data["message"] = "Loading from cache"
@@ -601,20 +613,22 @@ class BaseHandler(TornadoRequestHandler):
 
         # Set Per-User Role Name (This logic is not used in OSS deployment)
         if (
-            config.get_host_specific_key("user_roles.opt_in_group", host)
-            and config.get_host_specific_key("user_roles.opt_in_group", host)
+            config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
+            and config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
             in self.groups
         ):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
 
-        self.eligible_roles += await get_user_active_tear_roles_by_tag(self.user, host)
+        self.eligible_roles += await get_user_active_tear_roles_by_tag(
+            self.user, tenant
+        )
         self.eligible_roles = await group_mapping.get_eligible_roles(
             self.eligible_roles,
             self.user,
             self.groups,
             self.user_role_name,
-            self.get_host_name(),
+            self.get_tenant_name(),
             console_only=console_only,
         )
 
@@ -636,17 +650,19 @@ class BaseHandler(TornadoRequestHandler):
                 log.error(log_data, exc_info=True)
                 raise
         if (
-            config.get_host_specific_key("auth.cache_user_info_server_side", host, True)
+            config.get_tenant_specific_key(
+                "auth.cache_user_info_server_side", tenant, True
+            )
             and self.groups
             # Only set role cache if we didn't retrieve user's existing roles from cache
             and not refreshed_user_roles_from_cache
         ):
             try:
-                red = await RedisHandler().redis(host)
+                red = await RedisHandler().redis(tenant)
                 red.setex(
-                    f"{host}_USER-{self.user}-CONSOLE-{console_only}",
-                    config.get_host_specific_key(
-                        "role_cache.cache_expiration", host, 60
+                    f"{tenant}_USER-{self.user}-CONSOLE-{console_only}",
+                    config.get_tenant_specific_key(
+                        "role_cache.cache_expiration", tenant, 60
                     ),
                     json.dumps(
                         {
@@ -657,49 +673,52 @@ class BaseHandler(TornadoRequestHandler):
                         }
                     ),
                 )
-            except (redis.exceptions.ConnectionError, ClusterDownError):
+            except (
+                redis.exceptions.ConnectionError,
+                redis.exceptions.ClusterDownError,
+            ):
                 pass
         if not self.get_cookie(config.get("_global_.auth.cookie.name", "noq_auth")):
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                minutes=config.get_host_specific_key(
-                    "jwt.expiration_minutes", host, 1200
+                minutes=config.get_tenant_specific_key(
+                    "jwt.expiration_minutes", tenant, 1200
                 )
             )
 
             encoded_cookie = await generate_jwt_token(
-                self.user, self.groups, host, exp=expiration
+                self.user, self.groups, tenant, exp=expiration
             )
             self.set_cookie(
                 config.get("_global_.auth.cookie.name", "noq_auth"),
                 encoded_cookie,
                 expires=expiration,
-                secure=config.get_host_specific_key(
+                secure=config.get_tenant_specific_key(
                     "auth.cookie.secure",
-                    host,
-                    "https://" in config.get_host_specific_key("url", host),
+                    tenant,
+                    "https://" in config.get_tenant_specific_key("url", tenant),
                 ),
-                httponly=config.get_host_specific_key(
-                    "auth.cookie.httponly", host, True
+                httponly=config.get_tenant_specific_key(
+                    "auth.cookie.httponly", tenant, True
                 ),
-                samesite=config.get_host_specific_key(
-                    "auth.cookie.samesite", host, True
+                samesite=config.get_tenant_specific_key(
+                    "auth.cookie.samesite", tenant, True
                 ),
             )
         if self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
 
-        self.is_admin = can_admin_all(self.user, self.groups, host)
+        self.is_admin = can_admin_all(self.user, self.groups, tenant)
         stats.timer(
             "base_handler.incoming_request",
             {
                 "user": self.user,
-                "host": host,
+                "tenant": tenant,
                 "uri": self.request.uri,
                 "method": self.request.method,
             },
         )
         self.ctx = RequestContext(
-            host=host,
+            tenant=tenant,
             user=self.user,
             groups=self.groups,
             request_uuid=self.request_uuid,
@@ -752,20 +771,20 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.responses = []
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
-        host = self.get_host_name()
+        tenant = self.get_tenant_name()
         self.ctx = RequestContext(
-            host=host,
+            tenant=tenant,
             request_uuid=self.request_uuid,
             uri=self.request.uri,
         )
-        if not config.is_host_configured(host):
+        if not config.is_tenant_configured(tenant):
             function: str = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
             log_data = {
                 "function": function,
-                "message": "Invalid host specified. Redirecting to main page",
-                "host": host,
+                "message": "Invalid tenant specified. Redirecting to main page",
+                "tenant": tenant,
             }
             log.debug(log_data)
             self.set_status(403)
@@ -774,7 +793,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                     "type": "redirect",
                     "redirect_url": "https://noq.dev",
                     "reason": "unauthenticated",
-                    "message": "Invalid host specified",
+                    "message": "Invalid tenant specified",
                 }
             )
             await self.finish()
@@ -784,9 +803,9 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         )()
         stats.timer("base_handler.incoming_request")
         auth = get_plugin_by_name(
-            config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
+            config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
         )()
-        if config.get_host_specific_key("auth.require_mtls", host, False):
+        if config.get_tenant_specific_key("auth.require_mtls", tenant, False):
             try:
                 await auth.validate_certificate(self)
             except InvalidCertificateException:
@@ -817,13 +836,13 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.write({"code": "400", "message": message})
                 await self.finish()
                 return
-        elif config.get_host_specific_key("auth.require_jwt", host, True):
+        elif config.get_tenant_specific_key("auth.require_jwt", tenant, True):
             auth_cookie = self.get_cookie(
                 config.get("_global_.auth.cookie.name", "noq_auth")
             )
 
             if auth_cookie:
-                res = await validate_and_return_jwt_token(auth_cookie, host)
+                res = await validate_and_return_jwt_token(auth_cookie, tenant)
                 if not res:
                     error = {
                         "code": "invalid_jwt",
@@ -837,7 +856,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
                 self.eligible_roles += await get_user_active_tear_roles_by_tag(
-                    self.user, host
+                    self.user, tenant
                 )
                 self.eligible_roles = list(set(self.eligible_roles))
                 self.requester = {"type": "user", "email": self.user}
@@ -847,13 +866,13 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                     "base_handler.incoming_request",
                     {
                         "user": self.user,
-                        "host": host,
+                        "tenant": tenant,
                         "uri": self.request.uri,
                         "method": self.request.method,
                     },
                 )
                 self.ctx = RequestContext(
-                    host=host,
+                    tenant=tenant,
                     user=self.user,
                     groups=self.groups,
                     request_uuid=self.request_uuid,
@@ -871,17 +890,17 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         await self.configure_tracing()
 
     def write(self, chunk: Union[str, bytes, dict]) -> None:
-        # host = self.get_host_name()
-        # if config.get_host_specific_key(
-        #     "_security_risk_full_debugging.enabled", host
+        # tenant = self.get_tenant_name()
+        # if config.get_tenant_specific_key(
+        #     "_security_risk_full_debugging.enabled", tenant
         # ):
         #     self.responses.append(chunk)
         super(BaseMtlsHandler, self).write(chunk)
 
     def on_finish(self) -> None:
-        # host = self.get_host_name()
-        # if config.get_host_specific_key(
-        #     "_security_risk_full_debugging.enabled", host
+        # tenant = self.get_tenant_name()
+        # if config.get_tenant_specific_key(
+        #     "_security_risk_full_debugging.enabled", tenant
         # ):
         #     request_details = {
         #         "path": self.request.path,
@@ -897,8 +916,8 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         #         "response": self.responses,
         #     }
         #     with open(
-        #         config.get_host_specific_key(
-        #             "_security_risk_full_debugging.file", host
+        #         config.get_tenant_specific_key(
+        #             "_security_risk_full_debugging.file", tenant
         #         ),
         #         "a+",
         #     ) as f:
@@ -914,7 +933,7 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
 
 
 class StaticFileHandler(tornado.web.StaticFileHandler):
-    def get_host(self):
+    def get_tenant(self):
         if config.get("_global_.development"):
             x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
             if x_forwarded_host:
@@ -922,16 +941,16 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
 
         return self.request.host
 
-    def get_host_name(self):
-        return self.get_host().split(":")[0].replace(".", "_")
+    def get_tenant_name(self):
+        return self.get_tenant().split(":")[0].replace(".", "_")
 
     def initialize(self, **kwargs) -> None:
-        host = self.get_host_name()
-        if not config.is_host_configured(host):
+        tenant = self.get_tenant_name()
+        if not config.is_tenant_configured(tenant):
             self.set_status(418)
             raise tornado.web.Finish()
         self.ctx = RequestContext(
-            host=host,
+            tenant=tenant,
             user=None,
             request_uuid=str(uuid.uuid4()),
             uri=self.request.uri,
@@ -965,7 +984,7 @@ class BaseAdminHandler(BaseHandler):
             user, console_only, refresh_cache
         )
 
-        if not getattr(self.ctx, "host") or not self.is_admin:
+        if not getattr(self.ctx, "tenant") or not self.is_admin:
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, errors[0], errors, 403, "unauthorized", {}

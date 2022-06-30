@@ -34,16 +34,18 @@ from common.lib.aws.session import (
 )
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.crypto import CryptoSign
-from common.lib.dynamo.host_restrict_session_policy import get_session_policy_for_host
+from common.lib.dynamo.tenant_restrict_session_policy import (
+    get_session_policy_for_tenant,
+)
 from common.lib.password import wait_after_authentication_failure
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
-from common.lib.s3_helpers import get_s3_bucket_for_host
+from common.lib.s3_helpers import get_s3_bucket_for_tenant
 from common.lib.yaml import yaml
 from common.models import AuthenticationResponse
 from identity.lib.groups.models import GroupRequest, GroupRequests
 
-# TODO: Partion key should be host key. Dynamo instance should be retrieved dynamically. Should use dynamodb:LeadingKeys
+# TODO: Partion key should be tenant key. Dynamo instance should be retrieved dynamically. Should use dynamodb:LeadingKeys
 # to restrict.
 DYNAMO_EMPTY_STRING = "---DYNAMO-EMPTY-STRING---"
 
@@ -99,7 +101,7 @@ def decode_config_secrets(original, new):
     return new
 
 
-async def hash_api_key(api_key, user, host) -> str:
+async def hash_api_key(api_key, user, tenant) -> str:
     """
     Hashes an API key.
     """
@@ -110,7 +112,7 @@ async def hash_api_key(api_key, user, host) -> str:
     return base64.b64encode(
         hmac.new(
             api_key.encode("utf-8"),
-            f"{user}:{host}".encode("utf-8"),
+            f"{user}:{tenant}".encode("utf-8"),
             hashlib.sha256,
         ).digest()
     ).decode("utf-8")
@@ -119,18 +121,18 @@ async def hash_api_key(api_key, user, host) -> str:
 class BaseDynamoHandler:
     """Base class for interacting with DynamoDB."""
 
-    def _get_dynamo_table(self, table_name, host):
+    def _get_dynamo_table(self, table_name, tenant):
         function: str = (
             f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
         )
 
         # TODO: Support getting DynamoDB table in customer accounts through nested assume role calls
-        restrictive_session_policy = get_session_policy_for_host(host)
+        restrictive_session_policy = get_session_policy_for_tenant(tenant)
 
         try:
             # call sts_conn with my client and pass in forced_client
             if config.get("_global_.dynamodb_server"):
-                session = get_session_for_tenant(host)
+                session = get_session_for_tenant(tenant)
                 resource = session.resource(
                     "dynamodb",
                     region_name=config.region,
@@ -139,27 +141,27 @@ class BaseDynamoHandler:
                         config.get("_global_.boto3.client_kwargs.endpoint_url"),
                     ),
                 )
-            elif config.get_host_specific_key(
-                "aws.dynamodb.tenant_owns_dynamodb_tables", host, False
+            elif config.get_tenant_specific_key(
+                "aws.dynamodb.tenant_owns_dynamodb_tables", tenant, False
             ):
                 resource = boto3_cached_conn(
                     "dynamodb",
-                    host,
+                    tenant,
                     None,
                     service_type="resource",
-                    account_number=config.get_host_specific_key(
-                        "aws.account_number", host
+                    account_number=config.get_tenant_specific_key(
+                        "aws.account_number", tenant
                     ),
                     session_name=sanitize_session_name("consoleme_dynamodb"),
                     region=config.region,
                     client_kwargs=config.get("_global_.boto3.client_kwargs", {}),
                     session_policy=restrictive_session_policy,
-                    # TODO: This implies only hosting data in SaaS and not customer env. We will need to change this
+                    # TODO: This implies only tenanting data in SaaS and not customer env. We will need to change this
                     # to support data plane in customer env
                     pre_assume_roles=[],
                 )
             else:
-                session = get_session_for_tenant(host)
+                session = get_session_for_tenant(tenant)
                 resource = session.resource(
                     "dynamodb",
                     region_name=config.region,
@@ -171,7 +173,7 @@ class BaseDynamoHandler:
                 {
                     "function": function,
                     "error": e,
-                    "host": host,
+                    "tenant": tenant,
                 },
                 exc_info=True,
             )
@@ -328,7 +330,7 @@ class BaseDynamoHandler:
             items.extend(result)
         return items
 
-    def truncateTable(self, table, host):
+    def truncateTable(self, table, tenant):
         """
         Truncate a dynamo table - For development
         """
@@ -338,7 +340,7 @@ class BaseDynamoHandler:
         # Only retrieve the keys for each item in the table (minimize data transfer)
         projectionExpression = ", ".join("#" + key for key in tableKeyNames)
         expressionAttrNames = {"#" + key: key for key in tableKeyNames}
-        filterExpression = Key("host").eq(host)
+        filterExpression = Key("tenant").eq(tenant)
 
         counter = 0
         page = table.scan(
@@ -364,150 +366,150 @@ class BaseDynamoHandler:
 
 
 class UserDynamoHandler(BaseDynamoHandler):
-    def __init__(self, host, user: Optional[str] = None) -> None:
-        self.host = host
+    def __init__(self, tenant, user: Optional[str] = None) -> None:
+        self.tenant = tenant
 
         try:
             self.identity_requests_table = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.identity_requests_dynamo_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("identity_requests_multitenant"),
                 ),
-                host,
+                tenant,
             )
 
             self.users_table = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.users_dynamo_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("users_multitenant"),
                 ),
-                host,
+                tenant,
             )
             self.group_log = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.group_log_dynamo_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("audit_global"),
                 ),
-                host,
+                tenant,
             )
             self.dynamic_config = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.dynamic_config_dynamo_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("config_multitenant"),
                 ),
-                host,
+                tenant,
             )
             self.policy_requests_table = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.policy_requests_dynamo_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("policy_requests_multitenant"),
                 ),
-                host,
+                tenant,
             )
             self.resource_cache_table = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.resource_cache_dynamo_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("resource_cache_multitenant"),
                 ),
-                host,
+                tenant,
             )
             self.cloudtrail_table = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.cloudtrail_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("cloudtrail_multitenant"),
                 ),
-                host,
+                tenant,
             )
 
             self.notifications_table = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.notifications_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("notifications_multitenant"),
                 ),
-                host,
+                tenant,
             )
 
             self.identity_groups_table = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.identity_groups_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("identity_groups_multitenant"),
                 ),
-                host,
+                tenant,
             )
 
             self.identity_users_table = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.identity_users_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("identity_users_multitenant"),
                 ),
-                host,
+                tenant,
             )
 
             self.tenant_static_configs = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.tenant_static_config_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("tenant_static_configs"),
                 ),
-                host,
+                tenant,
             )
 
             self.noq_api_keys = self._get_dynamo_table(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.noq_api_keys_table",
-                    host,
+                    tenant,
                     get_dynamo_table_name("api_keys", "noq"),
                 ),
-                host,
+                tenant,
             )
 
-            if user and host:
-                self.user = self.get_or_create_user(user, host)
+            if user and tenant:
+                self.user = self.get_or_create_user(user, tenant)
                 self.affected_user = self.user
         except Exception:
             if config.get("_global_.development"):
                 log.error(
                     {
                         "message": "Unable to connect to Dynamo. Trying to set user via development configuration",
-                        "host": host,
+                        "tenant": tenant,
                     },
                     exc_info=True,
                 )
                 self.user = self.sign_request(
                     {
-                        "host": host,
+                        "tenant": tenant,
                         "last_updated": int(time.time()),
                         "username": user,
                         "requests": [],
                     },
-                    host=host,
+                    tenant=tenant,
                 )
                 self.affected_user = self.user
             else:
                 log.error(
                     {
                         "message": "Unable to get Dynamo table.",
-                        "host": host,
+                        "tenant": tenant,
                     },
                     exc_info=True,
                 )
                 raise
 
-    async def create_api_key(self, user, host, ttl=None) -> str:
+    async def create_api_key(self, user, tenant, ttl=None) -> str:
         """
         Creates a new API key for the user.
         :param user: The user to create an API key for.
-        :param host: The host to create the API key for.
+        :param tenant: The tenant to create the API key for.
         :param ttl: The TTL for the API key.
         :return: The API key.
         """
@@ -522,13 +524,13 @@ class UserDynamoHandler(BaseDynamoHandler):
 
         # Create a new API key
         api_key = await generate_api_key()
-        hashed_api_key = await hash_api_key(api_key, user, host)
+        hashed_api_key = await hash_api_key(api_key, user, tenant)
 
         # Store hashed API Key in Dynamo
         await aio_wrapper(
             self.noq_api_keys.put_item,
             Item={
-                "host": host,
+                "tenant": tenant,
                 "user": user,
                 "api_key": hashed_api_key,
                 "id": str(uuid.uuid4()),
@@ -538,18 +540,19 @@ class UserDynamoHandler(BaseDynamoHandler):
 
         return api_key
 
-    async def verify_api_key(self, api_key, user, host) -> bool:
+    async def verify_api_key(self, api_key, user, tenant) -> bool:
         """
         Verifies an API key.
         :param api_key: The API key to verify.
         :param user: The user to verify the API key for.
-        :param host: The host to verify the API key for.
+        :param tenant: The tenant to verify the API key for.
         :return: True if the API key is valid, False otherwise.
         """
-        hashed_api_key = await hash_api_key(api_key, user, host)
+        hashed_api_key = await hash_api_key(api_key, user, tenant)
         # Get the hashed API key
         hashed_api_entry = await aio_wrapper(
-            self.noq_api_keys.get_item, Key={"host": host, "api_key": hashed_api_key}
+            self.noq_api_keys.get_item,
+            Key={"tenant": tenant, "api_key": hashed_api_key},
         )
 
         # Verify the API key
@@ -559,27 +562,27 @@ class UserDynamoHandler(BaseDynamoHandler):
             return user
         return False
 
-    async def delete_api_key(self, host, user, api_key=None, api_key_id=None):
+    async def delete_api_key(self, tenant, user, api_key=None, api_key_id=None):
         """
         Delete API Key from Dynamo
         """
         if api_key:
-            hashed_api_key = await hash_api_key(api_key, user, host)
+            hashed_api_key = await hash_api_key(api_key, user, tenant)
             await self.noq_api_keys.delete_item(
-                Key={"host": host, "api_key": hashed_api_key}
+                Key={"tenant": tenant, "api_key": hashed_api_key}
             )
             return True
         elif api_key_id:
             res = await aio_wrapper(
                 self.cloudtrail_table.query,
-                IndexName="host_id_index",
-                KeyConditionExpression="id = :id AND host = :h",
-                ExpressionAttributeValues={":id": api_key_id, ":h": host},
+                IndexName="tenant_id_index",
+                KeyConditionExpression="id = :id AND tenant = :h",
+                ExpressionAttributeValues={":id": api_key_id, ":h": tenant},
             )
             items = res.get("Items", [])
             for item in items:
                 await self.noq_api_keys.delete_item(
-                    Key={"host": host, "api_key": item["api_key"]}
+                    Key={"tenant": tenant, "api_key": item["api_key"]}
                 )
                 return True
 
@@ -589,14 +592,14 @@ class UserDynamoHandler(BaseDynamoHandler):
         )
 
     def sign_request(
-        self, user_entry: Dict[str, Union[Decimal, List[str], Binary, str]], host: str
+        self, user_entry: Dict[str, Union[Decimal, List[str], Binary, str]], tenant: str
     ) -> Dict[str, Union[Decimal, List[str], str, bytes]]:
         """
         Sign the request and returned request with signature
         :param user_entry:
         :return:
         """
-        crypto = CryptoSign(host)
+        crypto = CryptoSign(tenant)
         # Remove old signature if it exists
         user_entry.pop("signature", None)
         user_entry = self._data_from_dynamo_replace(user_entry)
@@ -605,7 +608,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         user_entry["signature"] = sig
         return user_entry
 
-    async def authenticate_user(self, login_attempt, host) -> AuthenticationResponse:
+    async def authenticate_user(self, login_attempt, tenant) -> AuthenticationResponse:
         function: str = (
             f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
         )
@@ -613,12 +616,12 @@ class UserDynamoHandler(BaseDynamoHandler):
             "function": function,
             "user_email": login_attempt.username,
             "after_redirect_uri": login_attempt.after_redirect_uri,
-            "host": host,
+            "tenant": tenant,
         }
         user_entry = await aio_wrapper(
             self.users_table.query,
-            KeyConditionExpression="username = :un AND host = :h",
-            ExpressionAttributeValues={":un": login_attempt.username, ":h": host},
+            KeyConditionExpression="username = :un AND tenant = :h",
+            ExpressionAttributeValues={":un": login_attempt.username, ":h": tenant},
         )
         user = None
 
@@ -628,7 +631,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             user = user_entry["Items"][0]
         if not user:
             delay_error = await wait_after_authentication_failure(
-                login_attempt.username, host
+                login_attempt.username, tenant
             )
             error = f"Unable to find user: {login_attempt.username}"
             log.error({**log_data, "message": error + delay_error})
@@ -638,7 +641,7 @@ class UserDynamoHandler(BaseDynamoHandler):
 
         if not user.get("password"):
             delay_error = await wait_after_authentication_failure(
-                login_attempt.username, host
+                login_attempt.username, tenant
             )
             error = "User exists, but doesn't have a password stored in the database"
             log.error({**log_data, "message": error + delay_error})
@@ -651,7 +654,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         )
         if not password_hash_matches:
             delay_error = await wait_after_authentication_failure(
-                login_attempt.username, host
+                login_attempt.username, tenant
             )
             error = "Password does not match. "
             log.error({**log_data, "message": error + delay_error})
@@ -665,7 +668,7 @@ class UserDynamoHandler(BaseDynamoHandler):
     def create_user(
         self,
         user_email: str,
-        host: str,
+        tenant: str,
         password: Optional[str] = None,
         groups: Optional[List[str]] = None,
     ):
@@ -678,7 +681,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             "username": user_email,
             "requests": [],
             "groups": groups,
-            "host": host,
+            "tenant": tenant,
         }
 
         if password:
@@ -686,7 +689,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             salt = bcrypt.gensalt()
             unsigned_user_entry["password"] = bcrypt.hashpw(pw, salt)
 
-        user_entry = self.sign_request(unsigned_user_entry, host)
+        user_entry = self.sign_request(unsigned_user_entry, tenant)
         try:
             self.users_table.put_item(Item=self._data_to_dynamo_replace(user_entry))
         except Exception as e:
@@ -698,7 +701,7 @@ class UserDynamoHandler(BaseDynamoHandler):
     def update_user(
         self,
         user_email,
-        host,
+        tenant,
         password: Optional[str] = None,
         groups: Optional[List[str]] = None,
     ):
@@ -706,8 +709,8 @@ class UserDynamoHandler(BaseDynamoHandler):
             groups = []
 
         user_ddb = self.users_table.query(
-            KeyConditionExpression="username = :un AND host = :h",
-            ExpressionAttributeValues={":un": user_email, ":h": host},
+            KeyConditionExpression="username = :un AND tenant = :h",
+            ExpressionAttributeValues={":un": user_email, ":h": tenant},
         )
 
         user = None
@@ -728,9 +731,9 @@ class UserDynamoHandler(BaseDynamoHandler):
         if groups:
             user["groups"] = groups
         user["last_updated"] = timestamp
-        user["host"] = host
+        user["tenant"] = tenant
 
-        user_entry = self.sign_request(user, host)
+        user_entry = self.sign_request(user, tenant)
         try:
             self.users_table.put_item(Item=self._data_to_dynamo_replace(user_entry))
         except Exception as e:
@@ -739,17 +742,17 @@ class UserDynamoHandler(BaseDynamoHandler):
             raise Exception(error)
         return user_entry
 
-    def delete_user(self, user_email, host):
+    def delete_user(self, user_email, tenant):
         function: str = (
             f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
         )
         log_data = {
             "function": function,
             "user_email": user_email,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
-        user_entry = {"username": user_email, "host": host}
+        user_entry = {"username": user_email, "tenant": tenant}
         try:
             self.users_table.delete_item(Key=self._data_to_dynamo_replace(user_entry))
         except Exception as e:
@@ -758,7 +761,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             raise Exception(error)
 
     async def get_user(
-        self, user_email: str, host: str
+        self, user_email: str, tenant: str
     ) -> Optional[Dict[str, Union[Decimal, List[str], Binary, str]]]:
         function: str = (
             f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
@@ -766,14 +769,14 @@ class UserDynamoHandler(BaseDynamoHandler):
         log_data = {
             "function": function,
             "user_email": user_email,
-            "host": host,
+            "tenant": tenant,
         }
 
         log.debug(log_data)
 
         user = self.users_table.query(
-            KeyConditionExpression="username = :un AND host = :h",
-            ExpressionAttributeValues={":un": user_email, ":h": host},
+            KeyConditionExpression="username = :un AND tenant = :h",
+            ExpressionAttributeValues={":un": user_email, ":h": tenant},
         )
 
         if user and "Items" in user and len(user["Items"]) == 1:
@@ -781,7 +784,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         return None
 
     def get_or_create_user(
-        self, user_email: str, host: str
+        self, user_email: str, tenant: str
     ) -> Dict[str, Union[Decimal, List[str], Binary, str]]:
         function: str = (
             f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
@@ -789,14 +792,14 @@ class UserDynamoHandler(BaseDynamoHandler):
         log_data = {
             "function": function,
             "user_email": user_email,
-            "host": host,
+            "tenant": tenant,
         }
 
         log.debug(log_data)
 
         user = self.users_table.query(
-            KeyConditionExpression="username = :un AND host = :h",
-            ExpressionAttributeValues={":un": user_email, ":h": host},
+            KeyConditionExpression="username = :un AND tenant = :h",
+            ExpressionAttributeValues={":un": user_email, ":h": tenant},
         )
 
         items = []
@@ -805,17 +808,17 @@ class UserDynamoHandler(BaseDynamoHandler):
             items = user["Items"]
 
         if not items:
-            return self.create_user(user_email, host)
+            return self.create_user(user_email, tenant)
         return items[0]
 
     def resolve_request_ids(
-        self, request_ids: List[str], host: str
+        self, request_ids: List[str], tenant: str
     ) -> List[Dict[str, Union[int, str]]]:
         requests = []
         for request_id in request_ids:
             request = self.identity_requests_table.query(
-                KeyConditionExpression="request_id = :ri AND host = :h",
-                ExpressionAttributeValues={":ri": request_id, ":h": host},
+                KeyConditionExpression="request_id = :ri AND tenant = :h",
+                ExpressionAttributeValues={":ri": request_id, ":h": tenant},
             )
 
             if request["Items"]:
@@ -823,7 +826,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                 requests.append(items[0])
             else:
                 raise NoMatchingRequest(
-                    f"No matching request for request_id: {request_id} and host: {host}"
+                    f"No matching request for request_id: {request_id} and tenant: {tenant}"
                 )
         return requests
 
@@ -831,15 +834,15 @@ class UserDynamoHandler(BaseDynamoHandler):
         self,
         affected_user: Dict[str, Union[Decimal, List[str], Binary, str]],
         request_id: str,
-        host: str,
+        tenant: str,
     ) -> None:
-        if affected_user["host"] != host:
+        if affected_user["tenant"] != tenant:
             raise Exception(
-                "Host associated with user is different than the host the user authenticated with"
+                "tenant associated with user is different than the tenant the user authenticated with"
             )
         affected_user["requests"].append(request_id)
         self.users_table.put_item(
-            Item=self._data_to_dynamo_replace(self.sign_request(affected_user, host))
+            Item=self._data_to_dynamo_replace(self.sign_request(affected_user, tenant))
         )
 
     def add_request(
@@ -847,7 +850,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         user_email: str,
         group: str,
         justification: str,
-        host: str,
+        tenant: str,
         request_time: None = None,
         status: str = "pending",
         updated_by: Optional[str] = None,
@@ -894,19 +897,19 @@ class UserDynamoHandler(BaseDynamoHandler):
             tags={
                 "user": user_email,
                 "group": group,
-                "host": host,
+                "tenant": tenant,
             },
         )
 
         if self.affected_user.get("username") != user_email:
-            self.affected_user = self.get_or_create_user(user_email, host)
+            self.affected_user = self.get_or_create_user(user_email, tenant)
         # Get current user. Create if they do not already exist
         # self.user = self.get_or_create_user(user_email)
         # Get current user requests, which will validate existing signature
         # existing_request_ids = self.user["requests"]
         # existing_requests = self.resolve_request_ids(existing_request_ids)
         existing_pending_requests_for_group = self.get_requests_by_user(
-            user_email, host, group=group, status="pending"
+            user_email, tenant, group=group, status="pending"
         )
 
         # Craft the new request json
@@ -921,7 +924,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             "updated_by": updated_by,
             "last_updated": timestamp,
             "username": user_email,
-            "host": host,
+            "tenant": tenant,
         }
 
         # See if user already has an active or pending request for the group
@@ -942,15 +945,15 @@ class UserDynamoHandler(BaseDynamoHandler):
             log.error(error, exc_info=True)
             raise Exception(error)
 
-        self.add_request_id_to_user(self.affected_user, request_id, host)
+        self.add_request_id_to_user(self.affected_user, request_id, tenant)
 
         return new_request
 
-    async def get_identity_group_request_by_id(self, host, request_id):
+    async def get_identity_group_request_by_id(self, tenant, request_id):
         response: Dict = await aio_wrapper(
             self.identity_requests_table.query,
-            KeyConditionExpression="request_id = :ri AND host = :h",
-            ExpressionAttributeValues={":ri": request_id, ":h": host},
+            KeyConditionExpression="request_id = :ri AND tenant = :h",
+            ExpressionAttributeValues={":ri": request_id, ":h": tenant},
         )
         items = response.get("Items", [])
         if not items:
@@ -959,7 +962,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             raise Exception(f"Multiple requests found for request_id: {request_id}")
         return self._data_from_dynamo_replace(items[0])
 
-    async def get_all_identity_group_requests(self, host: str, status=None):
+    async def get_all_identity_group_requests(self, tenant: str, status=None):
         """Return all requests. If a status is specified, only requests with the specified status will be returned.
         :param status:
         :return:
@@ -972,7 +975,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         for item in items:
             if status and not item["status"] == status:
                 continue
-            if item["host"] != host:
+            if item["tenant"] != tenant:
                 continue
             return_value.append(self._data_from_dynamo_replace(item))
         return return_value
@@ -980,7 +983,7 @@ class UserDynamoHandler(BaseDynamoHandler):
     async def get_identity_group_requests_by_user(
         self,
         user_email: str,
-        host: str,
+        tenant: str,
         group: str = None,
         idp: str = None,
         status: str = None,
@@ -991,9 +994,9 @@ class UserDynamoHandler(BaseDynamoHandler):
         :param status:
         :return:
         """
-        red = RedisHandler().redis_sync(host)
+        red = RedisHandler().redis_sync(tenant)
         # TODO: Use cache
-        red_key = f"{host}_GROUP_IDENTITY_REQUESTS"
+        red_key = f"{tenant}_GROUP_IDENTITY_REQUESTS"
 
         requests_to_return = []
         requests = []
@@ -1002,9 +1005,9 @@ class UserDynamoHandler(BaseDynamoHandler):
         requests_j = await retrieve_json_data_from_redis_or_s3(
             redis_key=red_key,
             redis_data_type="hash",
-            s3_bucket=await get_s3_bucket_for_host(host),
+            s3_bucket=await get_s3_bucket_for_tenant(tenant),
             redis_field=user_email,
-            host=host,
+            tenant=tenant,
             default="[]",
         )
         if requests_j:
@@ -1030,7 +1033,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         return requests_to_return
 
     async def create_identity_group_request(
-        self, host, user_email, request: GroupRequest
+        self, tenant, user_email, request: GroupRequest
     ) -> GroupRequest:
         """Create a new group request.
         :param request:
@@ -1043,18 +1046,18 @@ class UserDynamoHandler(BaseDynamoHandler):
             Item=self._data_to_dynamo_replace(request_dict)
         )
         celery_app.send_task(
-            "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_host_t",
-            kwargs={"host": host},
+            "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_tenant_t",
+            kwargs={"tenant": tenant},
         )
 
         return request
 
     async def get_pending_identity_group_requests(
-        self, host, user=None, group=None, idp=None, status=None
+        self, tenant, user=None, group=None, idp=None, status=None
     ):
         """
         Get all pending identity group requests.
-        :param host:
+        :param tenant:
         :param user:
         :param group:
         :param status:
@@ -1063,20 +1066,20 @@ class UserDynamoHandler(BaseDynamoHandler):
         if user:
             return await self.get_identity_group_requests_by_user(
                 user,
-                host,
+                tenant,
                 group=group,
                 idp=idp,
                 status=status,
             )
         else:
-            return await self.get_all_identity_group_requests(host, status=status)
+            return await self.get_all_identity_group_requests(tenant, status=status)
 
     def change_request_status(
         self,
         user_email,
         group,
         new_status,
-        host,
+        tenant,
         updated_by=None,
         reviewer_comments=None,
     ):
@@ -1093,12 +1096,12 @@ class UserDynamoHandler(BaseDynamoHandler):
                 "group": group,
                 "new_status": new_status,
                 "updated_by": updated_by,
-                "host": host,
+                "tenant": tenant,
             },
         )
         modified_request = None
         if self.affected_user.get("username") != user_email:
-            self.affected_user = self.get_or_create_user(user_email, host)
+            self.affected_user = self.get_or_create_user(user_email, tenant)
         timestamp = int(time.time())
         if new_status not in POSSIBLE_STATUSES:
             raise Exception(
@@ -1108,7 +1111,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             raise Exception(
                 "You must provide `updated_by` to change a request status to approved."
             )
-        existing_requests = self.get_requests_by_user(user_email, host)
+        existing_requests = self.get_requests_by_user(user_email, tenant)
         if existing_requests:
             updated = False
             for request in existing_requests:
@@ -1117,7 +1120,7 @@ class UserDynamoHandler(BaseDynamoHandler):
                     request["status"] = new_status
                     request["last_updated"] = timestamp
                     request["reviewer_comments"] = reviewer_comments
-                    request["host"] = host
+                    request["tenant"] = tenant
                     modified_request = request
                     try:
                         self.identity_requests_table.put_item(
@@ -1142,7 +1145,7 @@ class UserDynamoHandler(BaseDynamoHandler):
 
     async def change_request_status_by_id(
         self,
-        host: str,
+        tenant: str,
         request_id: str,
         new_status: str,
         updated_by: Optional[str] = None,
@@ -1161,7 +1164,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             raise Exception(
                 "You must provide `updated_by` to change a request status to approved."
             )
-        requests = self.resolve_request_ids([request_id], host)
+        requests = self.resolve_request_ids([request_id], tenant)
 
         if new_status not in POSSIBLE_STATUSES:
             raise Exception(
@@ -1174,7 +1177,7 @@ class UserDynamoHandler(BaseDynamoHandler):
             request["last_updated_time"] = int(time.time())
             request["reviewer_comments"] = reviewer_comments
             request["expiration"] = expiration
-            request["host"] = host
+            request["tenant"] = tenant
             modified_request = request
             try:
                 self.identity_requests_table.put_item(
@@ -1192,7 +1195,7 @@ class UserDynamoHandler(BaseDynamoHandler):
         username: str,
         updated_by: str,
         action: str,
-        host: str,
+        tenant: str,
         updated_at: None = None,
         extra: None = None,
     ) -> None:
@@ -1207,24 +1210,24 @@ class UserDynamoHandler(BaseDynamoHandler):
             "updated_at": updated_at,
             "action": action,
             "extra": extra,
-            "host": host,
+            "tenant": tenant,
         }
         self.group_log.put_item(Item=self._data_to_dynamo_replace(log_entry))
 
-    def batch_write_cloudtrail_events(self, items, host: str):
+    def batch_write_cloudtrail_events(self, items, tenant: str):
         with self.cloudtrail_table.batch_writer(
-            overwrite_by_pkeys=["host", "request_id"]
+            overwrite_by_pkeys=["tenant", "request_id"]
         ) as batch:
             for item in items:
                 batch.put_item(Item=self._data_to_dynamo_replace(item))
         return True
 
-    async def get_top_cloudtrail_errors_by_arn(self, arn, host, n=5):
+    async def get_top_cloudtrail_errors_by_arn(self, arn, tenant, n=5):
         response: dict = await aio_wrapper(
             self.cloudtrail_table.query,
-            IndexName="host-arn-index",
-            KeyConditionExpression="arn = :arn AND host = :h",
-            ExpressionAttributeValues={":arn": arn, ":h": host},
+            IndexName="tenant-arn-index",
+            KeyConditionExpression="arn = :arn AND tenant = :h",
+            ExpressionAttributeValues={":arn": arn, ":h": tenant},
         )
         items = response.get("Items", [])
         aggregated_errors = defaultdict(dict)
@@ -1262,37 +1265,37 @@ class UserDynamoHandler(BaseDynamoHandler):
             error_count[arn] += item.get("count", 1)
         return error_count
 
-    def fetch_groups_for_host(self, host):
+    def fetch_groups_for_tenant(self, tenant):
         # TODO: Support filtering?
         function: str = (
             f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
         )
         log_data = {
             "function": function,
-            "host": host,
+            "tenant": tenant,
         }
 
         log.debug(log_data)
         groups = self.identity_groups_table.query(
-            KeyConditionExpression="host = :h",
-            ExpressionAttributeValues={":h": host},
+            KeyConditionExpression="tenant = :h",
+            ExpressionAttributeValues={":h": tenant},
         )
         return groups
 
-    def fetch_users_for_host(self, host):
+    def fetch_users_for_tenant(self, tenant):
         # TODO: Support filtering?
         function: str = (
             f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
         )
         log_data = {
             "function": function,
-            "host": host,
+            "tenant": tenant,
         }
 
         log.debug(log_data)
         users = self.identity_users_table.query(
-            KeyConditionExpression="host = :h",
-            ExpressionAttributeValues={":h": host},
+            KeyConditionExpression="tenant = :h",
+            ExpressionAttributeValues={":h": tenant},
         )
         return users
 
@@ -1337,13 +1340,13 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         )
         self.tenant_static_configs = _get_dynamo_table_restricted(self, table_name)
 
-    def get_static_config_for_host_sync(
-        self, host, return_format="dict", filter_secrets=False
+    def get_static_config_for_tenant_sync(
+        self, tenant, return_format="dict", filter_secrets=False
     ) -> bytes:
         """Retrieve dynamic configuration yaml synchronously"""
         c = b""
         current_config = self.tenant_static_configs.get_item(
-            Key={"host": host, "id": "master"}
+            Key={"tenant": tenant, "id": "master"}
         )
         if not current_config:
             return c
@@ -1364,27 +1367,27 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         else:
             return yaml.dump(c_dict)
 
-    def get_all_hosts(self) -> List[str]:
-        hosts = set()
+    def get_all_tenants(self) -> List[str]:
+        tenants = set()
         items = self.parallel_scan_table(
             self.tenant_static_configs,
             dynamodb_kwargs={
                 "Select": "SPECIFIC_ATTRIBUTES",
                 "AttributesToGet": [
-                    "host",
+                    "tenant",
                 ],
             },
         )
         for item in items:
-            hosts.add(item["host"])
-        return list(hosts)
+            tenants.add(item["tenant"])
+        return list(tenants)
 
-    async def copy_tenant_config_dynamo_to_redis(self, host, updated_at, config_item):
+    async def copy_tenant_config_dynamo_to_redis(self, tenant, updated_at, config_item):
         if not config_item:
             return
-        red = RedisHandler().redis_sync(host)
+        red = RedisHandler().redis_sync(tenant)
         red.set(
-            f"{host}_STATIC_CONFIGURATION",
+            f"{tenant}_STATIC_CONFIGURATION",
             json.dumps(
                 {
                     "config": config_item,
@@ -1394,11 +1397,11 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             ),
         )
 
-    async def update_static_config_for_host(
+    async def update_static_config_for_tenant(
         self,
         new_config: str,
         updated_by: str,
-        host: str,
+        tenant: str,
     ) -> None:
 
         # TODO: We could support encrypting/decrypting static configuration automatically based on a configuration
@@ -1406,19 +1409,19 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         """Take a YAML config and writes to DDB (The reason we use YAML instead of JSON is to preserve comments)."""
         # Validate that config loads as yaml, raises exception if not
 
-        if "." in host:
-            raise ValueError("`host` cannot contain a period")
+        if "." in tenant:
+            raise ValueError("`tenant` cannot contain a period")
         new_config_d = yaml.load(new_config)
         stats.count(
-            "update_static_config", tags={"updated_by": updated_by, "host": host}
+            "update_static_config", tags={"updated_by": updated_by, "tenant": tenant}
         )
         current_config_entry = await aio_wrapper(
-            self.tenant_static_configs.get_item, Key={"host": host, "id": "master"}
+            self.tenant_static_configs.get_item, Key={"tenant": tenant, "id": "master"}
         )
         current_config_entry = current_config_entry.get("Item", {})
         if current_config_entry:
             old_config = {
-                "host": host,
+                "tenant": tenant,
                 "id": current_config_entry.get("updated_at", "0"),
                 "updated_by": current_config_entry.get("updated_by", ""),
                 "config": current_config_entry["config"],
@@ -1435,7 +1438,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         if "secrets" in new_config_d:
             decode_config_secrets(original_config_d, new_config_d)
         new_config_writable = {
-            "host": host,
+            "tenant": tenant,
             "id": "master",
             "config": yaml.dump(new_config_d),
             "updated_by": updated_by,
@@ -1445,11 +1448,11 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
             Item=self._data_to_dynamo_replace(new_config_writable)
         )
         await self.copy_tenant_config_dynamo_to_redis(
-            host, int(time.time()), new_config_d
+            tenant, int(time.time()), new_config_d
         )
 
 
 # from asgiref.sync import async_to_sync
 # ddb = UserDynamoHandler("cyberdyne_noq_dev", user="ccastrapel@gmail.com")
 # api_key = async_to_sync(ddb.create_api_key)("ccastrapel@gmail.com", "cyberdyne_noq_dev")
-# print(api_key)
+# log.debug(api_key)

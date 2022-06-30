@@ -22,6 +22,6 @@ container_run_and_commit(
         "mkdir -p /home/appuser/.aws",
         "chown -R appuser /home/appuser",
     ],
-    image = "@python_3.9_container//image",
+    image = "@python_3.10_container//image",
     visibility = ["//visibility:public"],
 )

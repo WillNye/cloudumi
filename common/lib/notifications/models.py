@@ -17,9 +17,9 @@ class ConsoleMeUserNotificationAction(BaseModel):
 
 
 class ConsoleMeUserNotification(BaseModel):
-    host: str = Field(
+    tenant: str = Field(
         ...,
-        description=("Host/Tenant associated with this notification"),
+        description=("Tenant associated with this notification"),
     )
     predictable_id: str = Field(
         ...,

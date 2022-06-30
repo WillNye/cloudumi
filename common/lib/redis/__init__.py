@@ -1,4 +1,3 @@
-import os
 import sys
 import threading
 import time
@@ -7,21 +6,11 @@ from typing import Any, Optional
 import boto3
 import redis
 from redis.client import Redis
-from rediscluster import RedisCluster
-from rediscluster.exceptions import ClusterDownError
 
 import common.lib.noq_json as json
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.plugins import get_plugin_by_name
-
-if config.get("_global_.redis.use_redislite"):
-    import tempfile
-
-    import redislite
-
-    if not config.get("_global_.redis.redis_lite.db_path"):
-        default_redislite_db_path = tempfile.NamedTemporaryFile().name
 
 region = config.region
 
@@ -56,8 +45,8 @@ def raise_if_key_doesnt_start_with_prefix(key, prefix):
         raise Exception("Redis Key Name doesn't start with the required prefix.")
 
 
-# ToDo - Everything in ConsoleMeRedis needs to lock out unauthorized hosts
-class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
+# ToDo - Everything in ConsoleMeRedis needs to lock out unauthorized tenants
+class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
     """
     ConsoleMeRedis is a simple wrapper around redis.StrictRedis. It was created to allow Redis to be optional.
     If Redis settings are not defined in ConsoleMe's configuration, we "disable" redis. If Redis is disabled, calls to
@@ -69,6 +58,9 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
     def __init__(self, *args, **kwargs):
         self.required_key_prefix = kwargs.pop("required_key_prefix")
         self.enabled = True
+        if host := kwargs.pop("host", None):
+            kwargs["host"] = host
+
         if not cluster_mode:
             if kwargs["host"] is None or kwargs["port"] is None or kwargs["db"] is None:
                 self.enabled = False
@@ -81,7 +73,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
 
         try:
             result = super(ConsoleMeRedis, self).get(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -123,7 +118,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).set(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -163,7 +161,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         # We do not currently support caching data in S3 with expiration (SETEX)
         try:
             result = super(ConsoleMeRedis, self).setex(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -186,7 +187,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hmset(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -230,7 +234,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hset(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -278,7 +285,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hget(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -323,7 +333,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hmget(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -346,7 +359,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hgetall(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -403,20 +419,13 @@ class RedisHandler:
         if self.host is None or self.port is None or self.db is None:
             self.enabled = False
 
-    async def redis(self, host, db: int = 0) -> Redis:
-        if config.get("_global_.redis.use_redislite"):
-            REDIS_DB_PATH = os.path.join(
-                config.get(
-                    "_global_.redis.redislite.db_path", default_redislite_db_path
-                )
-            )
-            return redislite.StrictRedis(REDIS_DB_PATH, decode_responses=True)
+    async def redis(self, tenant, db: int = 0) -> Redis:
         if cluster_mode:
             self.red = await aio_wrapper(
                 ConsoleMeRedis,
                 startup_nodes=cluster_mode_nodes,
                 decode_responses=True,
-                required_key_prefix=host,
+                required_key_prefix=tenant,
                 skip_full_coverage_check=True,
             )
         else:
@@ -425,26 +434,18 @@ class RedisHandler:
                 host=self.host,
                 port=self.port,
                 db=self.db,
-                charset="utf-8",
+                encoding="utf-8",
                 decode_responses=True,
-                required_key_prefix=host,
+                required_key_prefix=tenant,
             )
         return self.red
 
-    def redis_sync(self, host, db: int = 0) -> Redis:
-        if config.get("_global_.redis.use_redislite"):
-            REDIS_DB_PATH = os.path.join(
-                config.get(
-                    "_global_.redis.redislite.db_path", default_redislite_db_path
-                )
-            )
-            # Warning: We do not restrict Redis keys by hostname when using RedisLite
-            return redislite.StrictRedis(REDIS_DB_PATH, decode_responses=True)
+    def redis_sync(self, tenant, db: int = 0) -> Redis:
         if cluster_mode:
             self.red = ConsoleMeRedis(
                 startup_nodes=cluster_mode_nodes,
                 decode_responses=True,
-                required_key_prefix=host,
+                required_key_prefix=tenant,
                 skip_full_coverage_check=True,
             )
         else:
@@ -452,48 +453,48 @@ class RedisHandler:
                 host=self.host,
                 port=self.port,
                 db=self.db,
-                charset="utf-8",
+                encoding="utf-8",
                 decode_responses=True,
-                required_key_prefix=host,
+                required_key_prefix=tenant,
             )
         return self.red
 
 
 async def redis_get(
-    key: str, host: str, default: Optional[str] = None
+    key: str, tenant: str, default: Optional[str] = None
 ) -> Optional[str]:
-    raise_if_key_doesnt_start_with_prefix(key, host)
-    red = await RedisHandler().redis(host)
+    raise_if_key_doesnt_start_with_prefix(key, tenant)
+    red = await RedisHandler().redis(tenant)
     v = await aio_wrapper(red.get, key)
     if not v:
         return default
     return v
 
 
-async def redis_hgetall(key: str, host: str, default=None):
-    raise_if_key_doesnt_start_with_prefix(key, host)
-    red = await RedisHandler().redis(host)
+async def redis_hgetall(key: str, tenant: str, default=None):
+    raise_if_key_doesnt_start_with_prefix(key, tenant)
+    red = await RedisHandler().redis(tenant)
     v = await aio_wrapper(red.hgetall, key)
     if not v:
         return default
     return v
 
 
-async def redis_hget(name: str, key: str, host: str, default=None):
-    raise_if_key_doesnt_start_with_prefix(name, host)
-    red = await RedisHandler().redis(host)
+async def redis_hget(name: str, key: str, tenant: str, default=None):
+    raise_if_key_doesnt_start_with_prefix(name, tenant)
+    red = await RedisHandler().redis(tenant)
     v = await aio_wrapper(red.hget, name, key)
     if not v:
         return default
     return v
 
 
-def redis_get_sync(key: str, host: str, default: None = None) -> Optional[str]:
-    raise_if_key_doesnt_start_with_prefix(key, host)
-    red = RedisHandler().redis_sync(host)
+def redis_get_sync(key: str, tenant: str, default: None = None) -> Optional[str]:
+    raise_if_key_doesnt_start_with_prefix(key, tenant)
+    red = RedisHandler().redis_sync(tenant)
     try:
         v = red.get(key)
-    except (redis.exceptions.ConnectionError, ClusterDownError):
+    except (redis.exceptions.ConnectionError, redis.exceptions.ClusterDownError):
         v = None
     if not v:
         return default
@@ -501,7 +502,7 @@ def redis_get_sync(key: str, host: str, default: None = None) -> Optional[str]:
 
 
 async def redis_hsetex(
-    name: str, key: str, value: Any, expiration_seconds: int, host: str
+    name: str, key: str, value: Any, expiration_seconds: int, tenant: str
 ):
     """
     Lazy way to set Redis hash keys with an expiration. Warning: Entries set here only get deleted when redis_hgetex
@@ -513,16 +514,16 @@ async def redis_hsetex(
     :param expiration_seconds: Number of seconds to consider entry expired
     :return:
     """
-    raise_if_key_doesnt_start_with_prefix(name, host)
+    raise_if_key_doesnt_start_with_prefix(name, tenant)
     expiration = int(time.time()) + expiration_seconds
-    red = await RedisHandler().redis(host)
+    red = await RedisHandler().redis(tenant)
     v = await aio_wrapper(
         red.hset, name, key, json.dumps({"value": value, "ttl": expiration})
     )
     return v
 
 
-async def redis_hgetex(name: str, key: str, host: str, default=None):
+async def redis_hgetex(name: str, key: str, tenant: str, default=None):
     """
     Lazy way to retrieve an entry from a Redis Hash, and delete it if it's due to expire.
 
@@ -531,8 +532,8 @@ async def redis_hgetex(name: str, key: str, host: str, default=None):
     :param default:
     :return:
     """
-    raise_if_key_doesnt_start_with_prefix(name, host)
-    red = await RedisHandler().redis(host)
+    raise_if_key_doesnt_start_with_prefix(name, tenant)
+    red = await RedisHandler().redis(tenant)
     if not red.exists(name):
         return default
     result_j = await aio_wrapper(red.hget, name, key)

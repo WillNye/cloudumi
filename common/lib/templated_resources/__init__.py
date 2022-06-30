@@ -25,36 +25,36 @@ yaml.indent(mapping=2, sequence=4, offset=2)
 yaml.width = 4096
 
 
-async def cache_resource_templates(host) -> TemplatedFileModelArray:
+async def cache_resource_templates(tenant) -> TemplatedFileModelArray:
     templated_file_array = TemplatedFileModelArray(templated_resources=[])
-    for repository in config.get_host_specific_key(
-        "cache_resource_templates.repositories", host, []
+    for repository in config.get_tenant_specific_key(
+        "cache_resource_templates.repositories", tenant, []
     ):
         if repository.get("type") == "git":
-            result = await cache_resource_templates_for_repository(repository, host)
+            result = await cache_resource_templates_for_repository(repository, tenant)
             templated_file_array.templated_resources.extend(result.templated_resources)
     await store_json_results_in_redis_and_s3(
         templated_file_array.dict(),
-        redis_key=config.get_host_specific_key(
+        redis_key=config.get_tenant_specific_key(
             "cache_resource_templates.redis.key",
-            host,
-            f"{host}_cache_templated_resources_v1",
+            tenant,
+            f"{tenant}_cache_templated_resources_v1",
         ),
-        s3_bucket=config.get_host_specific_key(
-            "cache_resource_templates.s3.bucket", host
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_resource_templates.s3.bucket", tenant
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_resource_templates.s3.file",
-            host,
+            tenant,
             "cache_templated_resources/cache_templated_resources_v1.json.gz",
         ),
-        host=host,
+        tenant=tenant,
     )
     return templated_file_array
 
 
 async def retrieve_cached_resource_templates(
-    host,
+    tenant,
     resource_type: Optional[str] = None,
     resource: Optional[str] = None,
     repository_name: Optional[str] = None,
@@ -63,20 +63,20 @@ async def retrieve_cached_resource_templates(
 ) -> Optional[Union[TemplatedFileModelArray, TemplateFile]]:
     matching_templates = []
     templated_resource_data_d = await retrieve_json_data_from_redis_or_s3(
-        redis_key=config.get_host_specific_key(
+        redis_key=config.get_tenant_specific_key(
             "cache_resource_templates.redis.key",
-            host,
-            f"{host}_cache_templated_resources_v1",
+            tenant,
+            f"{tenant}_cache_templated_resources_v1",
         ),
-        s3_bucket=config.get_host_specific_key(
-            "cache_resource_templates.s3.bucket", host
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_resource_templates.s3.bucket", tenant
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_resource_templates.s3.file",
-            host,
+            tenant,
             "cache_templated_resources/cache_templated_resources_v1.json.gz",
         ),
-        host=host,
+        tenant=tenant,
     )
     templated_file_array = TemplatedFileModelArray.parse_obj(templated_resource_data_d)
     for template_file in templated_file_array.templated_resources:
@@ -101,13 +101,13 @@ async def retrieve_cached_resource_templates(
 
 async def cache_resource_templates_for_repository(
     repository,
-    host,
+    tenant,
 ) -> TemplatedFileModelArray:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
         "repository": repository,
-        "host": host,
+        "tenant": tenant,
     }
     if repository["type"] not in ["git"]:
         raise Exception("Unsupported repository type")
@@ -119,7 +119,7 @@ async def cache_resource_templates_for_repository(
         email = repository["authentication_settings"]["email"]
         resource_formats = repository["resource_formats"]
         discovered_templates = []
-        accounts_d = await get_account_id_to_name_mapping(host)
+        accounts_d = await get_account_id_to_name_mapping(tenant)
         accounts_set = set(accounts_d.values())
         if email:
             repo.config_writer().set_value("user", "email", email).release()

@@ -3,16 +3,16 @@ from common.lib.aws.session import get_session_for_tenant
 from common.models import CloudAccountModel, CloudAccountModelArray
 
 
-async def retrieve_current_account(host) -> CloudAccountModelArray:
-    session = get_session_for_tenant(host)
+async def retrieve_current_account(tenant) -> CloudAccountModelArray:
+    session = get_session_for_tenant(tenant)
     client = session.client(
         "sts",
-        **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     )
     identity = client.get_caller_identity()
     account_aliases = session.client(
         "iam",
-        **config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     ).list_account_aliases()["AccountAliases"]
     account_id = None
     if identity and identity.get("Account"):

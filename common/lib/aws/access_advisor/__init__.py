@@ -10,7 +10,7 @@ from common.config.models import ModelAdapter
 from common.lib.assume_role import get_boto3_instance, rate_limited
 from common.lib.aws.cached_resources.iam import (
     get_identity_arns_for_account,
-    retrieve_iam_managed_policies_for_host,
+    retrieve_iam_managed_policies_for_tenant,
 )
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.models import SpokeAccount
@@ -62,72 +62,72 @@ class AccessAdvisor:
     on_error = Signal()
     on_failure = Signal()
 
-    def __init__(self, host):
-        self.host = host
+    def __init__(self, tenant):
+        self.tenant = tenant
         self.max_access_advisor_job_wait = (
             5 * 60
         )  # Wait 5 minutes before giving up on jobs
 
     async def store_access_advisor_results(
-        self, account_id: str, host: str, access_advisor_data: Dict[str, Any]
+        self, account_id: str, tenant: str, access_advisor_data: Dict[str, Any]
     ) -> bool:
         """Stores Access Advisor results in S3 for identities across an account.
 
         :param account_id: AWS Account ID
-        :param host: Tenant ID
+        :param tenant: Tenant ID
         :param access_advisor_data: All Access Advisor data for identities across a single AWS account
         """
         await store_json_results_in_redis_and_s3(
             access_advisor_data,
-            s3_bucket=config.get_host_specific_key(
+            s3_bucket=config.get_tenant_specific_key(
                 "access_advisor.s3.bucket",
-                host,
+                tenant,
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "access_advisor.s3.file",
-                host,
+                tenant,
                 "access_advisor/cache_access_advisor_{account_id}_v1.json.gz",
             ).format(account_id=account_id),
-            host=host,
+            tenant=tenant,
         )
         return True
 
     async def generate_and_save_access_advisor_data(
-        self, host: str, account_id: str, user: str = None
+        self, tenant: str, account_id: str, user: str = None
     ):
         """Generates effective and removed permissions
         for all identities across an account.
 
-        :param host: Tenant ID
+        :param tenant: Tenant ID
         :param account_id: AWS Account ID
         :param user: User making the request
         :return: Access Advisor data for identities across a single AWS account
         """
         client = await get_boto3_instance(
             "iam",
-            host,
+            tenant,
             account_id,
             user=user,
             session_name="cache_access_advisor",
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
         )
-        arns = await get_identity_arns_for_account(host, account_id)
+        arns = await get_identity_arns_for_account(tenant, account_id)
         jobs = self._generate_job_ids(client, arns)
         access_advisor_data = self._get_job_results(client, jobs)
         if arns and not access_advisor_data:
             log.error("Didn't get any results from Access Advisor")
-        await self.store_access_advisor_results(account_id, host, access_advisor_data)
+        await self.store_access_advisor_results(account_id, tenant, access_advisor_data)
         await self.generate_and_save_effective_identity_permissions(
-            host, account_id, arns, access_advisor_data
+            tenant, account_id, arns, access_advisor_data
         )
         return access_advisor_data
 
     async def generate_and_save_effective_identity_permissions(
         self,
-        host: str,
+        tenant: str,
         account_id: str,
         arns: List[str],
         access_advisor_data: Dict[str, Any],
@@ -135,7 +135,7 @@ class AccessAdvisor:
         """Generates and saves the "effective permissions" for each identity
         arn in `arns`.
 
-        :param host: Tenant ID
+        :param tenant: Tenant ID
         :param account_id: AWS Account ID
         :return: Access Advisor data for identities across a single AWS account
         """
@@ -143,22 +143,24 @@ class AccessAdvisor:
             calculate_unused_policy_for_identities,
         )
 
-        iam_policies = await retrieve_iam_managed_policies_for_host(host, account_id)
+        iam_policies = await retrieve_iam_managed_policies_for_tenant(
+            tenant, account_id
+        )
         effective_identity_permissions = await calculate_unused_policy_for_identities(
-            host, arns, iam_policies, access_advisor_data
+            tenant, arns, iam_policies, access_advisor_data
         )
         await store_json_results_in_redis_and_s3(
             effective_identity_permissions,
-            s3_bucket=config.get_host_specific_key(
+            s3_bucket=config.get_tenant_specific_key(
                 "cache_iam_resources_for_account.effective_identity_permissions.s3.bucket",
-                host,
+                tenant,
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "cache_iam_resources_for_account.effective_identity_permissions.s3.file",
-                host,
+                tenant,
                 "effective_identity_permissions/cache_effective_identity_permissions_{account_id}_v1.json.gz",
             ).format(account_id=account_id),
-            host=host,
+            tenant=tenant,
         )
         return True
 

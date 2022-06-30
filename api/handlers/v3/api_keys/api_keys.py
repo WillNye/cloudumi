@@ -13,9 +13,9 @@ class AddApiKeyHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
         self.set_status(200)
         self.write({"message": "OK"})
-        host = self.ctx.host
-        ddb = UserDynamoHandler(host, user=self.user)
-        api_key = ddb.create_api_key(self.user, host)
+        tenant = self.ctx.tenant
+        ddb = UserDynamoHandler(tenant, user=self.user)
+        api_key = ddb.create_api_key(self.user, tenant)
         self.write(
             WebResponse(
                 status=Status2.success,
@@ -33,10 +33,10 @@ class AddApiKeyHandler(BaseHandler):
         api_key_id = data.get("api_key_id")
         if not api_key and not api_key_id:
             raise ValueError("api_key or api_key_id is required")
-        host = self.ctx.host
-        ddb = UserDynamoHandler(host, user=self.user)
+        tenant = self.ctx.tenant
+        ddb = UserDynamoHandler(tenant, user=self.user)
         await ddb.delete_api_key(
-            host, self.user, api_key=api_key, api_key_id=api_key_id
+            tenant, self.user, api_key=api_key, api_key_id=api_key_id
         )
         self.set_header("Content-Type", "application/json")
         self.set_status(200)

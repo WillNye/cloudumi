@@ -26,9 +26,9 @@ from common.models import (
 )
 
 
-def get_self_service_iam_config(host):
-    return config.get_host_specific_key(
-        "self_service_iam", host, SELF_SERVICE_IAM_DEFAULTS
+def get_self_service_iam_config(tenant):
+    return config.get_tenant_specific_key(
+        "self_service_iam", tenant, SELF_SERVICE_IAM_DEFAULTS
     )
 
 
@@ -72,7 +72,7 @@ async def generate_policy_sid(user: str, expiration_date: Optional[int] = None) 
 
 
 async def generate_policy_name(
-    policy_name: str, user: str, host: str, expiration_date: Optional[int] = None
+    policy_name: str, user: str, tenant: str, expiration_date: Optional[int] = None
 ) -> str:
     """
     Generate a unique policy name identifying the user and time of the change request.
@@ -81,8 +81,8 @@ async def generate_policy_name(
     :param user: User's e-mail address
     :return: policy name string
     """
-    temp_policy_prefix = config.get_host_specific_key(
-        "policies.temp_policy_prefix", host, "noq_delete_on"
+    temp_policy_prefix = config.get_tenant_specific_key(
+        "policies.temp_policy_prefix", tenant, "noq_delete_on"
     )
     if policy_name:
         return policy_name
@@ -117,7 +117,7 @@ async def _generate_inline_policy_change_model(
     resources: List[ResourceModel],
     statements: List[Dict],
     user: str,
-    host: str,
+    tenant: str,
     is_new: bool = True,
     policy_name: Optional[str] = None,
 ) -> InlinePolicyChangeModel:
@@ -132,7 +132,7 @@ async def _generate_inline_policy_change_model(
     :param policy_name: Optional policy name. If not provided, one will be generated
     :return: InlinePolicyChangeModel
     """
-    policy_name = await generate_policy_name(policy_name, user, host)
+    policy_name = await generate_policy_name(policy_name, user, tenant)
     policy_document = await _generate_inline_policy_model_from_statements(statements)
     change_details = {
         "change_type": "inline_policy",
@@ -185,7 +185,7 @@ async def _get_actions_from_groups(
 
 
 async def _generate_s3_inline_policy_statement_from_mapping(
-    generator: ChangeGeneratorModel, host
+    generator: ChangeGeneratorModel, tenant
 ) -> Dict:
     """
     Generates an S3 inline policy statement from a ChangeGeneratorModel. S3 is an edge case, thus it gets a
@@ -194,7 +194,7 @@ async def _generate_s3_inline_policy_statement_from_mapping(
     :param generator: ChangeGeneratorModel
     :return: policy_statement: A dictionary representing an inline policy statement.
     """
-    self_service_iam_config = get_self_service_iam_config(host)
+    self_service_iam_config = get_self_service_iam_config(tenant)
     permissions_map = (
         self_service_iam_config.get("permissions_map", {})
         .get("s3", {})
@@ -245,7 +245,7 @@ async def _generate_condition_with_substitutions(generator: ChangeGeneratorModel
 
 
 async def _generate_inline_policy_statement_from_mapping(
-    generator: ChangeGeneratorModel, host: str
+    generator: ChangeGeneratorModel, tenant: str
 ) -> Dict:
     """
     Generates an inline policy statement given a ChangeGeneratorModel from a action mapping stored in configuration.
@@ -256,7 +256,7 @@ async def _generate_inline_policy_statement_from_mapping(
     generator_type = generator.generator_type
     if not isinstance(generator_type, str):
         generator_type = generator.generator_type.value
-    self_service_iam_config = get_self_service_iam_config(host)
+    self_service_iam_config = get_self_service_iam_config(tenant)
     permissions_map = (
         self_service_iam_config.get("permissions_map", {})
         .get(generator_type, {})
@@ -288,7 +288,7 @@ async def _generate_inline_policy_statement_from_mapping(
 
 
 async def _generate_inline_policy_statement_from_policy_sentry(
-    generator: CrudChangeGeneratorModel, host: str
+    generator: CrudChangeGeneratorModel, tenant: str
 ) -> Dict:
     """
     Generates an inline policy statement given a ChangeGeneratorModel from a action mapping provided by policy
@@ -297,7 +297,7 @@ async def _generate_inline_policy_statement_from_policy_sentry(
     :param generator: ChangeGeneratorModel
     :return: policy_statement: A dictionary representing an inline policy statement.
     """
-    self_service_iam_config = get_self_service_iam_config(host)
+    self_service_iam_config = get_self_service_iam_config(tenant)
     permissions_map = (
         self_service_iam_config.get("permissions_map", {})
         .get("crud_lookup", {})
@@ -325,7 +325,7 @@ async def _generate_inline_policy_statement_from_policy_sentry(
 
 
 async def _generate_inline_iam_policy_statement_from_change_generator(
-    change: ChangeGeneratorModel, host: str
+    change: ChangeGeneratorModel, tenant: str
 ) -> Dict:
     """
     Generates an inline policy statement from a ChangeGeneratorModel.
@@ -336,13 +336,13 @@ async def _generate_inline_iam_policy_statement_from_change_generator(
     if not isinstance(generator_type, str):
         generator_type = change.generator_type.value
     if generator_type == "s3":
-        policy = await _generate_s3_inline_policy_statement_from_mapping(change, host)
+        policy = await _generate_s3_inline_policy_statement_from_mapping(change, tenant)
     elif generator_type == "crud_lookup":
         policy = await _generate_inline_policy_statement_from_policy_sentry(
-            change, host
+            change, tenant
         )
     else:
-        policy = await _generate_inline_policy_statement_from_mapping(change, host)
+        policy = await _generate_inline_policy_statement_from_mapping(change, tenant)
 
     # Honeybee supports restricting policies to certain accounts.
     if change.include_accounts:
@@ -369,7 +369,7 @@ async def _attach_sids_to_policy_statements(
 
 
 async def _generate_resource_model_from_arn(
-    arn: str, host: str
+    arn: str, tenant: str
 ) -> Optional[ResourceModel]:
     """
     Generates a ResourceModel from a Resource ARN
@@ -384,7 +384,7 @@ async def _generate_resource_model_from_arn(
         name = arn.split(":")[5].split("/")[-1]
         if not region:
             region = "global"
-        ALL_ACCOUNTS = await get_account_id_to_name_mapping(host)
+        ALL_ACCOUNTS = await get_account_id_to_name_mapping(tenant)
         account_name = ALL_ACCOUNTS.get(account_id, "")
 
         return ResourceModel(
@@ -402,7 +402,7 @@ async def _generate_resource_model_from_arn(
 
 async def generate_change_model_array(
     changes: ChangeGeneratorModelArray,
-    host: str,
+    tenant: str,
 ) -> ChangeModelArray:
     """
     Compiles a ChangeModelArray which includes all of the AWS policies required to satisfy the
@@ -443,7 +443,7 @@ async def generate_change_model_array(
             # Generate inline policy for the change, if applicable
             inline_policies = [
                 await _generate_inline_iam_policy_statement_from_change_generator(
-                    change, host
+                    change, tenant
                 )
             ]
         for inline_policy in inline_policies:
@@ -464,7 +464,9 @@ async def generate_change_model_array(
                 if isinstance(change.resource_arn, str):
                     change.resource_arn = [change.resource_arn]
                 for arn in change.resource_arn:
-                    resource_model = await _generate_resource_model_from_arn(arn, host)
+                    resource_model = await _generate_resource_model_from_arn(
+                        arn, tenant
+                    )
                     # If the resource arn is actually a wildcard, we might not have a valid resource model
                     if resource_model:
                         resources.append(resource_model)
@@ -483,7 +485,7 @@ async def generate_change_model_array(
     )
     # TODO(ccastrapel): Check if the inline policy statements would be auto-approved and supply that context
     inline_iam_policy_change_model = await _generate_inline_policy_change_model(
-        primary_principal, resources, inline_iam_policy_statements, primary_user, host
+        primary_principal, resources, inline_iam_policy_statements, primary_user, tenant
     )
     change_models.append(inline_iam_policy_change_model)
     return ChangeModelArray.parse_obj({"changes": change_models})

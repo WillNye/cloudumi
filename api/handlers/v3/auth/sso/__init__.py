@@ -33,8 +33,8 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
         if user_pool_id := self._user_pool_id:
             return user_pool_id
 
-        user_pool_id = config.get_host_specific_key(
-            "secrets.cognito.config.user_pool_id", self.ctx.host
+        user_pool_id = config.get_tenant_specific_key(
+            "secrets.cognito.config.user_pool_id", self.ctx.tenant
         )
         if not user_pool_id:
             raise ValueError("Cognito user pool id not configured")
@@ -47,8 +47,8 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
         if user_pool_region := self._user_pool_region:
             return user_pool_region
 
-        user_pool_region = config.get_host_specific_key(
-            "secrets.cognito.config.user_pool_region", self.ctx.host, config.region
+        user_pool_region = config.get_tenant_specific_key(
+            "secrets.cognito.config.user_pool_region", self.ctx.tenant, config.region
         )
         if not user_pool_region:
             raise ValueError("Cognito user pool region not configured")
@@ -61,8 +61,8 @@ class IdpConfigurationCrudHandler(ConfigurationCrudHandler):
         if user_pool_client_id := self._user_pool_client_id:
             return user_pool_client_id
 
-        user_pool_client_id = config.get_host_specific_key(
-            "secrets.cognito.config.user_pool_client_id", self.ctx.host
+        user_pool_client_id = config.get_tenant_specific_key(
+            "secrets.cognito.config.user_pool_client_id", self.ctx.tenant
         )
         if not user_pool_client_id:
             raise ValueError("Cognito user pool client id not configured")
@@ -176,8 +176,8 @@ class CognitoCrudHandler(MultiItemConfigurationCrudHandler):
         if user_pool_id := getattr(self, "_user_pool_id"):
             return user_pool_id
 
-        user_pool_id = config.get_host_specific_key(
-            "secrets.cognito.config.user_pool_id", self.ctx.host
+        user_pool_id = config.get_tenant_specific_key(
+            "secrets.cognito.config.user_pool_id", self.ctx.tenant
         )
         if not user_pool_id:
             raise ValueError("Cognito user pool id not configured")
@@ -190,8 +190,8 @@ class CognitoCrudHandler(MultiItemConfigurationCrudHandler):
         if user_pool_region := self._user_pool_region:
             return user_pool_region
 
-        user_pool_region = config.get_host_specific_key(
-            "secrets.cognito.config.user_pool_region", self.ctx.host, config.region
+        user_pool_region = config.get_tenant_specific_key(
+            "secrets.cognito.config.user_pool_region", self.ctx.tenant, config.region
         )
         if not user_pool_region:
             raise ValueError("Cognito user pool region not configured")

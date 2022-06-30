@@ -19,7 +19,7 @@ log = config.get_logger()
 
 class IdentityGroupRequestReviewHandler(BaseHandler):
     async def get(self, request_id):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "IdentityGroupHandler.get",
             "user": self.user,
@@ -27,10 +27,10 @@ class IdentityGroupRequestReviewHandler(BaseHandler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "identity_request_id": request_id,
-            "host": host,
+            "tenant": tenant,
         }
         # Get request from DynamoDB
-        request = await get_request_by_id(host, request_id)
+        request = await get_request_by_id(tenant, request_id)
         if not request:
             log.error(log_data)
             res = WebResponse(status=Status2.error, message="No request found.")
@@ -68,7 +68,7 @@ class IdentityGroupRequestReviewHandler(BaseHandler):
         self.write(json.loads(res.json()))
 
     async def post(self, request_id):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         # TODO: Format data into a model
         data = tornado.escape.json_decode(self.request.body)
 
@@ -79,10 +79,10 @@ class IdentityGroupRequestReviewHandler(BaseHandler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "identity_request_id": request_id,
-            "host": host,
+            "tenant": tenant,
         }
         # Get request from DynamoDB
-        request = await get_request_by_id(host, request_id)
+        request = await get_request_by_id(tenant, request_id)
         if not request:
             log.error(log_data)
             res = WebResponse(status=Status2.error, message="No request found.")
@@ -90,7 +90,7 @@ class IdentityGroupRequestReviewHandler(BaseHandler):
             self.write(json.loads(res.json(exclude_unset=True)))
             return
         # Is user authorized to make changes to this request?
-        if not can_admin_identity(self.user, self.groups, host):
+        if not can_admin_identity(self.user, self.groups, tenant):
             log.error(log_data)
             res = WebResponse(status=Status2.error, message="Not authorized.")
             self.set_status(401)
@@ -120,7 +120,9 @@ class IdentityGroupRequestReviewHandler(BaseHandler):
             return
 
         if data["action"] == "approved":
-            res = await approve_group_request(host, request, self.user, data["comment"])
+            res = await approve_group_request(
+                tenant, request, self.user, data["comment"]
+            )
             self.write(
                 WebResponse(
                     status=Status2.success,
@@ -130,7 +132,9 @@ class IdentityGroupRequestReviewHandler(BaseHandler):
             )
         elif data["action"] == "cancelled":
             # TODO: Handle cancellation of request
-            res = await cancel_group_request(host, request, self.user, data["comment"])
+            res = await cancel_group_request(
+                tenant, request, self.user, data["comment"]
+            )
             self.write(
                 WebResponse(
                     status=Status2.success,
@@ -150,7 +154,7 @@ class IdentityGroupRequestReviewHandler(BaseHandler):
 
 class IdentityRequestGroupsHandler(BaseHandler):
     async def post(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         data = tornado.escape.json_decode(self.request.body)
 
         log_data = {
@@ -159,7 +163,7 @@ class IdentityRequestGroupsHandler(BaseHandler):
             "message": "Retrieving group information",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
 
         user = data["user"]
@@ -180,7 +184,7 @@ class IdentityRequestGroupsHandler(BaseHandler):
             return
 
         # TODO: Allow non-admins to "request" access instead of auto-approving and bulk adding
-        if not can_admin_identity(self.user, self.groups, host):
+        if not can_admin_identity(self.user, self.groups, tenant):
             log.error(log_data)
             res = WebResponse(
                 status=Status2.error, message="Not authorized to admin identity."
@@ -200,16 +204,18 @@ class IdentityRequestGroupsHandler(BaseHandler):
             User(
                 idp_name=idp_name,
                 username=user,
-                host=host,
+                tenant=tenant,
             )
         ]
 
-        groups = [Group(name=group, host=host, idp_name=idp_name) for group in groups]
+        groups = [
+            Group(name=group, tenant=tenant, idp_name=idp_name) for group in groups
+        ]
         # TODO: Support group expiration in bulk-addition group requests
-        await add_users_to_groups(host, user_obj, groups, justification)
+        await add_users_to_groups(tenant, user_obj, groups, justification)
 
         # request = await request_access_to_group(
-        #     host,
+        #     tenant,
         #     user,
         #     self.user,
         #     self.groups,
@@ -234,7 +240,7 @@ class IdentityRequestGroupHandler(BaseHandler):
         Returns information needed to render the Request Groups page.
         :return:
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "IdentityGroupHandler.get",
             "user": self.user,
@@ -243,7 +249,7 @@ class IdentityRequestGroupHandler(BaseHandler):
             "request_id": self.request_uuid,
             "idp": _idp,
             "group_name": _group_name,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
@@ -252,7 +258,7 @@ class IdentityRequestGroupHandler(BaseHandler):
         Request access to a group
         :return:
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "IdentityGroupHandler.get",
             "user": self.user,
@@ -261,7 +267,7 @@ class IdentityRequestGroupHandler(BaseHandler):
             "request_id": self.request_uuid,
             "idp": _idp,
             "group_name": _group_names,
-            "host": host,
+            "tenant": tenant,
         }
 
         data = tornado.escape.json_decode(self.request.body)
@@ -277,7 +283,7 @@ class IdentityRequestGroupHandler(BaseHandler):
             return
 
         request = await request_access_to_group(
-            host,
+            tenant,
             user,
             self.user,
             self.groups,

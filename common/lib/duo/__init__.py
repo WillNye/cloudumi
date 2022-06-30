@@ -12,10 +12,10 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger()
 
 
-async def duo_mfa_user(username, host, message="ConsoleMe Authorization Request"):
+async def duo_mfa_user(username, tenant, message="ConsoleMe Authorization Request"):
     """Send a DUO mfa push request to user."""
     # Create session for the region deployed in.
-    session = get_session_for_tenant(host)
+    session = get_session_for_tenant(tenant)
 
     # Create lambda client
     client = session.client("lambda")
@@ -23,7 +23,7 @@ async def duo_mfa_user(username, host, message="ConsoleMe Authorization Request"
     # Generate the payload for the event passed to the lambda function
     payload = {"username": username, "message_type": message}
 
-    lambda_arn = config.get_host_specific_key("duo.lambda_arn", host, None)
+    lambda_arn = config.get_tenant_specific_key("duo.lambda_arn", tenant, None)
 
     log_data = {"function": f"{__name__}.{sys._getframe().f_code.co_name}"}
 
@@ -41,7 +41,7 @@ async def duo_mfa_user(username, host, message="ConsoleMe Authorization Request"
                 "duo.mfa_request",
                 tags={
                     "user": username,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
         except ClientError as e:

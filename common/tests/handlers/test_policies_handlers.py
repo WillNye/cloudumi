@@ -6,7 +6,7 @@ import pytest
 from mock import MagicMock, patch
 
 import common.lib.noq_json as json
-from util.tests.fixtures.fixtures import MockRedisHandler, create_future
+from util.tests.fixtures.fixtures import MockRedisHandler
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -48,7 +48,7 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
     ):
         pass
 
-        # mock_auth.return_value.validate_certificate.return_value = create_future(True)
+        # mock_auth.return_value.validate_certificate.return_value = True
         # mock_auth.return_value.extract_user_from_certificate.return_value = create_future(
         #     {"name": "user@example.com"}
         # )
@@ -78,7 +78,7 @@ class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
             method="GET",
         )
         self.assertEqual(response.code, 400)
-        result = create_future({"123456789012": '["abucket1", "abucket2"]'})
+        result = {"123456789012": '["abucket1", "abucket2"]'}
         mock_retrieve_json_data_from_redis_or_s3.return_value = result
         account_id = "123456789012"
         resource = "s3"

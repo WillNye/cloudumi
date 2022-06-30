@@ -1,2 +1,2 @@
-host = "example_com"
-host_header = "example.com"
+tenant = "example_com"
+tenant_header = "example.com"

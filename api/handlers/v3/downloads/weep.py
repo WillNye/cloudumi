@@ -5,8 +5,8 @@ from common.lib.yaml import yaml
 
 class WeepDownloadHandler(BaseHandler):
     async def get(self):
-        host = self.ctx.host
-        url = config.get_host_specific_key("url", host)
+        tenant = self.ctx.tenant
+        url = config.get_tenant_specific_key("url", tenant)
         generated_config = {
             "authentication_method": "challenge",
             "challenge_settings": {

@@ -90,7 +90,7 @@ class TestIpRestrictions(TestCase):
     def test_get_ip_restriction_exists(self):
         with patch.object(
             config,
-            "get_host_specific_key",
+            "get_tenant_specific_key",
             return_value=["10.10.10.10/10"],
         ):
             assert async_to_sync(ip_restrictions.get_ip_restrictions)("host") == [
@@ -98,7 +98,7 @@ class TestIpRestrictions(TestCase):
             ]
 
     def test_get_ip_restrictions_empty(self):
-        with patch.object(config, "get_host_specific_key", return_value=[]):
+        with patch.object(config, "get_tenant_specific_key", return_value=[]):
             assert async_to_sync(ip_restrictions.get_ip_restrictions)("host") == []
 
     def test_toggle_ip_restrictions(self):

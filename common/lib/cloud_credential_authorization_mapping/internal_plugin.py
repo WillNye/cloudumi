@@ -11,13 +11,15 @@ from common.lib.plugins import get_plugin_by_name
 
 class InternalPluginAuthorizationMappingGenerator(CredentialAuthzMappingGenerator):
     async def generate_credential_authorization_mapping(
-        self, authorization_mapping: Dict[user_or_group, RoleAuthorizations], host: str
+        self,
+        authorization_mapping: Dict[user_or_group, RoleAuthorizations],
+        tenant: str,
     ) -> Dict[user_or_group, RoleAuthorizations]:
         """This will list accounts that meet the account attribute search criteria."""
         group_mapping = get_plugin_by_name(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "plugins.group_mapping",
-                host,
+                tenant,
                 "cmsaas_group_mapping",
             )
         )()

@@ -5,9 +5,9 @@ from common.lib.templated_resources import retrieve_cached_resource_templates
 class TemplatedResourceDetailHandler(BaseAPIV2Handler):
     async def get(self, repository_name, resource):
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         matching_template = await retrieve_cached_resource_templates(
-            host,
+            tenant,
             repository_name=repository_name,
             resource=resource,
             return_first_result=True,

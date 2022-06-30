@@ -22,18 +22,18 @@ class IdentityGroupHandler(BaseHandler):
     """
 
     async def get(self, _idp, _group_name):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         log_data = {
             "function": "IdentityGroupHandler.get",
             "user": self.user,
             "message": "Retrieving group information",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         # TODO: Authz check? this is a read only endpoint but some companies might not want all employees seeing groups
-        group = await get_group_by_name(host, _idp, _group_name)
+        group = await get_group_by_name(tenant, _idp, _group_name)
         if not group:
             raise Exception("Group not found")
         headers = [
@@ -110,7 +110,7 @@ class IdentityGroupHandler(BaseHandler):
         )
 
     async def post(self, _idp, _group_name):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         from common.celery_tasks.celery_tasks import app as celery_app
 
         log_data = {
@@ -121,11 +121,11 @@ class IdentityGroupHandler(BaseHandler):
             "request_id": self.request_uuid,
             "idp": _idp,
             "group": _group_name,
-            "host": host,
+            "tenant": tenant,
         }
         # Checks authz levels of current user
         generic_error_message = "Unable to update group"
-        if not can_admin_all(self.user, self.groups, host):
+        if not can_admin_all(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -135,14 +135,14 @@ class IdentityGroupHandler(BaseHandler):
 
         data = tornado.escape.json_decode(self.request.body)
 
-        idp_d = config.get_host_specific_key(
-            "identity.identity_providers", host, default={}
+        idp_d = config.get_tenant_specific_key(
+            "identity.identity_providers", tenant, default={}
         ).get(_idp)
         if not idp_d:
             raise Exception("Invalid IDP specified")
         if idp_d["idp_type"] == "okta":
             idp = OktaIdentityProvider.parse_obj(idp_d)
-            idp_plugin = OktaGroupManagementPlugin(host, idp)
+            idp_plugin = OktaGroupManagementPlugin(tenant, idp)
         else:
             raise Exception("IDP type is not supported.")
         group = await idp_plugin.get_group(_group_name)
@@ -157,7 +157,7 @@ class IdentityGroupHandler(BaseHandler):
 
         group.attributes = GroupAttributes.parse_obj(data)
 
-        ddb = UserDynamoHandler(host)
+        ddb = UserDynamoHandler(tenant)
         ddb.identity_groups_table.put_item(
             Item=ddb._data_to_dynamo_replace(json.loads(group.json()))
         )
@@ -169,7 +169,7 @@ class IdentityGroupHandler(BaseHandler):
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         celery_app.send_task(
-            "common.celery_tasks.celery_tasks.cache_identity_groups_for_host_t",
-            kwargs={"host": host},
+            "common.celery_tasks.celery_tasks.cache_identity_groups_for_tenant_t",
+            kwargs={"tenant": tenant},
         )
         return

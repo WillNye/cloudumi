@@ -17,12 +17,12 @@ log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
-async def update_role(event, host, user):
+async def update_role(event, tenant, user):
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "event": event,
         "message": "Working on event",
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
 
@@ -66,16 +66,18 @@ async def update_role(event, host, user):
         # TODO: Make configurable
         client = boto3_cached_conn(
             "iam",
-            host,
+            tenant,
             user,
             account_number=account_number,
             assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_number})
             .first.name,
             session_name=sanitize_session_name(aws_session_name),
             retry_max_attempts=2,
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
         )
         inline_policies = d.get("inline_policies", [])
         managed_policies = d.get("managed_policies", [])

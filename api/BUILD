@@ -69,7 +69,6 @@ EXT_DEPS = [
     requirement("policyuniverse"),
     requirement("ptvsd"),
     requirement("pyjwt"),
-    requirement("python3-saml"),
     requirement("requests"),
     requirement("retrying"),
     requirement("sentry_sdk"),
@@ -79,7 +78,6 @@ EXT_DEPS = [
     requirement("ujson"),
     requirement("uvloop"),
     requirement("validators"),
-    requirement("xmlsec"),
 ]
 
 REQUIRES = [
@@ -106,7 +104,6 @@ REQUIRES = [
     "policy_sentry",
     "policyuniverse",
     "pyjwt",
-    "python3-saml",
     "ptvsd",
     "requests",
     "retrying",
@@ -116,7 +113,6 @@ REQUIRES = [
     "tornado",
     "ujson",
     "uvloop",
-    "xmlsec",
 ]
 
 py_library(
@@ -246,7 +242,7 @@ container_layer(
 container_layer(
     name = "weep_layer",
     files = [
-        "@netflix_weep//:weep",
+        "@weep//file",
     ],
     directory = "/usr/bin",
 )
@@ -286,7 +282,8 @@ container_image(
         ":config_layer",
         ":web_site_layer",
         ":sshd_config_layer",
-        ":newrelic_layer"
+        ":newrelic_layer",
+        ":weep_layer",
     ],
     ports = ["8092", "2222"],
     symlinks = {

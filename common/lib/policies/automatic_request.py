@@ -23,7 +23,9 @@ from common.models import (
 log = config.get_logger(__name__)
 
 
-async def create_policy(host: str, user: str, role: str, policy_document: str) -> bool:
+async def create_policy(
+    tenant: str, user: str, role: str, policy_document: str
+) -> bool:
     """Creates the policy an AWS"""
     # TODO: If role_arn, check to see if role_arn is flagged as in_development, and if self.user is authorized for this role
     # TODO: Log all requests and actions taken during the session. eg: Google analytics for IAM
@@ -32,14 +34,14 @@ async def create_policy(host: str, user: str, role: str, policy_document: str) -
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
         "user": user,
     }
 
     # TODO: Normalize the policy, make sure the identity doesn't already have the allowance, and send the request. In our case, make the change.
     spoke_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name
     )
@@ -49,7 +51,7 @@ async def create_policy(host: str, user: str, role: str, policy_document: str) -
         return False
     iam_client = boto3_cached_conn(
         "iam",
-        host,
+        tenant,
         user,
         account_number=account_id,
         assume_role=spoke_role_name,
@@ -58,7 +60,7 @@ async def create_policy(host: str, user: str, role: str, policy_document: str) -
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         session_name=sanitize_session_name("noq_automatic_policy_request_handler"),
     )
     policy_name = "generated_policy"
@@ -85,10 +87,10 @@ async def create_policy(host: str, user: str, role: str, policy_document: str) -
 
 
 def get_policy_request_key(
-    host, account_id: str = None, user: str = None, policy_request_id: str = None
+    tenant, account_id: str = None, user: str = None, policy_request_id: str = None
 ) -> str:
     """Form the cache key used for automated policy requests"""
-    return f"{host}_AUTOMATIC_POLICY_REQUEST_{account_id or '*'}_{user or '*'}_{policy_request_id or '*'}"
+    return f"{tenant}_AUTOMATIC_POLICY_REQUEST_{account_id or '*'}_{user or '*'}_{policy_request_id or '*'}"
 
 
 def init_extended_policy_request(**policy_request) -> ExtendedAutomaticPolicyRequest:
@@ -128,12 +130,12 @@ def format_extended_policy_request(
 
 
 async def get_policy_requests(
-    host, account_id: str = None, user: str = None
+    tenant, account_id: str = None, user: str = None
 ) -> list[ExtendedAutomaticPolicyRequest]:
     returns = list()
-    red = await RedisHandler().redis(host)
+    red = await RedisHandler().redis(tenant)
     request_keys = await aio_wrapper(
-        red.keys, get_policy_request_key(host, account_id, user)
+        red.keys, get_policy_request_key(tenant, account_id, user)
     )
     policy_requests = [
         json.loads(pol_req) for pol_req in await aio_wrapper(red.mget, request_keys)
@@ -146,20 +148,20 @@ async def get_policy_requests(
 
 
 async def get_policy_request(
-    host, account_id: str, user: str, policy_request_id: str
+    tenant, account_id: str, user: str, policy_request_id: str
 ) -> ExtendedAutomaticPolicyRequest:
-    request_key = get_policy_request_key(host, account_id, user, policy_request_id)
-    if policy_request := await redis_get(request_key, host):
+    request_key = get_policy_request_key(tenant, account_id, user, policy_request_id)
+    if policy_request := await redis_get(request_key, tenant):
         return init_extended_policy_request(**json.loads(policy_request))
 
 
 async def create_policy_request(
-    host: str, user: str, policy_request: AutomaticPolicyRequest
+    tenant: str, user: str, policy_request: AutomaticPolicyRequest
 ) -> ExtendedAutomaticPolicyRequest:
-    red = await RedisHandler().redis(host)
+    red = await RedisHandler().redis(tenant)
     account_id = policy_request.role.split(":")[4]
     policy_dict = dict(
-        host=host, account_id=account_id, user=user, **policy_request.dict()
+        tenant=tenant, account_id=account_id, user=user, **policy_request.dict()
     )
     policy_dict["policy"] = json.loads(policy_dict["policy"])
 
@@ -169,9 +171,9 @@ async def create_policy_request(
             policy_dict, ensure_ascii=False, sort_keys=True, indent=None, cls=SetEncoder
         ).encode("utf-8")
     ).hexdigest()
-    request_key = get_policy_request_key(host, account_id, user, policy_request_id)
+    request_key = get_policy_request_key(tenant, account_id, user, policy_request_id)
 
-    if extended_policy_request := await redis_get(request_key, host):
+    if extended_policy_request := await redis_get(request_key, tenant):
         # Gracefully handle the same policy request
         extended_policy_request = init_extended_policy_request(
             **json.loads(extended_policy_request)
@@ -179,14 +181,14 @@ async def create_policy_request(
     else:
         account = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first
         )
         extended_policy_request = ExtendedAutomaticPolicyRequest(
             id=policy_request_id,
             account=account,
-            host=host,
+            tenant=tenant,
             user=user,
             role=policy_request.role,
             policy=policy_dict["policy"],
@@ -205,13 +207,16 @@ async def create_policy_request(
 
 
 async def update_policy_request(
-    host: str, policy_request: ExtendedAutomaticPolicyRequest, cache_conn=None
+    tenant: str, policy_request: ExtendedAutomaticPolicyRequest, cache_conn=None
 ) -> bool:
     if not cache_conn:
-        cache_conn = await RedisHandler().redis(host)
+        cache_conn = await RedisHandler().redis(tenant)
 
     request_key = get_policy_request_key(
-        host, policy_request.account.account_id, policy_request.user, policy_request.id
+        tenant,
+        policy_request.account.account_id,
+        policy_request.user,
+        policy_request.id,
     )
 
     policy_request.last_updated = datetime.utcnow().replace(tzinfo=pytz.utc)
@@ -230,7 +235,7 @@ async def update_policy_request(
                 "function": f"{__name__}.{sys._getframe().f_code.co_name}",
                 "policy_request_id": policy_request.id,
                 "account_id": policy_request.account.account_id,
-                "host": host,
+                "tenant": tenant,
                 "message": "Unable to update policy request",
                 "error": repr(err),
             }
@@ -239,16 +244,18 @@ async def update_policy_request(
         return False
 
 
-async def remove_policy_request(host, account_id, user, policy_request_id: str) -> bool:
-    red = await RedisHandler().redis(host)
+async def remove_policy_request(
+    tenant, account_id, user, policy_request_id: str
+) -> bool:
+    red = await RedisHandler().redis(tenant)
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "policy_request_id": policy_request_id,
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
     try:
-        red.delete(get_policy_request_key(host, account_id, user, policy_request_id))
+        red.delete(get_policy_request_key(tenant, account_id, user, policy_request_id))
         log_data["message"] = "Successfully removed policy"
         log.debug(log_data)
         return True
@@ -259,34 +266,36 @@ async def remove_policy_request(host, account_id, user, policy_request_id: str) 
 
 
 async def approve_policy_request(
-    host: str, account_id: str, user: str, policy_request_id: str
+    tenant: str, account_id: str, user: str, policy_request_id: str
 ) -> ExtendedAutomaticPolicyRequest:
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "policy_request_id": policy_request_id,
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
-    red = await RedisHandler().redis(host)
-    policy_request = await get_policy_request(host, account_id, user, policy_request_id)
+    red = await RedisHandler().redis(tenant)
+    policy_request = await get_policy_request(
+        tenant, account_id, user, policy_request_id
+    )
     if not policy_request:
         log_data["message"] = "Policy Request not found"
         log.info(log_data)
         raise KeyError(log_data["message"])
 
     policy_request.status = Status3.approved
-    await update_policy_request(host, policy_request, red)
+    await update_policy_request(tenant, policy_request, red)
 
     try:
         policy_created = await create_policy(
-            host,
+            tenant,
             user,
             policy_request.role,
             json.dumps(policy_request.policy, cls=SetEncoder),
         )
         if policy_created:
             policy_request.status = Status3.applied_awaiting_execution
-            await update_policy_request(host, policy_request, red)
+            await update_policy_request(tenant, policy_request, red)
             log_data["message"] = "Successfully applied policy"
             log.debug(log_data)
     except Exception as err:

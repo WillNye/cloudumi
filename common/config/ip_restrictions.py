@@ -7,90 +7,80 @@ from common.lib.yaml import yaml
 updated_by_name = "noq_automated_account_management"
 
 
-async def set_ip_restriction(host: str, ip_restriction: str) -> bool:
+async def set_ip_restriction(tenant: str, ip_restriction: str) -> bool:
     ddb = RestrictedDynamoHandler()
     try:
-        # Noteworthy: this will throw an exception if bits are set in the host field
+        # Noteworthy: this will throw an exception if bits are set in the tenant field
         _ = ipaddress.ip_network(ip_restriction)
     except ValueError:
         return False
-    host_config = config.get_tenant_static_config_from_dynamo(host)
-    if "aws" not in host_config:
-        host_config["aws"] = dict()
-    if "ip_restrictions" not in host_config["aws"]:
-        host_config["aws"]["ip_restrictions"] = list()
-    if ip_restriction in host_config["aws"]["ip_restrictions"]:
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    if "aws" not in tenant_config:
+        tenant_config["aws"] = dict()
+    if "ip_restrictions" not in tenant_config["aws"]:
+        tenant_config["aws"]["ip_restrictions"] = list()
+    if ip_restriction in tenant_config["aws"]["ip_restrictions"]:
         return False
     else:
-        host_config["aws"]["ip_restrictions"].append(ip_restriction)
-        await ddb.update_static_config_for_host(
-            yaml.dump(host_config), updated_by_name, host
+        tenant_config["aws"]["ip_restrictions"].append(ip_restriction)
+        await ddb.update_static_config_for_tenant(
+            yaml.dump(tenant_config), updated_by_name, tenant
         )
     return True
 
 
-async def get_ip_restrictions(host: str) -> list:
-    ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host, [])
+async def get_ip_restrictions(tenant: str) -> list:
+    ip_restrictions = config.get_tenant_specific_key("aws.ip_restrictions", tenant, [])
     return ip_restrictions
 
 
-async def delete_ip_restriction(host: str, ip_restriction: str) -> bool:
+async def delete_ip_restriction(tenant: str, ip_restriction: str) -> bool:
     ddb = RestrictedDynamoHandler()
-    host_config = config.get_tenant_static_config_from_dynamo(host)
-    if ip_restriction not in host_config.get("aws", {}).get("ip_restrictions", []):
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    if ip_restriction not in tenant_config.get("aws", {}).get("ip_restrictions", []):
         return False
     try:
-        idx = host_config["aws"]["ip_restrictions"].index(ip_restriction)
+        idx = tenant_config["aws"]["ip_restrictions"].index(ip_restriction)
     except ValueError:
         return False
-    host_config["aws"]["ip_restrictions"].pop(idx)
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), updated_by_name, host
+    tenant_config["aws"]["ip_restrictions"].pop(idx)
+    await ddb.update_static_config_for_tenant(
+        yaml.dump(tenant_config), updated_by_name, tenant
     )
     return True
 
 
-async def toggle_ip_restrictions(host: str, enabled: bool = False) -> bool:
+async def toggle_ip_restrictions(tenant: str, enabled: bool = False) -> bool:
     ddb = RestrictedDynamoHandler()
-    host_config = config.get_tenant_static_config_from_dynamo(host)
-    if "policies" not in host_config:
-        host_config["policies"] = dict()
-    host_config["policies"]["ip_restrictions"] = enabled
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), updated_by_name, host
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    tenant_config.setdefault("policies", dict())
+    tenant_config["policies"]["ip_restrictions"] = enabled
+    await ddb.update_static_config_for_tenant(
+        yaml.dump(tenant_config), updated_by_name, tenant
     )
     return True
 
 
-async def get_ip_restrictions_toggle(host: str) -> bool:
-    host_config = config.get_tenant_static_config_from_dynamo(host)
-    if "policies" not in host_config:
-        host_config["policies"] = dict()
-    if "ip_restrictions" not in host_config["policies"]:
-        return False
-    return host_config.get("policies", {}).get("ip_restrictions", False)
+async def get_ip_restrictions_toggle(tenant: str) -> bool:
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    return tenant_config.get("policies", {}).get("ip_restrictions", False)
 
 
 async def toggle_ip_restrictions_on_requester_ip_only(
-    host: str, enabled: bool = False
+    tenant: str, enabled: bool = False
 ) -> bool:
     ddb = RestrictedDynamoHandler()
-    host_config = config.get_tenant_static_config_from_dynamo(host)
-    if "policies" not in host_config:
-        host_config["policies"] = dict()
-    host_config["policies"]["ip_restrictions_on_requesters_ip"] = enabled
-    await ddb.update_static_config_for_host(
-        yaml.dump(host_config), updated_by_name, host
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    tenant_config.setdefault("policies", dict())
+    tenant_config["policies"]["ip_restrictions_on_requesters_ip"] = enabled
+    await ddb.update_static_config_for_tenant(
+        yaml.dump(tenant_config), updated_by_name, tenant
     )
     return True
 
 
-async def get_ip_restrictions_on_requester_ip_only_toggle(host: str) -> bool:
-    host_config = config.get_tenant_static_config_from_dynamo(host)
-    if "policies" not in host_config:
-        host_config["policies"] = dict()
-    if "ip_restrictions_on_requesters_ip" not in host_config["policies"]:
-        return False
-    return host_config.get("policies", {}).get(
+async def get_ip_restrictions_on_requester_ip_only_toggle(tenant: str) -> bool:
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    return tenant_config.get("policies", {}).get(
         "ip_restrictions_on_requesters_ip", False
     )

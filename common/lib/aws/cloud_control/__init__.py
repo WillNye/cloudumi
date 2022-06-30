@@ -37,15 +37,15 @@ async def get_supported_resource_types() -> Set[str]:
     return valid_resource_types
 
 
-async def list_resource_type(host, account_id, region, resource_type):
+async def list_resource_type(tenant, account_id, region, resource_type):
     resources = []
     cc_client = boto3_cached_conn(
         "cloudcontrol",
-        host,
+        tenant,
         None,
         account_number=account_id,
         assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
         region=region,
@@ -53,7 +53,7 @@ async def list_resource_type(host, account_id, region, resource_type):
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         session_name=sanitize_session_name("cloudcontrol_list_resource_type"),
     )
     next_token = ""
@@ -79,11 +79,11 @@ async def list_resource_type(host, account_id, region, resource_type):
     return resources
 
 
-async def list_all_resources(host, account_id, region):
+async def list_all_resources(tenant, account_id, region):
     valid_resource_types = await get_supported_resource_types()
     for resource_type in valid_resource_types:
         # TODO: Convert to async celery task. Task should store result in DDB
-        await list_resource_type(host, account_id, region, resource_type)
+        await list_resource_type(tenant, account_id, region, resource_type)
 
 
 # async_to_sync(list_all_resources)("localhost", "259868150464", "us-east-1")

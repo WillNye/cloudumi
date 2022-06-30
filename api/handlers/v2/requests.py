@@ -72,7 +72,7 @@ async def validate_request_creation(
         None,
     ):
         tear_supported_roles = await get_tear_supported_roles_by_tag(
-            handler.eligible_roles, handler.groups, handler.ctx.host
+            handler.eligible_roles, handler.groups, handler.ctx.tenant
         )
         tear_supported_roles = [role["arn"] for role in tear_supported_roles]
 
@@ -94,7 +94,7 @@ async def validate_request_creation(
             )
             return await handler.finish()
 
-        is_authenticated, err = await mfa_verify(handler.ctx.host, handler.user)
+        is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
         if not is_authenticated:
             handler.set_status(403)
             handler.write(
@@ -122,14 +122,14 @@ class RequestHandler(BaseAPIV2Handler):
             return
         from common.celery_tasks.celery_tasks import app as celery_app
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         try:
             with Timeout(
                 seconds=5, error_message="Timeout: Are you sure Celery is running?"
             ):
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
-                    kwargs={"host": host},
+                    kwargs={"tenant": tenant},
                 )
         except TimeoutError:
             sentry_sdk.capture_exception()
@@ -288,23 +288,23 @@ class RequestHandler(BaseAPIV2Handler):
 
 
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
-            if self.user not in config.get_host_specific_key(
+            if self.user not in config.get_tenant_specific_key(
                 "groups.can_bypass_contractor_restrictions",
-                host,
+                tenant,
                 [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
 
         tags = {
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count("RequestHandler.post", tags=tags)
         log_data = {
@@ -316,10 +316,10 @@ class RequestHandler(BaseAPIV2Handler):
             "ip": self.ip,
             "admin_auto_approved": False,
             "probe_auto_approved": False,
-            "host": host,
+            "tenant": tenant,
         }
         aws = get_plugin_by_name(
-            config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+            config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
         )()
         log.debug(log_data)
         try:
@@ -329,7 +329,7 @@ class RequestHandler(BaseAPIV2Handler):
                 changes = await validate_request_creation(self, changes)
 
             extended_request = await generate_request_from_change_model_array(
-                changes, self.user, host
+                changes, self.user, tenant
             )
             log_data["request"] = extended_request.dict()
             log.debug(log_data)
@@ -352,11 +352,11 @@ class RequestHandler(BaseAPIV2Handler):
                 if changes.admin_auto_approve:
                     # make sure user is allowed to use admin_auto_approve
                     account_ids = await get_extended_request_account_ids(
-                        extended_request, host
+                        extended_request, tenant
                     )
                     can_manage_policy_request = (
                         await can_admin_policies(
-                            self.user, self.groups, host, account_ids
+                            self.user, self.groups, tenant, account_ids
                         ),
                     )
                     if can_manage_policy_request:
@@ -379,7 +379,7 @@ class RequestHandler(BaseAPIV2Handler):
                             f"{log_data['function']}.post.admin_auto_approved",
                             tags={
                                 "user": self.user,
-                                "host": host,
+                                "tenant": tenant,
                             },
                         )
                     else:
@@ -388,7 +388,7 @@ class RequestHandler(BaseAPIV2Handler):
                             f"{log_data['function']}.post.unauthorized_admin_bypass",
                             tags={
                                 "user": self.user,
-                                "host": host,
+                                "tenant": tenant,
                             },
                         )
                         log_data[
@@ -408,7 +408,7 @@ class RequestHandler(BaseAPIV2Handler):
                     if is_eligible_for_auto_approve_probe:
                         should_auto_approve_request = (
                             await should_auto_approve_policy_v2(
-                                extended_request, self.user, self.groups, host
+                                extended_request, self.user, self.groups, tenant
                             )
                         )
                         if should_auto_approve_request["approved"]:
@@ -418,7 +418,7 @@ class RequestHandler(BaseAPIV2Handler):
                                 f"{log_data['function']}.probe_auto_approved",
                                 tags={
                                     "user": self.user,
-                                    "host": host,
+                                    "tenant": tenant,
                                 },
                             )
                             approving_probes = []
@@ -446,7 +446,7 @@ class RequestHandler(BaseAPIV2Handler):
                             log_data["request"] = extended_request.dict()
                             log.debug(log_data)
 
-            request = await IAMRequest.write_v2(extended_request, host)
+            request = await IAMRequest.write_v2(extended_request, tenant)
             log_data["message"] = "New request created in Dynamo"
             log_data["request"] = extended_request.dict()
             log_data["dynamo_request"] = request.dict()
@@ -458,7 +458,7 @@ class RequestHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             self.write_error(400, message="Error validating input: " + str(e))
@@ -472,7 +472,7 @@ class RequestHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             sentry_sdk.capture_exception(tags={"user": self.user})
@@ -515,7 +515,7 @@ class RequestHandler(BaseAPIV2Handler):
                         self.user,
                         self.groups,
                         int(time.time()),
-                        host,
+                        tenant,
                         approval_probe_approved=approval_probe_approved,
                         cloud_credentials=changes.credentials,
                     )
@@ -524,16 +524,16 @@ class RequestHandler(BaseAPIV2Handler):
                 response.action_results = policy_apply_response.action_results
 
             # Update in dynamo
-            await IAMRequest.write_v2(extended_request, host)
+            await IAMRequest.write_v2(extended_request, tenant)
             account_id = await get_resource_account(
-                extended_request.principal.principal_arn, host
+                extended_request.principal.principal_arn, tenant
             )
 
             # Force a refresh of the role in Redis/DDB
             arn_parsed = parse_arn(extended_request.principal.principal_arn)
             if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
                 await IAMRole.get(
-                    host,
+                    tenant,
                     account_id,
                     extended_request.principal.principal_arn,
                     force_refresh=True,
@@ -544,10 +544,10 @@ class RequestHandler(BaseAPIV2Handler):
             log.debug(log_data)
 
         await aws.send_communications_new_policy_request(
-            extended_request, admin_approved, approval_probe_approved, host
+            extended_request, admin_approved, approval_probe_approved, tenant
         )
         await send_slack_notification_new_request(
-            extended_request, admin_approved, approval_probe_approved, host
+            extended_request, admin_approved, approval_probe_approved, tenant
         )
         self.write(response.json())
         await self.finish()
@@ -566,7 +566,7 @@ class RequestsHandler(BaseAPIV2Handler):
         """
         POST /api/v2/requests
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         markdown = arguments.get("markdown")
         arguments = json.loads(self.request.body)
@@ -576,7 +576,7 @@ class RequestsHandler(BaseAPIV2Handler):
         limit = arguments.get("limit", 1000)
         tags = {
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count("RequestsHandler.post", tags=tags)
         log_data = {
@@ -587,10 +587,10 @@ class RequestsHandler(BaseAPIV2Handler):
             "filters": filters,
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
-        requests = [request.dict() for request in await IAMRequest.query(host)]
+        requests = [request.dict() for request in await IAMRequest.query(tenant)]
 
         total_count = len(requests)
 
@@ -628,7 +628,7 @@ class RequestsHandler(BaseAPIV2Handler):
                         try:
                             url = await get_url_for_resource(
                                 principal_arn,
-                                host,
+                                tenant,
                                 service_type,
                                 account_id,
                                 region,
@@ -667,14 +667,14 @@ class RequestDetailHandler(BaseAPIV2Handler):
             return
         from common.celery_tasks.celery_tasks import app as celery_app
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
-            kwargs={"host": host},
+            kwargs={"tenant": tenant},
         )
 
-    async def _get_extended_request(self, request_id, log_data, host):
-        request: IAMRequest = await IAMRequest.get(host, request_id=request_id)
+    async def _get_extended_request(self, request_id, log_data, tenant):
+        request: IAMRequest = await IAMRequest.get(tenant, request_id=request_id)
         if not request:
             log_data["message"] = "Request with that ID not found"
             log.warning(log_data)
@@ -682,7 +682,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.not_found",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             raise NoMatchingRequest(log_data["message"])
@@ -701,10 +701,10 @@ class RequestDetailHandler(BaseAPIV2Handler):
         """
         GET /api/v2/requests/{request_id}
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         tags = {
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count("RequestDetailHandler.get", tags=tags)
         log_data = {
@@ -714,18 +714,18 @@ class RequestDetailHandler(BaseAPIV2Handler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "policy_request_id": request_id,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
-            if self.user not in config.get_host_specific_key(
+            if self.user not in config.get_tenant_specific_key(
                 "groups.can_bypass_contractor_restrictions",
-                host,
+                tenant,
                 [],
             ):
                 self.write_error(
@@ -735,7 +735,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
 
         try:
             extended_request, last_updated = await self._get_extended_request(
-                request_id, log_data, host
+                request_id, log_data, tenant
             )
         except InvalidRequestParameter as e:
             sentry_sdk.capture_exception(tags={"user": self.user})
@@ -747,9 +747,11 @@ class RequestDetailHandler(BaseAPIV2Handler):
             return
         # Run these tasks concurrently.
         concurrent_results = await asyncio.gather(
-            populate_old_policies(extended_request, self.user, host),
-            populate_cross_account_resource_policies(extended_request, self.user, host),
-            populate_old_managed_policies(extended_request, self.user, host),
+            populate_old_policies(extended_request, self.user, tenant),
+            populate_cross_account_resource_policies(
+                extended_request, self.user, tenant
+            ),
+            populate_old_managed_policies(extended_request, self.user, tenant),
         )
         extended_request = concurrent_results[0]
 
@@ -760,7 +762,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 "extended_request"
             ]
             # Update in dynamo with the latest resource policy changes
-            updated_request = await IAMRequest.write_v2(extended_request, host)
+            updated_request = await IAMRequest.write_v2(extended_request, tenant)
             last_updated = updated_request.last_updated
 
             # Refresh the commands now that the policies in the script have changed
@@ -773,7 +775,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
         if populate_old_managed_policies_result["changed"]:
             extended_request = populate_old_managed_policies_result["extended_request"]
             # Update in dynamo with the latest resource policy changes
-            updated_request = await IAMRequest.write_v2(extended_request, host)
+            updated_request = await IAMRequest.write_v2(extended_request, tenant)
             last_updated = updated_request.last_updated
 
             # Refresh the commands now that the policies in the script have changed
@@ -782,16 +784,16 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 updated_request.extended_request.dict()
             )
 
-        accounts_ids = await get_extended_request_account_ids(extended_request, host)
+        accounts_ids = await get_extended_request_account_ids(extended_request, tenant)
         can_approve_reject = await can_admin_policies(
-            self.user, self.groups, host, accounts_ids
+            self.user, self.groups, tenant, accounts_ids
         )
 
         can_update_cancel = await can_update_cancel_requests_v2(
-            extended_request, self.user, self.groups, host
+            extended_request, self.user, self.groups, tenant
         )
         can_move_back_to_pending = await can_move_back_to_pending_v2(
-            extended_request, last_updated, self.user, self.groups, host
+            extended_request, last_updated, self.user, self.groups, tenant
         )
 
         # In the future request_specific_config will have specific approvers for specific changes based on ABAC
@@ -805,12 +807,12 @@ class RequestDetailHandler(BaseAPIV2Handler):
         arn_parsed = parse_arn(extended_request.principal.principal_arn)
         if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
             iam_role = await IAMRole.get(
-                host, arn_parsed["account"], extended_request.principal.principal_arn
+                tenant, arn_parsed["account"], extended_request.principal.principal_arn
             )
             template = iam_role.templated
 
         changes_config = await populate_approve_reject_policy(
-            extended_request, self.groups, host, self.user
+            extended_request, self.groups, tenant, self.user
         )
 
         response = {
@@ -827,10 +829,10 @@ class RequestDetailHandler(BaseAPIV2Handler):
         """
         PUT /api/v2/requests/{request_id}
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         tags = {
             "user": self.user,
-            "host": host,
+            "tenant": tenant,
         }
         stats.count("RequestDetailHandler.put", tags=tags)
         log_data = {
@@ -840,19 +842,19 @@ class RequestDetailHandler(BaseAPIV2Handler):
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "policy_request_id": request_id,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
         if (
-            config.get_host_specific_key(
-                "policy_editor.disallow_contractors", host, True
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", tenant, True
             )
             and self.contractor
         ):
-            if self.user not in config.get_host_specific_key(
+            if self.user not in config.get_tenant_specific_key(
                 "groups.can_bypass_contractor_restrictions",
-                host,
+                tenant,
                 [],
             ):
                 raise MustBeFte("Only FTEs are authorized to view this page.")
@@ -867,7 +869,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             log.debug(log_data)
 
             extended_request, last_updated = await self._get_extended_request(
-                request_id, log_data, host
+                request_id, log_data, tenant
             )
 
             if any(
@@ -889,7 +891,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 self.user,
                 self.groups,
                 last_updated,
-                host,
+                tenant,
                 cloud_credentials=getattr(
                     request_changes.modification_model, "credentials", None
                 ),
@@ -908,7 +910,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.validation_exception",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             self.write_error(400, message="Error validating input: " + str(e))
@@ -923,7 +925,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 f"{log_data['function']}.unauthorized",
                 tags={
                     "user": self.user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             self.write_error(403, message=str(e))
@@ -946,7 +948,7 @@ class RequestsPageConfigHandler(BaseHandler):
                 200:
                     description: Returns Requests Page Configuration
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         default_configuration = {
             "pageName": "Requests",
             "pageDescription": "View all IAM policy requests created through ConsoleMe",
@@ -995,9 +997,9 @@ class RequestsPageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get_host_specific_key(
+        table_configuration = config.get_tenant_specific_key(
             "RequestsTableConfigHandler.configuration",
-            host,
+            tenant,
             default_configuration,
         )
 

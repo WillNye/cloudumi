@@ -50,7 +50,7 @@ class Aws:
         self,
         user: str,
         role: str,
-        host: str,
+        tenant: str,
         enforce_ip_restrictions: bool = True,
         user_role: bool = False,
         account_id: str = None,
@@ -63,38 +63,40 @@ class Aws:
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "user": user,
             "role": role,
-            "host": host,
+            "tenant": tenant,
             "enforce_ip_restrictions": enforce_ip_restrictions,
             "custom_ip_restrictions": custom_ip_restrictions,
             "message": "Generating credentials",
         }
         client = boto3_cached_conn(
             "sts",
-            host,
+            tenant,
             user,
             region=config.region,
             sts_client_kwargs=dict(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             session_name=sanitize_session_name("noq_get_credentials"),
         )
 
         assume_role_kwargs = dict(
             RoleArn=role,
             RoleSessionName=user.lower(),
-            DurationSeconds=config.get_host_specific_key(
-                "aws.session_duration", host, 3600
+            DurationSeconds=config.get_tenant_specific_key(
+                "aws.session_duration", tenant, 3600
             ),
         )
 
         session_policies = session_policies or set()
         if read_only:
             session_policies.update(
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "aws.policies.read_only_policies",
-                    host,
+                    tenant,
                     ["arn:aws:iam::aws:policy/ReadOnlyAccess"],
                 )
             )
@@ -102,13 +104,13 @@ class Aws:
             assume_role_kwargs["PolicyArns"] = [
                 {"arn": policy_arn} for policy_arn in session_policies
             ]
-        ip_restrictions = config.get_host_specific_key("aws.ip_restrictions", host)
+        ip_restrictions = config.get_tenant_specific_key("aws.ip_restrictions", tenant)
         stats.count(
             "aws.get_credentials",
             tags={
                 "role": role,
                 "user": user,
-                "host": host,
+                "tenant": tenant,
             },
         )
 
@@ -120,7 +122,7 @@ class Aws:
                 tags={
                     "role": role,
                     "user": user,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             try:
@@ -129,19 +131,19 @@ class Aws:
                 raise e
 
         await raise_if_background_check_required_and_no_background_check(
-            role, user, host
+            role, user, tenant
         )
 
         # Set transitive tags to identify user
         transitive_tag_keys = []
         tags = []
-        transitive_tag_enabled = config.get_host_specific_key(
-            "aws.transitive_session_tags.enabled", host
+        transitive_tag_enabled = config.get_tenant_specific_key(
+            "aws.transitive_session_tags.enabled", tenant
         )
         if transitive_tag_enabled:
-            role_transitive_tag_key_identifying_user = config.get_host_specific_key(
+            role_transitive_tag_key_identifying_user = config.get_tenant_specific_key(
                 "aws.transitive_session_tags.user_key",
-                host,
+                tenant,
                 "noq_transitive_session_tag_user",
             )
 
@@ -233,12 +235,12 @@ class Aws:
                 e.response["Error"]["Code"] == "AccessDenied"
                 and "is not authorized to perform: sts:AssumeRole on resource: "
                 in e.response["Error"]["Message"]
-                and config.get_host_specific_key(
-                    "aws.automatically_update_role_trust_policies", host
+                and config.get_tenant_specific_key(
+                    "aws.automatically_update_role_trust_policies", tenant
                 )
             ):
                 await update_assume_role_policy_trust_noq(
-                    host, user, role.split("/")[-1], role.split(":")[4]
+                    tenant, user, role.split("/")[-1], role.split(":")[4]
                 )
                 raise RoleTrustPolicyModified(
                     "Role trust policy was modified. Please try again in a few seconds."
@@ -249,7 +251,7 @@ class Aws:
         self,
         user: str,
         role: str,
-        host: str,
+        tenant: str,
         region: str = "us-east-1",
         user_role: bool = False,
         account_id: str = None,
@@ -266,13 +268,13 @@ class Aws:
             "message": "Generating authenticated AWS console URL",
         }
         log.debug(log_data)
-        ip_restrictions_enabled = config.get_host_specific_key(
-            "policies.ip_restrictions", host, False
+        ip_restrictions_enabled = config.get_tenant_specific_key(
+            "policies.ip_restrictions", tenant, False
         )
         credentials = await self.get_credentials(
             user,
             role,
-            host,
+            tenant,
             user_role=user_role,
             account_id=account_id,
             enforce_ip_restrictions=ip_restrictions_enabled,
@@ -288,17 +290,17 @@ class Aws:
         req_params = {
             "Action": "getSigninToken",
             "Session": bleach.clean(json.dumps(credentials_d)),
-            "DurationSeconds": config.get_host_specific_key(
-                "aws.session_duration", host, 3600
+            "DurationSeconds": config.get_tenant_specific_key(
+                "aws.session_duration", tenant, 3600
             ),
         }
 
         http_client = AsyncHTTPClient(force_instance=True)
 
         url_with_params: str = url_concat(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "aws.federation_url",
-                host,
+                tenant,
                 "https://signin.aws.amazon.com/federation",
             ),
             req_params,
@@ -308,27 +310,27 @@ class Aws:
 
         login_req_params = {
             "Action": "login",
-            "Issuer": config.get_host_specific_key("aws.issuer", host),
+            "Issuer": config.get_tenant_specific_key("aws.issuer", tenant),
             "Destination": (
                 "{}".format(
-                    config.get_host_specific_key(
+                    config.get_tenant_specific_key(
                         "aws.console_url",
-                        host,
+                        tenant,
                         "https://{}.console.aws.amazon.com",
                     ).format(region)
                 )
             ),
             "SigninToken": bleach.clean(token.get("SigninToken")),
-            "SessionDuration": config.get_host_specific_key(
-                "aws.session_duration", host, 3600
+            "SessionDuration": config.get_tenant_specific_key(
+                "aws.session_duration", tenant, 3600
             ),
         }
 
         r2 = requests_sync.Request(
             "GET",
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "aws.federation_url",
-                host,
+                tenant,
                 "https://signin.aws.amazon.com/federation",
             ),
             params=login_req_params,
@@ -337,7 +339,7 @@ class Aws:
         return url
 
     async def send_communications_new_policy_request(
-        self, extended_request, admin_approved, approval_probe_approved, host
+        self, extended_request, admin_approved, approval_probe_approved, tenant
     ):
         """
         Optionally send a notification when there's a new policy change request
@@ -347,7 +349,7 @@ class Aws:
         :param extended_request:
         :return:
         """
-        await send_communications_policy_change_request_v2(extended_request, host)
+        await send_communications_policy_change_request_v2(extended_request, tenant)
         return
 
     @staticmethod
@@ -355,7 +357,7 @@ class Aws:
         pass
 
     async def should_auto_approve_policy_v2(
-        self, extended_request, user, user_groups, host
+        self, extended_request, user, user_groups, tenant
     ):
         return {"approved": False}
 

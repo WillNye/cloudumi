@@ -316,7 +316,7 @@ def _get_principal_from_user_identity(
 
         account_role_name = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", config.host)
+            .load_config("spoke_accounts", config.tenant)
             .with_query({"account_id": config.account_id})
             .first.name
         )
@@ -367,13 +367,13 @@ def _get_principal_arn_from_cross_account_principal_id(
         try:
             cross_account_role_name = (
                 ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", config.host)
+                .load_config("spoke_accounts", config.tenant)
                 .with_query({"account_id": account_id})
                 .first.name
             )
             iam_client = boto3_cached_conn(
                 "iam",
-                config.host,
+                config.tenant,
                 None,
                 account_number=account_id,
                 assume_role=cross_account_role_name,

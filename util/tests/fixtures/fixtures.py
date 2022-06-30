@@ -7,13 +7,13 @@ import uuid
 from datetime import datetime, timedelta
 
 import boto3
+import fakeredis
 import pytest
-import redislite
 from asgiref.sync import async_to_sync
 from mock import MagicMock, Mock, patch
 from moto import (
     mock_config,
-    mock_dynamodb2,
+    mock_dynamodb,
     mock_iam,
     mock_s3,
     mock_ses,
@@ -24,7 +24,7 @@ from moto import (
 from tornado.concurrent import Future
 
 # Unit tests will create mock resources in us-east-1
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["ASYNC_TEST_TIMEOUT"] = "100"
@@ -201,9 +201,9 @@ class AWSHelper:
 def redis_prereqs(redis):
     from common.lib.redis import RedisHandler
 
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     red.hmset(
-        f"{host}_AWSCONFIG_RESOURCE_CACHE",
+        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
         {
             "arn:aws:ec2:us-west-2:123456789013:security-group/12345": json.dumps(
                 {
@@ -369,9 +369,9 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
 
     global all_roles
     buckets = [
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "s3_cache_bucket",
-            host,
+            tenant,
             config.get("_global_.s3_cache_bucket"),
         )
     ]
@@ -381,51 +381,51 @@ def create_default_resources(s3, iam, sts, redis, iam_sync_principals, iamrole_t
     if all_roles:
         async_to_sync(store_json_results_in_redis_and_s3)(
             all_roles,
-            s3_bucket=config.get_host_specific_key(
+            s3_bucket=config.get_tenant_specific_key(
                 "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-                host,
+                tenant,
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-                host,
+                tenant,
                 "account_resource_cache/cache_all_roles_v1.json.gz",
             ),
-            host=host,
+            tenant=tenant,
         )
         return
     from common.celery_tasks.celery_tasks import cache_iam_resources_for_account
     from common.lib.account_indexers import get_account_id_to_name_mapping
     from common.lib.redis import RedisHandler
 
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
 
-    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     for account_id in accounts_d.keys():
-        cache_iam_resources_for_account(account_id, host=host)
+        cache_iam_resources_for_account(account_id, tenant=tenant)
 
-    cache_key = config.get_host_specific_key(
-        "aws.iamroles_redis_key", host, f"{host}_IAM_ROLE_CACHE"
+    cache_key = config.get_tenant_specific_key(
+        "aws.iamroles_redis_key", tenant, f"{tenant}_IAM_ROLE_CACHE"
     )
     all_roles = red.hgetall(cache_key)
     async_to_sync(store_json_results_in_redis_and_s3)(
         all_roles,
-        s3_bucket=config.get_host_specific_key(
+        s3_bucket=config.get_tenant_specific_key(
             "cache_iam_resources_across_accounts.all_roles_combined.s3.bucket",
-            host,
+            tenant,
         ),
-        s3_key=config.get_host_specific_key(
+        s3_key=config.get_tenant_specific_key(
             "cache_iam_resources_across_accounts.all_roles_combined.s3.file",
-            host,
+            tenant,
             "account_resource_cache/cache_all_roles_v1.json.gz",
         ),
-        host=host,
+        tenant=tenant,
     )
 
 
 @pytest.fixture(autouse=False, scope="session")
 def dynamodb(aws_credentials):
     """Mocked DynamoDB Fixture."""
-    with mock_dynamodb2():
+    with mock_dynamodb():
         # Remove the config value for the DynamoDB Server
         from common.config.config import CONFIG
 
@@ -464,11 +464,11 @@ def iamrole_table(dynamodb):
     dynamodb.create_table(
         TableName="iamroles_multitenant",
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "entity_id", "AttributeType": "S"},
         ],
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "entity_id", "KeyType": "RANGE"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
@@ -489,11 +489,11 @@ def cloudtrail_table(dynamodb):
     dynamodb.create_table(
         TableName="cloudtrail_multitenant",
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "arn", "AttributeType": "S"},
         ],
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "arn", "KeyType": "RANGE"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
@@ -717,11 +717,11 @@ def policy_requests_table(dynamodb):
     dynamodb.create_table(
         TableName="policy_requests_multitenant",
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "request_id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "request_id", "AttributeType": "S"},
             {"AttributeName": "arn", "AttributeType": "S"},
         ],
@@ -748,11 +748,11 @@ def requests_table(dynamodb):
     dynamodb.create_table(
         TableName="requests_global",
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "request_id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "request_id", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
@@ -767,11 +767,11 @@ def users_table(dynamodb):
     dynamodb.create_table(
         TableName="users_multitenant",
         AttributeDefinitions=[
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
             {"AttributeName": "username", "AttributeType": "S"},
         ],
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "username", "KeyType": "RANGE"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
@@ -786,12 +786,12 @@ def tenant_static_configs_table(dynamodb):
     dynamodb.create_table(
         TableName=table_name,
         KeySchema=[
-            {"AttributeName": "host", "KeyType": "HASH"},
+            {"AttributeName": "tenant", "KeyType": "HASH"},
             {"AttributeName": "id", "KeyType": "RANGE"},
         ],  # Partition key
         AttributeDefinitions=[
             {"AttributeName": "id", "AttributeType": "S"},
-            {"AttributeName": "host", "AttributeType": "S"},
+            {"AttributeName": "tenant", "AttributeType": "S"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
         StreamSpecification={
@@ -800,10 +800,10 @@ def tenant_static_configs_table(dynamodb):
         },
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "host_index",
+                "IndexName": "tenant_index",
                 "KeySchema": [
                     {
-                        "AttributeName": "host",
+                        "AttributeName": "tenant",
                         "KeyType": "HASH",
                     },
                 ],
@@ -827,7 +827,7 @@ def with_test_configuration_tenant_static_config_data(tenant_static_configs_tabl
 
     ddb = dynamo.RestrictedDynamoHandler()
     with open("util/tests/test_configuration.yaml", "r") as fp:
-        async_to_sync(ddb.update_static_config_for_host)(
+        async_to_sync(ddb.update_static_config_for_tenant)(
             fp, "test@noq.dev", "test.noq.dev".replace(".", "_")
         )
 
@@ -835,7 +835,7 @@ def with_test_configuration_tenant_static_config_data(tenant_static_configs_tabl
 @pytest.fixture(autouse=False, scope="session")
 def dummy_requests_data(requests_table):
     user = {
-        "host": {"S": host},
+        "tenant": {"S": tenant},
         "request_id": {"S": "abc-def-ghi"},
         "aws:rep:deleting": {"BOOL": False},
         "aws:rep:updateregion": {"S": "us-west-2"},
@@ -862,7 +862,7 @@ def dummy_requests_data(requests_table):
 @pytest.fixture(autouse=False, scope="session")
 def dummy_users_data(users_table):
     user = {
-        "host": {"S": host},
+        "tenant": {"S": tenant},
         "username": {"S": "test@user.xyz"},
         "aws:rep:deleting": {"BOOL": False},
         "aws:rep:updateregion": {"S": "us-west-2"},
@@ -1069,27 +1069,36 @@ def www_user():
     )
 
 
-class FakeRedis(redislite.StrictRedis):
-    def __init__(self, *args, **kwargs):
-        if kwargs.get("connection_pool"):
-            del kwargs["connection_pool"]
-        super(FakeRedis, self).__init__(
-            MOCK_REDIS_DB_PATH, *args, **kwargs, decode_responses=True
-        )
+fakeredis_server = fakeredis.FakeServer()
+
+fake_redis = fakeredis.FakeRedis(server=fakeredis_server, decode_responses=True)
+
+fake_strict_redis = fakeredis.FakeStrictRedis(
+    server=fakeredis_server, decode_responses=True
+)
+
+# class FakeRedis(fakeredis.FakeStrictRedis):
+#     def __init__(self, *args, **kwargs):
+#         super(FakeRedis, self).__init__(*args, **kwargs, server=fakeredis_server, connection_pool=None)
 
 
 @pytest.fixture(autouse=False, scope="session")
 def redis(session_mocker):
-    session_mocker.patch("redis.Redis", FakeRedis)
-    session_mocker.patch("redis.StrictRedis", FakeRedis)
-    session_mocker.patch("common.lib.redis.redis.StrictRedis", FakeRedis)
-    session_mocker.patch("common.lib.redis.redis.Redis", FakeRedis)
+    from common.config import config
+
+    if folder_configuration := config.get("_global_.celery.broker_transport_options"):
+        for v in folder_configuration.values():
+            os.makedirs(v, exist_ok=True)
+    session_mocker.patch("redis.Redis", return_value=fake_redis)
+    session_mocker.patch("redis.StrictRedis", return_value=fake_strict_redis)
     session_mocker.patch(
-        "common.lib.redis.RedisHandler.redis_sync", return_value=FakeRedis()
+        "common.lib.redis.redis.StrictRedis", return_value=fake_strict_redis
     )
+    session_mocker.patch("common.lib.redis.redis.Redis", return_value=fake_redis)
     session_mocker.patch(
-        "common.lib.redis.RedisHandler.redis", return_value=FakeRedis()
+        "common.lib.redis.RedisHandler.redis_sync", return_value=fake_redis
     )
+    session_mocker.patch("common.lib.redis.RedisHandler.redis", return_value=fake_redis)
     return True
 
 
@@ -1170,9 +1179,12 @@ def user_iam_role(iamrole_table, www_user):
         accountId="123456789012",
         ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
         policy=IAMRole().dump_json_attr(www_user),
-        host=host,
+        tenant=tenant,
+        entity_id=f"{www_user.get('Arn')}||{tenant}",
+        last_updated=int((datetime.utcnow()).timestamp()),
+        resourceId=www_user.get("RoleId"),
     )
-    role_entry.save()
+    async_to_sync(role_entry.save)()
 
 
 @pytest.fixture(autouse=False, scope="session")
@@ -1199,7 +1211,7 @@ def mock_async_http_client():
     p_return_value.body = "{}"
     p = patch("tornado.httpclient.AsyncHTTPClient")
 
-    p.return_value.fetch.return_value = create_future(p_return_value)
+    p.return_value.fetch.return_value = p_return_value
 
     yield p.start()
 
@@ -1230,24 +1242,24 @@ def populate_caches(
     from common.lib.account_indexers import get_account_id_to_name_mapping
     from plugins.celery_tasks import celery_tasks as default_celery_tasks
 
-    celery.cache_cloud_account_mapping(host)
-    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
-    default_celery_tasks.cache_application_information(host)
+    celery.cache_cloud_account_mapping(tenant)
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
+    default_celery_tasks.cache_application_information(tenant)
 
     for account_id in accounts_d.keys():
-        celery.cache_iam_resources_for_account(account_id, host=host)
-        celery.cache_s3_buckets_for_account(account_id, host=host)
-        celery.cache_sns_topics_for_account(account_id, host=host)
-        celery.cache_sqs_queues_for_account(account_id, host=host)
-        celery.cache_managed_policies_for_account(account_id, host=host)
+        celery.cache_iam_resources_for_account(account_id, tenant=tenant)
+        celery.cache_s3_buckets_for_account(account_id, tenant=tenant)
+        celery.cache_sns_topics_for_account(account_id, tenant=tenant)
+        celery.cache_sqs_queues_for_account(account_id, tenant=tenant)
+        celery.cache_managed_policies_for_account(account_id, tenant=tenant)
         # celery.cache_resources_from_aws_config_for_account(account_id) # No select_resource_config in moto yet
     # Running cache_iam_resources_across_accounts ensures that all of the pre-existing roles in our
     # role cache are stored in (mock) S3
     celery.cache_iam_resources_across_accounts(
-        host=host, wait_for_subtask_completion=False
+        tenant=tenant, wait_for_subtask_completion=False
     )
-    celery.cache_policies_table_details(host=host)
-    celery.cache_credential_authorization_mapping(host=host)
+    celery.cache_policies_table_details(tenant=tenant)
+    celery.cache_credential_authorization_mapping(tenant=tenant)
 
 
 class MockAioHttpResponse:

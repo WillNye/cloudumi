@@ -16,11 +16,13 @@ class AwsIntegrationHandler(BaseHandler):
         """
         Get AWS Integration
         """
-        host = self.ctx.host
-        if not can_admin_all(self.user, self.groups, host):
+        tenant = self.ctx.tenant
+        if not can_admin_all(self.user, self.groups, tenant):
             self.set_status(403)
             return
-        external_id = config.get_host_specific_key("tenant_details.external_id", host)
+        external_id = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
         if not external_id:
             self.set_status(400)
             res = WebResponse(status_code=400, message="External ID not found")
@@ -68,7 +70,7 @@ class AwsIntegrationHandler(BaseHandler):
             "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
         )
 
-        central_role = ModelAdapter(HubAccount).load_config("hub_account", host).model
+        central_role = ModelAdapter(HubAccount).load_config("hub_account", tenant).model
         if central_role:
             central_role_name = central_role.name
         else:
@@ -76,7 +78,7 @@ class AwsIntegrationHandler(BaseHandler):
                 "_global_.integrations.aws.central_role_name", "NoqCentralRole"
             )
         spoke_roles = (
-            ModelAdapter(SpokeAccount).load_config("spoke_accounts", host).models
+            ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).models
         )
         if spoke_roles:
             spoke_role_name = spoke_roles[0].name
@@ -87,7 +89,7 @@ class AwsIntegrationHandler(BaseHandler):
             )
         central_role_parameters = [
             {"ParameterKey": "ExternalIDParameter", "ParameterValue": external_id},
-            {"ParameterKey": "HostParameter", "ParameterValue": host},
+            {"ParameterKey": "HostParameter", "ParameterValue": tenant},
             {
                 "ParameterKey": "ClusterRoleParameter",
                 "ParameterValue": cluster_role,
@@ -114,7 +116,7 @@ class AwsIntegrationHandler(BaseHandler):
                         f"https://console.aws.amazon.com/cloudformation/home?region={region}"
                         + "#/stacks/quickcreate?templateURL="
                         + urllib.parse.quote(central_role_template_url)
-                        + f"&param_ExternalIDParameter={external_id}&param_HostParameter={host}&stackName={stack_name}"
+                        + f"&param_ExternalIDParameter={external_id}&param_HostParameter={tenant}&stackName={stack_name}"
                         + f"&param_ClusterRoleParameter={cluster_role}"
                         + f"&param_CentralRoleNameParameter={central_role_name}"
                         + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
@@ -137,7 +139,7 @@ class AwsIntegrationHandler(BaseHandler):
         )
 
         hub_account = (
-            models.ModelAdapter(HubAccount).load_config("hub_account", host).model
+            models.ModelAdapter(HubAccount).load_config("hub_account", tenant).model
         )
         if hub_account:
             customer_central_account_role = hub_account.role_arn
@@ -147,7 +149,7 @@ class AwsIntegrationHandler(BaseHandler):
                     "ParameterKey": "CentralRoleArnParameter",
                     "ParameterValue": customer_central_account_role,
                 },
-                {"ParameterKey": "HostParameter", "ParameterValue": host},
+                {"ParameterKey": "HostParameter", "ParameterValue": tenant},
                 {
                     "ParameterKey": "SpokeRoleNameParameter",
                     "ParameterValue": spoke_role_name,
@@ -175,7 +177,7 @@ class AwsIntegrationHandler(BaseHandler):
                     + "#/stacks/quickcreate?templateURL="
                     + urllib.parse.quote(spoke_role_template_url)
                     + f"&param_ExternalIDParameter={external_id}"
-                    + f"&param_HostParameter={host}"
+                    + f"&param_HostParameter={tenant}"
                     + f"&param_CentralRoleArnParameter={customer_central_account_role}"
                     + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                     + f"&stackName={spoke_stack_name}"

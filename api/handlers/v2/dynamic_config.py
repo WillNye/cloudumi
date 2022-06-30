@@ -22,16 +22,16 @@ class DynamicConfigApiHandler(BaseHandler):
             return
         from common.celery_tasks.celery_tasks import app as celery_app
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         # Force a refresh of credential authorization mapping in current region
         # TODO: Trigger this to run cross-region
         # TODO: Delete server-side user-role cache intelligently so users get immediate access
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
-            countdown=config.get_host_specific_key(
-                "dynamic_config.dynamo_load_interval", host
+            countdown=config.get_tenant_specific_key(
+                "dynamic_config.dynamo_load_interval", tenant
             ),
-            kwargs={"host": host},
+            kwargs={"tenant": tenant},
         )
 
     async def get(self) -> None:
@@ -48,15 +48,15 @@ class DynamicConfigApiHandler(BaseHandler):
 
         if not self.user:
             return
-        host = self.ctx.host
-        if not can_edit_dynamic_config(self.user, self.groups, host):
+        tenant = self.ctx.tenant
+        if not can_edit_dynamic_config(self.user, self.groups, tenant):
             raise tornado.web.HTTPError(
                 403, "Only application admins are authorized to view this page."
             )
         ddb = RestrictedDynamoHandler()
         dynamic_config = await aio_wrapper(
-            ddb.get_static_config_for_host_sync,
-            host,
+            ddb.get_static_config_for_tenant_sync,
+            tenant,
             return_format="bytes",
             filter_secrets=True,
         )
@@ -82,14 +82,14 @@ class DynamicConfigApiHandler(BaseHandler):
 
         if not self.user:
             return
-        host = self.ctx.host
-        if not can_edit_dynamic_config(self.user, self.groups, host):
+        tenant = self.ctx.tenant
+        if not can_edit_dynamic_config(self.user, self.groups, tenant):
             raise tornado.web.HTTPError(
                 403, "Only application admins are authorized to view this page."
             )
         ddb = RestrictedDynamoHandler()
         existing_config = await aio_wrapper(
-            ddb.get_static_config_for_host_sync, host, return_format="bytes"
+            ddb.get_static_config_for_tenant_sync, tenant, return_format="bytes"
         )
         if existing_config:
             existing_dynamic_config_sha256 = sha256(existing_config).hexdigest()
@@ -100,7 +100,7 @@ class DynamicConfigApiHandler(BaseHandler):
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "user": self.user,
             "existing_dynamic_config_sha256": existing_dynamic_config_sha256,
-            "host": host,
+            "tenant": tenant,
         }
         log.debug(log_data)
 
@@ -122,7 +122,9 @@ class DynamicConfigApiHandler(BaseHandler):
             #         "Please refresh your page and try again."
             #     )
 
-            await ddb.update_static_config_for_host(data["new_config"], self.user, host)
+            await ddb.update_static_config_for_tenant(
+                data["new_config"], self.user, tenant
+            )
         except Exception as e:
             result["status"] = "error"
             result["error"] = f"There was an error processing your request: {e}"

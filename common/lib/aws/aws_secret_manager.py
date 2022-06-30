@@ -5,7 +5,7 @@ import boto3
 
 def get_aws_secret(secret_arn):
     region = secret_arn.split(":")[3]
-    # TODO: Support AWS Secrets by host
+    # TODO: Support AWS Secrets by tenant
     session = boto3.session.Session()
     client = session.client(
         service_name="secretsmanager",

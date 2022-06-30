@@ -65,12 +65,12 @@ async def get_as_tags(name="main", extension=None, config=config, attrs=""):
 
 class EligibleRoleRefreshHandler(BaseHandler):
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         from common.celery_tasks.celery_tasks import app as celery_app
 
         res = celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping",
-            args=[host],
+            args=[tenant],
         )
         self.write(
             json.loads(
@@ -96,18 +96,18 @@ class EligibleRoleHandler(BaseHandler):
                 description: json list of roles
         """
 
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         roles = []
-        active_tear_roles = await get_user_active_tear_roles_by_tag(self.user, host)
+        active_tear_roles = await get_user_active_tear_roles_by_tag(self.user, tenant)
 
         for arn in self.eligible_roles:
             role_name = arn.split("/")[-1]
             account_id = await get_account_id_from_arn(arn)
             account_name = self.eligible_accounts.get(account_id, "")
-            formatted_account_name = config.get_host_specific_key(
+            formatted_account_name = config.get_tenant_specific_key(
                 "role_select_page.formatted_account_name",
-                host,
+                tenant,
                 "{account_name}",
             ).format(account_name=account_name, account_id=account_id)
             row = {
@@ -126,7 +126,7 @@ class EligibleRoleHandler(BaseHandler):
             roles.append(row)
 
         for role in await get_tear_supported_roles_by_tag(
-            self.eligible_roles + active_tear_roles, self.groups, self.ctx.host
+            self.eligible_roles + active_tear_roles, self.groups, self.ctx.tenant
         ):
             """
             Update:
@@ -136,9 +136,9 @@ class EligibleRoleHandler(BaseHandler):
             role_name = arn.split("/")[-1]
             account_id = await get_account_id_from_arn(arn)
             account_name = self.eligible_accounts.get(account_id, "")
-            formatted_account_name = config.get_host_specific_key(
+            formatted_account_name = config.get_tenant_specific_key(
                 "role_select_page.formatted_account_name",
-                host,
+                tenant,
                 "{account_name}",
             ).format(account_name=account_name, account_id=account_id)
             roles.append(
@@ -180,12 +180,12 @@ class EligibleRolePageConfigHandler(BaseHandler):
                 200:
                     description: Returns Role Page Configuration
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         page_configuration = {
             "pageName": "Select a Role",
-            "pageDescription": config.get_host_specific_key(
+            "pageDescription": config.get_tenant_specific_key(
                 "role_select_page.table_description",
-                host,
+                tenant,
                 "Select a role to login to the AWS console.",
             ),
             "refresh": {
@@ -223,9 +223,9 @@ class EligibleRolePageConfigHandler(BaseHandler):
             },
         }
 
-        table_configuration = config.get_host_specific_key(
+        table_configuration = config.get_tenant_specific_key(
             "role_table_config.table_configuration_override",
-            host,
+            tenant,
             page_configuration,
         )
 

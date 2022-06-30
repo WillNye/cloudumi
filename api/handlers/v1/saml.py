@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta
 
 import pytz
-from onelogin.saml2.utils import OneLogin_Saml2_Utils
+
+try:
+    from onelogin.saml2.utils import OneLogin_Saml2_Utils
+except ImportError:
+    pass
 
 from common.config import config
 from common.handlers.base import BaseHandler
@@ -19,9 +23,9 @@ class SamlHandler(BaseHandler):
         pass
 
     async def post(self, endpoint):
-        host = self.get_host_name()
+        tenant = self.get_tenant_name()
         req = await prepare_tornado_request_for_saml(self.request)
-        auth = await init_saml_auth(req, host)
+        auth = await init_saml_auth(req, tenant)
 
         if "sso" in endpoint:
             return self.redirect(auth.login())
@@ -37,44 +41,44 @@ class SamlHandler(BaseHandler):
 
                 saml_attributes = await aio_wrapper(auth.get_attributes)
                 email = saml_attributes[
-                    config.get_host_specific_key(
+                    config.get_tenant_specific_key(
                         "get_user_by_saml_settings.attributes.email",
-                        host,
+                        tenant,
                     )
                 ]
                 if isinstance(email, list) and len(email) > 0:
                     email = email[0]
                 groups = saml_attributes.get(
-                    config.get_host_specific_key(
+                    config.get_tenant_specific_key(
                         "get_user_by_saml_settings.attributes.groups",
-                        host,
+                        tenant,
                     ),
                     [],
                 )
 
                 self_url = await aio_wrapper(OneLogin_Saml2_Utils.get_self_url, req)
                 expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                    minutes=config.get_host_specific_key(
-                        "jwt.expiration_minutes", host, 1200
+                    minutes=config.get_tenant_specific_key(
+                        "jwt.expiration_minutes", tenant, 1200
                     )
                 )
                 encoded_cookie = await generate_jwt_token(
-                    email, groups, host, exp=expiration
+                    email, groups, tenant, exp=expiration
                 )
                 self.set_cookie(
                     config.get("_global_.auth.cookie.name", "noq_auth"),
                     encoded_cookie,
                     expires=expiration,
-                    secure=config.get_host_specific_key(
+                    secure=config.get_tenant_specific_key(
                         "auth.cookie.secure",
-                        host,
-                        "https://" in config.get_host_specific_key("url", host),
+                        tenant,
+                        "https://" in config.get_tenant_specific_key("url", tenant),
                     ),
-                    httponly=config.get_host_specific_key(
-                        "auth.cookie.httponly", host, True
+                    httponly=config.get_tenant_specific_key(
+                        "auth.cookie.httponly", tenant, True
                     ),
-                    samesite=config.get_host_specific_key(
-                        "auth.cookie.samesite", host, True
+                    samesite=config.get_tenant_specific_key(
+                        "auth.cookie.samesite", tenant, True
                     ),
                 )
                 if (

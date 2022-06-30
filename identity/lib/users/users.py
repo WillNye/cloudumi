@@ -10,20 +10,20 @@ from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 log = config.get_logger()
 
 
-def get_identity_user_storage_keys(host):
-    s3_bucket = config.get_host_specific_key(
+def get_identity_user_storage_keys(tenant):
+    s3_bucket = config.get_tenant_specific_key(
         "identity.cache_users.bucket",
-        host,
+        tenant,
         config.get("_global_.s3_cache_bucket"),
     )
-    redis_key: str = config.get_host_specific_key(
+    redis_key: str = config.get_tenant_specific_key(
         "identity.cache_users.redis_key",
-        host,
-        default=f"{host}_IDENTITY_USERS",
+        tenant,
+        default=f"{tenant}_IDENTITY_USERS",
     )
-    s3_key = config.get_host_specific_key(
+    s3_key = config.get_tenant_specific_key(
         "identity.cache_users.key",
-        host,
+        tenant,
         default="identity/users/identity_users_cache_v1.json.gz",
     )
     return {
@@ -33,52 +33,52 @@ def get_identity_user_storage_keys(host):
     }
 
 
-async def cache_identity_users_for_host(host):
+async def cache_identity_users_for_tenant(tenant):
     """
-    Fetches all existing cached users for the host and determines which
+    Fetches all existing cached users for the tenant and determines which
     users to update or remove.
 
-    Determines which identity providers are configured for the host,
+    Determines which identity providers are configured for the tenant,
     caches users for all configured identity providers, stores cached
     results in DynamoDB, S3, and Redis. Updates existing cache if
     necessary.
 
-    :param host:
+    :param tenant:
     :return:
     """
     # TODO: Only run in primary region
-    # Check what identity providers are configured for host
-    # Call "cache users" for all identity providers for a given host
+    # Check what identity providers are configured for tenant
+    # Call "cache users" for all identity providers for a given tenant
     # Store results in DynamoDB, S3, and Redis
     # DynamoDB will also have our protected attributes about the user
     # So we can't blindly overwrite
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "host": host,
+        "tenant": tenant,
     }
-    enabled = config.get_host_specific_key("identity.cache_users.enabled", host)
+    enabled = config.get_tenant_specific_key("identity.cache_users.enabled", tenant)
     if not enabled:
         log.debug(
             {
                 **log_data,
-                "message": "Configuration key to enable user caching is not enabled for host.",
+                "message": "Configuration key to enable user caching is not enabled for tenant.",
             }
         )
-    ddb = UserDynamoHandler(host)
+    ddb = UserDynamoHandler(tenant)
     existing_users = {}
-    existing_users_l = ddb.fetch_users_for_host(host)["Items"]
+    existing_users_l = ddb.fetch_users_for_tenant(tenant)["Items"]
     for user in existing_users_l:
         existing_users[user["username"]] = User.parse_obj(user)
 
     log_data["num_existing_users"] = len(existing_users)
     all_users = {}
 
-    for idp_name, idp_d in config.get_host_specific_key(
-        "identity.identity_providers", host, default={}
+    for idp_name, idp_d in config.get_tenant_specific_key(
+        "identity.identity_providers", tenant, default={}
     ).items():
         if idp_d["idp_type"] == "okta":
             idp = OktaIdentityProvider.parse_obj(idp_d)
-            idp_plugin = OktaGroupManagementPlugin(host, idp)
+            idp_plugin = OktaGroupManagementPlugin(tenant, idp)
         else:
             raise Exception("IDP type is not supported.")
         refreshed_users = await idp_plugin.list_all_users()
@@ -97,7 +97,7 @@ async def cache_identity_users_for_host(host):
                 continue
             users_to_remove.append(
                 {
-                    "host": host,
+                    "tenant": tenant,
                     "user_id": user_id,
                 }
             )
@@ -105,7 +105,7 @@ async def cache_identity_users_for_host(host):
             ddb.parallel_write_table(
                 ddb.identity_users_table,
                 users_to_update.values(),
-                ["host", "user_id"],
+                ["tenant", "user_id"],
             )
         if users_to_remove:
             log.debug(
@@ -118,36 +118,36 @@ async def cache_identity_users_for_host(host):
             ddb.parallel_delete_table_entries(ddb.identity_users_table, users_to_remove)
 
         await store_json_results_in_redis_and_s3(
-            all_users, host=host, **get_identity_user_storage_keys(host)
+            all_users, tenant=tenant, **get_identity_user_storage_keys(tenant)
         )
 
 
-async def get_user_by_name(host, idp, user_name):
+async def get_user_by_name(tenant, idp, user_name):
     """
     Gets a user by name from the cache.
 
-    :param host:
+    :param tenant:
     :param idp:
     :param user_name:
     :return:
     """
     user_id = f"{idp}-{user_name}"
-    ddb = UserDynamoHandler(host)
+    ddb = UserDynamoHandler(tenant)
     matching_user = ddb.identity_users_table.get_item(
-        Key={"host": host, "user_id": user_id}
+        Key={"tenant": tenant, "user_id": user_id}
     )
     # if matching_group.get("Item"):
     if False:  # TODO: Remove
         return User.parse_obj(ddb._data_from_dynamo_replace(matching_user["Item"]))
     else:
-        idp_d = config.get_host_specific_key(
-            "identity.identity_providers", host, default={}
+        idp_d = config.get_tenant_specific_key(
+            "identity.identity_providers", tenant, default={}
         ).get(idp)
         if not idp_d:
             raise Exception("Invalid IDP specified")
         if idp_d["idp_type"] == "okta":
             idp = OktaIdentityProvider.parse_obj(idp_d)
-            idp_plugin = OktaGroupManagementPlugin(host, idp)
+            idp_plugin = OktaGroupManagementPlugin(tenant, idp)
         else:
             raise Exception("IDP type is not supported.")
         return await idp_plugin.get_user(user_name)

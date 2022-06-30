@@ -38,17 +38,17 @@ async def generate_terraform_request_from_change_model_array(
     request_creation: RequestCreationModel,
     user: str,
     extended_request_uuid: str,
-    host: str,
+    tenant: str,
 ) -> ExtendedRequestModel:
     repositories_for_request = {}
     primary_principal = None
     t = int(time.time())
     generated_branch_name = f"{user}-{t}"
-    policy_name = await generate_policy_name(None, user, host)
+    policy_name = await generate_policy_name(None, user, tenant)
     repo_config = None
 
     auth = get_plugin_by_name(
-        config.get_host_specific_key("plugins.auth", host, "cmsaas_auth")
+        config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
     )()
     # Checkout Git Repo and generate a branch name for the user's change
     for change in request_creation.changes.changes:
@@ -59,8 +59,8 @@ async def generate_terraform_request_from_change_model_array(
         if repositories_for_request.get(change.principal.repository_name):
             continue
         # Find repo
-        for r in config.get_host_specific_key(
-            "cache_resource_templates.repositories", host, []
+        for r in config.get_tenant_specific_key(
+            "cache_resource_templates.repositories", tenant, []
         ):
             if r["name"] == change.principal.repository_name:
                 repo_config = r
@@ -141,17 +141,17 @@ EOT"""
         if repo_config["code_repository_provider"] == "bitbucket":
             bitbucket = BitBucket(
                 repo_config["code_repository_config"]["url"],
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     "{key}".format(
                         key=repo_config["code_repository_config"][
                             "username_config_key"
                         ],
                     ),
-                    host,
+                    tenant,
                 ),
-                config.get_host_specific_key(
+                config.get_tenant_specific_key(
                     repo_config["code_repository_config"]["password_config_key"],
-                    host,
+                    tenant,
                 ),
             )
             pull_request_url = await bitbucket.create_pull_request(
@@ -186,9 +186,9 @@ EOT"""
         changes=request_changes,
         requester_info=UserModel(
             email=user,
-            extended_info=await auth.get_user_info(user, host),
-            details_url=config.get_employee_info_url(user, host),
-            photo_url=config.get_employee_photo_url(user, host),
+            extended_info=await auth.get_user_info(user, tenant),
+            details_url=config.get_employee_info_url(user, tenant),
+            photo_url=config.get_employee_photo_url(user, tenant),
         ),
         comments=[],
         cross_account=False,

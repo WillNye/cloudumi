@@ -33,7 +33,7 @@ def get_resource_tag(
 class ResourceSummary:
     def __init__(
         self,
-        host: str,
+        tenant: str,
         arn: str,
         account: str,
         partition: str,
@@ -43,7 +43,7 @@ class ResourceSummary:
         name: str,
         parent_name: str = None,
     ):
-        self.host = host
+        self.tenant = tenant
         self.arn = arn
         self.account = account
         self.partition = partition
@@ -54,7 +54,7 @@ class ResourceSummary:
         self.parent_name = parent_name
 
     @classmethod
-    async def set(cls, host: str, arn: str) -> "ResourceSummary":
+    async def set(cls, tenant: str, arn: str) -> "ResourceSummary":
         from common.lib.aws.utils import (
             get_bucket_location_with_fallback,
             get_resource_account,
@@ -71,7 +71,7 @@ class ResourceSummary:
                     f"/{parsed_arn['resource_path']}", ""
                 )
 
-            parsed_arn["account"] = await get_resource_account(arn_as_resource, host)
+            parsed_arn["account"] = await get_resource_account(arn_as_resource, tenant)
             if not parsed_arn["account"]:
                 raise ValueError("Resource account not found")
 
@@ -88,7 +88,7 @@ class ResourceSummary:
                     parsed_arn["name"] = bucket_name
 
                 parsed_arn["region"] = await get_bucket_location_with_fallback(
-                    bucket_name, parsed_arn["account"], host
+                    bucket_name, parsed_arn["account"], tenant
                 )
         else:
             if not parsed_arn["region"]:
@@ -101,4 +101,4 @@ class ResourceSummary:
                 parsed_arn["name"] = parsed_arn.pop("resource", "")
                 parsed_arn["resource_type"] = parsed_arn["service"]
 
-        return cls(host, **parsed_arn)
+        return cls(tenant, **parsed_arn)

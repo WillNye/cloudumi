@@ -51,9 +51,9 @@ export const TempEscalationUserModal = ({
       </Dimmer>
       <Form>
         <Form.Field>
-          <label>Add Group Name</label>
+          <label>User or Group</label>
           <Input
-            placeholder='Add user groups ...'
+            placeholder='Add user or group'
             labelPosition='right'
             value={groupName}
             onChange={(e) => {
@@ -103,7 +103,7 @@ export const RoleAccessGroupModal = ({
   isPolicyEditorLoading,
 }) => {
   const { handleSubmit, watch, register } = useForm({
-    defaultValues: { tag_name: '', web_access: false },
+    defaultValues: { tag_name: '', web_access: true },
   })
 
   const fields = watch()
@@ -137,13 +137,16 @@ export const RoleAccessGroupModal = ({
       </Dimmer>
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Form.Field>
-          <label>Tag Name</label>
-          <input {...register('tag_name', { required: true })} />
+          <label>User or Group</label>
+          <input
+            placeholder='Add user or group'
+            {...register('tag_name', { required: true })}
+          />
         </Form.Field>
 
         <Form.Field inline>
           <input id='check' type='checkbox' {...register('web_access')} />
-          <label htmlFor='check'>Allow Web Console Access?</label>
+          <label htmlFor='check'>Web Console Access</label>
         </Form.Field>
 
         <Bar>

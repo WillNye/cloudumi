@@ -10,20 +10,20 @@ class SelfServiceConfigHandler(BaseAPIV2Handler):
     allowed_methods = ["GET"]
 
     async def get(self):
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         admin_bypass_approval_enabled: bool = await can_admin_policies(
-            self.user, self.groups, host, []
+            self.user, self.groups, tenant, []
         )
-        export_to_terraform_enabled: bool = config.get_host_specific_key(
-            "export_to_terraform_enabled", host, False
+        export_to_terraform_enabled: bool = config.get_tenant_specific_key(
+            "export_to_terraform_enabled", tenant, False
         )
-        self_service_iam_config: dict = config.get_host_specific_key(
-            "self_service_iam", host, SELF_SERVICE_IAM_DEFAULTS
+        self_service_iam_config: dict = config.get_tenant_specific_key(
+            "self_service_iam", tenant, SELF_SERVICE_IAM_DEFAULTS
         )
 
         # Help message can be configured with Markdown for link handling
-        help_message: str = config.get_host_specific_key(
-            "self_service_iam_help_message", host
+        help_message: str = config.get_tenant_specific_key(
+            "self_service_iam_help_message", tenant
         )
 
         self.write(
@@ -49,18 +49,18 @@ class PermissionTemplatesHandler(BaseAPIV2Handler):
         If no permission_templates are defined in static configuration, this function will substitute the static
         configuration templates with PERMISSION_TEMPLATE_DEFAULTS.
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
         permission_templates_dynamic_config: List[
             Dict[str, Any]
-        ] = config.get_host_specific_key(
-            "dynamic_config.permission_templates", host, []
+        ] = config.get_tenant_specific_key(
+            "dynamic_config.permission_templates", tenant, []
         )
 
         permission_templates_config: List[
             Dict[str, Any]
-        ] = config.get_host_specific_key(
+        ] = config.get_tenant_specific_key(
             "permission_templates",
-            host,
+            tenant,
             PERMISSION_TEMPLATE_DEFAULTS,
         )
 

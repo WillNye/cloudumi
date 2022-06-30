@@ -1,6 +1,7 @@
 asgiref
 atlassian-python-api
 boto3
+fakeredis
 mock
 mockredis
 moto
@@ -11,6 +12,5 @@ pytest-asyncio
 pyyaml
 #pytest-black
 #pytest-pylint
-redislite
 requests-mock
 tornado

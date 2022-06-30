@@ -10,7 +10,6 @@ command: celery -A consoleme.celery_tasks.celery_tasks worker --loglevel=info -l
 from __future__ import absolute_import
 
 import json  # We use a separate SetEncoder here so we cannot use ujson
-import os
 import sys
 import time
 from collections import defaultdict
@@ -55,7 +54,7 @@ from common.lib.account_indexers import (
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
-from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_host
+from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_tenant
 from common.lib.aws.cloudtrail import CloudTrail
 from common.lib.aws.iam import get_all_managed_policies
 from common.lib.aws.s3 import list_buckets
@@ -68,8 +67,8 @@ from common.lib.aws.utils import (
     cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
-    remove_expired_host_requests,
-    remove_expired_requests_for_hosts,
+    remove_expired_requests_for_tenants,
+    remove_expired_tenant_requests,
 )
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
@@ -91,16 +90,16 @@ from common.lib.self_service.typeahead import cache_self_service_typeahead
 from common.lib.sentry import before_send_event
 from common.lib.templated_resources import cache_resource_templates
 from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
-from common.lib.tenants import get_all_hosts
+from common.lib.tenants import get_all_tenants
 from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
 from common.models import SpokeAccount
 from identity.lib.groups.groups import (
-    cache_identity_groups_for_host,
-    cache_identity_requests_for_host,
+    cache_identity_groups_for_tenant,
+    cache_identity_requests_for_tenant,
 )
-from identity.lib.users.users import cache_identity_users_for_host
+from identity.lib.users.users import cache_identity_users_for_tenant
 
 asynpool.PROC_ALIVE_TIMEOUT = config.get(
     "_global_.celery.asynpool_proc_alive_timeout", 60.0
@@ -141,27 +140,13 @@ app = Celery(
     ),
     backend=config.get(
         f"_global_.celery.backend.{config.region}",
-        config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/2"),
+        config.get("_global_.celery.backend.global"),
     ),
 )
 
-if config.get("_global_.redis.use_redislite"):
-    import tempfile
-
-    import redislite
-
-    redislite_db_path = os.path.join(
-        config.get(
-            "_global_.redis.redislite.db_path", tempfile.NamedTemporaryFile().name
-        )
-    )
-    redislite_client = redislite.Redis(redislite_db_path)
-    redislite_socket_path = f"redis+socket://{redislite_client.socket_file}"
-    app = Celery(
-        "tasks",
-        broker=f"{redislite_socket_path}?virtual_host=1",
-        backend=f"{redislite_socket_path}?virtual_host=2",
-    )
+broker_transport_options = config.get("_global_.celery.broker_transport_options")
+if broker_transport_options:
+    app.conf.update({"broker_transport_options": dict(broker_transport_options)})
 
 app.conf.result_expires = config.get("_global_.celery.result_expires", 60)
 app.conf.worker_prefetch_multiplier = config.get(
@@ -193,7 +178,7 @@ def report_celery_last_success_metrics() -> bool:
     We can then alert when tasks are not ran when intended. We should also alert when no metrics are emitted
     from this function.
     """
-    # TODO: What is the host here?
+    # TODO: What is the tenant here?
     # TODO: How to report function args?
     red = RedisHandler().redis_sync("_global_")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -281,11 +266,11 @@ def get_celery_request_tags(**kwargs):
 
 @task_prerun.connect
 def refresh_tenant_config_in_worker(**kwargs):
-    host = kwargs.get("kwargs", {}).get("host")
-    if not host:
+    tenant = kwargs.get("kwargs", {}).get("tenant")
+    if not tenant:
         return
-    config.CONFIG.copy_tenant_config_dynamo_to_redis(host)
-    config.CONFIG.tenant_configs[host]["last_updated"] = 0
+    config.CONFIG.copy_tenant_config_dynamo_to_redis(tenant)
+    config.CONFIG.tenant_configs[tenant]["last_updated"] = 0
 
 
 @task_received.connect
@@ -318,7 +303,7 @@ def report_successful_task(**kwargs):
     :return:
     """
     tags = get_celery_request_tags(**kwargs)
-    # TODO: Host?
+    # TODO: tenant?
     red = RedisHandler().redis_sync("_global_")
     red.set(f"_global_.{tags['task_name']}.last_success", int(time.time()))
     tags.pop("error", None)
@@ -496,7 +481,7 @@ def is_task_already_running(fun, args):
     wait_exponential_multiplier=1000,
     wait_exponential_max=1000,
 )
-def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
+def _add_role_to_redis(redis_key: str, role_entry: Dict, tenant: str) -> None:
     """
     This function will add IAM role data to redis so that policy details can be quickly retrieved by the policies
     endpoint.
@@ -511,7 +496,7 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
         'templated': None, 'ttl': 1562510908, 'policy': '<json_formatted_policy>'}
     """
     try:
-        red = RedisHandler().redis_sync(host)
+        red = RedisHandler().redis_sync(tenant)
         red.hset(redis_key, str(role_entry["arn"]), str(json.dumps(role_entry)))
     except Exception as e:  # noqa
         stats.count(
@@ -520,7 +505,7 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
                 "redis_key": redis_key,
                 "error": str(e),
                 "role_entry": role_entry.get("arn"),
-                "host": host,
+                "tenant": tenant,
             },
         )
         account_id = role_entry.get("account_id")
@@ -529,7 +514,7 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
         log_data = {
             "message": "Error syncing Account's IAM roles to Redis",
             "account_id": account_id,
-            "host": host,
+            "tenant": tenant,
             "arn": role_entry["arn"],
             "role_entry": role_entry,
         }
@@ -538,50 +523,50 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, host: str) -> None:
 
 
 @app.task(soft_time_limit=3600)
-def cache_cloudtrail_errors_by_arn_for_all_hosts() -> Dict:
+def cache_cloudtrail_errors_by_arn_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_cloudtrail_errors_by_arn.apply_async((host,))
+    for tenant in tenants:
+        cache_cloudtrail_errors_by_arn.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=7200)
-def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_cloudtrail_errors_by_arn(tenant=None) -> Dict:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     aws = get_plugin_by_name(
-        config.get_host_specific_key("plugins.aws", host, "cmsaas_aws")
+        config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
     )()
     log_data: Dict = {"function": function}
-    if is_task_already_running(function, [host]):
+    if is_task_already_running(function, [tenant]):
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
         return log_data
     ct = CloudTrail()
     process_cloudtrail_errors_res: Dict = async_to_sync(ct.process_cloudtrail_errors)(
-        aws, host, None
+        aws, tenant, None
     )
     cloudtrail_errors = process_cloudtrail_errors_res["error_count_by_role"]
     red.setex(
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "celery.cache_cloudtrail_errors_by_arn.redis_key",
-            host,
-            f"{host}_CLOUDTRAIL_ERRORS_BY_ARN",
+            tenant,
+            f"{tenant}_CLOUDTRAIL_ERRORS_BY_ARN",
         ),
         86400,
         json.dumps(cloudtrail_errors),
     )
     if process_cloudtrail_errors_res["num_new_or_changed_notifications"] > 0:
-        cache_notifications.apply_async((host,))
+        cache_notifications.apply_async((tenant,))
     log_data["number_of_roles_with_errors"] = len(cloudtrail_errors.keys())
     log_data["number_errors"] = sum(cloudtrail_errors.values())
     log.debug(log_data)
@@ -589,41 +574,41 @@ def cache_cloudtrail_errors_by_arn(host=None) -> Dict:
 
 
 @app.task(soft_time_limit=3600)
-def cache_policies_table_details_for_all_hosts() -> Dict:
+def cache_policies_table_details_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_policies_table_details.apply_async((host,))
+    for tenant in tenants:
+        cache_policies_table_details.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=1800)
-def cache_policies_table_details(host=None) -> bool:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_policies_table_details(tenant=None) -> bool:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     items = []
-    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
-    red = RedisHandler().redis_sync(host)
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
+    red = RedisHandler().redis_sync(tenant)
     cloudtrail_errors = {}
     cloudtrail_errors_j = red.get(
-        config.get_host_specific_key(
+        config.get_tenant_specific_key(
             "celery.cache_cloudtrail_errors_by_arn.redis_key",
-            host,
-            f"{host}_CLOUDTRAIL_ERRORS_BY_ARN",
+            tenant,
+            f"{tenant}_CLOUDTRAIL_ERRORS_BY_ARN",
         )
     )
 
     if cloudtrail_errors_j:
         cloudtrail_errors = json.loads(cloudtrail_errors_j)
 
-    s3_error_topic = config.get_host_specific_key(
-        "redis.s3_errors", host, f"{host}_S3_ERRORS"
+    s3_error_topic = config.get_tenant_specific_key(
+        "redis.s3_errors", tenant, f"{tenant}_S3_ERRORS"
     )
     all_s3_errors = red.get(s3_error_topic)
     s3_errors = {}
@@ -632,17 +617,17 @@ def cache_policies_table_details(host=None) -> bool:
 
     # IAM Roles
     all_iam_roles = []
-    skip_iam_roles = config.get_host_specific_key(
-        "cache_policies_table_details.skip_iam_roles", host, False
+    skip_iam_roles = config.get_tenant_specific_key(
+        "cache_policies_table_details.skip_iam_roles", tenant, False
     )
     if not skip_iam_roles:
-        all_iam_roles = async_to_sync(IAMRole.query)(host)
+        all_iam_roles = async_to_sync(IAMRole.query)(tenant)
 
         for role in all_iam_roles:
             role_details_policy = role.policy
             role_tags = role_details_policy.get("Tags", {})
 
-            if not allowed_to_sync_role(role.arn, role_tags, host):
+            if not allowed_to_sync_role(role.arn, role_tags, tenant):
                 continue
 
             error_count = cloudtrail_errors.get(role.arn, 0)
@@ -663,33 +648,33 @@ def cache_policies_table_details(host=None) -> bool:
                     "errors": error_count,
                     "config_history_url": async_to_sync(
                         get_aws_config_history_url_for_resource
-                    )(account_id, resource_id, role.arn, "AWS::IAM::Role", host),
+                    )(account_id, resource_id, role.arn, "AWS::IAM::Role", tenant),
                 }
             )
 
     # IAM Users
-    skip_iam_users = config.get_host_specific_key(
-        "cache_policies_table_details.skip_iam_users", host, False
+    skip_iam_users = config.get_tenant_specific_key(
+        "cache_policies_table_details.skip_iam_users", tenant, False
     )
     if not skip_iam_users:
         all_iam_users = async_to_sync(retrieve_json_data_from_redis_or_s3)(
-            redis_key=config.get_host_specific_key(
+            redis_key=config.get_tenant_specific_key(
                 "aws.iamusers_redis_key",
-                host,
-                f"{host}_IAM_USER_CACHE",
+                tenant,
+                f"{tenant}_IAM_USER_CACHE",
             ),
             redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
+            s3_bucket=config.get_tenant_specific_key(
                 "cache_iam_resources_across_accounts.all_users_combined.s3.bucket",
-                host,
+                tenant,
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "cache_iam_resources_across_accounts.all_users_combined.s3.file",
-                host,
+                tenant,
                 "account_resource_cache/cache_all_users_v1.json.gz",
             ),
             default={},
-            host=host,
+            tenant=tenant,
         )
 
         for arn, details_j in all_iam_users.items():
@@ -708,26 +693,26 @@ def cache_policies_table_details(host=None) -> bool:
                     "arn": arn,
                     "technology": "AWS::IAM::User",
                     "templated": red.hget(
-                        config.get_host_specific_key(
+                        config.get_tenant_specific_key(
                             "templated_roles.redis_key",
-                            host,
-                            f"{host}_TEMPLATED_ROLES_v2",
+                            tenant,
+                            f"{tenant}_TEMPLATED_ROLES_v2",
                         ),
                         arn.lower(),
                     ),
                     "errors": error_count,
                     "config_history_url": async_to_sync(
                         get_aws_config_history_url_for_resource
-                    )(account_id, resource_id, arn, "AWS::IAM::User", host),
+                    )(account_id, resource_id, arn, "AWS::IAM::User", tenant),
                 }
             )
     # S3 Buckets
-    skip_s3_buckets = config.get_host_specific_key(
-        "cache_policies_table_details.skip_s3_buckets", host, False
+    skip_s3_buckets = config.get_tenant_specific_key(
+        "cache_policies_table_details.skip_s3_buckets", tenant, False
     )
     if not skip_s3_buckets:
-        s3_bucket_key: str = config.get_host_specific_key(
-            "redis.s3_bucket_key", host, f"{host}_S3_BUCKETS"
+        s3_bucket_key: str = config.get_tenant_specific_key(
+            "redis.s3_bucket_key", tenant, f"{tenant}_S3_BUCKETS"
         )
         s3_accounts = red.hkeys(s3_bucket_key)
         if s3_accounts:
@@ -754,12 +739,12 @@ def cache_policies_table_details(host=None) -> bool:
                     )
 
     # SNS Topics
-    skip_sns_topics = config.get_host_specific_key(
-        "cache_policies_table_details.skip_sns_topics", host, False
+    skip_sns_topics = config.get_tenant_specific_key(
+        "cache_policies_table_details.skip_sns_topics", tenant, False
     )
     if not skip_sns_topics:
-        sns_topic_key: str = config.get_host_specific_key(
-            "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
+        sns_topic_key: str = config.get_tenant_specific_key(
+            "redis.sns_topics_key", tenant, f"{tenant}_SNS_TOPICS"
         )
         sns_accounts = red.hkeys(sns_topic_key)
         if sns_accounts:
@@ -781,12 +766,12 @@ def cache_policies_table_details(host=None) -> bool:
                     )
 
     # SQS Queues
-    skip_sqs_queues = config.get_host_specific_key(
-        "cache_policies_table_details.skip_sqs_queues", host, False
+    skip_sqs_queues = config.get_tenant_specific_key(
+        "cache_policies_table_details.skip_sqs_queues", tenant, False
     )
     if not skip_sqs_queues:
-        sqs_queue_key: str = config.get_host_specific_key(
-            "redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
+        sqs_queue_key: str = config.get_tenant_specific_key(
+            "redis.sqs_queues_key", tenant, f"{tenant}_SQS_QUEUES"
         )
         sqs_accounts = red.hkeys(sqs_queue_key)
         if sqs_accounts:
@@ -808,16 +793,16 @@ def cache_policies_table_details(host=None) -> bool:
                     )
 
     # Managed Policies
-    skip_managed_policies = config.get_host_specific_key(
+    skip_managed_policies = config.get_tenant_specific_key(
         "cache_policies_table_details.skip_managed_policies",
-        host,
+        tenant,
         False,
     )
     if not skip_managed_policies:
-        managed_policies_key: str = config.get_host_specific_key(
+        managed_policies_key: str = config.get_tenant_specific_key(
             "redis.iam_managed_policies_key",
-            host,
-            f"{host}_IAM_MANAGED_POLICIES",
+            tenant,
+            f"{tenant}_IAM_MANAGED_POLICIES",
         )
         managed_policies_accounts = red.hkeys(managed_policies_key)
         if managed_policies_accounts:
@@ -847,16 +832,16 @@ def cache_policies_table_details(host=None) -> bool:
                     )
 
     # AWS Config Resources
-    skip_aws_config_resources = config.get_host_specific_key(
+    skip_aws_config_resources = config.get_tenant_specific_key(
         "cache_policies_table_details.skip_aws_config_resources",
-        host,
+        tenant,
         False,
     )
     if not skip_aws_config_resources:
-        resources_from_aws_config_redis_key: str = config.get_host_specific_key(
+        resources_from_aws_config_redis_key: str = config.get_tenant_specific_key(
             "aws_config_cache.redis_key",
-            host,
-            f"{host}_AWSCONFIG_RESOURCE_CACHE",
+            tenant,
+            f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
         )
         resources_from_aws_config = red.hgetall(resources_from_aws_config_redis_key)
         if resources_from_aws_config:
@@ -887,64 +872,66 @@ def cache_policies_table_details(host=None) -> bool:
 
     s3_bucket = None
     s3_key = None
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key(
-            "cache_policies_table_details.s3.bucket", host
+        s3_bucket = config.get_tenant_specific_key(
+            "cache_policies_table_details.s3.bucket", tenant
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "cache_policies_table_details.s3.file",
-            host,
+            tenant,
             "policies_table/cache_policies_table_details_v1.json.gz",
         )
     async_to_sync(store_json_results_in_redis_and_s3)(
         items,
-        redis_key=config.get_host_specific_key(
+        redis_key=config.get_tenant_specific_key(
             "policies.redis_policies_key",
-            host,
-            f"{host}_ALL_POLICIES",
+            tenant,
+            f"{tenant}_ALL_POLICIES",
         ),
         s3_bucket=s3_bucket,
         s3_key=s3_key,
-        host=host,
+        tenant=tenant,
     )
     stats.count(
         "cache_policies_table_details.success",
         tags={
             "num_roles": len(all_iam_roles),
-            "host": host,
+            "tenant": tenant,
         },
     )
     return True
 
 
 @app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[str, Any]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_iam_resources_for_account(
+    self, account_id: str, tenant=None
+) -> Dict[str, Any]:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     # progress_recorder = ProgressRecorder(self)
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
     # Get the DynamoDB handler:
-    iam_user_cache_key = f"{host}_IAM_USER_CACHE"
+    iam_user_cache_key = f"{tenant}_IAM_USER_CACHE"
     # Only query IAM and put data in Dynamo if we're in the active region
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
         spoke_role_name = (
             ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name
         )
@@ -953,7 +940,7 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
             return
         client = boto3_cached_conn(
             "iam",
-            host,
+            tenant,
             None,
             account_number=account_id,
             assume_role=spoke_role_name,
@@ -962,7 +949,9 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
-            client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
             session_name=sanitize_session_name(
                 "consoleme_cache_iam_resources_for_account"
             ),
@@ -995,58 +984,58 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
         # Store entire response in S3
         async_to_sync(store_json_results_in_redis_and_s3)(
             all_iam_resources,
-            s3_bucket=config.get_host_specific_key(
-                "cache_iam_resources_for_account.s3.bucket", host
+            s3_bucket=config.get_tenant_specific_key(
+                "cache_iam_resources_for_account.s3.bucket", tenant
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "cache_iam_resources_for_account.s3.file",
-                host,
+                tenant,
                 "get_account_authorization_details/get_account_authorization_details_{account_id}_v1.json.gz",
             ).format(account_id=account_id),
-            host=host,
+            tenant=tenant,
         )
 
         iam_users = all_iam_resources["UserDetailList"]
         iam_roles = all_iam_resources["RoleDetailList"]
         iam_policies = all_iam_resources["Policies"]
 
-        async_to_sync(IAMRole.sync_account_roles)(host, account_id, iam_roles)
+        async_to_sync(IAMRole.sync_account_roles)(tenant, account_id, iam_roles)
 
         last_updated: int = int((datetime.utcnow()).timestamp())
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
         for user in iam_users:
             user_entry = {
                 "arn": user.get("Arn"),
-                "host": host,
+                "tenant": tenant,
                 "name": user.get("UserName"),
                 "resourceId": user.get("UserId"),
                 "accountId": account_id,
                 "ttl": ttl,
                 "last_updated": last_updated,
-                "owner": get_aws_principal_owner(user, host),
+                "owner": get_aws_principal_owner(user, tenant),
                 "policy": NoqModel().dump_json_attr(user),
                 "templated": False,  # Templates not supported for IAM users at this time
             }
             # Redis:
-            _add_role_to_redis(iam_user_cache_key, user_entry, host)
+            _add_role_to_redis(iam_user_cache_key, user_entry, tenant)
 
         # Maybe store all resources in git
-        if config.get_host_specific_key(
+        if config.get_tenant_specific_key(
             "cache_iam_resources_for_account.store_in_git.enabled",
-            host,
+            tenant,
         ):
-            store_iam_resources_in_git(all_iam_resources, account_id, host)
+            store_iam_resources_in_git(all_iam_resources, account_id, tenant)
 
         if iam_policies:
-            async_to_sync(store_iam_managed_policies_for_host)(
-                host, iam_policies, account_id
+            async_to_sync(store_iam_managed_policies_for_tenant)(
+                tenant, iam_policies, account_id
             )
 
     stats.count(
         "cache_iam_resources_for_account.success",
         tags={
             "account_id": account_id,
-            "host": host,
+            "tenant": tenant,
         },
     )
     log.debug({**log_data, "message": "Finished caching IAM resources for account"})
@@ -1054,55 +1043,55 @@ def cache_iam_resources_for_account(self, account_id: str, host=None) -> Dict[st
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advisor_for_account(host: str, account_id: str) -> Dict[str, Any]:
-    """Caches AWS access advisor data for an account that belongs to a host.
+def cache_access_advisor_for_account(tenant: str, account_id: str) -> Dict[str, Any]:
+    """Caches AWS access advisor data for an account that belongs to a tenant.
     This tells us which services each role has used.
 
-    :param host: Tenant ID
+    :param tenant: Tenant ID
     :param account_id: AWS Account ID
     """
     log_data = {
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
         "message": "Caching access advisor data for account",
     }
 
-    aa = AccessAdvisor(host)
-    res = async_to_sync(aa.generate_and_save_access_advisor_data)(host, account_id)
+    aa = AccessAdvisor(tenant)
+    res = async_to_sync(aa.generate_and_save_access_advisor_data)(tenant, account_id)
     log_data["num_roles_analyzed"] = len(res.keys())
     log.debug(log_data)
     return log_data
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advisor_across_accounts(host: str) -> Dict:
-    """Triggers `cache_access_advisor_for_account` tasks on each AWS account that belongs to a host.
+def cache_access_advisor_across_accounts(tenant: str) -> Dict:
+    """Triggers `cache_access_advisor_for_account` tasks on each AWS account that belongs to a tenant.
 
-    :param host: Tenant ID
-    :raises Exception: When host is not valid
+    :param tenant: Tenant ID
+    :raises Exception: When tenant is not valid
     :return: Summary of the number of tasks triggered
     """
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
 
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-        "host": host,
+        "tenant": tenant,
         "message": "Caching access advisor data for tenant's accounts",
     }
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     log_data["num_accounts"] = len(accounts_d.keys())
 
     for account_id in accounts_d.keys():
         if config.get("_global_.environment") == "prod":
-            cache_access_advisor_for_account.delay(host, account_id)
+            cache_access_advisor_for_account.delay(tenant, account_id)
         else:
-            if account_id in config.get_host_specific_key(
-                "celery.test_account_ids", host, []
+            if account_id in config.get_tenant_specific_key(
+                "celery.test_account_ids", tenant, []
             ):
-                cache_access_advisor_for_account.delay(host, account_id)
+                cache_access_advisor_for_account.delay(tenant, account_id)
 
     stats.count(f"{function}.success")
     log.debug(log_data)
@@ -1110,73 +1099,73 @@ def cache_access_advisor_across_accounts(host: str) -> Dict:
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advior_across_accounts_for_all_hosts() -> Dict:
+def cache_access_advior_across_accounts_for_all_tenants() -> Dict:
     """Triggers `cache_access_advisor_across_accounts` task for each tenant.
 
     :return: Number of tenants that had tasks triggered.
     """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        if not config.get_host_specific_key(
+    for tenant in tenants:
+        if not config.get_tenant_specific_key(
             "cache_iam_resources_for_account.check_unused_permissions.enabled",
-            host,
+            tenant,
             True,
         ):
             continue
-        cache_access_advisor_across_accounts.delay(host=host)
+        cache_access_advisor_across_accounts.delay(tenant=tenant)
     return log_data
 
 
 @app.task(soft_time_limit=3600)
-def cache_iam_resources_across_accounts_for_all_hosts() -> Dict:
+def cache_iam_resources_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
+    for tenant in tenants:
         # TODO: Figure out why wait_for_subtask_completion=True is failing here
         cache_iam_resources_across_accounts.delay(
-            host=host, wait_for_subtask_completion=False
+            tenant=tenant, wait_for_subtask_completion=False
         )
     return log_data
 
 
 @app.task(soft_time_limit=3600)
 def cache_iam_resources_across_accounts(
-    host=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
+    tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     cache_keys = {
         "iam_users": {
-            "cache_key": f"{host}_IAM_USER_CACHE",
+            "cache_key": f"{tenant}_IAM_USER_CACHE",
         },
     }
 
-    log_data = {"function": function, "host": host}
-    if is_task_already_running(function, [host]):
+    log_data = {"function": function, "tenant": tenant}
+    if is_task_already_running(function, [tenant]):
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
         return log_data
 
-    accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(host)
+    accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(tenant)
     tasks = []
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         # First, get list of accounts
         # Second, call tasks to enumerate all the roles across all accounts
@@ -1192,12 +1181,12 @@ def cache_iam_resources_across_accounts(
                         ),
                     }
                 )
-                if account_id in config.get_host_specific_key(
-                    "celery.test_account_ids", host, []
+                if account_id in config.get_tenant_specific_key(
+                    "celery.test_account_ids", tenant, []
                 ):
-                    tasks.append(cache_iam_resources_for_account.s(account_id, host))
+                    tasks.append(cache_iam_resources_for_account.s(account_id, tenant))
             else:
-                tasks.append(cache_iam_resources_for_account.s(account_id, host))
+                tasks.append(cache_iam_resources_for_account.s(account_id, tenant))
         if run_subtasks:
             results = group(*tasks).apply_async()
             if wait_for_subtask_completion:
@@ -1229,18 +1218,18 @@ def cache_iam_resources_across_accounts(
             all_users,
             redis_key=cache_keys["iam_users"]["cache_key"],
             redis_data_type="hash",
-            s3_bucket=config.get_host_specific_key(
+            s3_bucket=config.get_tenant_specific_key(
                 "cache_iam_resources_across_accounts.all_users_combined.s3.bucket",
-                host,
+                tenant,
             ),
-            s3_key=config.get_host_specific_key(
+            s3_key=config.get_tenant_specific_key(
                 "cache_iam_resources_across_accounts.all_users_combined.s3.file",
-                host,
+                tenant,
                 "account_resource_cache/cache_all_users_v1.json.gz",
             ),
-            host=host,
+            tenant=tenant,
         )
-        cache_aws_resource_details(all_users, host)
+        cache_aws_resource_details(all_users, tenant)
 
     log_data["num_iam_users"] = len(all_users)
     stats.count(f"{function}.success")
@@ -1251,19 +1240,19 @@ def cache_iam_resources_across_accounts(
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
 def cache_managed_policies_for_account(
-    account_id: str, host=None
+    account_id: str, tenant=None
 ) -> Dict[str, Union[str, int]]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
 
     log_data = {
         "function": "cache_managed_policies_for_account",
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
     spoke_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name
     )
@@ -1271,13 +1260,13 @@ def cache_managed_policies_for_account(
         log.error({**log_data, "message": "No spoke role name found"})
         return
     managed_policies: List[Dict] = get_all_managed_policies(
-        host=host,
+        tenant=tenant,
         account_number=account_id,
         assume_role=spoke_role_name,
         region=config.region,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     )
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     all_policies: List = []
     for policy in managed_policies:
         all_policies.append(policy.get("Arn"))
@@ -1287,7 +1276,7 @@ def cache_managed_policies_for_account(
         "account_id": account_id,
         "message": "Successfully cached IAM managed policies for account",
         "number_managed_policies": len(all_policies),
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
     stats.count(
@@ -1295,141 +1284,141 @@ def cache_managed_policies_for_account(
         tags={
             "account_id": account_id,
             "num_managed_policies": len(all_policies),
-            "host": host,
+            "tenant": tenant,
         },
     )
 
-    policy_key = config.get_host_specific_key(
+    policy_key = config.get_tenant_specific_key(
         "redis.iam_managed_policies_key",
-        host,
-        f"{host}_IAM_MANAGED_POLICIES",
+        tenant,
+        f"{tenant}_IAM_MANAGED_POLICIES",
     )
     red.hset(policy_key, account_id, json.dumps(all_policies))
 
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key(
-            "account_resource_cache.s3.bucket", host
+        s3_bucket = config.get_tenant_specific_key(
+            "account_resource_cache.s3.bucket", tenant
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "account_resource_cache.s3.file",
-            host,
+            tenant,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="managed_policies", account_id=account_id)
         async_to_sync(store_json_results_in_redis_and_s3)(
             all_policies,
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
     return log_data
 
 
 @app.task(soft_time_limit=3600)
-def cache_managed_policies_across_accounts_for_all_hosts() -> Dict:
+def cache_managed_policies_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_managed_policies_across_accounts(host)
+    for tenant in tenants:
+        cache_managed_policies_across_accounts(tenant)
     return log_data
 
 
 @app.task(soft_time_limit=3600)
-def cache_managed_policies_across_accounts(host=None) -> bool:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_managed_policies_across_accounts(tenant=None) -> bool:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     # First, get list of accounts
-    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all accounts
     for account_id in accounts_d.keys():
         if config.get("_global_.environment") == "prod":
-            cache_managed_policies_for_account.delay(account_id, host=host)
+            cache_managed_policies_for_account.delay(account_id, tenant=tenant)
         else:
-            if account_id in config.get_host_specific_key(
-                "celery.test_account_ids", host, []
+            if account_id in config.get_tenant_specific_key(
+                "celery.test_account_ids", tenant, []
             ):
-                cache_managed_policies_for_account.delay(account_id, host=host)
+                cache_managed_policies_for_account.delay(account_id, tenant=tenant)
 
     stats.count(f"{function}.success")
     return True
 
 
 @app.task(soft_time_limit=3600)
-def cache_s3_buckets_across_accounts_for_all_hosts() -> Dict:
+def cache_s3_buckets_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
+    for tenant in tenants:
         cache_s3_buckets_across_accounts.delay(
-            host=host, wait_for_subtask_completion=False
+            tenant=tenant, wait_for_subtask_completion=False
         )
     return log_data
 
 
 @app.task(soft_time_limit=3600)
 def cache_s3_buckets_across_accounts(
-    host=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
+    tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict[str, Any]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
-    s3_bucket_redis_key: str = config.get_host_specific_key(
-        "redis.s3_buckets_key", host, f"{host}_S3_BUCKETS"
+    s3_bucket_redis_key: str = config.get_tenant_specific_key(
+        "redis.s3_buckets_key", tenant, f"{tenant}_S3_BUCKETS"
     )
-    s3_bucket = config.get_host_specific_key(
-        "account_resource_cache.s3_combined.bucket", host
+    s3_bucket = config.get_tenant_specific_key(
+        "account_resource_cache.s3_combined.bucket", tenant
     )
-    s3_key = config.get_host_specific_key(
+    s3_key = config.get_tenant_specific_key(
         "account_resource_cache.s3_combined.file",
-        host,
+        tenant,
         "account_resource_cache/cache_s3_combined_v1.json.gz",
     )
-    red = RedisHandler().redis_sync(host)
-    accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(host)
+    red = RedisHandler().redis_sync(tenant)
+    accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(tenant)
     log_data = {
         "function": function,
         "num_accounts": len(accounts_d.keys()),
         "run_subtasks": run_subtasks,
         "wait_for_subtask_completion": wait_for_subtask_completion,
-        "host": host,
+        "tenant": tenant,
     }
     tasks = []
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         # Call tasks to enumerate all S3 buckets across all accounts
         for account_id in accounts_d.keys():
             if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_s3_buckets_for_account.s(account_id, host))
+                tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
             else:
-                if account_id in config.get_host_specific_key(
-                    "celery.test_account_ids", host, []
+                if account_id in config.get_tenant_specific_key(
+                    "celery.test_account_ids", tenant, []
                 ):
-                    tasks.append(cache_s3_buckets_for_account.s(account_id, host))
+                    tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
         if wait_for_subtask_completion:
             # results.join() forces function to wait until all tasks are complete
             results.join(disable_sync_subtasks=False)
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
@@ -1439,19 +1428,19 @@ def cache_s3_buckets_across_accounts(
             all_buckets,
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
     else:
         redis_result_set = async_to_sync(retrieve_json_data_from_redis_or_s3)(
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
         async_to_sync(store_json_results_in_redis_and_s3)(
             redis_result_set,
             redis_key=s3_bucket_redis_key,
             redis_data_type="hash",
-            host=host,
+            tenant=tenant,
         )
     log.debug(
         {**log_data, "message": "Successfully cached s3 buckets across known accounts"}
@@ -1461,87 +1450,87 @@ def cache_s3_buckets_across_accounts(
 
 
 @app.task(soft_time_limit=3600)
-def cache_sqs_queues_across_accounts_for_all_hosts() -> Dict:
+def cache_sqs_queues_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
+    for tenant in tenants:
         cache_sqs_queues_across_accounts.delay(
-            host=host, wait_for_subtask_completion=False
+            tenant=tenant, wait_for_subtask_completion=False
         )
     return log_data
 
 
 @app.task(soft_time_limit=3600)
 def cache_sqs_queues_across_accounts(
-    host=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
+    tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict[str, Any]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
-    sqs_queue_redis_key: str = config.get_host_specific_key(
-        "redis.sqs_queues_key", host, f"{host}.SQS_QUEUES"
+    sqs_queue_redis_key: str = config.get_tenant_specific_key(
+        "redis.sqs_queues_key", tenant, f"{tenant}.SQS_QUEUES"
     )
-    s3_bucket = config.get_host_specific_key(
-        "account_resource_cache.sqs_combined.bucket", host
+    s3_bucket = config.get_tenant_specific_key(
+        "account_resource_cache.sqs_combined.bucket", tenant
     )
-    s3_key = config.get_host_specific_key(
+    s3_key = config.get_tenant_specific_key(
         "account_resource_cache.sqs_combined.file",
-        host,
+        tenant,
         "account_resource_cache/cache_sqs_queues_combined_v1.json.gz",
     )
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
 
-    accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(host)
+    accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(tenant)
     log_data = {
         "function": function,
         "num_accounts": len(accounts_d.keys()),
         "run_subtasks": run_subtasks,
         "wait_for_subtask_completion": wait_for_subtask_completion,
-        "host": host,
+        "tenant": tenant,
     }
     tasks = []
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
             if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_sqs_queues_for_account.s(account_id, host))
+                tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
             else:
-                if account_id in config.get_host_specific_key(
-                    "celery.test_account_ids", host, []
+                if account_id in config.get_tenant_specific_key(
+                    "celery.test_account_ids", tenant, []
                 ):
-                    tasks.append(cache_sqs_queues_for_account.s(account_id, host))
+                    tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
         if wait_for_subtask_completion:
             # results.join() forces function to wait until all tasks are complete
             results.join(disable_sync_subtasks=False)
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
         all_queues = red.hgetall(sqs_queue_redis_key)
         async_to_sync(store_json_results_in_redis_and_s3)(
-            all_queues, s3_bucket=s3_bucket, s3_key=s3_key, host=host
+            all_queues, s3_bucket=s3_bucket, s3_key=s3_key, tenant=tenant
         )
     else:
         redis_result_set = async_to_sync(retrieve_json_data_from_redis_or_s3)(
-            s3_bucket=s3_bucket, s3_key=s3_key, host=host
+            s3_bucket=s3_bucket, s3_key=s3_key, tenant=tenant
         )
         async_to_sync(store_json_results_in_redis_and_s3)(
             redis_result_set,
             redis_key=sqs_queue_redis_key,
             redis_data_type="hash",
-            host=host,
+            tenant=tenant,
         )
     log.debug(
         {**log_data, "message": "Successfully cached SQS queues across known accounts"}
@@ -1551,71 +1540,71 @@ def cache_sqs_queues_across_accounts(
 
 
 @app.task(soft_time_limit=3600)
-def cache_sns_topics_across_accounts_for_all_hosts() -> Dict:
+def cache_sns_topics_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
+    for tenant in tenants:
         cache_sns_topics_across_accounts.delay(
-            host=host, wait_for_subtask_completion=False
+            tenant=tenant, wait_for_subtask_completion=False
         )
     return log_data
 
 
 @app.task(soft_time_limit=3600)
 def cache_sns_topics_across_accounts(
-    host=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
+    tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict[str, Any]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
-    red = RedisHandler().redis_sync(host)
-    sns_topic_redis_key: str = config.get_host_specific_key(
-        "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
+    red = RedisHandler().redis_sync(tenant)
+    sns_topic_redis_key: str = config.get_tenant_specific_key(
+        "redis.sns_topics_key", tenant, f"{tenant}_SNS_TOPICS"
     )
-    s3_bucket = config.get_host_specific_key(
-        "account_resource_cache.sns_topics_combined.bucket", host
+    s3_bucket = config.get_tenant_specific_key(
+        "account_resource_cache.sns_topics_combined.bucket", tenant
     )
-    s3_key = config.get_host_specific_key(
+    s3_key = config.get_tenant_specific_key(
         "account_resource_cache.{resource_type}_topics_combined.file",
-        host,
+        tenant,
         "account_resource_cache/cache_{resource_type}_combined_v1.json.gz",
     ).format(resource_type="sns_topics")
 
     # First, get list of accounts
-    accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(host)
+    accounts_d: Dict[str, str] = async_to_sync(get_account_id_to_name_mapping)(tenant)
     log_data = {
         "function": function,
         "num_accounts": len(accounts_d.keys()),
         "run_subtasks": run_subtasks,
         "wait_for_subtask_completion": wait_for_subtask_completion,
-        "host": host,
+        "tenant": tenant,
     }
     tasks = []
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
             if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_sns_topics_for_account.s(account_id, host))
+                tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
             else:
-                if account_id in config.get_host_specific_key(
-                    "celery.test_account_ids", host, []
+                if account_id in config.get_tenant_specific_key(
+                    "celery.test_account_ids", tenant, []
                 ):
-                    tasks.append(cache_sns_topics_for_account.s(account_id, host))
+                    tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
         if wait_for_subtask_completion:
             # results.join() forces function to wait until all tasks are complete
             results.join(disable_sync_subtasks=False)
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
@@ -1625,19 +1614,19 @@ def cache_sns_topics_across_accounts(
             all_topics,
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
     else:
         redis_result_set = async_to_sync(retrieve_json_data_from_redis_or_s3)(
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
         async_to_sync(store_json_results_in_redis_and_s3)(
             redis_result_set,
             redis_key=sns_topic_redis_key,
             redis_data_type="hash",
-            host=host,
+            tenant=tenant,
         )
     log.debug(
         {**log_data, "message": "Successfully cached SNS topics across known accounts"}
@@ -1648,23 +1637,23 @@ def cache_sns_topics_across_accounts(
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
 def cache_sqs_queues_for_account(
-    account_id: str, host=None
+    account_id: str, tenant=None
 ) -> Dict[str, Union[str, int]]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     all_queues: set = set()
-    enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, host)
+    enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, tenant)
     for region in enabled_regions:
         try:
             spoke_role_name = (
                 ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
+                .load_config("spoke_accounts", tenant)
                 .with_query({"account_id": account_id})
                 .first.name
             )
@@ -1673,7 +1662,7 @@ def cache_sqs_queues_for_account(
                 return
             client = boto3_cached_conn(
                 "sqs",
-                host,
+                tenant,
                 None,
                 account_number=account_id,
                 assume_role=spoke_role_name,
@@ -1683,8 +1672,8 @@ def cache_sqs_queues_for_account(
                     region_name=config.region,
                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",
                 ),
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
                 ),
                 session_name=sanitize_session_name(
                     "consoleme_cache_sqs_queues_for_account"
@@ -1706,12 +1695,12 @@ def cache_sqs_queues_for_account(
                     "region": region,
                     "message": "Unable to sync SQS queues from region",
                     "error": str(e),
-                    "host": host,
+                    "tenant": tenant,
                 }
             )
             sentry_sdk.capture_exception()
-    sqs_queue_key: str = config.get_host_specific_key(
-        "redis.sqs_queues_key", host, f"{host}_SQS_QUEUES"
+    sqs_queue_key: str = config.get_tenant_specific_key(
+        "redis.sqs_queues_key", tenant, f"{tenant}_SQS_QUEUES"
     )
     red.hset(sqs_queue_key, account_id, json.dumps(list(all_queues)))
 
@@ -1723,57 +1712,57 @@ def cache_sqs_queues_for_account(
         tags={
             "account_id": account_id,
             "number_sqs_queues": len(all_queues),
-            "host": host,
+            "tenant": tenant,
         },
     )
 
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key(
-            "account_resource_cache.sqs.bucket", host
+        s3_bucket = config.get_tenant_specific_key(
+            "account_resource_cache.sqs.bucket", tenant
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "account_resource_cache.{resource_type}.file",
-            host,
+            tenant,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(
             resource_type="sqs_queues",
             account_id=account_id,
-            host=host,
+            tenant=tenant,
         )
         async_to_sync(store_json_results_in_redis_and_s3)(
             all_queues,
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
 def cache_sns_topics_for_account(
-    account_id: str, host=None
+    account_id: str, tenant=None
 ) -> Dict[str, Union[str, int]]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     # Make sure it is regional
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     all_topics: set = set()
-    enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, host)
+    enabled_regions = async_to_sync(get_enabled_regions_for_account)(account_id, tenant)
     for region in enabled_regions:
         try:
             spoke_role_name = (
                 ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", host)
+                .load_config("spoke_accounts", tenant)
                 .with_query({"account_id": account_id})
                 .first.name
             )
@@ -1781,7 +1770,7 @@ def cache_sns_topics_for_account(
                 log.error({**log_data, "message": "No spoke role name found"})
                 return
             topics = list_topics(
-                host=host,
+                tenant=tenant,
                 account_number=account_id,
                 assume_role=spoke_role_name,
                 region=region,
@@ -1790,8 +1779,8 @@ def cache_sns_topics_for_account(
                     region_name=config.region,
                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",
                 ),
-                client_kwargs=config.get_host_specific_key(
-                    "boto3.client_kwargs", host, {}
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
                 ),
             )
             for topic in topics:
@@ -1807,8 +1796,8 @@ def cache_sns_topics_for_account(
             )
             sentry_sdk.capture_exception()
 
-    sns_topic_key: str = config.get_host_specific_key(
-        "redis.sns_topics_key", host, f"{host}_SNS_TOPICS"
+    sns_topic_key: str = config.get_tenant_specific_key(
+        "redis.sns_topics_key", tenant, f"{tenant}_SNS_TOPICS"
     )
     red.hset(sns_topic_key, account_id, json.dumps(list(all_topics)))
 
@@ -1820,48 +1809,48 @@ def cache_sns_topics_for_account(
         tags={
             "account_id": account_id,
             "number_sns_topics": len(all_topics),
-            "host": host,
+            "tenant": tenant,
         },
     )
 
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key(
-            "account_resource_cache.s3.bucket", host
+        s3_bucket = config.get_tenant_specific_key(
+            "account_resource_cache.s3.bucket", tenant
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "account_resource_cache.s3.file",
-            host,
+            tenant,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="sns_topics", account_id=account_id)
         async_to_sync(store_json_results_in_redis_and_s3)(
             all_topics,
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
 def cache_s3_buckets_for_account(
-    account_id: str, host=None
+    account_id: str, tenant=None
 ) -> Dict[str, Union[str, int]]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     log_data = {
         "function": "cache_s3_buckets_for_account",
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     spoke_role_name = (
         ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", host)
+        .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name
     )
@@ -1869,25 +1858,25 @@ def cache_s3_buckets_for_account(
         log.error({**log_data, "message": "No spoke role name found"})
         return
     s3_buckets: List = list_buckets(
-        host=host,
+        tenant=tenant,
         account_number=account_id,
         assume_role=spoke_role_name,
         region=config.region,
         read_only=True,
-        client_kwargs=config.get_host_specific_key("boto3.client_kwargs", host, {}),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     )
     buckets: List = []
     for bucket in s3_buckets["Buckets"]:
         buckets.append(bucket["Name"])
-    s3_bucket_key: str = config.get_host_specific_key(
-        "redis.s3_buckets_key", host, f"{host}_S3_BUCKETS"
+    s3_bucket_key: str = config.get_tenant_specific_key(
+        "redis.s3_buckets_key", tenant, f"{tenant}_S3_BUCKETS"
     )
     red.hset(s3_bucket_key, account_id, json.dumps(buckets))
 
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
         "message": "Successfully cached S3 buckets for account",
         "number_s3_buckets": len(buckets),
     }
@@ -1897,29 +1886,29 @@ def cache_s3_buckets_for_account(
         tags={
             "account_id": account_id,
             "number_s3_buckets": len(buckets),
-            "host": host,
+            "tenant": tenant,
         },
     )
 
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
-        s3_bucket = config.get_host_specific_key(
-            "account_resource_cache.s3.bucket", host
+        s3_bucket = config.get_tenant_specific_key(
+            "account_resource_cache.s3.bucket", tenant
         )
-        s3_key = config.get_host_specific_key(
+        s3_key = config.get_tenant_specific_key(
             "account_resource_cache.s3.file",
-            host,
+            tenant,
             "account_resource_cache/cache_{resource_type}_{account_id}_v1.json.gz",
         ).format(resource_type="s3_buckets", account_id=account_id)
         async_to_sync(store_json_results_in_redis_and_s3)(
             buckets,
             s3_bucket=s3_bucket,
             s3_key=s3_key,
-            host=host,
+            tenant=tenant,
         )
     return log_data
 
@@ -1933,30 +1922,30 @@ def _scan_redis_iam_cache(
     cache_key: str,
     index: int,
     count: int,
-    host: str,
+    tenant: str,
 ) -> Tuple[int, Dict[str, str]]:
-    red = RedisHandler().redis_sync(host)
+    red = RedisHandler().redis_sync(tenant)
     return red.hscan(cache_key, index, count=count)
 
 
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
-def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
+def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict:
     from common.lib.dynamo import UserDynamoHandler
 
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
-    if not config.get_host_specific_key(
+    if not config.get_tenant_specific_key(
         "celery.cache_resources_from_aws_config_across_accounts.enabled",
-        host,
-        config.get_host_specific_key(
+        tenant,
+        config.get_tenant_specific_key(
             f"celery.cache_resources_from_aws_config_for_account.{account_id}.enabled",
-            host,
+            tenant,
             True,
         ),
     ):
@@ -1966,27 +1955,27 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
         log.debug(log_data)
         return log_data
 
-    s3_bucket = config.get_host_specific_key("aws_config_cache.s3.bucket", host)
-    s3_key = config.get_host_specific_key(
+    s3_bucket = config.get_tenant_specific_key("aws_config_cache.s3.bucket", tenant)
+    s3_key = config.get_tenant_specific_key(
         "aws_config_cache.s3.file",
-        host,
+        tenant,
         "aws_config_cache/cache_{account_id}_v1.json.gz",
     ).format(account_id=account_id)
-    dynamo = UserDynamoHandler(host=host)
+    dynamo = UserDynamoHandler(tenant=tenant)
     # Only query in active region, otherwise get data from DDB
-    if config.region == config.get_host_specific_key(
-        "celery.active_region", host, config.region
+    if config.region == config.get_tenant_specific_key(
+        "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in [
         "dev",
         "test",
     ]:
         results = aws_config.query(
-            config.get_host_specific_key(
+            config.get_tenant_specific_key(
                 "cache_all_resources_from_aws_config.aws_config.all_resources_query",
-                host,
+                tenant,
                 "select * where accountId = '{account_id}'",
             ).format(account_id=account_id),
-            host,
+            tenant,
             use_aggregator=False,
             account_id=account_id,
         )
@@ -1995,7 +1984,7 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
         redis_result_set = {}
         for result in results:
             result["ttl"] = ttl
-            result["host"] = host
+            result["tenant"] = tenant
             result["entity_id"] = result["arn"]
             if result.get("arn"):
                 if redis_result_set.get(result["arn"]):
@@ -2004,32 +1993,32 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
         if redis_result_set:
             async_to_sync(store_json_results_in_redis_and_s3)(
                 un_wrap_json_and_dump_values(redis_result_set),
-                redis_key=config.get_host_specific_key(
+                redis_key=config.get_tenant_specific_key(
                     "aws_config_cache.redis_key",
-                    host,
-                    f"{host}_AWSCONFIG_RESOURCE_CACHE",
+                    tenant,
+                    f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
                 ),
                 redis_data_type="hash",
                 s3_bucket=s3_bucket,
                 s3_key=s3_key,
-                host=host,
+                tenant=tenant,
             )
 
             dynamo.write_resource_cache_data(results)
     else:
         redis_result_set = async_to_sync(retrieve_json_data_from_redis_or_s3)(
-            s3_bucket=s3_bucket, s3_key=s3_key, host=host
+            s3_bucket=s3_bucket, s3_key=s3_key, tenant=tenant
         )
 
         async_to_sync(store_json_results_in_redis_and_s3)(
             redis_result_set,
-            redis_key=config.get_host_specific_key(
+            redis_key=config.get_tenant_specific_key(
                 "aws_config_cache.redis_key",
-                host,
-                f"{host}_AWSCONFIG_RESOURCE_CACHE",
+                tenant,
+                f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
             ),
             redis_data_type="hash",
-            host=host,
+            tenant=tenant,
         )
     log_data["message"] = "Successfully cached resources from AWS Config for account"
     log_data["number_resources_synced"] = len(redis_result_set)
@@ -2038,46 +2027,46 @@ def cache_resources_from_aws_config_for_account(account_id, host=None) -> dict:
 
 
 @app.task(soft_time_limit=3600)
-def cache_resources_from_aws_config_across_accounts_for_all_hosts() -> Dict:
+def cache_resources_from_aws_config_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
+    for tenant in tenants:
         cache_resources_from_aws_config_across_accounts.delay(
-            host=host, wait_for_subtask_completion=False
+            tenant=tenant, wait_for_subtask_completion=False
         )
     return log_data
 
 
 @app.task(soft_time_limit=3600)
 def cache_resources_from_aws_config_across_accounts(
-    host=None,
+    tenant=None,
     run_subtasks: bool = True,
     wait_for_subtask_completion: bool = True,
 ) -> Dict[str, Union[Union[str, int], Any]]:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    red = RedisHandler().redis_sync(host)
-    resource_redis_cache_key = config.get_host_specific_key(
+    red = RedisHandler().redis_sync(tenant)
+    resource_redis_cache_key = config.get_tenant_specific_key(
         "aws_config_cache.redis_key",
-        host,
-        f"{host}_AWSCONFIG_RESOURCE_CACHE",
+        tenant,
+        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
     )
     log_data = {
         "function": function,
         "resource_redis_cache_key": resource_redis_cache_key,
-        "host": host,
+        "tenant": tenant,
     }
 
-    if not config.get_host_specific_key(
+    if not config.get_tenant_specific_key(
         "celery.cache_resources_from_aws_config_across_accounts.enabled",
-        host,
+        tenant,
         True,
     ):
         log_data[
@@ -2088,21 +2077,21 @@ def cache_resources_from_aws_config_across_accounts(
 
     tasks = []
     # First, get list of accounts
-    accounts_d = async_to_sync(get_account_id_to_name_mapping)(host)
+    accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all tenant accounts
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment", host) in [
+        if config.get("_global_.environment", None) in [
             "prod",
             "dev",
         ]:
             tasks.append(
-                cache_resources_from_aws_config_for_account.s(account_id, host)
+                cache_resources_from_aws_config_for_account.s(account_id, tenant)
             )
-        elif account_id in config.get_host_specific_key(
-            "celery.test_account_ids", host, []
+        elif account_id in config.get_tenant_specific_key(
+            "celery.test_account_ids", tenant, []
         ):
             tasks.append(
-                cache_resources_from_aws_config_for_account.s(account_id, host)
+                cache_resources_from_aws_config_for_account.s(account_id, tenant)
             )
         else:
             log.debug(
@@ -2136,57 +2125,57 @@ def cache_resources_from_aws_config_across_accounts(
         # Cache all resource ARNs into a single file. Note: This runs synchronously with this task. This task triggers
         # resource collection on all accounts to happen asynchronously. That means when we store or delete data within
         # this task, we're always going to be caching the results from the previous task.
-        if config.region == config.get_host_specific_key(
-            "celery.active_region", host, config.region
+        if config.region == config.get_tenant_specific_key(
+            "celery.active_region", tenant, config.region
         ) or config.get("_global_.environment") in ["dev"]:
             # Refresh all resources after deletion of expired entries
             all_resources = red.hgetall(resource_redis_cache_key)
-            s3_bucket = config.get_host_specific_key(
-                "aws_config_cache_combined.s3.bucket", host
+            s3_bucket = config.get_tenant_specific_key(
+                "aws_config_cache_combined.s3.bucket", tenant
             )
-            s3_key = config.get_host_specific_key(
+            s3_key = config.get_tenant_specific_key(
                 "aws_config_cache_combined.s3.file",
-                host,
+                tenant,
                 "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
             )
             async_to_sync(store_json_results_in_redis_and_s3)(
                 all_resources,
                 s3_bucket=s3_bucket,
                 s3_key=s3_key,
-                host=host,
+                tenant=tenant,
             )
     stats.count(f"{function}.success")
     return log_data
 
 
 @app.task(soft_time_limit=300)
-def cache_cloud_account_mapping_for_all_hosts() -> Dict:
+def cache_cloud_account_mapping_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_cloud_account_mapping.apply_async((host,))
+    for tenant in tenants:
+        cache_cloud_account_mapping.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=300)
-def cache_cloud_account_mapping(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_cloud_account_mapping(tenant=None) -> Dict:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
 
-    account_mapping = async_to_sync(cache_cloud_accounts)(host)
+    account_mapping = async_to_sync(cache_cloud_accounts)(tenant)
 
     log_data = {
         "function": function,
         "num_accounts": len(account_mapping.accounts),
         "message": "Successfully cached cloud account mapping",
-        "host": host,
+        "tenant": tenant,
     }
 
     log.debug(log_data)
@@ -2194,40 +2183,40 @@ def cache_cloud_account_mapping(host=None) -> Dict:
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_credential_authorization_mapping_for_all_hosts() -> Dict:
+def cache_credential_authorization_mapping_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_credential_authorization_mapping.apply_async((host,))
+    for tenant in tenants:
+        cache_credential_authorization_mapping.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_credential_authorization_mapping(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_credential_authorization_mapping(tenant=None) -> Dict:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
-        "host": host,
+        "tenant": tenant,
     }
-    if is_task_already_running(function, [host]):
+    if is_task_already_running(function, [tenant]):
         log_data["message"] = "Skipping task: An identical task is currently running"
         log.debug(log_data)
         return log_data
 
     authorization_mapping = async_to_sync(
         generate_and_store_credential_authorization_mapping
-    )(host)
+    )(tenant)
 
     reverse_mapping = async_to_sync(generate_and_store_reverse_authorization_mapping)(
-        authorization_mapping, host
+        authorization_mapping, tenant
     )
 
     log_data["num_group_authorizations"] = len(authorization_mapping)
@@ -2242,64 +2231,64 @@ def cache_credential_authorization_mapping(host=None) -> Dict:
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_scps_across_organizations_for_all_hosts() -> Dict:
+def cache_scps_across_organizations_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_scps_across_organizations.apply_async((host,))
+    for tenant in tenants:
+        cache_scps_across_organizations.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_scps_across_organizations(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_scps_across_organizations(tenant=None) -> Dict:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    scps = async_to_sync(cache_all_scps)(host)
+    scps = async_to_sync(cache_all_scps)(tenant)
     log_data = {
         "function": function,
         "message": "Successfully cached service control policies",
         "num_organizations": len(scps),
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_organization_structure_for_all_hosts() -> Dict:
+def cache_organization_structure_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_organization_structure.apply_async((host,))
+    for tenant in tenants:
+        cache_organization_structure.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_organization_structure(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_organization_structure(tenant=None) -> Dict:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
 
     log_data = {
         "function": function,
-        "host": host,
+        "tenant": tenant,
     }
 
     try:
-        org_structure = async_to_sync(cache_org_structure)(host)
+        org_structure = async_to_sync(cache_org_structure)(tenant)
     except MissingConfigurationValue as e:
         log.debug(
             {
@@ -2320,119 +2309,119 @@ def cache_organization_structure(host=None) -> Dict:
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_resource_templates_task_for_all_hosts() -> Dict:
+def cache_resource_templates_task_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_resource_templates_task.apply_async((host,))
+    for tenant in tenants:
+        cache_resource_templates_task.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_resource_templates_task(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_resource_templates_task(tenant=None) -> Dict:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    templated_file_array = async_to_sync(cache_resource_templates)(host)
+    templated_file_array = async_to_sync(cache_resource_templates)(tenant)
     log_data = {
         "function": function,
         "message": "Successfully cached resource templates",
         "num_templated_files": len(templated_file_array.templated_resources),
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_terraform_resources_task(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_terraform_resources_task(tenant=None) -> Dict:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    terraform_resource_details = async_to_sync(cache_terraform_resources)(host)
+    terraform_resource_details = async_to_sync(cache_terraform_resources)(tenant)
     log_data = {
         "function": function,
         "message": "Successfully cached Terraform resources",
         "num_terraform_resources": len(terraform_resource_details.terraform_resources),
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_terraform_resources_task_for_all_hosts() -> Dict:
+def cache_terraform_resources_task_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_terraform_resources_task.apply_async((host,))
+    for tenant in tenants:
+        cache_terraform_resources_task.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_self_service_typeahead_task_for_all_hosts() -> Dict:
+def cache_self_service_typeahead_task_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_self_service_typeahead_task.apply_async((host,))
+    for tenant in tenants:
+        cache_self_service_typeahead_task.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def cache_self_service_typeahead_task(host=None) -> Dict:
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def cache_self_service_typeahead_task(tenant=None) -> Dict:
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    self_service_typeahead = async_to_sync(cache_self_service_typeahead)(host)
+    self_service_typeahead = async_to_sync(cache_self_service_typeahead)(tenant)
     log_data = {
         "function": function,
         "message": "Successfully cached IAM principals and templates for self service typeahead",
         "num_typeahead_entries": len(self_service_typeahead.typeahead_entries),
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def trigger_credential_mapping_refresh_from_role_changes_for_all_hosts() -> Dict:
+def trigger_credential_mapping_refresh_from_role_changes_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        if config.get_host_specific_key(
+    for tenant in tenants:
+        if config.get_tenant_specific_key(
             "celery.trigger_credential_mapping_refresh_from_role_changes.enabled",
-            host,
+            tenant,
         ):
-            trigger_credential_mapping_refresh_from_role_changes.apply_async((host,))
+            trigger_credential_mapping_refresh_from_role_changes.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
-def trigger_credential_mapping_refresh_from_role_changes(host=None):
+def trigger_credential_mapping_refresh_from_role_changes(tenant=None):
     """
     This task triggers a role cache refresh for any role that a change was detected for. This feature requires an
     Event Bridge rule monitoring Cloudtrail for your accounts for IAM role mutation.
@@ -2440,71 +2429,73 @@ def trigger_credential_mapping_refresh_from_role_changes(host=None):
     This task should run in all regions to force IAM roles to be refreshed in each region's cache on change.
     :return:
     """
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    if not config.get_host_specific_key(
+    if not config.get_tenant_specific_key(
         "celery.trigger_credential_mapping_refresh_from_role_changes.enabled",
-        host,
+        tenant,
     ):
         return {
             "function": function,
             "message": "Not running Celery task because it is not enabled.",
         }
-    roles_changed = detect_role_changes_and_update_cache(app, host)
+    roles_changed = detect_role_changes_and_update_cache(app, tenant)
     log_data = {
         "function": function,
         "message": "Successfully checked role changes",
-        "host": host,
+        "tenant": tenant,
         "num_roles_changed": len(roles_changed),
     }
     if roles_changed:
         # Trigger credential authorization mapping refresh. We don't want credential authorization mapping refreshes
         # running in parallel, so the cache_credential_authorization_mapping is protected to prevent parallel runs.
         # This task can run in parallel without negative impact.
-        cache_credential_authorization_mapping.apply_async((host,), countdown=30)
+        cache_credential_authorization_mapping.apply_async((tenant,), countdown=30)
     log.debug(log_data)
     return log_data
 
 
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
-def cache_cloudtrail_denies_for_all_hosts() -> Dict:
+def cache_cloudtrail_denies_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        if config.get_host_specific_key("celery.cache_cloudtrail_denies.enabled", host):
-            cache_cloudtrail_denies.apply_async((host,))
+    for tenant in tenants:
+        if config.get_tenant_specific_key(
+            "celery.cache_cloudtrail_denies.enabled", tenant
+        ):
+            cache_cloudtrail_denies.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
-def cache_cloudtrail_denies(host=None):
+def cache_cloudtrail_denies(tenant=None):
     """
     This task caches access denies reported by Cloudtrail. This feature requires an
     Event Bridge rule monitoring Cloudtrail for your accounts for access deny errors.
     """
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     if not (
         config.region
-        == config.get_host_specific_key("celery.active_region", host, config.region)
+        == config.get_tenant_specific_key("celery.active_region", tenant, config.region)
         or config.get("_global_.environment") in ["dev", "test"]
     ):
         return {
             "function": function,
             "message": "Not running Celery task in inactive region",
         }
-    events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(app, host)
+    events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(app, tenant)
     if events.get("new_events", 0) > 0:
         # Spawn off a task to cache errors by ARN for the UI
-        cache_cloudtrail_errors_by_arn.delay(host=host)
+        cache_cloudtrail_errors_by_arn.delay(tenant=tenant)
     log_data = {
         "function": function,
         "message": "Successfully cached cloudtrail denies",
@@ -2512,133 +2503,133 @@ def cache_cloudtrail_denies(host=None):
         "num_cloudtrail_denies": events.get("num_events", 0),
         # "New" CT messages that we don't already have cached in Dynamo DB. Not a "repeated" error
         "num_new_cloudtrail_denies": events.get("new_events", 0),
-        "host": host,
+        "tenant": tenant,
     }
     log.debug(log_data)
     return log_data
 
 
 @app.task(soft_time_limit=60, **default_retry_kwargs)
-def refresh_iam_role(role_arn, host=None):
+def refresh_iam_role(role_arn, tenant=None):
     """
     This task is called on demand to asynchronously refresh an AWS IAM role in Redis/DDB
     """
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
 
     account_id = role_arn.split(":")[4]
     async_to_sync(IAMRole.get)(
-        host, account_id, role_arn, force_refresh=True, run_sync=True
+        tenant, account_id, role_arn, force_refresh=True, run_sync=True
     )
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_notifications_for_all_hosts() -> Dict:
+def cache_notifications_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_notifications.apply_async((host,))
+    for tenant in tenants:
+        cache_notifications.apply_async((tenant,))
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_notifications(host=None) -> Dict[str, Any]:
+def cache_notifications(tenant=None) -> Dict[str, Any]:
     """
     This task caches notifications to be shown to end-users based on their identity or group membership.
     """
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    log_data = {"function": function, "host": host}
-    result = async_to_sync(cache_notifications_to_redis_s3)(host)
+    log_data = {"function": function, "tenant": tenant}
+    result = async_to_sync(cache_notifications_to_redis_s3)(tenant)
     log_data.update({**result, "message": "Successfully cached notifications"})
     log.debug(log_data)
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_groups_for_host_t(host: str = None) -> Dict:
-    if not host:
-        raise Exception("Host not provided")
+def cache_identity_groups_for_tenant_t(tenant: str = None) -> Dict:
+    if not tenant:
+        raise Exception("tenant not provided")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
-        "message": "Caching Identity Groups for Host",
-        "host": host,
+        "message": "Caching Identity Groups for tenant",
+        "tenant": tenant,
     }
     log.debug(log_data)
     # TODO: Finish this
-    async_to_sync(cache_identity_groups_for_host)(host)
+    async_to_sync(cache_identity_groups_for_tenant)(tenant)
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_users_for_host_t(host: str = None) -> Dict:
-    if not host:
-        raise Exception("Host not provided")
+def cache_identity_users_for_tenant_t(tenant: str = None) -> Dict:
+    if not tenant:
+        raise Exception("tenant not provided")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
-        "message": "Caching Identity Users for Host",
-        "host": host,
+        "message": "Caching Identity Users for tenant",
+        "tenant": tenant,
     }
     log.debug(log_data)
     # TODO: Finish this
-    async_to_sync(cache_identity_users_for_host)(host)
+    async_to_sync(cache_identity_users_for_tenant)(tenant)
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identities_for_all_hosts() -> Dict:
+def cache_identities_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_identity_groups_for_host_t.apply_async((host,))
-        cache_identity_users_for_host_t.apply_async((host,))
-        # TODO: Cache identity users for all hosts
+    for tenant in tenants:
+        cache_identity_groups_for_tenant_t.apply_async((tenant,))
+        cache_identity_users_for_tenant_t.apply_async((tenant,))
+        # TODO: Cache identity users for all tenants
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_requests_for_host_t(host: str = None) -> Dict:
-    if not host:
-        raise Exception("Host not provided")
+def cache_identity_requests_for_tenant_t(tenant: str = None) -> Dict:
+    if not tenant:
+        raise Exception("tenant not provided")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
-        "message": "Caching Identity Requests for Host",
-        "host": host,
+        "message": "Caching Identity Requests for tenant",
+        "tenant": tenant,
     }
     log.debug(log_data)
     # Fetch from Dynamo. Write to Redis and S3
-    async_to_sync(cache_identity_requests_for_host)(host)
+    async_to_sync(cache_identity_requests_for_tenant)(tenant)
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_identity_requests_for_all_hosts() -> Dict:
+def cache_identity_requests_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    hosts = get_all_hosts()
+    tenants = get_all_tenants()
     log_data = {
         "function": function,
         "message": "Spawning tasks",
-        "num_hosts": len(hosts),
+        "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for host in hosts:
-        cache_identity_requests_for_host_t.apply_async((host,))
+    for tenant in tenants:
+        cache_identity_requests_for_tenant_t.apply_async((tenant,))
     return log_data
 
 
@@ -2656,10 +2647,10 @@ def handle_tenant_aws_integration_queue() -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def get_current_celery_tasks(host: str = None, status: str = None) -> List[Any]:
-    # TODO: We may need to build a custom DynamoDB backend to segment tasks by host and maintain task status
-    if not host:
-        raise Exception("Host is required")
+def get_current_celery_tasks(tenant: str = None, status: str = None) -> List[Any]:
+    # TODO: We may need to build a custom DynamoDB backend to segment tasks by tenant and maintain task status
+    if not tenant:
+        raise Exception("tenant is required")
     if not status:
         raise Exception("Status is required")
     inspect = app.control.inspect()
@@ -2680,27 +2671,27 @@ def get_current_celery_tasks(host: str = None, status: str = None) -> List[Any]:
     elif status == "revoked":
         tasks = inspect.revoked()
 
-    # Filter tasks to only include the ones for the requested host
+    # Filter tasks to only include the ones for the requested tenant
     filtered_tasks = []
     for k, v in tasks.items():
         for task in v:
-            if task["kwargs"].get("host") != host:
+            if task["kwargs"].get("tenant") != tenant:
                 continue
             filtered_tasks.append(task)
     return filtered_tasks
 
 
 @app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-def handle_expired_policies(self, host: str):
-    if not host:
-        raise Exception("`host` must be passed to this task.")
+def handle_expired_policies(self, tenant: str):
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
 
-    async_to_sync(remove_expired_host_requests)(host)
+    async_to_sync(remove_expired_tenant_requests)(tenant)
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def handle_expired_policies_for_all_hosts() -> Dict:
-    return async_to_sync(remove_expired_requests_for_hosts)(get_all_hosts())
+def handle_expired_policies_for_all_tenants() -> Dict:
+    return async_to_sync(remove_expired_requests_for_tenants)(get_all_tenants())
 
 
 schedule_30_minute = timedelta(seconds=1800)
@@ -2724,13 +2715,13 @@ if config.get("_global_.development", False) and config.get(
     schedule_5_minutes = dev_schedule
 
 schedule = {
-    "cache_iam_resources_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_hosts",
+    "cache_iam_resources_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
-    "cache_policies_table_details_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_hosts",
+    "cache_policies_table_details_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
@@ -2741,88 +2732,88 @@ schedule = {
     #     "options": {"expires": 60},
     #     "schedule": schedule_minute,
     # },
-    "cache_managed_policies_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_managed_policies_across_accounts_for_all_hosts",
+    "cache_managed_policies_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_managed_policies_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
-    "cache_s3_buckets_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_s3_buckets_across_accounts_for_all_hosts",
+    "cache_s3_buckets_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_s3_buckets_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
-    "cache_sqs_queues_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_sqs_queues_across_accounts_for_all_hosts",
+    "cache_sqs_queues_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_sqs_queues_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
-    "cache_sns_topics_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_sns_topics_across_accounts_for_all_hosts",
+    "cache_sns_topics_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_sns_topics_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_45_minute,
     },
-    "cache_cloudtrail_errors_by_arn_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_errors_by_arn_for_all_hosts",
+    "cache_cloudtrail_errors_by_arn_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_errors_by_arn_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "cache_resources_from_aws_config_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_hosts",
+    "cache_resources_from_aws_config_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "cache_cloud_account_mapping_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_hosts",
+    "cache_cloud_account_mapping_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "cache_credential_authorization_mapping_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping_for_all_hosts",
+    "cache_credential_authorization_mapping_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_5_minutes,
     },
-    "cache_scps_across_organizations_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_scps_across_organizations_for_all_hosts",
+    "cache_scps_across_organizations_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_scps_across_organizations_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "cache_organization_structure_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_organization_structure_for_all_hosts",
+    "cache_organization_structure_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_organization_structure_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "cache_resource_templates_task_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_resource_templates_task_for_all_hosts",
+    "cache_resource_templates_task_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_resource_templates_task_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
-    "cache_self_service_typeahead_task_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task_for_all_hosts",
+    "cache_self_service_typeahead_task_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_30_minute,
     },
-    "trigger_credential_mapping_refresh_from_role_changes_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_hosts",
+    "trigger_credential_mapping_refresh_from_role_changes_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
-    "cache_cloudtrail_denies_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_hosts",
+    "cache_cloudtrail_denies_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
-    "cache_access_advior_across_accounts_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_access_advior_across_accounts_for_all_hosts",
+    "cache_access_advior_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_access_advior_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },
-    # "cache_identities_for_all_hosts": {
-    #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_hosts",
+    # "cache_identities_for_all_tenants": {
+    #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_tenants",
     #     "options": {"expires": 180},
     #     "schedule": schedule_30_minute,
     # },
-    # "cache_identity_group_requests_for_all_hosts": {
-    #     "task": "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_hosts",
+    # "cache_identity_group_requests_for_all_tenants": {
+    #     "task": "common.celery_tasks.celery_tasks.cache_identity_group_requests_for_all_tenants",
     #     "options": {"expires": 180},
     #     "schedule": schedule_30_minute,
     # },
@@ -2831,13 +2822,13 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
-    "cache_terraform_resources_task_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_hosts",
+    "cache_terraform_resources_task_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "handle_expired_policies_for_all_hosts": {
-        "task": "common.celery_tasks.celery_tasks.handle_expired_policies_for_all_hosts",
+    "handle_expired_policies_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.handle_expired_policies_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },

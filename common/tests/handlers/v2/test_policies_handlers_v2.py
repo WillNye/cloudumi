@@ -6,8 +6,7 @@ import pytest
 from mock import patch
 
 import common.lib.noq_json as json
-from util.tests.fixtures.fixtures import create_future
-from util.tests.fixtures.globals import host
+from util.tests.fixtures.globals import tenant
 from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -29,11 +28,11 @@ class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
         from common.config import config
 
         headers = {
-            config.get_host_specific_key(
-                "auth.user_header_name", host
+            config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@example.com",
-            config.get_host_specific_key(
-                "auth.groups_header_name", host
+            config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
         body = json.dumps({"filters": {}})
@@ -53,14 +52,14 @@ class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
     def test_policies_check_api(self, mock_access_analyzer_validate_policy):
         from common.config import config
 
-        mock_access_analyzer_validate_policy.return_value = create_future([])
+        mock_access_analyzer_validate_policy.return_value = []
 
         headers = {
-            config.get_host_specific_key(
-                "auth.user_header_name", host
+            config.get_tenant_specific_key(
+                "auth.user_header_name", tenant
             ): "user@example.com",
-            config.get_host_specific_key(
-                "auth.groups_header_name", host
+            config.get_tenant_specific_key(
+                "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
             "Content-type": "application/json",
         }

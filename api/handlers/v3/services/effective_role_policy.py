@@ -19,11 +19,11 @@ class EffectiveUnusedRolePolicyHandler(BaseHandler):
         :param _account_id: AWS account ID
         :param _role_name: IAM role name
         """
-        host = self.ctx.host
+        tenant = self.ctx.tenant
 
         try:
             effective_identity_permissions = await calculate_unused_policy_for_identity(
-                host,
+                tenant,
                 _account_id,
                 _role_name,
                 identity_type="role",

@@ -29,7 +29,7 @@ class UserStatus(Enum):
 class User(BaseModel):
     idp_name: str
     username: str
-    host: str
+    tenant: str
     user_id: Optional[str]
     domain: Optional[str]
     fullname: Optional[str]
@@ -88,12 +88,12 @@ class GroupAttributes(BaseModel):
 
 
 class Group(BaseModel):
-    host: str = Field(..., description="Host/Tenant associated with the group")
+    tenant: str = Field(..., description="Tenant associated with the group")
     name: str = Field(..., description="Name of the group")
     owner: Optional[str] = Field(None, description="Owner of the group")
     idp_name: str = Field(
         ...,
-        description="Name of the host's identity provider that's associated with the group",
+        description="Name of the tenant's identity provider that's associated with the group",
     )
     group_id: Optional[str] = Field(
         ..., description="Unique Group ID for the group. Usually it's {idp-name}-{name}"
@@ -136,7 +136,7 @@ class LastUpdated(BaseModel):
 class GroupRequest(BaseModel):
     request_id: str
     request_url: str
-    host: str
+    tenant: str
     users: List[User]
     groups: List[Group]
     requester: User

@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from botocore.exceptions import ClientError
 
-from common.aws.iam.utils import _cloudaux_to_aws, get_host_iam_conn
+from common.aws.iam.utils import _cloudaux_to_aws, get_tenant_iam_conn
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.asyncio import aio_wrapper
@@ -16,9 +16,9 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger(__name__)
 
 
-def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, Any]]:
-    client = get_host_iam_conn(
-        host, account_id, "consoleme_get_iam_user", read_only=True
+def _get_iam_user_sync(account_id, user_name, conn, tenant) -> Optional[Dict[str, Any]]:
+    client = get_tenant_iam_conn(
+        tenant, account_id, "consoleme_get_iam_user", read_only=True
     )
     user = client.get_user(UserName=user_name)["User"]
     user["ManagedPolicies"] = get_user_managed_policies({"UserName": user_name}, **conn)
@@ -29,11 +29,15 @@ def _get_iam_user_sync(account_id, user_name, conn, host) -> Optional[Dict[str, 
 
 
 async def _get_iam_user_async(
-    account_id, user_name, conn, host
+    account_id, user_name, conn, tenant
 ) -> Optional[Dict[str, Any]]:
     tasks = []
     client = await aio_wrapper(
-        get_host_iam_conn, host, account_id, "consoleme_get_iam_user", read_only=True
+        get_tenant_iam_conn,
+        tenant,
+        account_id,
+        "consoleme_get_iam_user",
+        read_only=True,
     )
     user_details = asyncio.ensure_future(
         aio_wrapper(client.get_user, UserName=user_name)
@@ -48,7 +52,7 @@ async def _get_iam_user_async(
     for t in all_tasks:
         tasks.append(
             asyncio.ensure_future(
-                aio_wrapper(t, {"UserName": user_name}, host=host, **conn)
+                aio_wrapper(t, {"UserName": user_name}, tenant=tenant, **conn)
             )
         )
 
@@ -72,7 +76,7 @@ async def _get_iam_user_async(
 async def fetch_iam_user(
     account_id: str,
     user_arn: str,
-    host: str,
+    tenant: str,
     run_sync=False,
 ) -> Optional[Dict[str, Any]]:
     """Fetch the IAM User from AWS in threadpool if run_sync=False, otherwise synchronously.
@@ -85,7 +89,7 @@ async def fetch_iam_user(
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "user_arn": user_arn,
         "account_id": account_id,
-        "host": host,
+        "tenant": tenant,
     }
 
     try:
@@ -93,18 +97,18 @@ async def fetch_iam_user(
         conn = {
             "account_number": account_id,
             "assume_role": ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", host)
+            .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
             "region": config.region,
-            "client_kwargs": config.get_host_specific_key(
-                "boto3.client_kwargs", host, {}
+            "client_kwargs": config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
             ),
         }
         if run_sync:
-            user = _get_iam_user_sync(account_id, user_name, conn, host)
+            user = _get_iam_user_sync(account_id, user_name, conn, tenant)
         else:
-            user = await _get_iam_user_async(account_id, user_name, conn, host)
+            user = await _get_iam_user_async(account_id, user_name, conn, tenant)
 
     except ClientError as ce:
         if ce.response["Error"]["Code"] == "NoSuchEntity":
@@ -116,7 +120,7 @@ async def fetch_iam_user(
                 tags={
                     "account_id": account_id,
                     "user_arn": user_arn,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             return None
@@ -129,7 +133,7 @@ async def fetch_iam_user(
                 tags={
                     "account_id": account_id,
                     "user_arn": user_arn,
-                    "host": host,
+                    "tenant": tenant,
                 },
             )
             raise
