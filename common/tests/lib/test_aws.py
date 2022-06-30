@@ -20,7 +20,6 @@ from common.models import (
     Status,
     UserModel,
 )
-from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import tenant
 
 ROLE = {
@@ -55,7 +54,7 @@ class TestAwsLib(TestCase):
         from common.lib.aws.utils import get_resource_account
 
         loop = asyncio.new_event_loop()
-        mock_aws_config_resources_redis.return_value = create_future(None)
+        mock_aws_config_resources_redis.return_value = None
         test_cases = [
             {
                 "arn": "arn:aws:s3:::nope",
@@ -85,8 +84,8 @@ class TestAwsLib(TestCase):
             "description": "internal S3 bucket",
         }
         aws_config_resources_test_case_redis_result = {"accountId": "123456789012"}
-        mock_aws_config_resources_redis.return_value = create_future(
-            json.dumps(aws_config_resources_test_case_redis_result)
+        mock_aws_config_resources_redis.return_value = json.dumps(
+            aws_config_resources_test_case_redis_result
         )
         result = async_to_sync(get_resource_account)(
             aws_config_resources_test_case["arn"], tenant

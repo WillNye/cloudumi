@@ -1,4 +1,3 @@
-import os
 import sys
 import threading
 import time
@@ -7,21 +6,11 @@ from typing import Any, Optional
 import boto3
 import redis
 from redis.client import Redis
-from rediscluster import RedisCluster
-from rediscluster.exceptions import ClusterDownError
 
 import common.lib.noq_json as json
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.plugins import get_plugin_by_name
-
-if config.get("_global_.redis.use_redislite"):
-    import tempfile
-
-    import redislite
-
-    if not config.get("_global_.redis.redis_lite.db_path"):
-        default_redislite_db_path = tempfile.NamedTemporaryFile().name
 
 region = config.region
 
@@ -57,7 +46,7 @@ def raise_if_key_doesnt_start_with_prefix(key, prefix):
 
 
 # ToDo - Everything in ConsoleMeRedis needs to lock out unauthorized tenants
-class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
+class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
     """
     ConsoleMeRedis is a simple wrapper around redis.StrictRedis. It was created to allow Redis to be optional.
     If Redis settings are not defined in ConsoleMe's configuration, we "disable" redis. If Redis is disabled, calls to
@@ -84,7 +73,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
 
         try:
             result = super(ConsoleMeRedis, self).get(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -126,7 +118,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).set(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -166,7 +161,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         # We do not currently support caching data in S3 with expiration (SETEX)
         try:
             result = super(ConsoleMeRedis, self).setex(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -189,7 +187,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hmset(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -233,7 +234,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hset(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -281,7 +285,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hget(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -326,7 +333,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hmget(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -349,7 +359,10 @@ class ConsoleMeRedis(RedisCluster if cluster_mode else redis.StrictRedis):
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
         try:
             result = super(ConsoleMeRedis, self).hgetall(*args, **kwargs)
-        except (redis.exceptions.ConnectionError, ClusterDownError) as e:
+        except (
+            redis.exceptions.ConnectionError,
+            redis.exceptions.ClusterDownError,
+        ) as e:
             function = (
                 f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
             )
@@ -407,13 +420,6 @@ class RedisHandler:
             self.enabled = False
 
     async def redis(self, tenant, db: int = 0) -> Redis:
-        if config.get("_global_.redis.use_redislite"):
-            REDIS_DB_PATH = os.path.join(
-                config.get(
-                    "_global_.redis.redislite.db_path", default_redislite_db_path
-                )
-            )
-            return redislite.StrictRedis(REDIS_DB_PATH, decode_responses=True)
         if cluster_mode:
             self.red = await aio_wrapper(
                 ConsoleMeRedis,
@@ -435,14 +441,6 @@ class RedisHandler:
         return self.red
 
     def redis_sync(self, tenant, db: int = 0) -> Redis:
-        if config.get("_global_.redis.use_redislite"):
-            REDIS_DB_PATH = os.path.join(
-                config.get(
-                    "_global_.redis.redislite.db_path", default_redislite_db_path
-                )
-            )
-            # Warning: We do not restrict Redis keys by tenant when using RedisLite
-            return redislite.StrictRedis(REDIS_DB_PATH, decode_responses=True)
         if cluster_mode:
             self.red = ConsoleMeRedis(
                 startup_nodes=cluster_mode_nodes,
@@ -496,7 +494,7 @@ def redis_get_sync(key: str, tenant: str, default: None = None) -> Optional[str]
     red = RedisHandler().redis_sync(tenant)
     try:
         v = red.get(key)
-    except (redis.exceptions.ConnectionError, ClusterDownError):
+    except (redis.exceptions.ConnectionError, redis.exceptions.ClusterDownError):
         v = None
     if not v:
         return default

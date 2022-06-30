@@ -160,24 +160,6 @@ class Configuration(metaclass=Singleton):
         # Main thread exited, signal to other threads
         main_exit_flag.set()
 
-    def purge_redislite_cache(self):
-        """
-        Purges redislite cache in primary DB periodically. This will force a cache refresh, and it is
-        convenient for cases where you cannot securely run shared Redis (ie: AWS AppRunner)
-        """
-        if not self.get("redis.use_redislite"):
-            return
-        from common.lib.redis import RedisHandler
-
-        red = RedisHandler().redis_sync("_global_")
-        while threading.main_thread().is_alive():
-            red.flushdb()
-            # Wait till main exit flag is set OR a fixed timeout
-            if main_exit_flag.wait(
-                timeout=self.get("redis.purge_redislite_cache_interval", 1800)
-            ):
-                break
-
     def merge_extended_paths(self, extends, dir_path):
         for s in extends:
             extend_config = {}
@@ -304,10 +286,6 @@ class Configuration(metaclass=Singleton):
         # could cause duplicate log entries.
         if allow_start_background_threads:
             Timer(0, self.__set_flag_on_main_exit, ()).start()
-
-        if allow_start_background_threads and self.get("_global_.redis.use_redislite"):
-            t = Timer(1, self.purge_redislite_cache, ())
-            t.start()
 
     def get(
         self, key: str, default: Optional[Union[List[str], int, bool, str, Dict]] = None
@@ -532,8 +510,6 @@ class Configuration(metaclass=Singleton):
             "spectator.HttpClient": "WARNING",
             "spectator.Registry": "WARNING",
             "urllib3": "ERROR",
-            "redislite.client": "WARNING",
-            "redislite.configuration": "WARNING",
             "rediscluster.nodemanager": "WARNING",
             "rediscluster.connection": "WARNING",
             "rediscluster.client": "WARNING",

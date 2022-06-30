@@ -27,7 +27,6 @@ from common.models import (
     Status,
     UserModel,
 )
-from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import tenant
 
 test_role_name = "TestRequestsLibV2RoleName"
@@ -2203,8 +2202,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             input_body
         )
         last_updated = extended_request.timestamp
-        mock_dynamo_write.return_value = create_future(None)
-        mock_send_comment.return_value = create_future(None)
+        mock_dynamo_write.return_value = None
+        mock_send_comment.return_value = None
         # Trying to set an empty comment
         with pytest.raises(ValidationError) as e:
             await parse_and_apply_policy_request_modification(
@@ -2324,7 +2323,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             input_body
         )
         last_updated = extended_request.timestamp
-        mock_dynamo_write.return_value = create_future(None)
+        mock_dynamo_write.return_value = None
 
         # Trying to update while not being authorized
         from common.exceptions.exceptions import Unauthorized
@@ -2418,10 +2417,10 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             input_body
         )
         last_updated = extended_request.timestamp
-        mock_dynamo_write.return_value = create_future(None)
-        mock_populate_old_policies.return_value = create_future(extended_request)
-        # mock_fetch_iam_role.return_value = create_future(None)
-        can_admin_policies.return_value = create_future(False)
+        mock_dynamo_write.return_value = None
+        mock_populate_old_policies.return_value = extended_request
+        # mock_fetch_iam_role.return_value = None
+        can_admin_policies.return_value = False
         client = boto3.client(
             "iam",
             region_name="us-east-1",
@@ -2440,7 +2439,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             )
             self.assertIn("Unauthorized", str(e))
 
-        can_admin_policies.return_value = create_future(True)
+        can_admin_policies.return_value = True
         # Trying to apply a non-existent change
 
         policy_request_model.modification_model.change_id = (
@@ -2514,8 +2513,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             input_body
         )
         last_updated = extended_request.timestamp
-        mock_dynamo_write.return_value = create_future(None)
-        mock_write_policy.return_value = create_future(None)
+        mock_dynamo_write.return_value = None
+        mock_write_policy.return_value = None
         # Trying to cancel while not being authorized
         with pytest.raises(Unauthorized) as e:
             await parse_and_apply_policy_request_modification(
@@ -2594,8 +2593,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             input_body
         )
         last_updated = int(extended_request.timestamp.timestamp())
-        mock_dynamo_write.return_value = create_future(None)
-        mock_send_email.return_value = create_future(None)
+        mock_dynamo_write.return_value = None
+        mock_send_email.return_value = None
 
         # It fails when I try to add the patch as a decorator. Possibly due to the import in this method.
         with patch("smtplib.SMTP_SSL", autospec=True):
@@ -2657,7 +2656,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             policy_request_model.modification_model.command = (
                 Command.move_back_to_pending
             )
-            mock_move_back_to_pending.return_value = create_future(False)
+            mock_move_back_to_pending.return_value = False
             # Trying to move back to pending request - not authorized
             with pytest.raises(Unauthorized) as e:
                 await parse_and_apply_policy_request_modification(
@@ -2670,7 +2669,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 )
                 self.assertIn("Cannot move this request back to pending", str(e))
 
-            mock_move_back_to_pending.return_value = create_future(True)
+            mock_move_back_to_pending.return_value = True
             # Trying to move back to pending request - authorized
             response = await parse_and_apply_policy_request_modification(
                 extended_request,
@@ -2792,12 +2791,12 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             input_body
         )
         last_updated = extended_request.timestamp
-        mock_dynamo_write.return_value = create_future(None)
-        mock_populate_old_policies.return_value = create_future(extended_request)
-        mock_fetch_iam_role.return_value = create_future(None)
-        mock_can_update_cancel_requests_v2.return_value = create_future(False)
-        can_admin_policies.return_value = create_future(False)
-        mock_send_email.return_value = create_future(None)
+        mock_dynamo_write.return_value = None
+        mock_populate_old_policies.return_value = extended_request
+        mock_fetch_iam_role.return_value = None
+        mock_can_update_cancel_requests_v2.return_value = False
+        can_admin_policies.return_value = False
+        mock_send_email.return_value = None
         client = boto3.client(
             "iam",
             region_name="us-east-1",
@@ -2816,8 +2815,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             )
             self.assertIn("Unauthorized", str(e))
 
-        can_admin_policies.return_value = create_future(True)
-        mock_can_update_cancel_requests_v2.return_value = create_future(True)
+        can_admin_policies.return_value = True
+        mock_can_update_cancel_requests_v2.return_value = True
 
         # Authorized person updating the change
         response = await parse_and_apply_policy_request_modification(

@@ -1,6 +1,6 @@
 # TODO: @ccastrapel: I don't think we need this anymore
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.9.11
+FROM python:3.10
 RUN mkdir -p /apps
 RUN apt clean
 RUN apt update
@@ -17,9 +17,9 @@ RUN systemctl enable logstash
 RUN systemctl start logstash
 
 # Metricsbeat (System metrics)
-RUN curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb
-RUN dpkg -i metricbeat-7.14.2-amd64.deb
-RUN rm -rf metricbeat-7.14.2-amd64.deb
+# RUN curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb
+# RUN dpkg -i metricbeat-7.14.2-amd64.deb
+# RUN rm -rf metricbeat-7.14.2-amd64.deb
 
 # TODO: Filebeat (elasticsearch to ingest system logs.)
 #RUN curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.14.2-amd64.deb

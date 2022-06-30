@@ -24,11 +24,11 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: "^1.17.7"
-      # setup-python won't work with self-hosted runners. Python3.9 should be pre-installed
-      #      - name: Set up Python 3.9
+      # setup-python won't work with self-hosted runners. Python3.10 should be pre-installed
+      #      - name: Set up Python 3.10
       #        uses: actions/setup-python@v1
       #        with:
-      #          python-version: 3.9
+      #          python-version: 3.10
       - name: Install dependencies
         run: |
           set -x
@@ -45,7 +45,7 @@ jobs:
             libssl-dev \
             libcurl4-openssl-dev \
             software-properties-common \
-            python3.9-dev \
+            python3.10-dev \
             build-essential \
             libxml2-dev \
             libxmlsec1-dev \
@@ -56,12 +56,12 @@ jobs:
             unzip \
             gnupg \
             python3-pip \
-            python3.9-venv \
+            python3.10-venv \
             terraform \
             clang \
             nodejs -y
           mkdir -p /tmp/env
-          python3.9 -m venv /tmp/env
+          python3.10 -m venv /tmp/env
           source /tmp/env/bin/activate
           pip install setuptools_rust numpy wheel
           pip install pre-commit

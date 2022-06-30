@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta
 
 import pytz
-from onelogin.saml2.utils import OneLogin_Saml2_Utils
+
+try:
+    from onelogin.saml2.utils import OneLogin_Saml2_Utils
+except ImportError:
+    pass
 
 from common.config import config
 from common.handlers.base import BaseHandler
