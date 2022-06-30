@@ -1014,7 +1014,9 @@ def cache_iam_resources_for_account(
         iam_roles = all_iam_resources["RoleDetailList"]
         iam_policies = all_iam_resources["Policies"]
 
-        async_to_sync(IAMRole.sync_account_roles)(tenant, account_id, iam_roles)
+        cache_refresh_required = async_to_sync(IAMRole.sync_account_roles)(
+            tenant, account_id, iam_roles
+        )
 
         last_updated: int = int((datetime.utcnow()).timestamp())
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
@@ -1045,6 +1047,11 @@ def cache_iam_resources_for_account(
             async_to_sync(store_iam_managed_policies_for_tenant)(
                 tenant, iam_policies, account_id
             )
+
+        if cache_refresh_required:
+            cache_credential_authorization_mapping.apply_async((tenant,))
+            cache_self_service_typeahead_task.apply_async((tenant,))
+            cache_policies_table_details.apply_async((tenant,))
 
     stats.count(
         "cache_iam_resources_for_account.success",
@@ -1156,7 +1163,6 @@ def cache_iam_resources_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
 def cache_iam_resources_across_accounts(
     tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict:
