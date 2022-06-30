@@ -1163,6 +1163,7 @@ def cache_iam_resources_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
+@app.task(soft_time_limit=3600)
 def cache_iam_resources_across_accounts(
     tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict:
