@@ -999,7 +999,7 @@ def cache_iam_resources_for_account(
         iam_roles = all_iam_resources["RoleDetailList"]
         iam_policies = all_iam_resources["Policies"]
 
-        log["cache_refresh_required"] = async_to_sync(IAMRole.sync_account_roles)(
+        log_data["cache_refresh_required"] = async_to_sync(IAMRole.sync_account_roles)(
             tenant, account_id, iam_roles
         )
 
