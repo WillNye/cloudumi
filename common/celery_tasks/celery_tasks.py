@@ -999,7 +999,9 @@ def cache_iam_resources_for_account(
         iam_roles = all_iam_resources["RoleDetailList"]
         iam_policies = all_iam_resources["Policies"]
 
-        async_to_sync(IAMRole.sync_account_roles)(tenant, account_id, iam_roles)
+        log_data["cache_refresh_required"] = async_to_sync(IAMRole.sync_account_roles)(
+            tenant, account_id, iam_roles
+        )
 
         last_updated: int = int((datetime.utcnow()).timestamp())
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
@@ -2105,7 +2107,14 @@ def cache_resources_from_aws_config_across_accounts(
             results = group(*tasks).apply_async()
             if wait_for_subtask_completion:
                 # results.join() forces function to wait until all tasks are complete
-                results.join(disable_sync_subtasks=False)
+                results_list = results.join(disable_sync_subtasks=False)
+                if any(
+                    result.get("cache_refresh_required", False)
+                    for result in results_list
+                ):
+                    cache_credential_authorization_mapping.apply_async((tenant,))
+                    cache_self_service_typeahead_task.apply_async((tenant,))
+                    cache_policies_table_details.apply_async((tenant,))
 
     # Delete roles in Redis cache with expired TTL
     all_resources = red.hgetall(resource_redis_cache_key)
