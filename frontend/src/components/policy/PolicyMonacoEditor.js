@@ -109,6 +109,7 @@ export const PolicyMonacoEditor = ({
   updatePolicy,
   deletePolicy,
   enableLinting = true,
+  isSaveButtonDisabled = false,
 }) => {
   const { user, sendRequestCommon } = useAuth()
   const { setModalWithAdminAutoApprove, setShowExpirationDate } =
@@ -251,7 +252,8 @@ export const PolicyMonacoEditor = ({
               disabled={
                 error ||
                 !policyDocument ||
-                policyDocumentOriginal === policyDocument
+                policyDocumentOriginal === policyDocument ||
+                isSaveButtonDisabled
               }
             />
             <Button.Or />
@@ -288,7 +290,11 @@ export const PolicyMonacoEditor = ({
   )
 }
 
-export const NewPolicyMonacoEditor = ({ addPolicy, setIsNewPolicy }) => {
+export const NewPolicyMonacoEditor = ({
+  addPolicy,
+  setIsNewPolicy,
+  isSaveButtonDisabled = false,
+}) => {
   const { user, sendRequestCommon } = useAuth()
   const { setModalWithAdminAutoApprove, setShowExpirationDate } =
     usePolicyContext()
@@ -462,7 +468,12 @@ export const NewPolicyMonacoEditor = ({ addPolicy, setIsNewPolicy }) => {
               icon='save'
               content='Save'
               onClick={handlePolicyAdminSave}
-              disabled={error || policyNameError || !policyDocument}
+              disabled={
+                error ||
+                policyNameError ||
+                !policyDocument ||
+                isSaveButtonDisabled
+              }
             />
             <Button.Or />
           </>
