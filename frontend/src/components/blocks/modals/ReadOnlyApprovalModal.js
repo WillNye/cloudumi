@@ -21,7 +21,7 @@ const ReadOnlyApprovalModal = ({
       const data = {
         aws_access_key_id: accessKeyId,
         aws_secret_access_key: secretAccessKey,
-        aws_session_token: sessionToken,
+        aws_session_token: sessionToken || null,
       }
       setIsApprovalModalOpen(false)
       onSubmitChange(data)
@@ -65,7 +65,6 @@ const ReadOnlyApprovalModal = ({
             />
             <Form.Input
               fuild
-              required
               placeholder='Session Token'
               value={sessionToken}
               onChange={(event) => setSessionToken(event.target.value)}
