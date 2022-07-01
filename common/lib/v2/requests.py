@@ -99,7 +99,10 @@ from common.models import (
     UserModel,
 )
 from common.user_request.models import IAMRequest
-from common.user_request.utils import update_extended_request_expiration_date
+from common.user_request.utils import (
+    update_extended_request_expiration_date,
+    validate_custom_credentials,
+)
 
 log = config.get_logger()
 
@@ -2750,6 +2753,10 @@ async def parse_and_apply_policy_request_modification(
     }
 
     log.debug(log_data)
+    # Validate cloud credentials
+    await validate_custom_credentials(
+        tenant, extended_request, policy_request_model, cloud_credentials
+    )
 
     response = PolicyRequestModificationResponseModel(errors=0, action_results=[])
     request_changes = policy_request_model.modification_model
