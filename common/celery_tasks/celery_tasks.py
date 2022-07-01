@@ -63,10 +63,12 @@ from common.lib.aws.sns import list_topics
 from common.lib.aws.typeahead_cache import cache_aws_resource_details
 from common.lib.aws.utils import (
     allowed_to_sync_role,
+    autodiscover_aws_org_accounts,
     cache_all_scps,
     cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
+    onboard_new_accounts_from_orgs,
     remove_expired_requests_for_tenants,
     remove_expired_tenant_requests,
 )
@@ -952,9 +954,7 @@ def cache_iam_resources_for_account(
             client_kwargs=config.get_tenant_specific_key(
                 "boto3.client_kwargs", tenant, {}
             ),
-            session_name=sanitize_session_name(
-                "consoleme_cache_iam_resources_for_account"
-            ),
+            session_name=sanitize_session_name("noq_cache_iam_resources_for_account"),
             read_only=True,
         )
         paginator = client.get_paginator("get_account_authorization_details")
@@ -2287,6 +2287,20 @@ def cache_organization_structure(tenant=None) -> Dict:
         "tenant": tenant,
     }
 
+    # Loop through all accounts and add organizations if enabled
+    if config.get_tenant_specific_key(
+        "cache_organization_structure.autodiscover_aws_org_accounts", tenant, True
+    ):
+        orgs_accounts_added = async_to_sync(autodiscover_aws_org_accounts)(tenant)
+        log_data["orgs_accounts_added"] = list(orgs_accounts_added)
+    # Onboard spoke accounts if enabled for org
+    log_data["accounts_onboarded"] = async_to_sync(onboard_new_accounts_from_orgs)(
+        tenant
+    )
+    # TODO: Add to log data
+    # Sync account names if enabled in org
+    # account_names_synced = async_to_sync(sync_account_names_from_orgs)(tenant)
+
     try:
         org_structure = async_to_sync(cache_org_structure)(tenant)
     except MissingConfigurationValue as e:
@@ -2306,6 +2320,9 @@ def cache_organization_structure(tenant=None) -> Dict:
         }
     )
     return log_data
+
+
+cache_organization_structure("localhost")
 
 
 @app.task(soft_time_limit=1800, **default_retry_kwargs)

@@ -26,6 +26,7 @@ from common.exceptions.exceptions import (
     MissingConfigurationValue,
 )
 from common.lib import noq_json as ujson
+from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.account_indexers.aws_organizations import (
     retrieve_org_structure,
     retrieve_scps_for_organization,
@@ -997,6 +998,150 @@ async def get_org_structure(tenant, force_sync=False) -> Dict[str, Any]:
     if force_sync or not org_structure:
         org_structure = await cache_org_structure(tenant)
     return org_structure
+
+
+async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
+    org_accounts = ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
+    for org_account in org_accounts:
+        if not org_account.automatically_onboard_accounts or not org_account.role_names:
+            continue
+
+        spoke_role_name = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", tenant)
+            .with_query({"account_id": org_account.account_id})
+            .first.name
+        )
+
+        org_client = boto3_cached_conn(
+            "organizations",
+            tenant,
+            None,
+            account_number=org_account.account_id,
+            assume_role=spoke_role_name,
+            region=config.region,
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
+            session_name=sanitize_session_name("noq_autodiscover_aws_org_accounts"),
+            read_only=True,
+        )
+
+        try:
+            paginator = org_client.get_paginator("list_accounts")
+            for page in paginator.paginate():
+                for account in page.get("Accounts"):
+                    try:
+                        (
+                            ModelAdapter(SpokeAccount)
+                            .load_config("spoke_accounts", tenant)
+                            .with_query({"account_id": account["Id"]})
+                            .first.name
+                        )
+                        continue  # We already know about this account, and can skip it
+                    except Exception:
+                        pass  # We don't yet know about this account, and can process it.
+
+                    for aws_organizations_role_name in org_account.role_names:
+                        try:
+                            boto3_cached_conn(
+                                "sts",
+                                region=config.region,
+                                account_number=account["Id"],
+                                assume_role=aws_organizations_role_name,
+                                session_name="noq_onboard_new_accounts_from_orgs",
+                                read_only=True,
+                            )
+                        except Exception:
+                            continue
+                        # Onboard the account
+
+        except Exception as e:
+            log.error("Unable to retrieve roles from AWS Organizations: {}".format(e))
+
+
+async def autodiscover_aws_org_accounts(tenant: str) -> set[str]:
+    """
+    This branch automatically discovers AWS Organization Accounts from Spoke Accounts. It filters out accounts that are
+    already flagged as AWS Organization Management Accounts. It also filters out accounts that we've already checked.
+    """
+    org_accounts_added = set()
+    accounts_d: Dict[str, str] = await get_account_id_to_name_mapping(tenant)
+    org_account_ids = [
+        org.account_id
+        for org in ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
+    ]
+    for account_id in accounts_d.keys():
+        if account_id in org_account_ids:
+            continue
+        spoke_account = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", tenant)
+            .with_query({"account_id": account_id})
+            .first
+        )
+        if not spoke_account:
+            continue
+        if spoke_account.org_access_checked:
+            continue
+        org = boto3_cached_conn(
+            "organizations",
+            tenant,
+            None,
+            account_number=account_id,
+            assume_role=spoke_account.name,
+            region=config.region,
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
+            session_name=sanitize_session_name("noq_autodiscover_aws_org_accounts"),
+            read_only=True,
+        )
+        org_details = None
+        org_account_name = None
+        org_management_account = False
+        try:
+            org_details = org.describe_organization()
+            if (
+                org_details
+                and org_details["Organization"]["MasterAccountId"] == account_id
+            ):
+                org_management_account = True
+                spoke_account.org_management_account = org_management_account
+                account_details = org.describe_account(AccountId=account_id)
+                if account_details:
+                    org_account_name = account_details["Account"]["Name"]
+        except Exception as e:
+            log.error("Unable to retrieve roles from AWS Organizations: {}".format(e))
+        spoke_account.org_access_checked = True
+        await ModelAdapter(SpokeAccount).load_config(
+            "spoke_accounts", tenant
+        ).from_dict(spoke_account.dict()).with_object_key(
+            ["account_id"]
+        ).store_item_in_list()
+        if org_management_account and org_details:
+            await ModelAdapter(OrgAccount).load_config(
+                "org_accounts", tenant
+            ).from_dict(
+                {
+                    "org_id": org_details["Organization"]["Id"],
+                    "account_id": account_id,
+                    "account_name": org_account_name,
+                    "owner": org_details["Organization"]["MasterAccountEmail"],
+                }
+            ).with_object_key(
+                ["org_id"]
+            ).store_item_in_list()
+            org_accounts_added.add(account_id)
+    return org_accounts_added
 
 
 async def cache_org_structure(tenant: str) -> Dict[str, Any]:
