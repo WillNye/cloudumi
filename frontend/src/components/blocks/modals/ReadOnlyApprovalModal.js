@@ -66,7 +66,7 @@ const ReadOnlyApprovalModal = ({
             <Form.Input
               fuild
               required
-              placeholder='Session Token (Optional)'
+              placeholder='Session Token'
               value={sessionToken}
               onChange={(event) => setSessionToken(event.target.value)}
             />
