@@ -95,11 +95,14 @@ async def validate_custom_credentials(
     modification_model = policy_request_model.modification_model
     if cloud_credentials and modification_model.command == Command.apply_change:
         if cloud_credentials.aws:
-            sts = boto3_cached_conn(
-                "sts", tenant, None, custom_aws_credentials=cloud_credentials.aws
-            )
-            whoami = sts.get_caller_identity()
-            custom_account = whoami["Account"]
+            try:
+                sts = boto3_cached_conn(
+                    "sts", tenant, None, custom_aws_credentials=cloud_credentials.aws
+                )
+                whoami = sts.get_caller_identity()
+                custom_account = whoami["Account"]
+            except Exception:
+                raise ValueError("Invalid AWS credentials provided")
         else:
             raise ValueError("Only AWS credentials are supported at this time")
 
