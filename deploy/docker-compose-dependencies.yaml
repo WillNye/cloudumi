@@ -10,6 +10,7 @@ services:
 
   cloudumi-dynamodb:
     image: "amazon/dynamodb-local"
+    user: root
     container_name: cloudumi-dynamodb
     entrypoint: java
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data -port 8005"
