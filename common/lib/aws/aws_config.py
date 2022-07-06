@@ -77,7 +77,7 @@ def query(
                 client_kwargs=config.get_tenant_specific_key(
                     "boto3.client_kwargs", tenant, {}
                 ),
-                session_name=sanitize_session_name("consoleme_aws_config_query"),
+                session_name=sanitize_session_name("noq_aws_config_query"),
             )
             try:
                 response = config_client.select_resource_config(

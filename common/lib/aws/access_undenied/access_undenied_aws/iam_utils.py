@@ -120,6 +120,7 @@ def _get_cross_account_iam_client(
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
+            session_name="noq_get_iam_client",
         )
         return iam_client
     except ClientError as client_error:

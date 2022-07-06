@@ -130,7 +130,7 @@ class LoginConfigurationHandler(TornadoRequestHandler):
             "page_title": config.get_tenant_specific_key(
                 "LoginConfigurationHandler.page_title",
                 tenant,
-                "Welcome to ConsoleMe - Please Sign-In",
+                "Welcome to Noq - Please Sign-In",
             ),
             "allow_password_login": config.get_tenant_specific_key(
                 "auth.get_user_by_password", tenant, True

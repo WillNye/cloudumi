@@ -153,7 +153,7 @@ class ResourceDetailHandler(BaseAPIV2Handler):
 
 
 class GetResourceURLHandler(BaseMtlsHandler):
-    """consoleme CLI resource URL handler. Parameters accepted: arn."""
+    """Noq CLI resource URL handler. Parameters accepted: arn."""
 
     def initialize(self):
         self.user: str = None
@@ -164,7 +164,7 @@ class GetResourceURLHandler(BaseMtlsHandler):
         /api/v2/get_resource_url - Endpoint used to get an URL from an ARN
         ---
         get:
-            description: Get the resource URL for ConsoleMe, given an ARN
+            description: Get the resource URL for Noq, given an ARN
             responses:
                 200:
                     description: Returns a URL generated from the ARN in JSON form

@@ -209,7 +209,7 @@ class RequestHandler(BaseAPIV2Handler):
                         "Principal": {
                           "AWS": "arn:aws:iam::123456789012:role/testInstanceProfile"
                         },
-                        "Sid": "AllowConsoleMeProdAssumeRoles"
+                        "Sid": "AllowNoqProdAssumeRoles"
                       }
                     ],
                     "Version": "2012-10-17"
@@ -951,7 +951,7 @@ class RequestsPageConfigHandler(BaseHandler):
         tenant = self.ctx.tenant
         default_configuration = {
             "pageName": "Requests",
-            "pageDescription": "View all IAM policy requests created through ConsoleMe",
+            "pageDescription": "View all IAM policy requests created through Noq",
             "tableConfig": {
                 "expandableRows": True,
                 "dataEndpoint": "/api/v2/requests?markdown=true",

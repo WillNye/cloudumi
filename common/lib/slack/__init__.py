@@ -102,7 +102,7 @@ async def get_payload(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*<{request_uri}|ConsoleMe Policy Change Request>*",
+                    "text": f"*<{request_uri}|Noq Policy Change Request>*",
                 },
             },
             {

@@ -3,9 +3,18 @@ import json
 import time
 from hashlib import sha1
 
+from common.aws.utils import ResourceSummary
 from common.config import config
+from common.lib.assume_role import boto3_cached_conn
 from common.lib.auth import can_admin_all
-from common.models import ExtendedRequestModel
+from common.models import (
+    CloudCredentials,
+    Command,
+    ExtendedRequestModel,
+    PolicyRequestModificationRequestModel,
+)
+
+log = config.get_logger(__name__)
 
 
 async def generate_dict_hash(dict_obj: dict) -> str:
@@ -52,6 +61,80 @@ async def update_extended_request_expiration_date(
             change.policy.policy_document["Statement"] = new_statement
 
     return extended_request
+
+
+def get_change_arn(change) -> str:
+    """Gets the ARN for a change dict or change model.
+    The ARN for a change is different depending on the type of change it is.
+    """
+    if not isinstance(change, dict):
+        try:
+            change = change.dict()
+        except Exception:
+            raise TypeError(
+                f"Expected change to be a Change model or of type dict; got {type(change)}"
+            )
+
+    if change["change_type"] not in [
+        "resource_policy",
+        "sts_resource_policy",
+        "managed_policy",
+    ]:
+        if principal_arn := change.get("principal", {}).get("principal_arn", None):
+            return principal_arn
+    else:
+        return change["arn"]
+
+
+async def validate_custom_credentials(
+    tenant: str,
+    extended_request: ExtendedRequestModel,
+    policy_request_model: PolicyRequestModificationRequestModel,
+    cloud_credentials: CloudCredentials,
+):
+    modification_model = policy_request_model.modification_model
+    if cloud_credentials and modification_model.command == Command.apply_change:
+        if cloud_credentials.aws:
+            try:
+                sts = boto3_cached_conn(
+                    "sts", tenant, None, custom_aws_credentials=cloud_credentials.aws
+                )
+                whoami = sts.get_caller_identity()
+                custom_account = whoami["Account"]
+            except Exception:
+                raise ValueError("Invalid AWS credentials provided")
+        else:
+            raise ValueError("Only AWS credentials are supported at this time")
+
+        change_arns = set()
+
+        # Get all change arns
+        for change in extended_request.changes.changes:
+            if change.id != modification_model.change_id:
+                continue
+
+            if change_arn := get_change_arn(change):
+                change_arns.add(change_arn)
+            else:
+                log.warning(
+                    {"message": "ARN for change not found", "change": change.dict()}
+                )
+
+        resource_summaries = await asyncio.gather(
+            *[ResourceSummary.set(tenant, arn) for arn in change_arns]
+        )
+        if invalid_resources := [
+            rs for rs in resource_summaries if rs.account != custom_account
+        ]:
+            err_str = "\n".join(
+                [
+                    f"(Resource: {rs.arn}, Account: {rs.account})"
+                    for rs in invalid_resources
+                ]
+            )
+            raise ValueError(
+                f"Resource(s) on a different account than the provided credentials. {err_str}"
+            )
 
 
 async def can_approve_reject_request(user, secondary_approvers, groups, tenant):
