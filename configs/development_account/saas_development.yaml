@@ -96,6 +96,8 @@ _global_:
             port: "9004"
           - host: redis-cluster
             port: "9005"
+  zelkova:
+    access_role: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
 # Localhost configuration
 #  redis:
 #    cluster_mode:
