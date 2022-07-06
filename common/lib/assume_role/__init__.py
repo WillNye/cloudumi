@@ -31,7 +31,7 @@ class ConsoleMeCloudAux:
                'assume_role': 'role_name',
             })
         """
-        self.conn_details = {"session_name": "cloudaux", "region": "us-east-1"}
+        self.conn_details = {"session_name": "noq_cloudaux", "region": "us-east-1"}
         # Let caller override session name and region
         self.conn_details.update(kwargs)
 
@@ -40,7 +40,7 @@ class ConsoleMeCloudAux:
         cloudaux = CloudAux(
             **{'account_number': '000000000000',
                'assume_role': 'role_name',
-               'session_name': 'testing',
+               'session_name': 'noq_testing',
                'region': 'us-east-1',
                'tech': 'kms',
                'service_type': 'client'
@@ -331,7 +331,7 @@ def boto3_cached_conn(
         when their expiration is within this many minutes of the present time. [Default 15]
     :param account_number: Required if assume_role is provided.
     :param assume_role:  Name of the role to assume into for account described by account_number.
-    :param session_name: Session name to attach to requests. [Default 'cloudaux']
+    :param session_name: Session name to attach to requests. [Default 'noq_cloudaux']
     :param region: Region name for connection. [Default us-east-1]
     :param return_credentials: Indicates if the STS credentials should be returned with the client [Default False]
     :param external_id: Optional external id to pass to sts:AssumeRole.

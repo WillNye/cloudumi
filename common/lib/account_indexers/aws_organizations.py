@@ -261,7 +261,7 @@ async def retrieve_org_structure(
     conn_details = {
         "assume_role": role_to_assume,
         "account_number": org_account_id,
-        "session_name": "ConsoleMeSCPSync",
+        "session_name": "noq_scp_sync",
         "region": region,
         "tenant": tenant,
         "client_kwargs": config.get_tenant_specific_key(
