@@ -16,7 +16,7 @@ async def get_custom_page_header(
         email address, or generic. If a configuration is not set, a header will not be shown.
 
     Example:
-        Visit https://YOUR_CONSOLEME_DOMAIN/config
+        Visit https://YOUR_NOQ_DOMAIN/config
         Add this to the page:
         ```
         custom_headers_for_group_members:

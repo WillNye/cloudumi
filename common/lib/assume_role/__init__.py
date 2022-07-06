@@ -605,7 +605,7 @@ def sts_conn(
                     future_expiration_minutes=future_expiration_minutes,
                     account_number=kwargs.pop("account_number", None),
                     assume_role=kwargs.pop("assume_role", None),
-                    session_name=kwargs.pop("session_name", "consoleme"),
+                    session_name=kwargs.pop("session_name", "noq"),
                     external_id=kwargs.pop("external_id", None),
                     region=kwargs.pop("region", "us-east-1"),
                     arn_partition=kwargs.pop("arn_partition", "aws"),

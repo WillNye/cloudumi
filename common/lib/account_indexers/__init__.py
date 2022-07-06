@@ -18,7 +18,7 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 
 async def cache_cloud_accounts(tenant) -> CloudAccountModelArray:
     """
-    Gets Cloud Account Information from either ConsoleMe's configuration, AWS Organizations, or Swag,
+    Gets Cloud Account Information from either Noq's configuration, AWS Organizations, or Swag,
     depending on configuration
     :return:
     """
