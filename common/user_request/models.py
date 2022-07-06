@@ -132,6 +132,8 @@ class IAMRequest(NoqModel):
             resource_policy - sqs
 
         """
+        from common.user_request.utils import get_change_arn
+
         disabled_cli_cmd_map = {"resource_policy": ["sqs"]}
         log_data: dict = {
             "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -177,12 +179,7 @@ class IAMRequest(NoqModel):
             )
 
             # Resolve the change's resource summary (parse_arn) by change type
-            if change_type not in [
-                "resource_policy",
-                "sts_resource_policy",
-            ]:
-                resource_summary = principal_summary
-            else:
+            if get_change_arn(change) != principal_arn:
                 try:
                     resource_summary = await ResourceSummary.set(
                         self.tenant, change["arn"]
@@ -200,6 +197,8 @@ class IAMRequest(NoqModel):
                         }
                     )
                     continue
+            else:
+                resource_summary = principal_summary
 
             # Use the account the change will be applied to for determining if the change is read only
             account_info: SpokeAccount = (
