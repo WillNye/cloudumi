@@ -332,9 +332,9 @@ class BaseHandler(TornadoRequestHandler):
 
     async def attempt_sso_authn(self, tenant) -> bool:
         """
-        ConsoleMe's configuration allows authenticating users by user/password, SSO, or both.
-        This function helps determine how ConsoleMe should authenticate a user. If user/password login is allowed,
-        users will be redirected to ConsoleMe's login page (/login). If SSO is also allowed, the Login page will present
+        Noq's configuration allows authenticating users by user/password, SSO, or both.
+        This function helps determine how Noq should authenticate a user. If user/password login is allowed,
+        users will be redirected to Noq's login page (/login). If SSO is also allowed, the Login page will present
         a button allowing the user to sign in with SSO.
 
         If user/password login is enabled, we don't want to give users the extra step of having to visit the login page,
@@ -459,7 +459,7 @@ class BaseHandler(TornadoRequestHandler):
                     self.user = await ddb.verify_api_key(api_key, api_user, tenant)
 
         if not self.user:
-            # SAML flow. If user has a JWT signed by ConsoleMe, and SAML is enabled in configuration, user will go
+            # SAML flow. If user has a JWT signed by Noq, and SAML is enabled in configuration, user will go
             # through this flow.
 
             if (

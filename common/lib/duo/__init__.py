@@ -12,7 +12,7 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger()
 
 
-async def duo_mfa_user(username, tenant, message="ConsoleMe Authorization Request"):
+async def duo_mfa_user(username, tenant, message="Noq Authorization Request"):
     """Send a DUO mfa push request to user."""
     # Create session for the region deployed in.
     session = get_session_for_tenant(tenant)

@@ -18,11 +18,11 @@ log = config.get_logger()
 
 class ChallengeGeneratorHandler(TornadoRequestHandler):
     """
-    Challenge URLs are an alternative to mutual TLS for authenticating CLI clients of ConsoleMe.
+    Challenge URLs are an alternative to mutual TLS for authenticating CLI clients of Noq.
 
     If Challenge Token auth is enabled, this will generate time-sensitive challenge token urls that end-users
     will be required to authenticate to. One authentication is verified, clients will be able to retrieve a
-    signed jwt that clients will be able to pass to ConsoleMe for authn/authz.
+    signed jwt that clients will be able to pass to Noq for authn/authz.
 
     The ChallengeUrlGenerator endpoint must be unauthenticated because the CLI client will be requesting URLs
     """
@@ -46,7 +46,7 @@ class ChallengeGeneratorHandler(TornadoRequestHandler):
             "auth.challenge_url.enabled", tenant, False
         ):
             raise MissingConfigurationValue(
-                "Challenge URL Authentication is not enabled in ConsoleMe's configuration"
+                "Challenge URL Authentication is not enabled in Noq's configuration"
             )
         ip = self.get_request_ip()
         red = await RedisHandler().redis(tenant)
@@ -113,7 +113,7 @@ class ChallengeValidatorHandler(BaseHandler):
             "auth.challenge_url.enabled", tenant, False
         ):
             raise MissingConfigurationValue(
-                "Challenge URL Authentication is not enabled in ConsoleMe's configuration"
+                "Challenge URL Authentication is not enabled in Noq's configuration"
             )
         red = await RedisHandler().redis(tenant)
         log_data = {
@@ -206,7 +206,7 @@ class ChallengeValidatorHandler(BaseHandler):
         request_ip = valid_user_challenge["ip"]
         request_user = valid_user_challenge["user"]
         message = (
-            f"A user at **{request_ip}** has requested ConsoleMe credentials for **{request_user}**.\n\n"
+            f"A user at **{request_ip}** has requested credentials for **{request_user}**.\n\n"
             f"You must approve this request for credentials to be provided. "
             f"You will not be able to refresh or revisit this page after closing it.\n\n"
             f"If you did not create this request, please report it to your security team."
@@ -226,7 +226,7 @@ class ChallengeValidatorHandler(BaseHandler):
             "auth.challenge_url.enabled", tenant, False
         ):
             raise MissingConfigurationValue(
-                "Challenge URL Authentication is not enabled in ConsoleMe's configuration"
+                "Challenge URL Authentication is not enabled in Noq's configuration"
             )
         red = await RedisHandler().redis(tenant)
         data = tornado.escape.json_decode(self.request.body)
@@ -333,7 +333,7 @@ class ChallengePollerHandler(TornadoRequestHandler):
             "auth.challenge_url.enabled", tenant, False
         ):
             raise MissingConfigurationValue(
-                "Challenge URL Authentication is not enabled in ConsoleMe's configuration"
+                "Challenge URL Authentication is not enabled in Noq's configuration"
             )
         red = await RedisHandler().redis(tenant)
         challenge_j = red.hget(

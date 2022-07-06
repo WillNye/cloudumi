@@ -1062,7 +1062,7 @@ async def apply_changes_to_role(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
-        session_name=sanitize_session_name("principal-updater-" + user),
+        session_name=sanitize_session_name("noq_principal_updater_" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -1892,7 +1892,7 @@ async def apply_managed_policy_resource_tag_change(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": resource_account})
         .first.name,
-        session_name=sanitize_session_name("tag-updater-" + user),
+        session_name=sanitize_session_name("noq_tag_updater_" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -2069,7 +2069,7 @@ async def apply_non_iam_resource_tag_change(
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
-            session_name=sanitize_session_name("apply-resource-tag-" + user),
+            session_name=sanitize_session_name("noq_apply_resource_tag_" + user),
             arn_partition="aws",
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -2244,7 +2244,7 @@ async def apply_tear_role_change(
             .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
-            session_name=sanitize_session_name("principal-updater-" + user),
+            session_name=sanitize_session_name("noq_principal_updater_" + user),
             retry_max_attempts=2,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -2351,7 +2351,7 @@ async def apply_managed_policy_resource_change(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": resource_account})
         .first.name,
-        "session_name": sanitize_session_name(f"ConsoleMe_MP_{user}"),
+        "session_name": sanitize_session_name(f"noq_MP_{user}"),
         "client_kwargs": config.get_tenant_specific_key(
             "boto3.client_kwargs", tenant, {}
         ),
@@ -2368,7 +2368,7 @@ async def apply_managed_policy_resource_change(
 
     policy_name = arn_parsed["resource_path"].split("/")[-1]
     if change.new:
-        description = f"Managed Policy created using ConsoleMe by {user}"
+        description = f"Managed Policy created using Noq by {user}"
         # create new policy
         try:
             policy_path = "/" + arn_parsed["resource_path"].replace(policy_name, "")
@@ -2536,7 +2536,7 @@ async def apply_resource_policy_change(
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
-            session_name=sanitize_session_name("apply-resource-policy-" + user),
+            session_name=sanitize_session_name("noq_apply_resource_policy-" + user),
             arn_partition="aws",
             sts_client_kwargs=dict(
                 region_name=config.region,

@@ -152,7 +152,7 @@ class BaseDynamoHandler:
                     account_number=config.get_tenant_specific_key(
                         "aws.account_number", tenant
                     ),
-                    session_name=sanitize_session_name("consoleme_dynamodb"),
+                    session_name=sanitize_session_name("noq_dynamodb"),
                     region=config.region,
                     client_kwargs=config.get("_global_.boto3.client_kwargs", {}),
                     session_policy=restrictive_session_policy,

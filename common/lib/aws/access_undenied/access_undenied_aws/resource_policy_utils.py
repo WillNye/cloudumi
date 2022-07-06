@@ -33,6 +33,7 @@ def _get_ecr_resource_policy(
         region_name=region,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
+        session_name="noq_get_ecr_policy",
     ).get_repository_policy(repositoryName=(arn_match.group("resource_id")))
     return common.Policy(
         attachment_target_arn=repository_policy_response["ARN"],
@@ -60,6 +61,7 @@ def _get_iam_resource_policy(
             None,
             account_number=resource.account_id,
             assume_role=cross_account_role_name,
+            session_name="noq_get_iam_resource_policy",
         ).get_role(RoleName=resource.arn.split("/")[-1])["Role"][
             "AssumeRolePolicyDocument"
         ]
@@ -93,6 +95,7 @@ def _get_kms_resource_policy(
         region_name=region,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
+        session_name="noq_get_kms_policy",
     ).get_key_policy(KeyId=(arn_match.group("resource_id")), PolicyName="default")[
         "Policy"
     ]
@@ -125,6 +128,7 @@ def _get_lambda_resource_policy(
         region_name=region,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
+        session_name="noq_get_kms_policy",
     ).get_policy(FunctionName=(arn_match.group("resource_id")))
     return common.Policy(
         attachment_target_arn=arn_match.group(0),
@@ -155,6 +159,7 @@ def _get_resource_account_session(
             None,
             account_number=resource.account_id,
             assume_role=cross_account_role_name,
+            session_name="noq_get_account_session",
         )
     except ClientError as client_error:
         logger.error(
@@ -185,6 +190,7 @@ def _get_s3_resource_policy(
         None,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
+        session_name="noq_get_s3_resource_policy",
     )
     try:
         bucket_policy_document = s3_client.get_bucket_policy(Bucket=bucket_name)[
@@ -221,6 +227,7 @@ def _get_secretsmanager_resource_policy(
         region_name=region,
         account_number=resource.account_id,
         assume_role=cross_account_role_name,
+        session_name="noq_get_secretsmanager_resource_policy",
     )
     secret_policy_response = secretsmanager_client.get_resource_policy(
         SecretId=(arn_match.group("resource_id"))

@@ -171,10 +171,10 @@ def is_in_time_range(t, time_range):
 
 
 async def get_random_security_logo(tenant):
-    if not config.get_tenant_specific_key("consoleme_logo.enabled", tenant):
+    if not config.get_tenant_specific_key("noq_logo.enabled", tenant):
         return None
-    if config.get_tenant_specific_key("consoleme_logo.image", tenant):
-        return config.get_tenant_specific_key("consoleme_logo.image", tenant)
+    if config.get_tenant_specific_key("noq_logo.image", tenant):
+        return config.get_tenant_specific_key("noq_logo.image", tenant)
     month = datetime.now().month
     summer = month in [6, 7, 8]
 
@@ -251,7 +251,7 @@ async def iterate_and_format_dict(d: Dict, replacements: Dict):
 
 async def should_force_redirect(req):
     """
-    ConsoleMe should only force a 302 redirect for non-XHR requests
+    Noq should only force a 302 redirect for non-XHR requests
     """
     if req.headers.get("X-Requested-With", "") == "XMLHttpRequest":
         return False

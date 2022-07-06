@@ -56,7 +56,7 @@ async def retrieve_accounts_from_aws_organizations(tenant) -> CloudAccountModelA
             None,
             account_number=organization.account_id,
             assume_role=role_to_assume,
-            session_name="ConsoleMeOrganizationsSync",
+            session_name="noq_organizations_sync",
         )
         paginator = await aio_wrapper(client.get_paginator, "list_accounts")
         page_iterator = await aio_wrapper(paginator.paginate)
@@ -261,7 +261,7 @@ async def retrieve_org_structure(
     conn_details = {
         "assume_role": role_to_assume,
         "account_number": org_account_id,
-        "session_name": "ConsoleMeSCPSync",
+        "session_name": "noq_scp_sync",
         "region": region,
         "tenant": tenant,
         "client_kwargs": config.get_tenant_specific_key(
@@ -294,7 +294,7 @@ async def retrieve_scps_for_organization(
         "tenant": tenant,
         "assume_role": role_to_assume,
         "account_number": org_account_id,
-        "session_name": "ConsoleMeSCPSync",
+        "session_name": "noq_scp_sync",
         "region": region,
         "client_kwargs": config.get_tenant_specific_key(
             "boto3.client_kwargs", tenant, {}

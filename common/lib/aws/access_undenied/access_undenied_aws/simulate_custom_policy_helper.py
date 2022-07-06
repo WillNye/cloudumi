@@ -193,7 +193,12 @@ def simulate_custom_policies(
         .first.name
     )
     iam_client = boto3_cached_conn(
-        "iam", config.tenant, None, account_number=account_id, assume_role=role
+        "iam",
+        config.tenant,
+        None,
+        account_number=account_id,
+        assume_role=role,
+        session_name="noq_simulate_custom_policy",
     )
     for guardrail_policy in iam_policy_data_.guardrail_policies or [None]:
         deny_result = _simulate_custom_policy(

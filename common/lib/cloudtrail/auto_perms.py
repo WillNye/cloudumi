@@ -47,6 +47,7 @@ def process_event(event: Dict[str, Any], account_id: str, tenant: str):
             region_name=access_undenied_config.region,
             endpoint_url=f"https://sts.{access_undenied_config.region}.amazonaws.com",
         ),
+        session_name="noq_process_event",
     )
 
     access_undenied.cli.initialize_config_from_user_input(
@@ -145,6 +146,7 @@ async def detect_cloudtrail_denies_and_update_cache(
         account_number=queue_account_number,
         assume_role=queue_assume_role,
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
+        session_name="noq_detect_cloudtrail_denies",
     )
 
     queue_url_res = sqs_client.get_queue_url(QueueName=queue_name)

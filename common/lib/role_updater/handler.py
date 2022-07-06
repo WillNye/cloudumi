@@ -60,7 +60,7 @@ async def update_role(event, tenant, user):
 
     for d in event:
         arn = d["arn"]
-        aws_session_name = "roleupdater-" + d["requester"]
+        aws_session_name = "noq_roleupdater_" + d["requester"]
         account_number = await parse_account_id_from_arn(arn)
         role_name = await parse_role_name_from_arn(arn)
         # TODO: Make configurable

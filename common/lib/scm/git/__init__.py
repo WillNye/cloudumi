@@ -27,7 +27,7 @@ class Repository:
             kwargs["depth"] = depth
         await aio_wrapper(git.Git(self.tempdir).clone, *args, **kwargs)
         self.repo = git.Repo(os.path.join(self.tempdir, self.repo_name))
-        self.repo.config_writer().set_value("user", "name", "ConsoleMe").release()
+        self.repo.config_writer().set_value("user", "name", "Noq").release()
         if self.git_email:
             self.repo.config_writer().set_value(
                 "user", "email", self.git_email
