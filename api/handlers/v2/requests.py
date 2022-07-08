@@ -44,6 +44,7 @@ from common.lib.v2.requests import (
     populate_cross_account_resource_policies,
     populate_old_managed_policies,
     populate_old_policies,
+    update_changes_meta_data,
 )
 from common.models import (
     CommentModel,
@@ -335,6 +336,7 @@ class RequestHandler(BaseAPIV2Handler):
             log.debug(log_data)
 
             if changes.dry_run:
+                await update_changes_meta_data(extended_request, tenant)
                 response = RequestCreationResponse(
                     errors=0, request_created=False, extended_request=extended_request
                 )

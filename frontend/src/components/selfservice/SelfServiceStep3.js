@@ -13,6 +13,7 @@ import {
   TextArea,
 } from 'semantic-ui-react'
 import MonacoDiffComponent from '../blocks/MonacoDiffComponent'
+import { checkContainsReadOnlyAccount } from './utils'
 
 class SelfServiceStep3 extends Component {
   constructor(props) {
@@ -40,6 +41,7 @@ class SelfServiceStep3 extends Component {
       principal_name: '',
       change_type: 'inline_policy',
       showIac: true,
+      hasReadOnlyAccountPolicy: false,
     }
     this.inlinePolicyEditorRef = React.createRef()
     this.editorDidMount = this.editorDidMount.bind(this)
@@ -103,6 +105,9 @@ class SelfServiceStep3 extends Component {
           active: false,
           change_type: 'generic_file',
           showIac: false,
+          hasReadOnlyAccountPolicy: checkContainsReadOnlyAccount(
+            response.extended_request.changes?.changes || []
+          ),
         })
       } else {
         this.setState({
@@ -116,6 +121,9 @@ class SelfServiceStep3 extends Component {
           policyName:
             response?.extended_request?.changes?.changes &&
             response?.extended_request?.changes?.changes[0]?.policy_name,
+          hasReadOnlyAccountPolicy: checkContainsReadOnlyAccount(
+            response.extended_request.changes?.changes || []
+          ),
         })
       }
     }
@@ -180,7 +188,12 @@ class SelfServiceStep3 extends Component {
 
   handleSubmit() {
     const { role } = this.props
-    const { justification, admin_auto_approve, new_policy } = this.state
+    const {
+      justification,
+      admin_auto_approve,
+      new_policy,
+      hasReadOnlyAccountPolicy,
+    } = this.state
     if (!justification) {
       return this.setState((state) => ({
         messages: ['No Justification is Given'],
@@ -196,7 +209,9 @@ class SelfServiceStep3 extends Component {
     const requestV2 = {
       justification,
       admin_auto_approve,
-      expiration_date: this.props.expiration_date,
+      expiration_date: hasReadOnlyAccountPolicy
+        ? null
+        : this.props.expiration_date,
       changes: {
         changes: [
           {
@@ -306,7 +321,13 @@ class SelfServiceStep3 extends Component {
       role,
       active,
       isLoading,
+      hasReadOnlyAccountPolicy,
     } = this.state
+
+    console.log(
+      hasReadOnlyAccountPolicy,
+      '==============================================='
+    )
 
     const messagesToShow = this.getMessages()
 
@@ -359,7 +380,7 @@ class SelfServiceStep3 extends Component {
                 </h3>
               </div>
             }
-            disabled={isError}
+            disabled={isError || active}
             fluid
             onClick={this.handleSubmit}
             style={{
@@ -386,7 +407,7 @@ class SelfServiceStep3 extends Component {
                 </h3>
               </div>
             }
-            disabled={isError}
+            disabled={isError || active || hasReadOnlyAccountPolicy}
             fluid
             onClick={this.handleAdminSubmit}
             style={{
@@ -416,7 +437,7 @@ class SelfServiceStep3 extends Component {
                 </h3>
               </div>
             }
-            disabled={isError}
+            disabled={isError || active}
             fluid
             onClick={() => {
               this.props.handleStepClick('previous')
@@ -444,7 +465,7 @@ class SelfServiceStep3 extends Component {
                 </h3>
               </div>
             }
-            disabled={isError}
+            disabled={isError || active}
             fluid
             onClick={this.handleSubmit}
             style={{
@@ -508,6 +529,13 @@ class SelfServiceStep3 extends Component {
         </Form>
         <Divider />
         {messagesToShow}
+        {hasReadOnlyAccountPolicy && (
+          <Message
+            info
+            header='Detected a policy request on a readonly account'
+            content='Auto approval and temporary policy requests are disabled'
+          />
+        )}
         {submission_buttons}
       </div>
     )

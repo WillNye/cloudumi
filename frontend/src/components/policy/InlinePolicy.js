@@ -125,7 +125,7 @@ const InlinePolicy = () => {
       />
       <JustificationModal
         handleSubmit={handleInlinePolicySubmit}
-        showExpirationDate={showExpirationDate}
+        showExpirationDate={showExpirationDate && !readOnlyAccount}
       />
     </>
   )

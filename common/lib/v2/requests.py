@@ -37,6 +37,7 @@ from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import (
     fetch_resource_details,
     generate_updated_resource_policy,
+    get_account_id_from_arn,
     get_bucket_location_with_fallback,
     get_region_from_arn,
     get_resource_account,
@@ -100,11 +101,30 @@ from common.models import (
 )
 from common.user_request.models import IAMRequest
 from common.user_request.utils import (
+    get_change_arn,
     update_extended_request_expiration_date,
     validate_custom_credentials,
 )
 
 log = config.get_logger()
+
+
+async def update_changes_meta_data(extended_request: ExtendedRequestModel, tenant: str):
+    for change in extended_request.changes.changes:
+        arn = get_change_arn(change)
+        account_id = await get_account_id_from_arn(arn)
+
+        try:
+            account_info: SpokeAccount = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", tenant)
+                .with_query({"account_id": account_id})
+                .first
+            )
+            change.read_only = account_info.read_only
+        except ValueError:
+            # spoke account not available
+            pass
 
 
 async def generate_request_from_change_model_array(

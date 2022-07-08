@@ -218,7 +218,7 @@ const ManagedPolicy = () => {
       </Segment>
       <JustificationModal
         handleSubmit={handleManagedPolicySubmit}
-        showExpirationDate={showExpirationDate}
+        showExpirationDate={showExpirationDate && !readOnlyAccount}
       />
     </>
   )

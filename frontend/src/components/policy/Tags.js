@@ -141,7 +141,10 @@ const Tags = () => {
           />
         </Button.Group>
       </Form>
-      <JustificationModal handleSubmit={handleTagSave} showExpirationDate />
+      <JustificationModal
+        handleSubmit={handleTagSave}
+        showExpirationDate={!readOnlyAccount}
+      />
     </>
   )
 }
