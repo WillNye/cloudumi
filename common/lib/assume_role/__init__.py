@@ -11,7 +11,7 @@ import dateutil.tz
 from botocore.config import Config
 from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
-from common.config import config as consoleme_config
+from common.config import config as noq_config
 from common.exceptions.exceptions import TenantNoCentralRoleConfigured
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
@@ -20,7 +20,7 @@ from common.models import AWSCredentials, SpokeAccount
 
 CACHE = {}
 
-log = consoleme_config.get_logger()
+log = noq_config.get_logger()
 
 
 class ConsoleMeCloudAux:
@@ -142,6 +142,15 @@ def _resource(service, region, role, retry_config, client_kwargs, session=None):
     )
 
 
+def _session(region, role):
+    return boto3.session.Session(
+        region_name=region,
+        aws_access_key_id=role["Credentials"]["AccessKeyId"],
+        aws_secret_access_key=role["Credentials"]["SecretAccessKey"],
+        aws_session_token=role["Credentials"]["SessionToken"],
+    )
+
+
 class BotoCallableWrapper:
     # A map of lowercase keys for a service to omit in addition to the default password.
     _redact_map: dict[list[str]] = {}
@@ -245,7 +254,7 @@ async def get_boto3_instance(
     account_id,
     session_name,
     assume_role,
-    region=consoleme_config.region,
+    region=noq_config.region,
     service_type="client",
     read_only=False,
     user=None,
@@ -259,7 +268,7 @@ async def get_boto3_instance(
     :param tenant: Tenant ID
     :param account_id: AWS Account ID
     :param session_name: Session Name to use when assuming role. This is logged to Cloudtrail
-    :param region: Region to create instance in, defaults to consoleme_config.region
+    :param region: Region to create instance in, defaults to noq_config.region
     :param service_type: Service of the boto3 instance, defaults to "client". Could also be "resource"
     :param read_only: Should we prevent write operations through the assumed role credentials?, defaults to False
     :param user: User to associate all boto3 calls with
@@ -277,10 +286,10 @@ async def get_boto3_instance(
         region=region,
         read_only=read_only,
         sts_client_kwargs=dict(
-            region_name=consoleme_config.region,
-            endpoint_url=f"https://sts.{consoleme_config.region}.amazonaws.com",
+            region_name=noq_config.region,
+            endpoint_url=f"https://sts.{noq_config.region}.amazonaws.com",
         ),
-        client_kwargs=consoleme_config.get_tenant_specific_key(
+        client_kwargs=noq_config.get_tenant_specific_key(
             "boto3.client_kwargs", tenant, {}
         ),
         session_name=sanitize_session_name(session_name),
@@ -296,7 +305,7 @@ def boto3_cached_conn(
     account_number=None,
     assume_role=None,
     session_name="noq",
-    region=consoleme_config.region,
+    region=noq_config.region,
     return_credentials=False,
     external_id=None,
     arn_partition="aws",
@@ -387,17 +396,19 @@ def boto3_cached_conn(
             return conn, credentials_dict
         return conn
 
-    if tenant and pre_assume_roles is None:
+    if tenant.startswith("_global_"):
+        pre_assume_roles = [noq_config.get(tenant, {})]
+    elif tenant and pre_assume_roles is None:
         pre_assume_roles = []
-        hub_role = consoleme_config.get_tenant_specific_key("hub_account", tenant)
+        hub_role = noq_config.get_tenant_specific_key("hub_account", tenant)
         if hub_role:
             pre_assume_roles.append(hub_role)
     elif pre_assume_roles is None:
         pre_assume_roles = []
     # TODO: This breaks when tenant employee attempts to retrieve credentials
-    # if not assume_role and consoleme_config.get("_global_.environment") != "test":
+    # if not assume_role and noq_config.get("_global_.environment") != "test":
     #     raise ValueError("Must provide role to assume")
-    if not pre_assume_roles and consoleme_config.get("_global_.environment") != "test":
+    if not pre_assume_roles and noq_config.get("_global_.environment") != "test":
         raise TenantNoCentralRoleConfigured(
             "Tenant hasn't configured central role for Noq."
         )
@@ -503,6 +514,8 @@ def boto3_cached_conn(
         conn = _resource(
             service, region, role, client_config, client_kwargs, session=session
         )
+    elif service_type == "session":
+        return _session(region, role)
     else:
         raise Exception("Service type must be client or resource")
 
