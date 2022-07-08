@@ -37,7 +37,6 @@ from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import (
     fetch_resource_details,
     generate_updated_resource_policy,
-    get_account_id_from_arn,
     get_bucket_location_with_fallback,
     get_region_from_arn,
     get_resource_account,

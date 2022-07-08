@@ -420,7 +420,7 @@ class AWSCredentials(BaseModel):
 
 
 class CloudCredentials(BaseModel):
-    aws: Optional[AWSCredentials] = None
+    aws: Optional[AWSCredentials] = Field(None, is_secret=True)
 
 
 class Options(BaseModel):
@@ -467,7 +467,7 @@ class Command(Enum):
 
 
 class RequestModificationBaseModel(BaseModel):
-    credentials: Optional[CloudCredentials] = None
+    credentials: Optional[CloudCredentials] = Field(None, is_secret=True)
     command: Command
 
 
@@ -1194,7 +1194,7 @@ class RequestCreationModel(BaseModel):
         description="Date to expire requested policy, in the format of YYYYmmdd",
         example=20210905,
     )
-    credentials: Optional[CloudCredentials] = None
+    credentials: Optional[CloudCredentials] = Field(None, is_secret=True)
 
 
 class ExtendedRequestModel(RequestModel):
