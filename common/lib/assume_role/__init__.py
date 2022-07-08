@@ -335,7 +335,7 @@ def boto3_cached_conn(
     resource = boto3_cached_conn('iam', tenant, user, service_type='resource', account_number='000000000000', assume_role='role_name')
 
     :param service: AWS service (i.e. 'iam', 'ec2', 'kms')
-    :param service_type: 'client' or 'resource'
+    :param service_type: 'client', 'resource', or 'session'
     :param future_expiration_minutes: Connections will expire from the cache
         when their expiration is within this many minutes of the present time. [Default 15]
     :param account_number: Required if assume_role is provided.
