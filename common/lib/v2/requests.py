@@ -112,13 +112,13 @@ log = config.get_logger()
 async def update_changes_meta_data(extended_request: ExtendedRequestModel, tenant: str):
     for change in extended_request.changes.changes:
         arn = get_change_arn(change)
-        account_id = await get_account_id_from_arn(arn)
+        resource_summary = await ResourceSummary.set(tenant, arn)
 
         try:
             account_info: SpokeAccount = (
                 ModelAdapter(SpokeAccount)
                 .load_config("spoke_accounts", tenant)
-                .with_query({"account_id": account_id})
+                .with_query({"account_id": resource_summary.account})
                 .first
             )
             change.read_only = account_info.read_only

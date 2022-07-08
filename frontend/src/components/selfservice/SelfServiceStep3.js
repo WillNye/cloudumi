@@ -324,11 +324,6 @@ class SelfServiceStep3 extends Component {
       hasReadOnlyAccountPolicy,
     } = this.state
 
-    console.log(
-      hasReadOnlyAccountPolicy,
-      '==============================================='
-    )
-
     const messagesToShow = this.getMessages()
 
     // Only allow admin approval on AwsResource requests and not templated requests
