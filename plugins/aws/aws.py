@@ -611,16 +611,18 @@ class Aws:
         try:
             zelkova = boto3_cached_conn(
                 "zelkova",
-                "_global_",
-                "noq-zelkova",
+                "_global_.accounts.zelkova",
+                user,
+                service_type="client",
+                future_expiration_minutes=60,
             )
         except Exception as e:  # noqa
             zelkova = None
             sentry_sdk.capture_exception()
 
         try:
-            if not config.get(
-                "dynamic_config.policy_request_autoapprove_probes.enabled"
+            if not config.get_tenant_specific_key(
+                "policy_request_autoapprove_probes.enabled", tenant
             ):
                 log_data["message"] = "Auto-approval probes are disabled"
                 log_data["approved"] = False
@@ -663,8 +665,8 @@ class Aws:
                 probes_result = False
                 account_id = principal_arn.split(":")[4]
 
-                for probe in config.get(
-                    "dynamic_config.policy_request_autoapprove_probes.probes", []
+                for probe in config.get_tenant_specific_key(
+                    "policy_request_autoapprove_probes.probes", tenant, []
                 ):
                     log_data["probe"] = probe["name"]
                     log_data["requested_policy"] = change.policy.json()
