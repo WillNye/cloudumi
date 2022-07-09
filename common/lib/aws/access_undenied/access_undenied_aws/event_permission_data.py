@@ -382,6 +382,7 @@ def _get_principal_arn_from_cross_account_principal_id(
                     region_name=config.region,
                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",
                 ),
+                session_name="noq_get_principal_arn",
             )
         except ClientError:
             raise common.AccessUndeniedError(

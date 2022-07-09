@@ -39,7 +39,7 @@ def store_iam_resources_in_git(
     tempdir = tempfile.mkdtemp()
     try:
         repo = clone_repo(git_url, tempdir)
-        repo.config_writer().set_value("user", "name", "ConsoleMe").release()
+        repo.config_writer().set_value("user", "name", "Noq").release()
         email = config.get_tenant_specific_key(
             "cache_iam_resources_for_account.store_in_git.email",
             tenant,

@@ -26,6 +26,7 @@ const PermissionsBoundary = () => {
     deletePermissionsBoundary,
     setModalWithAdminAutoApprove,
     handlePermissionsBoundarySubmit,
+    readOnlyAccount,
   } = usePermissionsBoundary()
 
   const [availableManagedPolicies, setAvailableManagedPolicies] = useState([])
@@ -149,7 +150,7 @@ const PermissionsBoundary = () => {
                   icon='save'
                   content='Add'
                   onClick={onPermissionsBoundarySave}
-                  disabled={!selected}
+                  disabled={!selected || readOnlyAccount}
                 />
                 <ButtonOr />
               </>

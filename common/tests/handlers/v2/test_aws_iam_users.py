@@ -79,6 +79,7 @@ class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
                     }
                 ],
                 "permissions_boundary": {},
+                "read_only": None,
                 "role_access_config": None,
                 "tags": [],
                 "effective_policy": None,

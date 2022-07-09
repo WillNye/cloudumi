@@ -47,6 +47,7 @@ const useManagedPolicy = () => {
 
   return {
     ...state,
+    readOnlyAccount: resource?.read_only || false,
     accountID: params.accountID,
     setModalWithAdminAutoApprove,
     setManagedPolicies: (policies) =>

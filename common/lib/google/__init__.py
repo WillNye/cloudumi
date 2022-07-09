@@ -209,9 +209,9 @@ async def get_service(
     Get a service connection to Google. You'll need to generate a GCP service account first from instructions here:
     https://hawkins.gitbook.io/consoleme/configuration/authentication-and-authorization/google-groups-support
 
-    ConsoleMe requires that you either have a service key file with content like below,
+    Noq requires that you either have a service key file with content like below,
     and you've set the configuration for `google.service_key_file` to the full path of that file on disk,
-    or you've just put the json for this in your ConsoleMe configuration in the `secrets.google.service_key_dict` configuration
+    or you've just put the json for this in your Noq configuration in the `secrets.google.service_key_dict` configuration
     key.
 
     There are sensitive secrets here, so if you want to
@@ -413,7 +413,7 @@ async def raise_if_requires_bgcheck_and_no_bgcheck(
 
 
 async def raise_if_not_same_domain(tenant: str, user: str, group_info: Any) -> None:
-    """Check if user is in the same domain as the group. Consoleme will refuse to add users to groups under a different
+    """Check if user is in the same domain as the group. Noq will refuse to add users to groups under a different
     domain if the allow_cross_domain_users or allow_third_party_users attributes are not set to "true" for a group.
     """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -444,7 +444,7 @@ async def raise_if_not_same_domain(tenant: str, user: str, group_info: Any) -> N
 
 
 async def raise_if_restricted(tenant: str, user: str, group_info: Any) -> None:
-    """Check if the group is a restricted group. Currently, Consoleme is not able to add users to
+    """Check if the group is a restricted group. Currently, Noq is not able to add users to
     restricted groups.
     """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -461,7 +461,7 @@ async def raise_if_restricted(tenant: str, user: str, group_info: Any) -> None:
     if group_info.restricted:
         raise UnableToModifyRestrictedGroupMembers(
             f"Group {group_info.name} is marked as Restricted. These groups have been determined to be sensitive. "
-            f"Consoleme cannot "
+            f"Noq cannot "
             f"currently be used to add/remove users from "
             f"restricted groups."
         )

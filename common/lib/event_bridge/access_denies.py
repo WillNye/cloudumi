@@ -141,6 +141,7 @@ async def detect_cloudtrail_denies_and_update_cache(
         account_number=queue_account_number,
         assume_role=queue_assume_role,
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
+        session_name="noq_detect_access_denies",
     )
 
     queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)

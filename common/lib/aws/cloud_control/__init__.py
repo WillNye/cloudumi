@@ -54,7 +54,7 @@ async def list_resource_type(tenant, account_id, region, resource_type):
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-        session_name=sanitize_session_name("cloudcontrol_list_resource_type"),
+        session_name=sanitize_session_name("noq_cloudcontrol_list_resource_type"),
     )
     next_token = ""
     while next_token is not None:

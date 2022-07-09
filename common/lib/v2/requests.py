@@ -99,9 +99,31 @@ from common.models import (
     UserModel,
 )
 from common.user_request.models import IAMRequest
-from common.user_request.utils import update_extended_request_expiration_date
+from common.user_request.utils import (
+    get_change_arn,
+    update_extended_request_expiration_date,
+    validate_custom_credentials,
+)
 
 log = config.get_logger()
+
+
+async def update_changes_meta_data(extended_request: ExtendedRequestModel, tenant: str):
+    for change in extended_request.changes.changes:
+        arn = get_change_arn(change)
+        resource_summary = await ResourceSummary.set(tenant, arn)
+
+        try:
+            account_info: SpokeAccount = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", tenant)
+                .with_query({"account_id": resource_summary.account})
+                .first
+            )
+            change.read_only = account_info.read_only
+        except ValueError:
+            # spoke account not available
+            pass
 
 
 async def generate_request_from_change_model_array(
@@ -1059,7 +1081,7 @@ async def apply_changes_to_role(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
-        session_name=sanitize_session_name("principal-updater-" + user),
+        session_name=sanitize_session_name("noq_principal_updater_" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -1889,7 +1911,7 @@ async def apply_managed_policy_resource_tag_change(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": resource_account})
         .first.name,
-        session_name=sanitize_session_name("tag-updater-" + user),
+        session_name=sanitize_session_name("noq_tag_updater_" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -2066,7 +2088,7 @@ async def apply_non_iam_resource_tag_change(
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
-            session_name=sanitize_session_name("apply-resource-tag-" + user),
+            session_name=sanitize_session_name("noq_apply_resource_tag_" + user),
             arn_partition="aws",
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -2241,7 +2263,7 @@ async def apply_tear_role_change(
             .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
-            session_name=sanitize_session_name("principal-updater-" + user),
+            session_name=sanitize_session_name("noq_principal_updater_" + user),
             retry_max_attempts=2,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -2348,7 +2370,7 @@ async def apply_managed_policy_resource_change(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": resource_account})
         .first.name,
-        "session_name": sanitize_session_name(f"ConsoleMe_MP_{user}"),
+        "session_name": sanitize_session_name(f"noq_MP_{user}"),
         "client_kwargs": config.get_tenant_specific_key(
             "boto3.client_kwargs", tenant, {}
         ),
@@ -2365,7 +2387,7 @@ async def apply_managed_policy_resource_change(
 
     policy_name = arn_parsed["resource_path"].split("/")[-1]
     if change.new:
-        description = f"Managed Policy created using ConsoleMe by {user}"
+        description = f"Managed Policy created using Noq by {user}"
         # create new policy
         try:
             policy_path = "/" + arn_parsed["resource_path"].replace(policy_name, "")
@@ -2533,7 +2555,7 @@ async def apply_resource_policy_change(
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
-            session_name=sanitize_session_name("apply-resource-policy-" + user),
+            session_name=sanitize_session_name("noq_apply_resource_policy-" + user),
             arn_partition="aws",
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -2750,6 +2772,10 @@ async def parse_and_apply_policy_request_modification(
     }
 
     log.debug(log_data)
+    # Validate cloud credentials
+    await validate_custom_credentials(
+        tenant, extended_request, policy_request_model, cloud_credentials
+    )
 
     response = PolicyRequestModificationResponseModel(errors=0, action_results=[])
     request_changes = policy_request_model.modification_model

@@ -108,7 +108,7 @@ class AccessAdvisor:
             tenant,
             account_id,
             user=user,
-            session_name="cache_access_advisor",
+            session_name="noq_cache_access_advisor",
             assume_role=ModelAdapter(SpokeAccount)
             .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})

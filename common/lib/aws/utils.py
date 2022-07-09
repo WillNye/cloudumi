@@ -269,6 +269,7 @@ async def fetch_sns_topic(
         ),
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         retry_max_attempts=2,
+        session_name="noq_fetch_sns_topic",
     )
 
     result: Dict = await aio_wrapper(
@@ -693,7 +694,7 @@ async def prune_iam_resource_tag(
 async def fetch_iam_user_details(account_id, iam_user_name, tenant, user):
     """
     Fetches details about an IAM user from AWS. If spoke_accounts configuration
-    is set, the hub (central) account ConsoleMeInstanceProfile role will assume the
+    is set, the hub (central) account role will assume the
     configured role to perform the action.
 
     :param account_id: account ID
@@ -720,7 +721,7 @@ async def fetch_iam_user_details(account_id, iam_user_name, tenant, user):
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
-        session_name=sanitize_session_name("fetch_iam_user_details"),
+        session_name=sanitize_session_name("noq_fetch_iam_user_details"),
         retry_max_attempts=2,
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
     )
@@ -791,6 +792,7 @@ async def get_enabled_regions_for_account(account_id: str, tenant: str) -> Set[s
         read_only=True,
         retry_max_attempts=2,
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
+        session_name="noq_get_enabled_regions",
     )
 
     regions = await aio_wrapper(client.describe_regions)
@@ -812,7 +814,7 @@ async def access_analyzer_validate_policy(
         access_analyzer_response = await aio_wrapper(
             client.validate_policy,
             policyDocument=policy,
-            policyType=policy_type,  # ConsoleMe only supports identity policy analysis currently
+            policyType=policy_type,  # Noq only supports identity policy analysis currently
         )
         for finding in access_analyzer_response.get("findings", []):
             for location in finding.get("locations", []):
@@ -1275,10 +1277,10 @@ def allowed_to_sync_role(
     tenant: str,
 ) -> bool:
     """
-    This function determines whether ConsoleMe is allowed to sync or otherwise manipulate an IAM role. By default,
-    ConsoleMe will sync all roles that it can get its grubby little hands on. However, ConsoleMe administrators can tell
-    ConsoleMe to only sync roles with either 1) Specific ARNs, or 2) Specific tag key/value pairs. All configured tags
-    must exist on the role for ConsoleMe to sync it.
+    This function determines whether Noq is allowed to sync or otherwise manipulate an IAM role. By default,
+    Noq will sync all roles that it can get its grubby little hands on. However, Noq administrators can tell
+    Noq to only sync roles with either 1) Specific ARNs, or 2) Specific tag key/value pairs. All configured tags
+    must exist on the role for Noq to sync it.
 
     Here's an example configuration for a tag-based restriction:
 
@@ -1305,7 +1307,7 @@ def allowed_to_sync_role(
         arn: The AWS role arn
         role_tags: A dictionary of role tags
 
-    :return: boolean specifying whether ConsoleMe is allowed to sync / access the role
+    :return: boolean specifying whether Noq is allowed to sync / access the role
     """
     allowed_tags = config.get_tenant_specific_key("roles.allowed_tags", tenant, {})
     allowed_arns = config.get_tenant_specific_key("roles.allowed_arns", tenant, [])
@@ -1317,9 +1319,9 @@ def allowed_to_sync_role(
 
     # Convert list of role tag dicts to a single key/value dict of tags
     # ex:
-    # role_tags = [{'Key': 'consoleme-authorized', 'Value': 'consoleme_admins'},
-    # {'Key': 'Description', 'Value': 'ConsoleMe OSS Demo Role'}]
-    # so: actual_tags = {'consoleme-authorized': 'consoleme_admins', 'Description': 'ConsoleMe OSS Demo Role'}
+    # role_tags = [{'Key': 'noq-authorized', 'Value': 'noq_admins'},
+    # {'Key': 'Description', 'Value': 'Noq OSS Demo Role'}]
+    # so: actual_tags = {'noq-authorized': 'noq_admins', 'Description': 'Noq OSS Demo Role'}
     actual_tags = {
         d["Key"]: d["Value"] for d in role_tags
     }  # Convert List[Dicts] to 1 Dict
@@ -1409,7 +1411,7 @@ async def remove_expired_request_changes(
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
-            session_name=sanitize_session_name("revoke-expired-policies"),
+            session_name=sanitize_session_name("noq_revoke_expired_policies"),
             arn_partition="aws",
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -1924,6 +1926,7 @@ async def simulate_iam_principal_action(
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
         retry_max_attempts=2,
+        session_name="noq_simulate_principal_action",
     )
     try:
         response = await aio_wrapper(

@@ -97,6 +97,7 @@ const usePolicyTag = () => {
   return {
     ...state,
     arn: resource.arn,
+    readOnlyAccount: resource?.read_only || false,
     setModalWithAdminAutoApprove,
     setTags,
     createTag,

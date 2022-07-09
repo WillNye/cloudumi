@@ -1736,6 +1736,9 @@ components:
               type: string
               description: |-
                 A string depicting the terraformed version of the principal, if available.
+            read_only:
+              type: boolean
+              readOnly: true
     UserModel:
       type: object
       readOnly: true

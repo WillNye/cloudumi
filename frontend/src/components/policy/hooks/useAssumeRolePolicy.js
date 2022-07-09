@@ -42,6 +42,7 @@ const useAssumeRolePolicy = () => {
 
   return {
     ...state,
+    readOnlyAccount: resource?.read_only || false,
     setAssumeRolePolicy: (policy) =>
       dispatch({ type: 'SET_ASSUMEROLE_POLICY', policy }),
     handleAssumeRolePolicySubmit,
