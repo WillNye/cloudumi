@@ -527,8 +527,8 @@ class SelfServiceStep3 extends Component {
         {hasReadOnlyAccountPolicy && (
           <Message
             info
-            header='Detected a policy request on a readonly account'
-            content='Auto approval and temporary policy requests are disabled'
+            header='Detected a policy request affecting a read-only account'
+            content='Auto-approve and temporary policy requests are disabled for requests affecting read-only accounts.'
           />
         )}
         {submission_buttons}
