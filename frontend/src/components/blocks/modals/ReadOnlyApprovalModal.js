@@ -40,12 +40,12 @@ const ReadOnlyApprovalModal = ({
         <Segment basic>
           <p>
             It looks like you are trying to apply a change to an account that
-            Noq only has read access to.
+            Noq has read-only access to.
           </p>
           <p>
             Please provide one-time-use credentials with the appropriate
             permissions for Noq to apply this change, or apply the change
-            manually and mark the change as approved
+            manually and mark the change as approved here.
           </p>
 
           <Form onSubmit={handleApplyChanges}>
