@@ -520,7 +520,7 @@ async def should_auto_approve_policy_v2(
 ):
     """
     This uses your fancy internal logic to determine if a request should be auto-approved or not. The default plugin
-    set included in ConsoleMe OSS will return False.
+    set included in Noq will return False.
     """
     aws = get_plugin_by_name(
         config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")

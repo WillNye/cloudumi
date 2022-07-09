@@ -18,6 +18,7 @@ const ResourceDetail = () => {
     resource_details,
     last_used_time,
     description,
+    read_only,
   } = resource
 
   const created_time = resource.created_time || resource_details?.created_time
@@ -29,6 +30,10 @@ const ResourceDetail = () => {
           <Table.Row>
             <Table.Cell width={4}>Account</Table.Cell>
             <Table.Cell>{`${account_name} (${account_id}`})</Table.Cell>
+          </Table.Row>
+          <Table.Row>
+            <Table.Cell width={4}>Ready Only Account</Table.Cell>
+            <Table.Cell>{`${read_only ? 'True' : 'False'}`}</Table.Cell>
           </Table.Row>
           <Table.Row>
             <Table.Cell>Amazon Resource Name</Table.Cell>

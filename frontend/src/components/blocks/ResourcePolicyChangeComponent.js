@@ -23,6 +23,7 @@ import {
   ResponseNotification,
 } from './notificationMessages'
 import ResourceChangeApprovers from './ResourceChangeApprovers'
+import ReadOnlyApprovalModal from './modals/ReadOnlyApprovalModal'
 
 class ResourcePolicyChangeComponent extends Component {
   constructor(props) {
@@ -51,12 +52,15 @@ class ResourcePolicyChangeComponent extends Component {
       requestReadOnly,
       requestID,
       isLoading: false,
+      isApprovalModalOpen: false,
     }
 
     this.onLintError = this.onLintError.bind(this)
     this.onValueChange = this.onValueChange.bind(this)
     this.onSubmitChange = this.onSubmitChange.bind(this)
     this.onCancelChange = this.onCancelChange.bind(this)
+    this.setIsApprovalModalOpen = this.setIsApprovalModalOpen.bind(this)
+    this.handleOnSubmitChange = this.handleOnSubmitChange.bind(this)
     this.updatePolicyDocument = props.updatePolicyDocument
     this.reloadDataFromBackend = props.reloadDataFromBackend
   }
@@ -119,8 +123,25 @@ class ResourcePolicyChangeComponent extends Component {
     this.updatePolicyDocument(change.id, newValue)
   }
 
-  onSubmitChange() {
-    const applyChange = this.props.sendProposedPolicy.bind(this, 'apply_change')
+  setIsApprovalModalOpen(value) {
+    this.setState({ isApprovalModalOpen: value })
+  }
+
+  handleOnSubmitChange() {
+    const { change } = this.props
+    if (change.read_only) {
+      this.setIsApprovalModalOpen(true)
+    } else {
+      this.onSubmitChange()
+    }
+  }
+
+  onSubmitChange(credentials = null) {
+    const applyChange = this.props.sendProposedPolicy.bind(
+      this,
+      'apply_change',
+      credentials
+    )
     applyChange()
   }
 
@@ -145,6 +166,7 @@ class ResourcePolicyChangeComponent extends Component {
       lastSavedStatement,
       isLoading,
       buttonResponseMessage,
+      isApprovalModalOpen,
     } = this.state
 
     const isOwner =
@@ -177,7 +199,7 @@ class ResourcePolicyChangeComponent extends Component {
             positive
             fluid
             disabled={isError}
-            onClick={this.onSubmitChange}
+            onClick={this.handleOnSubmitChange}
           />
         </Grid.Column>
       ) : null
@@ -320,6 +342,11 @@ class ResourcePolicyChangeComponent extends Component {
         {headerContent}
         <Divider hidden />
         {policyChangeContent}
+        <ReadOnlyApprovalModal
+          onSubmitChange={this.onSubmitChange}
+          isApprovalModalOpen={isApprovalModalOpen}
+          setIsApprovalModalOpen={this.setIsApprovalModalOpen}
+        />
       </Segment>
     )
   }

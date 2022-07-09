@@ -2728,7 +2728,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             future_expiration_minutes=15,
             account_number="123456789013",
             region="us-east-1",
-            session_name="ConsoleMe_UnitTest",
+            session_name="noq_unittest",
             arn_partition="aws",
             client_kwargs=config.get_tenant_specific_key(
                 "boto3.client_kwargs", tenant, {}

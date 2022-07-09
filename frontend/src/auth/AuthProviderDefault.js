@@ -231,7 +231,8 @@ export const AuthProvider = ({ children }) => {
     requestID,
     setIsLoading,
     setButtonResponseMessage,
-    reloadDataFromBackend
+    reloadDataFromBackend,
+    credentials = null
   ) => {
     setIsLoading(true)
     const request = {
@@ -242,6 +243,9 @@ export const AuthProvider = ({ children }) => {
     }
     if (newStatement) {
       request.modification_model.policy_document = JSON.parse(newStatement)
+    }
+    if (credentials) {
+      request.modification_model.credentials = { aws: credentials }
     }
     await sendRequestCommon(
       request,

@@ -16,6 +16,7 @@ const InlinePolicy = () => {
     setIsNewPolicy,
     handleInlinePolicySubmit,
     showExpirationDate,
+    readOnlyAccount,
   } = useInlinePolicy()
 
   const [activeIndex, setActiveIndex] = useState([])
@@ -51,6 +52,7 @@ const InlinePolicy = () => {
               <NewPolicyMonacoEditor
                 addPolicy={addInlinePolicy}
                 setIsNewPolicy={setIsNewPolicy}
+                isSaveButtonDisabled={readOnlyAccount}
               />
             ),
           },
@@ -58,7 +60,7 @@ const InlinePolicy = () => {
         ...panels,
       ]
     })
-  }, [isNewPolicy, addInlinePolicy, setIsNewPolicy])
+  }, [isNewPolicy, addInlinePolicy, setIsNewPolicy]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const newPanels = inlinePolicies.map((policy) => {
@@ -72,6 +74,7 @@ const InlinePolicy = () => {
               policy={policy}
               deletePolicy={deleteInlinePolicy}
               updatePolicy={updateInlinePolicy}
+              isSaveButtonDisabled={readOnlyAccount}
             />
           ),
         },
@@ -79,7 +82,7 @@ const InlinePolicy = () => {
     })
     setPanels(newPanels)
     setActiveIndex([...Array(newPanels.length).keys()])
-  }, [inlinePolicies, deleteInlinePolicy, updateInlinePolicy])
+  }, [inlinePolicies, deleteInlinePolicy, updateInlinePolicy]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -122,7 +125,7 @@ const InlinePolicy = () => {
       />
       <JustificationModal
         handleSubmit={handleInlinePolicySubmit}
-        showExpirationDate={showExpirationDate}
+        showExpirationDate={showExpirationDate && !readOnlyAccount}
       />
     </>
   )

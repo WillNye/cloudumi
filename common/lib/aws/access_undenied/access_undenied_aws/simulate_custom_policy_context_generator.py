@@ -45,6 +45,7 @@ class SimulateCustomPolicyContextGenerator(object):
                 region_name=config.region,
                 endpoint_url=f"https://sts.{config.region}.amazonaws.com",
             ),
+            session_name="noq_iam_policy_simulator",
         )
         self.event_permission_data = event_permission_data_
         self.cloudtrail_event = cloudtrail_event_

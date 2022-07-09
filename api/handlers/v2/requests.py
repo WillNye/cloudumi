@@ -44,6 +44,7 @@ from common.lib.v2.requests import (
     populate_cross_account_resource_policies,
     populate_old_managed_policies,
     populate_old_policies,
+    update_changes_meta_data,
 )
 from common.models import (
     CommentModel,
@@ -209,7 +210,7 @@ class RequestHandler(BaseAPIV2Handler):
                         "Principal": {
                           "AWS": "arn:aws:iam::123456789012:role/testInstanceProfile"
                         },
-                        "Sid": "AllowConsoleMeProdAssumeRoles"
+                        "Sid": "AllowNoqProdAssumeRoles"
                       }
                     ],
                     "Version": "2012-10-17"
@@ -333,6 +334,8 @@ class RequestHandler(BaseAPIV2Handler):
             )
             log_data["request"] = extended_request.dict()
             log.debug(log_data)
+
+            await update_changes_meta_data(extended_request, tenant)
 
             if changes.dry_run:
                 response = RequestCreationResponse(
@@ -951,7 +954,7 @@ class RequestsPageConfigHandler(BaseHandler):
         tenant = self.ctx.tenant
         default_configuration = {
             "pageName": "Requests",
-            "pageDescription": "View all IAM policy requests created through ConsoleMe",
+            "pageDescription": "View all IAM policy requests created through Noq",
             "tableConfig": {
                 "expandableRows": True,
                 "dataEndpoint": "/api/v2/requests?markdown=true",

@@ -753,7 +753,7 @@ class RoleCloneHandler(BaseAPIV2Handler):
 class GetRolesMTLSHandler(BaseMtlsHandler):
     """
     Handler for /api/v2/get_roles
-    Consoleme MTLS role handler - returns User's eligible roles and other details about eligible roles
+    Noq MTLS role handler - returns User's eligible roles and other details about eligible roles
     Pass ?all=true to URL query to return all roles.
     """
 
@@ -785,7 +785,7 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
                                         "apps": {
                                             "app_details": [
                                                 {
-                                                    "name": "consoleme",
+                                                    "name": "noq",
                                                     "owner": "owner@example.com",
                                                     "owner_url": null,
                                                     "app_url": "https://example.com"

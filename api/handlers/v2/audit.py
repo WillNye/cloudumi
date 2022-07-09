@@ -23,7 +23,7 @@ def _get_last_page(total: int, page_size: int) -> int:
 class AuditRolesHandler(BaseMtlsHandler):
     """Handler for /api/v2/audit/roles
 
-    Returns a list of all roles known to ConsoleMe
+    Returns a list of all roles known to Noq
     """
 
     allowed_methods = ["GET"]
