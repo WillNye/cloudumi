@@ -9,6 +9,7 @@ const ExpirationDateBlockComponent = ({
   expiration_date,
   sendRequestCommon,
   requestReadOnly,
+  hasReadOnlyAccountPolicy,
 }) => {
   const [expirationDate, setExpirationDate] = useState(expiration_date)
   const [isLoading, setIsLoading] = useState(false)

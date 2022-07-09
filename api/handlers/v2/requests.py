@@ -335,8 +335,9 @@ class RequestHandler(BaseAPIV2Handler):
             log_data["request"] = extended_request.dict()
             log.debug(log_data)
 
+            await update_changes_meta_data(extended_request, tenant)
+
             if changes.dry_run:
-                await update_changes_meta_data(extended_request, tenant)
                 response = RequestCreationResponse(
                     errors=0, request_created=False, extended_request=extended_request
                 )
