@@ -20,6 +20,7 @@ import ResourcePolicyChangeComponent from '../blocks/ResourcePolicyChangeCompone
 import ResourceTagChangeComponent from '../blocks/ResourceTagChangeComponent'
 import ExpirationDateBlockComponent from 'components/blocks/ExpirationDateBlockComponent'
 import TemporaryEscalationComponent from 'components/blocks/TemporaryEscalationBlockComponent'
+import { checkContainsReadOnlyAccount } from '../selfservice/utils'
 
 class PolicyRequestReview extends Component {
   constructor(props) {
@@ -413,7 +414,17 @@ class PolicyRequestReview extends Component {
       />
     ) : null
 
-    const expirationDateContent = extendedRequest.id ? (
+    const hasReadOnlyAccountPolicy = checkContainsReadOnlyAccount(
+      extendedRequest.changes?.changes || []
+    )
+
+    const expirationDateContent = hasReadOnlyAccountPolicy ? (
+      <Message
+        info
+        header='Policy request affects a read-only account'
+        content='Temporary policy requests are disabled for requests affecting read-only accounts.'
+      />
+    ) : (
       <ExpirationDateBlockComponent
         expiration_date={extendedRequest.expiration_date || null}
         reloadDataFromBackend={this.reloadDataFromBackend}
@@ -421,8 +432,6 @@ class PolicyRequestReview extends Component {
         sendRequestCommon={this.props.sendRequestCommon}
         requestReadOnly={requestReadOnly}
       />
-    ) : (
-      <></>
     )
 
     const templateContent = template ? (

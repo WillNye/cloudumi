@@ -171,8 +171,8 @@ class SelfServiceStep1 extends Component {
             We found some problems for this request.
           </Message.Header>
           <Message.List>
-            {messages.map((message) => (
-              <Message.Item>{message}</Message.Item>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
             ))}
           </Message.List>
         </Message>

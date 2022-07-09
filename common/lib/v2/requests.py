@@ -100,11 +100,30 @@ from common.models import (
 )
 from common.user_request.models import IAMRequest
 from common.user_request.utils import (
+    get_change_arn,
     update_extended_request_expiration_date,
     validate_custom_credentials,
 )
 
 log = config.get_logger()
+
+
+async def update_changes_meta_data(extended_request: ExtendedRequestModel, tenant: str):
+    for change in extended_request.changes.changes:
+        arn = get_change_arn(change)
+        resource_summary = await ResourceSummary.set(tenant, arn)
+
+        try:
+            account_info: SpokeAccount = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", tenant)
+                .with_query({"account_id": resource_summary.account})
+                .first
+            )
+            change.read_only = account_info.read_only
+        except ValueError:
+            # spoke account not available
+            pass
 
 
 async def generate_request_from_change_model_array(
