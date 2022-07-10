@@ -609,18 +609,6 @@ class Aws:
         log.debug(log_data)
 
         try:
-            zelkova = boto3_cached_conn(
-                "zelkova",
-                "_global_.accounts.zelkova",
-                user,
-                service_type="client",
-                future_expiration_minutes=60,
-            )
-        except Exception as e:  # noqa
-            zelkova = None
-            sentry_sdk.capture_exception()
-
-        try:
             if not config.get_tenant_specific_key(
                 "policy_request_autoapprove_probes.enabled", tenant
             ):
@@ -636,11 +624,23 @@ class Aws:
             arn_parsed = parse_arn(principal_arn)
             iam_role = await IAMRole.get(tenant, arn_parsed["account"], principal_arn)
 
-            if iam_role.get("templated"):
+            if iam_role.templated:
                 log_data["message"] = "Auto-approval not available for templated roles"
                 log_data["approved"] = False
                 log.debug(log_data)
                 return {"approved": False}
+
+            try:
+                zelkova = boto3_cached_conn(
+                    "zelkova",
+                    "_global_.accounts.zelkova",
+                    user,
+                    service_type="client",
+                    future_expiration_minutes=60,
+                )
+            except Exception as e:  # noqa
+                zelkova = None
+                sentry_sdk.capture_exception()
 
             approving_probes = []
 

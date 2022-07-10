@@ -485,6 +485,7 @@ async def is_request_eligible_for_auto_approval(
     :param user: username
     :return bool:
     """
+
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "user": user,
@@ -499,6 +500,10 @@ async def is_request_eligible_for_auto_approval(
         change.change_type == "tear_can_assume_role"
         for change in extended_request.changes.changes
     ):
+        return False
+
+    # We won't auto-approve any requests for Read-Only accounts
+    if any(change.read_only is True for change in extended_request.changes.changes):
         return False
 
     # Currently the only allowances are: Inline policies
