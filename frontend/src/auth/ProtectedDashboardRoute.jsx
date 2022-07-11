@@ -3,11 +3,11 @@ import { useAuth } from './AuthProviderDefault'
 import { useNotifications } from '../components/hooks/notifications'
 import { Route, useHistory, useLocation, useRouteMatch } from 'react-router-dom'
 import { Segment } from 'semantic-ui-react'
-import ConsoleMeHeader from '../components/Header'
-import ConsoleMeSidebar from '../components/Sidebar'
+import NavBarHeader from '../components/Header'
+import Sidebar from '../components/SideBar'
 import ReactGA from 'react-ga'
 
-const ProtectedRoute = (props) => {
+const ProtectedDashboardRoute = (props) => {
   const auth = useAuth()
   const notifications = useNotifications()
   let history = useHistory()
@@ -87,8 +87,8 @@ const ProtectedRoute = (props) => {
   }
   return (
     <>
-      <ConsoleMeHeader />
-      <ConsoleMeSidebar />
+      <NavBarHeader />
+      <Sidebar />
       <Segment
         basic
         style={{
@@ -109,4 +109,4 @@ const ProtectedRoute = (props) => {
   )
 }
 
-export default ProtectedRoute
+export default ProtectedDashboardRoute
