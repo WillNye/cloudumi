@@ -39,6 +39,11 @@ _global_:
       account_name: "development_2"
       role_arn: arn:aws:iam::350876197038:role/NoqSpokeRoleCorpNoqDev
       external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+    zelkova:
+      name: ZelkovaAnalysisRole
+      account_id: "894599878328"
+      account_name: "zelkova"
+      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
   integrations:
     aws:
       account_id: "759357822767"

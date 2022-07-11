@@ -139,6 +139,39 @@ account_ids_to_name:
 celery:
   cache_cloudtrail_denies:
     enabled: true
+policy_request_autoapprove_probes:
+  enabled: true
+  probes:
+    - name: auto_approve_low_risk_s3
+      description: |-
+        This auto-approval probe automatically approves requests
+        to pre-approved S3 buckets
+      policy: |-
+        {{
+            "Version": "2012-10-17",
+            "Statement": [
+                {{
+                    "Action": [
+                        "s3:getobject",
+                        "s3:getobjectacl",
+                        "s3:getobjecttagging",
+                        "s3:getobjectversion",
+                        "s3:getobjectversionacl",
+                        "s3:getobjectversiontagging",
+                        "s3:listbucket",
+                        "s3:listbucketversions"
+                    ],
+                    "Effect": "Allow",
+                    "Resource": [
+                        "arn:aws:s3:::adostoma",
+                        "arn:aws:s3:::adostoma/*",
+                        "arn:aws:s3:::aenkvee",
+                        "arn:aws:s3:::aenkvee/*"
+                    ],
+                    "Sid": "noquser1657458402wsng"
+                }}
+            ]
+        }}
 """
 
 # Store tenant information in DynamoDB
@@ -295,6 +328,39 @@ aws:
 celery:
   cache_cloudtrail_denies:
     enabled: true
+policy_request_autoapprove_probes:
+  enabled: true
+  probes:
+    - name: auto_approve_low_risk_s3
+      description: |-
+        This auto-approval probe automatically approves requests
+        to pre-approved S3 buckets
+      policy: |-
+        {{
+            "Version": "2012-10-17",
+            "Statement": [
+                {{
+                    "Action": [
+                        "s3:getobject",
+                        "s3:getobjectacl",
+                        "s3:getobjecttagging",
+                        "s3:getobjectversion",
+                        "s3:getobjectversionacl",
+                        "s3:getobjectversiontagging",
+                        "s3:listbucket",
+                        "s3:listbucketversions"
+                    ],
+                    "Effect": "Allow",
+                    "Resource": [
+                        "arn:aws:s3:::adostoma",
+                        "arn:aws:s3:::adostoma/*",
+                        "arn:aws:s3:::aenkvee",
+                        "arn:aws:s3:::aenkvee/*"
+                    ],
+                    "Sid": "noquser1657458402wsng"
+                }}
+            ]
+        }}
 """
 
 # Store cloudumidev information in DynamoDB

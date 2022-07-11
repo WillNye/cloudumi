@@ -3,12 +3,16 @@ import sys
 
 import bleach
 import requests as requests_sync
+import sentry_sdk
 import tenacity
+from asgiref.sync import sync_to_async
 from botocore.exceptions import ClientError
+from policy_sentry.util.arns import parse_arn
 from tornado.httpclient import AsyncHTTPClient
 from tornado.httputil import url_concat
 
 import common.lib.noq_json as json
+from common.aws.iam.role.models import IAMRole
 from common.aws.iam.role.utils import update_assume_role_policy_trust_noq
 from common.config import config
 from common.exceptions.exceptions import (
@@ -21,8 +25,10 @@ from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import (
     raise_if_background_check_required_and_no_background_check,
 )
+from common.lib.generic import get_principal_friendly_name
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import send_communications_policy_change_request_v2
+from common.models import Action, ExtendedRequestModel
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
@@ -357,9 +363,415 @@ class Aws:
         pass
 
     async def should_auto_approve_policy_v2(
-        self, extended_request, user, user_groups, tenant
+        self, extended_request: ExtendedRequestModel, user, user_groups, tenant
     ):
-        return {"approved": False}
+        """
+                This will auto-approve a policy based on a comparison of policy to auto-approval probes with AWS Zelkova.
+                Zelkova is not GA at the time of writing, hence this code is not in OSS consoleme. Anyone wishing to make use of
+                this code will need to perform the following steps:
+
+                1) You'll need to ask your AWS TAM to enable Zelkova on the account you have ConsoleMe deployed to.
+                2) You'll need to put a special JSON model for Zelkova in your consoleme instances under
+                /etc/aws/models/zelkova/2018-01-29/service-2.json . If you run ConsoleMe locally for development, also put it
+                in ~/.aws/models/zelkova/2018-01-29/service-2.json
+                3) You'll need to make your own internal consoleme plugin set if you don't already have one.
+                Basically, copy the contents of the default_plugins folder to a new repository internal to your company.
+                You'll need to pip install this into ConsoleMe OSS for your deployment.
+                4) In your plugin set, there's a function called should_auto_approve_policy_v2 that needs to be overridden.
+                We can provide the code to this when ready.
+
+                Once this is set up, you can use ConsoleMe's Dynamic Configuration (ex: https://your_consoleme_domain/config)
+                and write probes. Here's an example:
+
+        policy_request_autoapprove_probes:
+          enabled: true
+          probes:
+            - name: common_s3
+              description: Automatically approve requests to common, shared S3 buckets
+              policy: |-
+                {
+                  "Statement": [
+                    {
+                      "Action": [
+                        "s3:ListBucket",
+                        "s3:ListBucketVersions",
+                        "s3:GetObject",
+                        "s3:GetObjectTagging",
+                        "s3:GetObjectVersion",
+                        "s3:GetObjectVersionTagging",
+                        "s3:GetObjectAcl",
+                        "s3:GetObjectVersionAcl",
+                        "s3:PutObject",
+                        "s3:PutObjectTagging",
+                        "s3:PutObjectVersionTagging",
+                        "s3:ListMultipartUploadParts*",
+                        "s3:AbortMultipartUpload",
+                        "s3:DeleteObject",
+                        "s3:DeleteObjectTagging",
+                        "s3:DeleteObjectVersion",
+                        "s3:DeleteObjectVersionTagging",
+                        "s3:RestoreObject"
+                      ],
+                      "Effect": "Allow",
+                      "Resource": [
+                        "arn:aws:s3:::*.example.s3.shared.bucket",
+                        "arn:aws:s3:::*.example.s3.shared.bucket/*",
+                        "arn:aws:s3:::*.example.s3.shared.bucket2",
+                        "arn:aws:s3:::*.example.s3.shared.bucket2/*"
+                      ]
+                    }
+                  ]
+                }
+            - name: ses_probe
+              description: Automatically approve SES requests scoped to a specific e-mail suffix
+              policy: |-
+                {
+                  "Statement": [
+                    {
+                         "Action": [
+                             "ses:SendEmail",
+                              "ses:SendRawEmail"],
+                         "Condition": {
+                            "StringLike": {
+                            "ses:FromAddress": "*@mail.example.com"
+                            }
+                          },
+                         "Effect": "Allow",
+                         "Resource": "arn:aws:ses:*:123456789012:identity/mail.example.com"
+                   }
+                  ]
+                }
+            - name: cde_s3
+              description: 'Automatically approve S3 team read/write requests'
+              required_user_or_group:
+                - 's3team@example.com'
+              policy: |-
+                {
+                  "Statement": [
+                    {
+                      "Action": [
+                        "s3:ListBucket",
+                        "s3:ListBucketVersions",
+                        "s3:GetObject",
+                        "s3:GetObjectTagging",
+                        "s3:GetObjectVersion",
+                        "s3:GetObjectVersionTagging",
+                        "s3:GetObjectAcl",
+                        "s3:GetObjectVersionAcl",
+                        "s3:PutObject",
+                        "s3:PutObjectTagging",
+                        "s3:PutObjectVersionTagging",
+                        "s3:ListMultipartUploadParts*",
+                        "s3:AbortMultipartUpload",
+                        "s3:DeleteObject",
+                        "s3:DeleteObjectTagging",
+                        "s3:DeleteObjectVersion",
+                        "s3:DeleteObjectVersionTagging"
+                      ],
+                      "Effect": "Allow",
+                      "Resource": [
+                        "arn:aws:s3:::*"
+                      ]
+                    }
+                  ]
+                }
+            - name: dbteam_rds
+              description: 'Automatically approve DB team RDS requests'
+              required_user_or_group:
+                - 'db_team@example.com'
+              policy: |-
+                {
+                  "Statement": [
+                    {
+                      "Action": [
+                        "rds:*"
+                      ],
+                      "Effect": "Allow",
+                      "Resource": [
+                        "*"
+                      ]
+                    }
+                  ]
+                }
+            - name: networking_eni_autoattach
+              description: 'Automatically approve networking team ENI AutoAttach requests'
+              required_user_or_group:
+                - 'networking_team@example.com'
+              policy: |-
+                {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "ec2:AttachNetworkInterface",
+                                "ec2:Describe*",
+                                "ec2:DetachNetworkInterface"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                                "*"
+                            ]
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                }
+            - name: same_account_sqs
+              description: Automatically approve same-account SQS requests
+              policy: |-
+                {
+                  "Statement": [
+                    {
+                      "Action": [
+                        "sqs:GetQueueAttributes",
+                        "sqs:GetQueueUrl",
+                        "sqs:SendMessage",
+                        "sqs:ReceiveMessage",
+                        "sqs:DeleteMessage",
+                        "sqs:SetQueueAttributes",
+                        "sqs:PurgeQueue"
+                      ],
+                      "Effect": "Allow",
+                      "Resource": [
+                        "arn:aws:sqs:*:{account_id}:*"
+                      ]
+                    }
+                  ]
+                }
+            - name: same_account_sns
+              description: Automatically approve same-account SNS requests
+              policy: |-
+                {
+                  "Statement": [
+                    {
+                      "Action": [
+                        "sns:GetEndpointAttributes",
+                        "sns:GetTopicAttributes",
+                        "sns:Publish",
+                        "sns:Subscribe",
+                        "sns:ConfirmSubscription",
+                        "sns:Unsubscribe"
+                      ],
+                      "Effect": "Allow",
+                      "Resource": [
+                        "arn:aws:sns:*:{account_id}:*"
+                      ]
+                    }
+                  ]
+                }
+            - name: ec2:AssignIpv6Addresses
+              description: Automatically approve ec2 AssignIpv6Addresses requests
+              policy: |-
+                {
+                    "Statement":[
+                        {
+                            "Action":[
+                                "ec2:AssignIpv6Addresses"
+                            ],
+                            "Effect":"Allow",
+                            "Resource":[
+                                "*"
+                            ]
+                        }
+                    ]
+                }
+            - name: common_app_permissions
+              description: Automatically approve requests to common application permissions
+              accounts:
+                blocklist:
+                  - "123456789012" # the account ID to our really sensitive PCI account
+              policy: |-
+                {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Sid": "prana",
+                      "Effect": "Allow",
+                      "Action": [
+                        "route53:listresourcerecordsets",
+                        "route53:changeresourcerecordsets",
+                        "route53:gethostedzone",
+                        "route53:listhostedzones"
+                      ],
+                      "Resource": [
+                        "arn:aws:route53:::hostedzone/BLAH"
+                      ]
+                    }
+                  ]
+                }
+        """
+        principal = await get_principal_friendly_name(extended_request.principal)
+        log_data: dict = {
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "user": user,
+            "principal": principal,
+            "request": extended_request.dict(),
+            "message": "Determining if request should be auto-approved",
+        }
+        log.debug(log_data)
+
+        try:
+            if not config.get_tenant_specific_key(
+                "policy_request_autoapprove_probes.enabled", tenant
+            ):
+                log_data["message"] = "Auto-approval probes are disabled"
+                log_data["approved"] = False
+                log.debug(log_data)
+                return {"approved": False}
+
+            # AwsResource types are the only resource types currently supported for auto-approval.
+            if extended_request.principal.principal_type != "AwsResource":
+                return {"approved": False}
+            principal_arn = extended_request.principal.principal_arn
+            arn_parsed = parse_arn(principal_arn)
+            iam_role = await IAMRole.get(tenant, arn_parsed["account"], principal_arn)
+
+            if iam_role.templated:
+                log_data["message"] = "Auto-approval not available for templated roles"
+                log_data["approved"] = False
+                log.debug(log_data)
+                return {"approved": False}
+
+            try:
+                zelkova = boto3_cached_conn(
+                    "zelkova",
+                    "_global_.accounts.zelkova",
+                    user,
+                    service_type="client",
+                    future_expiration_minutes=60,
+                )
+            except Exception as e:  # noqa
+                zelkova = None
+                sentry_sdk.capture_exception()
+
+            approving_probes = []
+
+            # Currently the only allowances are: Inline policies
+            for change in extended_request.changes.changes:
+                # Exclude auto-generated resource policies from check as we don't apply these
+                if change.change_type == "resource_policy" and change.autogenerated:
+                    continue
+                # We currently only support for attaching inline policies, and only if zelkova
+                if (
+                    change.change_type != "inline_policy"
+                    or change.action != Action.attach
+                    or not zelkova
+                ):
+                    log_data[
+                        "message"
+                    ] = "Successfully finished running auto-approval probes"
+                    log_data["approved"] = False
+                    log.info(log_data)
+                    return {"approved": False}
+
+                probes_result = False
+                account_id = principal_arn.split(":")[4]
+
+                for probe in config.get_tenant_specific_key(
+                    "policy_request_autoapprove_probes.probes", tenant, []
+                ):
+                    log_data["probe"] = probe["name"]
+                    log_data["requested_policy"] = change.policy.json()
+                    log_data["message"] = "Running probe on requested policy"
+                    log.debug(log_data)
+                    probe_result = False
+                    policy_document = change.policy.policy_document
+
+                    # Do not approve "Deny" policies automatically
+                    statements = policy_document.get("Statement", [])
+                    for statement in statements:
+                        if statement.get("Effect") == "Deny":
+                            log_data[
+                                "message"
+                            ] = "Successfully finished running auto-approval probes"
+                            log_data["approved"] = False
+                            log.debug(log_data)
+                            return {"approved": False}
+
+                    requested_policy_text = json.dumps(policy_document)
+                    zelkova_result = await sync_to_async(zelkova.compare_policies)(
+                        Items=[
+                            {
+                                "Policy0": requested_policy_text,
+                                "Policy1": probe["policy"].replace(
+                                    "{account_id}", account_id
+                                ),
+                                "ResourceType": "IAM",
+                            }
+                        ]
+                    )
+
+                    comparison = zelkova_result["Items"][0]["Comparison"]
+
+                    allow_listed = False
+                    allowed_group = False
+
+                    # Probe will fail if ARN account ID is not in the probe's account allow-list. Default allow-list is
+                    # *
+                    for account in probe.get("accounts", {}).get("allowlist", ["*"]):
+                        if account == "*" or account_id == str(account):
+                            allow_listed = True
+                            break
+
+                    if not allow_listed:
+                        comparison = "DENIED_BY_ALLOWLIST"
+
+                    # Probe will fail if ARN account ID is in the probe's account blocklist
+                    for account in probe.get("accounts", {}).get("blocklist", []):
+                        if account_id == str(account):
+                            comparison = "DENIED_BY_BLOCKLIST"
+
+                    for group in probe.get("required_user_or_group", ["*"]):
+                        for g in user_groups:
+                            if group == "*" or group == g or group == user:
+                                allowed_group = True
+                                break
+
+                    if not allowed_group:
+                        comparison = "DENIED_BY_ALLOWEDGROUPS"
+
+                    if comparison in ["LESS_PERMISSIVE", "EQUIVALENT"]:
+                        probe_result = True
+                        probes_result = True
+                        approving_probes.append(
+                            {"name": probe["name"], "policy": change.policy_name}
+                        )
+                        log_data["comparison"] = comparison
+                        log_data["probe_result"] = probe_result
+                        log.debug(log_data)
+                        # Already have an approving probe, break out of for loop
+                        break
+                    log_data["comparison"] = comparison
+                    log_data["probe_result"] = probe_result
+                    log.debug(log_data)
+                if not probes_result:
+                    # If one of the policies in the request fails to auto-approve, everything fails
+                    log_data[
+                        "message"
+                    ] = "Successfully finished running auto-approval probes"
+                    log_data["approved"] = False
+                    log.debug(log_data)
+                    stats.count(
+                        f"{log_data['function']}.auto_approved",
+                        tags={"arn": principal_arn, "result": False},
+                    )
+                    return {"approved": False}
+
+            # All changes have been checked, and none of them returned false
+            log_data["message"] = "Successfully finished running auto-approval probes"
+            log_data["approved"] = True
+            log.debug(log_data)
+            stats.count(
+                f"{log_data['function']}.auto_approved",
+                tags={"arn": principal_arn, "result": True},
+            )
+            return {"approved": True, "approving_probes": approving_probes}
+        except Exception as e:
+            sentry_sdk.capture_exception()
+            log_data["error"] = str(e)
+            log_data[
+                "message"
+            ] = "Exception occurred while checking auto-approval probe"
+            log.error(log_data, exc_info=True)
+            return {"approved": False}
 
 
 def init():
