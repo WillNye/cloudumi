@@ -147,10 +147,10 @@ policy_request_autoapprove_probes:
         This auto-approval probe automatically approves requests
         to pre-approved S3 buckets
       policy: |-
-        {
+        {{
             "Version": "2012-10-17",
             "Statement": [
-                {
+                {{
                     "Action": [
                         "s3:getobject",
                         "s3:getobjectacl",
@@ -169,9 +169,9 @@ policy_request_autoapprove_probes:
                         "arn:aws:s3:::aenkvee/*"
                     ],
                     "Sid": "noquser1657458402wsng"
-                }
+                }}
             ]
-        }
+        }}
 """
 
 # Store tenant information in DynamoDB
@@ -336,10 +336,10 @@ policy_request_autoapprove_probes:
         This auto-approval probe automatically approves requests
         to pre-approved S3 buckets
       policy: |-
-        {
+        {{
             "Version": "2012-10-17",
             "Statement": [
-                {
+                {{
                     "Action": [
                         "s3:getobject",
                         "s3:getobjectacl",
@@ -358,9 +358,9 @@ policy_request_autoapprove_probes:
                         "arn:aws:s3:::aenkvee/*"
                     ],
                     "Sid": "noquser1657458402wsng"
-                }
+                }}
             ]
-        }
+        }}
 """
 
 # Store cloudumidev information in DynamoDB
