@@ -139,12 +139,12 @@ account_ids_to_name:
 celery:
   cache_cloudtrail_denies:
     enabled: true
-policy_request_autoapprove_probes:
+policy_request_autoapprove_rules
   enabled: true
-  probes:
+  rules:
     - name: auto_approve_low_risk_s3
       description: |-
-        This auto-approval probe automatically approves requests
+        This auto-approval rule automatically approves requests
         to pre-approved S3 buckets
       policy: |-
         {{
@@ -328,12 +328,12 @@ aws:
 celery:
   cache_cloudtrail_denies:
     enabled: true
-policy_request_autoapprove_probes:
+policy_request_autoapprove_rules:
   enabled: true
-  probes:
+  rules:
     - name: auto_approve_low_risk_s3
       description: |-
-        This auto-approval probe automatically approves requests
+        This auto-approval rule automatically approves requests
         to pre-approved S3 buckets
       policy: |-
         {{
