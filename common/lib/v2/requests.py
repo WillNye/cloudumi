@@ -478,8 +478,8 @@ async def is_request_eligible_for_auto_approval(
     extended_request: ExtendedRequestModel, user: str
 ) -> bool:
     """
-    Checks whether a request is eligible for auto-approval probes or not. Currently, only requests with inline_policies
-    are eligible for auto-approval probes.
+    Checks whether a request is eligible for auto-approval rules or not. Currently, only requests with inline_policies
+    are eligible for auto-approval rules.
 
     :param extended_request: ExtendedRequestModel
     :param user: username
@@ -491,7 +491,7 @@ async def is_request_eligible_for_auto_approval(
         "user": user,
         "arn": extended_request.principal.principal_arn,
         "request": extended_request.dict(),
-        "message": "Checking whether request is eligible for auto-approval probes",
+        "message": "Checking whether request is eligible for auto-approval rules",
     }
     log.info(log_data)
     is_eligible = False
@@ -517,16 +517,16 @@ async def is_request_eligible_for_auto_approval(
         if change.change_type != "inline_policy":
             log_data[
                 "message"
-            ] = "Finished checking whether request is eligible for auto-approval probes"
+            ] = "Finished checking whether request is eligible for auto-approval rules"
             log_data["eligible_for_auto_approval"] = is_eligible
             log.info(log_data)
             return is_eligible
 
-    # If above check passes, then it's eligible for auto-approval probe check
+    # If above check passes, then it's eligible for auto-approval rule check
     is_eligible = True
     log_data[
         "message"
-    ] = "Finished checking whether request is eligible for auto-approval probes"
+    ] = "Finished checking whether request is eligible for auto-approval rules"
     log_data["eligible_for_auto_approval"] = is_eligible
     log.info(log_data)
     return is_eligible
@@ -2748,7 +2748,7 @@ async def parse_and_apply_policy_request_modification(
     user_groups,
     last_updated,
     tenant: str,
-    approval_probe_approved=False,
+    approval_rule_approved=False,
     force_refresh=False,
     cloud_credentials: CloudCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
@@ -2760,7 +2760,7 @@ async def parse_and_apply_policy_request_modification(
     :param policy_request_model: PolicyRequestModificationRequestModel
     :param user_groups:  user's groups
     :param last_updated:
-    :param approval_probe_approved: Whether this change was approved by an auto-approval probe. If not, user needs to be
+    :param approval_rule_approved: Whether this change was approved by an auto-approval rule. If not, user needs to be
         authorized to make the change.
     :param cloud_credentials: User provided credentials
         used to override the default credentials for interfacing with a cloud provider
@@ -2856,9 +2856,9 @@ async def parse_and_apply_policy_request_modification(
         can_manage_policy_request = await can_admin_policies(
             user, user_groups, tenant, account_ids
         )
-        # Authorization required if the policy wasn't approved by an auto-approval probe.
+        # Authorization required if the policy wasn't approved by an auto-approval rule.
         should_apply_because_auto_approved = (
-            request_changes.command == Command.apply_change and approval_probe_approved
+            request_changes.command == Command.apply_change and approval_rule_approved
         )
 
         if not can_manage_policy_request and not should_apply_because_auto_approved:

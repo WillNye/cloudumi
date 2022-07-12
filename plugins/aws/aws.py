@@ -345,12 +345,12 @@ class Aws:
         return url
 
     async def send_communications_new_policy_request(
-        self, extended_request, admin_approved, approval_probe_approved, tenant
+        self, extended_request, admin_approved, approval_rule_approved, tenant
     ):
         """
         Optionally send a notification when there's a new policy change request
 
-        :param approval_probe_approved:
+        :param approval_rule_approved:
         :param admin_approved:
         :param extended_request:
         :return:
@@ -366,7 +366,7 @@ class Aws:
         self, extended_request: ExtendedRequestModel, user, user_groups, tenant
     ):
         """
-                This will auto-approve a policy based on a comparison of policy to auto-approval probes with AWS Zelkova.
+                This will auto-approve a policy based on a comparison of policy to auto-approval rules with AWS Zelkova.
                 Zelkova is not GA at the time of writing, hence this code is not in OSS consoleme. Anyone wishing to make use of
                 this code will need to perform the following steps:
 
@@ -381,11 +381,11 @@ class Aws:
                 We can provide the code to this when ready.
 
                 Once this is set up, you can use ConsoleMe's Dynamic Configuration (ex: https://your_consoleme_domain/config)
-                and write probes. Here's an example:
+                and write rules. Here's an example:
 
-        policy_request_autoapprove_probes:
+        policy_request_autoapprove_rules:
           enabled: true
-          probes:
+          rules:
             - name: common_s3
               description: Automatically approve requests to common, shared S3 buckets
               policy: |-
@@ -422,7 +422,7 @@ class Aws:
                     }
                   ]
                 }
-            - name: ses_probe
+            - name: ses_rule
               description: Automatically approve SES requests scoped to a specific e-mail suffix
               policy: |-
                 {
@@ -610,9 +610,9 @@ class Aws:
 
         try:
             if not config.get_tenant_specific_key(
-                "policy_request_autoapprove_probes.enabled", tenant
+                "policy_request_autoapprove_rules.enabled", tenant
             ):
-                log_data["message"] = "Auto-approval probes are disabled"
+                log_data["message"] = "Auto-approval rules are disabled"
                 log_data["approved"] = False
                 log.debug(log_data)
                 return {"approved": False}
@@ -642,7 +642,7 @@ class Aws:
                 zelkova = None
                 sentry_sdk.capture_exception()
 
-            approving_probes = []
+            approving_rules = []
 
             # Currently the only allowances are: Inline policies
             for change in extended_request.changes.changes:
@@ -657,22 +657,22 @@ class Aws:
                 ):
                     log_data[
                         "message"
-                    ] = "Successfully finished running auto-approval probes"
+                    ] = "Successfully finished running auto-approval rules"
                     log_data["approved"] = False
                     log.info(log_data)
                     return {"approved": False}
 
-                probes_result = False
+                rules_result = False
                 account_id = principal_arn.split(":")[4]
 
-                for probe in config.get_tenant_specific_key(
-                    "policy_request_autoapprove_probes.probes", tenant, []
+                for rule in config.get_tenant_specific_key(
+                    "policy_request_autoapprove_rules.rules", tenant, []
                 ):
-                    log_data["probe"] = probe["name"]
+                    log_data["rule"] = rule["name"]
                     log_data["requested_policy"] = change.policy.json()
-                    log_data["message"] = "Running probe on requested policy"
+                    log_data["message"] = "Running rule on requested policy"
                     log.debug(log_data)
-                    probe_result = False
+                    rule_result = False
                     policy_document = change.policy.policy_document
 
                     # Do not approve "Deny" policies automatically
@@ -681,7 +681,7 @@ class Aws:
                         if statement.get("Effect") == "Deny":
                             log_data[
                                 "message"
-                            ] = "Successfully finished running auto-approval probes"
+                            ] = "Successfully finished running auto-approval rules"
                             log_data["approved"] = False
                             log.debug(log_data)
                             return {"approved": False}
@@ -691,7 +691,7 @@ class Aws:
                         Items=[
                             {
                                 "Policy0": requested_policy_text,
-                                "Policy1": probe["policy"].replace(
+                                "Policy1": rule["policy"].replace(
                                     "{account_id}", account_id
                                 ),
                                 "ResourceType": "IAM",
@@ -704,9 +704,9 @@ class Aws:
                     allow_listed = False
                     allowed_group = False
 
-                    # Probe will fail if ARN account ID is not in the probe's account allow-list. Default allow-list is
+                    # Rule will fail if ARN account ID is not in the rule's account allow-list. Default allow-list is
                     # *
-                    for account in probe.get("accounts", {}).get("allowlist", ["*"]):
+                    for account in rule.get("accounts", {}).get("allowlist", ["*"]):
                         if account == "*" or account_id == str(account):
                             allow_listed = True
                             break
@@ -714,12 +714,12 @@ class Aws:
                     if not allow_listed:
                         comparison = "DENIED_BY_ALLOWLIST"
 
-                    # Probe will fail if ARN account ID is in the probe's account blocklist
-                    for account in probe.get("accounts", {}).get("blocklist", []):
+                    # Rule will fail if ARN account ID is in the rule's account blocklist
+                    for account in rule.get("accounts", {}).get("blocklist", []):
                         if account_id == str(account):
                             comparison = "DENIED_BY_BLOCKLIST"
 
-                    for group in probe.get("required_user_or_group", ["*"]):
+                    for group in rule.get("required_user_or_group", ["*"]):
                         for g in user_groups:
                             if group == "*" or group == g or group == user:
                                 allowed_group = True
@@ -729,24 +729,24 @@ class Aws:
                         comparison = "DENIED_BY_ALLOWEDGROUPS"
 
                     if comparison in ["LESS_PERMISSIVE", "EQUIVALENT"]:
-                        probe_result = True
-                        probes_result = True
-                        approving_probes.append(
-                            {"name": probe["name"], "policy": change.policy_name}
+                        rule_result = True
+                        rules_result = True
+                        approving_rules.append(
+                            {"name": rule["name"], "policy": change.policy_name}
                         )
                         log_data["comparison"] = comparison
-                        log_data["probe_result"] = probe_result
+                        log_data["rule_result"] = rule_result
                         log.debug(log_data)
-                        # Already have an approving probe, break out of for loop
+                        # Already have an approving rule, break out of for loop
                         break
                     log_data["comparison"] = comparison
-                    log_data["probe_result"] = probe_result
+                    log_data["rule_result"] = rule_result
                     log.debug(log_data)
-                if not probes_result:
+                if not rules_result:
                     # If one of the policies in the request fails to auto-approve, everything fails
                     log_data[
                         "message"
-                    ] = "Successfully finished running auto-approval probes"
+                    ] = "Successfully finished running auto-approval rules"
                     log_data["approved"] = False
                     log.debug(log_data)
                     stats.count(
@@ -756,20 +756,18 @@ class Aws:
                     return {"approved": False}
 
             # All changes have been checked, and none of them returned false
-            log_data["message"] = "Successfully finished running auto-approval probes"
+            log_data["message"] = "Successfully finished running auto-approval rules"
             log_data["approved"] = True
             log.debug(log_data)
             stats.count(
                 f"{log_data['function']}.auto_approved",
                 tags={"arn": principal_arn, "result": True},
             )
-            return {"approved": True, "approving_probes": approving_probes}
+            return {"approved": True, "approving_rules": approving_rules}
         except Exception as e:
             sentry_sdk.capture_exception()
             log_data["error"] = str(e)
-            log_data[
-                "message"
-            ] = "Exception occurred while checking auto-approval probe"
+            log_data["message"] = "Exception occurred while checking auto-approval rule"
             log.error(log_data, exc_info=True)
             return {"approved": False}
 
