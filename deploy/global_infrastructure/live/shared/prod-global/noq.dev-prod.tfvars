@@ -16,4 +16,4 @@ tags = {
 
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
-s3_access_log_bucket         = "s3-access-logs.306086318698.us-west-2"
+s3_access_log_bucket         = "noq-global-prod-s3-access-logs.us-west-2"
