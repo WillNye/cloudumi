@@ -1,0 +1,12 @@
+.eula {
+  width: 80%;
+  margin: auto;
+  padding-top: 100px;
+}
+
+.eula__actions {
+  width: inherit;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}

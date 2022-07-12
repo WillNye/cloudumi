@@ -170,7 +170,12 @@ function App() {
           component={AutomatedPermissions}
         />
         <ProtectedRoute key='eula' exact path='/eula' component={EULA} />
-        <ProtectedDashboardRoute key='logout' exact path='/logout' component={Logout} />
+        <ProtectedDashboardRoute
+          key='logout'
+          exact
+          path='/logout'
+          component={Logout}
+        />
         {/* <Route key='login' exact path='/login' component={Login} /> */}
         <Route component={NoMatch} />
       </Switch>
