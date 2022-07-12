@@ -7,11 +7,13 @@ from common.lib.asyncio import aio_wrapper
 log = config.get_logger(__name__)
 
 DOCS_BUCKET = config.get_global_s3_bucket("legal_docs")
-EULA_KEY = "agreements/eula.txt"
+DEFAULT_EULA_KEY = "agreements/eula.txt"
 
 
-async def generate_eula_link(version: str = None) -> str:
-    s3_params = {"Bucket": DOCS_BUCKET, "Key": EULA_KEY}
+async def generate_eula_link(
+    version: str = None, eula_key: str = DEFAULT_EULA_KEY
+) -> str:
+    s3_params = {"Bucket": DOCS_BUCKET, "Key": eula_key}
     if version:
         s3_params["VersionId"] = version
 
@@ -36,7 +38,7 @@ async def generate_eula_link(version: str = None) -> str:
         )
 
 
-async def get_current_eula_version() -> str:
+async def get_current_eula_version(eula_key: str = DEFAULT_EULA_KEY) -> str:
     try:
         s3_client = boto3_cached_conn(
             "s3",
@@ -48,7 +50,7 @@ async def get_current_eula_version() -> str:
         eula_info = await aio_wrapper(
             s3_client.get_object_attributes,
             Bucket=DOCS_BUCKET,
-            Key=EULA_KEY,
+            Key=eula_key,
             ObjectAttributes=["ObjectSize"],
         )
         return eula_info["VersionId"]

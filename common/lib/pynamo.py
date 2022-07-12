@@ -208,6 +208,7 @@ class GlobalConnection(Connection):
             None,
             service_type="session",
             future_expiration_minutes=60,
+            session_name="noq_dynamo_connection",
         )
         self._client = session.client("dynamodb")
 

@@ -14,7 +14,7 @@ log = get_logger(__name__)
 
 class MembershipTier(Enum):
     FREE = 0
-    UNLIMITED = 999
+    UNLIMITED = -1
 
     @classmethod
     def values(cls):
@@ -60,5 +60,6 @@ class TenantDetails(GlobalNoqModel):
     eula_info = NoqMapAttribute(null=True)
     noq_cluster = UnicodeAttribute()
     license_expiration = NumberAttribute(null=True)
+    notes = UnicodeAttribute(null=True)
 
     cluster_sharding_index = ClusterShardingIndex()
