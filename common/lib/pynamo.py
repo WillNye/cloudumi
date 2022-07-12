@@ -194,6 +194,7 @@ class GlobalConnection(Connection):
         dax_write_endpoints: Optional[list[str]] = None,
         dax_read_endpoints: Optional[list[str]] = None,
         fallback_to_dynamodb: Optional[bool] = False,
+        aws_account_name: Optional[str] = "tenant_data",
     ):
         from common.lib.assume_role import boto3_cached_conn
 
@@ -203,10 +204,11 @@ class GlobalConnection(Connection):
 
         session = boto3_cached_conn(
             None,
-            "_global_.accounts.tenant_data",
+            f"_global_.accounts.{aws_account_name}",
             None,
             service_type="session",
             future_expiration_minutes=60,
+            session_name="noq_dynamo_connection",
         )
         self._client = session.client("dynamodb")
 
@@ -289,6 +291,7 @@ class GlobalTableConnection(TableConnection):
         dax_write_endpoints: Optional[list[str]] = None,
         dax_read_endpoints: Optional[list[str]] = None,
         fallback_to_dynamodb: Optional[bool] = False,
+        aws_account_name: Optional[str] = "tenant_data",
     ) -> None:
         self.table_name = table_name
         self.connection = GlobalConnection(
@@ -303,6 +306,7 @@ class GlobalTableConnection(TableConnection):
             dax_write_endpoints=dax_write_endpoints,
             dax_read_endpoints=dax_read_endpoints,
             fallback_to_dynamodb=fallback_to_dynamodb,
+            aws_account_name=aws_account_name,
         )
 
 
@@ -351,10 +355,15 @@ class GlobalNoqModel(NoqModel):
                 dax_write_endpoints=cls.Meta.dax_write_endpoints,
                 dax_read_endpoints=cls.Meta.dax_read_endpoints,
                 fallback_to_dynamodb=cls.Meta.fallback_to_dynamodb,
+                aws_account_name=cls.aws_account_name(),
             )
             cls._conn_ttl = curr_time + timedelta(minutes=55)
 
         return cls._connection
+
+    @staticmethod
+    def aws_account_name():
+        return "tenant_data"
 
 
 class NoqMapAttribute(MapAttribute):

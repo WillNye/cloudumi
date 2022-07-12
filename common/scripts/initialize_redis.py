@@ -8,7 +8,7 @@ from asgiref.sync import async_to_sync
 
 from common.celery_tasks import celery_tasks as celery
 from common.lib.account_indexers import get_account_id_to_name_mapping
-from common.lib.tenants import get_all_tenants
+from common.lib.tenant import get_all_tenants
 
 start_time = int(time.time())
 

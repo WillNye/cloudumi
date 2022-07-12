@@ -12,6 +12,7 @@ zone        = "noq.dev"
 stage       = "prod"
 attributes  = 1
 domain_name = "*.noq.dev"
+profile     = "noq_prod"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
@@ -42,12 +43,13 @@ dax_node_count = 1
 # Redis
 redis_node_type = "cache.t3.small"
 
-profile = "noq_prod"
 # Sentry
 sentry_dsn = "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
 
-s3_access_log_bucket = "s3-access-logs.940552945933.us-west-2"
-
-elasticache_node_type = "cache.t2.medium"
-
+s3_access_log_bucket         = "s3-access-logs.940552945933.us-west-2"
+elasticache_node_type        = "cache.t2.medium"
 google_analytics_tracking_id = "G-P5K1SQF3P6"
+
+# Global info
+global_tenant_data_account_id = "940552945933"
+legal_docs_bucket_name        = "noq-global-prod-legal-docs"

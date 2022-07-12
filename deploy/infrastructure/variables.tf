@@ -173,3 +173,13 @@ variable "dax_node_count" {
   type        = number
   default     = 3
 }
+
+variable "global_tenant_data_account_id" {
+  description = "Account ID of the AWS Tenant Data Account"
+  type        = string
+}
+
+variable "legal_docs_bucket_name" {
+  description = "The S3 bucket containing templates for our legal documentation"
+  type        = string
+}
