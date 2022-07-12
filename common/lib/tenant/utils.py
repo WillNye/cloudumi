@@ -7,7 +7,7 @@ from common.lib.asyncio import aio_wrapper
 log = config.get_logger(__name__)
 
 DOCS_BUCKET = config.get_global_s3_bucket("legal_docs")
-EULA_KEY = "agreements/noq_eula.txt"
+EULA_KEY = "agreements/eula.txt"
 
 
 async def generate_eula_link(version: str = None) -> str:

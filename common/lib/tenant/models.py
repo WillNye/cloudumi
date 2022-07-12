@@ -21,13 +21,15 @@ class MembershipTier(Enum):
         return [str(mt.value) for mt in list(cls)]
 
 
-class MembershipTierAttribute(UnicodeAttribute):
+class MembershipTierAttribute(NumberAttribute):
     def serialize(self, value: any) -> any:
         if isinstance(value, MembershipTier):
-            return value.value
+            return super(MembershipTierAttribute, self).serialize(value.value)
 
         try:
-            return MembershipTier(value).value
+            return super(MembershipTierAttribute, self).serialize(
+                MembershipTier(value).value
+            )
         except ValueError:
             raise ValueError(
                 f"membership_tier must be one of {', '.join(MembershipTier.values())}"
