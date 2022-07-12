@@ -309,6 +309,9 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
+    def get_global_s3_bucket(self, bucket_name) -> str:
+        return self.get(f"_global_.s3_buckets.{bucket_name}")
+
     def get_tenant_static_config_from_dynamo(self, tenant, safe=False):
         """
         Get tenant static configuration from DynamoDB.
@@ -588,6 +591,7 @@ get_employee_info_url = CONFIG.get_employee_info_url
 get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dynamo
 is_tenant_configured = CONFIG.is_tenant_configured
 get_dynamo_table_name = CONFIG.get_dynamo_table_name
+get_global_s3_bucket = CONFIG.get_global_s3_bucket
 # Set logging levels
 CONFIG.set_logging_levels()
 
