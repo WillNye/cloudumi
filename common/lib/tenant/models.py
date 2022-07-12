@@ -1,10 +1,6 @@
 from enum import Enum
 
-from pynamodax.attributes import (
-    BooleanAttribute,
-    UnicodeAttribute,
-    UTCDateTimeAttribute,
-)
+from pynamodax.attributes import BooleanAttribute, NumberAttribute, UnicodeAttribute
 from pynamodax.indexes import AllProjection, GlobalSecondaryIndex
 
 from common.config import config
@@ -58,9 +54,9 @@ class TenantDetails(GlobalNoqModel):
     membership_tier = MembershipTierAttribute()
     is_active = BooleanAttribute(default=True)
     created_by = UnicodeAttribute()
-    created_at = UTCDateTimeAttribute()
+    created_at = NumberAttribute()
     eula_info = NoqMapAttribute(null=True)
     noq_cluster = UnicodeAttribute()
-    license_expiration = UTCDateTimeAttribute(null=True)
+    license_expiration = NumberAttribute(null=True)
 
     cluster_sharding_index = ClusterShardingIndex()
