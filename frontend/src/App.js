@@ -3,8 +3,8 @@ import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import ProtectedRoute from './auth/ProtectedRoute'
 import ConsoleMeSelectRoles from './components/roles/SelectRoles'
 import ConsoleMePolicyTable from './components/policy/PolicyTable'
-import ConsoleMeIdentityGroupsTable from './components/identity/IdentityGroupsTable'
-import IdentityGroupEdit from './components/identity/Group'
+// import ConsoleMeIdentityGroupsTable from './components/identity/IdentityGroupsTable'
+// import IdentityGroupEdit from './components/identity/Group'
 import ConsoleMeRequestTable from './components/request/RequestTable'
 import { Downloads } from './components/downloads/Downloads'
 import ConsoleMeSelfService from './components/selfservice/SelfService'
@@ -14,16 +14,16 @@ import PolicyEditor from './components/policy/PolicyEditor'
 import ConsoleLogin from './components/ConsoleLogin'
 import ConsoleMeChallengeValidator from './components/challenge/ConsoleMeChallengeValidator'
 import CreateCloneFeature from './components/roles/CreateCloneFeature'
-import Login from './components/Login'
+// import Login from './components/Login'
 import Logout from './components/Logout'
 import NoMatch from './components/NoMatch'
 import AuthenticateModal from './components/AuthenticateModal'
-import GenerateConfig from './components/generate_config/GenerateConfig'
-import { IdentityGroupRequest } from './components/identity/GroupRequest'
-import { IdentityGroupRequestReview } from './components/identity/GroupRequestReview'
-import IdentityRequestsTable from './components/identity/IdentityRequestsTable'
-import IdentityUsersTable from './components/identity/IdentityUsersTable'
-import IdentityUserEdit from './components/identity/User'
+// import GenerateConfig from './components/generate_config/GenerateConfig'
+// import { IdentityGroupRequest } from './components/identity/GroupRequest'
+// import { IdentityGroupRequestReview } from './components/identity/GroupRequestReview'
+// import IdentityRequestsTable from './components/identity/IdentityRequestsTable'
+// import IdentityUsersTable from './components/identity/IdentityUsersTable'
+// import IdentityUserEdit from './components/identity/User'
 import { Settings } from './components/settings/Settings'
 import { MainProvider } from './MainProvider'
 import AutomatedPermissions from 'components/AutomatedPermissions'
@@ -50,7 +50,7 @@ function App() {
           path='/policies'
           component={ConsoleMePolicyTable}
         />
-        <ProtectedRoute
+        {/* <ProtectedRoute
           key='groups'
           exact
           path='/groups'
@@ -88,7 +88,7 @@ function App() {
           exact
           path='/group_requests'
           component={IdentityRequestsTable}
-        />
+        /> */}
         <ProtectedRoute
           key='review'
           exact
@@ -117,12 +117,12 @@ function App() {
           path='/config'
           component={ConsoleMeDynamicConfig}
         />
-        <ProtectedRoute
+        {/* <ProtectedRoute
           key='generate_config'
           exact
           path='/generate_config'
           component={GenerateConfig}
-        />
+        /> */}
         <ProtectedRoute
           key='role_query'
           exact
@@ -168,7 +168,7 @@ function App() {
           component={AutomatedPermissions}
         />
         <ProtectedRoute key='logout' exact path='/logout' component={Logout} />
-        <Route key='login' exact path='/login' component={Login} />
+        {/* <Route key='login' exact path='/login' component={Login} /> */}
         <Route component={NoMatch} />
       </Switch>
       <AuthenticateModal />

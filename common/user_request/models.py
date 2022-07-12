@@ -241,7 +241,7 @@ class IAMRequest(NoqModel):
                                 .with_query({"account_id": resource_summary.account})
                                 .first.name,
                                 region=resource_summary.region or config.region,
-                                session_name="get-request-resource-details",
+                                session_name="noq_get_request_resource_details",
                                 sts_client_kwargs=dict(
                                     region_name=config.region,
                                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",

@@ -205,7 +205,7 @@ class SelfServiceStep2 extends Component {
             <Item.Meta>
               <Grid columns={2}>
                 <List relaxed style={{ width: '100%', marginTop: '.25em' }}>
-                  {Object.keys(permission).map((key) => {
+                  {Object.keys(permission).map((key, index) => {
                     if (
                       key === 'actions' ||
                       key === 'service' ||
@@ -214,7 +214,7 @@ class SelfServiceStep2 extends Component {
                       return null
                     }
                     return (
-                      <List.Item style={{ marginRight: '0px' }}>
+                      <List.Item key={index} style={{ marginRight: '0px' }}>
                         <Grid.Row
                           style={{ display: 'flex', fontSize: '0.8750em' }}
                         >
@@ -296,12 +296,13 @@ class SelfServiceStep2 extends Component {
               </Grid.Column>
               <Grid.Column style={{ width: '100%' }}>
                 {permission.actions != null
-                  ? permission.actions.map((action) => {
+                  ? permission.actions.map((action, index) => {
                       const actionDetail = _.find(found.actions, {
                         name: action,
                       })
                       return (
                         <Label
+                          key={index}
                           as='a'
                           style={{
                             border: '1px solid #babbbc',
@@ -341,8 +342,8 @@ class SelfServiceStep2 extends Component {
             We found some problems for this request.
           </Message.Header>
           <Message.List>
-            {messages.map((message) => (
-              <Message.Item>{message}</Message.Item>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
             ))}
           </Message.List>
         </Message>

@@ -4,7 +4,7 @@ when invoked. Please add internal-only celery tasks to the celery_tasks plugin.
 
 When ran in development mode (CONFIG_LOCATION=<location of development.yaml configuration file. To run both the celery
 beat scheduler and a worker simultaneously, and to have jobs kick off starting at the next minute, run the following
-command: celery -A consoleme.celery_tasks.celery_tasks worker --loglevel=info -l DEBUG -B
+command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DEBUG -B
 
 """
 from __future__ import absolute_import
@@ -952,9 +952,7 @@ def cache_iam_resources_for_account(
             client_kwargs=config.get_tenant_specific_key(
                 "boto3.client_kwargs", tenant, {}
             ),
-            session_name=sanitize_session_name(
-                "consoleme_cache_iam_resources_for_account"
-            ),
+            session_name=sanitize_session_name("noq_cache_iam_resources_for_account"),
             read_only=True,
         )
         paginator = client.get_paginator("get_account_authorization_details")
@@ -1677,9 +1675,7 @@ def cache_sqs_queues_for_account(
                 client_kwargs=config.get_tenant_specific_key(
                     "boto3.client_kwargs", tenant, {}
                 ),
-                session_name=sanitize_session_name(
-                    "consoleme_cache_sqs_queues_for_account"
-                ),
+                session_name=sanitize_session_name("noq_cache_sqs_queues_for_account"),
             )
 
             paginator = client.get_paginator("list_queues")

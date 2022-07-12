@@ -344,7 +344,7 @@ async def get_account_delegated_admins(account_id, tenant):
 
 async def populate_approve_reject_policy(
     extended_request: ExtendedRequestModel, groups, tenant, user: str
-) -> bool:
+) -> dict[str, Any]:
     request_config = {}
 
     for change in extended_request.changes.changes:
@@ -367,8 +367,10 @@ async def populate_approve_reject_policy(
 
 
 async def can_admin_policies(
-    user: str, user_groups: List[str], tenant: str, account_ids: set[str] = []
+    user: str, user_groups: List[str], tenant: str, account_ids: set[str] = None
 ) -> bool:
+    if not account_ids:
+        account_ids = set()
     if await user_can_edit_resources(user, user_groups, tenant, account_ids):
         return True
     if is_in_group(

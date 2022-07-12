@@ -9,6 +9,7 @@ const AssumeRolePolicy = () => {
     assumeRolePolicy = {},
     setAssumeRolePolicy,
     handleAssumeRolePolicySubmit,
+    readOnlyAccount,
   } = useAssumeRolePolicy()
 
   return (
@@ -31,6 +32,7 @@ const AssumeRolePolicy = () => {
           policy={assumeRolePolicy}
           updatePolicy={setAssumeRolePolicy}
           enableLinting={false}
+          isSaveButtonDisabled={readOnlyAccount}
         />
       </Segment>
       <JustificationModal handleSubmit={handleAssumeRolePolicySubmit} />

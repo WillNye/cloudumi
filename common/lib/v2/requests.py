@@ -100,11 +100,30 @@ from common.models import (
 )
 from common.user_request.models import IAMRequest
 from common.user_request.utils import (
+    get_change_arn,
     update_extended_request_expiration_date,
     validate_custom_credentials,
 )
 
 log = config.get_logger()
+
+
+async def update_changes_meta_data(extended_request: ExtendedRequestModel, tenant: str):
+    for change in extended_request.changes.changes:
+        arn = get_change_arn(change)
+        resource_summary = await ResourceSummary.set(tenant, arn)
+
+        try:
+            account_info: SpokeAccount = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", tenant)
+                .with_query({"account_id": resource_summary.account})
+                .first
+            )
+            change.read_only = account_info.read_only
+        except ValueError:
+            # spoke account not available
+            pass
 
 
 async def generate_request_from_change_model_array(
@@ -459,19 +478,20 @@ async def is_request_eligible_for_auto_approval(
     extended_request: ExtendedRequestModel, user: str
 ) -> bool:
     """
-    Checks whether a request is eligible for auto-approval probes or not. Currently, only requests with inline_policies
-    are eligible for auto-approval probes.
+    Checks whether a request is eligible for auto-approval rules or not. Currently, only requests with inline_policies
+    are eligible for auto-approval rules.
 
     :param extended_request: ExtendedRequestModel
     :param user: username
     :return bool:
     """
+
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "user": user,
         "arn": extended_request.principal.principal_arn,
         "request": extended_request.dict(),
-        "message": "Checking whether request is eligible for auto-approval probes",
+        "message": "Checking whether request is eligible for auto-approval rules",
     }
     log.info(log_data)
     is_eligible = False
@@ -480,6 +500,10 @@ async def is_request_eligible_for_auto_approval(
         change.change_type == "tear_can_assume_role"
         for change in extended_request.changes.changes
     ):
+        return False
+
+    # We won't auto-approve any requests for Read-Only accounts
+    if any(change.read_only is True for change in extended_request.changes.changes):
         return False
 
     # Currently the only allowances are: Inline policies
@@ -493,16 +517,16 @@ async def is_request_eligible_for_auto_approval(
         if change.change_type != "inline_policy":
             log_data[
                 "message"
-            ] = "Finished checking whether request is eligible for auto-approval probes"
+            ] = "Finished checking whether request is eligible for auto-approval rules"
             log_data["eligible_for_auto_approval"] = is_eligible
             log.info(log_data)
             return is_eligible
 
-    # If above check passes, then it's eligible for auto-approval probe check
+    # If above check passes, then it's eligible for auto-approval rule check
     is_eligible = True
     log_data[
         "message"
-    ] = "Finished checking whether request is eligible for auto-approval probes"
+    ] = "Finished checking whether request is eligible for auto-approval rules"
     log_data["eligible_for_auto_approval"] = is_eligible
     log.info(log_data)
     return is_eligible
@@ -1062,7 +1086,7 @@ async def apply_changes_to_role(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account_id})
         .first.name,
-        session_name=sanitize_session_name("principal-updater-" + user),
+        session_name=sanitize_session_name("noq_principal_updater_" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -1892,7 +1916,7 @@ async def apply_managed_policy_resource_tag_change(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": resource_account})
         .first.name,
-        session_name=sanitize_session_name("tag-updater-" + user),
+        session_name=sanitize_session_name("noq_tag_updater_" + user),
         retry_max_attempts=2,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -2069,7 +2093,7 @@ async def apply_non_iam_resource_tag_change(
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
-            session_name=sanitize_session_name("apply-resource-tag-" + user),
+            session_name=sanitize_session_name("noq_apply_resource_tag_" + user),
             arn_partition="aws",
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -2244,7 +2268,7 @@ async def apply_tear_role_change(
             .load_config("spoke_accounts", tenant)
             .with_query({"account_id": account_id})
             .first.name,
-            session_name=sanitize_session_name("principal-updater-" + user),
+            session_name=sanitize_session_name("noq_principal_updater_" + user),
             retry_max_attempts=2,
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -2351,7 +2375,7 @@ async def apply_managed_policy_resource_change(
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": resource_account})
         .first.name,
-        "session_name": sanitize_session_name(f"ConsoleMe_MP_{user}"),
+        "session_name": sanitize_session_name(f"noq_MP_{user}"),
         "client_kwargs": config.get_tenant_specific_key(
             "boto3.client_kwargs", tenant, {}
         ),
@@ -2368,7 +2392,7 @@ async def apply_managed_policy_resource_change(
 
     policy_name = arn_parsed["resource_path"].split("/")[-1]
     if change.new:
-        description = f"Managed Policy created using ConsoleMe by {user}"
+        description = f"Managed Policy created using Noq by {user}"
         # create new policy
         try:
             policy_path = "/" + arn_parsed["resource_path"].replace(policy_name, "")
@@ -2536,7 +2560,7 @@ async def apply_resource_policy_change(
             .with_query({"account_id": resource_account})
             .first.name,
             region=resource_region or config.region,
-            session_name=sanitize_session_name("apply-resource-policy-" + user),
+            session_name=sanitize_session_name("noq_apply_resource_policy-" + user),
             arn_partition="aws",
             sts_client_kwargs=dict(
                 region_name=config.region,
@@ -2724,7 +2748,7 @@ async def parse_and_apply_policy_request_modification(
     user_groups,
     last_updated,
     tenant: str,
-    approval_probe_approved=False,
+    approval_rule_approved=False,
     force_refresh=False,
     cloud_credentials: CloudCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
@@ -2736,7 +2760,7 @@ async def parse_and_apply_policy_request_modification(
     :param policy_request_model: PolicyRequestModificationRequestModel
     :param user_groups:  user's groups
     :param last_updated:
-    :param approval_probe_approved: Whether this change was approved by an auto-approval probe. If not, user needs to be
+    :param approval_rule_approved: Whether this change was approved by an auto-approval rule. If not, user needs to be
         authorized to make the change.
     :param cloud_credentials: User provided credentials
         used to override the default credentials for interfacing with a cloud provider
@@ -2832,9 +2856,9 @@ async def parse_and_apply_policy_request_modification(
         can_manage_policy_request = await can_admin_policies(
             user, user_groups, tenant, account_ids
         )
-        # Authorization required if the policy wasn't approved by an auto-approval probe.
+        # Authorization required if the policy wasn't approved by an auto-approval rule.
         should_apply_because_auto_approved = (
-            request_changes.command == Command.apply_change and approval_probe_approved
+            request_changes.command == Command.apply_change and approval_rule_approved
         )
 
         if not can_manage_policy_request and not should_apply_because_auto_approved:

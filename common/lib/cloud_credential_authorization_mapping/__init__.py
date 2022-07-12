@@ -40,7 +40,7 @@ class CredentialAuthorizationMapping(metaclass=Singleton):
     ):
         """
         This function retrieves the credential authorization mapping. This is a mapping of users/groups to the IAM roles
-        they are allowed to get credentials for. This is the authoritative mapping that ConsoleMe uses for access.
+        they are allowed to get credentials for. This is the authoritative mapping that Noq uses for access.
 
         :param max_age: Maximum allowable age of the credential authorization mapping. If the mapping is older than
         `max_age` seconds, this function will raise an exception and return an empty mapping.

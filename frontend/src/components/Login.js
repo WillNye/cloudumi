@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import {
-  Button,
-  Form,
-  Grid,
-  Header,
-  Image,
-  Message,
-  Segment,
-} from 'semantic-ui-react'
+import { Button, Form, Grid, Header, Message, Segment } from 'semantic-ui-react'
 import { useHistory } from 'react-router-dom'
 import qs from 'qs'
 
@@ -126,8 +118,8 @@ const LoginForm = () => {
               textTransform: 'uppercase',
             }}
           >
-            <Image src='/images/logos/logo192.png' />
-            ConsoleMe
+            {/* <Image src='/images/logos/logo192.png' /> */}
+            Noq
           </Header>
           {errorMessage ? (
             <Message negative>
@@ -181,7 +173,7 @@ const LoginForm = () => {
           ) : null}
         </Grid.Column>
       </Grid>
-      <Image
+      {/* <Image
         disabled
         src='/images/logos/sunglasses/3.png'
         size='medium'
@@ -192,7 +184,7 @@ const LoginForm = () => {
           marginRight: '10px',
           marginBottom: '10px',
         }}
-      />
+      /> */}
     </>
   )
 }

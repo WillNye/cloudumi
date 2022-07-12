@@ -49,7 +49,7 @@ class ConsoleMeTracer:
         # Set a reproducible pan name
         span_name = f"{frame.f_code.co_filename}-{frame.f_code.co_name}-{frame.f_back.f_code.co_filename}"
 
-        # Skip tracing functions outside of core ConsoleMe by default
+        # Skip tracing functions outside of core Noq by default
         in_scope_function_calls = config.get(
             "_global_.tracing.in_scope_function_calls",
             ["/api/", "/common/", "/lib/", "/botocore/"],

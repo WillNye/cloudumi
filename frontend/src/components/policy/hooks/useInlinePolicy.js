@@ -47,6 +47,7 @@ const useInlinePolicy = () => {
   return {
     ...state,
     arn: resource?.arn,
+    readOnlyAccount: resource?.read_only || false,
     showExpirationDate,
     setInlinePolicies: (policies) =>
       dispatch({ type: 'SET_POLICIES', policies }),

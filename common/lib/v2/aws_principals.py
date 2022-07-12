@@ -12,6 +12,7 @@ from common.aws.iam.role.models import IAMRole
 from common.aws.iam.user.utils import fetch_iam_user
 from common.aws.utils import get_resource_tag
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.asyncio import aio_wrapper
 from common.lib.plugins import get_plugin_by_name
@@ -30,6 +31,7 @@ from common.models import (
     S3DetailsModel,
     S3Error,
     S3ErrorArray,
+    SpokeAccount,
 )
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -290,6 +292,13 @@ async def get_role_details(
         tenant, account_id, arn, force_refresh=force_refresh
     )
 
+    account_info: SpokeAccount = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", tenant)
+        .with_query({"account_id": account_id})
+        .first
+    )
+
     role: dict = role.dict()
     # requested role doesn't exist
     if not role:
@@ -356,6 +365,7 @@ async def get_role_details(
             owner=role.get("owner"),
             permissions_boundary=role["policy"].get("PermissionsBoundary", {}),
             terraform=role.get("terraform"),
+            read_only=account_info.read_only,
         )
         return principal
     else:
