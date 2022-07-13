@@ -1,4 +1,5 @@
 import sys
+import time
 from typing import Any, Dict, Optional
 
 import boto3
@@ -118,6 +119,22 @@ async def handle_spoke_account_registration(body):
     external_id_in_config = config.get_tenant_specific_key(
         "tenant_details.external_id", tenant
     )
+
+    retry_attempt = 1
+
+    while not external_id_in_config and retry_attempt <= 5:
+        log.error(
+            {
+                **log_data,
+                "error": "External ID in configuration is None.",
+                "retry_attempt_count": str(retry_attempt),
+            }
+        )
+        time.sleep(5 * retry_attempt)
+        external_id_in_config = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
+        retry_attempt += 1
 
     if external_id != external_id_in_config:
         error_message = (
@@ -354,10 +371,26 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "message": error_message,
         }
 
-    # Verify External ID
     external_id_in_config = config.get_tenant_specific_key(
         "tenant_details.external_id", tenant
     )
+
+    retry_attempt = 1
+
+    # Verify External ID
+    while not external_id_in_config and retry_attempt <= 5:
+        log.error(
+            {
+                **log_data,
+                "error": "External ID in configuration is None.",
+                "retry_attempt_count": str(retry_attempt),
+            }
+        )
+        time.sleep(5 * retry_attempt)
+        external_id_in_config = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
+        retry_attempt += 1
 
     if external_id != external_id_in_config:
         error_message = (

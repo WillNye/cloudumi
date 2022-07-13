@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 import botocore.exceptions
 import logmatic
+import sentry_sdk
 from pytz import timezone
 
 import common.lib.noq_json as json
@@ -317,6 +318,13 @@ class Configuration(metaclass=Singleton):
         Get tenant static configuration from DynamoDB.
         configuration.
         """
+        function = f"{__name__}.{sys._getframe().f_code.co_name}"
+
+        log_data = {
+            "function": function,
+            "tenant": tenant,
+            "safe": safe,
+        }
         dynamodb = boto3.resource(
             "dynamodb",
             region_name=self.get_aws_region(),
@@ -336,6 +344,14 @@ class Configuration(metaclass=Singleton):
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "ResourceNotFoundException":
                 return {}
+            sentry_sdk.capture_exception()
+            self.get_logger("config").error(
+                {
+                    **log_data,
+                    "error": str(e),
+                    "message": "Unable to find tenant in Dynamo",
+                }
+            )
         c = {}
 
         tenant_config = current_config.get("Item", {}).get("config", "")
@@ -390,7 +406,14 @@ class Configuration(metaclass=Singleton):
         Get a tenant specific value for configuration entry in dot notation.
         """
         # Only support keys that explicitly call out a tenant in development mode
-
+        function = f"{__name__}.{sys._getframe().f_code.co_name}"
+        log_data = {
+            "function": function,
+            "message": "Loading tenant configuration",
+            "tenant": tenant,
+            "key": key,
+            "default": default,
+        }
         if self.get("_global_.development"):
             static_config_key = f"site_configs.{tenant}.{key}"
             # If we've defined a static config yaml file for the tenant, that takes precedence over
@@ -418,6 +441,12 @@ class Configuration(metaclass=Singleton):
         # Convert commented map to dictionary
         c = self.tenant_configs[tenant].get("config")
         if not c:
+            self.get_logger("config").error(
+                {
+                    **log_data,
+                    "message": "Unable to load tenant configuration. self.tenant_configs[tenant] is empty.",
+                }
+            )
             return default
 
         value = json.loads(json.dumps(self.tenant_configs[tenant].get("config")))

@@ -210,3 +210,7 @@ To connect to the web interface, install [ecs-tunnel](https://github.com/alastai
 ```bash
 AWS_PROFILE=noq_staging ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t 21e241ef65b74408b3be12648e1a3e94 --region us-west-2
 ```
+
+```bash
+AWS_PROFILE=noq_prod ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 6a26122f6fdb4aeda3fdb3b62124b70e --region us-west-2
+```
