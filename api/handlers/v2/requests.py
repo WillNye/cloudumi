@@ -462,7 +462,14 @@ class RequestHandler(BaseAPIV2Handler):
                     "tenant": tenant,
                 },
             )
-            self.write_error(400, message="Error validating input: " + str(e))
+            res = WebResponse(
+                success="error",
+                status_code=400,
+                message=f"Error validating input: {str(e)}",
+                count=1,
+            )
+
+            self.write(res.json(exclude_unset=True, exclude_none=True))
             if config.get("_global_.development"):
                 raise
             return
@@ -477,7 +484,14 @@ class RequestHandler(BaseAPIV2Handler):
                 },
             )
             sentry_sdk.capture_exception(tags={"user": self.user})
-            self.write_error(500, message="Error parsing request: " + str(e))
+            res = WebResponse(
+                success="error",
+                status_code=500,
+                message=f"Error parsing request: {str(e)}",
+                count=1,
+            )
+
+            self.write(res.json(exclude_unset=True, exclude_none=True))
             if config.get("_global_.development"):
                 raise
             return
