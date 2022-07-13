@@ -1,12 +1,5 @@
 import React, { useRef, useState } from 'react'
-import {
-  Button,
-  Checkbox,
-  Divider,
-  Header,
-  Message,
-  Segment,
-} from 'semantic-ui-react'
+import { Button, Checkbox, Divider, Header, Segment } from 'semantic-ui-react'
 import NavHeader from '../Header'
 import { paragraph } from './mockData'
 import './eula.css'
