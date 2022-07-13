@@ -2,11 +2,21 @@
   width: 80%;
   margin: auto;
   padding-top: 100px;
+  padding-bottom: 60px;
+}
+
+.eula__documnet {
+  height: 70vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: medium;
 }
 
 .eula__actions {
-  width: inherit;
   display: flex;
-  flex-direction: column;
   justify-content: center;
+}
+
+.eula__buttton {
+  max-width: 200px;
 }

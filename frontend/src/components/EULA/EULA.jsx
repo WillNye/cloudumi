@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   Button,
   Checkbox,
@@ -14,11 +14,14 @@ import './eula.css'
 const EULA = () => {
   const ref = useRef()
 
+  const [hasViewedAgreement, setHasViewedAgreement] = useState(false)
+  const [acceptAgreement, setAcceptAgreemnet] = useState(false)
+
   const onScroll = () => {
     if (ref.current) {
       const { scrollTop, scrollHeight, clientHeight } = ref.current
       if (scrollTop + clientHeight === scrollHeight) {
-        console.log('reached bottom')
+        setHasViewedAgreement(true)
       }
     }
   }
@@ -29,11 +32,7 @@ const EULA = () => {
       <div className='eula'>
         <Header as='h3'>Terms of Service</Header>
         <Segment>
-          <div
-            onScroll={onScroll}
-            ref={ref}
-            style={{ height: '60vh', overflowY: 'auto' }}
-          >
+          <div onScroll={onScroll} ref={ref} className='eula__documnet'>
             {Array(30)
               .fill()
               .map((_, index) => (
@@ -41,20 +40,39 @@ const EULA = () => {
               ))}
           </div>
         </Segment>
+
         <Divider horizontal />
-        <Message info>
+        <Divider horizontal />
+
+        <div className='eula__actions'>
           <p>
             By clicking below, you agree to the Noq Terms and Conditons of
             Service and Privacy Policy.
           </p>
-        </Message>
+        </div>
+
+        <Divider horizontal />
 
         <div className='eula__actions'>
-          <Divider horizontal />
+          <Checkbox
+            label='Accept'
+            onChange={(_event, data) => setAcceptAgreemnet(data.checked)}
+            checked={acceptAgreement}
+            disabled={!hasViewedAgreement}
+          />
+        </div>
 
-          <Checkbox label='Accept' />
-          <Divider horizontal />
-          <Button>Continue</Button>
+        <Divider horizontal />
+
+        <div className='eula__actions'>
+          <Button
+            className='eula__buttton'
+            primary
+            fluid
+            disabled={!acceptAgreement}
+          >
+            Continue
+          </Button>
         </div>
       </div>
     </>
