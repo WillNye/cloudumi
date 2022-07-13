@@ -119,6 +119,21 @@ async def handle_spoke_account_registration(body):
         "tenant_details.external_id", tenant
     )
 
+    if external_id_in_config is None:
+        log.error(
+            {**log_data, "error": "External ID in configuration is None. Retrying"}
+        )
+        external_id_in_config = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
+        if external_id_in_config is None:
+            log.error(
+                {**log_data, "error": "External ID in configuration is still None! :-("}
+            )
+            external_id_in_config = config.get_tenant_specific_key(
+                "tenant_details.external_id", tenant
+            )
+
     if external_id != external_id_in_config:
         error_message = (
             "External ID from CF doesn't match tenant's external ID configuration"
@@ -358,6 +373,20 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
     external_id_in_config = config.get_tenant_specific_key(
         "tenant_details.external_id", tenant
     )
+    if external_id_in_config is None:
+        log.error(
+            {**log_data, "error": "External ID in configuration is None. Retrying"}
+        )
+        external_id_in_config = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
+        if external_id_in_config is None:
+            log.error(
+                {**log_data, "error": "External ID in configuration is still None! :-("}
+            )
+            external_id_in_config = config.get_tenant_specific_key(
+                "tenant_details.external_id", tenant
+            )
 
     if external_id != external_id_in_config:
         error_message = (

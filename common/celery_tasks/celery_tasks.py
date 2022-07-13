@@ -89,8 +89,8 @@ from common.lib.redis import RedisHandler
 from common.lib.self_service.typeahead import cache_self_service_typeahead
 from common.lib.sentry import before_send_event
 from common.lib.templated_resources import cache_resource_templates
+from common.lib.tenant import get_all_tenants
 from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
-from common.lib.tenants import get_all_tenants
 from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
