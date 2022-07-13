@@ -84,3 +84,37 @@ def run_cpu_tasks_in_parallel(tasks):
             result = running_task.result()
             results[running_task] = result
     return results
+
+
+class NoqSemaphore:
+    def __init__(
+        self, callback_function: any, batch_size: int, callback_is_async: bool = True
+    ):
+        """Makes a reusable semaphore that wraps a provided function.
+        Useful for batch processing things that could be rate limited.
+
+        Example prints hello there 3 times in quick succession, waits 3 seconds then processes another 3:
+            from datetime import datetime
+
+            async def hello_there():
+                print(f"Hello there - {datetime.utcnow()}")
+                await asyncio.sleep(3)
+
+            hello_there_semaphore = NoqSemaphore(hello_there, 3)
+            asyncio.run(hello_there_semaphore.process([{} for _ in range(10)]))
+        """
+        self.limit = asyncio.Semaphore(batch_size)
+        self.callback_function = callback_function
+        self.callback_is_async = callback_is_async
+
+    async def handle_message(self, **kwargs):
+        async with self.limit:
+            if self.callback_is_async:
+                return await self.callback_function(**kwargs)
+
+            return await aio_wrapper(self.callback_function, **kwargs)
+
+    async def process(self, messages: list[dict]):
+        return await asyncio.gather(
+            *[asyncio.create_task(self.handle_message(**msg)) for msg in messages]
+        )
