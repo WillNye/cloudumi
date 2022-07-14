@@ -1,4 +1,0 @@
-/* eslint-disable max-len */
-export const paragraph = `
-Activation of the Software is REQUIRED in order to use the Software. Additionally, periodic reactivation of the Software may occur. You must have a valid serial number in order to complete the activation process of the Software. Upon your first installation of the Software, you will be prompted to activate the Software, and the Software will attempt to automatically connect to the Internet. Please be sure you have an Internet connection when initially installing the Software in order to activate the Software. The Software includes instructions regarding activation if you are not connected to (or unable to connect to) the Internet when attempting to complete the activation process of the Software. To complete the initial activation process, you will need to provide your name, valid e-mail address and applicable valid serial number for activating the Software.
-`
