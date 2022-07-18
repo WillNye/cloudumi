@@ -4,6 +4,7 @@ import jwt
 
 from common.config import config
 from common.lib.asyncio import aio_wrapper
+from common.lib.tenant.models import TenantDetails
 
 log = config.get_logger()
 
@@ -16,7 +17,22 @@ async def generate_jwt_token(
     nbf=datetime.utcnow() - timedelta(seconds=5),
     iat=datetime.utcnow(),
     exp=None,
+    eula_signed=None,
 ):
+    if eula_signed is None:
+        tenant_details = await TenantDetails.get(tenant)
+        eula_signed = bool(tenant_details.eula_info)
+
+    groups_pending_eula = []
+    roles_pending_eula = []
+    if not eula_signed:
+        if groups:
+            groups_pending_eula = [group for group in groups]
+            groups = []
+        if roles:
+            roles_pending_eula = [role for role in roles]
+            roles = []
+
     if not exp:
         exp = datetime.utcnow() + timedelta(
             hours=config.get_tenant_specific_key("jwt.expiration_hours", tenant, 1)
@@ -37,6 +53,9 @@ async def generate_jwt_token(
         ): roles
         or [],
         "tenant": tenant,
+        "eula_signed": eula_signed,
+        "groups_pending_eula": groups_pending_eula,
+        "additional_roles_pending_eula": roles_pending_eula,
     }
 
     encoded_cookie = await aio_wrapper(
@@ -87,6 +106,11 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
             "additional_roles": roles,
             "iat": decoded_jwt.get("iat"),
             "exp": exp,
+            "requires_eula": decoded_jwt.get("requires_eula", False),
+            "groups_pending_eula": decoded_jwt.get("groups_pending_eula", []),
+            "additional_roles_pending_eula": decoded_jwt.get(
+                "additional_roles_pending_eula", []
+            ),
         }
     except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError, jwt.DecodeError):
         # Force user to reauth.
