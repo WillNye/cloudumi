@@ -17,17 +17,21 @@ from common.config import config
 from common.handlers.base import TornadoRequestHandler
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.free_email_domains import is_email_free
+from common.lib.tenant.models import TenantDetails
 
 ADMIN_GROUP_NAME = "noq_administrators"
 
 
 async def generate_dev_domain(dev_mode):
-    tenant_id = random.randint(000000, 999999)
-    if dev_mode:
-        suffix = "noq_localhost"
-    else:
-        suffix = "noq_dev"
-    return f"dev-{tenant_id}_{suffix}"
+    suffix = "noq_localhost" if dev_mode else "noq_dev"
+
+    for i in range(0, 25):
+        tenant_id = random.randint(000000, 999999)
+        dev_domain = f"dev-{tenant_id}_{suffix}"
+
+        # check if the dev domain is available
+        if not config.get_tenant_static_config_from_dynamo(dev_domain):
+            return dev_domain
 
 
 async def create_user_pool(noq_subdomain):
@@ -518,36 +522,41 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             return
 
         dev_mode = config.get("_global_.development")
-
         dev_domain = data.get("domain", "").replace(".", "_")
-        cognito_url_domain = data.get("domain", "").replace(".", "-")
-        available = False
+
         if dev_domain:
-            if not config.get_tenant_static_config_from_dynamo(dev_domain):
-                available = True
-
-        if not dev_domain:
-            # Generate a valid dev domain
-            dev_domain = await generate_dev_domain(dev_mode)
-            for i in range(0, 10):
-                # check if the dev domain is available
-                if not config.get_tenant_static_config_from_dynamo(dev_domain):
-                    available = True
-                    break
-                dev_domain = await generate_dev_domain(dev_mode)
-
-        # User pool domain names cannot have underscores
-        user_pool_domain_name = dev_domain.replace("_", "-")
-
-        if not available:
+            if await TenantDetails.tenant_exists(dev_domain):
+                self.set_status(400)
+                self.write(
+                    {
+                        "error": f"The provided domain has already been registered ({dev_domain}). "
+                        f"Please specify a different domain or contact your admin for next steps.",
+                    }
+                )
+                return
+        elif not dev_mode:  # Don't generate domains on prod
             self.set_status(400)
             self.write(
                 {
-                    "error": "Unable to generate a suitable domain",
-                    "error_description": "Failed to generate a dev domain. Please try again.",
+                    "error": "A valid domain that has not already been registered must be provided."
                 }
             )
             return
+        else:
+            # Generate a valid dev domain
+            dev_domain = await generate_dev_domain(dev_mode)
+            if not dev_domain:
+                self.set_status(400)
+                self.write(
+                    {
+                        "error": "Unable to generate a suitable domain",
+                        "error_description": "Failed to generate a dev domain. Please try again.",
+                    }
+                )
+                return
+
+        cognito_url_domain = data.get("domain", "").replace(".", "-")
+
         if dev_mode:
             uri_scheme = "https://"
             port = ""
@@ -559,7 +568,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         # create new tenant
         user_pool_id = await create_user_pool(dev_domain)
         user_pool_domain = await create_user_pool_domain(
-            user_pool_id, user_pool_domain_name
+            user_pool_id, cognito_url_domain
         )
         if user_pool_domain["ResponseMetadata"]["HTTPStatusCode"] != 200:
             self.set_status(400)
@@ -657,9 +666,9 @@ auth:
 """
 
         # Store tenant information in DynamoDB
+        await TenantDetails.create(dev_domain, tenant.email)
 
         ddb = RestrictedDynamoHandler()
-
         await ddb.update_static_config_for_tenant(
             tenant_config, tenant.email, dev_domain
         )
