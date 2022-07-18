@@ -3,7 +3,7 @@ import tornado.escape
 
 from common.config import config, role_access
 from common.handlers.base import BaseHandler
-from common.lib.auth import can_admin_all
+from common.lib.auth import is_tenant_admin
 from common.lib.plugins import get_plugin_by_name
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
@@ -30,7 +30,7 @@ class CredentialBrokeringHandler(BaseHandler):
             "tenant": tenant,
         }
 
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self,
@@ -84,7 +84,7 @@ class CredentialBrokeringCurrentStateHandler(BaseHandler):
             "tenant": tenant,
         }
 
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self,
@@ -127,7 +127,7 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
         log.debug(log_data)
 
         generic_error_message = "Cannot access authorized groups tags information"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -159,7 +159,7 @@ class AuthorizedGroupsTagsHandler(BaseHandler):
 
         # Checks authz levels of current user
         generic_error_message = "Unable to update authorized groups tags"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -211,7 +211,7 @@ class AuthorizedGroupsTagsDeleteHandler(BaseHandler):
 
         # Checks authz levels of current user
         generic_error_message = "Unable to delete authorized groups tags"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -251,7 +251,7 @@ class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
         log.debug(log_data)
 
         generic_error_message = "Cannot access automatic policy update handler state"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -285,7 +285,7 @@ class AutomaticRoleTrustPolicyUpdateHandler(BaseHandler):
             "tenant": tenant,
         }
 
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self,
