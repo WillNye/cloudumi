@@ -6,7 +6,7 @@ from hashlib import sha1
 from common.aws.utils import ResourceSummary
 from common.config import config
 from common.lib.assume_role import boto3_cached_conn
-from common.lib.auth import can_admin_all
+from common.lib.auth import is_tenant_admin
 from common.models import (
     CloudCredentials,
     Command,
@@ -139,7 +139,7 @@ async def validate_custom_credentials(
 
 async def can_approve_reject_request(user, secondary_approvers, groups, tenant):
     # Allow admins to approve and reject all requests
-    if can_admin_all(user, groups, tenant):
+    if is_tenant_admin(user, groups, tenant):
         return True
 
     if secondary_approvers:
@@ -155,7 +155,7 @@ async def can_cancel_request(current_user, requesting_user, groups, tenant):
         return True
 
     # Allow admins to cancel requests
-    if can_admin_all(current_user, groups, tenant):
+    if is_tenant_admin(current_user, groups, tenant):
         return True
 
     # Allow restricted admins to cancel requests
@@ -171,7 +171,7 @@ async def can_move_back_to_pending(current_user, request, groups, tenant):
     if request.get("last_updated", 0) < int(time.time()) - 86400:
         return False
     # Allow admins to return requests back to pending state
-    if can_admin_all(current_user, groups, tenant):
+    if is_tenant_admin(current_user, groups, tenant):
         return True
     return False
 
