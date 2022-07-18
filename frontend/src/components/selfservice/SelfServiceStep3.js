@@ -83,9 +83,13 @@ class SelfServiceStep3 extends Component {
       '/api/v2/request'
     )
 
-    if (response.status != null && response.status === 400) {
+    if (
+      response.status != null &&
+      (response.status === 400 || response.status === 500)
+    ) {
       return this.setState({
         isError: true,
+        active: false,
         messages: [response.message],
       })
     }

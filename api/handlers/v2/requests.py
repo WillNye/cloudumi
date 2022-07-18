@@ -332,6 +332,15 @@ class RequestHandler(BaseAPIV2Handler):
             extended_request = await generate_request_from_change_model_array(
                 changes, self.user, tenant
             )
+
+            if not extended_request:
+                response = RequestCreationResponse(
+                    errors=1, request_created=False, action_results=[]
+                )
+                self.write(response.json())
+                await self.finish()
+                return
+
             log_data["request"] = extended_request.dict()
             log.debug(log_data)
 
@@ -452,7 +461,7 @@ class RequestHandler(BaseAPIV2Handler):
             log_data["request"] = extended_request.dict()
             log_data["dynamo_request"] = request.dict()
             log.debug(log_data)
-        except (InvalidRequestParameter, ValidationError) as e:
+        except (InvalidRequestParameter, ValidationError):
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
             stats.count(
@@ -462,18 +471,21 @@ class RequestHandler(BaseAPIV2Handler):
                     "tenant": tenant,
                 },
             )
-            res = WebResponse(
-                success="error",
-                status_code=400,
-                message=f"Error validating input: {str(e)}",
-                count=1,
+            request_url = await get_request_url(extended_request)
+            res = RequestCreationResponse(
+                errors=1,
+                request_created=True,
+                request_id=extended_request.id,
+                request_url=request_url,
+                action_results=[],
+                extended_request=extended_request,
             )
 
             self.write(res.json(exclude_unset=True, exclude_none=True))
             if config.get("_global_.development"):
                 raise
             return
-        except Exception as e:
+        except Exception:
             log_data["message"] = "Unknown Exception occurred while parsing request"
             log.error(log_data, exc_info=True)
             stats.count(
@@ -484,11 +496,14 @@ class RequestHandler(BaseAPIV2Handler):
                 },
             )
             sentry_sdk.capture_exception(tags={"user": self.user})
-            res = WebResponse(
-                success="error",
-                status_code=500,
-                message=f"Error parsing request: {str(e)}",
-                count=1,
+            request_url = await get_request_url(extended_request)
+            res = RequestCreationResponse(
+                errors=1,
+                request_created=True,
+                request_id=extended_request.id,
+                request_url=request_url,
+                action_results=[],
+                extended_request=extended_request,
             )
 
             self.write(res.json(exclude_unset=True, exclude_none=True))
