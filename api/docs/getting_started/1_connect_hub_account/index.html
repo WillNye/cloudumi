@@ -660,6 +660,8 @@
 
 
 
+
+
         <label class="md-nav__link" for="__nav_7">
           Weep CLI Utility
           <span class="md-nav__icon md-icon"></span>
@@ -708,6 +710,20 @@
     <li class="md-nav__item">
       <a href="../../weep/weep_emulate_ecs_credential_provider/" class="md-nav__link">
         Emulate ECS Credential Provider
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../../weep/emulate_imds/" class="md-nav__link">
+        Emulate EC2 Instance Metadata Service
       </a>
     </li>
 
@@ -790,6 +806,8 @@
 
 
         <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" >
+
+
 
 
 
@@ -1248,23 +1266,74 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
         <label class="md-nav__link" for="__nav_8_4">
+          Other
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Other" data-md-level="2">
+        <label class="md-nav__title" for="__nav_8_4">
+          <span class="md-nav__icon md-icon"></span>
+          Other
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../read_only/" class="md-nav__link">
+        Read-Only Account Guide
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_5" type="checkbox" id="__nav_8_5" >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_8_5">
           Planned
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Planned" data-md-level="2">
-        <label class="md-nav__title" for="__nav_8_4">
+        <label class="md-nav__title" for="__nav_8_5">
           <span class="md-nav__icon md-icon"></span>
           Planned
         </label>
@@ -1459,10 +1528,18 @@
 
 
 
-        <label class="md-nav__link" for="__nav_10">
-          Documentation Style Guide
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+
+
+
+
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../reference/style_guide/">Documentation Style Guide</a>
+
+            <label for="__nav_10">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+
+        </div>
 
       <nav class="md-nav" aria-label="Documentation Style Guide" data-md-level="1">
         <label class="md-nav__title" for="__nav_10">
@@ -1470,18 +1547,6 @@
           Documentation Style Guide
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-
-
-
-
-
-
-    <li class="md-nav__item">
-      <a href="../../reference/style_guide/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-
 
 
 
@@ -1672,6 +1737,12 @@ spoke roles in your AWS account.</p>
 <h2 id="6-create-the-noq-cloudformation-stack">6. Create the Noq CloudFormation Stack<a class="headerlink" href="#6-create-the-noq-cloudformation-stack" title="Permanent link">&para;</a></h2>
 <p>Scroll to the bottom of the CloudFormation page.</p>
 <p><img alt="noq hub role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_01_create_stack_top.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To connect Noq to one or more accounts in a read-only state, see
+the <a href="../read_only/">Read-Only Account Guide</a></p>
+</div>
+<p>Check the box next to <strong>I acknowledge that AWS CloudFormation might create IAM resources with custom names.</strong></p>
 <p>Click <em>Create Stack</em>. This will create hub and spoke roles on your AWS account
 and then notify Noq when the tasks have completed.</p>
 <p><img alt="noq hub role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_01_create_stack_bottom.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>

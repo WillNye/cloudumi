@@ -15,7 +15,7 @@
 
 
 
-        <title>**Configure Read Only** - Noq Docs</title>
+        <title>Read-Only Account Guide - Noq Docs</title>
 
 
 
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
 
 
-        <a href="#configure-read-only" class="md-skip">
+        <a href="#configure-read-only-hub-andor-spoke-accounts" class="md-skip">
           Skip to content
         </a>
 
@@ -109,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
 
-              **Configure Read Only**
+              Read-Only Account Guide
 
           </span>
         </div>
@@ -648,6 +648,8 @@
 
 
 
+
+
         <label class="md-nav__link" for="__nav_7">
           Weep CLI Utility
           <span class="md-nav__icon md-icon"></span>
@@ -696,6 +698,20 @@
     <li class="md-nav__item">
       <a href="../../weep/weep_emulate_ecs_credential_provider/" class="md-nav__link">
         Emulate ECS Credential Provider
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../../weep/emulate_imds/" class="md-nav__link">
+        Emulate EC2 Instance Metadata Service
       </a>
     </li>
 
@@ -774,10 +790,14 @@
 
 
 
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" >
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" checked>
+
+
 
 
 
@@ -1224,20 +1244,12 @@
 
 
 
-    <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_4" type="checkbox" id="__nav_8_4" >
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
 
 
-
-
-
-
-
-
-
-
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_4" type="checkbox" id="__nav_8_4" checked>
 
 
 
@@ -1247,12 +1259,83 @@
 
 
         <label class="md-nav__link" for="__nav_8_4">
+          Other
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Other" data-md-level="2">
+        <label class="md-nav__title" for="__nav_8_4">
+          <span class="md-nav__icon md-icon"></span>
+          Other
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--active">
+
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+
+
+
+
+
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Read-Only Account Guide
+      </a>
+
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_5" type="checkbox" id="__nav_8_5" >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_8_5">
           Planned
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Planned" data-md-level="2">
-        <label class="md-nav__title" for="__nav_8_4">
+        <label class="md-nav__title" for="__nav_8_5">
           <span class="md-nav__icon md-icon"></span>
           Planned
         </label>
@@ -1447,10 +1530,18 @@
 
 
 
-        <label class="md-nav__link" for="__nav_10">
-          Documentation Style Guide
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+
+
+
+
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../reference/style_guide/">Documentation Style Guide</a>
+
+            <label for="__nav_10">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+
+        </div>
 
       <nav class="md-nav" aria-label="Documentation Style Guide" data-md-level="1">
         <label class="md-nav__title" for="__nav_10">
@@ -1458,18 +1549,6 @@
           Documentation Style Guide
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-
-
-
-
-
-
-    <li class="md-nav__item">
-      <a href="../../reference/style_guide/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-
 
 
 
@@ -1623,7 +1702,7 @@
 
 
 
-<h1 id="configure-read-only"><strong>Configure Read Only</strong><a class="headerlink" href="#configure-read-only" title="Permanent link">&para;</a></h1>
+<h1 id="configure-read-only-hub-andor-spoke-accounts"><strong>Configure Read Only Hub and/or Spoke Accounts</strong><a class="headerlink" href="#configure-read-only-hub-andor-spoke-accounts" title="Permanent link">&para;</a></h1>
 <p>Noq can be configured to run in your environment without having write permissions to effectuate changes. This configuration can be used in situations where Noq is trialed or if Noq is deployed into highly sensitive environments.</p>
 <p>This is configurable per account, so some accounts can be read-only while others allow Noq to write changes. You will need to be logged in to Noq as an administrator to proceed with these steps.</p>
 <p>A role can be changed from read-only to read-write by first deleting Noq's CloudFormation Stack on the target AWS account, then removing the relevant role from Noq's Settings Page. You must remove both Spoke and Hub Roles from your Settings page if you're changing the read-only state of your Hub Account.</p>
@@ -1682,6 +1761,42 @@
       </main>
 
         <footer class="md-footer">
+
+
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+
+
+        <a href="../../features/resource_management/clone_role/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Clone Role" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Clone Role
+            </div>
+          </div>
+        </a>
+
+
+
+        <a href="../../features/planned/automatic_permissions_generation/" class="md-footer__link md-footer__link--next" aria-label="Next: Automatic Permissions Generation" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Automatic Permissions Generation
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+
+    </nav>
 
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">

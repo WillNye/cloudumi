@@ -75,6 +75,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
 
+
+        <a href="#automatically-approve-and-apply-low-risk-permission-requests" class="md-skip">
+          Skip to content
+        </a>
+
     </div>
     <div data-md-component="announce">
 
@@ -643,6 +648,8 @@
 
 
 
+
+
         <label class="md-nav__link" for="__nav_7">
           Weep CLI Utility
           <span class="md-nav__icon md-icon"></span>
@@ -691,6 +698,20 @@
     <li class="md-nav__item">
       <a href="../../../weep/weep_emulate_ecs_credential_provider/" class="md-nav__link">
         Emulate ECS Credential Provider
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../../../weep/emulate_imds/" class="md-nav__link">
+        Emulate EC2 Instance Metadata Service
       </a>
     </li>
 
@@ -775,6 +796,8 @@
 
 
         <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" checked>
+
+
 
 
 
@@ -1044,6 +1067,8 @@
 
 
 
+
+
       <a href="./" class="md-nav__link md-nav__link--active">
         Automatically Approve Low-Risk Requests
       </a>
@@ -1243,23 +1268,74 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
         <label class="md-nav__link" for="__nav_8_4">
+          Other
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <nav class="md-nav" aria-label="Other" data-md-level="2">
+        <label class="md-nav__title" for="__nav_8_4">
+          <span class="md-nav__icon md-icon"></span>
+          Other
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../../../getting_started/read_only/" class="md-nav__link">
+        Read-Only Account Guide
+      </a>
+    </li>
+
+
+
+
+        </ul>
+      </nav>
+    </li>
+
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_5" type="checkbox" id="__nav_8_5" >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <label class="md-nav__link" for="__nav_8_5">
           Planned
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <nav class="md-nav" aria-label="Planned" data-md-level="2">
-        <label class="md-nav__title" for="__nav_8_4">
+        <label class="md-nav__title" for="__nav_8_5">
           <span class="md-nav__icon md-icon"></span>
           Planned
         </label>
@@ -1454,10 +1530,18 @@
 
 
 
-        <label class="md-nav__link" for="__nav_10">
-          Documentation Style Guide
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+
+
+
+
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../../../reference/style_guide/">Documentation Style Guide</a>
+
+            <label for="__nav_10">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+
+        </div>
 
       <nav class="md-nav" aria-label="Documentation Style Guide" data-md-level="1">
         <label class="md-nav__title" for="__nav_10">
@@ -1465,18 +1549,6 @@
           Documentation Style Guide
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-
-
-
-
-
-
-    <li class="md-nav__item">
-      <a href="../../../reference/style_guide/" class="md-nav__link">
-        Overview
-      </a>
-    </li>
-
 
 
 
@@ -1616,6 +1688,8 @@
 
 
 
+
+
 </nav>
                   </div>
                 </div>
@@ -1628,13 +1702,289 @@
 
 
 
-  <h1>Automatically Approve Low-Risk Requests</h1>
-
-<p>Automatically approve and apply low-risk permission requests</p>
-<p>Example 1: Automatically approve all requests made by the networking team that are related to VPC, VPC Endpoints, or IPv6</p>
-<p>Example 2: Automatically approve all READ requests that any employee makes to a list of S3 buckets.</p>
-<p>Example 3: Automatically approve all requests for new IAM roles as long as they don’t mutate IAM</p>
-<p>Instructions are TBD.</p>
+<h1 id="automatically-approve-and-apply-low-risk-permission-requests"><strong>Automatically Approve and Apply Low-Risk Permission Requests</strong><a class="headerlink" href="#automatically-approve-and-apply-low-risk-permission-requests" title="Permanent link">&para;</a></h1>
+<p>Noq can be configured to automatically approve and apply low-risk AWS IAM policy requests from your users. This only applies to policy requests made through Noq.</p>
+<p>Rules to automatically approve policy requests can be restricted to some or all of your AWS accounts, and to some or all of your users.</p>
+<p>Here are some example use cases:</p>
+<ul>
+<li>
+<p>Automatically approve all READ requests that any employee makes to a list of specific S3 buckets.</p>
+</li>
+<li>
+<p>Automatically approve all requests made by the networking team that are related to VPC, VPC Endpoints, or IPv6</p>
+</li>
+<li>
+<p>Automatically approve all SQS read-requests that apply to the same account as the role</p>
+</li>
+<li>
+<p>Automatically approve all Route53 requests for permissions to change records on a hosted zone, except for those that would apply to sensitive accounts.</p>
+</li>
+<li>
+<p>Automatically approve all requests for new IAM roles as long as they don’t mutate IAM, except on sensitive accounts</p>
+</li>
+</ul>
+<h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
+<h2 id="1-craft-a-rule">1. Craft a rule<a class="headerlink" href="#1-craft-a-rule" title="Permanent link">&para;</a></h2>
+<p>Craft one or more IAM policies that you would like to be automatically approved for one or more users, groups, or accounts.</p>
+<p>Policy requests that are equivalent or less powerful than the crafted policy will be automatically approved if all other criteria are met.</p>
+<p>Example Rule:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">policy_request_autoapprove_rules</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="w">  </span><span class="nt">rules</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all_s3_list</span><span class="w"></span>
+<span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Allow engineers to list all buckets on the dev account</span><span class="w"></span>
+<span class="w">      </span><span class="nt">accounts</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">allowlist</span><span class="p">:</span><span class="w"></span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;123456789012&quot;</span><span class="w"> </span><span class="c1"># dev account</span><span class="w"></span>
+<span class="w">      </span><span class="nt">required_user_or_group</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">engineering</span><span class="w"></span>
+<span class="w">      </span><span class="nt">policy</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|-</span><span class="w"></span>
+<span class="w">        </span><span class="no">{</span><span class="w"></span>
+<span class="w">            </span><span class="no">&quot;Statement&quot;: [</span><span class="w"></span>
+<span class="w">            </span><span class="no">{</span><span class="w"></span>
+<span class="w">                </span><span class="no">&quot;Action&quot;: [</span><span class="w"></span>
+<span class="w">                </span><span class="no">&quot;s3:ListAllMyBuckets&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="no">],</span><span class="w"></span>
+<span class="w">                </span><span class="no">&quot;Effect&quot;: &quot;Allow&quot;,</span><span class="w"></span>
+<span class="w">                </span><span class="no">&quot;Resource&quot;: [</span><span class="w"></span>
+<span class="w">                </span><span class="no">&quot;*&quot;</span><span class="w"></span>
+<span class="w">                </span><span class="no">]</span><span class="w"></span>
+<span class="w">            </span><span class="no">}</span><span class="w"></span>
+<span class="w">            </span><span class="no">]</span><span class="w"></span>
+<span class="w">        </span><span class="no">}</span><span class="w"></span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If <code>required_user_or_group</code> is not specified, the rule will apply to all users.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If <code>accounts.allowlist</code> is not specified, the rule will apply to policy requests on all AWS accounts.</p>
+</div>
+<p>See <a href="#example-configuration">Example Configuration</a> for more examples.</p>
+<h2 id="2-write-and-save-rules-to-configuration">2. Write and Save Rules to Configuration<a class="headerlink" href="#2-write-and-save-rules-to-configuration" title="Permanent link">&para;</a></h2>
+<p>As an administrator, navigate to the <strong>Advanced/Config</strong> view in
+Noq's UI. This is your organization's configuration in Noq.</p>
+<p>Write and save the rule here.</p>
+<p><img alt="noq low risk auto-approve configuration" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/auto-approve-low-risk-policy-requests-1.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="3-optional-test-the-rule-in-self-service">3. (Optional) Test the rule in Self-Service<a class="headerlink" href="#3-optional-test-the-rule-in-self-service" title="Permanent link">&para;</a></h2>
+<p>Test the rule by creating a temporary policy request in Self-Service, and promptly removing the auto-approved policy one it is validated. Follow the <a href="/docs/getting_started/self_serve_permissions/">Self Service Getting Started Guide</a> for a detailed walk-through.</p>
+<h1 id="example-configuration">Example Configuration<a class="headerlink" href="#example-configuration" title="Permanent link">&para;</a></h1>
+<div class="highlight"><pre><span></span><code>policy_request_autoapprove_rules:
+  enabled: true
+  rules:
+    - name: common_app_permissions
+      description: Automatically approve requests to common application permissions
+      accounts:
+        blocklist:
+          - &quot;123456789012&quot; # the account ID to our really sensitive PCI account
+      policy: |-
+        {
+          &quot;Version&quot;: &quot;2012-10-17&quot;,
+          &quot;Statement&quot;: [
+            {
+              &quot;Sid&quot;: &quot;prana&quot;,
+              &quot;Effect&quot;: &quot;Allow&quot;,
+              &quot;Action&quot;: [
+                &quot;route53:listresourcerecordsets&quot;,
+                &quot;route53:changeresourcerecordsets&quot;,
+                &quot;route53:gethostedzone&quot;,
+                &quot;route53:listhostedzones&quot;
+              ],
+              &quot;Resource&quot;: [
+                &quot;arn:aws:route53:::hostedzone/BLAH&quot;
+              ]
+            }
+          ]
+        }
+    - name: common_s3
+      description: Automatically approve requests to common, shared S3 buckets
+      policy: |-
+        {
+          &quot;Statement&quot;: [
+            {
+              &quot;Action&quot;: [
+                &quot;s3:ListBucket&quot;,
+                &quot;s3:ListBucketVersions&quot;,
+                &quot;s3:GetObject&quot;,
+                &quot;s3:GetObjectTagging&quot;,
+                &quot;s3:GetObjectVersion&quot;,
+                &quot;s3:GetObjectVersionTagging&quot;,
+                &quot;s3:GetObjectAcl&quot;,
+                &quot;s3:GetObjectVersionAcl&quot;,
+                &quot;s3:PutObject&quot;,
+                &quot;s3:PutObjectTagging&quot;,
+                &quot;s3:PutObjectVersionTagging&quot;,
+                &quot;s3:ListMultipartUploadParts*&quot;,
+                &quot;s3:AbortMultipartUpload&quot;,
+                &quot;s3:DeleteObject&quot;,
+                &quot;s3:DeleteObjectTagging&quot;,
+                &quot;s3:DeleteObjectVersion&quot;,
+                &quot;s3:DeleteObjectVersionTagging&quot;,
+                &quot;s3:RestoreObject&quot;
+              ],
+              &quot;Effect&quot;: &quot;Allow&quot;,
+              &quot;Resource&quot;: [
+                &quot;arn:aws:s3:::*.example.s3.shared.bucket&quot;,
+                &quot;arn:aws:s3:::*.example.s3.shared.bucket/*&quot;,
+                &quot;arn:aws:s3:::*.example.s3.shared.bucket2&quot;,
+                &quot;arn:aws:s3:::*.example.s3.shared.bucket2/*&quot;
+              ]
+            }
+          ]
+        }
+    - name: ses_rule
+      description: Automatically approve SES requests scoped to a specific e-mail suffix
+      policy: |-
+        {
+          &quot;Statement&quot;: [
+            {
+                 &quot;Action&quot;: [
+                     &quot;ses:SendEmail&quot;,
+                      &quot;ses:SendRawEmail&quot;],
+                 &quot;Condition&quot;: {
+                    &quot;StringLike&quot;: {
+                    &quot;ses:FromAddress&quot;: &quot;*@mail.example.com&quot;
+                    }
+                  },
+                 &quot;Effect&quot;: &quot;Allow&quot;,
+                 &quot;Resource&quot;: &quot;arn:aws:ses:*:123456789012:identity/mail.example.com&quot;
+           }
+          ]
+        }
+    - name: cde_s3
+      description: &#39;Automatically approve S3 team read/write requests&#39;
+      required_user_or_group:
+        - &#39;s3team@example.com&#39;
+      policy: |-
+        {
+          &quot;Statement&quot;: [
+            {
+              &quot;Action&quot;: [
+                &quot;s3:ListBucket&quot;,
+                &quot;s3:ListBucketVersions&quot;,
+                &quot;s3:GetObject&quot;,
+                &quot;s3:GetObjectTagging&quot;,
+                &quot;s3:GetObjectVersion&quot;,
+                &quot;s3:GetObjectVersionTagging&quot;,
+                &quot;s3:GetObjectAcl&quot;,
+                &quot;s3:GetObjectVersionAcl&quot;,
+                &quot;s3:PutObject&quot;,
+                &quot;s3:PutObjectTagging&quot;,
+                &quot;s3:PutObjectVersionTagging&quot;,
+                &quot;s3:ListMultipartUploadParts*&quot;,
+                &quot;s3:AbortMultipartUpload&quot;,
+                &quot;s3:DeleteObject&quot;,
+                &quot;s3:DeleteObjectTagging&quot;,
+                &quot;s3:DeleteObjectVersion&quot;,
+                &quot;s3:DeleteObjectVersionTagging&quot;
+              ],
+              &quot;Effect&quot;: &quot;Allow&quot;,
+              &quot;Resource&quot;: [
+                &quot;arn:aws:s3:::*&quot;
+              ]
+            }
+          ]
+        }
+    - name: dbteam_rds
+      description: &#39;Automatically approve DB team RDS requests&#39;
+      required_user_or_group:
+        - &#39;db_team@example.com&#39;
+      policy: |-
+        {
+          &quot;Statement&quot;: [
+            {
+              &quot;Action&quot;: [
+                &quot;rds:*&quot;
+              ],
+              &quot;Effect&quot;: &quot;Allow&quot;,
+              &quot;Resource&quot;: [
+                &quot;*&quot;
+              ]
+            }
+          ]
+        }
+    - name: networking_eni_autoattach
+      description: &#39;Automatically approve networking team ENI AutoAttach requests&#39;
+      required_user_or_group:
+        - &#39;networking_team@example.com&#39;
+      policy: |-
+        {
+            &quot;Statement&quot;: [
+                {
+                    &quot;Action&quot;: [
+                        &quot;ec2:AttachNetworkInterface&quot;,
+                        &quot;ec2:Describe*&quot;,
+                        &quot;ec2:DetachNetworkInterface&quot;
+                    ],
+                    &quot;Effect&quot;: &quot;Allow&quot;,
+                    &quot;Resource&quot;: [
+                        &quot;*&quot;
+                    ]
+                }
+            ],
+            &quot;Version&quot;: &quot;2012-10-17&quot;
+        }
+    - name: same_account_sqs
+      description: Automatically approve same-account SQS requests
+      policy: |-
+        {
+          &quot;Statement&quot;: [
+            {
+              &quot;Action&quot;: [
+                &quot;sqs:GetQueueAttributes&quot;,
+                &quot;sqs:GetQueueUrl&quot;,
+                &quot;sqs:SendMessage&quot;,
+                &quot;sqs:ReceiveMessage&quot;,
+                &quot;sqs:DeleteMessage&quot;,
+                &quot;sqs:SetQueueAttributes&quot;,
+                &quot;sqs:PurgeQueue&quot;
+              ],
+              &quot;Effect&quot;: &quot;Allow&quot;,
+              &quot;Resource&quot;: [
+                &quot;arn:aws:sqs:*:{account_id}:*&quot;
+              ]
+            }
+          ]
+        }
+    - name: same_account_sns
+      description: Automatically approve same-account SNS requests
+      policy: |-
+        {
+          &quot;Statement&quot;: [
+            {
+              &quot;Action&quot;: [
+                &quot;sns:GetEndpointAttributes&quot;,
+                &quot;sns:GetTopicAttributes&quot;,
+                &quot;sns:Publish&quot;,
+                &quot;sns:Subscribe&quot;,
+                &quot;sns:ConfirmSubscription&quot;,
+                &quot;sns:Unsubscribe&quot;
+              ],
+              &quot;Effect&quot;: &quot;Allow&quot;,
+              &quot;Resource&quot;: [
+                &quot;arn:aws:sns:*:{account_id}:*&quot;
+              ]
+            }
+          ]
+        }
+    - name: ec2:AssignIpv6Addresses
+      description: Automatically approve ec2 AssignIpv6Addresses requests
+      policy: |-
+        {
+            &quot;Statement&quot;:[
+                {
+                    &quot;Action&quot;:[
+                        &quot;ec2:AssignIpv6Addresses&quot;
+                    ],
+                    &quot;Effect&quot;:&quot;Allow&quot;,
+                    &quot;Resource&quot;:[
+                        &quot;*&quot;
+                    ]
+                }
+            ]
+        }
+</code></pre></div>
 
 
             </article>
