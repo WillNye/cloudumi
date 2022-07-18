@@ -350,7 +350,6 @@ class SelfServiceStep3 extends Component {
                 </h3>
               </div>
             }
-            disabled={isError}
             fluid
             onClick={() => {
               this.props.handleStepClick('previous')
@@ -436,7 +435,6 @@ class SelfServiceStep3 extends Component {
                 </h3>
               </div>
             }
-            disabled={isError || active}
             fluid
             onClick={() => {
               this.props.handleStepClick('previous')
