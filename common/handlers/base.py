@@ -373,11 +373,17 @@ class BaseHandler(TornadoRequestHandler):
         # TODO: Return Authentication prompt regardless of subdomain
 
         tenant = self.get_tenant_name()
-        tenant_details = await TenantDetails.get(tenant)
+        try:
+            tenant_details = await TenantDetails.get(tenant)
+            self.eula_signed = bool(tenant_details.eula_info)
+        except Exception:
+            # TODO: Move this along with other tenant validator checks into dedicated method.
+            #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
+            self.eula_signed = False
+
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
-        self.eula_signed = bool(tenant_details.eula_info)
         group_mapping = get_plugin_by_name(
             config.get_tenant_specific_key(
                 "plugins.group_mapping",
