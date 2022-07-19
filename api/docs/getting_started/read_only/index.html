@@ -8,21 +8,21 @@
 
 
 
-        <link rel="canonical" href="https://docs.noq.dev/docs/features/credential_management/aws_console_temporary_credentials/">
+        <link rel="canonical" href="https://docs.noq.dev/docs/getting_started/read_only/">
 
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
 
 
 
-        <title>Overview - Noq Docs</title>
+        <title>Read-Only Account Guide - Noq Docs</title>
 
 
 
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.1d29e8d0.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.1d29e8d0.min.css">
 
 
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
 
 
 
@@ -38,7 +38,7 @@
 
 
 
-    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
 
 
 
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
 
 
-        <a href="#overview" class="md-skip">
+        <a href="#configure-read-only-hub-andor-spoke-accounts" class="md-skip">
           Skip to content
         </a>
 
@@ -90,7 +90,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Noq Docs" class="md-header__button md-logo" aria-label="Noq Docs" data-md-component="logo">
+    <a href="../.." title="Noq Docs" class="md-header__button md-logo" aria-label="Noq Docs" data-md-component="logo">
 
 
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -109,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
 
-              Overview
+              Read-Only Account Guide
 
           </span>
         </div>
@@ -204,7 +204,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Noq Docs" class="md-nav__button md-logo" aria-label="Noq Docs" data-md-component="logo">
+    <a href="../.." title="Noq Docs" class="md-nav__button md-logo" aria-label="Noq Docs" data-md-component="logo">
 
 
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -223,7 +223,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         Home
       </a>
     </li>
@@ -274,7 +274,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/noq_usage/" class="md-nav__link">
+      <a href="../noq_usage/" class="md-nav__link">
         Noq Usage
       </a>
     </li>
@@ -288,7 +288,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/noq_administration/" class="md-nav__link">
+      <a href="../noq_administration/" class="md-nav__link">
         Noq Administration
       </a>
     </li>
@@ -302,7 +302,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/weep_cli_overview/" class="md-nav__link">
+      <a href="../weep_cli_overview/" class="md-nav__link">
         Weep CLI Utility
       </a>
     </li>
@@ -360,7 +360,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/access_aws_console_with_assumed_roles/" class="md-nav__link">
+      <a href="../access_aws_console_with_assumed_roles/" class="md-nav__link">
         Access the AWS Console with Assumed Roles
       </a>
     </li>
@@ -374,7 +374,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/self_serve_permissions/" class="md-nav__link">
+      <a href="../self_serve_permissions/" class="md-nav__link">
         Request Self-Serve Permissions
       </a>
     </li>
@@ -388,7 +388,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/download_and_configure_weep/" class="md-nav__link">
+      <a href="../download_and_configure_weep/" class="md-nav__link">
         Set up the Weep CLI Utility
       </a>
     </li>
@@ -458,7 +458,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/1_connect_hub_account/" class="md-nav__link">
+      <a href="../1_connect_hub_account/" class="md-nav__link">
         Connect Your AWS Hub Account
       </a>
     </li>
@@ -472,7 +472,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/5_enable_credential_brokering/" class="md-nav__link">
+      <a href="../5_enable_credential_brokering/" class="md-nav__link">
         Enable Credential Brokering
       </a>
     </li>
@@ -486,7 +486,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/enable_users_to_assume_roles/" class="md-nav__link">
+      <a href="../enable_users_to_assume_roles/" class="md-nav__link">
         Configure Credential Brokering
       </a>
     </li>
@@ -500,7 +500,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/6_automatically_update_trust_policies/" class="md-nav__link">
+      <a href="../6_automatically_update_trust_policies/" class="md-nav__link">
         Configure Automatic Updates to Trust Policies
       </a>
     </li>
@@ -514,7 +514,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/8_configure_weep/" class="md-nav__link">
+      <a href="../8_configure_weep/" class="md-nav__link">
         Enable the Weep CLI Utility
       </a>
     </li>
@@ -528,7 +528,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/4_update_account_names/" class="md-nav__link">
+      <a href="../4_update_account_names/" class="md-nav__link">
         Update Account Names
       </a>
     </li>
@@ -542,7 +542,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/3_connect_spoke_accounts/" class="md-nav__link">
+      <a href="../3_connect_spoke_accounts/" class="md-nav__link">
         Connect Additional Spoke Accounts
       </a>
     </li>
@@ -556,7 +556,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/7_enable_ip_restrictions/" class="md-nav__link">
+      <a href="../7_enable_ip_restrictions/" class="md-nav__link">
         Enable IP Restrictions
       </a>
     </li>
@@ -570,7 +570,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../getting_started/9_connect_eventbridge/" class="md-nav__link">
+      <a href="../9_connect_eventbridge/" class="md-nav__link">
         Configure AWS Event Bridge
       </a>
     </li>
@@ -592,7 +592,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../iam/" class="md-nav__link">
+      <a href="../../iam/" class="md-nav__link">
         IAM Permissions
       </a>
     </li>
@@ -607,7 +607,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../tasks/" class="md-nav__link">
+      <a href="../../tasks/" class="md-nav__link">
         Tasks
       </a>
     </li>
@@ -668,7 +668,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../weep/weep_features/" class="md-nav__link">
+      <a href="../../weep/weep_features/" class="md-nav__link">
         Credential Serving Options
       </a>
     </li>
@@ -682,7 +682,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../weep/precedence_of_credential_sources/" class="md-nav__link">
+      <a href="../../weep/precedence_of_credential_sources/" class="md-nav__link">
         Credential Source Precedence
       </a>
     </li>
@@ -696,7 +696,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../weep/weep_emulate_ecs_credential_provider/" class="md-nav__link">
+      <a href="../../weep/weep_emulate_ecs_credential_provider/" class="md-nav__link">
         Emulate ECS Credential Provider
       </a>
     </li>
@@ -710,7 +710,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../weep/emulate_imds/" class="md-nav__link">
+      <a href="../../weep/emulate_imds/" class="md-nav__link">
         Emulate EC2 Instance Metadata Service
       </a>
     </li>
@@ -724,7 +724,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../weep/weep_export_credentials_to_environment_variables/" class="md-nav__link">
+      <a href="../../weep/weep_export_credentials_to_environment_variables/" class="md-nav__link">
         Export Credentials to Environment Variables
       </a>
     </li>
@@ -738,7 +738,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../weep/export_credentials_to_file/" class="md-nav__link">
+      <a href="../../weep/export_credentials_to_file/" class="md-nav__link">
         Export to AWS Shared Credentials File
       </a>
     </li>
@@ -752,7 +752,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../weep/credential_process/" class="md-nav__link">
+      <a href="../../weep/credential_process/" class="md-nav__link">
         Set as Credential Process
       </a>
     </li>
@@ -766,7 +766,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../weep/weep_list_roles/" class="md-nav__link">
+      <a href="../../weep/weep_list_roles/" class="md-nav__link">
         List Roles
       </a>
     </li>
@@ -830,12 +830,10 @@
 
 
 
+    <li class="md-nav__item md-nav__item--nested">
 
 
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-
-
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_1" type="checkbox" id="__nav_8_1" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_1" type="checkbox" id="__nav_8_1" >
 
 
 
@@ -868,12 +866,10 @@
 
 
 
+    <li class="md-nav__item md-nav__item--nested">
 
 
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-
-
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_1_1" type="checkbox" id="__nav_8_1_1" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_1_1" type="checkbox" id="__nav_8_1_1" >
 
 
 
@@ -903,58 +899,10 @@
 
 
 
-
-
-    <li class="md-nav__item md-nav__item--active">
-
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-
-
-
-
-
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Overview
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../features/credential_management/aws_console_temporary_credentials/" class="md-nav__link">
         Overview
       </a>
-
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-
-
-
-
-
-
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-
-        <li class="md-nav__item">
-  <a href="#role-selection" class="md-nav__link">
-    Role Selection
-  </a>
-
-</li>
-
-        <li class="md-nav__item">
-  <a href="#recent-roles" class="md-nav__link">
-    Recent Roles
-  </a>
-
-</li>
-
-    </ul>
-
-</nav>
-
     </li>
 
 
@@ -966,7 +914,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../chrome_integration/" class="md-nav__link">
+      <a href="../../features/credential_management/chrome_integration/" class="md-nav__link">
         Chrome Integration
       </a>
     </li>
@@ -980,7 +928,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../alfred_integration/" class="md-nav__link">
+      <a href="../../features/credential_management/alfred_integration/" class="md-nav__link">
         Alfred Integration
       </a>
     </li>
@@ -1001,7 +949,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../aws_cli_credentials/" class="md-nav__link">
+      <a href="../../features/credential_management/aws_cli_credentials/" class="md-nav__link">
         AWS CLI Credentials
       </a>
     </li>
@@ -1015,7 +963,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../ip_restricted_credentials/" class="md-nav__link">
+      <a href="../../features/credential_management/ip_restricted_credentials/" class="md-nav__link">
         IP Restrictions
       </a>
     </li>
@@ -1029,7 +977,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../transitive_session_tags/" class="md-nav__link">
+      <a href="../../features/credential_management/transitive_session_tags/" class="md-nav__link">
         Transitive Session Tags
       </a>
     </li>
@@ -1096,7 +1044,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/autogenerate_x_account_permissions/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/autogenerate_x_account_permissions/" class="md-nav__link">
         Autogenerate Cross Account Requests
       </a>
     </li>
@@ -1110,7 +1058,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/automatically_approve_low_risk_requests/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/automatically_approve_low_risk_requests/" class="md-nav__link">
         Automatically Approve Low-Risk Requests
       </a>
     </li>
@@ -1124,7 +1072,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/customizable_policy_requests/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/customizable_policy_requests/" class="md-nav__link">
         Customize Policy Requests Before Approving
       </a>
     </li>
@@ -1138,7 +1086,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/permissions_are_crud/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/permissions_are_crud/" class="md-nav__link">
         Customizable CRUD Mapping for Permissions
       </a>
     </li>
@@ -1152,7 +1100,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/decentralized_request_management/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/decentralized_request_management/" class="md-nav__link">
         Decentralized Request Management
       </a>
     </li>
@@ -1166,7 +1114,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/restrict_viewers_of_account_resources/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/restrict_viewers_of_account_resources/" class="md-nav__link">
         Restrict Viewers of Account Resources
       </a>
     </li>
@@ -1180,7 +1128,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/self_service_permissions/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/self_service_permissions/" class="md-nav__link">
         Self-Service Permissions
       </a>
     </li>
@@ -1194,7 +1142,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/typeaheads_across_known_resources/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/typeaheads_across_known_resources/" class="md-nav__link">
         Typeaheads across all known resources
       </a>
     </li>
@@ -1208,7 +1156,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/temporary_policy_requests/" class="md-nav__link">
+      <a href="../../features/permissions_management_and_request_framework/temporary_policy_requests/" class="md-nav__link">
         Temporary Policy Requests
       </a>
     </li>
@@ -1261,7 +1209,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../resource_management/create_role/" class="md-nav__link">
+      <a href="../../features/resource_management/create_role/" class="md-nav__link">
         Create Role
       </a>
     </li>
@@ -1275,7 +1223,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../resource_management/clone_role/" class="md-nav__link">
+      <a href="../../features/resource_management/clone_role/" class="md-nav__link">
         Clone Role
       </a>
     </li>
@@ -1296,10 +1244,12 @@
 
 
 
-    <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_4" type="checkbox" id="__nav_8_4" >
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_4" type="checkbox" id="__nav_8_4" checked>
 
 
 
@@ -1325,10 +1275,20 @@
 
 
 
-    <li class="md-nav__item">
-      <a href="../../../getting_started/read_only/" class="md-nav__link">
+
+
+    <li class="md-nav__item md-nav__item--active">
+
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+
+
+
+
+
+      <a href="./" class="md-nav__link md-nav__link--active">
         Read-Only Account Guide
       </a>
+
     </li>
 
 
@@ -1387,7 +1347,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/automatic_permissions_generation/" class="md-nav__link">
+      <a href="../../features/planned/automatic_permissions_generation/" class="md-nav__link">
         Automatic Permissions Generation
       </a>
     </li>
@@ -1401,7 +1361,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/unused_permissions_removal/" class="md-nav__link">
+      <a href="../../features/planned/unused_permissions_removal/" class="md-nav__link">
         Unused Permissions Removal
       </a>
     </li>
@@ -1415,7 +1375,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/breakglass_role_access/" class="md-nav__link">
+      <a href="../../features/planned/breakglass_role_access/" class="md-nav__link">
         Breakglass Role Access
       </a>
     </li>
@@ -1429,7 +1389,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/multi_role_wizard_selection/" class="md-nav__link">
+      <a href="../../features/planned/multi_role_wizard_selection/" class="md-nav__link">
         Multi-Role Self-Service
       </a>
     </li>
@@ -1443,7 +1403,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/multi_tag_wizard_request/" class="md-nav__link">
+      <a href="../../features/planned/multi_tag_wizard_request/" class="md-nav__link">
         Self-Service Wizard for Tagging
       </a>
     </li>
@@ -1457,7 +1417,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../planned/2fa_step_up/" class="md-nav__link">
+      <a href="../../features/planned/2fa_step_up/" class="md-nav__link">
         2-Factor Step-Up
       </a>
     </li>
@@ -1518,7 +1478,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../swagger/swagger/" class="md-nav__link">
+      <a href="../../swagger/swagger/" class="md-nav__link">
         Swagger Documentation
       </a>
     </li>
@@ -1575,7 +1535,7 @@
 
 
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../../reference/style_guide/">Documentation Style Guide</a>
+          <a href="../../reference/style_guide/">Documentation Style Guide</a>
 
             <label for="__nav_10">
               <span class="md-nav__icon md-icon"></span>
@@ -1598,7 +1558,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../reference/style_guide/tone/" class="md-nav__link">
+      <a href="../../reference/style_guide/tone/" class="md-nav__link">
         Voice and tone
       </a>
     </li>
@@ -1612,7 +1572,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../reference/style_guide/accessibility/" class="md-nav__link">
+      <a href="../../reference/style_guide/accessibility/" class="md-nav__link">
         Accessibility
       </a>
     </li>
@@ -1626,7 +1586,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../reference/style_guide/write-to-user/" class="md-nav__link">
+      <a href="../../reference/style_guide/write-to-user/" class="md-nav__link">
         Second person
       </a>
     </li>
@@ -1640,7 +1600,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../reference/style_guide/active-voice/" class="md-nav__link">
+      <a href="../../reference/style_guide/active-voice/" class="md-nav__link">
         Active voice
       </a>
     </li>
@@ -1654,7 +1614,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../reference/style_guide/active-verbs/" class="md-nav__link">
+      <a href="../../reference/style_guide/active-verbs/" class="md-nav__link">
         Active verbs
       </a>
     </li>
@@ -1668,7 +1628,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../reference/style_guide/clause-order/" class="md-nav__link">
+      <a href="../../reference/style_guide/clause-order/" class="md-nav__link">
         Clause order
       </a>
     </li>
@@ -1682,7 +1642,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../reference/style_guide/link-text/" class="md-nav__link">
+      <a href="../../reference/style_guide/link-text/" class="md-nav__link">
         Link text
       </a>
     </li>
@@ -1696,7 +1656,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../../reference/style_guide/examples/" class="md-nav__link">
+      <a href="../../reference/style_guide/examples/" class="md-nav__link">
         Example domains and names
       </a>
     </li>
@@ -1730,28 +1690,6 @@
 
 
 
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-
-        <li class="md-nav__item">
-  <a href="#role-selection" class="md-nav__link">
-    Role Selection
-  </a>
-
-</li>
-
-        <li class="md-nav__item">
-  <a href="#recent-roles" class="md-nav__link">
-    Recent Roles
-  </a>
-
-</li>
-
-    </ul>
-
 </nav>
                   </div>
                 </div>
@@ -1764,33 +1702,55 @@
 
 
 
-<h1 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h1>
-<p>Noq can broker temporary sessions to the AWS console. After a user authenticates, Noq determines their users and groups from the configured Identity Provider. This could be Okta, Azure AD, Google, or any other OIDC/SAML compatible Identity Provider.</p>
-<p>These attributes are used to determine which roles the user is authorized to access. Noq can be used in a few different ways to determine what roles a user is allowed to access:</p>
-<ol>
-<li>
-<p>Tag the IAM role with the names of the users or groups allowed to access the role (See <a href="/getting_started/5_enable_credential_brokering.md">getting_started/5_enable_credential_brokering.md</a> for more details.</p>
-</li>
-<li>
-<p>Specify a manual mapping of group/users -&gt; roles in the /config endpoint. Here's an example configuration:</p>
-</li>
-</ol>
-<div class="highlight"><pre><span></span><code>group_mapping:
-  groupa@example.com:
-    roles:
-      - arn:aws:iam::123456789012:role/roleA
-      - arn:aws:iam::123456789012:role/roleB
-  userb@example.com:
-    roles:
-      - arn:aws:iam::123456789012:role/roleA
-</code></pre></div>
-<ol>
-<li>(TBD) Specify a Lambda function to invoke, which should return a mapping of roles -&gt; group/users. (Let us know if you want this feature added!)</li>
-</ol>
-<h2 id="role-selection">Role Selection<a class="headerlink" href="#role-selection" title="Permanent link">&para;</a></h2>
-<p>Noq's index page shows a list of roles that the current user is allowed to access across all of the organization's accounts. This could be hundreds or thousands of roles for a given user.</p>
-<h2 id="recent-roles">Recent Roles<a class="headerlink" href="#recent-roles" title="Permanent link">&para;</a></h2>
-<p>On the left side of the page, we store the 5 most recent roles a user has logged in to. This enables them to quickly select the role they want to use if they are commonly logging in to the same roles.</p>
+<h1 id="configure-read-only-hub-andor-spoke-accounts"><strong>Configure Read Only Hub and/or Spoke Accounts</strong><a class="headerlink" href="#configure-read-only-hub-andor-spoke-accounts" title="Permanent link">&para;</a></h1>
+<p>Noq can be configured to run in your environment without having write permissions to effectuate changes. This configuration can be used in situations where Noq is trialed or if Noq is deployed into highly sensitive environments.</p>
+<p>This is configurable per account, so some accounts can be read-only while others allow Noq to write changes. You will need to be logged in to Noq as an administrator to proceed with these steps.</p>
+<p>A role can be changed from read-only to read-write by first deleting Noq's CloudFormation Stack on the target AWS account, then removing the relevant role from Noq's Settings Page. You must remove both Spoke and Hub Roles from your Settings page if you're changing the read-only state of your Hub Account.</p>
+<h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
+<h2 id="1-navigate-to-advanced-settings">1. Navigate to <em>Advanced-&gt;Settings</em><a class="headerlink" href="#1-navigate-to-advanced-settings" title="Permanent link">&para;</a></h2>
+<p>Select <em>Advanced</em> &gt; <em>Settings</em> from the Noq main menu.</p>
+<p><img alt="navigate to all settings" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_01_navigate_to_settings.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="2-optional-find-the-spoke-role-whose-access-permissions-youd-like-to-change-and-remove-it">2. Optional: find the spoke role whose access permissions you'd like to change and remove it<a class="headerlink" href="#2-optional-find-the-spoke-role-whose-access-permissions-youd-like-to-change-and-remove-it" title="Permanent link">&para;</a></h2>
+<p>Under the Spoke Accounts section, identify the appropriate spoke account role.</p>
+<p>Once you find the correct account, <code>Remove</code> it.</p>
+<p><img alt="remove the spoke role whose access permissions should be changed" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_02_optionally_remove_role_to_change.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="3-add-a-new-role">3. Add a New role<a class="headerlink" href="#3-add-a-new-role" title="Permanent link">&para;</a></h2>
+<p>Add a new role by clicking the <code>New</code> button on the <code>Spoke Accounts</code> section</p>
+<p><img alt="add a new spoke role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_03_new_role.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>Login to AWS as an administrator for the targeted AWS account into which the read-only spoke account role should be installed.</p>
+<p>After clicking the <code>New</code> button a modal pops that prompts to <code>Add Spoke Account</code>, either click the <code>Execute CloudFormation</code> or the <code>Copy URL</code> button at the bottom.</p>
+<p><strong>NOTE</strong> when selecting the <code>Copy URL</code> button, a link is copied to your clipboard with the intent of having it pasted into the desired browser session</p>
+<p><img alt="add spoke modal pops" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_04_add_spoke_role.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="4-execute-the-cloudformation-role-template">4. Execute the CloudFormation role template<a class="headerlink" href="#4-execute-the-cloudformation-role-template" title="Permanent link">&para;</a></h2>
+<p>Before proceeding, please confirm that you are logged into the correct AWS account.</p>
+<p>The next screen that pops up is the CloudFormation Stack <code>Create Stack</code> screen.</p>
+<p><img alt="cloudformation create stack screen" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_05_cloud_formation_quick_create_stack.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>Select the ReadOnlyModeParameter boolean value and set it to either true (role is read-only) or false (role is read-write)</p>
+<p><img alt="select readonlymodeparameter" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_06_select_read_only_boolean.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>Select <code>I acknowledge that AWS CloudFormation might create IAM resources with custom names.</code> and <code>Create stack</code>.</p>
+<p><img alt="select create stack" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_07_create_stack.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>After selecting <code>Create Stack</code>, your spoke role will be created into the selected account.</p>
+<p><img alt="create stack creation process" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_08_cloud_formation_stack_creation_process.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="5-verify-the-read-only-spoke-account">5. Verify the read only spoke account<a class="headerlink" href="#5-verify-the-read-only-spoke-account" title="Permanent link">&para;</a></h2>
+<p>Back on the <code>Spoke Accounts</code> page, hit the browser's refresh button, you should see the new account pop up now.</p>
+<p>Noq will need to finish caching resources from the account. You may need to wait a few minutes before proceeding to the next step.</p>
+<p><img alt="verify the new spoke account" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_09_verify_spoke_role_account.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p><strong>NOTE</strong> In the <code>Account Name</code> field, there is a edit button on the right side of the text box (looks like a business card). You can use that button to rename the account.</p>
+<h2 id="6-test-the-read-only-spoke-account">6. Test the read only spoke account<a class="headerlink" href="#6-test-the-read-only-spoke-account" title="Permanent link">&para;</a></h2>
+<p>Select Resources &gt; Self-Service Permissions.</p>
+<p><img alt="verify the new spoke account" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_10_self_service_permissions.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>Select a role or template to add permissions to and select <code>Next</code></p>
+<p><img alt="search and select a role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_11_select_role_in_self_service_permissions.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>Add a permission to an S3 Bucket (for instance), selecting the bucket under <code>Bucket Name</code> and hitting enter. Select the <code>desired permissions</code> and ensure to select permissions that have a write effect (such as Put, Delete).</p>
+<p><img alt="add a permission" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_12_modify_policy_attempt_read_write.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>After selecting <code>Next</code> you'll be required to enter a Justification; notice that there should be a blue banner indicating that the policy request affects a read-only account. Click the <code>Submit, Everything looks good</code> button.</p>
+<p><img alt="justification policy request affects read-only acct" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_13_attempt_self_service_permissions_provision.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>You'll receive a link after submitting a request. Follow it to see your policy request. As a Noq administrator, you will be able to approve or reject the change. Approve the change associated with your read-only account.</p>
+<p><img alt="Reject or Cancel request" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_14_temporarily_elevate_access_or_reject.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>If desired, temporary one-time credentials can be used to write a change to your system.</p>
+<p><img alt="apply changes button" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_14.1_highlight_apply_changes_button.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<p>A modal should pop up prompting you to either provide temporary one-time credentials to allow Noq to write the change for you on the affected account, or to instruct Noq mark the request as approved without attempting to write the change. The latter option should be used if you've written the change outside of Noq.</p>
+<p><img alt="temporary elevate permissions feature" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_15_temporarily_elevate_permissions_modal_popped.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 
 
             </article>
@@ -1806,7 +1766,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
 
 
-        <a href="../../../weep/weep_list_roles/" class="md-footer__link md-footer__link--prev" aria-label="Previous: List Roles" rel="prev">
+        <a href="../../features/resource_management/clone_role/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Clone Role" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>
@@ -1815,20 +1775,20 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              List Roles
+              Clone Role
             </div>
           </div>
         </a>
 
 
 
-        <a href="../chrome_integration/" class="md-footer__link md-footer__link--next" aria-label="Next: Chrome Integration" rel="next">
+        <a href="../../features/planned/automatic_permissions_generation/" class="md-footer__link md-footer__link--next" aria-label="Next: Automatic Permissions Generation" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Chrome Integration
+              Automatic Permissions Generation
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -1871,10 +1831,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "navigation.sections"], "search": "../../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.indexes", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "navigation.sections"], "search": "../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
 
 
-      <script src="../../../assets/javascripts/bundle.0238f547.min.js"></script>
+      <script src="../../assets/javascripts/bundle.0238f547.min.js"></script>
 
 
   </body>

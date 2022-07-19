@@ -6,9 +6,10 @@ from collections import defaultdict
 import simplejson as json
 from boto3.dynamodb.types import Binary  # noqa
 
+from common.aws.iam.utils import get_iam_principal_owner
 from common.aws.utils import ResourceSummary
 from common.config import config
-from common.lib.aws.utils import get_iam_principal_owner, simulate_iam_principal_action
+from common.lib.aws.utils import simulate_iam_principal_action
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.noq_json import SetEncoder

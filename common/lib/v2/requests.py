@@ -106,10 +106,9 @@ log = config.get_logger()
 
 async def update_changes_meta_data(extended_request: ExtendedRequestModel, tenant: str):
     for change in extended_request.changes.changes:
-        arn = get_change_arn(change)
-        resource_summary = await ResourceSummary.set(tenant, arn)
-
         try:
+            arn = get_change_arn(change)
+            resource_summary = await ResourceSummary.set(tenant, arn)
             account_info: SpokeAccount = (
                 ModelAdapter(SpokeAccount)
                 .load_config("spoke_accounts", tenant)
@@ -117,7 +116,7 @@ async def update_changes_meta_data(extended_request: ExtendedRequestModel, tenan
                 .first
             )
             change.read_only = account_info.read_only
-        except ValueError:
+        except (ValueError, AttributeError):
             # spoke account not available
             pass
 
@@ -466,7 +465,10 @@ async def generate_request_from_change_model_array(
 async def get_request_url(extended_request: ExtendedRequestModel) -> str:
     if extended_request.principal.principal_type == "AwsResource":
         return f"/policies/request/{extended_request.id}"
-    elif extended_request.principal.principal_type == "HoneybeeAwsResourceTemplate":
+    elif extended_request.principal.principal_type in [
+        "HoneybeeAwsResourceTemplate",
+        "TerraformAwsResource",
+    ]:
         return extended_request.request_url
     else:
         raise Exception("Unsupported principal type")

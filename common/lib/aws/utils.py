@@ -17,7 +17,7 @@ from common.aws.iam.policy.utils import (
 )
 from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.user.utils import fetch_iam_user
-from common.aws.utils import ResourceSummary, get_resource_account, get_resource_tag
+from common.aws.utils import get_resource_account, get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -1644,18 +1644,3 @@ async def is_already_allowed_by_other_policy(
                 continue
             return True
     return False
-
-
-async def get_iam_principal_owner(arn: str, tenant: str) -> Optional[str]:
-    from common.aws.iam.role.models import IAMRole
-
-    principal_details = {}
-    resource_summary = await ResourceSummary.set(tenant, arn)
-    principal_type = resource_summary.resource_type
-    account_id = resource_summary.account
-    # trying to find principal for subsequent queries
-    if principal_type == "role":
-        principal_details = (await IAMRole.get(tenant, account_id, arn)).dict()
-    elif principal_type == "user":
-        principal_details = await fetch_iam_user(account_id, arn, tenant)
-    return principal_details.get("owner")

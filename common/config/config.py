@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 import botocore.exceptions
 import logmatic
+import sentry_sdk
 from pytz import timezone
 
 import common.lib.noq_json as json
@@ -191,6 +192,9 @@ class Configuration(metaclass=Singleton):
                 self.merge_extended_paths(extend_config.get("extends"), dir_path)
         validate_config(self.config)
 
+    def is_test_environment(self) -> bool:
+        return self.get("_global_.environment") == "test"
+
     def get_employee_photo_url(self, user, tenant):
         import hashlib
         import urllib.parse
@@ -279,7 +283,7 @@ class Configuration(metaclass=Singleton):
         if extends:
             self.merge_extended_paths(extends, dir_path)
 
-        if self.get("_global_.environment") != "test":
+        if not self.is_test_environment():
             self.raise_if_invalid_aws_credentials()
 
         # We use different Timer intervals for our background threads to prevent logger objects from clashing, which
@@ -317,6 +321,13 @@ class Configuration(metaclass=Singleton):
         Get tenant static configuration from DynamoDB.
         configuration.
         """
+        function = f"{__name__}.{sys._getframe().f_code.co_name}"
+
+        log_data = {
+            "function": function,
+            "tenant": tenant,
+            "safe": safe,
+        }
         dynamodb = boto3.resource(
             "dynamodb",
             region_name=self.get_aws_region(),
@@ -336,6 +347,14 @@ class Configuration(metaclass=Singleton):
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "ResourceNotFoundException":
                 return {}
+            sentry_sdk.capture_exception()
+            self.get_logger("config").error(
+                {
+                    **log_data,
+                    "error": str(e),
+                    "message": "Unable to find tenant in Dynamo",
+                }
+            )
         c = {}
 
         tenant_config = current_config.get("Item", {}).get("config", "")
@@ -358,11 +377,10 @@ class Configuration(metaclass=Singleton):
         red = RedisHandler().redis_sync(tenant)
         if red.get(f"{tenant}_STATIC_CONFIGURATION"):
             return True
-        if self.get_tenant_static_config_from_dynamo(tenant):
+        elif self.get_tenant_static_config_from_dynamo(tenant):
             return True
-        if self.get("_global_.environment") == "test":
-            return True
-        return False
+        else:
+            return self.is_test_environment()
 
     def copy_tenant_config_dynamo_to_redis(self, tenant):
         config_item = self.get_tenant_static_config_from_dynamo(tenant, safe=True)
@@ -390,7 +408,14 @@ class Configuration(metaclass=Singleton):
         Get a tenant specific value for configuration entry in dot notation.
         """
         # Only support keys that explicitly call out a tenant in development mode
-
+        function = f"{__name__}.{sys._getframe().f_code.co_name}"
+        log_data = {
+            "function": function,
+            "message": "Loading tenant configuration",
+            "tenant": tenant,
+            "key": key,
+            "default": default,
+        }
         if self.get("_global_.development"):
             static_config_key = f"site_configs.{tenant}.{key}"
             # If we've defined a static config yaml file for the tenant, that takes precedence over
@@ -418,6 +443,12 @@ class Configuration(metaclass=Singleton):
         # Convert commented map to dictionary
         c = self.tenant_configs[tenant].get("config")
         if not c:
+            self.get_logger("config").error(
+                {
+                    **log_data,
+                    "message": "Unable to load tenant configuration. self.tenant_configs[tenant] is empty.",
+                }
+            )
             return default
 
         value = json.loads(json.dumps(self.tenant_configs[tenant].get("config")))
@@ -548,9 +579,7 @@ class Configuration(metaclass=Singleton):
     def get_dynamo_table_name(
         self, table_name: str, namespace: str = "cloudumi"
     ) -> str:
-        if self.get("_global_.environment") == "test" and self.get(
-            "_global_.development"
-        ):
+        if self.is_test_environment() and self.get("_global_.development"):
             return table_name
         cluster_id_key = "_global_.deployment.cluster_id"
         cluster_id = self.get(cluster_id_key, None)
@@ -592,6 +621,7 @@ get_tenant_static_config_from_dynamo = CONFIG.get_tenant_static_config_from_dyna
 is_tenant_configured = CONFIG.is_tenant_configured
 get_dynamo_table_name = CONFIG.get_dynamo_table_name
 get_global_s3_bucket = CONFIG.get_global_s3_bucket
+is_test_environment = CONFIG.is_test_environment
 # Set logging levels
 CONFIG.set_logging_levels()
 

@@ -1,4 +1,5 @@
 import sys
+import time
 from typing import Any, Dict, Optional
 
 import boto3
@@ -118,6 +119,55 @@ async def handle_spoke_account_registration(body):
     external_id_in_config = config.get_tenant_specific_key(
         "tenant_details.external_id", tenant
     )
+
+    retry_attempt = 1
+
+    while not external_id_in_config and retry_attempt <= 5:
+        log.error(
+            {
+                **log_data,
+                "error": "External ID in configuration is None.",
+                "retry_attempt_count": str(retry_attempt),
+            }
+        )
+        time.sleep(5 * retry_attempt)
+        external_id_in_config = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
+        retry_attempt += 1
+
+    if not external_id_in_config:
+        tenant_config = config.CONFIG.tenant_configs[tenant]
+        tenant_config_in_redis = config.CONFIG.load_tenant_config_from_redis(tenant)
+        tenant_config_in_dynamo = config.CONFIG.get_tenant_static_config_from_dynamo(
+            tenant, safe=True
+        )
+        log.error(
+            {
+                **log_data,
+                "tenant_config_in_memory": tenant_config,
+                "tenant_config_in_redis": tenant_config_in_redis,
+                "tenant_config_in_dynamo": tenant_config_in_dynamo,
+            }
+        )
+        external_id_in_config = (
+            tenant_config_in_redis.get("config", {})
+            .get("tenant_details", {})
+            .get("external_id")
+        )
+        if not external_id_in_config:
+            log.error({**log_data, "message": "External ID not in loaded Redis config"})
+            external_id_in_config = tenant_config_in_dynamo.get(
+                "tenant_details", {}
+            ).get("external_id")
+
+        if not external_id_in_config:
+            log.error(
+                {
+                    **log_data,
+                    "message": "External ID not in loaded Dynamo config either oh no!",
+                }
+            )
 
     if external_id != external_id_in_config:
         error_message = (
@@ -354,10 +404,59 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "message": error_message,
         }
 
-    # Verify External ID
     external_id_in_config = config.get_tenant_specific_key(
         "tenant_details.external_id", tenant
     )
+
+    retry_attempt = 1
+
+    # Verify External ID
+    while not external_id_in_config and retry_attempt <= 5:
+        log.error(
+            {
+                **log_data,
+                "error": "External ID in configuration is None.",
+                "retry_attempt_count": str(retry_attempt),
+            }
+        )
+        time.sleep(5 * retry_attempt)
+        external_id_in_config = config.get_tenant_specific_key(
+            "tenant_details.external_id", tenant
+        )
+        retry_attempt += 1
+
+    if not external_id_in_config:
+        tenant_config = config.CONFIG.tenant_configs[tenant]
+        tenant_config_in_redis = config.CONFIG.load_tenant_config_from_redis(tenant)
+        tenant_config_in_dynamo = config.CONFIG.get_tenant_static_config_from_dynamo(
+            tenant, safe=True
+        )
+        log.error(
+            {
+                **log_data,
+                "tenant_config_in_memory": tenant_config,
+                "tenant_config_in_redis": tenant_config_in_redis,
+                "tenant_config_in_dynamo": tenant_config_in_dynamo,
+            }
+        )
+        external_id_in_config = (
+            tenant_config_in_redis.get("config", {})
+            .get("tenant_details", {})
+            .get("external_id")
+        )
+        if not external_id_in_config:
+            log.error({**log_data, "message": "External ID not in loaded Redis config"})
+            external_id_in_config = tenant_config_in_dynamo.get(
+                "tenant_details", {}
+            ).get("external_id")
+
+        if not external_id_in_config:
+            log.error(
+                {
+                    **log_data,
+                    "message": "External ID not in loaded Dynamo config either oh no!",
+                }
+            )
 
     if external_id != external_id_in_config:
         error_message = (

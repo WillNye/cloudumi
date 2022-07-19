@@ -8,9 +8,9 @@ import jwt
 from cryptography.hazmat.backends.openssl.rsa import _RSAPublicKey
 
 import common.lib.noq_json as json
-from common.aws.utils import get_resource_account
 from common.config import config
 from common.config.models import ModelAdapter
+from common.lib.aws.utils import get_resource_account
 from common.lib.crypto import CryptoSign
 from common.lib.generic import is_in_group
 from common.lib.plugins import get_plugin_by_name

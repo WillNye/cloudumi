@@ -20,6 +20,9 @@ async def generate_jwt_token(
     eula_signed=None,
 ):
     if eula_signed is None:
+        all_tenants = await TenantDetails.scan()
+        t_str = ", ".join([ten.name for ten in all_tenants])
+        log.warning(f"THIS_IS_THE_THING : {tenant} not in {t_str}")
         tenant_details = await TenantDetails.get(tenant)
         eula_signed = bool(tenant_details.eula_info)
 
