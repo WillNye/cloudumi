@@ -8,8 +8,10 @@ from typing import Dict, List, Optional
 
 from deepdiff import DeepDiff
 from policy_sentry.util.actions import get_service_from_action
+from policy_sentry.util.arns import parse_arn
 
 import common.lib.noq_json as json
+from common.aws.utils import ResourceSummary, get_resource_account
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
@@ -17,12 +19,6 @@ from common.exceptions.exceptions import (
     ResourceNotFound,
 )
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
-from common.lib.aws.utils import (
-    get_region_from_arn,
-    get_resource_account,
-    get_resource_from_arn,
-    get_service_from_arn,
-)
 from common.lib.notifications import (
     send_new_comment_notification,
     send_policy_request_status_update_v2,
@@ -359,21 +355,23 @@ async def get_resources_from_events(
                     for resource in resources:
                         if resource == "*":
                             continue
-                        resource_name = get_resource_from_arn(resource)
+
+                        resource_summary = await ResourceSummary.set(tenant, resource)
+                        resource_name = resource_summary.name
                         if resource_name == "*":
                             continue
                         if not resource_actions[resource_name]["account"]:
                             resource_actions[resource_name][
                                 "account"
-                            ] = await get_resource_account(resource, tenant)
+                            ] = resource_summary.account
                         if not resource_actions[resource_name]["type"]:
                             resource_actions[resource_name][
                                 "type"
-                            ] = get_service_from_arn(resource)
+                            ] = resource_summary.resource_type
                         if not resource_actions[resource_name]["region"]:
                             resource_actions[resource_name][
                                 "region"
-                            ] = get_region_from_arn(resource)
+                            ] = resource_summary.region
                         resource_actions[resource_name]["arns"].append(resource)
                         actions = get_actions_for_resource(resource, statement)
                         resource_actions[resource_name]["actions"].extend(
@@ -390,7 +388,7 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
     """
     results: List[str] = []
     # Get service from resource
-    resource_service = get_service_from_arn(resource_arn)
+    resource_service = parse_arn(resource_arn)["service"]
     # Get relevant actions from policy doc
     actions = statement.get("Action", [])
     actions = actions if isinstance(actions, list) else [actions]
@@ -568,29 +566,51 @@ async def send_communications_new_comment(
     )
 
 
-async def get_resource_type_for_arn(arn: str) -> str:
-    return arn.split(":")[2]
+async def get_aws_config_history_url_for_resource(
+    account_id,
+    resource_id,
+    resource_name,
+    technology,
+    tenant: str,
+    region: Optional[str] = None,
+):
+    if not region:
+        region = (config.get_tenant_specific_key("aws.region", tenant, config.region),)
+    if config.get_tenant_specific_key(
+        "get_aws_config_history_url_for_resource.generate_conglomo_url",
+        tenant,
+    ):
+        return await get_conglomo_url_for_resource(
+            account_id, resource_id, technology, tenant, region
+        )
+
+    encoded_redirect = urllib.parse.quote_plus(
+        f"https://{region}.console.aws.amazon.com/config/home?#/resources/timeline?"
+        f"resourceId={resource_id}&resourceName={resource_name}&resourceType={technology}"
+    )
+
+    url = f"/role/{account_id}?redirect={encoded_redirect}"
+    return url
 
 
-async def get_region_for_arn(arn: str) -> str:
-    # TODO: Provide region for S3 buckets and other organization resource types where it isn't known?
-    return arn.split(":")[3]
+async def get_conglomo_url_for_resource(
+    account_id, resource_id, technology, tenant, region="global"
+):
+    conglomo_url = config.get_tenant_specific_key(
+        "get_aws_config_history_url_for_resource.conglomo_url",
+        tenant,
+    )
+    if not conglomo_url:
+        raise MissingConfigurationValue(
+            "Unable to find conglomo URL in configuration: `get_aws_config_history_url_for_resource.conglomo_url`"
+        )
+    encoded_resource_id = base64.urlsafe_b64encode(resource_id.encode("utf-8")).decode(
+        "utf-8"
+    )
+    return f"{conglomo_url}/resource/{account_id}/{region}/{technology}/{encoded_resource_id}"
 
 
-async def get_resource_name_for_arn(arn: str) -> str:
-    resource_name = arn.split(":")[5]
-    if "/" in resource_name:
-        resource_name = resource_name.split("/")[-1]
-    return resource_name
-
-
-async def get_resource_sub_type_for_arn(arn: str) -> str:
-    resource_name = arn.split(":")[5]
-    if "/" in resource_name:
-        return resource_name.split("/")[0]
-    return ""
-
-
+# TODO: REMOVE ME
 async def get_url_for_resource(
     arn,
     tenant,
@@ -889,45 +909,24 @@ async def get_url_for_resource(
     return url
 
 
-async def get_aws_config_history_url_for_resource(
-    account_id,
-    resource_id,
-    resource_name,
-    technology,
-    tenant: str,
-    region: Optional[str] = None,
-):
-    if not region:
-        region = (config.get_tenant_specific_key("aws.region", tenant, config.region),)
-    if config.get_tenant_specific_key(
-        "get_aws_config_history_url_for_resource.generate_conglomo_url",
-        tenant,
-    ):
-        return await get_conglomo_url_for_resource(
-            account_id, resource_id, technology, tenant, region
-        )
-
-    encoded_redirect = urllib.parse.quote_plus(
-        f"https://{region}.console.aws.amazon.com/config/home?#/resources/timeline?"
-        f"resourceId={resource_id}&resourceName={resource_name}&resourceType={technology}"
-    )
-
-    url = f"/role/{account_id}?redirect={encoded_redirect}"
-    return url
+async def get_resource_type_for_arn(arn: str) -> str:
+    return arn.split(":")[2]
 
 
-async def get_conglomo_url_for_resource(
-    account_id, resource_id, technology, tenant, region="global"
-):
-    conglomo_url = config.get_tenant_specific_key(
-        "get_aws_config_history_url_for_resource.conglomo_url",
-        tenant,
-    )
-    if not conglomo_url:
-        raise MissingConfigurationValue(
-            "Unable to find conglomo URL in configuration: `get_aws_config_history_url_for_resource.conglomo_url`"
-        )
-    encoded_resource_id = base64.urlsafe_b64encode(resource_id.encode("utf-8")).decode(
-        "utf-8"
-    )
-    return f"{conglomo_url}/resource/{account_id}/{region}/{technology}/{encoded_resource_id}"
+async def get_region_for_arn(arn: str) -> str:
+    # TODO: Provide region for S3 buckets and other organization resource types where it isn't known?
+    return arn.split(":")[3]
+
+
+async def get_resource_name_for_arn(arn: str) -> str:
+    resource_name = arn.split(":")[5]
+    if "/" in resource_name:
+        resource_name = resource_name.split("/")[-1]
+    return resource_name
+
+
+async def get_resource_sub_type_for_arn(arn: str) -> str:
+    resource_name = arn.split(":")[5]
+    if "/" in resource_name:
+        return resource_name.split("/")[0]
+    return ""

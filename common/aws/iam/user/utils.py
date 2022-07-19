@@ -4,11 +4,14 @@ from typing import Any, Dict, Optional
 
 from botocore.exceptions import ClientError
 
+from common.aws.iam.policy.utils import (
+    get_user_inline_policies,
+    get_user_managed_policies,
+)
 from common.aws.iam.utils import _cloudaux_to_aws, get_tenant_iam_conn
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.iam import get_user_inline_policies, get_user_managed_policies
 from common.lib.plugins import get_plugin_by_name
 from common.models import SpokeAccount
 

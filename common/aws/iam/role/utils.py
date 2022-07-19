@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from joblib import Parallel, delayed
 
 import common.lib.noq_json as json
+from common.aws.iam.policy.utils import get_managed_policy_document
 from common.aws.iam.role.config import (
     get_active_tear_users_tag,
     get_tear_support_groups_tag,
@@ -18,7 +19,6 @@ from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import rate_limited, sts_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
-from common.lib.aws.iam import get_managed_policy_document
 from common.lib.cloud_credential_authorization_mapping import RoleAuthorizations
 from common.lib.plugins import get_plugin_by_name
 from common.models import (

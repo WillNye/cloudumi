@@ -12,10 +12,16 @@ from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
 import common.lib.noq_json as json
+from common.aws.iam.policy.utils import (
+    create_or_update_managed_policy,
+    generate_updated_resource_policy,
+    get_managed_policy_document,
+    get_resource_policy,
+)
 from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.utils import get_supported_resource_permissions
-from common.aws.utils import ResourceSummary, get_resource_tag
+from common.aws.utils import ResourceSummary, get_resource_account, get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -29,20 +35,10 @@ from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
-from common.lib.aws.iam import (
-    create_or_update_managed_policy,
-    get_managed_policy_document,
-)
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import (
     fetch_resource_details,
-    generate_updated_resource_policy,
     get_bucket_location_with_fallback,
-    get_region_from_arn,
-    get_resource_account,
-    get_resource_from_arn,
-    get_resource_policy,
-    get_service_from_arn,
 )
 from common.lib.change_request import generate_policy_name, generate_policy_sid
 from common.lib.plugins import get_plugin_by_name
@@ -247,23 +243,18 @@ async def generate_request_from_change_model_array(
 
     if primary_principal.principal_type == "AwsResource":
         # TODO: Separate this out into another function
-        account_id = await get_resource_account(primary_principal.principal_arn, tenant)
-        arn_parsed = parse_arn(primary_principal.principal_arn)
-        arn_type = arn_parsed["service"]
-        arn_name = (
-            arn_parsed["resource_path"]
-            if arn_parsed["resource_path"]
-            else arn_parsed["resource"]
+        resource_summary = await ResourceSummary.set(
+            tenant, primary_principal.principal_arn
         )
-        arn_region = arn_parsed["region"]
+        account_id = resource_summary.account
         try:
             arn_url = await get_url_for_resource(
                 arn=primary_principal.principal_arn,
                 tenant=tenant,
-                resource_type=arn_type,
+                resource_type=resource_summary.service,
                 account_id=account_id,
-                region=arn_region,
-                resource_name=arn_name,
+                region=resource_summary.region,
+                resource_name=resource_summary.name,
             )
         except ResourceNotFound:
             # should never reach this case...
@@ -279,14 +270,17 @@ async def generate_request_from_change_model_array(
 
         if len(managed_policy_resource_changes) > 0:
             # for managed policy changes, principal arn must be a managed policy
-            if arn_parsed["service"] != "iam" or arn_parsed["resource"] != "policy":
+            if (
+                resource_summary.service != "iam"
+                or resource_summary.resource_type != "policy"
+            ):
                 log_data[
                     "message"
                 ] = "Principal ARN type not supported for managed policy resource changes."
                 log.error(log_data)
                 raise InvalidRequestParameter(log_data["message"])
 
-            if arn_parsed["account"] == "aws":
+            if resource_summary.account == "aws":
                 log_data["message"] = "AWS Managed Policies aren't valid for changes."
                 log.error(log_data)
                 raise InvalidRequestParameter(log_data["message"])
@@ -310,7 +304,7 @@ async def generate_request_from_change_model_array(
                 log.error(log_data)
                 raise InvalidRequestParameter(log_data["message"])
 
-            policy_name = arn_parsed["resource_path"].split("/")[-1]
+            policy_name = resource_summary.name
             managed_policy_resource = None
             try:
                 managed_policy_resource = await aio_wrapper(
@@ -352,22 +346,26 @@ async def generate_request_from_change_model_array(
             or len(tear_role_changes) > 0
         ):
             # for inline/managed/assume role policies, principal arn must be a role
-            if arn_parsed["service"] != "iam" or arn_parsed["resource"] not in [
-                "role",
-                "user",
-            ]:
+            if (
+                resource_summary.service != "iam"
+                or resource_summary.resource_type
+                not in [
+                    "role",
+                    "user",
+                ]
+            ):
                 log_data[
                     "message"
                 ] = "Resource not found, or ARN type not supported for inline/managed/assume role policy changes."
                 log.error(log_data)
                 raise InvalidRequestParameter(log_data["message"])
-            principal_name = arn_parsed["resource_path"].split("/")[-1]
+            principal_name = resource_summary.name
             principal_details = None
-            if arn_parsed["resource"] == "role":
+            if resource_summary.resource_type == "role":
                 principal_details = await get_role_details(
                     account_id, principal_name, tenant, extended=True
                 )
-            elif arn_parsed["resource"] == "user":
+            elif resource_summary.resource_type == "user":
                 principal_details = await get_user_details(
                     account_id, principal_name, tenant, extended=True
                 )
@@ -394,7 +392,7 @@ async def generate_request_from_change_model_array(
                     permissions_boundary_change, user, principal_details
                 )
             for assume_role_policy_change in assume_role_policy_changes:
-                if arn_parsed["resource"] == "user":
+                if resource_summary.resource_type == "user":
                     raise UnsupportedChangeType(
                         "Unable to modify an assume role policy associated with an IAM user"
                     )
@@ -678,10 +676,13 @@ async def generate_resource_policies(
 
     if extended_request.principal.principal_type == "AwsResource":
         principal_arn = extended_request.principal.principal_arn
-        role_account_id = await get_resource_account(principal_arn, tenant)
-        arn_parsed = parse_arn(principal_arn)
+        resource_summary = await ResourceSummary.set(tenant, principal_arn)
+        role_account_id = resource_summary.account
 
-        if arn_parsed["service"] != "iam" or arn_parsed["resource"] != "role":
+        if (
+            resource_summary.service != "iam"
+            or resource_summary.resource_type != "role"
+        ):
             log_data[
                 "message"
             ] = "ARN type not supported for generating resource policy changes."
@@ -690,14 +691,14 @@ async def generate_resource_policies(
 
         resource_policy = {"Version": "2012-10-17", "Statement": [], "Sid": ""}
         resource_policy_sha = sha256(json.dumps(resource_policy).encode()).hexdigest()
-        if not arn_parsed.get("resource_path") or not arn_parsed.get("service"):
+        if not resource_summary.resource_type or not resource_summary.service:
             return extended_request
 
         primary_principal_resource_model = ResourceModel(
             arn=principal_arn,
-            name=arn_parsed["resource_path"].split("/")[-1],
+            name=resource_summary.name,
             account_id=role_account_id,
-            resource_type=arn_parsed["service"],
+            resource_type=resource_summary.service,
         )
 
         auto_generated_resource_policy_changes = []
@@ -1056,10 +1057,15 @@ async def apply_changes_to_role(
     }
     log.info(log_data)
 
-    arn_parsed = parse_arn(extended_request.principal.principal_arn)
+    resource_summary = await ResourceSummary.set(
+        tenant, extended_request.principal.principal_arn
+    )
 
     # Principal ARN must be a role for this function
-    if arn_parsed["service"] != "iam" or arn_parsed["resource"] not in ["role", "user"]:
+    if resource_summary.service != "iam" or resource_summary.resource_type not in [
+        "role",
+        "user",
+    ]:
         log_data[
             "message"
         ] = "Resource not found, or ARN type not supported for inline/managed/assume role policy changes."
@@ -1070,7 +1076,7 @@ async def apply_changes_to_role(
         )
         return
 
-    principal_name = arn_parsed["resource_path"].split("/")[-1]
+    principal_name = resource_summary.name
     account_id = await get_resource_account(
         extended_request.principal.principal_arn, tenant
     )
@@ -1112,7 +1118,7 @@ async def apply_changes_to_role(
         if change.change_type == "inline_policy":
             if change.action == Action.attach:
                 try:
-                    if arn_parsed["resource"] == "role":
+                    if resource_summary.resource_type == "role":
                         await aio_wrapper(
                             iam_client.put_role_policy,
                             RoleName=principal_name,
@@ -1121,7 +1127,7 @@ async def apply_changes_to_role(
                                 change.policy.policy_document,
                             ),
                         )
-                    elif arn_parsed["resource"] == "user":
+                    elif resource_summary.resource_type == "user":
                         await aio_wrapper(
                             iam_client.put_user_policy,
                             UserName=principal_name,
@@ -1157,13 +1163,13 @@ async def apply_changes_to_role(
                     )
             elif change.action == Action.detach:
                 try:
-                    if arn_parsed["resource"] == "role":
+                    if resource_summary.resource_type == "role":
                         await aio_wrapper(
                             iam_client.delete_role_policy,
                             RoleName=principal_name,
                             PolicyName=change.policy_name,
                         )
-                    elif arn_parsed["resource"] == "user":
+                    elif resource_summary.resource_type == "user":
                         await aio_wrapper(
                             iam_client.delete_user_policy,
                             UserName=principal_name,
@@ -1197,13 +1203,13 @@ async def apply_changes_to_role(
         elif change.change_type == "permissions_boundary":
             if change.action == Action.attach:
                 try:
-                    if arn_parsed["resource"] == "role":
+                    if resource_summary.resource_type == "role":
                         await aio_wrapper(
                             iam_client.put_role_permissions_boundary,
                             RoleName=principal_name,
                             PermissionsBoundary=change.arn,
                         )
-                    elif arn_parsed["resource"] == "user":
+                    elif resource_summary.resource_type == "user":
                         await aio_wrapper(
                             iam_client.put_user_permissions_boundary,
                             UserName=principal_name,
@@ -1238,12 +1244,12 @@ async def apply_changes_to_role(
                     )
             elif change.action == Action.detach:
                 try:
-                    if arn_parsed["resource"] == "role":
+                    if resource_summary.resource_type == "role":
                         await aio_wrapper(
                             iam_client.delete_role_permissions_boundary,
                             RoleName=principal_name,
                         )
-                    elif arn_parsed["resource"] == "user":
+                    elif resource_summary.resource_type == "user":
                         await aio_wrapper(
                             iam_client.delete_user_permissions_boundary,
                             UserName=principal_name,
@@ -1278,13 +1284,13 @@ async def apply_changes_to_role(
         elif change.change_type == "managed_policy":
             if change.action == Action.attach:
                 try:
-                    if arn_parsed["resource"] == "role":
+                    if resource_summary.resource_type == "role":
                         await aio_wrapper(
                             iam_client.attach_role_policy,
                             RoleName=principal_name,
                             PolicyArn=change.arn,
                         )
-                    elif arn_parsed["resource"] == "user":
+                    elif resource_summary.resource_type == "user":
                         await aio_wrapper(
                             iam_client.attach_user_policy,
                             UserName=principal_name,
@@ -1316,13 +1322,13 @@ async def apply_changes_to_role(
                     )
             elif change.action == Action.detach:
                 try:
-                    if arn_parsed["resource"] == "role":
+                    if resource_summary.resource_type == "role":
                         await aio_wrapper(
                             iam_client.detach_role_policy,
                             RoleName=principal_name,
                             PolicyArn=change.arn,
                         )
-                    elif arn_parsed["resource"] == "user":
+                    elif resource_summary.resource_type == "user":
                         await aio_wrapper(
                             iam_client.detach_user_policy,
                             UserName=principal_name,
@@ -1353,7 +1359,7 @@ async def apply_changes_to_role(
                         )
                     )
         elif change.change_type == "assume_role_policy":
-            if arn_parsed["resource"] == "user":
+            if resource_summary.resource_type == "user":
                 raise UnsupportedChangeType(
                     "IAM users don't have assume role policies. Unable to process request."
                 )
@@ -1392,13 +1398,13 @@ async def apply_changes_to_role(
                 if change.original_value and not change.value:
                     change.value = change.original_value
                 try:
-                    if arn_parsed["resource"] == "role":
+                    if resource_summary.resource_type == "role":
                         await aio_wrapper(
                             iam_client.tag_role,
                             RoleName=principal_name,
                             Tags=[{"Key": change.key, "Value": change.value}],
                         )
-                    elif arn_parsed["resource"] == "user":
+                    elif resource_summary.resource_type == "user":
                         await aio_wrapper(
                             iam_client.tag_user,
                             UserName=principal_name,
@@ -1411,13 +1417,13 @@ async def apply_changes_to_role(
                         )
                     )
                     if change.original_key and change.original_key != change.key:
-                        if arn_parsed["resource"] == "role":
+                        if resource_summary.resource_type == "role":
                             await aio_wrapper(
                                 iam_client.untag_role,
                                 RoleName=principal_name,
                                 TagKeys=[change.original_key],
                             )
-                        elif arn_parsed["resource"] == "user":
+                        elif resource_summary.resource_type == "user":
                             await aio_wrapper(
                                 iam_client.untag_user,
                                 UserName=principal_name,
@@ -1445,13 +1451,13 @@ async def apply_changes_to_role(
                     )
             if change.tag_action == TagAction.delete:
                 try:
-                    if arn_parsed["resource"] == "role":
+                    if resource_summary.resource_type == "role":
                         await aio_wrapper(
                             iam_client.untag_role,
                             RoleName=principal_name,
                             TagKeys=[change.key],
                         )
-                    elif arn_parsed["resource"] == "user":
+                    elif resource_summary.resource_type == "user":
                         await aio_wrapper(
                             iam_client.untag_user,
                             UserName=principal_name,
@@ -1529,10 +1535,10 @@ async def populate_old_policies(
 
     if extended_request.principal.principal_type == "AwsResource":
         principal_arn = extended_request.principal.principal_arn
-        role_account_id = await get_resource_account(principal_arn, tenant)
-        arn_parsed = parse_arn(principal_arn)
+        resource_summary = await ResourceSummary.set(tenant, principal_arn)
+        role_account_id = resource_summary.account
 
-        if arn_parsed["service"] != "iam" or arn_parsed["resource"] not in [
+        if resource_summary.service != "iam" or resource_summary.resource_type not in [
             "role",
             "user",
         ]:
@@ -1542,9 +1548,9 @@ async def populate_old_policies(
             log.debug(log_data)
             return extended_request
 
-        principal_name = arn_parsed["resource_path"].split("/")[-1]
+        principal_name = resource_summary.name
         if not principal:
-            if arn_parsed["resource"] == "role":
+            if resource_summary.resource_type == "role":
                 principal = await get_role_details(
                     role_account_id,
                     principal_name,
@@ -1552,7 +1558,7 @@ async def populate_old_policies(
                     extended=True,
                     force_refresh=force_refresh,
                 )
-            elif arn_parsed["resource"] == "user":
+            elif resource_summary.resource_type == "user":
                 principal = await get_user_details(
                     role_account_id,
                     principal_name,
@@ -2248,12 +2254,11 @@ async def apply_tear_role_change(
         "tenant": tenant,
     }
     log.info(log_data)
-
-    account_id = await get_resource_account(
-        extended_request.principal.principal_arn, tenant
+    resource_summary = await ResourceSummary.set(
+        tenant, extended_request.principal.principal_arn
     )
-    parsed_arn = parse_arn(change.principal.principal_arn)
-    principal_name = parsed_arn["resource_path"].split("/")[-1]
+    account_id = resource_summary.account
+    principal_name = resource_summary.name
 
     try:
         iam_client = await aio_wrapper(
@@ -2340,11 +2345,16 @@ async def apply_managed_policy_resource_change(
     }
     log.info(log_data)
 
-    arn_parsed = parse_arn(extended_request.principal.principal_arn)
-    resource_type = arn_parsed["service"]
-    resource_name = arn_parsed["resource"]
-    resource_account = arn_parsed["account"]
-    if resource_type != "iam" or resource_name != "policy" or resource_account == "aws":
+    resource_summary = await ResourceSummary.set(
+        tenant, extended_request.principal.principal_arn
+    )
+    resource_account = resource_summary.account
+
+    if (
+        resource_summary.service != "iam"
+        or resource_summary.resource_type != "policy"
+        or resource_summary.account == "aws"
+    ):
         log_data[
             "message"
         ] = "ARN type not supported for managed policy resource changes."
@@ -2355,7 +2365,7 @@ async def apply_managed_policy_resource_change(
         )
         return response
 
-    if not resource_account:
+    if not resource_summary.account:
         # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
         # we can't apply this change
         log_data["message"] = "Resource account not found"
@@ -2390,12 +2400,12 @@ async def apply_managed_policy_resource_change(
     if populate_old_managed_policies_results["changed"]:
         extended_request = populate_old_managed_policies_results["extended_request"]
 
-    policy_name = arn_parsed["resource_path"].split("/")[-1]
+    policy_name = resource_summary.name
     if change.new:
         description = f"Managed Policy created using Noq by {user}"
         # create new policy
         try:
-            policy_path = "/" + arn_parsed["resource_path"].replace(policy_name, "")
+            policy_path = "/" + resource_summary.resource_type
             await create_or_update_managed_policy(
                 new_policy=change.policy.policy_document,
                 policy_name=policy_name,
@@ -2489,17 +2499,9 @@ async def apply_resource_policy_change(
     }
     log.info(log_data)
 
-    resource_arn_parsed = parse_arn(change.arn)
-    resource_type = resource_arn_parsed["service"]
-    resource_name = resource_arn_parsed["resource"]
-    resource_region = resource_arn_parsed["region"]
-    resource_account = resource_arn_parsed["account"]
-    if not resource_account:
-        resource_account = await get_resource_account(change.arn, tenant)
-    if resource_type == "s3" and not resource_region:
-        resource_region = await get_bucket_location_with_fallback(
-            resource_name, resource_account, tenant
-        )
+    resource_summary = await ResourceSummary.set(tenant, change.arn)
+    resource_account = resource_summary.account
+    resource_region = resource_summary.region
 
     if not resource_account:
         # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
@@ -2515,7 +2517,7 @@ async def apply_resource_policy_change(
         )
         return response
 
-    supported_resource_types = config.get_tenant_specific_key(
+    supported_services = config.get_tenant_specific_key(
         "policies.supported_resource_types_for_policy_application",
         tenant,
         ["s3", "sqs", "sns"],
@@ -2528,7 +2530,7 @@ async def apply_resource_policy_change(
         not change.supported
         or (
             change.change_type == "resource_policy"
-            and resource_type not in supported_resource_types
+            and resource_summary.service not in supported_services
         )
         or (
             change.change_type == "sts_resource_policy"
@@ -2549,7 +2551,7 @@ async def apply_resource_policy_change(
     try:
         client = await aio_wrapper(
             boto3_cached_conn,
-            resource_type,
+            resource_summary.service,
             tenant,
             user,
             service_type="client",
@@ -2572,30 +2574,30 @@ async def apply_resource_policy_change(
             retry_max_attempts=2,
             custom_aws_credentials=custom_aws_credentials,
         )
-        if resource_type == "s3":
+        if resource_summary.service == "s3":
             await aio_wrapper(
                 client.put_bucket_policy,
-                Bucket=resource_name,
+                Bucket=resource_summary.name,
                 Policy=json.dumps(change.policy.policy_document),
             )
-        elif resource_type == "sns":
+        elif resource_summary.service == "sns":
             await aio_wrapper(
                 client.set_topic_attributes,
                 TopicArn=change.arn,
                 AttributeName="Policy",
                 AttributeValue=json.dumps(change.policy.policy_document),
             )
-        elif resource_type == "sqs":
+        elif resource_summary.service == "sqs":
             queue_url: dict = await aio_wrapper(
-                client.get_queue_url, QueueName=resource_name
+                client.get_queue_url, QueueName=resource_summary.name
             )
             await aio_wrapper(
                 client.set_queue_attributes,
                 QueueUrl=queue_url.get("QueueUrl"),
                 Attributes={"Policy": json.dumps(change.policy.policy_document)},
             )
-        elif resource_type == "iam":
-            role_name = resource_arn_parsed["resource_path"].split("/")[-1]
+        elif resource_summary.service == "iam":
+            role_name = resource_summary.name
             await aio_wrapper(
                 client.update_assume_role_policy,
                 RoleName=role_name,
@@ -3329,7 +3331,7 @@ async def get_resources_from_policy_change(change: ChangeModel, tenant):
                     "One or more resources must be specified in the policy."
                 )
             try:
-                resource_name = get_resource_from_arn(resource)
+                resource_summary = await ResourceSummary.set(tenant, resource)
             except Exception as e:
                 log.error(
                     {
@@ -3341,18 +3343,16 @@ async def get_resources_from_policy_change(change: ChangeModel, tenant):
                 )
                 sentry_sdk.capture_exception()
                 continue
+
             resource_action = {
                 "arn": resource,
-                "name": resource_name,
-                "account_id": await get_resource_account(resource, tenant),
-                "region": get_region_from_arn(resource),
-                "resource_type": get_service_from_arn(resource),
+                "name": resource_summary.name,
+                "account_id": resource_summary.account,
+                "region": resource_summary.region,
+                "resource_type": resource_summary.resource_type,
+                "account_name": accounts_d.get(resource_summary.account),
+                "actions": get_actions_for_resource(resource, statement),
             }
-
-            resource_action["account_name"] = accounts_d.get(
-                resource_action["account_id"]
-            )
-            resource_action["actions"] = get_actions_for_resource(resource, statement)
             resource_actions.append(ResourceModel.parse_obj(resource_action))
     return resource_actions
 
@@ -3363,7 +3363,7 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
     """
     results: List[str] = []
     # Get service from resource
-    resource_service = get_service_from_arn(resource_arn)
+    resource_service = parse_arn(resource_arn)["service"]
     # Get relevant actions from policy doc
     actions = statement.get("Action", [])
     actions = actions if isinstance(actions, list) else [actions]

@@ -6,14 +6,9 @@ from collections import defaultdict
 import simplejson as json
 from boto3.dynamodb.types import Binary  # noqa
 
+from common.aws.utils import ResourceSummary
 from common.config import config
-from common.lib.aws.utils import (
-    get_account_id_from_arn,
-    get_iam_principal_owner,
-    get_identity_name_from_arn,
-    get_identity_type_from_arn,
-    simulate_iam_principal_action,
-)
+from common.lib.aws.utils import get_iam_principal_owner, simulate_iam_principal_action
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.noq_json import SetEncoder
@@ -25,7 +20,7 @@ from common.lib.slack import send_slack_notification_new_notification
 
 
 class CloudTrail:
-    async def process_cloudtrail_errors(self, aws, tenant, user) -> object:
+    async def process_cloudtrail_errors(self, tenant, user) -> object:
         """
         Processes Cloudtrail Errors that were cached by the `cache_cloudtrail_denies` celery task. Generates and returns
         count data. If configured, generates notifications to end-users based on policies that can be generated
@@ -63,11 +58,12 @@ class CloudTrail:
         new_or_changed_notifications = {}
         for cloudtrail_error in cloudtrail_errors:
             arn = cloudtrail_error.get("arn", "")
-            principal_owner = await get_iam_principal_owner(arn, aws, tenant)
             session_name = cloudtrail_error.get("session_name", "")
-            principal_type = "iam" + await get_identity_type_from_arn(arn)
-            account_id = await get_account_id_from_arn(arn)
-            principal_name = await get_identity_name_from_arn(arn)
+            resource_summary = await ResourceSummary.set(tenant, arn)
+            principal_owner = await get_iam_principal_owner(arn, tenant)
+            principal_type = "iam" + resource_summary.resource_type
+            account_id = resource_summary.account
+            principal_name = resource_summary.name
             url_role_path = (
                 f"/policies/edit/{account_id}/{principal_type}/{principal_name}"
             )

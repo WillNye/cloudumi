@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
+from common.aws.utils import get_resource_account
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
@@ -24,7 +25,6 @@ from common.lib.auth import (
     populate_approve_reject_policy,
 )
 from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
-from common.lib.aws.utils import get_resource_account
 from common.lib.generic import filter_table, write_json_error
 from common.lib.mfa import mfa_verify
 from common.lib.plugins import get_plugin_by_name

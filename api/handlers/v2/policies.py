@@ -3,12 +3,12 @@ import sys
 import tornado.escape
 
 import common.lib.noq_json as json
+from common.aws.iam.policy.policy_utils import validate_iam_policy
 from common.aws.iam.role.utils import get_roles_as_resource
 from common.config import config
 from common.exceptions.exceptions import ResourceNotFound
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
 from common.lib.auth import get_accounts_user_can_view_resources_for
-from common.lib.aws.utils import validate_iam_policy
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.generic import filter_table
 from common.lib.plugins import get_plugin_by_name
