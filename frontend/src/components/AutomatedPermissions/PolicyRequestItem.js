@@ -70,9 +70,9 @@ const PolicyRequestItem = ({
     [modifiedPolicy, policyRequest] // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  const approveAutomaticPolicyRequest = (accountId, policyId) => {
+  const approveAutomaticPolicyRequest = (accountId, policyId, data) => {
     setIsLoading(true)
-    approvePolicyRequest(sendRequestCommon, accountId, policyId)
+    approvePolicyRequest(sendRequestCommon, accountId, policyId, data)
       .then(() => {
         getAutomaticPermissionsRequests().then()
         success('Request successfully approved')
@@ -144,10 +144,12 @@ const PolicyRequestItem = ({
               </Form>
             </Table.Cell>
           </Table.Row>
-          <Table.Row>
-            <Table.Cell>Role Owner</Table.Cell>
-            <Table.Cell>{policyRequest.role_owner || ''}</Table.Cell>
-          </Table.Row>
+          {policyRequest.role_owner ? (
+            <Table.Row>
+              <Table.Cell>Role Owner</Table.Cell>
+              <Table.Cell>{policyRequest.role_owner || ''}</Table.Cell>
+            </Table.Row>
+          ) : null}
 
           <Table.Row>
             <Table.Cell>User</Table.Cell>
@@ -163,10 +165,12 @@ const PolicyRequestItem = ({
             </Table.Cell>
           </Table.Row>
 
-          <Table.Row>
-            <Table.Cell>Access Denied Error</Table.Cell>
-            <Table.Cell>{policyRequest.error || ''}</Table.Cell>
-          </Table.Row>
+          {policyRequest.error ? (
+            <Table.Row>
+              <Table.Cell>Access Denied Error</Table.Cell>
+              <Table.Cell>{policyRequest.error || ''}</Table.Cell>
+            </Table.Row>
+          ) : null}
 
           <Table.Row>
             <Table.Cell>Last Updated</Table.Cell>
@@ -201,7 +205,7 @@ const PolicyRequestItem = ({
                       setModifiedPolicy(value)
                     }}
                     modified={modifiedPolicy}
-                    options={{ ...editorOptions, readonly: cantEditPolicy }}
+                    options={{ ...editorOptions, readOnly: cantEditPolicy }}
                     alwaysConsumeMouseWheel={false}
                     textAlign='center'
                   />
@@ -218,7 +222,11 @@ const PolicyRequestItem = ({
                   onClick={() =>
                     approveAutomaticPolicyRequest(
                       policyRequest.account.account_id,
-                      policyRequest.id
+                      policyRequest.id,
+                      {
+                        role: policyRequest.role,
+                        policy: JSON.parse(modifiedPolicy),
+                      }
                     )
                   }
                 />
