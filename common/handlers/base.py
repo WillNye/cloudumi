@@ -373,14 +373,7 @@ class BaseHandler(TornadoRequestHandler):
         # TODO: Return Authentication prompt regardless of subdomain
 
         tenant = self.get_tenant_name()
-        try:
-            tenant_details = await TenantDetails.get(tenant)
-            self.eula_signed = bool(tenant_details.eula_info)
-        except Exception:
-            # TODO: Move this along with other tenant validator checks into dedicated method.
-            #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
-            self.eula_signed = False
-
+        self.eula_signed = None
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
@@ -423,7 +416,6 @@ class BaseHandler(TornadoRequestHandler):
             "message": "Incoming request",
             "tenant": tenant,
         }
-
         log.debug(log_data)
 
         # Check to see if user has a valid auth cookie
@@ -432,11 +424,21 @@ class BaseHandler(TornadoRequestHandler):
         # Validate auth cookie and use it to retrieve group information
         if auth_cookie:
             res = await validate_and_return_jwt_token(auth_cookie, tenant)
-            if res and isinstance(res, dict):
+            if isinstance(res, dict):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
+                self.eula_signed = res.get("eula_signed", False)
+
+        if self.eula_signed is None:
+            try:
+                tenant_details = await TenantDetails.get(tenant)
+                self.eula_signed = bool(tenant_details.eula_info)
+            except Exception:
+                # TODO: Move this along with other tenant validator checks into dedicated method.
+                #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
+                self.eula_signed = False
 
         # if tenant in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
