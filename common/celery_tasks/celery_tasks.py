@@ -2706,6 +2706,7 @@ schedule_minute = timedelta(minutes=1)
 schedule_5_minutes = timedelta(minutes=5)
 schedule_24_hours = timedelta(hours=24)
 schedule_1_hour = timedelta(hours=1)
+schedule_15_seconds = timedelta(seconds=15)
 
 if config.get("_global_.development", False) and config.get(
     "_global_._development_run_celery_tasks_1_min", False
@@ -2718,6 +2719,7 @@ if config.get("_global_.development", False) and config.get(
     schedule_1_hour = dev_schedule
     schedule_6_hours = dev_schedule
     schedule_5_minutes = dev_schedule
+    schedule_15_seconds = dev_schedule
 
 schedule = {
     "cache_iam_resources_across_accounts_for_all_tenants": {
@@ -2825,7 +2827,7 @@ schedule = {
     "handle_tenant_aws_integration_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
         "options": {"expires": 180},
-        "schedule": schedule_minute,
+        "schedule": schedule_15_seconds,
     },
     "cache_terraform_resources_task_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_tenants",
