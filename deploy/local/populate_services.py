@@ -139,7 +139,7 @@ account_ids_to_name:
 celery:
   cache_cloudtrail_denies:
     enabled: true
-policy_request_autoapprove_rules
+policy_request_autoapprove_rules:
   enabled: true
   rules:
     - name: auto_approve_low_risk_s3
