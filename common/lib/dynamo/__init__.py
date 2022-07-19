@@ -1402,7 +1402,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         new_config: str,
         updated_by: str,
         tenant: str,
-    ) -> None:
+    ) -> dict:
 
         # TODO: We could support encrypting/decrypting static configuration automatically based on a configuration
         # passed in from AWS Secrets Manager or something else
@@ -1450,6 +1450,8 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         await self.copy_tenant_config_dynamo_to_redis(
             tenant, int(time.time()), new_config_d
         )
+
+        return new_config_d
 
 
 # from asgiref.sync import async_to_sync
