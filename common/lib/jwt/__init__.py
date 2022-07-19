@@ -109,7 +109,7 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
             "additional_roles": roles,
             "iat": decoded_jwt.get("iat"),
             "exp": exp,
-            "requires_eula": decoded_jwt.get("requires_eula", False),
+            "eula_signed": decoded_jwt.get("eula_signed", False),
             "groups_pending_eula": decoded_jwt.get("groups_pending_eula", []),
             "additional_roles_pending_eula": decoded_jwt.get(
                 "additional_roles_pending_eula", []
