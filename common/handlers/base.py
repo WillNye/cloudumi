@@ -766,7 +766,6 @@ class BaseHandler(TornadoRequestHandler):
                 "auth.cookie.samesite", tenant, True
             ),
         )
-        log.warning({"updated_cookie": self.cookies})
 
     @classmethod
     def get_noq_auth_cookie_key(cls):
