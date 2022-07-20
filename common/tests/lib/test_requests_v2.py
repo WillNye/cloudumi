@@ -100,6 +100,7 @@ async def get_extended_request_helper():
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("sts")
+@pytest.mark.usefixtures("iam")
 class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.maxDiff = None
