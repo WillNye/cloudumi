@@ -22,11 +22,39 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
 
         # TODO: Add support to config and handle support for permission_flow. Options: auto_apply, auto_request, review
         permission_flow = data.get("permissions_flow", "review")
+        updated_policy = data.get("policy_request")
 
         if is_existing_policy:
             policy_request = await automatic_request.get_policy_request(
                 self.ctx.tenant, account_id, self.user, policy_request_id
             )
+
+            if policy_request and updated_policy:
+                non_allowed_statuses = [
+                    Status3.applied_and_failure.value,
+                    Status3.applied_and_success.value,
+                    Status3.approved.value,
+                ]
+                if policy_request.status not in non_allowed_statuses:
+                    if updated_policy["role"] != policy_request.role:
+                        new_account_id = policy_request.role.split(":")[4]
+                        account = (
+                            ModelAdapter(SpokeAccount)
+                            .load_config("spoke_accounts", self.ctx.tenant)
+                            .with_query({"account_id": new_account_id})
+                            .first
+                        )
+                        policy_request.role = updated_policy["role"]
+                        policy_request.account = account
+                    policy_request.policy = updated_policy["policy"]
+                    if await automatic_request.update_policy_request(
+                        self.ctx.tenant, policy_request
+                    ):
+                        policy_request = (
+                            automatic_request.format_extended_policy_request(
+                                policy_request
+                            )
+                        )
 
             if policy_request and permission_flow == "approve":
                 policy_request = await automatic_request.approve_policy_request(
@@ -130,16 +158,15 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
         ]
 
         policy_request = await automatic_request.get_policy_request(
-            self.ctx.host, account_id, self.user, policy_request_id
+            self.ctx.tenant, account_id, self.user, policy_request_id
         )
         if policy_request:
-
             if policy_request.status not in non_allowed_statuses:
                 if data["role"] != policy_request.role:
                     new_account_id = policy_request.role.split(":")[4]
                     account = (
                         ModelAdapter(SpokeAccount)
-                        .load_config("spoke_accounts", self.ctx.host)
+                        .load_config("spoke_accounts", self.ctx.tenant)
                         .with_query({"account_id": new_account_id})
                         .first
                     )
@@ -147,7 +174,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
                     policy_request.account = account
                 policy_request.policy = data["policy"]
                 if await automatic_request.update_policy_request(
-                    self.ctx.host, policy_request
+                    self.ctx.tenant, policy_request
                 ):
                     policy_request = automatic_request.format_extended_policy_request(
                         policy_request

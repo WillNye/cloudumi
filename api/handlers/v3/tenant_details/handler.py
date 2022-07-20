@@ -3,7 +3,7 @@ from tornado.web import Finish
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
 from common.lib.jwt import validate_and_return_jwt_token
 from common.lib.tenant.models import TenantDetails
-from common.lib.tenant.utils import generate_eula_link
+from common.lib.tenant.utils import get_eula
 from common.models import EulaModel, TenantDetailsModel, WebResponse
 
 
@@ -57,11 +57,11 @@ class TenantEulaHandler(BaseAdminHandler):
 
 class EulaHandler(TornadoRequestHandler):
     async def get(self, version=None):
-        eula_link = await generate_eula_link(version)
+        eula_text = await get_eula(version)
         self.write(
             WebResponse(
                 success="success",
                 status_code=200,
-                data=EulaModel(link=eula_link).dict(),
+                data=EulaModel(eula=eula_text).dict(),
             ).json(exclude_unset=True, exclude_none=True)
         )
