@@ -7,7 +7,6 @@ from botocore.exceptions import ClientError
 from joblib import Parallel, delayed
 
 import common.lib.noq_json as json
-from common.aws.iam.policy.utils import get_managed_policy_document
 from common.aws.iam.role.config import (
     get_active_tear_users_tag,
     get_tear_support_groups_tag,
@@ -707,8 +706,9 @@ def get_role_managed_policies(role, client=None, **kwargs):
 @rate_limited()
 def get_role_managed_policy_documents(role, client=None, **kwargs):
     """Retrieve the currently active policy version document for every managed policy that is attached to the role."""
-    policies = get_role_managed_policies(role, force_client=client)
+    from common.aws.iam.policy.utils import get_managed_policy_document
 
+    policies = get_role_managed_policies(role, force_client=client)
     policy_names = (policy["name"] for policy in policies)
     delayed_gmpd_calls = (
         delayed(get_managed_policy_document)(policy["arn"], force_client=client)

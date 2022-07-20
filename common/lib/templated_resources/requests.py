@@ -4,7 +4,7 @@ import time
 
 from ruamel.yaml.comments import CommentedSeq
 
-from common.aws.iam.policy.policy_utils import minimize_iam_policy_statements
+from common.aws.iam.policy.utils import minimize_iam_policy_statements
 from common.config import config
 from common.lib.plugins import get_plugin_by_name
 from common.lib.scm.git import Repository

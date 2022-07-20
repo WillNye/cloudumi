@@ -16,7 +16,6 @@ from common.aws.iam.policy.utils import (
     should_exclude_policy_from_comparison,
 )
 from common.aws.iam.role.config import get_active_tear_users_tag
-from common.aws.iam.user.utils import fetch_iam_user
 from common.aws.utils import get_resource_account, get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
@@ -67,20 +66,20 @@ PERMISSIONS_SEPARATOR = "||"
 
 async def fetch_resource_details(
     account_id: str,
-    resource_type: str,
+    service: str,
     resource_name: str,
     region: str,
     tenant,
     user,
     path: str = None,
 ) -> dict:
-    if resource_type == "s3":
+    if service == "s3":
         return await fetch_s3_bucket(account_id, resource_name, tenant, user)
-    elif resource_type == "sqs":
+    elif service == "sqs":
         return await fetch_sqs_queue(account_id, region, resource_name, tenant, user)
-    elif resource_type == "sns":
+    elif service == "sns":
         return await fetch_sns_topic(account_id, region, resource_name, tenant, user)
-    elif resource_type == "managed_policy":
+    elif service == "managed_policy":
         return await fetch_managed_policy_details(
             account_id, resource_name, tenant, user, path
         )
@@ -1323,6 +1322,8 @@ async def remove_expired_request_changes(
                 )
 
             elif resource_name == "user":
+                from common.aws.iam.user.utils import fetch_iam_user
+
                 await fetch_iam_user(
                     resource_account,
                     principal_arn,

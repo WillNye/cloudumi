@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from policy_sentry.querying.actions import get_actions_with_access_level
 
 import common.lib.noq_json as json
-from common.aws.iam.policy.policy_utils import minimize_iam_policy_statements
+from common.aws.iam.policy.utils import minimize_iam_policy_statements
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,

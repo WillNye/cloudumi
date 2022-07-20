@@ -4,7 +4,6 @@ import os
 import pathlib
 from typing import Optional
 
-from common.aws.iam.user.utils import fetch_iam_user
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
@@ -102,6 +101,7 @@ async def _cloudaux_to_aws(principal):
 
 async def get_iam_principal_owner(arn: str, tenant: str) -> Optional[str]:
     from common.aws.iam.role.models import IAMRole
+    from common.aws.iam.user.utils import fetch_iam_user
     from common.aws.utils import ResourceSummary
 
     principal_details = {}

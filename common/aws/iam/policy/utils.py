@@ -14,7 +14,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from joblib import Parallel, delayed
 from parliament import analyze_policy_string, enhance_finding
 
-from common.aws.iam.role.models import IAMRole
 from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.aws.iam.statement.utils import condense_statements
 from common.aws.iam.user.utils import fetch_iam_user
@@ -27,7 +26,6 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.aws.access_advisor import get_epoch_authenticated
 from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.session import get_session_for_tenant
-from common.lib.aws.utils import fetch_resource_details
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
@@ -48,6 +46,8 @@ ALL_IAM_MANAGED_POLICIES = defaultdict(dict)
 async def get_resource_policy(
     account: str, resource_type: str, name: str, region: str, tenant: str, user: str
 ):
+    from common.lib.aws.utils import fetch_resource_details
+
     try:
         details = await fetch_resource_details(
             account, resource_type, name, region, tenant, user
@@ -787,6 +787,7 @@ async def calculate_effective_policy_for_identity(
     """
     Calculate the effective policy for a given tenant and arn
     """
+    from common.aws.iam.role.models import IAMRole
 
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -1015,6 +1016,7 @@ async def calculate_unused_policy_for_identities(
     :raises Exception: Raises an exception if there is a validation error
     :return: A dictionary of arn to its generated effective and unused policies.
     """
+    from common.aws.iam.role.models import IAMRole
 
     if not access_advisor_data:
         if not account_id:

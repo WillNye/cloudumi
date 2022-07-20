@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
-from common.aws.utils import get_resource_account
+from common.aws.utils import ResourceSummary, get_resource_account, get_url_for_resource
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
@@ -31,7 +31,6 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
     can_move_back_to_pending_v2,
     can_update_cancel_requests_v2,
-    get_url_for_resource,
     should_auto_approve_policy_v2,
 )
 from common.lib.slack import send_slack_notification_new_request
@@ -650,20 +649,10 @@ class RequestsHandler(BaseAPIV2Handler):
                     )
 
                 if principal_arn and principal_arn.count(":") == 5 and not url:
-
-                    region = principal_arn.split(":")[3]
-                    service_type = principal_arn.split(":")[2]
-                    account_id = principal_arn.split(":")[4]
+                    resource_summary = await ResourceSummary.set(tenant, principal_arn)
                     if request.get("principal", {}).get("principal_arn"):
                         try:
-                            url = await get_url_for_resource(
-                                principal_arn,
-                                tenant,
-                                service_type,
-                                account_id,
-                                region,
-                                resource_name,
-                            )
+                            url = await get_url_for_resource(resource_summary)
                         except ResourceNotFound:
                             pass
                 # Convert request_id and role ARN to link
