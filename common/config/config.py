@@ -195,6 +195,9 @@ class Configuration(metaclass=Singleton):
     def is_test_environment(self) -> bool:
         return self.get("_global_.environment") == "test"
 
+    def is_development(self) -> bool:
+        return self.get("_global_.development", False)
+
     def get_employee_photo_url(self, user, tenant):
         import hashlib
         import urllib.parse
@@ -622,6 +625,7 @@ is_tenant_configured = CONFIG.is_tenant_configured
 get_dynamo_table_name = CONFIG.get_dynamo_table_name
 get_global_s3_bucket = CONFIG.get_global_s3_bucket
 is_test_environment = CONFIG.is_test_environment
+is_development = CONFIG.is_development
 # Set logging levels
 CONFIG.set_logging_levels()
 

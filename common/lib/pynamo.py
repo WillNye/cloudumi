@@ -317,7 +317,7 @@ class GlobalTableConnection(TableConnection):
 
 class GlobalNoqModel(NoqModel):
     @classmethod
-    def _get_connection(cls) -> TableConnection:
+    def _get_connection(cls) -> GlobalTableConnection:
         """
         Returns a (cached) connection
         """
