@@ -1,4 +1,5 @@
 """Configuration handling library."""
+import copy
 import datetime
 import logging
 import logging.handlers
@@ -292,7 +293,10 @@ class Configuration(metaclass=Singleton):
             Timer(0, self.__set_flag_on_main_exit, ()).start()
 
     def get(
-        self, key: str, default: Optional[Union[List[str], int, bool, str, Dict]] = None
+        self,
+        key: str,
+        default: Optional[Union[List[str], int, bool, str, Dict]] = None,
+        return_original: bool = True,
     ) -> Any:
         """Get value for configuration entry in dot notation."""
         value = default
@@ -311,7 +315,7 @@ class Configuration(metaclass=Singleton):
                     nested = True
             except KeyError:
                 return default
-        return value
+        return value if return_original else copy.deepcopy(value)
 
     def get_global_s3_bucket(self, bucket_name) -> str:
         return self.get(f"_global_.s3_buckets.{bucket_name}")
