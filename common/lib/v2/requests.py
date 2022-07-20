@@ -1069,9 +1069,7 @@ async def apply_changes_to_role(
         return
 
     principal_name = resource_summary.name
-    account_id = await get_resource_account(
-        extended_request.principal.principal_arn, tenant
-    )
+    account_id = resource_summary.account
     iam_client = await aio_wrapper(
         boto3_cached_conn,
         "iam",
