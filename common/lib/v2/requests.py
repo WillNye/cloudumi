@@ -1712,7 +1712,9 @@ async def populate_cross_account_resource_policy_for_change(
         or change.change_type == "sts_resource_policy"
     ):
         try:
-            resource_summary = await ResourceSummary.set(tenant, change.arn)
+            resource_summary = await ResourceSummary.set(
+                tenant, change.arn, region_required=True
+            )
         except ValueError:
             change.supported = False
             old_policy = default_policy
@@ -2035,7 +2037,7 @@ async def apply_non_iam_resource_tag_change(
     }
     try:
         resource_summary = await ResourceSummary.set(
-            tenant, change.principal.principal_arn
+            tenant, change.principal.principal_arn, region_required=True
         )
         account = resource_summary.account
         resource_type = resource_summary.resource_type
@@ -2486,7 +2488,9 @@ async def apply_resource_policy_change(
     }
     log.info(log_data)
 
-    resource_summary = await ResourceSummary.set(tenant, change.arn)
+    resource_summary = await ResourceSummary.set(
+        tenant, change.arn, region_required=True
+    )
     resource_account = resource_summary.account
     resource_region = resource_summary.region
 
@@ -3318,7 +3322,9 @@ async def get_resources_from_policy_change(change: ChangeModel, tenant):
                     "One or more resources must be specified in the policy."
                 )
             try:
-                resource_summary = await ResourceSummary.set(tenant, resource)
+                resource_summary = await ResourceSummary.set(
+                    tenant, resource, region_required=True
+                )
             except Exception as e:
                 log.error(
                     {

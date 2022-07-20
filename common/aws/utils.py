@@ -115,7 +115,13 @@ class ResourceSummary:
         self.path = path
 
     @classmethod
-    async def set(cls, tenant: str, arn: str) -> "ResourceSummary":
+    async def set(
+        cls,
+        tenant: str,
+        arn: str,
+        region_required: bool = False,
+        account_required: bool = True,
+    ) -> "ResourceSummary":
         # TODO: Handle gov and china ARNs
         from common.lib.aws.utils import get_bucket_location_with_fallback
 
@@ -124,7 +130,7 @@ class ResourceSummary:
         account_provided = bool(parsed_arn["account"])
         content_set = False
 
-        if not account_provided:
+        if not account_provided and account_required:
             arn_as_resource = arn
             if parsed_arn["service"] == "s3" and not account_provided:
                 arn_as_resource = arn_as_resource.replace(
@@ -148,7 +154,7 @@ class ResourceSummary:
                     parsed_arn["resource_type"] = "bucket"
                     parsed_arn["name"] = bucket_name
 
-                if bucket_name == "*":
+                if not region_required or bucket_name == "*":
                     parsed_arn["region"] = ""
                 else:
                     parsed_arn["region"] = await get_bucket_location_with_fallback(
@@ -188,9 +194,9 @@ async def get_url_for_resource(resource_summary: ResourceSummary):
         url = f"/policies/edit/{account}/iamrole/{name}"
     elif service == "iam" and resource_type == "policy" and account != "aws":
         url = f"/policies/edit/{account}/managed_policy/{name}"
-    elif resource_type in ["s3", "AWS::S3::Bucket"]:
+    elif service in ["s3", "AWS::S3::Bucket"]:
         url = f"/policies/edit/{account}/s3/{name}"
-    elif resource_type == "managed_policy":
+    elif service == "managed_policy":
         # managed policies can have a path
         url = f"/policies/edit/{account}/managed_policy/{resource_type}/{name}"
     elif service in ["sns", "AWS::SNS::Topic"]:
