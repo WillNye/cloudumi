@@ -187,7 +187,7 @@ def create_managed_policy(cloudaux, name, path, policy, description, tenant):
     }
     log.debug(log_data)
 
-    cloudaux.call(
+    return cloudaux.call(
         "iam.client.create_policy",
         PolicyName=name,
         Path=path,
@@ -726,8 +726,7 @@ async def create_or_update_managed_policy(
 
     if not existing_policy:
         log_data["message"] = "Policy does not exist. Creating"
-        log.debug(log_data)
-        await aio_wrapper(
+        created_policy = await aio_wrapper(
             create_managed_policy,
             ca,
             policy_name,
@@ -736,6 +735,9 @@ async def create_or_update_managed_policy(
             description,
             tenant,
         )
+        log_data["created_policy"] = created_policy
+        log.debug(log_data)
+
         return
 
     log_data["message"] = "Policy exists and needs to be updated"
