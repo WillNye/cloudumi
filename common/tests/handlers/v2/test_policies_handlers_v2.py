@@ -48,7 +48,7 @@ class TestPoliciesApi(ConsoleMeAsyncHTTPTestCase):
         self.assertEqual(first_entity["account_id"], "012345678901")
         self.assertEqual(first_entity["account_name"], "default_account_0")
 
-    @patch("common.lib.aws.utils.access_analyzer_validate_policy")
+    @patch("common.aws.iam.policy.utils.access_analyzer_validate_policy")
     def test_policies_check_api(self, mock_access_analyzer_validate_policy):
         from common.config import config
 

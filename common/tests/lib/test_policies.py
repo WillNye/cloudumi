@@ -47,7 +47,7 @@ class TestPoliciesLib(TestCase):
             result = get_actions_for_resource(tc["arn"], tc["statement"])
             self.assertListEqual(tc["expected"], result, tc["description"])
 
-    @patch("common.lib.aws.utils.redis_hget", mock_aws_config_resources_redis)
+    @patch("common.aws.utils.redis_hget", mock_aws_config_resources_redis)
     def test_get_resources_from_events(self):
         from common.lib.policies import get_resources_from_events
 
@@ -108,28 +108,28 @@ class TestPoliciesLib(TestCase):
                 "arns": ["arn:aws:s3:::foobar", "arn:aws:s3:::foobar/*"],
                 "account": "123456789012",
                 "type": "s3",
-                "region": "",
+                "region": "us-east-1",
             },
             "bazbang": {
                 "actions": ["s3:PutObject"],
                 "arns": ["arn:aws:s3:::bazbang"],
                 "account": "123456789012",
                 "type": "s3",
-                "region": "",
+                "region": "us-east-1",
             },
             "bangbar": {
                 "actions": ["*"],
                 "arns": ["arn:aws:s3:::bangbar"],
                 "account": "123456789012",
                 "type": "s3",
-                "region": "",
+                "region": "us-east-1",
             },
             "heewon": {
                 "actions": ["s3:Get*"],
                 "arns": ["arn:aws:s3:::heewon"],
                 "account": "123456789012",
                 "type": "s3",
-                "region": "",
+                "region": "us-east-1",
             },
         }
         self.maxDiff = None

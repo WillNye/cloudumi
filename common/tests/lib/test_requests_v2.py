@@ -6,7 +6,6 @@ import pytest
 from mock import patch
 from pydantic import ValidationError
 
-import common.aws.iam.policy.utils
 import common.lib.noq_json as json
 from common.lib.assume_role import boto3_cached_conn
 from common.models import (
@@ -734,7 +733,6 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         await generate_resource_policies(
             extended_request, extended_request.requester_email, tenant
         )
-
         self.assertEqual(
             len(extended_request.changes.changes), len_before_call + number_of_resources
         )
@@ -1565,14 +1563,13 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "test@example.com",
                 tenant,
             )
-
             self.assertEqual(0, response.errors)
             self.assertIn(
                 "created managed policy",
                 dict(response.action_results[0]).get("message"),
             )
             # ensure that it has been created in AWS
-            policy_response = common.aws.iam.policy.utils.get_policy(
+            policy_response = client.get_policy(
                 PolicyArn=extended_request.principal.principal_arn
             )["Policy"]
             self.assertEqual(
@@ -1624,7 +1621,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 dict(response.action_results[0]).get("message"),
             )
             # ensure that it has been updated in AWS
-            policy_response = common.aws.iam.policy.utils.get_policy(
+            policy_response = client.get_policy(
                 PolicyArn=extended_request.principal.principal_arn
             )["Policy"]
             self.assertEqual(

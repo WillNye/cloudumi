@@ -49,7 +49,7 @@ class TestAwsLib(TestCase):
         self.assertNotEqual(get_resource_tag(ROLE, "tag2"), "value1")
         self.assertNotEqual(get_resource_tag(ROLE, "tag1"), "value2")
 
-    @patch("common.lib.aws.utils.redis_hget")
+    @patch("common.aws.utils.redis_hget")
     def test_get_resource_account(self, mock_aws_config_resources_redis):
         from common.aws.utils import get_resource_account
 
