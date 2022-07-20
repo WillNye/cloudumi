@@ -2310,9 +2310,9 @@ components:
       required:
         - link
       properties:
-        link:
+        eula:
           type: string
-          description: The link to view the EULA. Link expires after 30 minutes
+          description: The text of the EULA.
 
     HubAccount:
       type: object

@@ -19,7 +19,7 @@ async def get_eula_key(tenant: str = None):
         return DEFAULT_EULA_KEY
 
 
-async def generate_eula_link(version: str = None, tenant: str = None) -> str:
+async def get_eula(version: str = None, tenant: str = None) -> str:
     eula_key = await get_eula_key(tenant)
     s3_params = {"Bucket": DOCS_BUCKET, "Key": eula_key}
     if version and version != "latest":
@@ -33,12 +33,8 @@ async def generate_eula_link(version: str = None, tenant: str = None) -> str:
             service_type="client",
             session_name="noq_generate_eula_link",
         )
-        return await aio_wrapper(
-            s3_client.generate_presigned_url,
-            "get_object",
-            Params=s3_params,
-            ExpiresIn=1800,  # 30 minutes
-        )
+        eula_text = await aio_wrapper(s3_client.get_object, **s3_params)
+        return eula_text["Body"].read().decode("utf-8")
 
     except ClientError as err:
         log.error(
