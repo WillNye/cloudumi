@@ -397,7 +397,7 @@ def boto3_cached_conn(
         return conn
 
     if tenant.startswith("_global_"):
-        tenant_details = noq_config.get(tenant, {})
+        tenant_details = noq_config.get(tenant, {}, return_original=False)
         region = tenant_details.pop("region", noq_config.region)
         pre_assume_roles = [tenant_details]
     elif tenant and pre_assume_roles is None:
