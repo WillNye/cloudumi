@@ -204,7 +204,7 @@ class GlobalConnection(Connection):
         self.host = host
         self._local = local()
 
-        if not config.is_test_environment:
+        if not config.is_test_environment():
             session = boto3_cached_conn(
                 None,
                 f"_global_.accounts.{aws_account_name}",
