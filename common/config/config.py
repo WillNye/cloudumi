@@ -1,9 +1,9 @@
 """Configuration handling library."""
-import copy
 import datetime
 import logging
 import logging.handlers
 import os
+import pickle
 import socket
 import sys
 import threading
@@ -315,7 +315,7 @@ class Configuration(metaclass=Singleton):
                     nested = True
             except KeyError:
                 return default
-        return value if return_original else copy.deepcopy(value)
+        return value if return_original else pickle.loads(pickle.dumps(value))
 
     def get_global_s3_bucket(self, bucket_name) -> str:
         return self.get(f"_global_.s3_buckets.{bucket_name}")
