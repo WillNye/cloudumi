@@ -29,6 +29,7 @@ _global_:
       account_id: {{ global_tenant_data_account_id }}
       role_arn: arn:aws:iam::{{ global_tenant_data_account_id }}:role/NoqServiceConnRole
       external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+      region: us-west-2
   s3_buckets:
     legal_docs: {{ legal_docs_bucket_name }}
   deployment:

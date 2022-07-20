@@ -4,6 +4,7 @@ from decimal import Decimal
 from threading import local
 from typing import Dict, Iterable, Mapping, Optional, Sequence, Text, Type, Union
 
+import boto3
 from boto3.dynamodb.types import Binary  # noqa
 from cloudaux import get_iso_string
 from pynamodax.attributes import MapAttribute
@@ -16,6 +17,7 @@ from pynamodax.models import _T, Model, _KeyType
 from pynamodax.pagination import ResultIterator
 from pynamodax.settings import OperationSettings, get_settings_value
 
+from common.config import config
 from common.lib.asyncio import aio_wrapper
 
 DYNAMO_EMPTY_STRING = "---DYNAMO-EMPTY-STRING---"
@@ -202,16 +204,19 @@ class GlobalConnection(Connection):
         self.host = host
         self._local = local()
 
-        session = boto3_cached_conn(
-            None,
-            f"_global_.accounts.{aws_account_name}",
-            None,
-            service_type="session",
-            future_expiration_minutes=60,
-            session_name="noq_dynamo_connection",
-        )
-        self._client = session.client("dynamodb")
+        if not config.is_test_environment():
+            session = boto3_cached_conn(
+                None,
+                f"_global_.accounts.{aws_account_name}",
+                None,
+                service_type="session",
+                future_expiration_minutes=60,
+                session_name="noq_dynamo_connection",
+            )
+        else:
+            session = boto3.Session()
 
+        self._client = session.client("dynamodb")
         self.region = region if region else get_settings_value("region")
 
         if connect_timeout_seconds is not None:

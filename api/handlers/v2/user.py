@@ -8,7 +8,7 @@ from email_validator import validate_email
 
 from common.config import config
 from common.handlers.base import BaseAPIV2Handler, TornadoRequestHandler
-from common.lib.auth import can_admin_all
+from common.lib.auth import is_tenant_admin
 
 # from common.lib.cognito.auth import get_secret_hash
 from common.lib.dynamo import UserDynamoHandler
@@ -289,7 +289,7 @@ class UserManagementHandler(BaseAPIV2Handler):
         generic_error_message = "Unable to create/update user"
         log.debug(log_data)
         # Checks authz levels of current user
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
