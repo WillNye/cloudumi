@@ -116,6 +116,7 @@ class ResourceSummary:
 
     @classmethod
     async def set(cls, tenant: str, arn: str) -> "ResourceSummary":
+        # TODO: Handle gov and china ARNs
         from common.lib.aws.utils import get_bucket_location_with_fallback
 
         parsed_arn = parse_arn(arn)
@@ -162,7 +163,8 @@ class ResourceSummary:
                 if "/" in resource_path:
                     split_path = resource_path.split("/")
                     parsed_arn["name"] = split_path[-1]
-                    parsed_arn["path"] = "/" + "/".join(split_path[:-1])
+                    resource_path = "/".join(split_path[:-1])
+                    parsed_arn["path"] = f"/{resource_path}/"
                 else:
                     parsed_arn["name"] = resource_path
 
