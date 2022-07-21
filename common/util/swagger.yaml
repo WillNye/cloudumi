@@ -30,6 +30,9 @@ tags:
     description: Policies endpoints
   - name: apps
     description: Endpoints used by apps (such as weep)
+  - name: tenant_details
+    description: Corporate level information about the tenant such as membership tier.
+
 paths:
   /request:
     post:
@@ -327,6 +330,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtendedAutomaticPolicyRequest"
+  /api/v3/legal/agreements/eula:
+    get:
+      summary: Returns a link to view the EULA.
+      tags:
+        - tenant_details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EulaModel"
+
+  /api/v3/tenant/details/eula:
+    post:
+      summary: Agree to the terms and conditions of the Noq EULA.
+      tags:
+        - tenant_details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantDetailsModel"
+
+  /api/v3/tenant/details:
+    get:
+      summary: Retrieve Noq account level information about the tenant such as membership tier and license expiration.
+      tags:
+        - tenant_details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantDetailsModel"
+
   /roles/{account_id}/{role_name}:
     get:
       summary: get details about a role
@@ -1292,6 +1334,33 @@ components:
             change_type:
               type: string
               pattern: "tear_can_assume_role"
+    TenantDetailsModel:
+      type: object
+      required:
+        - name
+        - membership_tier
+        - created_by
+        - created_at
+        - eula_info
+      properties:
+        name:
+          type: string
+          description: Tenant Name
+        membership_tier:
+          type: number
+          description: The type of membership the tenant has
+        created_by:
+          type: string
+          description: The user who created the Noq account
+        created_at:
+          type: number
+        eula_info:
+          type: object
+          description: Details about the tenant's EULA agreement like who signed it, when, and what version
+        license_expiration:
+          type: number
+          description: When the tenants account will be set to inactive if not renewed
+
     ResourcePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -2235,6 +2304,16 @@ components:
           items:
             anyOf:
               - $ref: "#/components/schemas/EligibleRolesModel"
+
+    EulaModel:
+      type: object
+      required:
+        - link
+      properties:
+        eula:
+          type: string
+          description: The text of the EULA.
+
     HubAccount:
       type: object
       required:

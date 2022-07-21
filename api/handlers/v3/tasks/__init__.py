@@ -1,12 +1,12 @@
 from common.handlers.base import BaseHandler
 from common.lib.asyncio import aio_wrapper
-from common.lib.auth import can_admin_all
+from common.lib.auth import is_tenant_admin
 
 
 class TasksHandler(BaseHandler):
     async def get(self):
         tenant = self.ctx.tenant
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             # TODO: Log here
             self.set_status(403)
             await self.finish()
@@ -41,7 +41,7 @@ class TasksHandler(BaseHandler):
 
     async def post(self):
         tenant = self.ctx.tenant
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             # TODO: Log here
             self.set_status(403)
             await self.finish()

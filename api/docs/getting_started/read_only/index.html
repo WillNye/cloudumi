@@ -76,7 +76,7 @@
     <div data-md-component="skip">
 
 
-        <a href="#configure-read-only-hub-andor-spoke-accounts" class="md-skip">
+        <a href="#configure-read-only-hub-and-spoke-accounts" class="md-skip">
           Skip to content
         </a>
 
@@ -440,6 +440,8 @@
 
 
 
+
+
         <label class="md-nav__link" for="__nav_4">
           Administration Guides
           <span class="md-nav__icon md-icon"></span>
@@ -460,6 +462,20 @@
     <li class="md-nav__item">
       <a href="../1_connect_hub_account/" class="md-nav__link">
         Connect Your AWS Hub Account
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="./" class="md-nav__link">
+        Configure Read-Only Hub and Spoke Accounts
       </a>
     </li>
 
@@ -1702,24 +1718,40 @@
 
 
 
-<h1 id="configure-read-only-hub-andor-spoke-accounts"><strong>Configure Read Only Hub and/or Spoke Accounts</strong><a class="headerlink" href="#configure-read-only-hub-andor-spoke-accounts" title="Permanent link">&para;</a></h1>
-<p>Noq can be configured to run in your environment without having write permissions to effectuate changes. This configuration can be used in situations where Noq is trialed or if Noq is deployed into highly sensitive environments.</p>
-<p>This is configurable per account, so some accounts can be read-only while others allow Noq to write changes. You will need to be logged in to Noq as an administrator to proceed with these steps.</p>
-<p>A role can be changed from read-only to read-write by first deleting Noq's CloudFormation Stack on the target AWS account, then removing the relevant role from Noq's Settings Page. You must remove both Spoke and Hub Roles from your Settings page if you're changing the read-only state of your Hub Account.</p>
+<h1 id="configure-read-only-hub-and-spoke-accounts"><strong>Configure Read Only Hub and Spoke Accounts</strong><a class="headerlink" href="#configure-read-only-hub-and-spoke-accounts" title="Permanent link">&para;</a></h1>
+<p>You may configure Noq as read-only so that it does not have permissions to
+make changes within your AWS environment. You might want to use this
+configuration when Noq is deployed into highly sensitive environments or when
+running a trial of Noq prior to adopting.</p>
+<p>This is configurable per account, so some accounts can be read-only while
+others allow Noq to write changes. You will need to be logged in to Noq as an
+administrator to proceed with these steps.</p>
+<p>You may change a role from read-only to read-write by first deleting Noq's
+CloudFormation Stack on the target AWS account, followed by by removing the
+relevant role from Noq's <em>Settings</em> Page. You must remove both Spoke and Hub
+roles from your <em>Settings</em> page if you're changing the read-only state of your
+Hub Account.</p>
 <h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
 <h2 id="1-navigate-to-advanced-settings">1. Navigate to <em>Advanced-&gt;Settings</em><a class="headerlink" href="#1-navigate-to-advanced-settings" title="Permanent link">&para;</a></h2>
 <p>Select <em>Advanced</em> &gt; <em>Settings</em> from the Noq main menu.</p>
 <p><img alt="navigate to all settings" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_01_navigate_to_settings.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
-<h2 id="2-optional-find-the-spoke-role-whose-access-permissions-youd-like-to-change-and-remove-it">2. Optional: find the spoke role whose access permissions you'd like to change and remove it<a class="headerlink" href="#2-optional-find-the-spoke-role-whose-access-permissions-youd-like-to-change-and-remove-it" title="Permanent link">&para;</a></h2>
+<h2 id="2-optional-find-the-spoke-role-youd-like-to-change-and-remove-it">2. Optional: find the spoke role you'd like to change and remove it<a class="headerlink" href="#2-optional-find-the-spoke-role-youd-like-to-change-and-remove-it" title="Permanent link">&para;</a></h2>
 <p>Under the Spoke Accounts section, identify the appropriate spoke account role.</p>
 <p>Once you find the correct account, <code>Remove</code> it.</p>
 <p><img alt="remove the spoke role whose access permissions should be changed" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_02_optionally_remove_role_to_change.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 <h2 id="3-add-a-new-role">3. Add a New role<a class="headerlink" href="#3-add-a-new-role" title="Permanent link">&para;</a></h2>
 <p>Add a new role by clicking the <code>New</code> button on the <code>Spoke Accounts</code> section</p>
 <p><img alt="add a new spoke role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_03_new_role.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
-<p>Login to AWS as an administrator for the targeted AWS account into which the read-only spoke account role should be installed.</p>
-<p>After clicking the <code>New</code> button a modal pops that prompts to <code>Add Spoke Account</code>, either click the <code>Execute CloudFormation</code> or the <code>Copy URL</code> button at the bottom.</p>
-<p><strong>NOTE</strong> when selecting the <code>Copy URL</code> button, a link is copied to your clipboard with the intent of having it pasted into the desired browser session</p>
+<p>Login to AWS as an administrator for the targeted AWS account into which the
+read-only spoke account role should be installed.</p>
+<p>After clicking the <code>New</code> button, you will see a modal that prompts you to
+<code>Add Spoke Account</code>. Either click the <code>Execute CloudFormation</code> or the <code>Copy URL</code>
+button at the bottom.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When you select the <code>Copy URL</code> button, a link is copied to your clipboard
+so that you may paste it into the desired browser session</p>
+</div>
 <p><img alt="add spoke modal pops" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_04_add_spoke_role.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 <h2 id="4-execute-the-cloudformation-role-template">4. Execute the CloudFormation role template<a class="headerlink" href="#4-execute-the-cloudformation-role-template" title="Permanent link">&para;</a></h2>
 <p>Before proceeding, please confirm that you are logged into the correct AWS account.</p>
@@ -1732,24 +1764,41 @@
 <p>After selecting <code>Create Stack</code>, your spoke role will be created into the selected account.</p>
 <p><img alt="create stack creation process" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_08_cloud_formation_stack_creation_process.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 <h2 id="5-verify-the-read-only-spoke-account">5. Verify the read only spoke account<a class="headerlink" href="#5-verify-the-read-only-spoke-account" title="Permanent link">&para;</a></h2>
-<p>Back on the <code>Spoke Accounts</code> page, hit the browser's refresh button, you should see the new account pop up now.</p>
-<p>Noq will need to finish caching resources from the account. You may need to wait a few minutes before proceeding to the next step.</p>
+<p>Back on the <code>Spoke Accounts</code> page, click the browser's refresh button.
+You should now see the new account listed on this page.</p>
+<p>Noq will need to finish caching resources from the account. You may need to wait
+a few minutes before proceeding to the next step.</p>
 <p><img alt="verify the new spoke account" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_09_verify_spoke_role_account.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
-<p><strong>NOTE</strong> In the <code>Account Name</code> field, there is a edit button on the right side of the text box (looks like a business card). You can use that button to rename the account.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+</div>
+<p>In the <code>Account Name</code> field, there is a edit button on the right side of the text
+box (looks like a business card). You can use that button to rename the account.</p>
 <h2 id="6-test-the-read-only-spoke-account">6. Test the read only spoke account<a class="headerlink" href="#6-test-the-read-only-spoke-account" title="Permanent link">&para;</a></h2>
 <p>Select Resources &gt; Self-Service Permissions.</p>
 <p><img alt="verify the new spoke account" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_10_self_service_permissions.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 <p>Select a role or template to add permissions to and select <code>Next</code></p>
 <p><img alt="search and select a role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_11_select_role_in_self_service_permissions.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
-<p>Add a permission to an S3 Bucket (for instance), selecting the bucket under <code>Bucket Name</code> and hitting enter. Select the <code>desired permissions</code> and ensure to select permissions that have a write effect (such as Put, Delete).</p>
+<p>Add a permission to an S3 Bucket (for instance), selecting the bucket under
+<code>Bucket Name</code> and hitting enter. Select the <code>desired permissions</code>. Be sure to
+select permissions that have a write effect (such as Put, Delete).</p>
 <p><img alt="add a permission" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_12_modify_policy_attempt_read_write.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
-<p>After selecting <code>Next</code> you'll be required to enter a Justification; notice that there should be a blue banner indicating that the policy request affects a read-only account. Click the <code>Submit, Everything looks good</code> button.</p>
+<p>After selecting <code>Next</code> you'll be required to enter a justification; notice that
+there should be a blue banner indicating that the policy request affects a
+read-only account. Click the <code>Submit, Everything looks good</code> button.</p>
 <p><img alt="justification policy request affects read-only acct" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_13_attempt_self_service_permissions_provision.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
-<p>You'll receive a link after submitting a request. Follow it to see your policy request. As a Noq administrator, you will be able to approve or reject the change. Approve the change associated with your read-only account.</p>
+<p>You'll receive a link after submitting a request. Follow it to see your policy
+request. As a Noq administrator, you will be able to approve or reject the
+change. Approve the change associated with your read-only account.</p>
 <p><img alt="Reject or Cancel request" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_14_temporarily_elevate_access_or_reject.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
-<p>If desired, temporary one-time credentials can be used to write a change to your system.</p>
+<p>If desired, you may use temporary one-time credentials to write a change to
+your system.</p>
 <p><img alt="apply changes button" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_14.1_highlight_apply_changes_button.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
-<p>A modal should pop up prompting you to either provide temporary one-time credentials to allow Noq to write the change for you on the affected account, or to instruct Noq mark the request as approved without attempting to write the change. The latter option should be used if you've written the change outside of Noq.</p>
+<p>A modal should pop up prompting you to either provide temporary one-time
+credentials to allow Noq to write the change for you on the affected account,
+or to instruct Noq mark the request as approved without attempting to write the
+change. The latter option should be used if you've written the change outside
+of Noq.</p>
 <p><img alt="temporary elevate permissions feature" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_read_only_15_temporarily_elevate_permissions_modal_popped.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 
 

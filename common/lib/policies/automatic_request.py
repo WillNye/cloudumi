@@ -85,10 +85,13 @@ async def create_policy(
         )
 
     except Exception as err:
-        log_data["error"] = repr(err)
-        log.error(log_data)
-        sentry_sdk.capture_exception()
-        return False
+        if "NoSuchEntity" in str(err):
+            pass
+        else:
+            log_data["error"] = repr(err)
+            log.error(log_data)
+            sentry_sdk.capture_exception()
+            return False
 
     try:
         await aio_wrapper(

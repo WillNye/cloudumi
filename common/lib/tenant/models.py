@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 
 from pynamodax.attributes import BooleanAttribute, NumberAttribute, UnicodeAttribute
@@ -63,3 +64,59 @@ class TenantDetails(GlobalNoqModel):
     notes = UnicodeAttribute(null=True)
 
     cluster_sharding_index = ClusterShardingIndex()
+
+    async def submit_default_eula(self, signed_by: str, ip_address: str):
+        from common.lib.tenant.utils import get_current_eula_version
+
+        self.eula_info = {
+            "signed_at": int((datetime.utcnow()).timestamp()),
+            "version": await get_current_eula_version(),
+            "signed_by": {"email": signed_by, "ip_address": ip_address},
+        }
+
+        await self.save()
+
+    @classmethod
+    async def tenant_exists(cls, tenant_name: str) -> bool:
+        results = await cls.query(tenant_name, limit=1)
+        try:
+            return bool(results.next())
+        except StopIteration:
+            return False
+
+    @staticmethod
+    async def _get_cluster() -> str:
+        """
+        TODO: Proper tenant assignment.
+        Scope defined in https://perimy.atlassian.net/browse/EN-887
+        """
+        return config.get("_global_.deployment.cluster_id")
+
+    @classmethod
+    async def create(
+        cls,
+        name: str,
+        created_by: str,
+        membership_tier: int = MembershipTier.UNLIMITED.value,
+        eula_info: dict = None,
+        notes: str = None,
+        noq_cluster: str = None,
+    ) -> "TenantDetails":
+        # How to calculate license_expiration?
+        if noq_cluster:
+            # TODO: Validate it exists
+            pass
+        else:
+            noq_cluster = await cls._get_cluster()
+
+        tenant_details = cls(
+            name=name,
+            created_by=created_by,
+            membership_tier=membership_tier,
+            eula_info=eula_info,
+            notes=notes,
+            created_at=int((datetime.utcnow()).timestamp()),
+            noq_cluster=noq_cluster,
+        )
+        await tenant_details.save()
+        return tenant_details
