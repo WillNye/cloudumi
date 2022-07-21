@@ -1,12 +1,13 @@
 import React from 'react'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
+import ProtectedDashboardRoute from './auth/ProtectedDashboardRoute'
 import ProtectedRoute from './auth/ProtectedRoute'
-import ConsoleMeSelectRoles from './components/roles/SelectRoles'
-import ConsoleMePolicyTable from './components/policy/PolicyTable'
+import SelectRoles from './components/roles/SelectRoles'
+import PolicyTable from './components/policy/PolicyTable'
 // import ConsoleMeIdentityGroupsTable from './components/identity/IdentityGroupsTable'
 // import IdentityGroupEdit from './components/identity/Group'
 import ConsoleMeRequestTable from './components/request/RequestTable'
-import { Downloads } from './components/downloads/Downloads'
+import Downloads from './components/Downloads'
 import ConsoleMeSelfService from './components/selfservice/SelfService'
 import ConsoleMeDynamicConfig from './components/DynamicConfig'
 import PolicyRequestReview from './components/request/PolicyRequestsReview'
@@ -27,147 +28,154 @@ import AuthenticateModal from './components/AuthenticateModal'
 import { Settings } from './components/settings/Settings'
 import { MainProvider } from './MainProvider'
 import AutomatedPermissions from 'components/AutomatedPermissions'
+import EULA from './components/EULA'
 
 function App() {
   return (
     <BrowserRouter>
       <Switch>
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='roles'
           exact
           path='/'
-          component={ConsoleMeSelectRoles}
+          component={SelectRoles}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='selfservice'
           exact
           path='/selfservice'
           component={ConsoleMeSelfService}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='policies'
           exact
           path='/policies'
-          component={ConsoleMePolicyTable}
+          component={PolicyTable}
         />
-        {/* <ProtectedRoute
+        {/* <ProtectedDashboardRoute
           key='groups'
           exact
           path='/groups'
           component={ConsoleMeIdentityGroupsTable}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='users'
           exact
           path='/users'
           component={IdentityUsersTable}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='group'
           path='/group/:idpName/:groupName'
           component={IdentityGroupEdit}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='user'
           path='/user/:idpName/:userName'
           component={IdentityUserEdit}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='group_request'
           path='/group_request/:idpName/:groupName'
           component={IdentityGroupRequest}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='group_request_review'
           exact
           path='/group_request/:requestId'
           component={IdentityGroupRequestReview}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='group_requests'
           exact
           path='/group_requests'
           component={IdentityRequestsTable}
         /> */}
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='review'
           exact
           path='/policies/request/:requestID'
           component={PolicyRequestReview}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='requests'
           exact
           path='/requests'
           component={ConsoleMeRequestTable}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='resource_policy'
           path='/policies/edit/:accountID/:serviceType/*/:resourceName'
           component={PolicyEditor}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='iamrole_policy'
           path='/policies/edit/:accountID/:serviceType/:resourceName'
           component={PolicyEditor}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='config'
           exact
           path='/config'
           component={ConsoleMeDynamicConfig}
         />
-        {/* <ProtectedRoute
+        {/* <ProtectedDashboardRoute
           key='generate_config'
           exact
           path='/generate_config'
           component={GenerateConfig}
         /> */}
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='role_query'
           exact
           path='/role/:roleQuery+'
           component={ConsoleLogin}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='challenge_validator'
           exact
           path='/challenge_validator/:challengeToken'
           component={ConsoleMeChallengeValidator}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='create_role'
           exact
           path='/create_role'
           component={CreateCloneFeature}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='settings'
           exact
           path='/settings'
           origin='/settings'
           component={Settings}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='settings'
           exact
           path='/settings/:tabName'
           origin='/settings'
           component={Settings}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='downloads'
           exact
           path='/downloads'
           component={Downloads}
         />
-        <ProtectedRoute
+        <ProtectedDashboardRoute
           key='automated_permissions'
           exact
           path='/automated_permissions'
           component={AutomatedPermissions}
         />
-        <ProtectedRoute key='logout' exact path='/logout' component={Logout} />
+        <ProtectedRoute key='eula' exact path='/eula' component={EULA} />
+        <ProtectedDashboardRoute
+          key='logout'
+          exact
+          path='/logout'
+          component={Logout}
+        />
         {/* <Route key='login' exact path='/login' component={Login} /> */}
         <Route component={NoMatch} />
       </Switch>
