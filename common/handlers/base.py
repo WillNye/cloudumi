@@ -713,7 +713,9 @@ class BaseHandler(TornadoRequestHandler):
             self.eligible_roles = []
             self.eligible_accounts = []
 
-            if not self.request.uri.endswith("tenant/details/eula"):
+            if not self.request.uri.endswith("tenant/details/eula") and not isinstance(
+                self, AuthenticatedStaticFileHandler
+            ):
                 # Force them to the eula page if they're an admin, return a 403 otherwise
                 if self.is_admin:
                     self.write(
