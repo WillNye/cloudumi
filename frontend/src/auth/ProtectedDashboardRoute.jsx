@@ -87,7 +87,7 @@ const ProtectedDashboardRoute = (props) => {
   }
   return (
     <>
-      <NavBarHeader />
+      <NavBarHeader showMenuItems />
       <Sidebar />
       <Segment
         basic

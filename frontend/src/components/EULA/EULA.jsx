@@ -7,12 +7,15 @@ import {
   Divider,
   Header,
   Message,
+  Popup,
   Segment,
 } from 'semantic-ui-react'
 import NavHeader from '../Header'
 import './eula.css'
 
-const EULA = ({ history }) => {
+const SCROLL_HEIGHT_OFFSET = 5
+
+const EULA = () => {
   const { sendRequestCommon } = useAuth()
 
   const ref = useRef()
@@ -41,23 +44,23 @@ const EULA = ({ history }) => {
 
   const handleOnSubmit = () => {
     setIsLoading(true)
-    sendRequestCommon(null, 'api/v3/tenant/details/eula', 'post')
-      .then((res) => {
+    sendRequestCommon(null, 'api/v3/tenant/details/eula', 'post').then(
+      (res) => {
         if ([400, 200].includes(res?.status_code)) {
-          history.push('/')
+          window.location.href = '/'
         } else {
           setSubmitError(JSON.stringify(res))
+          setIsLoading(false)
         }
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
+      }
+    )
   }
 
   const onScroll = () => {
     if (ref.current) {
       const { scrollTop, scrollHeight, clientHeight } = ref.current
-      if (scrollTop + clientHeight === scrollHeight) {
+      const height = scrollTop + clientHeight
+      if (height + SCROLL_HEIGHT_OFFSET >= scrollHeight) {
         setHasViewedAgreement(true)
       }
     }
@@ -126,11 +129,19 @@ const EULA = ({ history }) => {
             <Divider horizontal />
 
             <div className='eula__actions'>
-              <Checkbox
-                label='Accept'
-                onChange={(_event, data) => setAcceptAgreemnet(data.checked)}
-                checked={acceptAgreement}
-                disabled={!hasViewedAgreement}
+              <Popup
+                content='Read the EULA to continue (scroll to the bottom)'
+                disabled={hasViewedAgreement}
+                trigger={
+                  <Checkbox
+                    label='Accept'
+                    onChange={(_event, data) =>
+                      setAcceptAgreemnet(data.checked)
+                    }
+                    checked={acceptAgreement}
+                    disabled={!hasViewedAgreement}
+                  />
+                }
               />
             </div>
 

@@ -7,7 +7,7 @@ import SettingsModal from './SettingsModal'
 import { NotificationsModal } from './notifications/Notifications'
 import { useNotifications } from './hooks/notifications'
 
-const ConsoleMeHeader = ({ showMenuItems = true }) => {
+const NavHeader = ({ showMenuItems = true }) => {
   const { user } = useAuth()
   const { notifications, unreadNotificationCount, GetAndSetNotifications } =
     useNotifications()
@@ -237,4 +237,4 @@ const ConsoleMeHeader = ({ showMenuItems = true }) => {
   )
 }
 
-export default ConsoleMeHeader
+export default NavHeader
