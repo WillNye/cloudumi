@@ -29,6 +29,7 @@ py_library(
         "//api/handlers/v3/services/aws:src",
         "//api/handlers/v3/slack:src",
         "//api/handlers/v3/tasks:src",
+        "//api/handlers/v3/tenant_details:src",
         "//api/handlers/v3/tenant_registration:src",
     ],
     deps = [
