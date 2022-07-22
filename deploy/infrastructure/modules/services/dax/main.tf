@@ -49,7 +49,7 @@ resource "aws_dax_parameter_group" "dax_param_group" {
 
   parameters {
     name  = "query-ttl-millis"
-    value = "600000" # 10 minutes
+    value = "300000" # 5 minutes
   }
 
   parameters {

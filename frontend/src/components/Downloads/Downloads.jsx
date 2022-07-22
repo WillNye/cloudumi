@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react'
 import { Grid, Table, Segment, Header } from 'semantic-ui-react'
-import { useAuth } from './../../auth/AuthProviderDefault'
+import { useAuth } from '../../auth/AuthProviderDefault'
 import { CopyBlock, dracula } from 'react-code-blocks'
 
-export const Downloads = () => {
+const Downloads = () => {
   const { sendRequestCommon } = useAuth()
   const [weepInstallScript, setWeepInstallScript] = React.useState('')
   const [weepDownloadTable, setWeepDownloadTable] = React.useState([])
@@ -18,7 +18,7 @@ export const Downloads = () => {
       if (!resJson) {
         return
       }
-      console.log(resJson)
+
       setWeepInstallScript(resJson.install_script)
       setWeepDownloadTable(
         resJson.download_links.map((item) => {
@@ -63,3 +63,5 @@ export const Downloads = () => {
     </Grid>
   )
 }
+
+export default Downloads
