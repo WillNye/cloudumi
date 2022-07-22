@@ -60,7 +60,6 @@ export const TypeaheadBlockComponent = (props) => {
           setResults([])
           setValue('')
           props.handleInputUpdate(selectedValues)
-
           return
         }
 
