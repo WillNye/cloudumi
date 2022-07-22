@@ -1,8 +1,8 @@
 import _ from 'lodash'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Form, Icon, Label, Search } from 'semantic-ui-react'
 
-const TypeaheadBlockComponent = (props) => {
+export const TypeaheadBlockComponent = (props) => {
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState([])
   const [selectedValues, setSelectedValues] = useState(
@@ -10,14 +10,14 @@ const TypeaheadBlockComponent = (props) => {
   )
   const [value, setValue] = useState(props.defaultValue ?? '')
 
-  useEffect(function onMount() {}, [])
+  const { typeahead, noQuery, resultsFormatter, shouldTransformResults } = props
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       if (!e.target.value) {
         return
       }
-      let values = this.state.selectedValues
+      const values = [...selectedValues]
       values.push(e.target.value)
       setSelectedValues(values)
       setResults([])
@@ -47,43 +47,43 @@ const TypeaheadBlockComponent = (props) => {
     [selectedValues] // eslint-disable-line
   )
 
-  const handleSearchChange = (e, { value }) => {
-    const { typeahead, noQuery, resultsFormatter, shouldTransformResults } =
-      props
+  const handleSearchChange = useCallback(
+    (e, { value }) => {
+      setIsLoading(true)
+      setValue(value)
 
-    setIsLoading(true)
-    setValue(value)
+      props.handleInputUpdate(selectedValues)
 
-    props.handleInputUpdate(this.state.selectedValues)
+      setTimeout(() => {
+        if (value.length < 1) {
+          setIsLoading(false)
+          setResults([])
+          setValue('')
+          props.handleInputUpdate(selectedValues)
 
-    setTimeout(() => {
-      if (value.length < 1) {
-        setIsLoading(false)
-        setResults([])
-        setValue('')
-        props.handleInputUpdate(this.state.selectedValues)
+          return
+        }
 
-        return
-      }
+        const re = new RegExp(_.escapeRegExp(value), 'i')
+        const isMatch = (result) => re.test(result.title)
 
-      const re = new RegExp(_.escapeRegExp(value), 'i')
-      const isMatch = (result) => re.test(result.title)
+        const TYPEAHEAD_API = noQuery
+          ? typeahead
+          : typeahead.replace('{query}', value)
 
-      const TYPEAHEAD_API = noQuery
-        ? typeahead
-        : typeahead.replace('{query}', value)
+        props.sendRequestCommon(null, TYPEAHEAD_API, 'get').then((response) => {
+          const source = shouldTransformResults
+            ? resultsFormatter(response)
+            : response
+          const results = _.filter(source, isMatch)
 
-      props.sendRequestCommon(null, TYPEAHEAD_API, 'get').then((response) => {
-        const source = shouldTransformResults
-          ? resultsFormatter(response)
-          : response
-        const results = _.filter(source, isMatch)
-
-        setIsLoading(false)
-        setResults(results)
-      })
-    }, 300)
-  }
+          setIsLoading(false)
+          setResults(results)
+        })
+      }, 300)
+    },
+    [selectedValues, shouldTransformResults, noQuery] // eslint-disable-line
+  )
 
   const selectedValueLabels = selectedValues.map((selectedValue, index) => {
     return (
@@ -107,12 +107,10 @@ const TypeaheadBlockComponent = (props) => {
         multiple
         loading={isLoading}
         onResultSelect={handleResultSelect}
-        onSearchChange={(e, data) =>
-          _.debounce(() => handleSearchChange(e, data), 500, {
-            leading: true,
-          })
-        }
-        onKeyDown={handleKeyDown}
+        onSearchChange={_.debounce(handleSearchChange, 500, {
+          leading: true,
+        })}
+        wn={handleKeyDown}
         results={formattedResults}
         value={value}
         showNoResults={false}
