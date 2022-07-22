@@ -15,6 +15,7 @@ const AutomaticPermissionsList = () => {
 
     if (resJson && resJson.count) {
       const requests = resJson.data
+      console.log('requests', requests)
       setPolicyRequests(requests)
     } else {
       setPolicyRequests([])
