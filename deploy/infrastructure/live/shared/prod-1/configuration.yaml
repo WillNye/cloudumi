@@ -14,7 +14,7 @@ _global_:
       trusted_remote_ip_header: X-Forwarded-For
   integrations:
     aws:
-      account_id: 940552945933
+      account_id: "940552945933"
       central_role_name: NoqCentralRole
       spoke_role_name: NoqSpokeRole
       node_role: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
@@ -26,7 +26,7 @@ _global_:
   accounts:
     tenant_data:
       name: NoqServiceConnRole
-      account_id: 940552945933
+      account_id: "940552945933"
       role_arn: arn:aws:iam::940552945933:role/NoqServiceConnRole
       external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
       region: us-west-2
