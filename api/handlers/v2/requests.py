@@ -316,7 +316,7 @@ class RequestHandler(BaseAPIV2Handler):
             "request_id": self.request_uuid,
             "ip": self.ip,
             "admin_auto_approved": False,
-            "probe_auto_approved": False,
+            "rule_auto_approved": False,
             "tenant": tenant,
         }
         aws = get_plugin_by_name(
@@ -332,6 +332,15 @@ class RequestHandler(BaseAPIV2Handler):
             extended_request = await generate_request_from_change_model_array(
                 changes, self.user, tenant
             )
+
+            if not extended_request:
+                response = RequestCreationResponse(
+                    errors=1, request_created=False, action_results=[]
+                )
+                self.write(response.json())
+                await self.finish()
+                return
+
             log_data["request"] = extended_request.dict()
             log.debug(log_data)
 
@@ -346,7 +355,7 @@ class RequestHandler(BaseAPIV2Handler):
                 return
 
             admin_approved = False
-            approval_probe_approved = False
+            approval_rule_approved = False
 
             if extended_request.principal.principal_type == "AwsResource":
                 # TODO: Provide a note to the requester that admin_auto_approve will apply the requested policies only.
@@ -401,14 +410,14 @@ class RequestHandler(BaseAPIV2Handler):
                         await write_json_error("Unauthorized", obj=self)
                         return
                 else:
-                    # If admin auto approve is false, check for auto-approve probe eligibility
-                    is_eligible_for_auto_approve_probe = (
+                    # If admin auto approve is false, check for auto-approve rule eligibility
+                    is_eligible_for_auto_approve_rule = (
                         await is_request_eligible_for_auto_approval(
                             extended_request, self.user
                         )
                     )
-                    # If we have only made requests that are eligible for auto-approval probe, check against them
-                    if is_eligible_for_auto_approve_probe:
+                    # If we have only made requests that are eligible for auto-approval rule, check against them
+                    if is_eligible_for_auto_approve_rule:
                         should_auto_approve_request = (
                             await should_auto_approve_policy_v2(
                                 extended_request, self.user, self.groups, tenant
@@ -416,36 +425,34 @@ class RequestHandler(BaseAPIV2Handler):
                         )
                         if should_auto_approve_request["approved"]:
                             extended_request.request_status = RequestStatus.approved
-                            approval_probe_approved = True
+                            approval_rule_approved = True
                             stats.count(
-                                f"{log_data['function']}.probe_auto_approved",
+                                f"{log_data['function']}.rule_auto_approved",
                                 tags={
                                     "user": self.user,
                                     "tenant": tenant,
                                 },
                             )
-                            approving_probes = []
-                            for approving_probe in should_auto_approve_request[
-                                "approving_probes"
+                            approving_rules = []
+                            for approving_rule in should_auto_approve_request[
+                                "approving_rules"
                             ]:
-                                approving_probe_comment = CommentModel(
+                                approving_rule_comment = CommentModel(
                                     id=str(uuid.uuid4()),
                                     timestamp=int(time.time()),
-                                    user_email=f"Auto-Approve Probe: {approving_probe['name']}",
+                                    user_email=f"Auto-Approve Rule: {approving_rule['name']}",
                                     last_modified=int(time.time()),
                                     text=(
-                                        f"Policy {approving_probe['policy']} auto-approved by probe: "
-                                        f"{approving_probe['name']}"
+                                        f"Policy {approving_rule['policy']} auto-approved by rule: "
+                                        f"{approving_rule['name']}"
                                     ),
                                 )
-                                extended_request.comments.append(
-                                    approving_probe_comment
-                                )
-                                approving_probes.append(approving_probe["name"])
+                                extended_request.comments.append(approving_rule_comment)
+                                approving_rules.append(approving_rule["name"])
                             extended_request.reviewer = (
-                                f"Auto-Approve Probe: {','.join(approving_probes)}"
+                                f"Auto-Approve Rule: {','.join(approving_rules)}"
                             )
-                            log_data["probe_auto_approved"] = True
+                            log_data["rule_auto_approved"] = True
                             log_data["request"] = extended_request.dict()
                             log.debug(log_data)
 
@@ -454,7 +461,7 @@ class RequestHandler(BaseAPIV2Handler):
             log_data["request"] = extended_request.dict()
             log_data["dynamo_request"] = request.dict()
             log.debug(log_data)
-        except (InvalidRequestParameter, ValidationError) as e:
+        except (InvalidRequestParameter, ValidationError):
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
             stats.count(
@@ -464,11 +471,21 @@ class RequestHandler(BaseAPIV2Handler):
                     "tenant": tenant,
                 },
             )
-            self.write_error(400, message="Error validating input: " + str(e))
+            request_url = await get_request_url(extended_request)
+            res = RequestCreationResponse(
+                errors=1,
+                request_created=True,
+                request_id=extended_request.id,
+                request_url=request_url,
+                action_results=[],
+                extended_request=extended_request,
+            )
+
+            self.write(res.json(exclude_unset=True, exclude_none=True))
             if config.get("_global_.development"):
                 raise
             return
-        except Exception as e:
+        except Exception:
             log_data["message"] = "Unknown Exception occurred while parsing request"
             log.error(log_data, exc_info=True)
             stats.count(
@@ -479,7 +496,17 @@ class RequestHandler(BaseAPIV2Handler):
                 },
             )
             sentry_sdk.capture_exception(tags={"user": self.user})
-            self.write_error(500, message="Error parsing request: " + str(e))
+            request_url = await get_request_url(extended_request)
+            res = RequestCreationResponse(
+                errors=1,
+                request_created=True,
+                request_id=extended_request.id,
+                request_url=request_url,
+                action_results=[],
+                extended_request=extended_request,
+            )
+
+            self.write(res.json(exclude_unset=True, exclude_none=True))
             if config.get("_global_.development"):
                 raise
             return
@@ -496,7 +523,7 @@ class RequestHandler(BaseAPIV2Handler):
             extended_request=extended_request,
         )
 
-        # If approved is true due to an auto-approval probe or admin auto-approval, apply the non-autogenerated changes
+        # If approved is true due to an auto-approval rule or admin auto-approval, apply the non-autogenerated changes
         if extended_request.request_status == RequestStatus.approved:
             for change in extended_request.changes.changes:
                 if change.autogenerated:
@@ -519,7 +546,7 @@ class RequestHandler(BaseAPIV2Handler):
                         self.groups,
                         int(time.time()),
                         tenant,
-                        approval_probe_approved=approval_probe_approved,
+                        approval_rule_approved=approval_rule_approved,
                         cloud_credentials=changes.credentials,
                     )
                 )
@@ -547,10 +574,10 @@ class RequestHandler(BaseAPIV2Handler):
             log.debug(log_data)
 
         await aws.send_communications_new_policy_request(
-            extended_request, admin_approved, approval_probe_approved, tenant
+            extended_request, admin_approved, approval_rule_approved, tenant
         )
         await send_slack_notification_new_request(
-            extended_request, admin_approved, approval_probe_approved, tenant
+            extended_request, admin_approved, approval_rule_approved, tenant
         )
         self.write(response.json())
         await self.finish()

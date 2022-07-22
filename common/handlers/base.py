@@ -27,7 +27,7 @@ from common.exceptions.exceptions import (
     WebAuthNError,
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
-from common.lib.auth import AuthenticationError, can_admin_all
+from common.lib.auth import AuthenticationError, is_tenant_admin
 from common.lib.aws.cached_resources.iam import get_user_active_tear_roles_by_tag
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
@@ -36,8 +36,10 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
 from common.lib.request_context.models import RequestContext
 from common.lib.saml import authenticate_user_by_saml
+from common.lib.tenant.models import TenantDetails
 from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
+from common.models import WebResponse
 
 log = config.get_logger()
 
@@ -183,11 +185,12 @@ class BaseJSONHandler(TornadoRequestHandler):
         message = kwargs.get("message", self._reason)
         # self.set_status() modifies self._reason, so this call should come after we grab the reason
         self.set_status(status_code)
-        self.finish(
+        self.write(
             json.dumps(
                 {"status": status_code, "title": title, "message": message}
             )  # noqa
         )
+        raise tornado.web.Finish()
 
     def get_current_user(self):
         tenant = self.get_tenant_name()
@@ -227,9 +230,9 @@ class BaseHandler(TornadoRequestHandler):
             self.set_header("Content-Type", "text/plain")
             for line in traceback.format_exception(*kwargs["exc_info"]):
                 self.write(line)
-            self.finish()
+            raise tornado.web.Finish()
         else:
-            self.finish(
+            self.write(
                 "<html><title>%(code)d: %(message)s</title>"
                 "<body>%(code)d: %(message)s</body></html>"
                 % {
@@ -237,6 +240,7 @@ class BaseHandler(TornadoRequestHandler):
                     "message": f"{self._reason} - {config.get_tenant_specific_key('errors.custom_website_error_message', tenant, '')}",
                 }
             )
+            raise tornado.web.Finish()
 
     def data_received(self, chunk):
         """Receives the data."""
@@ -245,7 +249,7 @@ class BaseHandler(TornadoRequestHandler):
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
-        self.ctx = None
+        self.ctx: Union[None | RequestContext] = None
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
@@ -368,10 +372,11 @@ class BaseHandler(TornadoRequestHandler):
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
         # TODO: Return Authentication prompt regardless of subdomain
 
+        tenant = self.get_tenant_name()
+        self.eula_signed = None
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
-        tenant = self.get_tenant_name()
         group_mapping = get_plugin_by_name(
             config.get_tenant_specific_key(
                 "plugins.group_mapping",
@@ -411,22 +416,29 @@ class BaseHandler(TornadoRequestHandler):
             "message": "Incoming request",
             "tenant": tenant,
         }
-
         log.debug(log_data)
 
         # Check to see if user has a valid auth cookie
-        auth_cookie = self.get_cookie(
-            config.get("_global_.auth.cookie.name", "noq_auth")
-        )
+        auth_cookie = self.get_cookie(self.get_noq_auth_cookie_key())
 
         # Validate auth cookie and use it to retrieve group information
         if auth_cookie:
             res = await validate_and_return_jwt_token(auth_cookie, tenant)
-            if res and isinstance(res, dict):
+            if isinstance(res, dict):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
+                self.eula_signed = res.get("eula_signed", False)
+
+        if self.eula_signed is None:
+            try:
+                tenant_details = await TenantDetails.get(tenant)
+                self.eula_signed = bool(tenant_details.eula_info)
+            except Exception:
+                # TODO: Move this along with other tenant validator checks into dedicated method.
+                #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
+                self.eula_signed = False
 
         # if tenant in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
@@ -489,7 +501,7 @@ class BaseHandler(TornadoRequestHandler):
                         "Unable to authenticate the user by OIDC. "
                         "Redirecting to authentication endpoint"
                     )
-                if res and isinstance(res, dict):
+                elif isinstance(res, dict):
                     self.user = res.get("user")
                     self.groups = res.get("groups")
 
@@ -500,7 +512,7 @@ class BaseHandler(TornadoRequestHandler):
                 res = await authenticate_user_by_alb_auth(self)
                 if not res:
                     raise Exception("Unable to authenticate the user by ALB Auth")
-                if res and isinstance(res, dict):
+                elif isinstance(res, dict):
                     self.user = res.get("user")
                     self.groups = res.get("groups")
 
@@ -555,8 +567,8 @@ class BaseHandler(TornadoRequestHandler):
                 )
                 log_data["message"] = "No user detected. Check configuration."
                 log.error(log_data)
-                await self.finish(log_data["message"])
-                raise
+                self.write(log_data["message"])
+                raise tornado.web.Finish()
 
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
@@ -639,7 +651,7 @@ class BaseHandler(TornadoRequestHandler):
             log.warning(log_data)
         log_data["eligible_roles"] = len(self.eligible_roles)
 
-        if not self.eligible_accounts:
+        if not self.eligible_accounts and self.eula_signed:
             try:
                 self.eligible_accounts = await group_mapping.get_eligible_accounts(self)
                 log_data["eligible_accounts"] = len(self.eligible_accounts)
@@ -678,36 +690,13 @@ class BaseHandler(TornadoRequestHandler):
                 redis.exceptions.ClusterDownError,
             ):
                 pass
-        if not self.get_cookie(config.get("_global_.auth.cookie.name", "noq_auth")):
-            expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
-                minutes=config.get_tenant_specific_key(
-                    "jwt.expiration_minutes", tenant, 1200
-                )
-            )
+        if not self.get_cookie(self.get_noq_auth_cookie_key()):
+            await self.set_jwt_cookie(tenant)
 
-            encoded_cookie = await generate_jwt_token(
-                self.user, self.groups, tenant, exp=expiration
-            )
-            self.set_cookie(
-                config.get("_global_.auth.cookie.name", "noq_auth"),
-                encoded_cookie,
-                expires=expiration,
-                secure=config.get_tenant_specific_key(
-                    "auth.cookie.secure",
-                    tenant,
-                    "https://" in config.get_tenant_specific_key("url", tenant),
-                ),
-                httponly=config.get_tenant_specific_key(
-                    "auth.cookie.httponly", tenant, True
-                ),
-                samesite=config.get_tenant_specific_key(
-                    "auth.cookie.samesite", tenant, True
-                ),
-            )
         if self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
 
-        self.is_admin = can_admin_all(self.user, self.groups, tenant)
+        self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
         stats.timer(
             "base_handler.incoming_request",
             {
@@ -717,6 +706,37 @@ class BaseHandler(TornadoRequestHandler):
                 "method": self.request.method,
             },
         )
+
+        if not self.eula_signed:
+            # If the EULA hasn't been signed the user cannot access any AWS information.
+            self.groups = []
+            self.eligible_roles = []
+            self.eligible_accounts = []
+
+            if not self.request.uri.endswith("tenant/details/eula") and not isinstance(
+                self, AuthenticatedStaticFileHandler
+            ):
+                # Force them to the eula page if they're an admin, return a 403 otherwise
+                if self.is_admin:
+                    self.write(
+                        {
+                            "type": "redirect",
+                            "redirect_url": "/eula",
+                            "reason": "unauthenticated",
+                            "message": "User did not sign EULA yet",
+                        }
+                    )
+                else:
+                    self.write(
+                        WebResponse(
+                            status_code=403,
+                            reason="The EULA for this tenant has not been signed. Please contact your admin.",
+                        ).json(exclude_unset=True, exclude_none=True)
+                    )
+
+                self.set_status(403)
+                raise tornado.web.Finish()
+
         self.ctx = RequestContext(
             tenant=tenant,
             user=self.user,
@@ -724,6 +744,48 @@ class BaseHandler(TornadoRequestHandler):
             request_uuid=self.request_uuid,
             uri=self.request.uri,
         )
+
+    async def set_jwt_cookie(self, tenant, roles: list = None):
+        expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
+            minutes=config.get_tenant_specific_key(
+                "jwt.expiration_minutes", tenant, 1200
+            )
+        )
+
+        encoded_cookie = await generate_jwt_token(
+            self.user,
+            self.groups,
+            tenant,
+            roles,
+            exp=expiration,
+            eula_signed=self.eula_signed,
+        )
+        self.set_cookie(
+            self.get_noq_auth_cookie_key(),
+            encoded_cookie,
+            expires=expiration,
+            secure=config.get_tenant_specific_key(
+                "auth.cookie.secure",
+                tenant,
+                "https://" in config.get_tenant_specific_key("url", tenant),
+            ),
+            httponly=config.get_tenant_specific_key(
+                "auth.cookie.httponly", tenant, True
+            ),
+            samesite=config.get_tenant_specific_key(
+                "auth.cookie.samesite", tenant, True
+            ),
+        )
+
+    @classmethod
+    def get_noq_auth_cookie_key(cls):
+        attr_name = "noq_auth_cookie_key"
+        if cookie_key := getattr(cls, attr_name, None):
+            return cookie_key
+
+        cookie_key = config.get("_global_.auth.cookie.name", "noq_auth")
+        setattr(cls, attr_name, cookie_key)
+        return cookie_key
 
 
 class BaseAPIV1Handler(BaseHandler):
@@ -746,18 +808,19 @@ class BaseAPIV2Handler(BaseHandler):
             self.set_status(status_code)
             for line in traceback.format_exception(*kwargs["exc_info"]):
                 self.write(line)
-            self.finish()
+            raise tornado.web.Finish()
         else:
             self.set_header("Content-Type", "application/problem+json")
             title = httputil.responses.get(status_code, "Unknown")
             message = kwargs.get("message", self._reason)
             # self.set_status() modifies self._reason, so this call should come after we grab the reason
             self.set_status(status_code)
-            self.finish(
+            self.write(
                 json.dumps(
                     {"status": status_code, "title": title, "message": message}
                 )  # noqa
             )
+            raise tornado.web.Finish()
 
 
 class BaseMtlsHandler(BaseAPIV2Handler):
@@ -814,8 +877,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 )
                 self.set_status(403)
                 self.write({"code": "403", "message": "Invalid Certificate"})
-                await self.finish()
-                return
+                raise tornado.web.Finish()
 
             # Extract user from valid certificate
             try:
@@ -834,12 +896,9 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                     message = f"Invalid Mtls Certificate: {e}"
                 self.set_status(400)
                 self.write({"code": "400", "message": message})
-                await self.finish()
-                return
+                raise tornado.web.Finish()
         elif config.get_tenant_specific_key("auth.require_jwt", tenant, True):
-            auth_cookie = self.get_cookie(
-                config.get("_global_.auth.cookie.name", "noq_auth")
-            )
+            auth_cookie = self.get_cookie(self.get_noq_auth_cookie_key())
 
             if auth_cookie:
                 res = await validate_and_return_jwt_token(auth_cookie, tenant)
@@ -851,7 +910,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                     }
                     self.set_status(403)
                     self.write(error)
-                    await self.finish()
+                    raise tornado.web.Finish()
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
@@ -963,7 +1022,7 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
-        self.ctx = None
+        self.ctx: Union[None | RequestContext] = None
         super(AuthenticatedStaticFileHandler, self).initialize(**kwargs)
 
     async def prepare(self) -> None:

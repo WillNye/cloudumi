@@ -2471,7 +2471,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 [],
                 last_updated,
                 tenant,
-                approval_probe_approved=True,
+                approval_rule_approved=True,
             )
 
         self.assertEqual(0, response.errors)

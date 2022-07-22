@@ -483,6 +483,24 @@ def iamrole_table(dynamodb):
     yield dynamodb
 
 
+@pytest.fixture(autouse=True, scope="session")
+def tenant_details_table(dynamodb):
+    table_name = "tenant_details"
+    # Create the table:
+    table_obj = dynamodb.create_table(
+        TableName=table_name,
+        AttributeDefinitions=[
+            {"AttributeName": "name", "AttributeType": "S"},
+        ],
+        KeySchema=[
+            {"AttributeName": "name", "KeyType": "HASH"},
+        ],
+        ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
+    )
+
+    yield table_obj
+
+
 @pytest.fixture(autouse=False, scope="session")
 def cloudtrail_table(dynamodb):
     # Create the table:
@@ -821,15 +839,23 @@ def tenant_static_configs_table(dynamodb):
     yield dynamodb
 
 
-@pytest.fixture(scope="session")
-def with_test_configuration_tenant_static_config_data(tenant_static_configs_table):
+@pytest.fixture(autouse=True, scope="session")
+def with_test_configuration_tenant_static_config_data(
+    tenant_static_configs_table, tenant_details_table
+):
     from common.lib import dynamo
+    from common.lib.tenant.models import TenantDetails
 
     ddb = dynamo.RestrictedDynamoHandler()
     with open("util/tests/test_configuration.yaml", "r") as fp:
-        async_to_sync(ddb.update_static_config_for_tenant)(
+        config_dict = async_to_sync(ddb.update_static_config_for_tenant)(
             fp, "test@noq.dev", "test.noq.dev".replace(".", "_")
         )
+        tenants = list(config_dict.get("site_configs", {}).keys())
+        for tenant_name in tenants:
+            async_to_sync(TenantDetails.create)(
+                tenant_name, "test_user", eula_info={"signed": True}, noq_cluster="1"
+            )
 
 
 @pytest.fixture(autouse=False, scope="session")

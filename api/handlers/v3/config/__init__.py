@@ -3,7 +3,7 @@ import tornado.escape
 from common.config import config, models
 from common.config.models import ModelAdapter
 from common.handlers.base import BaseHandler
-from common.lib.auth import can_admin_all
+from common.lib.auth import is_tenant_admin
 from common.models import HubAccount, SpokeAccount, WebResponse
 
 
@@ -11,7 +11,7 @@ class ConfigHandler(BaseHandler):
     async def get(self):
         """"""
         tenant = self.ctx.tenant
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             self.set_status(403)
             return
         external_id = config.get_tenant_specific_key(
@@ -196,7 +196,7 @@ class ConfigHandler(BaseHandler):
         Write configuration
         """
         tenant = self.ctx.tenant
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             self.set_status(403)
             return
         # TODO: Format data into a model

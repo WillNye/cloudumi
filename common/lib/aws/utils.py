@@ -13,7 +13,7 @@ import sentry_sdk
 from botocore.exceptions import ClientError, ParamValidationError
 from deepdiff import DeepDiff
 from parliament import analyze_policy_string, enhance_finding
-from policy_sentry.util.arns import get_account_from_arn, parse_arn
+from policy_sentry.util.arns import parse_arn
 
 from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.user.utils import fetch_iam_user
@@ -1980,7 +1980,8 @@ async def get_resource_account(arn: str, tenant: str) -> str:
     If we are unsuccessful in pulling the account from ARN, we try to grab it from our resources cache
     """
     red = await RedisHandler().redis(tenant)
-    resource_account: str = get_account_from_arn(arn)
+    parsed_arn = parse_arn(arn)
+    resource_account = parsed_arn.get("account", "")
     if resource_account:
         return resource_account
 

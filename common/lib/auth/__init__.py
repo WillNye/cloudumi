@@ -158,7 +158,7 @@ async def validate_auth_token(user, ip, token, request_object):
     return token_details
 
 
-def can_admin_all(user: str, user_groups: List[str], tenant: str):
+def is_tenant_admin(user: str, user_groups: List[str], tenant: str):
     application_admin = config.get_tenant_specific_key("application_admin", tenant)
     if application_admin:
         if user == application_admin or application_admin in user_groups:
@@ -181,7 +181,7 @@ async def get_accounts_user_can_view_resources_for(user, groups, tenant) -> set[
     spoke_roles = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).list
     allowed = set()
     for spoke_role in spoke_roles:
-        if can_admin_all(user, groups, tenant):
+        if is_tenant_admin(user, groups, tenant):
             allowed.add(spoke_role.get("account_id"))
             continue
         if not spoke_role.get("restrict_viewers_of_account_resources"):
@@ -219,7 +219,7 @@ async def get_accounts_user_can_edit_resources_for(user, groups, tenant) -> set[
 
 async def user_can_edit_resources(user, groups, tenant, account_ids) -> bool:
     can_edit_resource = False
-    if can_admin_all(user, groups, tenant):
+    if is_tenant_admin(user, groups, tenant):
         return True
 
     if len(account_ids) == 0:
@@ -239,7 +239,7 @@ async def user_can_edit_resources(user, groups, tenant, account_ids) -> bool:
 
 
 def can_admin_identity(user: str, user_groups: List[str], tenant: str):
-    if can_admin_all(user, user_groups, tenant):
+    if is_tenant_admin(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
@@ -258,7 +258,7 @@ def can_admin_identity(user: str, user_groups: List[str], tenant: str):
 
 
 def can_create_roles(user: str, user_groups: List[str], tenant: str) -> bool:
-    if can_admin_all(user, user_groups, tenant):
+    if is_tenant_admin(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
@@ -344,7 +344,7 @@ async def get_account_delegated_admins(account_id, tenant):
 
 async def populate_approve_reject_policy(
     extended_request: ExtendedRequestModel, groups, tenant, user: str
-) -> bool:
+) -> dict[str, Any]:
     request_config = {}
 
     for change in extended_request.changes.changes:
@@ -367,8 +367,10 @@ async def populate_approve_reject_policy(
 
 
 async def can_admin_policies(
-    user: str, user_groups: List[str], tenant: str, account_ids: set[str] = []
+    user: str, user_groups: List[str], tenant: str, account_ids: set[str] = None
 ) -> bool:
+    if not account_ids:
+        account_ids = set()
     if await user_can_edit_resources(user, user_groups, tenant, account_ids):
         return True
     if is_in_group(
@@ -403,7 +405,7 @@ def can_delete_iam_principals(
     user_groups: List[str],
     tenant: str,
 ) -> bool:
-    if can_admin_all(user, user_groups, tenant):
+    if is_tenant_admin(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
@@ -430,7 +432,7 @@ def can_delete_iam_principals(
 
 
 def can_edit_dynamic_config(user: str, user_groups: List[str], tenant: str) -> bool:
-    if can_admin_all(user, user_groups, tenant):
+    if is_tenant_admin(user, user_groups, tenant):
         return True
     if is_in_group(
         user,
@@ -452,7 +454,7 @@ def can_edit_attributes(
     group_info: Optional[Any],
     tenant: str,
 ) -> bool:
-    if can_admin_all(user, user_groups, tenant):
+    if is_tenant_admin(user, user_groups, tenant):
         return True
 
     if is_in_group(
@@ -491,7 +493,7 @@ def can_modify_members(
     if group_info and group_info.restricted:
         return False
 
-    if can_admin_all(user, user_groups, tenant):
+    if is_tenant_admin(user, user_groups, tenant):
         return True
 
     if is_in_group(
@@ -527,7 +529,7 @@ def can_modify_members(
 def can_edit_sensitive_attributes(
     user: str, user_groups: List[str], group_info: Optional[Any], tenant: str
 ) -> bool:
-    if can_admin_all(user, user_groups, tenant):
+    if is_tenant_admin(user, user_groups, tenant):
         return True
     if is_in_group(
         user,

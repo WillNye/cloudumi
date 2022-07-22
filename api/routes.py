@@ -123,6 +123,11 @@ from api.handlers.v3.services.effective_role_policy import (
     EffectiveUnusedRolePolicyHandler,
 )
 from api.handlers.v3.slack import SlackIntegrationConfigurationCrudHandler
+from api.handlers.v3.tenant_details.handler import (
+    EulaHandler,
+    TenantDetailsHandler,
+    TenantEulaHandler,
+)
 from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
@@ -150,6 +155,9 @@ def make_app(jwt_validator=None):
         (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
         (r"/api/v1/get_credentials", GetCredentialsHandler),
+        (r"/api/v3/legal/agreements/eula", EulaHandler),
+        (r"/api/v3/tenant/details", TenantDetailsHandler),
+        (r"/api/v3/tenant/details/eula", TenantEulaHandler),
         (r"/api/v1/get_roles", GetRolesHandler),
         (r"/api/v2/get_roles", GetRolesMTLSHandler),
         (r"/api/v2/get_resource_url", GetResourceURLHandler),

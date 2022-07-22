@@ -23,6 +23,20 @@ _global_:
       attributes: 1
       registration_topic_arn: arn:aws:sns:us-west-2:940552945933:noq-dev-shared-prod-1-registration-topic
       registration_queue_arn: arn:aws:sqs:us-west-2:940552945933:noq-dev-shared-prod-1-registration-queue
+  accounts:
+    tenant_data:
+      name: NoqServiceConnRole
+      account_id: 940552945933
+      role_arn: arn:aws:iam::940552945933:role/NoqServiceConnRole
+      external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+      region: us-west-2
+    zelkova:
+      name: ZelkovaAnalysisRole
+      account_id: "894599878328"
+      account_name: "zelkova"
+      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
+  s3_buckets:
+    legal_docs: noq-global-prod-legal-docs
   deployment:
     domain_name: shared.noq.dev
     namespace: shared
