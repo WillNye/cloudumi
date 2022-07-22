@@ -2012,6 +2012,7 @@ async def apply_non_iam_resource_tag_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     tenant: str,
+    resource_summary: ResourceSummary,
     custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
@@ -2033,27 +2034,9 @@ async def apply_non_iam_resource_tag_change(
         "message": "Applying resource policy change changes",
         "request": extended_request.dict(),
     }
-    try:
-        resource_summary = await ResourceSummary.set(
-            tenant, change.principal.principal_arn, region_required=True
-        )
-        account = resource_summary.account
-        resource_type = resource_summary.resource_type
-        service = resource_summary.service
-    except ValueError:
-        # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
-        # we can't apply this change
-        log_data["message"] = "Resource account not found"
-        log.warning(log_data)
-        response.errors += 1
-        response.action_results.append(
-            ActionResult(
-                status="error",
-                message=f"Cannot apply change to {change.principal.json()} as cannot determine resource account",
-            )
-        )
-        return response
 
+    account = resource_summary.account
+    service = resource_summary.service
     supported_services = config.get_tenant_specific_key(
         "policies.supported_resource_types_for_policy_application",
         tenant,
@@ -2075,7 +2058,7 @@ async def apply_non_iam_resource_tag_change(
     try:
         client = await aio_wrapper(
             boto3_cached_conn,
-            resource_type,
+            service,
             tenant,
             user,
             service_type="client",
@@ -2113,7 +2096,7 @@ async def apply_non_iam_resource_tag_change(
         if change.original_value and not change.value:
             change.value = change.original_value
 
-        if resource_type == "s3":
+        if service == "s3":
             if change.tag_action in [TagAction.create, TagAction.update]:
                 tag_key_preexists = False
                 resulting_tagset = []
@@ -2155,7 +2138,7 @@ async def apply_non_iam_resource_tag_change(
                     Bucket=resource_summary.name,
                     Tagging={"TagSet": resource_details["TagSet"]},
                 )
-        elif resource_type == "sns":
+        elif service == "sns":
             if change.tag_action in [TagAction.create, TagAction.update]:
                 await aio_wrapper(
                     client.tag_resource,
@@ -2175,7 +2158,7 @@ async def apply_non_iam_resource_tag_change(
                     ResourceArn=change.principal.principal_arn,
                     TagKeys=[change.key],
                 )
-        elif resource_type == "sqs":
+        elif service == "sqs":
             if change.tag_action in [TagAction.create, TagAction.update]:
                 await aio_wrapper(
                     client.tag_queue,
@@ -3010,13 +2993,29 @@ async def parse_and_apply_policy_request_modification(
                 )
             managed_policy_arn_regex = re.compile(r"^arn:aws:iam::\d{12}:policy/.+")
 
-            resource_summary = await ResourceSummary.set(tenant, specific_change_arn)
-            account_info: SpokeAccount = (
-                ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", tenant)
-                .with_query({"account_id": resource_summary.account})
-                .first
-            )
+            try:
+                resource_summary = await ResourceSummary.set(
+                    tenant, specific_change_arn
+                )
+                account_info: SpokeAccount = (
+                    ModelAdapter(SpokeAccount)
+                    .load_config("spoke_accounts", tenant)
+                    .with_query({"account_id": resource_summary.account})
+                    .first
+                )
+            except ValueError:
+                # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
+                # we can't apply this change
+                log_data["message"] = "Resource account not found"
+                log.warning(log_data)
+                response.errors += 1
+                response.action_results.append(
+                    ActionResult(
+                        status="error",
+                        message=f"Cannot apply change to {specific_change.principal.json()} as cannot determine resource account",
+                    )
+                )
+                return response
 
             if account_info.read_only and (
                 specific_change.change_type == "tear_can_assume_role"
@@ -3053,6 +3052,7 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     tenant,
+                    resource_summary,
                     custom_aws_credentials=custom_aws_credentials,
                 )
             elif (
