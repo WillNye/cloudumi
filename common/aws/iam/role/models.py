@@ -19,7 +19,6 @@ from common.aws.iam.role.utils import (
     _get_iam_role_async,
     _get_iam_role_sync,
 )
-from common.aws.iam.utils import _cloudaux_to_aws
 from common.config import config
 from common.config.config import (
     dax_endpoints,
@@ -28,7 +27,6 @@ from common.config.config import (
     get_logger,
 )
 from common.config.models import ModelAdapter
-from common.lib.aws.utils import allowed_to_sync_role, get_aws_principal_owner
 from common.lib.plugins import get_plugin_by_name
 from common.lib.pynamo import NoqMapAttribute, NoqModel
 from common.lib.terraform.transformers.IAMRoleTransformer import IAMRoleTransformer
@@ -125,6 +123,7 @@ class IAMRole(NoqModel):
         force_refresh: bool = False,
         run_sync: bool = False,
     ):
+        from common.aws.iam.utils import _cloudaux_to_aws
         from common.lib.aws.utils import get_aws_principal_owner
 
         stat_tags = {
@@ -264,6 +263,8 @@ class IAMRole(NoqModel):
     async def _batch_write_role(
         cls, tenant: str, account_id: str, filtered_iam_roles: list[dict]
     ):
+        from common.lib.aws.utils import get_aws_principal_owner
+
         # Don't use this. It doesn't work but the implementation looks good.
         # When this is stable we'll replace existing logic which just calls save for each role
 
@@ -294,6 +295,8 @@ class IAMRole(NoqModel):
     async def sync_account_roles(
         cls, tenant: str, account_id: str, iam_roles: list[dict]
     ) -> bool:
+        from common.lib.aws.utils import allowed_to_sync_role, get_aws_principal_owner
+
         aws = get_plugin_by_name(
             config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
         )()

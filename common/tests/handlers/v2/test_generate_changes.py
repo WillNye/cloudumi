@@ -589,13 +589,7 @@ class TestGenerateChangesHandler(ConsoleMeAsyncHTTPTestCase):
                     "account_id": "",
                     "region": "global",
                     "account_name": "",
-                    "policy_sha256": None,
-                    "policy": None,
-                    "actions": None,
-                    "owner": None,
-                    "approvers": None,
                     "resource_type": "s3",
-                    "last_updated": None,
                 }
             ],
         )

@@ -139,9 +139,7 @@ class AccessAdvisor:
         :param account_id: AWS Account ID
         :return: Access Advisor data for identities across a single AWS account
         """
-        from common.lib.aws.unused_permissions_remover import (
-            calculate_unused_policy_for_identities,
-        )
+        from common.aws.iam.policy.utils import calculate_unused_policy_for_identities
 
         iam_policies = await retrieve_iam_managed_policies_for_tenant(
             tenant, account_id

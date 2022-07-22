@@ -2,6 +2,7 @@ import copy
 import json
 import os
 import pathlib
+from typing import Optional
 
 from common.config import config
 from common.config.models import ModelAdapter
@@ -96,3 +97,20 @@ async def _cloudaux_to_aws(principal):
     principal.pop("InlinePolicies", None)
 
     return principal
+
+
+async def get_iam_principal_owner(arn: str, tenant: str) -> Optional[str]:
+    from common.aws.iam.role.models import IAMRole
+    from common.aws.iam.user.utils import fetch_iam_user
+    from common.aws.utils import ResourceSummary
+
+    principal_details = {}
+    resource_summary = await ResourceSummary.set(tenant, arn)
+    principal_type = resource_summary.resource_type
+    account_id = resource_summary.account
+    # trying to find principal for subsequent queries
+    if principal_type == "role":
+        principal_details = (await IAMRole.get(tenant, account_id, arn)).dict()
+    elif principal_type == "user":
+        principal_details = await fetch_iam_user(account_id, arn, tenant)
+    return principal_details.get("owner")

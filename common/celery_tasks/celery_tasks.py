@@ -42,6 +42,7 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
+from common.aws.iam.policy.utils import get_all_managed_policies
 from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.config.models import ModelAdapter
@@ -56,7 +57,6 @@ from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_tenant
 from common.lib.aws.cloudtrail import CloudTrail
-from common.lib.aws.iam import get_all_managed_policies
 from common.lib.aws.s3 import list_buckets
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
@@ -543,9 +543,6 @@ def cache_cloudtrail_errors_by_arn(tenant=None) -> Dict:
         raise Exception("`tenant` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(tenant)
-    aws = get_plugin_by_name(
-        config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
-    )()
     log_data: Dict = {"function": function}
     if is_task_already_running(function, [tenant]):
         log_data["message"] = "Skipping task: An identical task is currently running"
@@ -553,7 +550,7 @@ def cache_cloudtrail_errors_by_arn(tenant=None) -> Dict:
         return log_data
     ct = CloudTrail()
     process_cloudtrail_errors_res: Dict = async_to_sync(ct.process_cloudtrail_errors)(
-        aws, tenant, None
+        tenant, None
     )
     cloudtrail_errors = process_cloudtrail_errors_res["error_count_by_role"]
     red.setex(

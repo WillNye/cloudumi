@@ -1,10 +1,8 @@
 import sentry_sdk
 
 import common.lib.noq_json as json
+from common.aws.iam.policy.utils import calculate_unused_policy_for_identity
 from common.handlers.base import BaseHandler
-from common.lib.aws.unused_permissions_remover import (
-    calculate_unused_policy_for_identity,
-)
 from common.models import Status2, WebResponse
 
 

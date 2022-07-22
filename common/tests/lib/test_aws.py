@@ -11,7 +11,7 @@ from asgiref.sync import async_to_sync
 from mock import patch
 
 import common.lib.noq_json as json
-from common.lib.aws.utils import condense_statements
+from common.aws.iam.statement.utils import condense_statements
 from common.models import (
     ChangeModelArray,
     ExtendedRequestModel,
@@ -49,9 +49,9 @@ class TestAwsLib(TestCase):
         self.assertNotEqual(get_resource_tag(ROLE, "tag2"), "value1")
         self.assertNotEqual(get_resource_tag(ROLE, "tag1"), "value2")
 
-    @patch("common.lib.aws.utils.redis_hget")
+    @patch("common.aws.utils.redis_hget")
     def test_get_resource_account(self, mock_aws_config_resources_redis):
-        from common.lib.aws.utils import get_resource_account
+        from common.aws.utils import get_resource_account
 
         loop = asyncio.new_event_loop()
         mock_aws_config_resources_redis.return_value = None
@@ -188,8 +188,8 @@ class TestAwsLib(TestCase):
         self.assertFalse(result)
 
     def test_fetch_managed_policy_details(self):
+        from common.aws.iam.policy.utils import fetch_managed_policy_details
         from common.config import config
-        from common.lib.aws.utils import fetch_managed_policy_details
 
         result = async_to_sync(fetch_managed_policy_details)(
             "123456789012", "policy-one", tenant, None
