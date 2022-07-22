@@ -18,7 +18,6 @@ from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import rate_limited, sts_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
-from common.lib.aws.iam import get_managed_policy_document
 from common.lib.cloud_credential_authorization_mapping import RoleAuthorizations
 from common.lib.plugins import get_plugin_by_name
 from common.models import (
@@ -707,8 +706,9 @@ def get_role_managed_policies(role, client=None, **kwargs):
 @rate_limited()
 def get_role_managed_policy_documents(role, client=None, **kwargs):
     """Retrieve the currently active policy version document for every managed policy that is attached to the role."""
-    policies = get_role_managed_policies(role, force_client=client)
+    from common.aws.iam.policy.utils import get_managed_policy_document
 
+    policies = get_role_managed_policies(role, force_client=client)
     policy_names = (policy["name"] for policy in policies)
     delayed_gmpd_calls = (
         delayed(get_managed_policy_document)(policy["arn"], force_client=client)

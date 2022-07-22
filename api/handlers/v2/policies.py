@@ -3,16 +3,16 @@ import sys
 import tornado.escape
 
 import common.lib.noq_json as json
+from common.aws.iam.policy.utils import validate_iam_policy
 from common.aws.iam.role.utils import get_roles_as_resource
+from common.aws.utils import ResourceSummary, get_url_for_resource
 from common.config import config
 from common.exceptions.exceptions import ResourceNotFound
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
 from common.lib.auth import get_accounts_user_can_view_resources_for
-from common.lib.aws.utils import validate_iam_policy
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.generic import filter_table
 from common.lib.plugins import get_plugin_by_name
-from common.lib.policies import get_url_for_resource
 from common.lib.timeout import Timeout
 from common.models import DataTableResponse
 
@@ -164,19 +164,9 @@ class PoliciesHandler(BaseAPIV2Handler):
         if markdown:
             policies_to_write = []
             for policy in policies[0:limit]:
-                resource_name = policy.get("arn").split(":")[5]
-                if "/" in resource_name:
-                    resource_name = resource_name.split("/")[-1]
-                region = policy["arn"].split(":")[3]
+                resource_summary = await ResourceSummary.set(tenant, policy.get("arn"))
                 try:
-                    url = await get_url_for_resource(
-                        policy["arn"],
-                        tenant,
-                        policy["technology"],
-                        policy["account_id"],
-                        region,
-                        resource_name,
-                    )
+                    url = await get_url_for_resource(resource_summary)
                 except ResourceNotFound:
                     url = ""
                 if url:

@@ -5,13 +5,13 @@ from typing import Dict, List, Optional
 from policy_sentry.querying.actions import get_actions_with_access_level
 
 import common.lib.noq_json as json
+from common.aws.iam.policy.utils import minimize_iam_policy_statements
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
     MissingConfigurationValue,
 )
 from common.lib.account_indexers import get_account_id_to_name_mapping
-from common.lib.aws.utils import minimize_iam_policy_statements
 from common.lib.defaults import SELF_SERVICE_IAM_DEFAULTS
 from common.lib.generic import generate_random_string, iterate_and_format_dict
 from common.models import (

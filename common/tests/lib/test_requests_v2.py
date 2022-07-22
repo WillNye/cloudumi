@@ -100,6 +100,7 @@ async def get_extended_request_helper():
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("sts")
+@pytest.mark.usefixtures("iam")
 class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.maxDiff = None
@@ -733,7 +734,6 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         await generate_resource_policies(
             extended_request, extended_request.requester_email, tenant
         )
-
         self.assertEqual(
             len(extended_request.changes.changes), len_before_call + number_of_resources
         )
@@ -1564,7 +1564,6 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
                 "test@example.com",
                 tenant,
             )
-
             self.assertEqual(0, response.errors)
             self.assertIn(
                 "created managed policy",

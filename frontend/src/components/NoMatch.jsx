@@ -20,7 +20,7 @@ const NoMatch = () => {
         textAlign='center'
       >
         404
-        <Header.Subheader>We were unable to console you!</Header.Subheader>
+        <Header.Subheader>Page not found!</Header.Subheader>
       </Header>
       <Image
         centered
@@ -30,7 +30,7 @@ const NoMatch = () => {
       />
       <br />
       <Link to='/'>
-        <Button content='Return to Home' color='red' size='large' />
+        <Button content='Return to Home' primary size='large' />
       </Link>
     </Segment>
   )

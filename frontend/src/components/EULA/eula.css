@@ -1,0 +1,30 @@
+.eula {
+  width: 80%;
+  margin: auto;
+  padding-top: 100px;
+  padding-bottom: 20px;
+  max-width: 1200px;
+}
+
+.eula__documnet {
+  height: 65vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 15px;
+  line-height: 1.6rem;
+  resize: none;
+  outline: none;
+  border: none;
+  display: block;
+  width: 100%;
+}
+
+.eula__actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.eula__buttton {
+  max-width: 200px;
+}

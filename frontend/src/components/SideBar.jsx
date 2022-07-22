@@ -40,7 +40,7 @@ const listRecentRoles = (recentRoles, user) => {
   })
 }
 
-const ConsoleMeSidebar = () => {
+const SideBar = () => {
   const { user } = useAuth()
   const [siteConfig, setSiteConfig] = useState({})
   const recentRoles = parseLocalStorageCache(localStorageRecentRolesKey)
@@ -182,4 +182,4 @@ const ConsoleMeSidebar = () => {
   )
 }
 
-export default ConsoleMeSidebar
+export default SideBar

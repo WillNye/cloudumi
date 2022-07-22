@@ -14,7 +14,7 @@ _global_:
       trusted_remote_ip_header: X-Forwarded-For
   integrations:
     aws:
-      account_id: 940552945933
+      account_id: "940552945933"
       central_role_name: NoqCentralRole
       spoke_role_name: NoqSpokeRole
       node_role: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
@@ -23,6 +23,20 @@ _global_:
       attributes: 1
       registration_topic_arn: arn:aws:sns:us-west-2:940552945933:noq-dev-shared-prod-1-registration-topic
       registration_queue_arn: arn:aws:sqs:us-west-2:940552945933:noq-dev-shared-prod-1-registration-queue
+  accounts:
+    tenant_data:
+      name: NoqServiceConnRole
+      account_id: "306086318698"
+      role_arn: arn:aws:iam::306086318698:role/NoqServiceConnRole
+      external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+      region: us-west-2
+    zelkova:
+      name: ZelkovaAnalysisRole
+      account_id: "894599878328"
+      account_name: "zelkova"
+      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
+  s3_buckets:
+    legal_docs: noq-global-prod-legal-docs
   deployment:
     domain_name: shared.noq.dev
     namespace: shared
@@ -82,9 +96,3 @@ _global_:
     dsn: https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3
   google_analytics:
     tracking_id: G-P5K1SQF3P6
-  accounts:
-    zelkova:
-      name: ZelkovaAnalysisRole
-      account_id: "894599878328"
-      account_name: "zelkova"
-      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole

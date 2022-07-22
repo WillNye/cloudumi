@@ -8,7 +8,6 @@ from common.aws.iam.utils import _cloudaux_to_aws, get_tenant_iam_conn
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.iam import get_user_inline_policies, get_user_managed_policies
 from common.lib.plugins import get_plugin_by_name
 from common.models import SpokeAccount
 
@@ -17,6 +16,11 @@ log = config.get_logger(__name__)
 
 
 def _get_iam_user_sync(account_id, user_name, conn, tenant) -> Optional[Dict[str, Any]]:
+    from common.aws.iam.policy.utils import (
+        get_user_inline_policies,
+        get_user_managed_policies,
+    )
+
     client = get_tenant_iam_conn(tenant, account_id, "noq_get_iam_user", read_only=True)
     user = client.get_user(UserName=user_name)["User"]
     user["ManagedPolicies"] = get_user_managed_policies({"UserName": user_name}, **conn)
@@ -29,6 +33,11 @@ def _get_iam_user_sync(account_id, user_name, conn, tenant) -> Optional[Dict[str
 async def _get_iam_user_async(
     account_id, user_name, conn, tenant
 ) -> Optional[Dict[str, Any]]:
+    from common.aws.iam.policy.utils import (
+        get_user_inline_policies,
+        get_user_managed_policies,
+    )
+
     tasks = []
     client = await aio_wrapper(
         get_tenant_iam_conn,

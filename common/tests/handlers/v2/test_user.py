@@ -221,7 +221,6 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
             should_pass.dict(),
             {
                 "authenticated": True,
-                "errors": None,
                 "username": "testuser3",
                 "groups": ["group1", "group2", "group3"],
             },
@@ -241,8 +240,6 @@ class TestUserApi(ConsoleMeAsyncHTTPTestCase):
                     "Your next authentication failure will result in a 1 second wait. "
                     "This wait time will expire after 60 seconds of no authentication failures.",
                 ],
-                "groups": None,
-                "username": None,
             },
         )
 
