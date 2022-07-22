@@ -76,7 +76,7 @@ const AutomaticPermissionsList = () => {
       {policyRequests.length ? (
         policyRequests.map((policyRequest, index) => (
           <PolicyRequestItem
-            key={index}
+            key={policyRequest.policy.Statement[0].Action[0]}
             policyRequest={policyRequest}
             getAutomaticPermissionsRequests={getAutomaticPermissionsRequests}
             sendRequestCommon={sendRequestCommon}
