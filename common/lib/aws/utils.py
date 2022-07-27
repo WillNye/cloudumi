@@ -17,6 +17,7 @@ from policy_sentry.util.arns import parse_arn
 
 from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.user.utils import fetch_iam_user
+from common.aws.service_config.utils import execute_query
 from common.aws.utils import get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
@@ -32,7 +33,6 @@ from common.lib.account_indexers.aws_organizations import (
 )
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.aws_config import query
 from common.lib.aws.iam import get_managed_policy_document, get_policy
 from common.lib.aws.s3 import (
     get_bucket_location,
@@ -1843,7 +1843,7 @@ async def resource_arn_known_in_aws_config(
         return False
 
     r = await aio_wrapper(
-        query,
+        execute_query,
         f"select arn where arn = '{resource_arn}'",
         tenant,
         use_aggregator=run_query_with_aggregator,

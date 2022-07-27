@@ -1,22 +1,50 @@
+import asyncio
 import sys
+from itertools import chain
 from typing import List, Optional
 
 import sentry_sdk
 from botocore.exceptions import ClientError
 
 import common.lib.noq_json as json
+from common.aws.utils import ResourceSummary
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
+from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
+from common.lib.generic import un_wrap_json
 from common.models import SpokeAccount
 
 log = config.get_logger()
 
 
-def query(
+def get_config_client(tenant: str, account: str, region: str = config.region):
+    spoke_account_name = (
+        ModelAdapter(SpokeAccount)
+        .load_config("spoke_accounts", tenant)
+        .with_query({"account_id": account})
+        .first.name
+    )
+    return boto3_cached_conn(
+        "config",
+        tenant,
+        None,
+        account_number=account,
+        assume_role=spoke_account_name,
+        region=region,
+        sts_client_kwargs=dict(
+            region_name=region,
+            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+        ),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
+        session_name=sanitize_session_name("noq_aws_config_query"),
+    )
+
+
+def execute_query(
     query: str,
     tenant: str,
     use_aggregator: bool = True,
@@ -110,103 +138,82 @@ def query(
         return resources
 
 
-def get_fetch_parameters_resource_history(
-    unique_resource_identifier: str,
-) -> Tuple[AccountId, Region, ResourceType, ResourceId]:
-    """This is a utility function that pulls out the account id, Region, ResourceType, and ResourceId for the fetch functions."""
-    # pylint: disable=R0914,R0912
-    # Need to pull out the Account ID, Region, ResourceType, ResourceId:
-    account_id, region, resource_type, resource_id = unique_resource_identifier.split(
-        "/"
-    )  # This should have been validated already.
-    try:
-        resource_id = base64.urlsafe_b64decode(resource_id).decode(
-            "utf-8"
-        )  # Un-Base64/URL quote the Resource ID
-    except Exception as exc:
-        raise InvalidUniqueResourceIdException(
-            f"Resource: {unique_resource_identifier} has an invalid Base64 string in for the Resource ID field."
-        ) from exc
+async def get_resource_config(
+    resource_summary: ResourceSummary, select_fields: list = None, config_client=None
+) -> dict:
+    tenant = resource_summary.tenant
+    arn = resource_summary.arn
+    account = resource_summary.account
+    region = resource_summary.region if resource_summary.region else config.region
+    if not config_client:
+        config_client = get_config_client(tenant, account, region)
 
-    # If we are pulling from a global resource, then we need to override the region to where we are collecting global resources:
-    if region == "global":
-        region = self.configuration.global_resource_query_region  # noqa
-
-    return account_id, region, resource_type, resource_id
+    select_fields = "*" if not select_fields else ", ".join(select_fields)
+    response = config_client.select_resource_config(
+        Expression=f"SELECT {select_fields} WHERE arn = '{arn}';", Limit=1
+    )
+    if results := response.get("Results", None):
+        return un_wrap_json(results[0])
 
 
-def get_resource_history(tenant, account_id, region, resource_type, resource_id):
-    """Loop to fetch a proper amount of AWS Config resource histories.
+async def get_resource_history(
+    resource_summary: ResourceSummary, include_relationships: bool = True
+) -> list[dict]:
+    """Retrieve all config changes for a given resource with the ability to also include config changes for related resources"""
 
-    Note: This will raise exceptions and will need to be handled by the function that calls this."""
-    config_client = boto3_cached_conn(
-        "config",
-        tenant,
-        None,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", tenant)
-        .with_query({"account_id": account_id})
-        .first.name,
-        region=region,
-        sts_client_kwargs=dict(
-            region_name=config.region,
-            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-        ),
-        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-        session_name=sanitize_session_name("noq_aws_config_query"),
+    async def _get_resource_history(resourceId, resourceType, **kwargs):
+        resource_config_changes = []
+        config_args = {
+            "resourceId": resourceId,
+            "resourceType": resourceType,
+            "limit": 10,
+        }
+
+        while True:
+            api_response = await aio_wrapper(
+                config_client.get_resource_config_history, **config_args
+            )
+            if not api_response["configurationItems"]:
+                api_response[
+                    "nextToken"
+                ] = None  # Blank out the nextToken since AWS Config likes to keep returning it :/
+                return resource_config_changes
+
+            resource_config_changes.extend(
+                [
+                    un_wrap_json(config_change)
+                    for config_change in api_response["configurationItems"]
+                ]
+            )
+
+            if api_response.get("nextToken"):
+                config_args["nextToken"] = api_response["nextToken"]
+            else:
+                return resource_config_changes
+
+    account = resource_summary.account
+    region = resource_summary.region if resource_summary.region else config.region
+    tenant = resource_summary.tenant
+    config_client = get_config_client(tenant, account, region)
+    resource_details = await get_resource_config(
+        resource_summary, ["relationships", "resourceId", "resourceType"], config_client
     )
 
-    config_args = {
-        "resourceType": resource_type,
-        "resourceId": resource_id,
-        "limit": 25,
-        "account_number": account_id,
-        "region": region,
-        "assume_role": "",
-        "session_name": "noq_aws_config_timeline",
-        "sts_client_kwargs": {
-            "endpoint_url": f"https://sts.{region}.amazonaws.com",
-            "region_name": region,
-        },
-        # For STS V2 tokens
-    }
-
-    # You shouldn't get both a revision_id and a next_page (verified by the API)
-    if revision_id:
-        config_args.update({"earlierTime": before, "laterTime": after})
-    elif next_page:
-        config_args["nextToken"] = next_page
-
-    configuration_items = []
-    while True:
-        api_response = config_client.get_resource_config_history(**config_args)
-
-        # Did we get any results?
-        if not api_response["configurationItems"]:
-            api_response[
-                "nextToken"
-            ] = None  # Blank out the nextToken since AWS Config likes to keep returning it :/
-            break
-
-        configuration_items += api_response["configurationItems"]
-
-        # If we have more results, we are only done if we have at least "max_items" items in our list:
-        if api_response.get("nextToken") and len(configuration_items) < max_items:
-            config_args["nextToken"] = api_response["nextToken"]
-
-        # If we didn't get any more pages, or we got more than 5 results, then we are done:
-        else:
-            break  # pragma: no cover  (this is actually covered but not seen by coverage for some reason...)
-    return api_response, configuration_items
-
-    # Add in revision ID info if needed (need to subtract by 1 second so that it's included in the result):
-    if revision_id:
-        config_args.update(
-            {
-                "earlierTime": datetime.datetime.fromisoformat(start_revision_id)
-                - datetime.timedelta(seconds=1)
-            }
+    if include_relationships:
+        all_resources = [
+            related_resource
+            for related_resource in resource_details.pop("relationships", [])
+        ]
+        all_resources.append(resource_details)
+        configuration_changes = await asyncio.gather(
+            *[_get_resource_history(**resource) for resource in all_resources]
         )
-    # get_resource_config_history
-    pass
+        configuration_changes = list(chain.from_iterable(configuration_changes))
+    else:
+        configuration_changes = await _get_resource_history(**resource_details)
+
+    return sorted(
+        configuration_changes,
+        key=lambda x: x["configurationItemCaptureTime"],
+        reverse=True,
+    )

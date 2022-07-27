@@ -43,6 +43,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
 from common.aws.iam.role.models import IAMRole
+from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
@@ -52,7 +53,6 @@ from common.lib.account_indexers import (
     get_account_id_to_name_mapping,
 )
 from common.lib.assume_role import boto3_cached_conn
-from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_tenant
 from common.lib.aws.cloudtrail import CloudTrail
@@ -1967,7 +1967,7 @@ def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict
         "dev",
         "test",
     ]:
-        results = aws_config.query(
+        results = execute_query(
             config.get_tenant_specific_key(
                 "cache_all_resources_from_aws_config.aws_config.all_resources_query",
                 tenant,
