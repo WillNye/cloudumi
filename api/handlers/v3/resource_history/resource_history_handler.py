@@ -1,9 +1,9 @@
+from common.aws.service_config.utils import get_resource_history
+from common.aws.utils import ResourceSummary
 from common.config import config
 from common.exceptions.exceptions import MustBeFte
 from common.handlers.base import BaseHandler
 from common.models import WebResponse
-from common.aws.utils import ResourceSummary
-from common.aws.service_config.utils import get_resource_history
 
 log = config.get_logger()
 

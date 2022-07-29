@@ -45,7 +45,7 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.plugins import get_plugin_by_name
-from common.lib.redis import RedisHandler, redis_hgetex, redis_hsetex
+from common.lib.redis import redis_hgetex, redis_hsetex
 from common.models import (
     ExtendedRequestModel,
     OrgAccount,

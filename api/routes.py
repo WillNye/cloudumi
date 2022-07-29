@@ -102,6 +102,9 @@ from api.handlers.v3.auth.sso import (
 )
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
+from api.handlers.v3.resource_history.resource_history_handler import (
+    ResourceHistoryHandler,
+)
 from api.handlers.v3.services.aws.account import (
     HubAccountConfigurationCrudHandler,
     OrgAccountConfigurationCrudHandler,
@@ -132,7 +135,6 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
-from api.handlers.v3.resource_history.resource_history_handler import ResourceHistoryHandler
 from common.config import config
 from common.lib.sentry import before_send_event
 

@@ -2,10 +2,9 @@ import asyncio
 import base64
 import sys
 from itertools import chain
-from typing import List, Optional
+from typing import List
 
 import sentry_sdk
-from botocore.exceptions import ClientError
 
 import common.lib.noq_json as json
 from common.aws.iam.policy.utils import batch_get_policy_versions, is_tenant_policy
@@ -13,7 +12,6 @@ from common.aws.iam.utils import get_tenant_iam_conn
 from common.aws.utils import ResourceSummary, get_url_for_resource
 from common.config import config
 from common.config.models import ModelAdapter
-from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
@@ -48,18 +46,12 @@ def get_config_client(tenant: str, account: str, region: str = config.region):
     )
 
 
-async def execute_query(
-    query: str,
-    tenant: str,
-    account_id: str
-) -> List:
+async def execute_query(query: str, tenant: str, account_id: str) -> List:
     async def _execute_query(region: str):
         resources_for_region = []
         try:
             config_client = get_config_client(tenant, account_id, region)
-            response = config_client.select_resource_config(
-                Expression=query, Limit=100
-            )
+            response = config_client.select_resource_config(Expression=query, Limit=100)
             for r in response.get("Results", []):
                 resources_for_region.append(json.loads(r))
             # Query Config for a specific account in all regions we care about
@@ -90,9 +82,18 @@ async def execute_query(
     available_regions = session.get_available_regions("config")
     excluded_regions = config.get(
         "_global_.api_protect.exclude_regions",
-        ["af-south-1", "ap-east-1", "ap-southeast-3", "ap-northeast-3", "eu-south-1", "me-south-1"],
+        [
+            "af-south-1",
+            "ap-east-1",
+            "ap-southeast-3",
+            "ap-northeast-3",
+            "eu-south-1",
+            "me-south-1",
+        ],
     )
-    resources = await asyncio.gather(*[_execute_query(x) for x in available_regions if x not in excluded_regions])
+    resources = await asyncio.gather(
+        *[_execute_query(x) for x in available_regions if x not in excluded_regions]
+    )
     return list(chain.from_iterable(resources))
 
 
