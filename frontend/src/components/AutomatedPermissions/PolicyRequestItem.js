@@ -32,19 +32,9 @@ const PolicyRequestItem = ({
   const { error, success } = useToast()
 
   const [existingPolicy, setExistingPolicy] = useState({})
-  // const previousPolicyRef = useRef()
-  // const previousPolicy = previousPolicyRef.current;
-  // if (! _.isEqual(policy, previousPolicy) && ! _.isEqual(policy, existingPolicy)) {
-  //   setExistingPolicy(policy)
-  //   console.log('setExistingPolicy', policy)
-  // }
 
   useEffect(() => {
     setExistingPolicy(policyRequest.policy || {})
-    console.log(`setExistingPolicy ${policyRequest.policy}`)
-    console.log(
-      `statement_action: ${policyRequest.policy.Statement[0].Action[0]}`
-    )
   }, [policyRequest.policy])
 
   const cantEditPolicy = APPLIED_POLICY_STATUSES.includes(policyRequest.status)
