@@ -25,6 +25,7 @@ py_library(
         "//api/handlers/v3/downloads:src",
         "//api/handlers/v3/identity:src",
         "//api/handlers/v3/integrations:src",
+        "//api/handlers/v3/resource_history:src",
         "//api/handlers/v3/services:src",
         "//api/handlers/v3/services/aws:src",
         "//api/handlers/v3/slack:src",
