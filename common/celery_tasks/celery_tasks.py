@@ -1964,14 +1964,13 @@ def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict
         "dev",
         "test",
     ]:
-        results = execute_query(
+        results = await execute_query(
             config.get_tenant_specific_key(
                 "cache_all_resources_from_aws_config.aws_config.all_resources_query",
                 tenant,
                 "select * where accountId = '{account_id}'",
             ).format(account_id=account_id),
             tenant,
-            use_aggregator=False,
             account_id=account_id,
         )
 

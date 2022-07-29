@@ -16,7 +16,6 @@ from common.aws.iam.policy.utils import (
     should_exclude_policy_from_comparison,
 )
 from common.aws.iam.role.config import get_active_tear_users_tag
-from common.aws.service_config.utils import execute_query
 from common.aws.utils import get_resource_account, get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
@@ -1393,84 +1392,6 @@ def get_aws_principal_owner(role_details: Dict[str, Any], tenant: str) -> Option
             if role_tag["Key"] == owner_tag_name:
                 return role_tag["Value"]
     return owner
-
-
-async def resource_arn_known_in_aws_config(
-    resource_arn: str,
-    tenant: str,
-    run_query: bool = True,
-    run_query_with_aggregator: bool = True,
-) -> bool:
-    """
-    Determines if the resource ARN is known in AWS Config. AWS config does not store all resource
-    types, nor will it account for cross-organizational resources, so the result of this function shouldn't be used
-    to determine if a resource "exists" or not.
-
-    A more robust approach is determining the resource type and querying AWS API directly to see if it exists, but this
-    requires a lot of code.
-
-    Note: This data may be stale by ~ 1 hour and 15 minutes (local results caching + typical AWS config delay)
-
-    :param resource_arn: ARN of the resource we want to look up
-    :param run_query: Should we run an AWS config query if we're not able to find the resource in our AWS Config cache?
-    :param run_query_with_aggregator: Should we run the AWS Config query on our AWS Config aggregator?
-    :return:
-    """
-    red = RedisHandler().redis_sync(tenant)
-    expiration_seconds: int = config.get_tenant_specific_key(
-        "aws.resource_arn_known_in_aws_config.expiration_seconds",
-        tenant,
-        3600,
-    )
-    known_arn = False
-    if not resource_arn.startswith("arn:aws:"):
-        return known_arn
-
-    resources_from_aws_config_redis_key: str = config.get_tenant_specific_key(
-        "aws_config_cache.redis_key",
-        tenant,
-        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
-    )
-
-    if red.exists(resources_from_aws_config_redis_key) and red.hget(
-        resources_from_aws_config_redis_key, resource_arn
-    ):
-        return True
-
-    resource_arn_exists_temp_matches_redis_key: str = config.get_tenant_specific_key(
-        "resource_arn_known_in_aws_config.redis.temp_matches_key",
-        tenant,
-        f"{tenant}_TEMP_QUERIED_RESOURCE_ARN_CACHE",
-    )
-
-    # To prevent repetitive queries against AWS config, first see if we've already ran a query recently
-    result = await redis_hgetex(
-        resource_arn_exists_temp_matches_redis_key, resource_arn, tenant
-    )
-    if result:
-        return result["known"]
-
-    if not run_query:
-        return False
-
-    r = await aio_wrapper(
-        execute_query,
-        f"select arn where arn = '{resource_arn}'",
-        tenant,
-        use_aggregator=run_query_with_aggregator,
-    )
-    if r:
-        known_arn = True
-    # To prevent future repetitive queries on AWS Config, set our result in Redis with an expiration
-    await redis_hsetex(
-        resource_arn_exists_temp_matches_redis_key,
-        resource_arn,
-        {"known": known_arn},
-        expiration_seconds,
-        tenant,
-    )
-
-    return known_arn
 
 
 async def simulate_iam_principal_action(

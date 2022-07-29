@@ -41,105 +41,59 @@ def get_config_client(tenant: str, account: str, region: str = config.region):
         region=region,
         sts_client_kwargs=dict(
             region_name=region,
-            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            endpoint_url=f"https://sts.{region}.amazonaws.com",
         ),
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         session_name=sanitize_session_name("noq_aws_config_query"),
     )
 
 
-def execute_query(
+async def execute_query(
     query: str,
     tenant: str,
-    use_aggregator: bool = True,
-    account_id: Optional[str] = None,
+    account_id: str
 ) -> List:
-    resources = []
-    session = get_session_for_tenant(tenant)
-    if use_aggregator:
-        config_client = session.client(
-            "config",
-            region_name=config.region,
-            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-        )
-        configuration_aggregator_name: str = config.get_tenant_specific_key(
-            "aws_config.configuration_aggregator.name", tenant
-        ).format(region=config.region)
-        if not configuration_aggregator_name:
-            raise MissingConfigurationValue("Invalid configuration for aws_config")
-        response = config_client.select_aggregate_resource_config(
-            Expression=query,
-            ConfigurationAggregatorName=configuration_aggregator_name,
-            Limit=100,
-        )
-        for r in response.get("Results", []):
-            resources.append(json.loads(r))
-        while response.get("NextToken"):
-            response = config_client.select_aggregate_resource_config(
-                Expression=query,
-                ConfigurationAggregatorName=configuration_aggregator_name,
-                Limit=100,
-                NextToken=response["NextToken"],
+    async def _execute_query(region: str):
+        resources_for_region = []
+        try:
+            config_client = get_config_client(tenant, account_id, region)
+            response = config_client.select_resource_config(
+                Expression=query, Limit=100
             )
             for r in response.get("Results", []):
-                resources.append(json.loads(r))
-        return resources
-    else:  # Don't use Config aggregator and instead query all the regions on an account
-        available_regions = session.get_available_regions("config")
-        excluded_regions = config.get(
-            "_global_.api_protect.exclude_regions",
-            ["af-south-1", "ap-east-1", "ap-northeast-3", "eu-south-1", "me-south-1"],
-        )
-        regions = [x for x in available_regions if x not in excluded_regions]
-        for region in regions:
-            config_client = boto3_cached_conn(
-                "config",
-                tenant,
-                None,
-                account_number=account_id,
-                assume_role=ModelAdapter(SpokeAccount)
-                .load_config("spoke_accounts", tenant)
-                .with_query({"account_id": account_id})
-                .first.name,
-                region=region,
-                sts_client_kwargs=dict(
-                    region_name=config.region,
-                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-                ),
-                client_kwargs=config.get_tenant_specific_key(
-                    "boto3.client_kwargs", tenant, {}
-                ),
-                session_name=sanitize_session_name("noq_aws_config_query"),
-            )
-            try:
+                resources_for_region.append(json.loads(r))
+            # Query Config for a specific account in all regions we care about
+            while response.get("NextToken"):
                 response = config_client.select_resource_config(
-                    Expression=query, Limit=100
+                    Expression=query, Limit=100, NextToken=response["NextToken"]
                 )
                 for r in response.get("Results", []):
-                    resources.append(json.loads(r))
-                # Query Config for a specific account in all regions we care about
-                while response.get("NextToken"):
-                    response = config_client.select_resource_config(
-                        Expression=query, Limit=100, NextToken=response["NextToken"]
-                    )
-                    for r in response.get("Results", []):
-                        resources.append(json.loads(r))
-            except ClientError as e:
-                log.error(
-                    {
-                        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                        "message": "Failed to query AWS Config",
-                        "query": query,
-                        "use_aggregator": use_aggregator,
-                        "account_id": account_id,
-                        "region": region,
-                        "error": str(e),
-                        "tenant": tenant,
-                    },
-                    exc_info=True,
-                )
-                sentry_sdk.capture_exception()
-        return resources
+                    resources_for_region.append(json.loads(r))
+        except Exception as e:
+            log.error(
+                {
+                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+                    "message": "Failed to query AWS Config",
+                    "query": query,
+                    "account_id": account_id,
+                    "region": region,
+                    "error": str(e),
+                    "tenant": tenant,
+                },
+                exc_info=True,
+            )
+            sentry_sdk.capture_exception()
+        finally:
+            return resources_for_region
+
+    session = get_session_for_tenant(tenant)
+    available_regions = session.get_available_regions("config")
+    excluded_regions = config.get(
+        "_global_.api_protect.exclude_regions",
+        ["af-south-1", "ap-east-1", "ap-southeast-3", "ap-northeast-3", "eu-south-1", "me-south-1"],
+    )
+    resources = await asyncio.gather(*[_execute_query(x) for x in available_regions if x not in excluded_regions])
+    return list(chain.from_iterable(resources))
 
 
 def get_fetch_parameters_resource_history(

@@ -162,9 +162,12 @@ class PoliciesHandler(BaseAPIV2Handler):
                 raise
 
         if markdown:
+            policies = policies[0:limit]
+            resource_summaries = await ResourceSummary.bulk_set(tenant, [p["arn"] for p in policies])
+            resource_summary_map = {rs.arn: rs for rs in resource_summaries}
             policies_to_write = []
             for policy in policies[0:limit]:
-                resource_summary = await ResourceSummary.set(tenant, policy.get("arn"))
+                resource_summary = resource_summary_map[policy.get("arn")]
                 try:
                     url = await get_url_for_resource(resource_summary)
                 except ResourceNotFound:
