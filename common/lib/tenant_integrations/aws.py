@@ -880,6 +880,11 @@ async def handle_tenant_integration_queue(
                     args=[account_id_for_role],
                     kwargs={"tenant": tenant},
                 )
+                celery_app.send_task(
+                    "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task",
+                    kwargs={"tenant": tenant},
+                    countdown=120,
+                )
 
             except Exception:
                 raise
