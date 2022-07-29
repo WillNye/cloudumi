@@ -132,6 +132,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
+from api.handlers.v3.resource_history.resource_history_handler import ResourceHistoryHandler
 from common.config import config
 from common.lib.sentry import before_send_event
 
@@ -230,6 +231,10 @@ def make_app(jwt_validator=None):
         (r"/noauth/v1/challenge_poller/([a-zA-Z0-9_-]+)", ChallengePollerHandler),
         (r"/api/v2/audit/roles", AuditRolesHandler),
         (r"/api/v2/audit/roles/(\d{12})/(.*)/access", AuditRolesAccessHandler),
+        (
+            r"/api/v3/resource/history/(.*)",
+            ResourceHistoryHandler,
+        ),
         (
             r"/api/v3/automatic_policy_request_handler/aws/?",
             AutomaticPolicyRequestHandler,
