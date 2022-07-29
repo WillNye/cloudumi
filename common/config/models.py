@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Type, Union
 
 from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
@@ -10,7 +10,9 @@ log = config.get_logger()
 
 
 class ModelAdapter:
-    def __init__(self, pydantic_model_class: BaseModel, updated_by: str = UPDATED_BY):
+    def __init__(
+        self, pydantic_model_class: Type[BaseModel], updated_by: str = UPDATED_BY
+    ):
         self._model_class = pydantic_model_class
         self._model = None
         self._model_array = list()

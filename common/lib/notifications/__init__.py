@@ -27,6 +27,9 @@ async def send_email_via_ses(
     sending_app: str = "noq",
     charset: str = "UTF-8",
 ) -> None:
+    if config.is_development:  # Don't send emails on local environment to reduce noise
+        return
+
     region: str = config.get_tenant_specific_key("ses.region", tenant, config.region)
     session = get_session_for_tenant(tenant)
     client = session.client(

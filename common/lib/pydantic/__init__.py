@@ -42,7 +42,9 @@ class BaseModel(PydanticBaseModel):
 
         return field_type
 
-    def dict(self, exclude_secrets=True, **kwargs):
+    def dict(
+        self, exclude_secrets=True, exclude_none=True, exclude_unset=False, **kwargs
+    ):
         return_val = dict()
 
         # Iterate model fields
@@ -53,6 +55,11 @@ class BaseModel(PydanticBaseModel):
             if isinstance(field, ModelField):
                 if exclude_secrets and field.field_info.extra.get("is_secret", False):
                     continue
+
+            if exclude_none and field_val is None:
+                continue
+            elif exclude_unset and field_name not in self.__fields_set__:
+                continue
 
             # Get base field type accounting for things like union, list, set, field types
             field_type = self.get_field_type(field)

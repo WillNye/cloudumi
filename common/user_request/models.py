@@ -153,7 +153,9 @@ class IAMRequest(NoqModel):
             return
 
         principal_arn = principal.get("principal_arn")
-        principal_summary = await ResourceSummary.set(self.tenant, principal_arn)
+        principal_summary = await ResourceSummary.set(
+            self.tenant, principal_arn, region_required=True
+        )
 
         template_env = Environment(
             loader=FileSystemLoader("common/templates"),
@@ -182,7 +184,7 @@ class IAMRequest(NoqModel):
             if get_change_arn(change) != principal_arn:
                 try:
                     resource_summary = await ResourceSummary.set(
-                        self.tenant, change["arn"]
+                        self.tenant, change["arn"], region_required=True
                     )
                 except Exception as err:
                     # Unable to resolve the resource details for the change so set to read only

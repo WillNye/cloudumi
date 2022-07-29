@@ -7,7 +7,7 @@ from typing import Dict, Iterable, Mapping, Optional, Sequence, Text, Type, Unio
 import boto3
 from boto3.dynamodb.types import Binary  # noqa
 from cloudaux import get_iso_string
-from pynamodax.attributes import MapAttribute
+from pynamodax.attributes import DynamicMapAttribute
 from pynamodax.connection.base import Connection
 from pynamodax.connection.dax import DaxClient
 from pynamodax.connection.table import MetaTable, TableConnection
@@ -204,7 +204,7 @@ class GlobalConnection(Connection):
         self.host = host
         self._local = local()
 
-        if not config.is_test_environment():
+        if not config.is_test_environment:
             session = boto3_cached_conn(
                 None,
                 f"_global_.accounts.{aws_account_name}",
@@ -317,7 +317,7 @@ class GlobalTableConnection(TableConnection):
 
 class GlobalNoqModel(NoqModel):
     @classmethod
-    def _get_connection(cls) -> TableConnection:
+    def _get_connection(cls) -> GlobalTableConnection:
         """
         Returns a (cached) connection
         """
@@ -371,7 +371,7 @@ class GlobalNoqModel(NoqModel):
         return "tenant_data"
 
 
-class NoqMapAttribute(MapAttribute):
+class NoqMapAttribute(DynamicMapAttribute):
     @classmethod
     def is_raw(cls):
         return cls == NoqMapAttribute

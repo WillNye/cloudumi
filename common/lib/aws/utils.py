@@ -1,24 +1,23 @@
 import asyncio
-import copy
 import fnmatch
 import json
 import re
 import sys
-from collections import defaultdict
-from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import sentry_sdk
-from botocore.exceptions import ClientError, ParamValidationError
-from deepdiff import DeepDiff
-from parliament import analyze_policy_string, enhance_finding
+from botocore.exceptions import ClientError
 from policy_sentry.util.arns import parse_arn
 
+from common.aws.iam.policy.utils import (
+    fetch_managed_policy_details,
+    get_resource_policy,
+    should_exclude_policy_from_comparison,
+)
 from common.aws.iam.role.config import get_active_tear_users_tag
-from common.aws.iam.user.utils import fetch_iam_user
 from common.aws.service_config.utils import execute_query
-from common.aws.utils import get_resource_tag
+from common.aws.utils import get_resource_account, get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -33,7 +32,6 @@ from common.lib.account_indexers.aws_organizations import (
 )
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.iam import get_managed_policy_document, get_policy
 from common.lib.aws.s3 import (
     get_bucket_location,
     get_bucket_policy,
@@ -41,16 +39,14 @@ from common.lib.aws.s3 import (
     get_bucket_tagging,
 )
 from common.lib.aws.sanitize import sanitize_session_name
-from common.lib.aws.session import get_session_for_tenant
 from common.lib.aws.sns import get_topic_attributes
 from common.lib.aws.sqs import get_queue_attributes, get_queue_url, list_queue_tags
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
-from common.lib.generic import sort_dict
 from common.lib.plugins import get_plugin_by_name
-from common.lib.redis import RedisHandler, redis_hget, redis_hgetex, redis_hsetex
+from common.lib.redis import RedisHandler, redis_hgetex, redis_hsetex
 from common.models import (
     ExtendedRequestModel,
     OrgAccount,
@@ -68,176 +64,27 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 PERMISSIONS_SEPARATOR = "||"
 
 
-async def get_resource_policy(
-    account: str, resource_type: str, name: str, region: str, tenant: str, user: str
-):
-    try:
-        details = await fetch_resource_details(
-            account, resource_type, name, region, tenant, user
-        )
-    except ClientError:
-        # We don't have access to this resource, so we can't get the policy.
-        details = {}
-
-    # Default policy
-    default_policy = {"Version": "2012-10-17", "Statement": []}
-
-    # When NoSuchBucketPolicy, the above method returns {"Policy": {}}, so we default to blank policy
-    if "Policy" in details and "Statement" not in details["Policy"]:
-        details = {"Policy": default_policy}
-
-    # Default to a blank policy
-    return details.get("Policy", default_policy)
-
-
-async def get_resource_policies(
-    principal_arn: str,
-    resource_actions: Dict[str, Dict[str, Any]],
-    account: str,
-    tenant: str,
-) -> Tuple[List[Dict], bool]:
-    resource_policies: List[Dict] = []
-    cross_account_request: bool = False
-    for resource_name, resource_info in resource_actions.items():
-        resource_account: str = resource_info.get("account", "")
-        if resource_account and resource_account != account:
-            # This is a cross-account request. Might need a resource policy.
-            cross_account_request = True
-            resource_type: str = resource_info.get("type", "")
-            resource_region: str = resource_info.get("region", "")
-            old_policy = await get_resource_policy(
-                resource_account,
-                resource_type,
-                resource_name,
-                resource_region,
-                tenant,
-                None,
-            )
-            arns = resource_info.get("arns", [])
-            actions = resource_info.get("actions", [])
-            new_policy = await generate_updated_resource_policy(
-                old_policy, principal_arn, arns, actions, ""
-            )
-
-            result = {
-                "resource": resource_name,
-                "account": resource_account,
-                "type": resource_type,
-                "region": resource_region,
-                "policy_document": new_policy,
-            }
-            resource_policies.append(result)
-
-    return resource_policies, cross_account_request
-
-
-async def generate_updated_resource_policy(
-    existing: Dict,
-    principal_arn: str,
-    resource_arns: List[str],
-    actions: List[str],
-    policy_sid: str,
-    include_resources: bool = True,
-) -> Dict:
-    """
-
-    :param existing: Dict: the current existing policy document
-    :param principal_arn: the Principal ARN which wants access to the resource
-    :param resource_arns: the Resource ARNs
-    :param actions: The list of Actions to be added
-    :param include_resources: whether to include resources in the new statement or not
-    :return: Dict: generated updated resource policy that includes a new statement for the listed actions
-    """
-    policy_dict = deepcopy(existing)
-    new_statement = {
-        "Effect": "Allow",
-        "Principal": {"AWS": [principal_arn]},
-        "Action": list(set(actions)),
-        "Sid": policy_sid,
-    }
-    if include_resources:
-        new_statement["Resource"] = resource_arns
-    policy_dict["Statement"].append(new_statement)
-    return policy_dict
-
-
 async def fetch_resource_details(
     account_id: str,
-    resource_type: str,
+    service: str,
     resource_name: str,
     region: str,
     tenant,
     user,
     path: str = None,
 ) -> dict:
-    if resource_type == "s3":
+    if service == "s3":
         return await fetch_s3_bucket(account_id, resource_name, tenant, user)
-    elif resource_type == "sqs":
+    elif service == "sqs":
         return await fetch_sqs_queue(account_id, region, resource_name, tenant, user)
-    elif resource_type == "sns":
+    elif service == "sns":
         return await fetch_sns_topic(account_id, region, resource_name, tenant, user)
-    elif resource_type == "managed_policy":
+    elif service == "managed_policy":
         return await fetch_managed_policy_details(
             account_id, resource_name, tenant, user, path
         )
     else:
         return {}
-
-
-async def fetch_managed_policy_details(
-    account_id: str, resource_name: str, tenant: str, user: str, path: str = None
-) -> Optional[Dict]:
-    from common.lib.policies import get_aws_config_history_url_for_resource
-
-    if not tenant:
-        raise Exception("tenant not configured")
-    if path:
-        resource_name = path + "/" + resource_name
-    policy_arn: str = f"arn:aws:iam::{account_id}:policy/{resource_name}"
-    result: Dict = {}
-    result["Policy"] = await aio_wrapper(
-        get_managed_policy_document,
-        policy_arn=policy_arn,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", tenant)
-        .with_query({"account_id": account_id})
-        .first.name,
-        region=config.region,
-        retry_max_attempts=2,
-        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-        tenant=tenant,
-        user=user,
-    )
-    policy_details = await aio_wrapper(
-        get_policy,
-        policy_arn=policy_arn,
-        account_number=account_id,
-        assume_role=ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", tenant)
-        .with_query({"account_id": account_id})
-        .first.name,
-        region=config.region,
-        retry_max_attempts=2,
-        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-        tenant=tenant,
-        user=user,
-    )
-
-    try:
-        result["TagSet"] = policy_details["Policy"]["Tags"]
-    except KeyError:
-        result["TagSet"] = []
-    result["config_timeline_url"] = await get_aws_config_history_url_for_resource(
-        account_id,
-        policy_arn,
-        resource_name,
-        "AWS::IAM::ManagedPolicy",
-        tenant,
-        region=config.region,
-    )
-
-    return result
 
 
 async def fetch_sns_topic(
@@ -736,31 +583,6 @@ async def fetch_iam_user_details(account_id, iam_user_name, tenant, user):
     return iam_user
 
 
-def get_region_from_arn(arn):
-    """Given an ARN, return the region in the ARN, if it is available. In certain cases like S3 it is not"""
-    result = parse_arn(arn)
-    # Support S3 buckets with no values under region
-    if result["region"] is None:
-        result = ""
-    else:
-        result = result["region"]
-    return result
-
-
-def get_resource_from_arn(arn):
-    """Given an ARN, parse it according to ARN namespacing and return the resource. See
-    http://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html for more details on ARN namespacing.
-    """
-    result = parse_arn(arn)
-    return result["resource"]
-
-
-def get_service_from_arn(arn):
-    """Given an ARN string, return the service"""
-    result = parse_arn(arn)
-    return result["service"]
-
-
 async def get_enabled_regions_for_account(account_id: str, tenant: str) -> Set[str]:
     """
     Returns a list of regions enabled for an account based on an EC2 Describe Regions call. Can be overridden with a
@@ -797,87 +619,6 @@ async def get_enabled_regions_for_account(account_id: str, tenant: str) -> Set[s
 
     regions = await aio_wrapper(client.describe_regions)
     return {r["RegionName"] for r in regions["Regions"]}
-
-
-async def access_analyzer_validate_policy(
-    policy: str, log_data, tenant, policy_type: str = "IDENTITY_POLICY"
-) -> List[Dict[str, Any]]:
-    session = get_session_for_tenant(tenant)
-    try:
-        enhanced_findings = []
-        client = await aio_wrapper(
-            session.client,
-            "accessanalyzer",
-            region_name=config.region,
-            **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-        )
-        access_analyzer_response = await aio_wrapper(
-            client.validate_policy,
-            policyDocument=policy,
-            policyType=policy_type,  # Noq only supports identity policy analysis currently
-        )
-        for finding in access_analyzer_response.get("findings", []):
-            for location in finding.get("locations", []):
-                enhanced_findings.append(
-                    {
-                        "issue": finding.get("issueCode"),
-                        "detail": "",
-                        "location": {
-                            "line": location.get("span", {})
-                            .get("start", {})
-                            .get("line"),
-                            "column": location.get("span", {})
-                            .get("start", {})
-                            .get("column"),
-                            "filepath": None,
-                        },
-                        "severity": finding.get("findingType"),
-                        "title": finding.get("issueCode"),
-                        "description": finding.get("findingDetails"),
-                    }
-                )
-        return enhanced_findings
-    except (ParamValidationError, ClientError) as e:
-        log.error(
-            {
-                **log_data,
-                "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                "message": "Error retrieving Access Analyzer data",
-                "policy": policy,
-                "error": str(e),
-            }
-        )
-        sentry_sdk.capture_exception()
-        return []
-
-
-async def parliament_validate_iam_policy(policy: str) -> List[Dict[str, Any]]:
-    analyzed_policy = await aio_wrapper(analyze_policy_string, policy)
-    findings = analyzed_policy.findings
-
-    enhanced_findings = []
-
-    for finding in findings:
-        enhanced_finding = await aio_wrapper(enhance_finding, finding)
-        enhanced_findings.append(
-            {
-                "issue": enhanced_finding.issue,
-                "detail": json.dumps(enhanced_finding.detail),
-                "location": enhanced_finding.location,
-                "severity": enhanced_finding.severity,
-                "title": enhanced_finding.title,
-                "description": enhanced_finding.description,
-            }
-        )
-    return enhanced_findings
-
-
-async def validate_iam_policy(policy: str, log_data: Dict, tenant: str):
-    parliament_findings: List = await parliament_validate_iam_policy(policy)
-    access_analyzer_findings: List = await access_analyzer_validate_policy(
-        policy, log_data, tenant, policy_type="IDENTITY_POLICY"
-    )
-    return parliament_findings + access_analyzer_findings
 
 
 async def get_all_scps(
@@ -1137,138 +878,6 @@ async def get_scps_for_account_or_ou(
                 scps_for_account.append(scp)
     scps = ServiceControlPolicyArrayModel(__root__=scps_for_account)
     return scps
-
-
-async def minimize_iam_policy_statements(
-    inline_iam_policy_statements: List[Dict], disregard_sid=True
-) -> List[Dict]:
-    """
-    Minimizes a list of inline IAM policy statements.
-
-    1. Policies that are identical except for the resources will have the resources merged into a single statement
-    with the same actions, effects, conditions, etc.
-
-    2. Policies that have an identical resource, but different actions, will be combined if the rest of the policy
-    is identical.
-    :param inline_iam_policy_statements: A list of IAM policy statement dictionaries
-    :return: A potentially more compact list of IAM policy statement dictionaries
-    """
-    exclude_ids = []
-    minimized_statements = []
-
-    inline_iam_policy_statements = await normalize_policies(
-        inline_iam_policy_statements
-    )
-
-    for i in range(len(inline_iam_policy_statements)):
-        inline_iam_policy_statement = inline_iam_policy_statements[i]
-        if disregard_sid:
-            inline_iam_policy_statement.pop("Sid", None)
-        if i in exclude_ids:
-            # We've already combined this policy with another. Ignore it.
-            continue
-        for j in range(i + 1, len(inline_iam_policy_statements)):
-            if j in exclude_ids:
-                # We've already combined this policy with another. Ignore it.
-                continue
-            inline_iam_policy_statement_to_compare = inline_iam_policy_statements[j]
-            if disregard_sid:
-                inline_iam_policy_statement_to_compare.pop("Sid", None)
-            # Check to see if policy statements are identical except for a given element. Merge the policies
-            # if possible.
-            for element in [
-                "Resource",
-                "Action",
-                "NotAction",
-                "NotResource",
-                "NotPrincipal",
-            ]:
-                if not (
-                    inline_iam_policy_statement.get(element)
-                    or inline_iam_policy_statement_to_compare.get(element)
-                ):
-                    # This function won't handle `Condition`.
-                    continue
-                diff = DeepDiff(
-                    inline_iam_policy_statement,
-                    inline_iam_policy_statement_to_compare,
-                    ignore_order=True,
-                    exclude_paths=[f"root['{element}']"],
-                )
-                if not diff:
-                    exclude_ids.append(j)
-                    # Policy can be minimized
-                    inline_iam_policy_statement[element] = sorted(
-                        list(
-                            set(
-                                inline_iam_policy_statement[element]
-                                + inline_iam_policy_statement_to_compare[element]
-                            )
-                        )
-                    )
-                    break
-
-    for i in range(len(inline_iam_policy_statements)):
-        if i not in exclude_ids:
-            inline_iam_policy_statements[i] = sort_dict(inline_iam_policy_statements[i])
-            minimized_statements.append(inline_iam_policy_statements[i])
-    # TODO(cccastrapel): Intelligently combine actions and/or resources if they include wildcards
-    minimized_statements = await normalize_policies(minimized_statements)
-    return minimized_statements
-
-
-async def normalize_policies(policies: List[Any]) -> List[Any]:
-    """
-    Normalizes policy statements to ensure appropriate AWS policy elements are lists (such as actions and resources),
-    lowercase, and sorted. It will remove duplicate entries and entries that are superseded by other elements.
-    """
-
-    for policy in policies:
-        for element in [
-            "Resource",
-            "Action",
-            "NotAction",
-            "NotResource",
-            "NotPrincipal",
-        ]:
-            if not policy.get(element):
-                continue
-            if isinstance(policy.get(element), str):
-                policy[element] = [policy[element]]
-            # Policy elements can be lowercased, except for resources. Some resources
-            # (such as IAM roles) are case sensitive
-            if element in ["Resource", "NotResource", "NotPrincipal"]:
-                policy[element] = list(set(policy[element]))
-            else:
-                policy[element] = list(set([x.lower() for x in policy[element]]))
-            modified_elements = set()
-            for i in range(len(policy[element])):
-                matched = False
-                # Sorry for the magic. this is iterating through all elements of a list that aren't the current element
-                for compare_value in policy[element][:i] + policy[element][(i + 1) :]:
-                    if compare_value == policy[element][i]:
-                        matched = True
-                        break
-                    if compare_value == "*":
-                        matched = True
-                        break
-                    if (
-                        "*" not in compare_value
-                        and ":" in policy[element][i]
-                        and ":" in compare_value
-                    ):
-                        if (
-                            compare_value.split(":")[0]
-                            != policy[element][i].split(":")[0]
-                        ):
-                            continue
-                    if fnmatch.fnmatch(policy[element][i], compare_value):
-                        matched = True
-                        break
-                if not matched:
-                    modified_elements.add(policy[element][i])
-            policy[element] = sorted(modified_elements)
-    return policies
 
 
 def allowed_to_sync_role(
@@ -1713,6 +1322,8 @@ async def remove_expired_request_changes(
                 )
 
             elif resource_name == "user":
+                from common.aws.iam.user.utils import fetch_iam_user
+
                 await fetch_iam_user(
                     resource_account,
                     principal_arn,
@@ -1959,95 +1570,6 @@ async def simulate_iam_principal_action(
     return response["EvaluationResults"]
 
 
-async def get_iam_principal_owner(arn: str, aws: Any, tenant: str) -> Optional[str]:
-    from common.aws.iam.role.models import IAMRole
-
-    principal_details = {}
-    principal_type = await get_identity_type_from_arn(arn)
-    account_id = await get_account_id_from_arn(arn)
-    # trying to find principal for subsequent queries
-    if principal_type == "role":
-        principal_details = (await IAMRole.get(tenant, account_id, arn)).dict()
-    elif principal_type == "user":
-        principal_details = await fetch_iam_user(account_id, arn, tenant)
-    return principal_details.get("owner")
-
-
-async def get_resource_account(arn: str, tenant: str) -> str:
-    """Return the AWS account ID that owns a resource.
-
-    In most cases, this will pull the ID directly from the ARN.
-    If we are unsuccessful in pulling the account from ARN, we try to grab it from our resources cache
-    """
-    red = await RedisHandler().redis(tenant)
-    parsed_arn = parse_arn(arn)
-    resource_account = parsed_arn.get("account", "")
-    if resource_account:
-        return resource_account
-
-    resources_from_aws_config_redis_key: str = config.get_tenant_specific_key(
-        "aws_config_cache.redis_key",
-        tenant,
-        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
-    )
-
-    if not red.exists(resources_from_aws_config_redis_key):
-        # This will force a refresh of our redis cache if the data exists in S3
-        await retrieve_json_data_from_redis_or_s3(
-            redis_key=resources_from_aws_config_redis_key,
-            s3_bucket=config.get_tenant_specific_key(
-                "aws_config_cache_combined.s3.bucket", tenant
-            ),
-            s3_key=config.get_tenant_specific_key(
-                "aws_config_cache_combined.s3.file",
-                tenant,
-                "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
-            ),
-            redis_data_type="hash",
-            tenant=tenant,
-            default={},
-        )
-
-    resource_info = await redis_hget(resources_from_aws_config_redis_key, arn, tenant)
-    if resource_info:
-        return json.loads(resource_info).get("accountId", "")
-    elif "arn:aws:s3:::" in arn:
-        # Try to retrieve S3 bucket information from S3 cache. This is inefficient and we should ideally have
-        # retrieved this info from our AWS Config cache, but we've encountered problems with AWS Config historically
-        # that have necessitated this code.
-        s3_cache = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get_tenant_specific_key(
-                "redis.s3_buckets_key", tenant, f"{tenant}_S3_BUCKETS"
-            ),
-            redis_data_type="hash",
-            tenant=tenant,
-        )
-        search_bucket_name = arn.split(":")[-1]
-        for bucket_account_id, buckets in s3_cache.items():
-            buckets_j = json.loads(buckets)
-            if search_bucket_name in buckets_j:
-                return bucket_account_id
-    return ""
-
-
-async def should_exclude_policy_from_comparison(policy: Dict[str, Any]) -> bool:
-    """Ignores policies from comparison if we don't support them.
-
-    AWS IAM policies come in all shapes and sizes. We ignore policies that have Effect=Deny, or NotEffect (instead of Effect),
-    NotResource (instead of Resource), and NotAction (instead of Action).
-
-    :param policy: A policy dictionary, ie: {'Statement': [{'Action': 's3:*', 'Effect': 'Allow', 'Resource': '*'}]}
-    :return: Whether to exclude the policy from comparison or not.
-    """
-    if not policy.get("Effect") or policy["Effect"] == "Deny":
-        return True
-    if not policy.get("Resource"):
-        return True
-    if not policy.get("Action"):
-        return True
-    return False
-
-
 async def entry_in_entries(value: str, values_to_compare: List[str]) -> bool:
     """Returns True if value is included in values_to_compare, using wildcard matching.
 
@@ -2123,368 +1645,3 @@ async def is_already_allowed_by_other_policy(
                 continue
             return True
     return False
-
-
-async def combine_all_policy_statements(
-    policies: List[Dict[str, Any]]
-) -> List[Dict[str, Any]]:
-    """Takes a list of policies and combines them into a single list of policies. This is useful for combining inline
-    policies and managed policies into a single list of policies.
-
-    :param policies: A List of policies. IE: [{'Action': ['s3:*'], 'Effect': 'Allow', 'Resource': ['*']}, ...]
-    :return: a combined list of policies.
-    """
-    combined_policies = []
-    for policy in policies:
-        if isinstance(policy.get("Statement"), list):
-            for statement in policy["Statement"]:
-                combined_policies.append(statement)
-        else:
-            combined_policies.append(policy)
-    return combined_policies
-
-
-async def calculate_policy_changes(
-    identity: Dict[str, Any],
-    used_services: Set[str],
-    policy_type: str,
-    managed_policy_details: Dict[str, Any] = None,
-):
-    """Given the identity, the list of used_services (not permissions, but services like `s3`, `sqs`, etc), the policy type
-    (inline_policy or manage_policy), and the managed policy details (if applicable), this function will calculate the
-    changes that need to be made to the identity's policies to remove all unused services.
-
-    :param identity: Details about the AWS IAM Role or User.
-    :param used_services: A set or list of used services.
-    :param policy_type: Either inline_policy or manage_policy.
-    :param managed_policy_details: A dictionary of managed policy name to the default managed policy document, defaults to None.
-    :raises Exception: Raises an exception on validation error.
-    :return: Returns effective policy as-is, effective policy with unused services removed, and individual changes to a role's
-        list of internal policies.
-    """
-    if policy_type == "inline_policy":
-        identity_policy_list_name = "RolePolicyList"
-    elif policy_type == "managed_policy":
-        identity_policy_list_name = "AttachedManagedPolicies"
-    else:
-        raise Exception("Invalid policy type")
-    all_before_policy_statements = []
-    all_after_policy_statements = []
-    individual_role_policy_changes = []
-    for policy in identity["policy"].get(identity_policy_list_name, []):
-        if policy_type == "managed_policy":
-            before_policy_document = managed_policy_details[policy["PolicyName"]]
-        else:
-            before_policy_document = policy["PolicyDocument"]
-        computed_changes = {
-            "policy_type": policy_type,
-            "policy_name": policy["PolicyName"],
-            "before_policy_document": before_policy_document,
-        }
-        if policy_type == "managed_policy":
-            computed_changes["policy_arn"] = policy["PolicyArn"]
-        after_policy_statements = []
-        before_policy_document_copy = copy.deepcopy(before_policy_document)
-        for statement in before_policy_document_copy["Statement"]:
-            all_before_policy_statements.append(copy.deepcopy(statement))
-            new_actions = set()
-            new_resources = set()
-            if await should_exclude_policy_from_comparison(statement):
-                after_policy_statements.append(statement)
-                continue
-            if isinstance(statement["Action"], str):
-                statement["Action"] = [statement["Action"]]
-            for action in statement["Action"]:
-                if used_services and action == "*":
-                    for service in used_services:
-                        new_actions.add(f"{service}:*")
-                elif action.split(":")[0] in used_services:
-                    new_actions.add(action)
-            if isinstance(statement["Resource"], str):
-                statement["Resource"] = [statement["Resource"]]
-
-            for resource in statement["Resource"]:
-                if resource == "*":
-                    new_resources.add(resource)
-                elif resource.split(":")[2] in used_services:
-                    new_resources.add(resource)
-            if new_actions and new_resources:
-                statement["Action"] = list(new_actions)
-                statement["Resource"] = list(new_resources)
-                after_policy_statements.append(statement)
-                all_after_policy_statements.append(statement)
-                continue
-        if after_policy_statements:
-            computed_changes["after_policy_document"] = {
-                "Statement": after_policy_statements,
-            }
-            if before_policy_document.get("Version"):
-                computed_changes["after_policy_document"][
-                    "Version"
-                ] = before_policy_document["Version"]
-            individual_role_policy_changes.append(computed_changes)
-    return {
-        "all_before_policy_statements": all_before_policy_statements,
-        "all_after_policy_statements": all_after_policy_statements,
-        "individual_role_policy_changes": individual_role_policy_changes,
-    }
-
-
-def get_regex_resource_names(statement: dict) -> list:
-    """Generates a list of resource names for a statement that can be used for regex searches
-
-    :param statement: A statement, IE: {
-        'Action': ['s3:listbucket', 's3:list*'],
-        'Effect': 'Allow',
-        'Resource': ["arn:aws:dynamodb:*:*:table/TableOne", "arn:aws:dynamodb:*:*:table/TableTwo"]
-    }
-    :return: A list of resource names to be used for regex checks, IE: [
-        "Allow:arn:aws:dynamodb:.*:.*:table/Table", "Allow:arn:aws:dynamodb:.*:.*:table/Table"
-    ]
-    """
-    return [
-        f"{statement.get('Effect')}:{resource}".replace("*", ".*")
-        for resource in statement.get("Resource")
-    ]
-
-
-async def is_resource_match(regex_patterns, regex_strs) -> bool:
-    """Check if all provided strings (regex_strs) match on AT LEAST ONE regex pattern
-
-    :param regex_patterns: A list of regex patterns to search on
-    :param regex_strs: A list of strings to check against
-    """
-
-    async def _regex_check(regex_pattern) -> bool:
-        return any(re.match(regex_pattern, regex_str) for regex_str in regex_strs)
-
-    results = await asyncio.gather(
-        *[_regex_check(regex_pattern) for regex_pattern in regex_patterns]
-    )
-    return all(r for r in results)
-
-
-async def reduce_statement_actions(statement: dict) -> dict:
-    """Removes redundant actions from a statement and stores a regex map of the reduced.
-
-    :param statement: A normalized statement, IE: {
-        'Action': ['s3:listbucket', 's3:list*'], 'Effect': 'Allow', 'Resource': ['*']
-    }
-    :return: A statement with all redundant actions removed, IE: {
-        'Action': ['s3:list*'], 'Effect': 'Allow', 'Resource': ['*']
-    }
-    """
-    actions = statement.get("Action", [])
-
-    if not isinstance(actions, list):
-        actions = [actions]
-    else:
-        actions = sorted(set(actions))
-
-    if "*" in actions:
-        # Not sure if we should really be allowing this but
-        #   if they've added a wildcard action there isn't any need to check what hits
-        statement["Action"] = ["*"]
-        return statement
-
-    # Create a map of actions grouped by resource to prevent unnecessary checks
-    resource_regex_map = defaultdict(list)
-    for action in actions:
-        # Represent the action as the regex lookup so this isn't being done on every iteration
-        if "*" in action:
-            resource_regex_map[action.split(":")[0]].append(action.replace("*", ".*"))
-
-    async def _regex_check(action_str) -> str:
-        # Check if the provided string hits on any other action for the same resource type
-        # If not, return the string to be used as part of the reduced set of actions
-        action_str_re = action_str.replace("*", ".*")
-        action_resource = action_str.split(":")[0]
-
-        resource_actions = resource_regex_map[action_resource]
-        if not any(
-            re.match(related_action, action_str_re, re.IGNORECASE)
-            for related_action in resource_actions
-            if related_action != action_str_re
-        ):
-            return action_str
-
-    reduced_actions = await asyncio.gather(
-        *[_regex_check(action_str) for action_str in actions]
-    )
-    statement["Action"] = [action.lower() for action in reduced_actions if action]
-
-    return statement
-
-
-async def normalize_statement(statement: dict) -> dict:
-    """Refactors the statement dict and adds additional keys to be used for easy regex checks.
-
-    :param statement: A statement, IE: {
-        'Action': ['s3:listbucket', 's3:list*'], 'Effect': 'Allow', 'Resource': '*'
-    }
-    :return: A statement with all redundant actions removed, IE: {
-        'Action': ['s3:listbucket', 's3:list*'],
-        'ActionMap': {'s3': ['listbucket', 's3:list.*']},
-        'Effect': 'Allow',
-        'Resource': ['*']
-        'ResourceAsRegex': ['.*']
-    }
-    """
-    statement.pop("Sid", None)  # Drop the statement ID
-
-    # Ensure Resource is a sorted list
-    if not isinstance(statement["Resource"], list):
-        statement["Resource"] = [statement["Resource"]]
-
-    if "*" in statement["Resource"] and len(statement["Resource"]) > 1:
-        statement["Resource"] = ["*"]
-    else:
-        statement["Resource"].sort()
-
-    # Add the regex repr of the resource to be used when comparing statements in a policy
-    statement["ResourceAsRegex"] = [
-        f"{statement.get('Effect')}:{resource}".replace("*", ".*")
-        for resource in statement.get("Resource")
-    ]
-
-    statement = await reduce_statement_actions(statement)
-
-    # Create a map of actions grouped by resource to prevent unnecessary checks
-    statement["ActionMap"] = defaultdict(set)
-    for action in statement["Action"]:
-        # Represent the action as the regex lookup so this isn't being done on every iteration
-        # if "*" in action:
-        statement["ActionMap"][action.split(":")[0]].add(action.replace("*", ".*"))
-
-    return statement
-
-
-async def condense_statements(
-    statements: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Removes redundant policies, and actions that are already permitted by a different wildcard / partial wildcard
-    statement.
-
-    :param statements: A list of statements, IE: [
-        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['*']},
-        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['arn:aws:s3:::bucket']},
-        ...
-    ]
-    :return: A list of statements with all redundant policies removed, IE: [
-        {'Action': ['s3:listbucket'], 'Effect': 'Allow', 'Resource': ['*']},
-        ...
-    ]
-    """
-    statements = await asyncio.gather(
-        *[normalize_statement(statement) for statement in statements]
-    )
-
-    # statements.copy() so we don't mess up enumeration when popping statements with identical resource+effect
-    # The offset variables are so we can access the correct element after elements have been removed
-    pop_offset = 0
-    for elem, statement in enumerate(statements.copy()):
-        offset_elem = elem - pop_offset
-
-        if statement["Action"][0] == "*" or statement.get("Condition"):
-            # Don't mess with statements that allow everything or have a condition
-            continue
-
-        for inner_elem, inner_statement in enumerate(statements):
-            if offset_elem == inner_elem:
-                continue
-            elif not await is_resource_match(
-                inner_statement["ResourceAsRegex"], statement["ResourceAsRegex"]
-            ):
-                continue
-            elif inner_statement.get("Condition"):
-                continue
-            elif (
-                len(inner_statement["Action"]) == 1
-                and inner_statement["Action"][0] == "*"
-            ):
-                continue
-            elif (
-                statement["Effect"] == inner_statement["Effect"]
-                and statement["Resource"] == inner_statement["Resource"]
-            ):
-                # The statements are identical so combine the actions
-                statements[inner_elem]["Action"] = sorted(
-                    list(set(statements[inner_elem]["Action"] + statement["Action"]))
-                )
-                for resource_type, perm_set in statement["ActionMap"].items():
-                    for perm in perm_set:
-                        statements[inner_elem]["ActionMap"][resource_type].add(perm)
-
-                del statements[offset_elem]
-                pop_offset += 1
-                break
-
-            action_pop_offset = 0
-            # statement["Action"].copy() so we don't mess up enumerating Action when popping elements
-            for action_elem, action in enumerate(statement["Action"].copy()):
-                offset_action_elem = action_elem - action_pop_offset
-                action_re = action.replace("*", ".*")
-                action_resource = action.split(":")[0]
-                resource_actions = inner_statement["ActionMap"][action_resource]
-
-                if any(
-                    re.match(related_action, action_re, re.IGNORECASE)
-                    for related_action in resource_actions
-                ):
-                    # If the action falls under a different (inner) statement, remove it.
-                    del statements[offset_elem]["Action"][offset_action_elem]
-                    action_pop_offset += 1
-                    statements[offset_elem]["ActionMap"][action_resource] = set(
-                        act_re
-                        for act_re in statements[offset_elem]["ActionMap"][
-                            action_resource
-                        ]
-                        if act_re != action_re
-                    )
-
-    # Remove statements with no remaining actions and reduce actions once again to account for combined statements
-    statements = await asyncio.gather(
-        *[
-            reduce_statement_actions(statement)
-            for statement in statements
-            if len(statement["Action"]) > 0
-        ]
-    )
-    for elem in range(len(statements)):  # Remove eval keys
-        statements[elem].pop("ActionMap")
-        statements[elem].pop("ResourceAsRegex")
-
-    return statements
-
-
-async def get_identity_type_from_arn(arn: str) -> str:
-    """Returns identity type (`user` or `role`) from an ARN.
-
-    :param arn: Amazon Resource Name of an IAM user or role,
-        ex: arn:aws:iam::123456789012:role/role_name -> returns 'role'
-            arn:aws:iam::123456789012:user/user_name -> returns 'user'
-    :return: Identity type (`user` or `role`)
-    """
-    return arn.split(":")[-1].split("/")[0]
-
-
-async def get_identity_name_from_arn(arn: str) -> str:
-    """Returns identity name from an ARN.
-
-    :param arn: Amazon Resource Name of an IAM user or role,
-        ex: arn:aws:iam::123456789012:role/role_name -> returns 'role_name'
-            arn:aws:iam::123456789012:user/user_name -> returns 'user_name'
-    :return: Identity name
-    """
-    return arn.split("/")[-1]
-
-
-async def get_account_id_from_arn(arn: str) -> str:
-    """Returns account ID from an ARN.
-
-    :param arn: Amazon Resource Name of an IAM user or role,
-        ex: arn:aws:iam::123456789012:role/role_name -> returns '123456789012'
-            arn:aws:iam::123456789012:user/user_name -> returns '123456789012'
-    :return: Identity name
-    """
-    return arn.split(":")[4]
