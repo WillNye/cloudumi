@@ -1964,7 +1964,7 @@ def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict
         "dev",
         "test",
     ]:
-        results = await execute_query(
+        results = async_to_sync(execute_query)(
             config.get_tenant_specific_key(
                 "cache_all_resources_from_aws_config.aws_config.all_resources_query",
                 tenant,
