@@ -7,7 +7,7 @@ import SettingsModal from './SettingsModal'
 import { NotificationsModal } from './notifications/Notifications'
 import { useNotifications } from './hooks/notifications'
 
-const ConsoleMeHeader = () => {
+const NavHeader = ({ showMenuItems = true }) => {
   const { user } = useAuth()
   const { notifications, unreadNotificationCount, GetAndSetNotifications } =
     useNotifications()
@@ -211,12 +211,15 @@ const ConsoleMeHeader = () => {
           /> */}
           NOQ
         </Menu.Item>
-        <Menu.Menu position='left'>
-          {generateRoleLoginDropDown()}
-          {generatePoliciesDropDown()}
-          {generateIdentityDropDown()}
-          {generateAdvancedDropDown()}
-        </Menu.Menu>
+        {showMenuItems && (
+          <Menu.Menu position='left'>
+            {generateRoleLoginDropDown()}
+            {generatePoliciesDropDown()}
+            {generateIdentityDropDown()}
+            {generateAdvancedDropDown()}
+          </Menu.Menu>
+        )}
+
         <Menu.Menu position='right'>
           <Menu.Item>{getAvatarImage()}</Menu.Item>
           <Menu.Item>{getNotifications()}</Menu.Item>
@@ -234,4 +237,4 @@ const ConsoleMeHeader = () => {
   )
 }
 
-export default ConsoleMeHeader
+export default NavHeader

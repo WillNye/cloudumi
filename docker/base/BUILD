@@ -2,6 +2,13 @@ load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer")
 
 filegroup(
+    name = "zelkova_files",
+    srcs = [
+        "root/.aws",
+    ],
+)
+
+filegroup(
     name = "etc_files",
     srcs = [
         "root/etc",
@@ -22,6 +29,14 @@ genrule(
     stamp = True,
     outs = [ "tag_file" ],
     cmd = "git rev-parse HEAD >> $@",
+)
+
+container_layer(
+    name = "zelkova_layer",
+    directory = "/root",
+    files = [
+        ":zelkova_files",
+    ],
 )
 
 container_layer(
@@ -60,6 +75,7 @@ container_image(
     name = "base_docker",
     base = ":base_docker_raw",
     layers = [
+        ":zelkova_layer",
         ":etc_layer",
         ":home_layer",
     ],

@@ -26,6 +26,7 @@ const PermissionsBoundary = () => {
     deletePermissionsBoundary,
     setModalWithAdminAutoApprove,
     handlePermissionsBoundarySubmit,
+    readOnlyAccount,
   } = usePermissionsBoundary()
 
   const [availableManagedPolicies, setAvailableManagedPolicies] = useState([])
@@ -140,6 +141,7 @@ const PermissionsBoundary = () => {
             selection
             options={options}
             onChange={onPermissionsBoundaryChange}
+            disabled={!!attachedPermissionsBoundaryDetails}
           />
           <ButtonGroup attached='bottom'>
             {user?.authorization?.can_edit_policies ? (
@@ -149,7 +151,11 @@ const PermissionsBoundary = () => {
                   icon='save'
                   content='Add'
                   onClick={onPermissionsBoundarySave}
-                  disabled={!selected}
+                  disabled={
+                    !selected ||
+                    readOnlyAccount ||
+                    !!attachedPermissionsBoundaryDetails
+                  }
                 />
                 <ButtonOr />
               </>
@@ -159,7 +165,7 @@ const PermissionsBoundary = () => {
               icon='send'
               content='Request'
               onClick={onPermissionsBoundarySubmit}
-              disabled={!selected}
+              disabled={!selected || !!attachedPermissionsBoundaryDetails}
             />
           </ButtonGroup>
         </Form.Field>

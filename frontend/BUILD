@@ -81,7 +81,8 @@ _RUNTIME_DEPS = [
     "@npm//eslint-plugin-react",
     "@npm//eslint-plugin-react-hooks",
     "@npm//zustand",
-    "@npm//use-state-if-mounted"
+    "@npm//use-state-if-mounted",
+    "@npm//sass"
 ]
 
 _DEV_DEPS = [

@@ -21,6 +21,7 @@ import {
 } from './notificationMessages'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import ResourceChangeApprovers from './ResourceChangeApprovers'
+import ReadOnlyApprovalModal from './modals/ReadOnlyApprovalModal'
 
 class PermissionsBoundaryChangeComponent extends Component {
   constructor(props) {
@@ -34,10 +35,13 @@ class PermissionsBoundaryChangeComponent extends Component {
       changesConfig: this.props.changesConfig || {},
       requestID: this.props.requestID,
       requestReadOnly: this.props.requestReadOnly,
+      isApprovalModalOpen: false,
     }
 
     this.onSubmitChange = this.onSubmitChange.bind(this)
     this.onCancelChange = this.onCancelChange.bind(this)
+    this.setIsApprovalModalOpen = this.setIsApprovalModalOpen.bind(this)
+    this.handleOnSubmitChange = this.handleOnSubmitChange.bind(this)
     this.reloadDataFromBackend = props.reloadDataFromBackend
   }
 
@@ -63,8 +67,25 @@ class PermissionsBoundaryChangeComponent extends Component {
     }
   }
 
-  onSubmitChange() {
-    const applyChange = this.props.sendProposedPolicy.bind(this, 'apply_change')
+  setIsApprovalModalOpen(value) {
+    this.setState({ isApprovalModalOpen: value })
+  }
+
+  handleOnSubmitChange() {
+    const { change } = this.props
+    if (change.read_only) {
+      this.setIsApprovalModalOpen(true)
+    } else {
+      this.onSubmitChange()
+    }
+  }
+
+  onSubmitChange(credentials = null) {
+    const applyChange = this.props.sendProposedPolicy.bind(
+      this,
+      'apply_change',
+      credentials
+    )
     applyChange()
   }
 
@@ -107,6 +128,7 @@ class PermissionsBoundaryChangeComponent extends Component {
       isLoading,
       buttonResponseMessage,
       changesConfig,
+      isApprovalModalOpen,
     } = this.state
 
     const isOwner =
@@ -135,7 +157,7 @@ class PermissionsBoundaryChangeComponent extends Component {
             content='Apply Change'
             positive
             fluid
-            onClick={this.onSubmitChange}
+            onClick={this.handleOnSubmitChange}
           />
         </Grid.Column>
       ) : null
@@ -226,6 +248,11 @@ class PermissionsBoundaryChangeComponent extends Component {
         </Dimmer>
         {headerContent}
         {policyChangeContent}
+        <ReadOnlyApprovalModal
+          onSubmitChange={this.onSubmitChange}
+          isApprovalModalOpen={isApprovalModalOpen}
+          setIsApprovalModalOpen={this.setIsApprovalModalOpen}
+        />
       </Segment>
     )
   }

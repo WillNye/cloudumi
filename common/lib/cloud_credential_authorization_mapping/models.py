@@ -16,10 +16,10 @@ class CredentialAuthzMappingGenerator(object):
 
 
 class RoleAuthorizations(BaseModel):
-    # roles that the user can get credentials for via CLI. Users will see these roles in the ConsoleMe UI and can
+    # roles that the user can get credentials for via CLI. Users will see these roles in the Noq UI and can
     # receive an authenticated web console url for the role
     authorized_roles: Set[str] = set()
-    # roles that the user can get credentials for only via CLI (They won't see these in the consoleme web UI)
+    # roles that the user can get credentials for only via CLI (They won't see these in the Noq web UI)
     authorized_roles_cli_only: Set[str] = set()
 
 

@@ -8,21 +8,16 @@ from typing import Dict, List, Optional
 
 from deepdiff import DeepDiff
 from policy_sentry.util.actions import get_service_from_action
+from policy_sentry.util.arns import parse_arn
 
 import common.lib.noq_json as json
+from common.aws.utils import ResourceSummary
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
     MissingConfigurationValue,
-    ResourceNotFound,
 )
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
-from common.lib.aws.utils import (
-    get_region_from_arn,
-    get_resource_account,
-    get_resource_from_arn,
-    get_service_from_arn,
-)
 from common.lib.notifications import (
     send_new_comment_notification,
     send_policy_request_status_update_v2,
@@ -359,27 +354,34 @@ async def get_resources_from_events(
                     for resource in resources:
                         if resource == "*":
                             continue
-                        resource_name = get_resource_from_arn(resource)
-                        if resource_name == "*":
+
+                        resource_summary = await ResourceSummary.set(
+                            tenant, resource, region_required=True
+                        )
+                        # Default to parent name to use bucket name for S3 objects
+                        namespace = (
+                            resource_summary.parent_name or resource_summary.name
+                        )
+                        if namespace == "*":
                             continue
-                        if not resource_actions[resource_name]["account"]:
-                            resource_actions[resource_name][
+                        if not resource_actions[namespace]["account"]:
+                            resource_actions[namespace][
                                 "account"
-                            ] = await get_resource_account(resource, tenant)
-                        if not resource_actions[resource_name]["type"]:
-                            resource_actions[resource_name][
+                            ] = resource_summary.account
+                        if not resource_actions[namespace]["type"]:
+                            resource_actions[namespace][
                                 "type"
-                            ] = get_service_from_arn(resource)
-                        if not resource_actions[resource_name]["region"]:
-                            resource_actions[resource_name][
+                            ] = resource_summary.service
+                        if not resource_actions[namespace]["region"]:
+                            resource_actions[namespace][
                                 "region"
-                            ] = get_region_from_arn(resource)
-                        resource_actions[resource_name]["arns"].append(resource)
+                            ] = resource_summary.region
+                        resource_actions[namespace]["arns"].append(resource)
                         actions = get_actions_for_resource(resource, statement)
-                        resource_actions[resource_name]["actions"].extend(
+                        resource_actions[namespace]["actions"].extend(
                             x
                             for x in actions
-                            if x not in resource_actions[resource_name]["actions"]
+                            if x not in resource_actions[namespace]["actions"]
                         )
     return dict(resource_actions)
 
@@ -390,7 +392,7 @@ def get_actions_for_resource(resource_arn: str, statement: Dict) -> List[str]:
     """
     results: List[str] = []
     # Get service from resource
-    resource_service = get_service_from_arn(resource_arn)
+    resource_service = parse_arn(resource_arn)["service"]
     # Get relevant actions from policy doc
     actions = statement.get("Action", [])
     actions = actions if isinstance(actions, list) else [actions]
@@ -520,7 +522,7 @@ async def should_auto_approve_policy_v2(
 ):
     """
     This uses your fancy internal logic to determine if a request should be auto-approved or not. The default plugin
-    set included in ConsoleMe OSS will return False.
+    set included in Noq will return False.
     """
     aws = get_plugin_by_name(
         config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
@@ -566,327 +568,6 @@ async def send_communications_new_comment(
     await send_new_comment_notification(
         extended_request, to_addresses, user, request_uri, tenant
     )
-
-
-async def get_resource_type_for_arn(arn: str) -> str:
-    return arn.split(":")[2]
-
-
-async def get_region_for_arn(arn: str) -> str:
-    # TODO: Provide region for S3 buckets and other organization resource types where it isn't known?
-    return arn.split(":")[3]
-
-
-async def get_resource_name_for_arn(arn: str) -> str:
-    resource_name = arn.split(":")[5]
-    if "/" in resource_name:
-        resource_name = resource_name.split("/")[-1]
-    return resource_name
-
-
-async def get_resource_sub_type_for_arn(arn: str) -> str:
-    resource_name = arn.split(":")[5]
-    if "/" in resource_name:
-        return resource_name.split("/")[0]
-    return ""
-
-
-async def get_url_for_resource(
-    arn,
-    tenant,
-    resource_type=None,
-    account_id=None,
-    region=None,
-    resource_name=None,
-    resource_sub_type=None,
-):
-    if not resource_type:
-        resource_type = await get_resource_type_for_arn(arn)
-    if not account_id:
-        account_id = await get_resource_account(arn, tenant)
-    if not region:
-        region = await get_region_for_arn(arn)
-    if not resource_name:
-        resource_name = await get_resource_name_for_arn(arn)
-    if not resource_sub_type:
-        resource_sub_type = await get_resource_sub_type_for_arn(arn)
-
-    # If account id is not found
-    if not account_id:
-        raise ResourceNotFound("The account for the given ARN could not be determined")
-    url = ""
-    if (
-        resource_type == "iam" and resource_sub_type == "role"
-    ) or resource_type == "AWS::IAM::Role":
-        resource_name = arn.split("/")[-1]
-        url = f"/policies/edit/{account_id}/iamrole/{resource_name}"
-    elif (
-        resource_type == "iam" and resource_sub_type == "policy" and account_id != "aws"
-    ):
-        url = f"/policies/edit/{account_id}/managed_policy/{resource_name}"
-    elif resource_type in ["s3", "AWS::S3::Bucket"]:
-        url = f"/policies/edit/{account_id}/s3/{resource_name}"
-    elif resource_type == "managed_policy":
-        # managed policies can have a path
-        resource_name_and_path = arn.split(":policy/")[-1]
-        url = f"/policies/edit/{account_id}/managed_policy/{resource_name_and_path}"
-    elif resource_type in ["sns", "AWS::SNS::Topic"]:
-        url = f"/policies/edit/{account_id}/sns/{region}/{resource_name}"
-    elif resource_type in ["sqs", "AWS::SQS::Queue"]:
-        url = f"/policies/edit/{account_id}/sqs/{region}/{resource_name}"
-    elif (resource_type == "AWS::CloudFormation::Stack") or (
-        resource_type == "cloudformation" and resource_sub_type == "stack"
-    ):
-        url = f"/role/{account_id}?redirect=https://console.aws.amazon.com/cloudformation/home?region={region}#/stacks/"
-    elif resource_type == "AWS::CloudFront::Distribution" or (
-        resource_type == "cloudfront" and resource_sub_type == "distribution"
-    ):
-        url = f"/role/{account_id}?redirect=https://console.aws.amazon.com/cloudfront/home?%23distribution-settings:{resource_name}"
-    elif resource_type == "AWS::CloudTrail::Trail" or (
-        resource_type == "cloudtrail" and resource_sub_type == "trail"
-    ):
-        url = f"/role/{account_id}?redirect=https://console.aws.amazon.com/cloudtrail/home?region={region}%23/configuration"
-    elif resource_type == "AWS::CloudWatch::Alarm" or (
-        resource_type == "cloudwatch" and arn.split(":")[5] == "alarm"
-    ):
-        url = (
-            f"/role/{account_id}?redirect=https://console.aws.amazon.com/cloudwatch/home"
-            f"?region={region}%23alarmsV2:"
-        )
-    elif resource_type == "AWS::CodeBuild::Project" or (
-        resource_type == "codebuild" and resource_sub_type == "project"
-    ):
-        url = (
-            f"/role/{account_id}?redirect=https://console.aws.amazon.com/codesuite/codebuild/"
-            f"{account_id}/projects/{resource_name}/history?region={region}"
-        )
-    elif (
-        resource_type == "AWS::CodePipeline::Pipeline"
-        or resource_type == "codepipeline"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            "https://console.aws.amazon.com/codesuite/codepipeline/pipelines/"
-            f"{resource_name}/view?region={region}"
-        )
-    elif resource_type == "AWS::DynamoDB::Table" or (
-        resource_type == "dynamodb" and resource_sub_type == "table"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/dynamodb/home?region={region}%23tables:selected={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::CustomerGateway" or (
-        resource_type == "ec2" and resource_sub_type == "customer-gateway"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23CustomerGateways:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::InternetGateway" or (
-        resource_type == "ec2" and resource_sub_type == "internet-gateway"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23igws:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::NatGateway" or (
-        resource_type == "ec2" and resource_sub_type == "natgateway"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23NatGateways:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::NetworkAcl" or (
-        resource_type == "ec2" and resource_sub_type == "network-acl"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23acls:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::RouteTable" or (
-        resource_type == "ec2" and resource_sub_type == "route-table"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23RouteTables:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::SecurityGroup" or (
-        resource_type == "ec2" and resource_sub_type == "security-group"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/ec2/v2/home?region={region}%23SecurityGroup:groupId={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::Subnet" or (
-        resource_type == "ec2" and resource_sub_type == "subnet"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23subnets:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::VPC" or (
-        resource_type == "ec2" and resource_sub_type == "vpc"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23vpcs:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::VPCEndpoint" or (
-        resource_type == "ec2" and resource_sub_type == "vpc-endpoint"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23Endpoints:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::VPCEndpointService" or (
-        resource_type == "ec2" and resource_sub_type == "vpc-endpoint-service"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23EndpointServices:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::VPCPeeringConnection" or (
-        resource_type == "ec2" and resource_sub_type == "vpc-peering-connection"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23PeeringConnections:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::VPNConnection" or (
-        resource_type == "ec2" and resource_sub_type == "vpn-connection"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23VpnConnections:search={resource_name}"
-        )
-    elif resource_type == "AWS::EC2::VPNGateway" or (
-        resource_type == "ec2" and resource_sub_type == "vpn-gateway"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/vpc/home?region={region}%23VpnGateways:search={resource_name}"
-        )
-    elif resource_type == "AWS::ElasticBeanstalk::Application" or (
-        resource_type == "elasticbeanstalk" and resource_sub_type == "application"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/elasticbeanstalk/home?region={region}%23/applications"
-        )
-    elif resource_type == "AWS::ElasticBeanstalk::ApplicationVersion" or (
-        resource_type == "elasticbeanstalk"
-        and resource_sub_type == "applicationversion"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/elasticbeanstalk/home?region={region}%23/applications"
-        )
-    elif resource_type == "AWS::ElasticBeanstalk::Environment" or (
-        resource_type == "elasticbeanstalk" and resource_sub_type == "environment"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/elasticbeanstalk/home?region={region}%23/environments"
-        )
-    elif resource_type == "AWS::ElasticLoadBalancing::LoadBalancer" or (
-        resource_type == "elasticloadbalancing"
-        and resource_sub_type == "loadbalancer"
-        and "/app/" not in arn
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            "https://console.aws.amazon.com"
-            f"/ec2/v2/home?region={region}%23LoadBalancers:search={resource_name}"
-        )
-    elif resource_type == "AWS::ElasticLoadBalancingV2::LoadBalancer" or (
-        resource_type == "elasticloadbalancing" and resource_sub_type == "loadbalancer"
-    ):
-        if "/" in resource_name:
-            resource_name = arn.split("/")[2]
-        url = (
-            f"/role/{account_id}?redirect="
-            "https://console.aws.amazon.com"
-            f"/ec2/v2/home?region={region}%23LoadBalancers:search={resource_name}"
-        )
-    elif resource_type == "AWS::Elasticsearch::Domain" or (
-        resource_type == "es" and resource_sub_type == "domain"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            "https://console.aws.amazon.com"
-            f"/es/home?region={region}%23domain:resource={resource_name};action=dashboard;tab=undefined"
-        )
-    elif resource_type == "AWS::Lambda::Function" or (
-        resource_type == "lambda" and arn.split(":")[5] == "function"
-    ):
-        resource_name = arn.split(":")[6]
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/lambda/home?region={region}%23/functions/{resource_name}"
-        )
-    elif resource_type == "AWS::RDS::DBSnapshot" or (
-        resource_type == "rds" and arn.split(":")[5] == "snapshot"
-    ):
-        resource_name = arn.split(":")[6]
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/rds/home?region={region}%23db-snapshot:id={resource_name}"
-        )
-    # TBD
-    elif resource_type == "AWS::Redshift::Cluster":
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/rds/home?region={region}%23db-snapshot:id={resource_name}"
-        )
-    elif resource_type == "AWS::IAM::Policy" or (
-        resource_type == "iam" and resource_sub_type == "policy"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/iam/home?%23/policies/{arn}$serviceLevelSummary"
-        )
-    elif resource_type == "AWS::IAM::User" or (
-        resource_type == "iam" and resource_sub_type == "user"
-    ):
-        resource_name = arn.split("/")[-1]
-        url = f"/policies/edit/{account_id}/iamuser/{resource_name}"
-    elif resource_type == "AWS::IAM::Group" or (
-        resource_type == "iam" and resource_sub_type == "group"
-    ):
-        url = f"/role/{account_id}?redirect=https://console.aws.amazon.com/iam/home?%23/groups/{resource_name}"
-    elif resource_type == "AWS::Shield::Protection":
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/wafv2/shield%23/tedx"
-        )
-    elif resource_type == "AWS::ShieldRegional::Protection" or (
-        resource_type == "shield" and resource_sub_type == "protection"
-    ):
-        url = (
-            f"/role/{account_id}?redirect="
-            f"https://console.aws.amazon.com/wafv2/shield%23/tedx"
-        )
-    elif resource_type in ["AWS::WAF::RateBasedRule", "AWS::WAF::Rule"] or (
-        resource_type == "waf" and resource_sub_type in ["rule", "ratebasedrule"]
-    ):
-        url = (
-            f"/role/{account_id}?redirect=" f"https://console.aws.amazon.com/wafv2/home"
-        )
-    elif resource_type == "AWS::WAF::RuleGroup" or (
-        resource_type in ["waf", "wafv2"] and "rulegroup/" in arn
-    ):
-        url = (
-            f"/role/{account_id}?redirect=" f"https://console.aws.amazon.com/wafv2/fms"
-        )
-    elif resource_type == "AWS::WAF::WebACL" or (
-        resource_type in ["waf", "wafv2"] and "webacl/" in arn
-    ):
-        url = (
-            f"/role/{account_id}?redirect=" f"https://console.aws.amazon.com/wafv2/home"
-        )
-
-    return url
 
 
 async def get_aws_config_history_url_for_resource(

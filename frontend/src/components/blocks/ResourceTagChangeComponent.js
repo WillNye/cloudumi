@@ -22,10 +22,12 @@ import {
 } from './notificationMessages'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import ResourceChangeApprovers from './ResourceChangeApprovers'
+import ReadOnlyApprovalModal from './modals/ReadOnlyApprovalModal'
 
 const ResourceTagChangeComponent = (props) => {
   const change = props.change
   const [isLoading, setIsLoading] = useState(false)
+  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false)
   const [buttonResponseMessage, setButtonResponseMessage] = useState([])
   const { sendProposedPolicyWithHooks } = useAuth()
 
@@ -42,7 +44,7 @@ const ResourceTagChangeComponent = (props) => {
   }
   const action = getTagActionSpan(change)
 
-  const handleTaggingApprove = async () => {
+  const handleTaggingApprove = async (credentials = null) => {
     await sendProposedPolicyWithHooks(
       'apply_change',
       change,
@@ -50,8 +52,17 @@ const ResourceTagChangeComponent = (props) => {
       props.requestID,
       setIsLoading,
       setButtonResponseMessage,
-      props.reloadDataFromBackend
+      props.reloadDataFromBackend,
+      credentials
     )
+  }
+
+  const handleOnSubmitChange = () => {
+    if (change.read_only) {
+      setIsApprovalModalOpen(true)
+    } else {
+      handleTaggingApprove()
+    }
   }
 
   const handleTaggingCancel = async () => {
@@ -83,7 +94,7 @@ const ResourceTagChangeComponent = (props) => {
       <Grid.Column>
         <Button
           content='Apply Change'
-          onClick={handleTaggingApprove}
+          onClick={handleOnSubmitChange}
           positive
           fluid
         />
@@ -213,6 +224,11 @@ const ResourceTagChangeComponent = (props) => {
       </Dimmer>
       {headerContent}
       {policyChangeContent}
+      <ReadOnlyApprovalModal
+        onSubmitChange={handleTaggingApprove}
+        isApprovalModalOpen={isApprovalModalOpen}
+        setIsApprovalModalOpen={setIsApprovalModalOpen}
+      />
     </Segment>
   )
 }

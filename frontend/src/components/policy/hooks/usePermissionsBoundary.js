@@ -47,6 +47,7 @@ const usePermissionsBoundary = () => {
     ...state,
     accountID: params.accountID,
     setModalWithAdminAutoApprove,
+    readOnlyAccount: resource?.read_only || false,
     setPermissionsBoundary: (policy) =>
       dispatch({
         type: 'SET_PERMISSIONS_BOUNDARY',

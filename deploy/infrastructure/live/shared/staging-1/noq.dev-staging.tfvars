@@ -13,6 +13,7 @@ zone        = "staging.noq.dev"
 stage       = "staging"
 attributes  = 1
 domain_name = "*.staging.noq.dev"
+profile     = "noq_staging"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
@@ -43,12 +44,13 @@ dax_node_count = 1
 # Redis
 redis_node_type = "cache.t3.micro"
 
-profile = "noq_staging"
 # Sentry
 sentry_dsn = "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
 
-s3_access_log_bucket = "s3-access-logs.259868150464.us-west-2"
-
-elasticache_node_type = "cache.t3.micro"
-
+s3_access_log_bucket         = "s3-access-logs.259868150464.us-west-2"
+elasticache_node_type        = "cache.t3.micro"
 google_analytics_tracking_id = "G-P5K1SQF3P6"
+
+# Global info
+global_tenant_data_account_id = "615395543222"
+legal_docs_bucket_name        = "noq-global-staging-legal-docs"

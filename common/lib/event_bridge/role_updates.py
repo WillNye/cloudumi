@@ -49,7 +49,7 @@ def detect_role_changes_and_update_cache(celery_app, tenant):
         account_number=queue_account_number,
         assume_role=queue_assume_role,
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-        session_name=sanitize_session_name("consoleme_sqs_role_updates"),
+        session_name=sanitize_session_name("noq_sqs_role_updates"),
     )
 
     queue_url_res = sqs_client.get_queue_url(QueueName=queue_name)

@@ -152,7 +152,7 @@ class BaseDynamoHandler:
                     account_number=config.get_tenant_specific_key(
                         "aws.account_number", tenant
                     ),
-                    session_name=sanitize_session_name("consoleme_dynamodb"),
+                    session_name=sanitize_session_name("noq_dynamodb"),
                     region=config.region,
                     client_kwargs=config.get("_global_.boto3.client_kwargs", {}),
                     session_policy=restrictive_session_policy,
@@ -1402,7 +1402,7 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         new_config: str,
         updated_by: str,
         tenant: str,
-    ) -> None:
+    ) -> dict:
 
         # TODO: We could support encrypting/decrypting static configuration automatically based on a configuration
         # passed in from AWS Secrets Manager or something else
@@ -1450,6 +1450,8 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         await self.copy_tenant_config_dynamo_to_redis(
             tenant, int(time.time()), new_config_d
         )
+
+        return new_config_d
 
 
 # from asgiref.sync import async_to_sync

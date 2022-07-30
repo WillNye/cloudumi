@@ -21,14 +21,16 @@ import {
   ResponseNotification,
 } from './notificationMessages'
 import ResourceChangeApprovers from './ResourceChangeApprovers'
+import ReadOnlyApprovalModal from './modals/ReadOnlyApprovalModal'
 
 const TemporaryEscalationComponent = (props) => {
   const change = props.change
   const [isLoading, setIsLoading] = useState(false)
+  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false)
   const [buttonResponseMessage, setButtonResponseMessage] = useState([])
   const { sendProposedPolicyWithHooks } = useAuth()
 
-  const handleApproval = async () => {
+  const handleApproval = async (credentials = null) => {
     await sendProposedPolicyWithHooks(
       'apply_change',
       change,
@@ -36,7 +38,8 @@ const TemporaryEscalationComponent = (props) => {
       props.requestID,
       setIsLoading,
       setButtonResponseMessage,
-      props.reloadDataFromBackend
+      props.reloadDataFromBackend,
+      credentials
     )
   }
 
@@ -50,6 +53,14 @@ const TemporaryEscalationComponent = (props) => {
       setButtonResponseMessage,
       props.reloadDataFromBackend
     )
+  }
+
+  const handleOnSubmitChange = () => {
+    if (change.read_only) {
+      setIsApprovalModalOpen(true)
+    } else {
+      handleApproval()
+    }
   }
 
   const isOwner =
@@ -71,7 +82,7 @@ const TemporaryEscalationComponent = (props) => {
       <Grid.Column>
         <Button
           content='Apply Change'
-          onClick={handleApproval}
+          onClick={handleOnSubmitChange}
           positive
           fluid
         />
@@ -129,6 +140,11 @@ const TemporaryEscalationComponent = (props) => {
       </Dimmer>
       {headerContent}
       {policyChangeContent}
+      <ReadOnlyApprovalModal
+        onSubmitChange={handleApproval}
+        isApprovalModalOpen={isApprovalModalOpen}
+        setIsApprovalModalOpen={setIsApprovalModalOpen}
+      />
     </Segment>
   )
 }

@@ -3,7 +3,7 @@ import tornado.escape
 import common.lib.noq_json as json
 from common.config import config
 from common.handlers.base import BaseHandler
-from common.lib.auth import can_admin_all, can_admin_identity
+from common.lib.auth import can_admin_identity, is_tenant_admin
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.generic import filter_table
@@ -199,7 +199,7 @@ class IdentityUserHandler(BaseHandler):
         }
         # Checks authz levels of current user
         generic_error_message = "Unable to update user"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data

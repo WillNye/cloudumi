@@ -57,7 +57,9 @@ export const AuthProvider = ({ children }) => {
 
       // ConsoleMe backend returns a response containing a redirection to IDP for authentication.
       if (auth.type === 'redirect' && auth.reason === 'unauthenticated') {
-        window.location.href = auth.redirect_url
+        if (auth.redirect_url !== history?.location?.pathname) {
+          window.location.href = auth.redirect_url
+        }
       } else if (auth.status === 401) {
         // handle the session expiration if the response status is 401 for re-authentication
         setIsSessionExpired(true)
@@ -231,7 +233,8 @@ export const AuthProvider = ({ children }) => {
     requestID,
     setIsLoading,
     setButtonResponseMessage,
-    reloadDataFromBackend
+    reloadDataFromBackend,
+    credentials = null
   ) => {
     setIsLoading(true)
     const request = {
@@ -242,6 +245,9 @@ export const AuthProvider = ({ children }) => {
     }
     if (newStatement) {
       request.modification_model.policy_document = JSON.parse(newStatement)
+    }
+    if (credentials) {
+      request.modification_model.credentials = { aws: credentials }
     }
     await sendRequestCommon(
       request,

@@ -8,6 +8,16 @@ output "attributes" {
   value       = var.attributes
 }
 
+output "global_tenant_data_account_id" {
+  description = "Account ID of the AWS Tenant Data Account"
+  value       = var.global_tenant_data_account_id
+}
+
+output "legal_docs_bucket_name" {
+  description = "The S3 bucket containing templates for our legal documentation"
+  value       = var.legal_docs_bucket_name
+}
+
 output "bucket_name" {
   description = "The bucket used for cloudumi operation"
   value       = module.tenant_s3_service.cloudumi_bucket_name

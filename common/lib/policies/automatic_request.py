@@ -6,6 +6,7 @@ from datetime import datetime
 import pytz
 import sentry_sdk
 
+from common.aws.iam.statement.utils import condense_statements
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
@@ -68,6 +69,29 @@ async def create_policy(
     # TODO: Generate formal permission request / audit trail
     # TODO: Don't overwrite existing policies
     # TODO: Generate cross-account resource policies as well, turn into a formal policy request
+    try:
+        policy_res = await aio_wrapper(
+            iam_client.get_role_policy,
+            RoleName=principal_name,
+            PolicyName=policy_name,
+        )
+        existing_policy = policy_res["PolicyDocument"]
+        policy_document_d = json.loads(policy_document)
+        statements = existing_policy["Statement"]
+        statements.extend(policy_document_d["Statement"])
+        normalized_statements = await condense_statements(statements)
+        policy_document = json.dumps(
+            {"Version": "2012-10-17", "Statement": normalized_statements}
+        )
+
+    except Exception as err:
+        if "NoSuchEntity" in str(err):
+            pass
+        else:
+            log_data["error"] = repr(err)
+            log.error(log_data)
+            sentry_sdk.capture_exception()
+            return False
 
     try:
         await aio_wrapper(
@@ -245,7 +269,10 @@ async def update_policy_request(
 
 
 async def remove_policy_request(
-    tenant, account_id, user, policy_request_id: str
+    tenant,
+    account_id,
+    user,
+    policy_request_id: str,
 ) -> bool:
     red = await RedisHandler().redis(tenant)
     log_data = {

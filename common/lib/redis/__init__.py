@@ -53,8 +53,8 @@ def raise_if_key_doesnt_start_with_prefix(key: str, prefix: str):
 class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
     """
     ConsoleMeRedis is a simple wrapper around redis.StrictRedis. It was created to allow Redis to be optional.
-    If Redis settings are not defined in ConsoleMe's configuration, we "disable" redis. If Redis is disabled, calls to
-    Redis will fail silently. If new Redis calls are added to ConsoleMe, they should be added to this class.
+    If Redis settings are not defined in Noq's configuration, we "disable" redis. If Redis is disabled, calls to
+    Redis will fail silently. If new Redis calls are added to Noq, they should be added to this class.
 
     ConsoleMeRedis also supports writing/retrieving data from S3 if the data is not retrievable from Redis
     """

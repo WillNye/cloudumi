@@ -17,6 +17,7 @@ const Tags = () => {
     toggleNewTag,
     handleTagSave,
     setModalWithAdminAutoApprove,
+    readOnlyAccount,
   } = usePolicyTag()
 
   const [newTag, setNewTag] = useState({ Key: '', Value: '' })
@@ -126,7 +127,7 @@ const Tags = () => {
                 icon='save'
                 content='Save'
                 onClick={onSaveTags}
-                disabled={!tagChanges.length}
+                disabled={!tagChanges.length || readOnlyAccount}
               />
               <Button.Or />
             </>
@@ -140,7 +141,10 @@ const Tags = () => {
           />
         </Button.Group>
       </Form>
-      <JustificationModal handleSubmit={handleTagSave} showExpirationDate />
+      <JustificationModal
+        handleSubmit={handleTagSave}
+        showExpirationDate={!readOnlyAccount}
+      />
     </>
   )
 }

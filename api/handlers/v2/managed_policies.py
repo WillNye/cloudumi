@@ -2,17 +2,17 @@ import sentry_sdk
 import tornado.escape
 
 import common.lib.noq_json as json
+from common.aws.iam.policy.utils import (
+    get_all_iam_managed_policies_for_account,
+    get_managed_policy_document,
+    get_user_managed_policy_documents,
+)
 from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MustBeFte
 from common.handlers.base import BaseAPIV2Handler
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.iam import (
-    get_all_iam_managed_policies_for_account,
-    get_managed_policy_document,
-    get_user_managed_policy_documents,
-)
 from common.models import SpokeAccount, Status2, WebResponse
 
 log = config.get_logger()

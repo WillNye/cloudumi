@@ -34,7 +34,7 @@ def get_plugin_by_name(plugin_name: str) -> Any:
         initial_exception_message = (
             f"Could not find the specified plugin: {plugin_name}. "
             "Please install it with `pip install -e default_plugins` "
-            "from the ConsoleMe directory. "
+            "from the Noq directory. "
         )
 
     exception_message = (

@@ -132,6 +132,8 @@ class IAMRequest(NoqModel):
             resource_policy - sqs
 
         """
+        from common.user_request.utils import get_change_arn
+
         disabled_cli_cmd_map = {"resource_policy": ["sqs"]}
         log_data: dict = {
             "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -151,7 +153,9 @@ class IAMRequest(NoqModel):
             return
 
         principal_arn = principal.get("principal_arn")
-        principal_summary = await ResourceSummary.set(self.tenant, principal_arn)
+        principal_summary = await ResourceSummary.set(
+            self.tenant, principal_arn, region_required=True
+        )
 
         template_env = Environment(
             loader=FileSystemLoader("common/templates"),
@@ -177,15 +181,10 @@ class IAMRequest(NoqModel):
             )
 
             # Resolve the change's resource summary (parse_arn) by change type
-            if change_type not in [
-                "resource_policy",
-                "sts_resource_policy",
-            ]:
-                resource_summary = principal_summary
-            else:
+            if get_change_arn(change) != principal_arn:
                 try:
                     resource_summary = await ResourceSummary.set(
-                        self.tenant, change["arn"]
+                        self.tenant, change["arn"], region_required=True
                     )
                 except Exception as err:
                     # Unable to resolve the resource details for the change so set to read only
@@ -200,6 +199,8 @@ class IAMRequest(NoqModel):
                         }
                     )
                     continue
+            else:
+                resource_summary = principal_summary
 
             # Use the account the change will be applied to for determining if the change is read only
             account_info: SpokeAccount = (
@@ -242,7 +243,7 @@ class IAMRequest(NoqModel):
                                 .with_query({"account_id": resource_summary.account})
                                 .first.name,
                                 region=resource_summary.region or config.region,
-                                session_name="get-request-resource-details",
+                                session_name="noq_get_request_resource_details",
                                 sts_client_kwargs=dict(
                                     region_name=config.region,
                                     endpoint_url=f"https://sts.{config.region}.amazonaws.com",

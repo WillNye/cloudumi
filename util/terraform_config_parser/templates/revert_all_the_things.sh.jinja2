@@ -16,6 +16,11 @@ echo
 export AWS_PROFILE={{ aws_profile }}
 
 echo
+echo "Updating aws-cli"
+echo
+pip install --upgrade awscli
+
+echo
 echo "Logging in to AWS ECR for {{ registry_repository_url }}"
 echo
 aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}

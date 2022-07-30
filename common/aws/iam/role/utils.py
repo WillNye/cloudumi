@@ -18,7 +18,6 @@ from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import rate_limited, sts_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
-from common.lib.aws.iam import get_managed_policy_document
 from common.lib.cloud_credential_authorization_mapping import RoleAuthorizations
 from common.lib.plugins import get_plugin_by_name
 from common.models import (
@@ -36,9 +35,7 @@ log = config.get_logger(__name__)
 def _get_iam_role_sync(
     account_id, role_name, conn, tenant: str
 ) -> Optional[Dict[str, Any]]:
-    client = get_tenant_iam_conn(
-        tenant, account_id, "consoleme_get_iam_role", read_only=True
-    )
+    client = get_tenant_iam_conn(tenant, account_id, "noq_get_iam_role", read_only=True)
     role = client.get_role(RoleName=role_name)["Role"]
     role["ManagedPolicies"] = get_role_managed_policies(
         {"RoleName": role_name}, tenant=tenant, **conn
@@ -58,7 +55,7 @@ async def _get_iam_role_async(
         get_tenant_iam_conn,
         tenant,
         account_id,
-        "consoleme_get_iam_role",
+        "noq_get_iam_role",
         read_only=True,
     )
     role_details = asyncio.ensure_future(
@@ -136,7 +133,7 @@ async def _create_iam_role(
         account_id: destination account's ID
         role_name: destination role name
         description: optional string - description of the role
-                     default: Role created by {username} through ConsoleMe
+                     default: Role created by {username} through Noq
         instance_profile: optional boolean - whether to create an instance profile and attach it to the role or not
                      default: True
     :param username: username of user requesting action
@@ -178,7 +175,7 @@ async def _create_iam_role(
     if create_model.description:
         description = create_model.description
     else:
-        description = f"Role created by {username} through ConsoleMe"
+        description = f"Role created by {username} through Noq"
 
     iam_client = await aio_wrapper(
         get_tenant_iam_conn, tenant, create_model.account_id, f"create_role_{username}"
@@ -378,13 +375,13 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, tenant):
         dest_role_name: destination role's name
         clone_options: dict to indicate what to copy when cloning:
             assume_role_policy: bool
-                default: False - uses default ConsoleMe AssumeRolePolicy
+                default: False - uses default Noq AssumeRolePolicy
             tags: bool
                 default: False - defaults to no tags
             copy_description: bool
                 default: False - defaults to copying provided description or default description
             description: string
-                default: "Role cloned via ConsoleMe by `username` from `arn:aws:iam::<account_id>:role/<role_name>`
+                default: "Role cloned via Noq by `username` from `arn:aws:iam::<account_id>:role/<role_name>`
                 if copy_description is True, then description is ignored
             inline_policies: bool
                 default: False - defaults to no inline policies
@@ -443,7 +440,7 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, tenant):
     ):
         description = clone_model.options.description
     else:
-        description = f"Role cloned via ConsoleMe by {username} from {role.arn}"
+        description = f"Role cloned via Noq by {username} from {role.arn}"
 
     tags = role.tags if clone_model.options.tags and role.tags else []
     iam_client = await aio_wrapper(
@@ -709,8 +706,9 @@ def get_role_managed_policies(role, client=None, **kwargs):
 @rate_limited()
 def get_role_managed_policy_documents(role, client=None, **kwargs):
     """Retrieve the currently active policy version document for every managed policy that is attached to the role."""
-    policies = get_role_managed_policies(role, force_client=client)
+    from common.aws.iam.policy.utils import get_managed_policy_document
 
+    policies = get_role_managed_policies(role, force_client=client)
     policy_names = (policy["name"] for policy in policies)
     delayed_gmpd_calls = (
         delayed(get_managed_policy_document)(policy["arn"], force_client=client)

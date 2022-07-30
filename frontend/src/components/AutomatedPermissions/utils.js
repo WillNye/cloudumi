@@ -12,10 +12,11 @@ export const removePolicyRequest = async (
 export const approvePolicyRequest = async (
   sendRequestCommon,
   acountId,
-  policyId
+  policyId,
+  data
 ) =>
   sendRequestCommon(
-    { permissions_flow: 'approve' },
+    { permissions_flow: 'approve', policy_request: data },
     `/api/v3/automatic_policy_request_handler/aws/${acountId}/${policyId}`,
     'post'
   )

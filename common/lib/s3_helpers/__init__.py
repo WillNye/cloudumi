@@ -118,7 +118,7 @@ def put_object(**kwargs):
                 kwargs.pop("user", None),
                 account_number=kwargs.get("account_number"),
                 assume_role=assume_role,
-                session_name=sanitize_session_name("consoleme_s3_put_object"),
+                session_name=sanitize_session_name("noq_s3_put_object"),
                 region=region,
                 retry_max_attempts=2,
                 client_kwargs=config.get_tenant_specific_key(
@@ -151,7 +151,7 @@ def get_object(**kwargs):
                 kwargs.pop("user", None),
                 account_number=kwargs.get("account_number"),
                 assume_role=assume_role,
-                session_name=sanitize_session_name("consoleme_s3_get_object"),
+                session_name=sanitize_session_name("noq_s3_get_object"),
                 region=kwargs.get("region", config.region),
                 retry_max_attempts=2,
                 client_kwargs=config.get_tenant_specific_key(

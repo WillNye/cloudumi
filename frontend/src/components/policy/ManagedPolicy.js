@@ -26,6 +26,7 @@ const ManagedPolicy = () => {
     deleteManagedPolicy,
     setModalWithAdminAutoApprove,
     handleManagedPolicySubmit,
+    readOnlyAccount,
   } = useManagedPolicy()
 
   const [availableManagedPolicies, setAvailableManagedPolicies] = useState([])
@@ -133,7 +134,7 @@ const ManagedPolicy = () => {
                   icon='save'
                   content='Add'
                   onClick={onManagedPolicySave}
-                  disabled={!selected}
+                  disabled={!selected || readOnlyAccount}
                 />
                 <ButtonOr />
               </>
@@ -217,7 +218,7 @@ const ManagedPolicy = () => {
       </Segment>
       <JustificationModal
         handleSubmit={handleManagedPolicySubmit}
-        showExpirationDate={showExpirationDate}
+        showExpirationDate={showExpirationDate && !readOnlyAccount}
       />
     </>
   )

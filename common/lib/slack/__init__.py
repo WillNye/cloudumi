@@ -18,7 +18,7 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 async def send_slack_notification_new_request(
     extended_request: ExtendedRequestModel,
     admin_approved,
-    approval_probe_approved,
+    approval_rule_approved,
     tenant,
 ):
     """
@@ -47,7 +47,7 @@ async def send_slack_notification_new_request(
         "message": "Incoming request for slack notification",
         "request": extended_request.dict(),
         "admin_approved": admin_approved,
-        "approval_probe_approved": approval_probe_approved,
+        "approval_rule_approved": approval_rule_approved,
     }
     log.debug(log_data)
     slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
@@ -60,7 +60,7 @@ async def send_slack_notification_new_request(
         requester,
         arn,
         admin_approved,
-        approval_probe_approved,
+        approval_rule_approved,
         tenant,
     )
     http_headers = HTTPHeaders({"Content-Type": "application/json"})
@@ -86,15 +86,15 @@ async def get_payload(
     requester: str,
     arn: str,
     admin_approved: bool,
-    approval_probe_approved: bool,
+    approval_rule_approved: bool,
     tenant: str,
 ):
     request_uri = await get_policy_request_uri_v2(extended_request, tenant)
     pre_text = "A new request has been created"
     if admin_approved:
         pre_text += " and auto-approved by admin"
-    elif approval_probe_approved:
-        pre_text += " and auto-approved by auto-approval probe"
+    elif approval_rule_approved:
+        pre_text += " and auto-approved by auto-approval rule"
 
     payload = {
         "blocks": [
@@ -102,7 +102,7 @@ async def get_payload(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*<{request_uri}|ConsoleMe Policy Change Request>*",
+                    "text": f"*<{request_uri}|Noq Policy Change Request>*",
                 },
             },
             {

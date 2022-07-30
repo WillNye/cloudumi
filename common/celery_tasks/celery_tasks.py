@@ -4,7 +4,7 @@ when invoked. Please add internal-only celery tasks to the celery_tasks plugin.
 
 When ran in development mode (CONFIG_LOCATION=<location of development.yaml configuration file. To run both the celery
 beat scheduler and a worker simultaneously, and to have jobs kick off starting at the next minute, run the following
-command: celery -A consoleme.celery_tasks.celery_tasks worker --loglevel=info -l DEBUG -B
+command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DEBUG -B
 
 """
 from __future__ import absolute_import
@@ -42,6 +42,7 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 
+from common.aws.iam.policy.utils import get_all_managed_policies
 from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.config.models import ModelAdapter
@@ -56,7 +57,6 @@ from common.lib.aws import aws_config
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_tenant
 from common.lib.aws.cloudtrail import CloudTrail
-from common.lib.aws.iam import get_all_managed_policies
 from common.lib.aws.s3 import list_buckets
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
@@ -91,8 +91,8 @@ from common.lib.redis import RedisHandler
 from common.lib.self_service.typeahead import cache_self_service_typeahead
 from common.lib.sentry import before_send_event
 from common.lib.templated_resources import cache_resource_templates
+from common.lib.tenant import get_all_tenants
 from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
-from common.lib.tenants import get_all_tenants
 from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
@@ -545,9 +545,6 @@ def cache_cloudtrail_errors_by_arn(tenant=None) -> Dict:
         raise Exception("`tenant` must be passed to this task.")
     function: str = f"{__name__}.{sys._getframe().f_code.co_name}"
     red = RedisHandler().redis_sync(tenant)
-    aws = get_plugin_by_name(
-        config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
-    )()
     log_data: Dict = {"function": function}
     if is_task_already_running(function, [tenant]):
         log_data["message"] = "Skipping task: An identical task is currently running"
@@ -555,7 +552,7 @@ def cache_cloudtrail_errors_by_arn(tenant=None) -> Dict:
         return log_data
     ct = CloudTrail()
     process_cloudtrail_errors_res: Dict = async_to_sync(ct.process_cloudtrail_errors)(
-        aws, tenant, None
+        tenant, None
     )
     cloudtrail_errors = process_cloudtrail_errors_res["error_count_by_role"]
     red.setex(
@@ -999,7 +996,9 @@ def cache_iam_resources_for_account(
         iam_roles = all_iam_resources["RoleDetailList"]
         iam_policies = all_iam_resources["Policies"]
 
-        async_to_sync(IAMRole.sync_account_roles)(tenant, account_id, iam_roles)
+        log_data["cache_refresh_required"] = async_to_sync(IAMRole.sync_account_roles)(
+            tenant, account_id, iam_roles
+        )
 
         last_updated: int = int((datetime.utcnow()).timestamp())
         ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
@@ -1675,9 +1674,7 @@ def cache_sqs_queues_for_account(
                 client_kwargs=config.get_tenant_specific_key(
                     "boto3.client_kwargs", tenant, {}
                 ),
-                session_name=sanitize_session_name(
-                    "consoleme_cache_sqs_queues_for_account"
-                ),
+                session_name=sanitize_session_name("noq_cache_sqs_queues_for_account"),
             )
 
             paginator = client.get_paginator("list_queues")
@@ -2105,7 +2102,14 @@ def cache_resources_from_aws_config_across_accounts(
             results = group(*tasks).apply_async()
             if wait_for_subtask_completion:
                 # results.join() forces function to wait until all tasks are complete
-                results.join(disable_sync_subtasks=False)
+                results_list = results.join(disable_sync_subtasks=False)
+                if any(
+                    result.get("cache_refresh_required", False)
+                    for result in results_list
+                ):
+                    cache_credential_authorization_mapping.apply_async((tenant,))
+                    cache_self_service_typeahead_task.apply_async((tenant,))
+                    cache_policies_table_details.apply_async((tenant,))
 
     # Delete roles in Redis cache with expired TTL
     all_resources = red.hgetall(resource_redis_cache_key)
@@ -2718,6 +2722,7 @@ schedule_minute = timedelta(minutes=1)
 schedule_5_minutes = timedelta(minutes=5)
 schedule_24_hours = timedelta(hours=24)
 schedule_1_hour = timedelta(hours=1)
+schedule_15_seconds = timedelta(seconds=15)
 
 if config.get("_global_.development", False) and config.get(
     "_global_._development_run_celery_tasks_1_min", False
@@ -2730,6 +2735,7 @@ if config.get("_global_.development", False) and config.get(
     schedule_1_hour = dev_schedule
     schedule_6_hours = dev_schedule
     schedule_5_minutes = dev_schedule
+    schedule_15_seconds = dev_schedule
 
 schedule = {
     "cache_iam_resources_across_accounts_for_all_tenants": {
@@ -2837,7 +2843,7 @@ schedule = {
     "handle_tenant_aws_integration_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
         "options": {"expires": 180},
-        "schedule": schedule_minute,
+        "schedule": schedule_15_seconds,
     },
     "cache_terraform_resources_task_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_tenants",

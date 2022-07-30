@@ -4,7 +4,7 @@ import tornado.escape
 from common.config import config
 from common.config.models import ModelAdapter
 from common.handlers.base import BaseHandler
-from common.lib.auth import can_admin_all
+from common.lib.auth import is_tenant_admin
 from common.lib.plugins import get_plugin_by_name
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
@@ -65,7 +65,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
         # Checks authz levels of current user
         generic_error_message = f"Cannot call GET on {type(self).__name__}"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -125,7 +125,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
         # Checks authz levels of current user
         generic_error_message = f"Unable to call POST on {type(self).__name__}"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -181,7 +181,7 @@ class ConfigurationCrudHandler(BaseHandler):
 
         # Checks authz levels of current user
         generic_error_message = "Unable to delete data"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -281,7 +281,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
         # Checks authz levels of current user
         generic_error_message = f"Cannot call GET on {type(self).__name__}"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -323,7 +323,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
         # Checks authz levels of current user
         generic_error_message = f"Unable to call POST on {type(self).__name__}"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
@@ -381,7 +381,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
         # Checks authz levels of current user
         generic_error_message = "Unable to delete data"
-        if not can_admin_all(self.user, self.groups, tenant):
+        if not is_tenant_admin(self.user, self.groups, tenant):
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data

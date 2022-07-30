@@ -5,6 +5,7 @@ import sentry_sdk
 from policy_sentry.util.arns import parse_arn
 
 import common.lib.noq_json as json
+from common.aws.utils import ResourceSummary, get_url_for_resource
 from common.config import config
 from common.exceptions.exceptions import MustBeFte, ResourceNotFound
 from common.handlers.base import BaseAPIV2Handler, BaseMtlsHandler
@@ -13,7 +14,6 @@ from common.lib.auth import can_admin_policies, get_accounts_user_can_view_resou
 from common.lib.aws.utils import fetch_resource_details
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.plugins import get_plugin_by_name
-from common.lib.policies import get_url_for_resource
 from common.lib.redis import RedisHandler, redis_hget
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
@@ -153,7 +153,7 @@ class ResourceDetailHandler(BaseAPIV2Handler):
 
 
 class GetResourceURLHandler(BaseMtlsHandler):
-    """consoleme CLI resource URL handler. Parameters accepted: arn."""
+    """Noq CLI resource URL handler. Parameters accepted: arn."""
 
     def initialize(self):
         self.user: str = None
@@ -164,7 +164,7 @@ class GetResourceURLHandler(BaseMtlsHandler):
         /api/v2/get_resource_url - Endpoint used to get an URL from an ARN
         ---
         get:
-            description: Get the resource URL for ConsoleMe, given an ARN
+            description: Get the resource URL for Noq, given an ARN
             responses:
                 200:
                     description: Returns a URL generated from the ARN in JSON form
@@ -231,7 +231,9 @@ class GetResourceURLHandler(BaseMtlsHandler):
             )
             if not resource_info:
                 raise ValueError("Resource not found in organization cache")
-            resource_url = await get_url_for_resource(arn, tenant)
+
+            resource_summary = await ResourceSummary.set(tenant, arn)
+            resource_url = await get_url_for_resource(resource_summary)
             if not resource_url:
                 raise ValueError("This resource type is currently not supported")
         except (ResourceNotFound, ValueError) as e:
