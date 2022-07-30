@@ -71,6 +71,7 @@ from common.lib.aws.utils import (
     onboard_new_accounts_from_orgs,
     remove_expired_requests_for_tenants,
     remove_expired_tenant_requests,
+    sync_account_names_from_orgs,
 )
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
@@ -2301,9 +2302,10 @@ def cache_organization_structure(tenant=None) -> Dict:
     log_data["accounts_onboarded"] = async_to_sync(onboard_new_accounts_from_orgs)(
         tenant
     )
-    # TODO: Add to log data
     # Sync account names if enabled in org
-    # account_names_synced = async_to_sync(sync_account_names_from_orgs)(tenant)
+    log_data["account_names_synced"] = async_to_sync(sync_account_names_from_orgs)(
+        tenant
+    )
 
     try:
         org_structure = async_to_sync(cache_org_structure)(tenant)
