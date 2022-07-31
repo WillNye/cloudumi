@@ -7,6 +7,7 @@ import urllib.parse
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import boto3
 import sentry_sdk
 from botocore.exceptions import ClientError
 from policy_sentry.util.arns import parse_arn
@@ -789,112 +790,190 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
                             .first.name
                         )
                         continue  # We already know about this account, and can skip it
-                    except Exception:
-                        pass  # We don't yet know about this account, and can process it.
+                    except ValueError as e:
+                        if "did not find any items with the given query" not in str(e):
+                            raise
+                        # We don't yet know about this account, and can process it.
+
+                    org_iam_client = boto3_cached_conn(
+                        "iam",
+                        tenant,
+                        None,
+                        region=config.region,
+                        assume_role=spoke_role_name,
+                        account_number=org_account.account_id,
+                        session_name="noq_onboard_new_accounts_from_orgs",
+                    )
+
+                    temp_policy_name = "noq_onboard_new_accounts_from_orgs_temp_sts"
+                    # TODO: Actually this is a bad idea. Instruct the user to do this as a policy in Self-Service
+                    org_iam_client.put_role_policy(
+                        RoleName=spoke_role_name,
+                        PolicyName=temp_policy_name,
+                        PolicyDocument=json.dumps(
+                            {
+                                "Action": "sts:AssumeRole",
+                                "Effect": "Allow",
+                                "Resource": "*",
+                            }
+                        ),
+                    )
+                    await asyncio.sleep(
+                        10
+                    )  # Wait 10 seconds for permissions to propagate
 
                     for aws_organizations_role_name in org_account.role_names:
+                        # Get STS client on Org Account
+                        # attempt sts:AssumeRole
+                        org_role_arn = f"arn:aws:iam::{account['Id']}:role/{aws_organizations_role_name}"
                         try:
-                            cf_client = boto3_cached_conn(
-                                "cloudformation",
+                            # TODO: SpokeRoles, by default, do not have the ability to assume other roles
+                            # To automatically onboard a new account, we have to grant the Spoke role this capability
+                            # temporarily then wait for the permission to propagate. THIS NEEDS TO BE DOCUMENTED
+                            # and we need a finally statement to ensure we attempt to remove it.
+                            # TODO: Inject retry and/or sleep
+                            # TODO: Save somewhere that we know we attempted this account before, so no need to try again.
+                            org_sts_client = boto3_cached_conn(
+                                "sts",
+                                tenant,
+                                None,
                                 region=config.region,
-                                account_number=account["Id"],
-                                assume_role=aws_organizations_role_name,
+                                assume_role=spoke_role_name,
+                                account_number=org_account.account_id,
                                 session_name="noq_onboard_new_accounts_from_orgs",
                             )
-                        except Exception:
-                            continue
-                        # Onboard the account.
-                        spoke_stack_name = config.get(
-                            "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
-                        )
-                        spoke_role_template_url = config.get(
-                            "_global_.integrations.aws.registration_spoke_role_cf_template",
-                            "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
-                        )
-                        spoke_roles = (
-                            ModelAdapter(SpokeAccount)
-                            .load_config("spoke_accounts", tenant)
-                            .models
-                        )
-                        external_id = config.get_tenant_specific_key(
-                            "tenant_details.external_id", tenant
-                        )
-                        if not external_id:
-                            log.error({**log_data, "error": "External ID not found"})
-                            continue
-                        cluster_role = config.get("_global_.integrations.aws.node_role")
-                        if not cluster_role:
-                            log.error({**log_data, "error": "Cluster role not found"})
-                            continue
-                        if spoke_roles:
-                            spoke_role_name = spoke_roles[0].name
-                            spoke_stack_name = spoke_role_name
-                        else:
-                            spoke_role_name = config.get(
+
+                            # Use the spoke role on the org management account to assume into the org role on the
+                            # new (unknown) account
+                            new_account_credentials = await aio_wrapper(
+                                org_sts_client.assume_role,
+                                RoleArn=org_role_arn,
+                                RoleSessionName="noq_onboard_new_accounts_from_orgs",
+                            )
+
+                            new_account_cf_client = await aio_wrapper(
+                                boto3.client,
+                                "iam",
+                                aws_access_key_id=new_account_credentials[
+                                    "Credentials"
+                                ]["AccessKeyId"],
+                                aws_secret_access_key=new_account_credentials[
+                                    "Credentials"
+                                ]["SecretAccessKey"],
+                                aws_session_token=new_account_credentials[
+                                    "Credentials"
+                                ]["SessionToken"],
+                            )
+
+                            # Onboard the account.
+                            spoke_stack_name = config.get(
                                 "_global_.integrations.aws.spoke_role_name",
                                 "NoqSpokeRole",
                             )
-                        hub_account = (
-                            models.ModelAdapter(HubAccount)
-                            .load_config("hub_account", tenant)
-                            .model
-                        )
-                        if hub_account:
+                            spoke_role_template_url = config.get(
+                                "_global_.integrations.aws.registration_spoke_role_cf_template",
+                                "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
+                            )
+                            spoke_roles = (
+                                ModelAdapter(SpokeAccount)
+                                .load_config("spoke_accounts", tenant)
+                                .models
+                            )
+                            external_id = config.get_tenant_specific_key(
+                                "tenant_details.external_id", tenant
+                            )
+                            if not external_id:
+                                log.error(
+                                    {**log_data, "error": "External ID not found"}
+                                )
+                                continue
+                            cluster_role = config.get(
+                                "_global_.integrations.aws.node_role"
+                            )
+                            if not cluster_role:
+                                log.error(
+                                    {**log_data, "error": "Cluster role not found"}
+                                )
+                                continue
+                            if spoke_roles:
+                                spoke_role_name = spoke_roles[0].name
+                                spoke_stack_name = spoke_role_name
+                            else:
+                                spoke_role_name = config.get(
+                                    "_global_.integrations.aws.spoke_role_name",
+                                    "NoqSpokeRole",
+                                )
+                            hub_account = (
+                                models.ModelAdapter(HubAccount)
+                                .load_config("hub_account", tenant)
+                                .model
+                            )
                             customer_central_account_role = hub_account.role_arn
-                        region = config.get(
-                            "_global_.integrations.aws.region", "us-west-2"
-                        )
-                        account_id = config.get("_global_.integrations.aws.account_id")
-                        cluster_id = config.get("_global_.deployment.cluster_id")
-                        registration_topic_arn = config.get(
-                            "_global_.integrations.aws.registration_topic_arn",
-                            f"arn:aws:sns:{region}:{account_id}:{cluster_id}-registration-topic",
-                        )
-                        spoke_role_parameters = [
-                            {
-                                "ParameterKey": "ExternalIDParameter",
-                                "ParameterValue": external_id,
-                            },
-                            {
-                                "ParameterKey": "CentralRoleArnParameter",
-                                "ParameterValue": customer_central_account_role,
-                            },
-                            {"ParameterKey": "HostParameter", "ParameterValue": tenant},
-                            {
-                                "ParameterKey": "SpokeRoleNameParameter",
-                                "ParameterValue": spoke_role_name,
-                            },
-                            {
-                                "ParameterKey": "RegistrationTopicArnParameter",
-                                "ParameterValue": registration_topic_arn,
-                            },
-                        ]
-                        response = cf_client.create_stack(
-                            StackName=spoke_stack_name,
-                            TemplateURL=(
-                                f"https://console.aws.amazon.com/cloudformation/home?region={region}"
-                                + "#/stacks/quickcreate?templateURL="
-                                + urllib.parse.quote(spoke_role_template_url)
-                                + f"&param_ExternalIDParameter={external_id}"
-                                + f"&param_HostParameter={tenant}"
-                                + f"&param_CentralRoleArnParameter={customer_central_account_role}"
-                                + f"&param_SpokeRoleNameParameter={spoke_role_name}"
-                                + f"&stackName={spoke_stack_name}"
-                                + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
-                            ),
-                            Parameters=spoke_role_parameters,
-                            Capabilities=[
-                                "CAPABILITY_NAMED_IAM",
-                            ],
-                        )
-                        print(response)
-                        break
+
+                            region = config.get(
+                                "_global_.integrations.aws.region", "us-west-2"
+                            )
+                            account_id = config.get(
+                                "_global_.integrations.aws.account_id"
+                            )
+                            cluster_id = config.get("_global_.deployment.cluster_id")
+                            registration_topic_arn = config.get(
+                                "_global_.integrations.aws.registration_topic_arn",
+                                f"arn:aws:sns:{region}:{account_id}:{cluster_id}-registration-topic",
+                            )
+                            spoke_role_parameters = [
+                                {
+                                    "ParameterKey": "ExternalIDParameter",
+                                    "ParameterValue": external_id,
+                                },
+                                {
+                                    "ParameterKey": "CentralRoleArnParameter",
+                                    "ParameterValue": customer_central_account_role,
+                                },
+                                {
+                                    "ParameterKey": "HostParameter",
+                                    "ParameterValue": tenant,
+                                },
+                                {
+                                    "ParameterKey": "SpokeRoleNameParameter",
+                                    "ParameterValue": spoke_role_name,
+                                },
+                                {
+                                    "ParameterKey": "RegistrationTopicArnParameter",
+                                    "ParameterValue": registration_topic_arn,
+                                },
+                            ]
+                            response = new_account_cf_client.create_stack(
+                                StackName=spoke_stack_name,
+                                TemplateURL=(
+                                    f"https://console.aws.amazon.com/cloudformation/home?region={region}"
+                                    + "#/stacks/quickcreate?templateURL="
+                                    + urllib.parse.quote(spoke_role_template_url)
+                                    + f"&param_ExternalIDParameter={external_id}"
+                                    + f"&param_HostParameter={tenant}"
+                                    + f"&param_CentralRoleArnParameter={customer_central_account_role}"
+                                    + f"&param_SpokeRoleNameParameter={spoke_role_name}"
+                                    + f"&stackName={spoke_stack_name}"
+                                    + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
+                                ),
+                                Parameters=spoke_role_parameters,
+                                Capabilities=[
+                                    "CAPABILITY_NAMED_IAM",
+                                ],
+                            )
+                            print(response)
+                            break
+                        except Exception as e:
+                            continue
+                    org_iam_client.delete_role_policy(
+                        RoleName=spoke_role_name, PolicyName=temp_policy_name
+                    )
 
         except Exception as e:
             log.error(f"Unable to retrieve roles from AWS Organizations: {e}")
 
 
-async def sync_account_names_from_orgs(tenant: str) -> set[str]:
+async def sync_account_names_from_orgs(tenant: str) -> dict[str, str]:
     log_data = {"function": "sync_account_names_from_orgs", "tenant": tenant}
     org_account_id_to_name = {}
     account_names_synced = {}
@@ -937,8 +1016,10 @@ async def sync_account_names_from_orgs(tenant: str) -> set[str]:
         except Exception as e:
             log.error({**log_data, "error": str(e)}, exc_info=True)
         for account_id, account_name in accounts_d.items():
-            if account_id != account_name:
-                continue
+            if (
+                account_id != account_name
+            ):  # The account name was changed from the account ID, don't override it.
+                continue  # TODO: Maybe remove this condition?
             if account_id not in org_account_id_to_name:
                 continue
             spoke_account_to_replace = (
