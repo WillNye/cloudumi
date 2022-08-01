@@ -2,7 +2,8 @@ from unittest import TestCase
 
 import pytest
 from asgiref.sync import async_to_sync
-from mock import MagicMock, patch
+from cachetools import TTLCache
+from mock import MagicMock
 
 import common.lib.noq_json as json
 from util.tests.fixtures.fixtures import create_future
@@ -47,8 +48,8 @@ class TestPoliciesLib(TestCase):
             result = get_actions_for_resource(tc["arn"], tc["statement"])
             self.assertListEqual(tc["expected"], result, tc["description"])
 
-    @patch("common.aws.utils.redis_hget", mock_aws_config_resources_redis)
     def test_get_resources_from_events(self):
+        from common.aws.utils import ResourceAccountCache
         from common.lib.policies import get_resources_from_events
 
         policy_changes = [
@@ -132,6 +133,16 @@ class TestPoliciesLib(TestCase):
                 "region": "us-east-1",
             },
         }
+
+        if not ResourceAccountCache._tenant_resources.get(tenant):
+            ResourceAccountCache._tenant_resources[tenant] = TTLCache(
+                maxsize=1000, ttl=120
+            )
+        for _, resource in expected.items():
+            ResourceAccountCache._tenant_resources[tenant][
+                resource["arns"][0]
+            ] = resource["account"]
+
         self.maxDiff = None
         result = async_to_sync(get_resources_from_events)(policy_changes, tenant)
         self.assertDictEqual(expected, result)

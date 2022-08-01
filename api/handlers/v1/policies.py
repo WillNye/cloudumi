@@ -5,7 +5,7 @@ from policyuniverse.expander_minimizer import _expand_wildcard_action
 
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
-from common.aws.utils import get_resource_account
+from common.aws.utils import ResourceAccountCache
 from common.config import config
 from common.exceptions.exceptions import InvalidRequestParameter, MustBeFte
 from common.handlers.base import BaseAPIV1Handler, BaseHandler, BaseMtlsHandler
@@ -232,7 +232,7 @@ async def handle_resource_type_ahead_request(cls):
             if search_string.lower() in app_name.lower():
                 results[app_name] = {"name": app_name, "results": []}
                 for role in roles:
-                    account_id = await get_resource_account(role, tenant)
+                    account_id = await ResourceAccountCache.get(tenant, role)
                     account = accounts.get(account_id, "")
                     parsed_app_name = (
                         f"{app_name} on {account} ({account_id}) ({role})]"

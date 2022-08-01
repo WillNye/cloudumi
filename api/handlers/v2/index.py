@@ -1,7 +1,7 @@
 import tornado.web
 
 import common.lib.noq_json as json
-from common.aws.utils import get_resource_account
+from common.aws.utils import ResourceAccountCache
 from common.config import config
 from common.handlers.base import (
     AuthenticatedStaticFileHandler,
@@ -103,7 +103,7 @@ class EligibleRoleHandler(BaseHandler):
 
         for arn in self.eligible_roles:
             role_name = arn.split("/")[-1]
-            account_id = await get_resource_account(arn, tenant)
+            account_id = await ResourceAccountCache.get(tenant, arn)
             account_name = self.eligible_accounts.get(account_id, "")
             formatted_account_name = config.get_tenant_specific_key(
                 "role_select_page.formatted_account_name",
@@ -134,7 +134,7 @@ class EligibleRoleHandler(BaseHandler):
             """
             arn = role["arn"]
             role_name = arn.split("/")[-1]
-            account_id = await get_resource_account(arn, tenant)
+            account_id = await ResourceAccountCache.get(tenant, arn)
             account_name = self.eligible_accounts.get(account_id, "")
             formatted_account_name = config.get_tenant_specific_key(
                 "role_select_page.formatted_account_name",
