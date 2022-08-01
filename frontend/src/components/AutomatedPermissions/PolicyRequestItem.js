@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import camelCase from 'lodash/camelCase'
 import startCase from 'lodash/startCase'
 import {
@@ -18,6 +18,7 @@ import {
 import Editor from '@monaco-editor/react'
 import { useToast } from 'lib/Toast'
 import { APPLIED_POLICY_STATUSES, editorOptions } from './constants'
+import _ from 'lodash'
 
 const PolicyRequestItem = ({
   policyRequest,
@@ -30,13 +31,11 @@ const PolicyRequestItem = ({
 
   const { error, success } = useToast()
 
-  const existingPolicy = JSON.stringify(policyRequest.policy || {}, null, '\t')
-  const [modifiedPolicy, setModifiedPolicy] = useState(existingPolicy)
+  const [existingPolicy, setExistingPolicy] = useState({})
 
-  const noChangesDetected = useMemo(
-    () => existingPolicy === modifiedPolicy,
-    [existingPolicy, modifiedPolicy]
-  )
+  useEffect(() => {
+    setExistingPolicy(policyRequest.policy || {})
+  }, [policyRequest.policy])
 
   const cantEditPolicy = APPLIED_POLICY_STATUSES.includes(policyRequest.status)
 
@@ -64,10 +63,10 @@ const PolicyRequestItem = ({
       const value = result?.principal?.principal_arn || policyRequest.role
       handleUpdateRequest(policyRequest.account.account_id, policyRequest.id, {
         role: value,
-        policy: JSON.parse(modifiedPolicy),
+        policy: existingPolicy,
       })
     },
-    [modifiedPolicy, policyRequest] // eslint-disable-line react-hooks/exhaustive-deps
+    [existingPolicy, policyRequest] // eslint-disable-line react-hooks/exhaustive-deps
   )
 
   const approveAutomaticPolicyRequest = (accountId, policyId, data) => {
@@ -200,11 +199,11 @@ const PolicyRequestItem = ({
                   <Editor
                     height='450px'
                     defaultLanguage='json'
-                    defaultValue={existingPolicy}
+                    defaultValue={JSON.stringify(existingPolicy || {}, null, 2)}
                     onChange={(value) => {
-                      setModifiedPolicy(value)
+                      setExistingPolicy(JSON.parse(value))
                     }}
-                    modified={modifiedPolicy}
+                    modified={!_.isEqual(existingPolicy, policyRequest.policy)}
                     options={{ ...editorOptions, readOnly: cantEditPolicy }}
                     alwaysConsumeMouseWheel={false}
                     textAlign='center'
@@ -225,7 +224,7 @@ const PolicyRequestItem = ({
                       policyRequest.id,
                       {
                         role: policyRequest.role,
-                        policy: JSON.parse(modifiedPolicy),
+                        policy: existingPolicy,
                       }
                     )
                   }
@@ -236,14 +235,14 @@ const PolicyRequestItem = ({
                   content='Update Change'
                   positive
                   fluid
-                  disabled={cantEditPolicy || noChangesDetected}
+                  disabled={cantEditPolicy}
                   onClick={() =>
                     handleUpdateRequest(
                       policyRequest.account.account_id,
                       policyRequest.id,
                       {
                         role: policyRequest.role,
-                        policy: JSON.parse(modifiedPolicy),
+                        policy: existingPolicy,
                       }
                     )
                   }

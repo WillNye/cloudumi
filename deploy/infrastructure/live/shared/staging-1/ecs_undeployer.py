@@ -3,7 +3,7 @@ import sys
 from typing import List
 
 import boto3
-import semver
+from distutils.version import LooseVersion
 
 ELASTIC_REGISTRIES = [
     "259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api",
@@ -15,13 +15,13 @@ def get_registry_name(registry_url: str) -> str:
     return registry_url.split("/")[-1]
 
 
-def get_image_tags(registry_name: str) -> List[semver.VersionInfo]:
+def get_image_tags(registry_name: str) -> List[str]:
     client = boto3.client("ecr", region_name=os.getenv("AWS_REGION", "us-west-2"))
     image_info = client.list_images(repositoryName=registry_name)
     return [
-        semver.VersionInfo.parse(x)
+        x
         for x in [y.get("imageTag") for y in image_info.get("imageIds", [])]
-        if "." in x
+        if x is not None and "." in x
     ]
 
 
@@ -34,32 +34,37 @@ if __name__ == "__main__":
     else:
         print(f"Syntax: {sys.argv[0]} <rollback_version>")
 
+    rollback_candidate_version = "0.0.0-dev"
     if version is None:
-        resolved_versions = dict()
+        resolved_versions = {}
+        ref_registry_name = None
         for registry in ELASTIC_REGISTRIES:
             registry_name = get_registry_name(registry)
-            resolved_versions[registry_name] = get_image_tags(registry_name)
-        try:
-            rollback_candidate_versions = {
-                x: y
-                for x in ELASTIC_REGISTRIES
-                for y in resolved_versions[get_registry_name(x)][-2]
-            }
-        except IndexError:
-            raise RuntimeError(
-                f"Unable to rollback, no other versions other than {resolved_versions[get_registry_name(ELASTIC_REGISTRIES[0])][0]}"
+            if ref_registry_name is None:
+                ref_registry_name = registry_name
+            resolved_versions[registry_name] = sorted(
+                get_image_tags(registry_name), key=LooseVersion
             )
 
-        rollback_candidate_version = {x for x in rollback_candidate_versions.values()}
-        if len(rollback_candidate_version) > 1:
-            raise RuntimeError(
-                f"Inconsistent versioning, more handholding is required {rollback_candidate_version}"
+        ref_versions = list(
+            sorted(
+                {
+                    x
+                    for n in resolved_versions.values()
+                    for x in resolved_versions[ref_registry_name]
+                    if any(k for k in n if k == x)
+                },
+                key=LooseVersion,
             )
+        )
+
+        rollback_candidate_version = ref_versions[-2]
+
     else:
-        rollback_candidate_version = [version]
+        rollback_candidate_version = version
 
-    os.environ["VERSION"] = rollback_candidate_version[0]
-    print(f"Rolling back to version: {rollback_candidate_version[0]}")
+    os.environ["VERSION"] = rollback_candidate_version
+    print(f"Rolling back to version: {rollback_candidate_version}")
     answer = input("Are you sure? y/n or CTRL+C to exit")
 
     if answer in ["y", "Y"]:
