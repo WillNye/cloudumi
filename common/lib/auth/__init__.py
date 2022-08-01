@@ -8,9 +8,9 @@ import jwt
 from cryptography.hazmat.backends.openssl.rsa import _RSAPublicKey
 
 import common.lib.noq_json as json
+from common.aws.utils import ResourceAccountCache
 from common.config import config
 from common.config.models import ModelAdapter
-from common.lib.aws.utils import get_resource_account
 from common.lib.crypto import CryptoSign
 from common.lib.generic import is_in_group
 from common.lib.plugins import get_plugin_by_name
@@ -277,7 +277,7 @@ def can_create_roles(user: str, user_groups: List[str], tenant: str) -> bool:
 async def get_extended_request_account_ids(
     extended_request: ExtendedRequestModel, tenant: str
 ) -> set[str]:
-    accounts = []
+    accounts = set()
 
     for change in extended_request.changes.changes:
         arn = change.principal.principal_arn
@@ -286,8 +286,7 @@ async def get_extended_request_account_ids(
             "sts_resource_policy",
         ]:
             arn = change.arn
-
-        await get_resource_account(arn, tenant)
+        accounts.add(await ResourceAccountCache.get(tenant, arn))
     return accounts
 
 
@@ -303,7 +302,7 @@ async def get_extended_request_allowed_approvers(
         ]:
             arn = change.arn
 
-        account_id = await get_resource_account(arn, tenant)
+        account_id = await ResourceAccountCache.get(tenant, arn)
         admins = await get_account_delegated_admins(account_id, tenant)
         allowed_admins.update(admins)
     return list(allowed_admins)
@@ -355,8 +354,7 @@ async def populate_approve_reject_policy(
         ]:
             arn = change.arn
 
-        account_id = await get_resource_account(arn, tenant)
-
+        account_id = await ResourceAccountCache.get(tenant, arn)
         is_owner = await can_admin_policies(user, groups, tenant, [account_id])
         allowed_admins = await get_account_delegated_admins(account_id, tenant)
         request_config[change.id] = {

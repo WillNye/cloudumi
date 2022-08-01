@@ -20,7 +20,7 @@ from parliament import analyze_policy_string, enhance_finding
 from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.aws.iam.statement.utils import condense_statements
 from common.aws.iam.user.utils import fetch_iam_user
-from common.aws.utils import ResourceSummary, get_resource_account
+from common.aws.utils import ResourceAccountCache, ResourceSummary
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib import noq_json as json
@@ -1088,7 +1088,7 @@ async def calculate_unused_policy_for_identities(
             continue
         if ":role/aws-reserved" in arn:
             continue
-        account_id = await get_resource_account(arn, tenant)
+        account_id = await ResourceAccountCache.get(tenant, arn)
         role = await IAMRole.get(
             tenant,
             account_id,
