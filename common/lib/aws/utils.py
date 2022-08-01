@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import sentry_sdk
 from botocore.exceptions import ClientError
-from policy_sentry.util.arns import parse_arn
 
 from common.aws.iam.policy.utils import (
     fetch_managed_policy_details,
@@ -16,7 +15,7 @@ from common.aws.iam.policy.utils import (
     should_exclude_policy_from_comparison,
 )
 from common.aws.iam.role.config import get_active_tear_users_tag
-from common.aws.utils import get_resource_account, get_resource_tag
+from common.aws.utils import ResourceSummary, get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -974,7 +973,6 @@ async def remove_expired_request_changes(
             continue
 
         principal_arn = change.principal.principal_arn
-
         if change.change_type in [
             "managed_policy_resource",
             "resource_policy",
@@ -982,33 +980,25 @@ async def remove_expired_request_changes(
         ]:
             principal_arn = change.arn
 
-        arn_parsed = parse_arn(principal_arn)
-        # resource name is none for s3 buckets
-        principal_name = (arn_parsed["resource_path"] or "").split("/")[-1]
-
-        resource_type = arn_parsed["service"]
-        resource_name = arn_parsed["resource"]
-        resource_region = arn_parsed["region"]
-        resource_account = arn_parsed["account"]
-
-        if not resource_account:
-            resource_account = await get_resource_account(principal_arn, tenant)
-
-        if resource_type == "s3" and not resource_region:
-            resource_region = await get_bucket_location_with_fallback(
-                resource_name, resource_account, tenant
-            )
-
-        if not resource_account:
+        try:
+            resource_summary = await ResourceSummary.set(tenant, principal_arn)
+        except ValueError:
             # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
             # we can't revoke this change
             log_data["message"] = "Resource account not found"
             log.warning(log_data)
             continue
 
+        # resource name is none for s3 buckets
+        principal_name = resource_summary.name
+        resource_service = resource_summary.service
+        resource_type = resource_summary.resource_type
+        resource_region = resource_summary.region
+        resource_account = resource_summary.account
+
         client = await aio_wrapper(
             boto3_cached_conn,
-            resource_type,
+            resource_service,
             tenant,
             user,
             service_type="client",
@@ -1033,13 +1023,13 @@ async def remove_expired_request_changes(
 
         if change.change_type == "inline_policy":
             try:
-                if resource_name == "role":
+                if resource_type == "role":
                     await aio_wrapper(
                         client.delete_role_policy,
                         RoleName=principal_name,
                         PolicyName=change.policy_name,
                     )
-                elif resource_name == "user":
+                elif resource_type == "user":
                     await aio_wrapper(
                         client.delete_user_policy,
                         UserName=principal_name,
@@ -1052,7 +1042,7 @@ async def remove_expired_request_changes(
                 log_data["message"] = "Policy was not found"
                 log_data[
                     "error"
-                ] = f"{change.policy_name} was not attached to {resource_name}"
+                ] = f"{change.policy_name} was not attached to {resource_type}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1067,12 +1057,12 @@ async def remove_expired_request_changes(
 
         elif change.change_type == "permissions_boundary":
             try:
-                if resource_name == "role":
+                if resource_type == "role":
                     await aio_wrapper(
                         client.delete_role_permissions_boundary,
                         RoleName=principal_name,
                     )
-                elif resource_name == "user":
+                elif resource_type == "user":
                     await aio_wrapper(
                         client.delete_user_permissions_boundary,
                         UserName=principal_name,
@@ -1084,7 +1074,7 @@ async def remove_expired_request_changes(
                 log_data["message"] = "Policy was not found"
                 log_data[
                     "error"
-                ] = f"permission boundary was not attached to {resource_name}"
+                ] = f"permission boundary was not attached to {resource_type}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1101,13 +1091,13 @@ async def remove_expired_request_changes(
 
         elif change.change_type == "managed_policy":
             try:
-                if resource_name == "role":
+                if resource_type == "role":
                     await aio_wrapper(
                         client.detach_role_policy,
                         RoleName=principal_name,
                         PolicyArn=change.arn,
                     )
-                elif resource_name == "user":
+                elif resource_type == "user":
                     await aio_wrapper(
                         client.detach_user_policy,
                         UserName=principal_name,
@@ -1118,7 +1108,7 @@ async def remove_expired_request_changes(
 
             except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
-                log_data["error"] = f"{change.arn} was not attached to {resource_name}"
+                log_data["error"] = f"{change.arn} was not attached to {resource_type}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1134,7 +1124,7 @@ async def remove_expired_request_changes(
         elif change.change_type == "resource_tag":
             try:
                 await prune_iam_resource_tag(
-                    client, resource_name, principal_name, change.key, change.value
+                    client, resource_type, principal_name, change.key, change.value
                 )
                 change.status = Status.expired
                 should_update_policy_request = True
@@ -1142,7 +1132,7 @@ async def remove_expired_request_changes(
 
             except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
-                log_data["error"] = f"{change.key} was not attached to {resource_name}"
+                log_data["error"] = f"{change.key} was not attached to {resource_type}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1216,8 +1206,8 @@ async def remove_expired_request_changes(
 
                     existing_policy = await get_resource_policy(
                         resource_account,
+                        resource_service,
                         resource_type,
-                        resource_name,
                         resource_region,
                         tenant,
                         user,
@@ -1252,29 +1242,29 @@ async def remove_expired_request_changes(
 
                 existing_policy["Statement"] = new_policy_statement
 
-                if resource_type == "s3":
+                if resource_service == "s3":
                     if len(new_policy_statement) == 0:
                         await aio_wrapper(
                             client.delete_bucket_policy,
-                            Bucket=resource_name,
+                            Bucket=resource_type,
                             ExpectedBucketOwner=resource_account,
                         )
                     else:
                         await aio_wrapper(
                             client.put_bucket_policy,
-                            Bucket=resource_name,
+                            Bucket=resource_type,
                             Policy=ujson.dumps(existing_policy),
                         )
-                elif resource_type == "sns":
+                elif resource_service == "sns":
                     await aio_wrapper(
                         client.set_topic_attributes,
                         TopicArn=change.arn,
                         AttributeName="Policy",
                         AttributeValue=ujson.dumps(existing_policy),
                     )
-                elif resource_type == "sqs":
+                elif resource_service == "sqs":
                     queue_url: dict = await aio_wrapper(
-                        client.get_queue_url, QueueName=resource_name
+                        client.get_queue_url, QueueName=resource_type
                     )
 
                     if len(new_policy_statement) == 0:
@@ -1290,7 +1280,7 @@ async def remove_expired_request_changes(
                             QueueUrl=queue_url.get("QueueUrl"),
                             Attributes={"Policy": ujson.dumps(existing_policy)},
                         )
-                elif resource_type == "iam":
+                elif resource_service == "iam":
                     await aio_wrapper(
                         client.update_assume_role_policy,
                         RoleName=principal_name,
@@ -1311,7 +1301,7 @@ async def remove_expired_request_changes(
             extended_request.request_status = RequestStatus.expired
             await IAMRequest.write_v2(extended_request, tenant)
 
-            if resource_name == "role":
+            if resource_type == "role":
                 await IAMRole.get(
                     tenant,
                     resource_account,
@@ -1320,7 +1310,7 @@ async def remove_expired_request_changes(
                     run_sync=True,
                 )
 
-            elif resource_name == "user":
+            elif resource_type == "user":
                 from common.aws.iam.user.utils import fetch_iam_user
 
                 await fetch_iam_user(

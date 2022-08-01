@@ -22,8 +22,8 @@ from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.utils import get_supported_resource_permissions
 from common.aws.utils import (
+    ResourceAccountCache,
     ResourceSummary,
-    get_resource_account,
     get_resource_tag,
     get_url_for_resource,
 )
@@ -702,8 +702,8 @@ async def generate_resource_policies(
                     policy_change, tenant
                 )
                 for resource in policy_change.resources:
-                    resource_account_id = await get_resource_account(
-                        resource.arn, tenant
+                    resource_account_id = await ResourceAccountCache.get(
+                        tenant, resource.arn
                     )
                     if (
                         resource_account_id != role_account_id
@@ -2783,7 +2783,7 @@ async def parse_and_apply_policy_request_modification(
             ]:
                 specific_change_arn = specific_change.arn
 
-            account_ids = [await get_resource_account(specific_change_arn, tenant)]
+            account_ids = [await ResourceAccountCache.get(tenant, specific_change_arn)]
         else:
             account_ids = await get_extended_request_account_ids(
                 extended_request, tenant
@@ -2825,7 +2825,7 @@ async def parse_and_apply_policy_request_modification(
             ]:
                 specific_change_arn = specific_change.arn
 
-            account_ids = [await get_resource_account(specific_change_arn, tenant)]
+            account_ids = [await ResourceAccountCache.get(tenant, specific_change_arn)]
 
         can_manage_policy_request = await can_admin_policies(
             user, user_groups, tenant, account_ids
