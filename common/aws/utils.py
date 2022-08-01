@@ -1,11 +1,11 @@
-import json
+import asyncio
 from typing import Dict, Optional
 
+from cachetools import TTLCache
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
 from common.config import config
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
-from common.lib.redis import RedisHandler, redis_hget
 
 log = config.get_logger()
 
@@ -33,60 +33,79 @@ def get_resource_tag(
     return default
 
 
-async def get_resource_account(arn: str, tenant: str) -> str:
-    """Return the AWS account ID that owns a resource.
-
-    In most cases, this will pull the ID directly from the ARN.
-    If we are unsuccessful in pulling the account from ARN, we try to grab it from our resources cache
+async def list_tenant_resources(tenant: str) -> list[dict]:
     """
-    red = await RedisHandler().redis(tenant)
-    resource_account: str = get_account_from_arn(arn)
-    if resource_account:
-        return resource_account
+    Returns a list containing summary information of all tenant resources.
 
-    resources_from_aws_config_redis_key: str = config.get_tenant_specific_key(
-        "aws_config_cache.redis_key",
-        tenant,
-        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
+    Note: policies is in the keys but this does not represent all resources types contained within the response.
+        At the time this was written, this is the list of supported resources -
+            S3, Role, SQS, SNS, User, and Policy
+
+    Response Keys: list[
+        Dict(
+            account_id: str,
+            account_name: str,
+            arn: str,
+            technology: str,
+            templated: str,
+            errors: int,
+            config_history_url: str
+        )
+    ]
+    """
+
+    return await retrieve_json_data_from_redis_or_s3(
+        redis_key=config.get_tenant_specific_key(
+            "policies.redis_policies_key",
+            tenant,
+            f"{tenant}_ALL_POLICIES",
+        ),
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_policies_table_details.s3.bucket", tenant
+        ),
+        s3_key=config.get_tenant_specific_key(
+            "cache_policies_table_details.s3.file",
+            tenant,
+            "policies_table/cache_policies_table_details_v1.json.gz",
+        ),
+        default=[],
+        tenant=tenant,
     )
 
-    if not red.exists(resources_from_aws_config_redis_key):
-        # This will force a refresh of our redis cache if the data exists in S3
-        await retrieve_json_data_from_redis_or_s3(
-            redis_key=resources_from_aws_config_redis_key,
-            s3_bucket=config.get_tenant_specific_key(
-                "aws_config_cache_combined.s3.bucket", tenant
-            ),
-            s3_key=config.get_tenant_specific_key(
-                "aws_config_cache_combined.s3.file",
-                tenant,
-                "aws_config_cache_combined/aws_config_resource_cache_combined_v1.json.gz",
-            ),
-            redis_data_type="hash",
-            tenant=tenant,
-            default={},
-        )
 
-    resource_info = await redis_hget(resources_from_aws_config_redis_key, arn, tenant)
-    if resource_info:
-        return json.loads(resource_info).get("accountId", "")
-    elif "arn:aws:s3:::" in arn:
-        # Try to retrieve S3 bucket information from S3 cache. This is inefficient and we should ideally have
-        # retrieved this info from our AWS Config cache, but we've encountered problems with AWS Config historically
-        # that have necessitated this code.
-        s3_cache = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get_tenant_specific_key(
-                "redis.s3_buckets_key", tenant, f"{tenant}_S3_BUCKETS"
-            ),
-            redis_data_type="hash",
-            tenant=tenant,
+class ResourceAccountCache:
+    _tenant_resources: dict[TTLCache] = {}
+
+    @classmethod
+    async def set_tenant_resources(cls, tenant: str) -> TTLCache:
+        tenant_resources = await list_tenant_resources(tenant)
+        cls._tenant_resources[tenant] = TTLCache(
+            maxsize=max(len(tenant_resources), 1000), ttl=120
         )
-        search_bucket_name = arn.split(":")[-1]
-        for bucket_account_id, buckets in s3_cache.items():
-            buckets_j = json.loads(buckets)
-            if search_bucket_name in buckets_j:
-                return bucket_account_id
-    return ""
+        for tenant_resource in tenant_resources:
+            cls._tenant_resources[tenant][tenant_resource["arn"]] = tenant_resource[
+                "account_id"
+            ]
+
+        return cls._tenant_resources[tenant]
+
+    @classmethod
+    async def get(cls, tenant: str, arn: str) -> str:
+        if resource_account := get_account_from_arn(arn):
+            return resource_account
+
+        if tenant_resources := cls._tenant_resources.get(tenant):
+            try:
+                return tenant_resources[arn]
+            except KeyError:
+                tenant_resources = await cls.set_tenant_resources(tenant)
+        else:
+            tenant_resources = await cls.set_tenant_resources(tenant)
+
+        try:
+            return tenant_resources[arn]
+        except KeyError:
+            return ""
 
 
 class ResourceSummary:
@@ -130,16 +149,18 @@ class ResourceSummary:
         account_provided = bool(parsed_arn["account"])
         content_set = False
 
-        if not account_provided and account_required:
+        if not account_provided:
             arn_as_resource = arn
             if parsed_arn["service"] == "s3" and not account_provided:
                 arn_as_resource = arn_as_resource.replace(
                     f"/{parsed_arn['resource_path']}", ""
                 )
 
-            parsed_arn["account"] = await get_resource_account(arn_as_resource, tenant)
-            if not parsed_arn["account"]:
-                raise ValueError("Resource account not found")
+            parsed_arn["account"] = await ResourceAccountCache.get(
+                tenant, arn_as_resource
+            )
+            if account_required and not parsed_arn["account"]:
+                raise ValueError(f"Resource account not found - {arn_as_resource}")
 
         if parsed_arn["service"] == "s3":
             parsed_arn["name"] = parsed_arn.pop("resource_path", None)
@@ -180,6 +201,27 @@ class ResourceSummary:
                 parsed_arn["resource_type"] = parsed_arn["service"]
 
         return cls(tenant, **parsed_arn)
+
+    @property
+    def full_name(self):
+        if self.resource_type == "policy" and self.path:
+            return f"{self.path}/{self.name}"
+        return self.name
+
+    @classmethod
+    async def bulk_set(
+        cls,
+        tenant: str,
+        arn_list: list[str],
+        region_required: bool = False,
+        account_required: bool = True,
+    ) -> list["ResourceSummary"]:
+        return await asyncio.gather(
+            *[
+                cls.set(tenant, arn, region_required, account_required)
+                for arn in arn_list
+            ]
+        )
 
 
 async def get_url_for_resource(resource_summary: ResourceSummary):

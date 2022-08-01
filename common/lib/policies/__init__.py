@@ -354,10 +354,13 @@ async def get_resources_from_events(
                     for resource in resources:
                         if resource == "*":
                             continue
+                        try:
+                            resource_summary = await ResourceSummary.set(
+                                tenant, resource, region_required=True
+                            )
+                        except ValueError:
+                            continue
 
-                        resource_summary = await ResourceSummary.set(
-                            tenant, resource, region_required=True
-                        )
                         # Default to parent name to use bucket name for S3 objects
                         namespace = (
                             resource_summary.parent_name or resource_summary.name

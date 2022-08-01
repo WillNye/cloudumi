@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
-from common.aws.utils import ResourceSummary, get_resource_account, get_url_for_resource
+from common.aws.utils import ResourceAccountCache, ResourceSummary, get_url_for_resource
 from common.config import config
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
@@ -554,8 +554,8 @@ class RequestHandler(BaseAPIV2Handler):
 
             # Update in dynamo
             await IAMRequest.write_v2(extended_request, tenant)
-            account_id = await get_resource_account(
-                extended_request.principal.principal_arn, tenant
+            account_id = await ResourceAccountCache.get(
+                tenant, extended_request.principal.principal_arn
             )
 
             # Force a refresh of the role in Redis/DDB
