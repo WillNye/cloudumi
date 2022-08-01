@@ -2327,9 +2327,6 @@ def cache_organization_structure(tenant=None) -> Dict:
     return log_data
 
 
-cache_organization_structure("localhost")
-
-
 @app.task(soft_time_limit=1800, **default_retry_kwargs)
 def cache_resource_templates_task_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"

@@ -3,7 +3,6 @@ import fnmatch
 import json
 import re
 import sys
-import urllib.parse
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -11,7 +10,6 @@ import boto3
 import sentry_sdk
 from botocore.exceptions import ClientError
 
-from common import models
 from common.aws.iam.policy.utils import (
     fetch_managed_policy_details,
     get_resource_policy,
@@ -745,8 +743,9 @@ async def get_org_structure(tenant, force_sync=False) -> Dict[str, Any]:
     return org_structure
 
 
-async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
+async def onboard_new_accounts_from_orgs(tenant: str) -> list[str]:
     log_data = {"function": "onboard_new_accounts_from_orgs", "tenant": tenant}
+    new_accounts_onboarded = []
     org_accounts = ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
     for org_account in org_accounts:
         if not org_account.automatically_onboard_accounts or not org_account.role_names:
@@ -781,6 +780,7 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
             paginator = org_client.get_paginator("list_accounts")
             for page in paginator.paginate():
                 for account in page.get("Accounts"):
+                    log_data["account_id"] = account["Id"]
                     try:
                         (
                             ModelAdapter(SpokeAccount)
@@ -798,6 +798,7 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
                         # Get STS client on Org Account
                         # attempt sts:AssumeRole
                         org_role_arn = f"arn:aws:iam::{account['Id']}:role/{aws_organizations_role_name}"
+                        log_data["org_role_arn"] = "org_role_arn"
                         try:
                             # TODO: SpokeRoles, by default, do not have the ability to assume other roles
                             # To automatically onboard a new account, we have to grant the Spoke role this capability
@@ -825,7 +826,7 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
 
                             new_account_cf_client = await aio_wrapper(
                                 boto3.client,
-                                "iam",
+                                "cloudformation",
                                 aws_access_key_id=new_account_credentials[
                                     "Credentials"
                                 ]["AccessKeyId"],
@@ -835,6 +836,7 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
                                 aws_session_token=new_account_credentials[
                                     "Credentials"
                                 ]["SessionToken"],
+                                region_name=config.region,
                             )
 
                             # Onboard the account.
@@ -876,7 +878,7 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
                                     "NoqSpokeRole",
                                 )
                             hub_account = (
-                                models.ModelAdapter(HubAccount)
+                                ModelAdapter(HubAccount)
                                 .load_config("hub_account", tenant)
                                 .model
                             )
@@ -917,28 +919,25 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
                             ]
                             response = new_account_cf_client.create_stack(
                                 StackName=spoke_stack_name,
-                                TemplateURL=(
-                                    f"https://console.aws.amazon.com/cloudformation/home?region={region}"
-                                    + "#/stacks/quickcreate?templateURL="
-                                    + urllib.parse.quote(spoke_role_template_url)
-                                    + f"&param_ExternalIDParameter={external_id}"
-                                    + f"&param_HostParameter={tenant}"
-                                    + f"&param_CentralRoleArnParameter={customer_central_account_role}"
-                                    + f"&param_SpokeRoleNameParameter={spoke_role_name}"
-                                    + f"&stackName={spoke_stack_name}"
-                                    + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
-                                ),
+                                TemplateURL=spoke_role_template_url,
                                 Parameters=spoke_role_parameters,
                                 Capabilities=[
                                     "CAPABILITY_NAMED_IAM",
                                 ],
                             )
-                            print(response)
+                            log.debug(
+                                {
+                                    **log_data,
+                                    "stack_id": response["StackId"],
+                                }
+                            )
+                            new_accounts_onboarded.append(account["Id"])
                             break
                         except Exception as e:
                             log.error({**log_data, "error": str(e)}, exc_info=True)
         except Exception as e:
             log.error(f"Unable to retrieve roles from AWS Organizations: {e}")
+    return new_accounts_onboarded
 
 
 async def sync_account_names_from_orgs(tenant: str) -> dict[str, str]:
