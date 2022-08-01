@@ -8,7 +8,6 @@ import boto3
 import pytest
 import pytz
 from asgiref.sync import async_to_sync
-from mock import patch
 
 import common.lib.noq_json as json
 from common.aws.iam.statement.utils import condense_statements
@@ -49,12 +48,10 @@ class TestAwsLib(TestCase):
         self.assertNotEqual(get_resource_tag(ROLE, "tag2"), "value1")
         self.assertNotEqual(get_resource_tag(ROLE, "tag1"), "value2")
 
-    @patch("common.aws.utils.redis_hget")
-    def test_get_resource_account(self, mock_aws_config_resources_redis):
+    def test_get_resource_account(self):
         from common.aws.utils import ResourceAccountCache
 
         loop = asyncio.new_event_loop()
-        mock_aws_config_resources_redis.return_value = None
         test_cases = [
             {
                 "arn": "arn:aws:s3:::nope",

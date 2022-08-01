@@ -3,7 +3,7 @@ from unittest import TestCase
 import pytest
 from asgiref.sync import async_to_sync
 from cachetools import TTLCache
-from mock import MagicMock, patch
+from mock import MagicMock
 
 import common.lib.noq_json as json
 from util.tests.fixtures.fixtures import create_future
@@ -48,7 +48,6 @@ class TestPoliciesLib(TestCase):
             result = get_actions_for_resource(tc["arn"], tc["statement"])
             self.assertListEqual(tc["expected"], result, tc["description"])
 
-    @patch("common.aws.utils.redis_hget", mock_aws_config_resources_redis)
     def test_get_resources_from_events(self):
         from common.aws.utils import ResourceAccountCache
         from common.lib.policies import get_resources_from_events
