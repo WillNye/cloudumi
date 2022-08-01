@@ -1,4 +1,4 @@
-\# Welcome to NOQ
+# Welcome to NOQ
 
 > Quick Start
 
