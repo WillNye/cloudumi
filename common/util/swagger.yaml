@@ -1574,7 +1574,7 @@ components:
           format: date-time
         document:
           $ref: "#/components/schemas/PolicyDocumentModel"
-    ConfigurationEventModel:
+    ConfigurationChangeModel:
       type: object
       properties:
         version:
@@ -1623,6 +1623,14 @@ components:
               items:
                 allOf:
                   - $ref: "#/components/schemas/PolicyVersionModel"
+    ConfigurationEventModel:
+      type: object
+      properties:
+        config_change:
+          $ref: "#/components/schemas/ConfigurationChangeModel"
+        updated_at:
+          type: string
+          format: date-time
         rollback_supported:
           type: boolean
         resource_url:

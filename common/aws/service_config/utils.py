@@ -234,8 +234,11 @@ async def get_resource_history(
     resource_details = resource_details[0]
     configuration_changes = []
     for config_change in await _get_resource_history(**resource_details):
-        config_change["rollback_supported"] = True
-        configuration_changes.append(config_change)
+        configuration_changes.append({
+            "config_change": config_change,
+            "updated_at": config_change["configurationItemCaptureTime"],
+            "rollback_supported": True
+        })
 
     if include_relationships:
         # Get all arns which have been used as either a permission boundary or managed policy within the last 90 days for the resource
@@ -243,7 +246,7 @@ async def get_resource_history(
         managed_arns = set()
 
         for config_change in configuration_changes:
-            config_change = config_change.get("configuration", {})
+            config_change = config_change["config_change"].get("configuration", {})
             for managed_policy in config_change.get("attachedManagedPolicies", []):
                 arn = managed_policy["policyArn"]
                 if is_tenant_policy(arn):
@@ -293,16 +296,16 @@ async def get_resource_history(
                 )
                 related_configuration_changes.extend(managed_resource_history)
 
-            for elem, config_change in enumerate(related_configuration_changes):
-                related_configuration_changes[elem]["rollback_supported"] = False
-                related_configuration_changes[elem]["resource_url"] = arn_url_map.get(
-                    config_change["arn"]
-                )
-
-            configuration_changes.extend(related_configuration_changes)
+            for config_change in related_configuration_changes:
+                configuration_changes.append({
+                    "config_change": config_change,
+                    "updated_at": config_change["configurationItemCaptureTime"],
+                    "rollback_supported": False,
+                    "resource_url": arn_url_map[config_change.get("arn")]
+                })
 
     return sorted(
         configuration_changes,
-        key=lambda x: x["configurationItemCaptureTime"],
+        key=lambda x: x["updated_at"],
         reverse=True,
     )
