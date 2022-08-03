@@ -175,7 +175,7 @@ class SelfServiceComponent extends Component {
           return (
             <>
               <TypeaheadBlockComponent
-                defaultValue={defaultValue + 1}
+                defaultValue={defaultValue}
                 handleInputUpdate={this.handleInputUpdate.bind(
                   this,
                   input.name
@@ -190,7 +190,7 @@ class SelfServiceComponent extends Component {
         case 'single_typeahead_input':
           return (
             <SingleTypeaheadBlockComponent
-              defaultValue={defaultValue + 1}
+              defaultValue={defaultValue}
               handleInputUpdate={this.handleInputUpdate.bind(this, input.name)}
               required={input.required || false}
               typeahead={input.typeahead_endpoint}
