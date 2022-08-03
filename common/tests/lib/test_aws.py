@@ -8,7 +8,6 @@ import boto3
 import pytest
 import pytz
 from asgiref.sync import async_to_sync
-from mock import patch
 
 import common.lib.noq_json as json
 from common.aws.iam.statement.utils import condense_statements
@@ -49,12 +48,10 @@ class TestAwsLib(TestCase):
         self.assertNotEqual(get_resource_tag(ROLE, "tag2"), "value1")
         self.assertNotEqual(get_resource_tag(ROLE, "tag1"), "value2")
 
-    @patch("common.aws.utils.redis_hget")
-    def test_get_resource_account(self, mock_aws_config_resources_redis):
-        from common.aws.utils import get_resource_account
+    def test_get_resource_account(self):
+        from common.aws.utils import ResourceAccountCache
 
         loop = asyncio.new_event_loop()
-        mock_aws_config_resources_redis.return_value = None
         test_cases = [
             {
                 "arn": "arn:aws:s3:::nope",
@@ -73,22 +70,23 @@ class TestAwsLib(TestCase):
             },
         ]
         for tc in test_cases:
-            result = loop.run_until_complete(get_resource_account(tc["arn"], tenant))
+            result = loop.run_until_complete(
+                ResourceAccountCache.get(tenant, tc["arn"])
+            )
             self.assertEqual(
                 tc["expected"], result, f"Test case failed: {tc['description']}"
             )
 
+        arn = "arn:aws:s3:::foobar"
+        account_id = "123456789012"
         aws_config_resources_test_case = {
-            "arn": "arn:aws:s3:::foobar",
-            "expected": "123456789012",
+            "arn": arn,
+            "expected": account_id,
             "description": "internal S3 bucket",
         }
-        aws_config_resources_test_case_redis_result = {"accountId": "123456789012"}
-        mock_aws_config_resources_redis.return_value = json.dumps(
-            aws_config_resources_test_case_redis_result
-        )
-        result = async_to_sync(get_resource_account)(
-            aws_config_resources_test_case["arn"], tenant
+        ResourceAccountCache._tenant_resources[tenant][arn] = account_id
+        result = async_to_sync(ResourceAccountCache.get)(
+            tenant, aws_config_resources_test_case["arn"]
         )
         self.assertEqual(
             aws_config_resources_test_case["expected"],

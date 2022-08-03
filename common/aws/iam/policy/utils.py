@@ -1,10 +1,13 @@
+import asyncio
 import copy
 import datetime
 import fnmatch
+import re
 import sys
 import time
 from collections import defaultdict
 from copy import deepcopy
+from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import sentry_sdk
@@ -17,12 +20,12 @@ from parliament import analyze_policy_string, enhance_finding
 from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.aws.iam.statement.utils import condense_statements
 from common.aws.iam.user.utils import fetch_iam_user
-from common.aws.utils import ResourceSummary, get_resource_account
+from common.aws.utils import ResourceAccountCache, ResourceSummary
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib import noq_json as json
 from common.lib.assume_role import ConsoleMeCloudAux, rate_limited, sts_conn
-from common.lib.asyncio import aio_wrapper
+from common.lib.asyncio import NoqSemaphore, aio_wrapper
 from common.lib.aws.access_advisor import get_epoch_authenticated
 from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.aws.session import get_session_for_tenant
@@ -41,6 +44,11 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 
 PERMISSIONS_SEPARATOR = "||"
 ALL_IAM_MANAGED_POLICIES = defaultdict(dict)
+TENANT_CREATED_POLICY_REGEX = re.compile(r"arn:aws:iam::[0-9]{12}:policy/.*")
+
+
+def is_tenant_policy(arn: str) -> bool:
+    return bool(TENANT_CREATED_POLICY_REGEX.match(arn))
 
 
 async def get_resource_policy(
@@ -106,6 +114,35 @@ async def get_resource_policies(
             resource_policies.append(result)
 
     return resource_policies, cross_account_request
+
+
+async def get_policy_version(iam_client, policy_arn: str, version_id: str) -> dict:
+    response = await aio_wrapper(
+        iam_client.get_policy_version, PolicyArn=policy_arn, VersionId=version_id
+    )
+    return {"arn": policy_arn, "policy_version": response.get("PolicyVersion")}
+
+
+async def batch_get_policy_versions(iam_client, policy_arns: list[str]) -> list[dict]:
+    async def _get_policy_versions(policy_arn: str) -> list[dict]:
+        response = await aio_wrapper(
+            iam_client.list_policy_versions, PolicyArn=policy_arn, MaxItems=15
+        )
+        return [
+            {"version_id": version["VersionId"], "policy_arn": policy_arn}
+            for version in response.get("Versions", [])
+        ]
+
+    get_policy_semaphore = NoqSemaphore(get_policy_version, batch_size=10)
+    policy_versions = await asyncio.gather(
+        *[_get_policy_versions(arn) for arn in policy_arns]
+    )
+    return await get_policy_semaphore.process(
+        [
+            {"iam_client": iam_client, **policy}
+            for policy in list(chain.from_iterable(policy_versions))
+        ]
+    )
 
 
 @aws_paginated("AttachedPolicies")
@@ -1051,7 +1088,7 @@ async def calculate_unused_policy_for_identities(
             continue
         if ":role/aws-reserved" in arn:
             continue
-        account_id = await get_resource_account(arn, tenant)
+        account_id = await ResourceAccountCache.get(tenant, arn)
         role = await IAMRole.get(
             tenant,
             account_id,
