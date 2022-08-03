@@ -649,8 +649,12 @@ class RequestsHandler(BaseAPIV2Handler):
                     )
 
                 if principal_arn and principal_arn.count(":") == 5 and not url:
-                    resource_summary = await ResourceSummary.set(tenant, principal_arn)
-                    if request.get("principal", {}).get("principal_arn"):
+                    resource_summary = await ResourceSummary.set(
+                        tenant, principal_arn, account_required=False
+                    )
+                    if resource_summary.account and request.get("principal", {}).get(
+                        "principal_arn"
+                    ):
                         try:
                             url = await get_url_for_resource(resource_summary)
                         except ResourceNotFound:
