@@ -11,6 +11,7 @@ import InlinePolicy from './InlinePolicy'
 import Issues from './Issues'
 import Tags from './Tags'
 import ConfigureAccess from './ConfigureAccess'
+import HistoricalView from './HistoricalView'
 
 const IAMRolePolicy = () => {
   const all = usePolicyContext()
@@ -160,6 +161,22 @@ const IAMRolePolicy = () => {
         return (
           <Tab.Pane>
             <Issues />
+          </Tab.Pane>
+        )
+      },
+    },
+
+    {
+      menuItem: {
+        key: 'resource_history',
+        content: (() => {
+          return 'Resource History'
+        })(),
+      },
+      render: () => {
+        return (
+          <Tab.Pane>
+            <HistoricalView />
           </Tab.Pane>
         )
       },
