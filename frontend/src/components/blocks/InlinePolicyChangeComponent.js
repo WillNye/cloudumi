@@ -86,14 +86,6 @@ const InlinePolicyChangeComponent = (props) => {
     [change.id] // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  const handleOnSubmitChange = useCallback(() => {
-    if (change.read_only) {
-      setIsApprovalModalOpen(true)
-    } else {
-      onSubmitChange()
-    }
-  }, [change]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleCancel = useCallback(async () => {
     await sendProposedPolicyWithHooks(
       'cancel_change',
@@ -123,7 +115,7 @@ const InlinePolicyChangeComponent = (props) => {
       await sendProposedPolicyWithHooks(
         'apply_change',
         change,
-        null,
+        newStatement,
         requestID,
         setIsLoading,
         setButtonResponseMessage,
@@ -131,8 +123,16 @@ const InlinePolicyChangeComponent = (props) => {
         credentials
       )
     },
-    [change, requestID] // eslint-disable-line react-hooks/exhaustive-deps
+    [change, requestID, newStatement] // eslint-disable-line react-hooks/exhaustive-deps
   )
+
+  const handleOnSubmitChange = useCallback(() => {
+    if (change.read_only) {
+      setIsApprovalModalOpen(true)
+    } else {
+      onSubmitChange()
+    }
+  }, [change, onSubmitChange])
 
   const isOwner =
     validateApprovePolicy(changesConfig, change.id) || config.can_approve_reject
