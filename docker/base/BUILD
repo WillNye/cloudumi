@@ -1,27 +1,6 @@
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer")
 
-filegroup(
-    name = "zelkova_files",
-    srcs = [
-        "root/.aws",
-    ],
-)
-
-filegroup(
-    name = "etc_files",
-    srcs = [
-        "root/etc",
-    ],
-)
-
-filegroup(
-    name = "home_files",
-    srcs = [
-        "root/home",
-    ],
-)
-
 genrule(
     name = "create_tag_file",
     srcs = [
@@ -31,36 +10,12 @@ genrule(
     cmd = "git rev-parse HEAD >> $@",
 )
 
-container_layer(
-    name = "zelkova_layer",
-    directory = "/root",
-    files = [
-        ":zelkova_files",
-    ],
-)
-
-container_layer(
-    name = "etc_layer",
-    directory = "/",
-    files = [
-        ":etc_files",
-    ],
-)
-
-container_layer(
-    name = "home_layer",
-    directory = "/",
-    files = [
-        ":home_files",
-    ]
-)
-
 # TODO: let's do without this
 container_run_and_commit(
     name = "base_docker_raw",
     commands = [
         "apt-get update -y",
-        "apt-get install clang build-essential openssh-server cron curl telnet iputils-ping sudo vim systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev libssl-dev software-properties-common python3-dev nodejs -y",
+        "apt-get install -y clang build-essential openssh-server cron curl telnet iputils-ping sudo vim systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev libssl-dev software-properties-common python3-dev nodejs",
         "pip install uvloop awscli",
         "mkdir -p /root/.ssh/",
         "echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQClHPc54DoYiOy/0IMoDte+aYKF5vSF6DK1miSUVfbkaUd7MiRIDLPvOyIBEOk9AfHnkah2ka6gyGl7pSkyrMLqcbfnHWb/0q3nWg/InqXl0c/aqgkZoaN4VJi4ejoBj7jnWFbS7EJLaPJlGIWh1HKxHbswjuxiEDImytojAKpwfgD6qK6J8hb6XZyiyS0nv61g8w+4H71WoxjArgTUxzdmAFubyU0SP7EG4GkESCcDzs/JhO74tNAY8cZbmp2XENvbWGXwgOUrfn2RoWMFZE/9a8k/hGkmrujzA1UPk+os8NcjR1oN+/kPUzn1N0xmS+UYUChYAIirnD2NMMppQfKJ' > ~/.ssh/authorized_keys",
@@ -75,9 +30,12 @@ container_image(
     name = "base_docker",
     base = ":base_docker_raw",
     layers = [
-        ":zelkova_layer",
-        ":etc_layer",
-        ":home_layer",
+        "//deploy/layers:zelkova",
+        "//deploy/layers:filebeat",
+        "//deploy/layers:logstash",
+        "//deploy/layers:metricbeat",
+        "//deploy/layers:td-agent-bit",
+        "//deploy/layers:home",
     ],
     data_path = "/",
     visibility = ["//visibility:public"],

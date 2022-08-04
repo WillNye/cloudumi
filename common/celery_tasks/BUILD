@@ -108,23 +108,6 @@ py_layer(
     filter = "@",
 )
 
-container_layer(
-    name = "config_layer",
-    files = [
-        "//configs/development_account:configs",
-    ],
-    data_path = ".",
-    directory = "/",
-)
-
-container_layer(
-    name = "sshd_config_layer",
-    files = [
-        "//common/celery_tasks/util:sshd_config",
-    ],
-    directory = "/etc/ssh",
-)
-
 container_image(
     name = "base-celery-api",
     base = "//docker/base:base_docker",
@@ -132,8 +115,11 @@ container_image(
         "DEBUG": "1",
     },
     layers = [
-        ":config_layer",
-        ":sshd_config_layer",
+        "//deploy/layers:config",
+        "//deploy/layers:web_site",
+        "//deploy/layers:celery_tasks.sshd_config",
+        "//deploy/layers:newrelic",
+        "//deploy/layers:weep",
     ],
     ports = ["2223"],
     symlinks = {
@@ -153,8 +139,11 @@ container_image(
         "DEBUG": "1",
     },
     layers = [
-        ":config_layer",
-        ":sshd_config_layer",
+        "//deploy/layers:config",
+        "//deploy/layers:web_site",
+        "//deploy/layers:celery_tasks.sshd_config",
+        "//deploy/layers:newrelic",
+        "//deploy/layers:weep",
     ],
     ports = ["2223"],
     symlinks = {
