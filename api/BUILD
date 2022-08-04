@@ -25,7 +25,8 @@ filegroup(
     name = "docs_sources",
     srcs = glob([
         "docs/**/*",
-    ])
+    ]),
+    visibility = ["//visibility:public"],
 )
 
 INT_DEPS = [

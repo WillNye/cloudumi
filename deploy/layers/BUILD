@@ -7,16 +7,72 @@ container_layer(
     ],
     data_path = ".",
     directory = "/",
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
+    name = "zelkova",
+    directory = "/root",
+    files = [
+        "//configs:zelkova",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
+    name = "filebeat",
+    directory = "/",
+    files = [
+        "//configs:filebeat",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
+    name = "logstash",
+    directory = "/",
+    files = [
+        "//configs:logstash",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
+    name = "metricbeat",
+    directory = "/",
+    files = [
+        "//configs:metricbeat",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
+    name = "td-agent-bit",
+    directory = "/",
+    files = [
+        "//configs:td-agent-bit",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
+    name = "home",
+    directory = "/",
+    files = [
+        "//configs:home",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 container_layer(
     name = "web_site",
     files = [
         "//frontend:build",
-        ":docs_sources",
+        "//api:docs_sources",
     ],
     data_path = ".",
     directory = "/",
+    visibility = ["//visibility:public"],
 )
 
 container_layer(
@@ -25,6 +81,7 @@ container_layer(
         "//configs/ssh/api:sshd_config",
     ],
     directory = "/etc/ssh",
+    visibility = ["//visibility:public"],
 )
 
 container_layer(
@@ -33,14 +90,16 @@ container_layer(
         "//configs/ssh/celery_tasks:sshd_config",
     ],
     directory = "/etc/ssh",
+    visibility = ["//visibility:public"],
 )
 
 container_layer(
     name = "newrelic",
     files = [
-        "//configs/newrelic:newrelic.ini",
+        "//configs:newrelic",
     ],
     directory = "/etc/newrelic",
+    visibility = ["//visibility:public"],
 )
 
 container_layer(
@@ -49,5 +108,5 @@ container_layer(
         "@weep//file",
     ],
     directory = "/usr/bin",
+    visibility = ["//visibility:public"],
 )
-
