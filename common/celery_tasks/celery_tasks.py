@@ -2853,3 +2853,5 @@ app.autodiscover_tasks(
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
+
+cache_policies_table_details("localhost")
