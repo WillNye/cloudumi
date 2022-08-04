@@ -150,10 +150,10 @@ def analyze(
         if analysis_result:
             return analysis_result
     except common.AccessUndeniedError as access_undenied_error:
-        logger.error(
-            str(access_undenied_error)
-            + f" [eventID:{raw_event.get('eventID', '<None>')}]"
-        )
+        # logger.error(
+        #     str(access_undenied_error)
+        #     + f" [eventID:{raw_event.get('eventID', '<None>')}]"
+        # )
         return results.ErrorResult(
             event_id=raw_event.get("eventID", "<None>"),
             assessment_result=access_undenied_error.access_denied_reason,
