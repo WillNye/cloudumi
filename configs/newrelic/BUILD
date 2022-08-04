@@ -1,4 +1,4 @@
 exports_files(
-    srcs = ["sshd_config", "newrelic.ini"],
+    srcs = ["newrelic.ini"],
     visibility = ["//visibility:public"],
 )
