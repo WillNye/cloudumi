@@ -21,7 +21,7 @@ container_layer(
 
 container_layer(
     name = "filebeat",
-    directory = "/",
+    directory = "/etc/filebeat",
     files = [
         "//configs:filebeat",
     ],
@@ -30,7 +30,7 @@ container_layer(
 
 container_layer(
     name = "logstash",
-    directory = "/",
+    directory = "/etc/logstash",
     files = [
         "//configs:logstash",
     ],
@@ -39,7 +39,7 @@ container_layer(
 
 container_layer(
     name = "metricbeat",
-    directory = "/",
+    directory = "/etc/metricbeat",
     files = [
         "//configs:metricbeat",
     ],
@@ -48,7 +48,7 @@ container_layer(
 
 container_layer(
     name = "td-agent-bit",
-    directory = "/",
+    directory = "/etc/td-agent-bit",
     files = [
         "//configs:td-agent-bit",
     ],
