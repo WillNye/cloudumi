@@ -331,15 +331,28 @@ class RequestHandler(BaseAPIV2Handler):
             extended_request = await generate_request_from_change_model_array(
                 changes, self.user, tenant
             )
+        except Exception as err:
+            extended_request = None
+            log_data["error"] = str(err)
+            log.error(log_data, exc_info=True)
+            stats.count(
+                f"{log_data['function']}.exception",
+                tags={
+                    "user": self.user,
+                    "tenant": tenant,
+                },
+            )
+            sentry_sdk.capture_exception(tags={"user": self.user})
 
-            if not extended_request:
-                response = RequestCreationResponse(
-                    errors=1, request_created=False, action_results=[]
-                )
-                self.write(response.json())
-                await self.finish()
-                return
+        if not extended_request:
+            response = RequestCreationResponse(
+                errors=1, request_created=False, action_results=[]
+            )
+            self.write(response.json())
+            await self.finish()
+            return
 
+        try:
             log_data["request"] = extended_request.dict()
             log.debug(log_data)
 
@@ -900,12 +913,19 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 for change in extended_request.changes.changes
             ):
                 change_info = request_changes.modification_model
-                if (
-                    hasattr(change_info, "expiration_date")
-                    and not change_info.expiration_date
-                ):
+                if not getattr(change_info, "expiration_date", None):
                     raise ValueError(
                         "An expiration date must be provided for elevated access requests."
+                    )
+
+            if any(
+                change.change_type == "policy_condenser"
+                for change in extended_request.changes.changes
+            ):
+                change_info = request_changes.modification_model
+                if getattr(change_info, "expiration_date", None):
+                    raise ValueError(
+                        "Expiration date is not supported for policy condenser requests."
                     )
 
             response = await parse_and_apply_policy_request_modification(
