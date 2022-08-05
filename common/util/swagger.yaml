@@ -120,6 +120,7 @@ paths:
             application/json:
               schema:
                 oneOf:
+                  - $ref: "#/components/schemas/PolicyCondenserChangeModel"
                   - $ref: "#/components/schemas/InlinePolicyChangeModel"
                   - $ref: "#/components/schemas/ManagedPolicyChangeModel"
                   - $ref: "#/components/schemas/ResourcePolicyChangeModel"
@@ -1276,6 +1277,20 @@ components:
                 - json
                 - hcl
                 - text
+    PolicyCondenserChangeModel:
+      allOf:
+        - $ref: "#/components/schemas/ChangeModel"
+        - type: object
+          properties:
+            policy_name:
+              type: string
+            change_type:
+              type: string
+              pattern: "policy_condenser"
+            policy:
+              $ref: "#/components/schemas/PolicyModel"
+            old_policy:
+              $ref: "#/components/schemas/PolicyModel"
     InlinePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1458,6 +1473,7 @@ components:
           type: array
           items:
             anyOf:
+              - $ref: "#/components/schemas/PolicyCondenserChangeModel"
               - $ref: "#/components/schemas/InlinePolicyChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyChangeModel"
               - $ref: "#/components/schemas/PermissionsBoundaryChangeModel"
