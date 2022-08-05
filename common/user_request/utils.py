@@ -31,7 +31,7 @@ async def update_extended_request_expiration_date(
     extended_request.expiration_date = expiration_date
 
     for change in extended_request.changes.changes:
-        if change.change_type in ["inline_policy"]:
+        if change.change_type in ["inline_policy", "policy_condenser"]:
             change.policy_name = await generate_policy_name(
                 None, user, tenant, expiration_date
             )
