@@ -826,6 +826,8 @@ async def get_authorized_group_map(
         )
 
         for tag in iam_role.tags:
+            if not tag["Value"]:
+                continue
             if tag["Key"] in authorized_group_tags:
                 splitted_groups = tag["Value"].split(":")
                 for group in splitted_groups:
