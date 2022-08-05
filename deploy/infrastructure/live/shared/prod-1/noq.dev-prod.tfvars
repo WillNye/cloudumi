@@ -41,13 +41,13 @@ dax_node_type  = "dax.t3.small"
 dax_node_count = 1
 
 # Redis
-redis_node_type = "cache.t3.medium"
+redis_node_type = "cache.t3.small"
 
 # Sentry
 sentry_dsn = "https://50b9f954977449db94bf4d1a8b9a8084@o1134078.ingest.sentry.io/6625264"
 
 s3_access_log_bucket         = "s3-access-logs.940552945933.us-west-2"
-elasticache_node_type        = "cache.m6g.large"
+elasticache_node_type        = "cache.t2.medium"
 google_analytics_tracking_id = "G-P5K1SQF3P6"
 
 # Global info

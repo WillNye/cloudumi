@@ -498,10 +498,6 @@ resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant_v2" {
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
-  ttl {
-    attribute_name = "ttl"
-    enabled        = true
-  }
 
   # dynamic "replica" {
   #   for_each = var.dynamo_table_replica_regions

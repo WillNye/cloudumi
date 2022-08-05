@@ -56,7 +56,6 @@ class IAMRole(NoqModel):
     templated = UnicodeAttribute(null=True)
     permissions_boundary = NoqMapAttribute(null=True)
     tags = ListAttribute(of=TagMap, null=True)
-    ttl = NumberAttribute()
     last_updated = NumberAttribute()
 
     @property
@@ -80,12 +79,6 @@ class IAMRole(NoqModel):
         return self._policy_dict
 
     @property
-    def is_expired(self) -> bool:
-        if not self.ttl:
-            return False
-        return bool(datetime.fromtimestamp(float(self.ttl)) < datetime.utcnow())
-
-    @property
     def terraform(self) -> str:
         if not self.policy_dict:
             return ""
@@ -104,8 +97,6 @@ class IAMRole(NoqModel):
             return ""
 
     def _normalize_object(self):
-        if self.ttl:
-            self.ttl = int(self.ttl)
         if self.policy and isinstance(self.policy, str):
             self.policy = json.loads(self.policy)
 
@@ -148,13 +139,10 @@ class IAMRole(NoqModel):
                 log_data["message"] = "Role is missing in DDB. Going out to AWS."
                 stats.count("aws.fetch_iam_role.missing_dynamo", tags=stat_tags)
 
-        if not iam_role or iam_role.is_expired:
+        if not iam_role:
             if force_refresh:
                 log_data["message"] = "Force refresh is enabled. Going out to AWS."
                 stats.count("aws.fetch_iam_role.force_refresh", tags=stat_tags)
-            elif iam_role and iam_role.is_expired:
-                log_data["message"] = "Role is out of date. Going out to AWS."
-                stats.count("aws.fetch_iam_role.is_expired", tags=stat_tags)
             log.debug(log_data)
 
             try:
