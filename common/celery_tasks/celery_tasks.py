@@ -917,125 +917,140 @@ def cache_iam_resources_for_account(
         "account_id": account_id,
         "tenant": tenant,
     }
-    # Get the DynamoDB handler:
-    iam_user_cache_key = f"{tenant}_IAM_USER_CACHE"
-    # Only query IAM and put data in Dynamo if we're in the active region
-    if config.region == config.get_tenant_specific_key(
-        "celery.active_region", tenant, config.region
-    ) or config.get("_global_.environment") in [
-        "dev",
-        "test",
-    ]:
-        spoke_role_name = (
-            ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", tenant)
-            .with_query({"account_id": account_id})
-            .first.name
-        )
-        if not spoke_role_name:
-            log.error({**log_data, "message": "No spoke role name found"})
-            return
-        client = boto3_cached_conn(
-            "iam",
-            tenant,
-            None,
-            account_number=account_id,
-            assume_role=spoke_role_name,
-            region=config.region,
-            sts_client_kwargs=dict(
-                region_name=config.region,
-                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-            ),
-            client_kwargs=config.get_tenant_specific_key(
-                "boto3.client_kwargs", tenant, {}
-            ),
-            session_name=sanitize_session_name("noq_cache_iam_resources_for_account"),
-            read_only=True,
-        )
-        paginator = client.get_paginator("get_account_authorization_details")
-        response_iterator = paginator.paginate()
-        all_iam_resources = defaultdict(list)
-        for response in response_iterator:
-            if not all_iam_resources:
-                all_iam_resources = response
-            else:
-                all_iam_resources["UserDetailList"].extend(response["UserDetailList"])
-                all_iam_resources["GroupDetailList"].extend(response["GroupDetailList"])
-                all_iam_resources["RoleDetailList"].extend(response["RoleDetailList"])
-                all_iam_resources["Policies"].extend(response["Policies"])
-            for k in response.keys():
-                if k not in [
-                    "UserDetailList",
-                    "GroupDetailList",
-                    "RoleDetailList",
-                    "Policies",
-                    "ResponseMetadata",
-                    "Marker",
-                    "IsTruncated",
-                ]:
-                    # Fail hard if we find something unexpected
-                    raise RuntimeError("Unexpected key {0} in response".format(k))
+    log.debug({**log_data, "message": "Request received."})
 
-        # Store entire response in S3
-        async_to_sync(store_json_results_in_redis_and_s3)(
-            all_iam_resources,
-            s3_bucket=config.get_tenant_specific_key(
-                "cache_iam_resources_for_account.s3.bucket", tenant
-            ),
-            s3_key=config.get_tenant_specific_key(
-                "cache_iam_resources_for_account.s3.file",
+    try:
+        # Get the DynamoDB handler:
+        iam_user_cache_key = f"{tenant}_IAM_USER_CACHE"
+        # Only query IAM and put data in Dynamo if we're in the active region
+        if config.region == config.get_tenant_specific_key(
+            "celery.active_region", tenant, config.region
+        ) or config.get("_global_.environment") in [
+            "dev",
+            "test",
+        ]:
+            spoke_role_name = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", tenant)
+                .with_query({"account_id": account_id})
+                .first.name
+            )
+            if not spoke_role_name:
+                log.error({**log_data, "message": "No spoke role name found"})
+                return
+            client = boto3_cached_conn(
+                "iam",
                 tenant,
-                "get_account_authorization_details/get_account_authorization_details_{account_id}_v1.json.gz",
-            ).format(account_id=account_id),
-            tenant=tenant,
-        )
+                None,
+                account_number=account_id,
+                assume_role=spoke_role_name,
+                region=config.region,
+                sts_client_kwargs=dict(
+                    region_name=config.region,
+                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                ),
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
+                ),
+                session_name=sanitize_session_name(
+                    "noq_cache_iam_resources_for_account"
+                ),
+                read_only=True,
+            )
+            paginator = client.get_paginator("get_account_authorization_details")
+            response_iterator = paginator.paginate()
+            all_iam_resources = defaultdict(list)
+            for response in response_iterator:
+                if not all_iam_resources:
+                    all_iam_resources = response
+                else:
+                    all_iam_resources["UserDetailList"].extend(
+                        response["UserDetailList"]
+                    )
+                    all_iam_resources["GroupDetailList"].extend(
+                        response["GroupDetailList"]
+                    )
+                    all_iam_resources["RoleDetailList"].extend(
+                        response["RoleDetailList"]
+                    )
+                    all_iam_resources["Policies"].extend(response["Policies"])
+                for k in response.keys():
+                    if k not in [
+                        "UserDetailList",
+                        "GroupDetailList",
+                        "RoleDetailList",
+                        "Policies",
+                        "ResponseMetadata",
+                        "Marker",
+                        "IsTruncated",
+                    ]:
+                        # Fail hard if we find something unexpected
+                        raise RuntimeError("Unexpected key {0} in response".format(k))
 
-        iam_users = all_iam_resources["UserDetailList"]
-        iam_roles = all_iam_resources["RoleDetailList"]
-        iam_policies = all_iam_resources["Policies"]
-
-        log_data["cache_refresh_required"] = async_to_sync(IAMRole.sync_account_roles)(
-            tenant, account_id, iam_roles
-        )
-
-        last_updated: int = int((datetime.utcnow()).timestamp())
-        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
-        for user in iam_users:
-            user_entry = {
-                "arn": user.get("Arn"),
-                "tenant": tenant,
-                "name": user.get("UserName"),
-                "resourceId": user.get("UserId"),
-                "accountId": account_id,
-                "ttl": ttl,
-                "last_updated": last_updated,
-                "owner": get_aws_principal_owner(user, tenant),
-                "policy": NoqModel().dump_json_attr(user),
-                "templated": False,  # Templates not supported for IAM users at this time
-            }
-            # Redis:
-            _add_role_to_redis(iam_user_cache_key, user_entry, tenant)
-
-        # Maybe store all resources in git
-        if config.get_tenant_specific_key(
-            "cache_iam_resources_for_account.store_in_git.enabled",
-            tenant,
-        ):
-            store_iam_resources_in_git(all_iam_resources, account_id, tenant)
-
-        if iam_policies:
-            async_to_sync(store_iam_managed_policies_for_tenant)(
-                tenant, iam_policies, account_id
+            # Store entire response in S3
+            async_to_sync(store_json_results_in_redis_and_s3)(
+                all_iam_resources,
+                s3_bucket=config.get_tenant_specific_key(
+                    "cache_iam_resources_for_account.s3.bucket", tenant
+                ),
+                s3_key=config.get_tenant_specific_key(
+                    "cache_iam_resources_for_account.s3.file",
+                    tenant,
+                    "get_account_authorization_details/get_account_authorization_details_{account_id}_v1.json.gz",
+                ).format(account_id=account_id),
+                tenant=tenant,
             )
 
-    stats.count(
-        "cache_iam_resources_for_account.success",
-        tags={
-            "account_id": account_id,
-            "tenant": tenant,
-        },
-    )
-    log.debug({**log_data, "message": "Finished caching IAM resources for account"})
+            iam_users = all_iam_resources["UserDetailList"]
+            iam_roles = all_iam_resources["RoleDetailList"]
+            iam_policies = all_iam_resources["Policies"]
+
+            log_data["cache_refresh_required"] = async_to_sync(
+                IAMRole.sync_account_roles
+            )(tenant, account_id, iam_roles)
+
+            last_updated: int = int((datetime.utcnow()).timestamp())
+            ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
+            for user in iam_users:
+                user_entry = {
+                    "arn": user.get("Arn"),
+                    "tenant": tenant,
+                    "name": user.get("UserName"),
+                    "resourceId": user.get("UserId"),
+                    "accountId": account_id,
+                    "ttl": ttl,
+                    "last_updated": last_updated,
+                    "owner": get_aws_principal_owner(user, tenant),
+                    "policy": NoqModel().dump_json_attr(user),
+                    "templated": False,  # Templates not supported for IAM users at this time
+                }
+                # Redis:
+                _add_role_to_redis(iam_user_cache_key, user_entry, tenant)
+
+            # Maybe store all resources in git
+            if config.get_tenant_specific_key(
+                "cache_iam_resources_for_account.store_in_git.enabled",
+                tenant,
+            ):
+                store_iam_resources_in_git(all_iam_resources, account_id, tenant)
+
+            if iam_policies:
+                async_to_sync(store_iam_managed_policies_for_tenant)(
+                    tenant, iam_policies, account_id
+                )
+
+        stats.count(
+            "cache_iam_resources_for_account.success",
+            tags={
+                "account_id": account_id,
+                "tenant": tenant,
+            },
+        )
+        log.debug({**log_data, "message": "Finished caching IAM resources for account"})
+    except Exception as err:
+        log_data["error"] = str(err)
+        log.exception(log_data)
+
     return log_data
 
 
