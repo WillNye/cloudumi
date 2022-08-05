@@ -13,6 +13,8 @@ from policy_sentry.util.arns import parse_arn
 
 import common.lib.noq_json as json
 from common.aws.iam.policy.utils import (
+    aio_get_managed_policy_document,
+    aio_list_managed_policies_for_resource,
     create_or_update_managed_policy,
     generate_updated_resource_policy,
     get_managed_policy_document,
@@ -20,7 +22,7 @@ from common.aws.iam.policy.utils import (
 )
 from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.role.models import IAMRole
-from common.aws.iam.utils import get_supported_resource_permissions
+from common.aws.iam.utils import get_supported_resource_permissions, get_tenant_iam_conn
 from common.aws.utils import (
     ResourceAccountCache,
     ResourceSummary,
@@ -38,7 +40,7 @@ from common.exceptions.exceptions import (
 )
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import boto3_cached_conn
-from common.lib.asyncio import aio_wrapper
+from common.lib.asyncio import NoqSemaphore, aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import fetch_resource_details
@@ -1045,6 +1047,90 @@ async def validate_assume_role_policy_change(
         raise InvalidRequestParameter(log_data["message"])
 
 
+async def apply_policy_condenser_change(
+    resource_summary: ResourceSummary,
+    change: PolicyCondenserChangeModel,
+    response: PolicyRequestModificationResponseModel,
+    iam_client,
+    log_data: dict = None,
+) -> PolicyRequestModificationResponseModel:
+    name = resource_summary.name
+    resource_type = resource_summary.resource_type
+    assert resource_type in ["user", "role"]
+    log_data = log_data or {}
+    try:
+        boto_params = {f"{resource_type.title()}Name": name}
+        list_policies_call = getattr(iam_client, f"list_{resource_type}_policies")
+        put_policy_call = getattr(iam_client, f"put_{resource_type}_policy")
+        delete_policy_call = getattr(iam_client, f"delete_{resource_type}_policy")
+
+        existing_policies = await aio_wrapper(list_policies_call, **boto_params)
+        log_data[
+            "message"
+        ] = f"Creating new policy for {name} as part of policy_condenser change {change.id}"
+        log.debug(log_data)
+        await aio_wrapper(
+            put_policy_call,
+            PolicyName=change.policy_name,
+            PolicyDocument=json.dumps(
+                change.policy.policy_document,
+            ),
+            **boto_params,
+        )
+        for policy in existing_policies.get("PolicyNames", []):
+            log_data[
+                "message"
+            ] = f"Removing policy {policy} from {name} as part of policy_condenser"
+            log.debug(log_data)
+            await aio_wrapper(delete_policy_call, PolicyName=policy, **boto_params)
+
+        if change.detach_managed_policies:
+            detach_managed_policy_call = getattr(
+                iam_client, f"detach_{resource_type}_policy"
+            )
+            managed_policies = await aio_list_managed_policies_for_resource(
+                resource_type, name, iam_client
+            )
+            for managed_policy in managed_policies:
+                policy = managed_policy["PolicyArn"]
+                log_data[
+                    "message"
+                ] = f"Detaching managed policy {policy} from {name} as part of policy_condenser"
+                log.debug(log_data)
+                await aio_wrapper(
+                    detach_managed_policy_call,
+                    PolicyArn=policy,
+                    **boto_params,
+                )
+
+        response.action_results.append(
+            ActionResult(
+                status="success",
+                message=(
+                    f"Successfully condensed inline policies from principal: " f"{name}"
+                ),
+            )
+        )
+        change.status = Status.applied
+    except Exception as e:
+        log_data["message"] = "Exception occurred condensing inline policies"
+        log_data["error"] = str(e)
+        log.error(log_data, exc_info=True)
+        sentry_sdk.capture_exception()
+        response.errors += 1
+        response.action_results.append(
+            ActionResult(
+                status="error",
+                message=(
+                    f"Error occurred condensing inline policies from principal: "
+                    f"{resource_summary.name} {str(e)}"
+                ),
+            )
+        )
+    finally:
+        return response
+
+
 async def apply_changes_to_role(
     extended_request: ExtendedRequestModel,
     response: Union[RequestCreationResponse, PolicyRequestModificationResponseModel],
@@ -1078,6 +1164,11 @@ async def apply_changes_to_role(
     resource_summary = await ResourceSummary.set(
         tenant, extended_request.principal.principal_arn
     )
+    log_data["resource"] = {
+        "resource_type": resource_summary.resource_type,
+        "service": resource_summary.service,
+        "name": resource_summary.name,
+    }
 
     # Principal ARN must be a role for this function
     if resource_summary.service != "iam" or resource_summary.resource_type not in [
@@ -1217,82 +1308,9 @@ async def apply_changes_to_role(
                         )
                     )
         elif change.change_type == "policy_condenser":
-            try:
-                if resource_summary.resource_type == "role":
-                    existing_policies = await aio_wrapper(
-                        iam_client.list_role_policies,
-                        RoleName=principal_name,
-                    )
-                    log.debug(
-                        f"Creating new policy for policy_condenser change {change.id}"
-                    )
-                    await aio_wrapper(
-                        iam_client.put_role_policy,
-                        RoleName=principal_name,
-                        PolicyName=change.policy_name,
-                        PolicyDocument=json.dumps(
-                            change.policy.policy_document,
-                        ),
-                    )
-                    for policy in existing_policies.get("PolicyNames", []):
-                        log.debug(
-                            f"Removing {policy} policy as part of policy_condenser"
-                        )
-                        await aio_wrapper(
-                            iam_client.delete_role_policy,
-                            RoleName=principal_name,
-                            PolicyName=policy,
-                        )
-                elif resource_summary.resource_type == "user":
-                    existing_policies = await aio_wrapper(
-                        iam_client.list_user_policies,
-                        UserName=principal_name,
-                    )
-                    log.debug(
-                        f"Creating new policy for policy_condenser change {change.id}"
-                    )
-                    await aio_wrapper(
-                        iam_client.put_user_policy,
-                        UserName=principal_name,
-                        PolicyName=change.policy_name,
-                        PolicyDocument=json.dumps(
-                            change.policy.policy_document,
-                        ),
-                    )
-                    for policy in existing_policies.get("PolicyNames", []):
-                        log.debug(
-                            f"Removing {policy} policy as part of policy_condenser"
-                        )
-                        await aio_wrapper(
-                            iam_client.delete_user_policy,
-                            UserName=principal_name,
-                            PolicyName=policy,
-                        )
-                response.action_results.append(
-                    ActionResult(
-                        status="success",
-                        message=(
-                            f"Successfully condensed inline policies from principal: "
-                            f"{principal_name}"
-                        ),
-                    )
-                )
-                change.status = Status.applied
-            except Exception as e:
-                log_data["message"] = "Exception occurred condensing inline policies"
-                log_data["error"] = str(e)
-                log.error(log_data, exc_info=True)
-                sentry_sdk.capture_exception()
-                response.errors += 1
-                response.action_results.append(
-                    ActionResult(
-                        status="error",
-                        message=(
-                            f"Error occurred condensing inline policies from principal: "
-                            f"{principal_name} {str(e)}"
-                        ),
-                    )
-                )
+            response = await apply_policy_condenser_change(
+                resource_summary, change, response, iam_client, log_data
+            )
         elif change.change_type == "permissions_boundary":
             if change.action == Action.attach:
                 try:
@@ -1687,7 +1705,25 @@ async def populate_old_policies(
                     break
         elif change.change_type == "policy_condenser":
             combined_policies_document = dict(Statement=[])
-            for existing_policy in principal.inline_policies:
+            combined_policies = principal.inline_policies
+            if change.detach_managed_policies:
+                iam_client = get_tenant_iam_conn(
+                    tenant, role_account_id, "noq_get_managed_policy_docs"
+                )
+                sem = NoqSemaphore(aio_get_managed_policy_document, batch_size=20)
+                combined_policies.extend(
+                    await sem.process(
+                        [
+                            {
+                                "policy_arn": policy["PolicyArn"],
+                                "iam_client": iam_client,
+                            }
+                            for policy in principal.managed_policies
+                        ]
+                    )
+                )
+
+            for existing_policy in combined_policies:
                 existing_policy = existing_policy.get("PolicyDocument", {})
                 if version := existing_policy.get("Version"):
                     combined_policies_document.setdefault("Version", version)

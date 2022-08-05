@@ -31,12 +31,11 @@ async def update_extended_request_expiration_date(
     extended_request.expiration_date = expiration_date
 
     for change in extended_request.changes.changes:
-        if change.change_type in ["inline_policy", "policy_condenser"]:
+        if change.change_type == "inline_policy":
             change.policy_name = await generate_policy_name(
                 None, user, tenant, expiration_date
             )
-
-        if change.change_type in ["resource_policy", "sts_resource_policy"]:
+        elif change.change_type in ["resource_policy", "sts_resource_policy"]:
             new_statement = []
             old_statement_hashes = []
             statements = change.policy.policy_document.get("Statement", [])
