@@ -1287,6 +1287,9 @@ components:
             change_type:
               type: string
               pattern: "policy_condenser"
+            detach_managed_policies:
+              type: boolean
+              default: true
             policy:
               $ref: "#/components/schemas/PolicyModel"
             old_policy:
