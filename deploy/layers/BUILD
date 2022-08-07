@@ -29,6 +29,15 @@ container_layer(
 )
 
 container_layer(
+    name = "fluent-bit",
+    directory = "/etc/fluent-bit",
+    files = [
+        "//configs:fluent-bit",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
     name = "logstash",
     directory = "/etc/logstash",
     files = [
