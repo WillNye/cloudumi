@@ -335,17 +335,9 @@ class IAMRole(NoqModel):
     @classmethod
     async def _parse_results(cls, results: ResultIterator[_T]) -> list:
         iam_roles = []
-        expired_roles = []
         for iam_role in results:
-            if not iam_role.is_expired:
-                iam_role._normalize_object()
-                iam_roles.append(iam_role)
-            else:
-                expired_roles.append(iam_role)
-
-        if expired_roles:
-            for iam_role in expired_roles:
-                await iam_role.delete()
+            iam_role._normalize_object()
+            iam_roles.append(iam_role)
 
         return iam_roles
 
