@@ -1,6 +1,6 @@
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, Iterable, Optional, Sequence, Type
 
 from botocore.exceptions import ClientError
@@ -197,7 +197,6 @@ class IAMRole(NoqModel):
                 permissions_boundary=role.get("PermissionsBoundary", {}),
                 owner=get_aws_principal_owner(role, tenant),
                 last_updated=last_updated,
-                ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
             )
             await iam_role.save()
 
@@ -257,7 +256,6 @@ class IAMRole(NoqModel):
         # When this is stable we'll replace existing logic which just calls save for each role
 
         last_updated: int = int((datetime.utcnow()).timestamp())
-        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
 
         with cls.batch_write() as batch:
             for role in filtered_iam_roles:
@@ -275,7 +273,6 @@ class IAMRole(NoqModel):
                         permissions_boundary=role.get("PermissionsBoundary", {}),
                         owner=get_aws_principal_owner(role, tenant),
                         last_updated=last_updated,
-                        ttl=ttl,
                     )
                 )
 
@@ -289,7 +286,6 @@ class IAMRole(NoqModel):
             config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
         )()
         last_updated: int = int((datetime.utcnow()).timestamp())
-        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
         filtered_iam_roles = []
         cache_refresh_required = False
 
@@ -323,7 +319,6 @@ class IAMRole(NoqModel):
                 permissions_boundary=role.get("PermissionsBoundary", {}),
                 owner=get_aws_principal_owner(role, tenant),
                 last_updated=last_updated,
-                ttl=ttl,
             ).save()
 
         for role in iam_roles:
