@@ -47,7 +47,7 @@ _global_:
   web:
     path: "/frontend/build"
   docs:
-    path: "/docs"
+    path: "/api/docs"
   s3_cache_bucket: cloudumi-cache.staging-noq-dev-shared-staging-1
   development: false
   environment: staging
