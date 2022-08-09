@@ -50,8 +50,6 @@ class FunctionalTest(AsyncHTTPTestCase):
         if body and body_type == "urlencode":
             body = urllib.parse.urlencode(body)
         if method == "post":
-            # urllib.parse.urlencode(body)
-            # r = session.post(url, data=data, headers=headers)
             r = self.fetch(
                 path,
                 body=body,
@@ -63,6 +61,5 @@ class FunctionalTest(AsyncHTTPTestCase):
             return r
         if method == "get":
             r = self.fetch(path, body=body, headers=headers)
-            # r = session.get(url, data=data, headers=headers)
             return r
         raise Exception("Invalid method")
