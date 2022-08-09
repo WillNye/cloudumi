@@ -63,14 +63,16 @@ from common.lib.aws.sns import list_topics
 from common.lib.aws.typeahead_cache import cache_aws_resource_details
 from common.lib.aws.utils import (
     allowed_to_sync_role,
-    autodiscover_aws_org_accounts,
     cache_all_scps,
-    cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
-    onboard_new_accounts_from_orgs,
     remove_expired_requests_for_tenants,
     remove_expired_tenant_requests,
+)
+from common.aws.organizations.utils import (
+    autodiscover_aws_org_accounts,
+    cache_org_structure,
+    onboard_new_accounts_from_orgs,
     sync_account_names_from_orgs,
 )
 from common.lib.cache import (
