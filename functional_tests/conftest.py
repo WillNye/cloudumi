@@ -11,7 +11,8 @@ TEST_ROLE = "NullRole"
 TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
 TEST_USER_NAME = "testing@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
-TEST_USER_DOMAIN = "corp_staging_noq_dev"
+TEST_USER_DOMAIN = "corp.staging.noq.dev"
+TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
 
 
 class FunctionalTest(AsyncHTTPTestCase):
@@ -20,7 +21,7 @@ class FunctionalTest(AsyncHTTPTestCase):
         generate_jwt_token(
             TEST_USER_NAME,
             TEST_USER_GROUPS,
-            TEST_USER_DOMAIN,
+            TEST_USER_DOMAIN_US,
             eula_signed=True,
         )
     )
@@ -48,7 +49,7 @@ class FunctionalTest(AsyncHTTPTestCase):
             headers = {}
         if not headers.get("Content-Type"):
             headers["Content-Type"] = "application/json"
-        headers["Host"] = "corp.staging.noq.dev"
+        headers["Host"] = TEST_USER_DOMAIN
         headers["Cookie"] = f"noq_auth={self.token}"
         headers["X-Forwarded-For"] = "127.0.0.1"
 
