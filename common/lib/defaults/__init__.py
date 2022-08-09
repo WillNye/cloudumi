@@ -43,6 +43,10 @@ permissions_map:
           - s3:PutObjectVersionTagging
           - s3:ListMultipartUploadParts*
           - s3:AbortMultipartUpload
+      - name: put_object_acl
+        text: PutObjectAcl
+        permissions:
+          - s3:PutObjectAcl
       - name: delete
         text: Delete
         permissions:
