@@ -145,7 +145,7 @@ class AccessAdvisor:
             tenant, account_id
         )
         effective_identity_permissions = await calculate_unused_policy_for_identities(
-            tenant, arns, iam_policies, access_advisor_data
+            tenant, arns, iam_policies, access_advisor_data, account_id=account_id
         )
         await store_json_results_in_redis_and_s3(
             effective_identity_permissions,
