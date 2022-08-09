@@ -26,14 +26,9 @@ import tornado.ioloop
 import uvloop
 from tornado.platform.asyncio import AsyncIOMainLoop
 
-# Run and fail fast if functional tests fail
-from functional_tests import run_tests
-
-run_tests.run()  # raises an exception if the functional tests fail, which should stop deployment
-
-from api.routes import make_app  # noqa
-from common.config import config  # noqa
-from common.lib.plugins import get_plugin_by_name  # noqa
+from api.routes import make_app
+from common.config import config
+from common.lib.plugins import get_plugin_by_name
 
 configured_profiler = config.get("_global_.profiler")
 if configured_profiler:

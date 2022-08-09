@@ -1,8 +1,21 @@
 # content of myinvoke.py
+import argparse
+import sys
+
 import pytest
 from pytest import ExitCode
 
 from util.log import logger
+
+parser = argparse.ArgumentParser(description="Stage")
+parser.add_argument(
+    "--stage",
+    help="Stage of deployment. Functional tests only run in staging",
+)
+args = parser.parse_args()
+
+if args.stage != "staging":
+    sys.exit(0)
 
 
 class MyPlugin:
@@ -17,3 +30,7 @@ def run():
         ExitCode.USAGE_ERROR,
     ]:
         raise RuntimeError("Functional tests failed")
+
+
+if __name__ == "__main__":
+    run()

@@ -11,8 +11,8 @@ class TestUserProfile(FunctionalTest):
 
         accounts = res_j.pop("accounts")
 
-        self.assertIn("259868150464", accounts.keys())
-        self.assertIn("staging", accounts.values())
+        self.assertIn("759357822767", accounts.keys())
+        self.assertIn("development", accounts.values())
 
         self.assertEqual(
             res_j,
