@@ -5,12 +5,15 @@ import tornado.escape
 import common.lib.noq_json as json
 from common.aws.iam.policy.utils import validate_iam_policy
 from common.aws.iam.role.utils import get_roles_as_resource
-from common.aws.utils import ResourceSummary, get_url_for_resource
+from common.aws.utils import (
+    ResourceSummary,
+    get_url_for_resource,
+    list_tenant_resources,
+)
 from common.config import config
 from common.exceptions.exceptions import ResourceNotFound
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
 from common.lib.auth import get_accounts_user_can_view_resources_for
-from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.generic import filter_table
 from common.lib.plugins import get_plugin_by_name
 from common.lib.timeout import Timeout
@@ -117,23 +120,7 @@ class PoliciesHandler(BaseAPIV2Handler):
             "tenant": tenant,
         }
         log.debug(log_data)
-        all_policies = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get_tenant_specific_key(
-                "policies.redis_policies_key",
-                tenant,
-                f"{tenant}_ALL_POLICIES",
-            ),
-            s3_bucket=config.get_tenant_specific_key(
-                "cache_policies_table_details.s3.bucket", tenant
-            ),
-            s3_key=config.get_tenant_specific_key(
-                "cache_policies_table_details.s3.file",
-                tenant,
-                "policies_table/cache_policies_table_details_v1.json.gz",
-            ),
-            default=[],
-            tenant=tenant,
-        )
+        all_policies = await list_tenant_resources(tenant)
 
         viewable_accounts = await get_accounts_user_can_view_resources_for(
             self.user, self.groups, tenant
@@ -162,9 +149,14 @@ class PoliciesHandler(BaseAPIV2Handler):
                 raise
 
         if markdown:
+            policies = policies[0:limit]
+            resource_summaries = await ResourceSummary.bulk_set(
+                tenant, [p["arn"] for p in policies]
+            )
+            resource_summary_map = {rs.arn: rs for rs in resource_summaries}
             policies_to_write = []
             for policy in policies[0:limit]:
-                resource_summary = await ResourceSummary.set(tenant, policy.get("arn"))
+                resource_summary = resource_summary_map[policy.get("arn")]
                 try:
                     url = await get_url_for_resource(resource_summary)
                 except ResourceNotFound:

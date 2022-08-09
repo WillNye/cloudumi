@@ -275,7 +275,7 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(false)
         setButtonResponseMessage(
           response.action_results.reduce((resultsReduced, result) => {
-            if (result.visible === true) {
+            if (!(result.hasOwnProperty('visible') && !result.visible)) {
               resultsReduced.push(result)
             }
             return resultsReduced

@@ -23,6 +23,7 @@ Resources:
                   Fn::If:
                     - ReadOnlyModeEnabled
                     - - "config:BatchGet*" # Retrieve AWS Config details for your resources ; Will allow policy rollback
+                      - "config:GetResourceConfigHistory"
                       - "config:List*" # Retrieve information about AWS resources to list in a single source of truth
                       - "config:Select*" # Query AWS Config
                       - "ec2:describeregions" # Retrieve active regions for your AWS environment
@@ -98,6 +99,7 @@ Resources:
                       - "sqs:ListQueues"
                       - "sqs:ListQueueTags"
                     - - "config:BatchGet*" # Retrieve AWS Config details for your resources ; Will allow policy rollback
+                      - "config:GetResourceConfigHistory"
                       - "config:List*" # Retrieve information about AWS resources to list in a single source of truth
                       - "config:Select*" # Query AWS Config
                       - "ec2:describeregions" # Retrieve active regions for your AWS environment

@@ -32,7 +32,7 @@ const ResourceDetail = () => {
             <Table.Cell>{`${account_name} (${account_id}`})</Table.Cell>
           </Table.Row>
           <Table.Row>
-            <Table.Cell width={4}>Ready Only Account</Table.Cell>
+            <Table.Cell width={4}>Read Only Account</Table.Cell>
             <Table.Cell>{`${read_only ? 'True' : 'False'}`}</Table.Cell>
           </Table.Row>
           <Table.Row>

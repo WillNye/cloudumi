@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import boto3
 import sentry_sdk
 from botocore.exceptions import ClientError
-from policy_sentry.util.arns import parse_arn
 
 from common.aws.iam.policy.utils import (
     fetch_managed_policy_details,
@@ -18,7 +17,7 @@ from common.aws.iam.policy.utils import (
     should_exclude_policy_from_comparison,
 )
 from common.aws.iam.role.config import get_active_tear_users_tag
-from common.aws.utils import get_resource_account, get_resource_tag
+from common.aws.utils import ResourceSummary, get_resource_tag
 from common.config import config, models
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
@@ -34,7 +33,6 @@ from common.lib.account_indexers.aws_organizations import (
 )
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.aws_config import query
 from common.lib.aws.s3 import (
     get_bucket_location,
     get_bucket_policy,
@@ -49,7 +47,7 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.plugins import get_plugin_by_name
-from common.lib.redis import RedisHandler, redis_hgetex, redis_hsetex
+from common.lib.redis import redis_hgetex, redis_hsetex
 from common.models import (
     ExtendedRequestModel,
     HubAccount,
@@ -963,7 +961,7 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> set[str]:
                             )
                             print(response)
                             break
-                        except Exception as e:
+                        except Exception:
                             continue
                     org_iam_client.delete_role_policy(
                         RoleName=spoke_role_name, PolicyName=temp_policy_name
@@ -1354,7 +1352,6 @@ async def remove_expired_request_changes(
             continue
 
         principal_arn = change.principal.principal_arn
-
         if change.change_type in [
             "managed_policy_resource",
             "resource_policy",
@@ -1362,33 +1359,25 @@ async def remove_expired_request_changes(
         ]:
             principal_arn = change.arn
 
-        arn_parsed = parse_arn(principal_arn)
-        # resource name is none for s3 buckets
-        principal_name = (arn_parsed["resource_path"] or "").split("/")[-1]
-
-        resource_type = arn_parsed["service"]
-        resource_name = arn_parsed["resource"]
-        resource_region = arn_parsed["region"]
-        resource_account = arn_parsed["account"]
-
-        if not resource_account:
-            resource_account = await get_resource_account(principal_arn, tenant)
-
-        if resource_type == "s3" and not resource_region:
-            resource_region = await get_bucket_location_with_fallback(
-                resource_name, resource_account, tenant
-            )
-
-        if not resource_account:
+        try:
+            resource_summary = await ResourceSummary.set(tenant, principal_arn)
+        except ValueError:
             # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
             # we can't revoke this change
             log_data["message"] = "Resource account not found"
             log.warning(log_data)
             continue
 
+        # resource name is none for s3 buckets
+        principal_name = resource_summary.name
+        resource_service = resource_summary.service
+        resource_type = resource_summary.resource_type
+        resource_region = resource_summary.region
+        resource_account = resource_summary.account
+
         client = await aio_wrapper(
             boto3_cached_conn,
-            resource_type,
+            resource_service,
             tenant,
             user,
             service_type="client",
@@ -1413,13 +1402,13 @@ async def remove_expired_request_changes(
 
         if change.change_type == "inline_policy":
             try:
-                if resource_name == "role":
+                if resource_type == "role":
                     await aio_wrapper(
                         client.delete_role_policy,
                         RoleName=principal_name,
                         PolicyName=change.policy_name,
                     )
-                elif resource_name == "user":
+                elif resource_type == "user":
                     await aio_wrapper(
                         client.delete_user_policy,
                         UserName=principal_name,
@@ -1432,7 +1421,7 @@ async def remove_expired_request_changes(
                 log_data["message"] = "Policy was not found"
                 log_data[
                     "error"
-                ] = f"{change.policy_name} was not attached to {resource_name}"
+                ] = f"{change.policy_name} was not attached to {resource_type}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1447,12 +1436,12 @@ async def remove_expired_request_changes(
 
         elif change.change_type == "permissions_boundary":
             try:
-                if resource_name == "role":
+                if resource_type == "role":
                     await aio_wrapper(
                         client.delete_role_permissions_boundary,
                         RoleName=principal_name,
                     )
-                elif resource_name == "user":
+                elif resource_type == "user":
                     await aio_wrapper(
                         client.delete_user_permissions_boundary,
                         UserName=principal_name,
@@ -1464,7 +1453,7 @@ async def remove_expired_request_changes(
                 log_data["message"] = "Policy was not found"
                 log_data[
                     "error"
-                ] = f"permission boundary was not attached to {resource_name}"
+                ] = f"permission boundary was not attached to {resource_type}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1481,13 +1470,13 @@ async def remove_expired_request_changes(
 
         elif change.change_type == "managed_policy":
             try:
-                if resource_name == "role":
+                if resource_type == "role":
                     await aio_wrapper(
                         client.detach_role_policy,
                         RoleName=principal_name,
                         PolicyArn=change.arn,
                     )
-                elif resource_name == "user":
+                elif resource_type == "user":
                     await aio_wrapper(
                         client.detach_user_policy,
                         UserName=principal_name,
@@ -1498,7 +1487,7 @@ async def remove_expired_request_changes(
 
             except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
-                log_data["error"] = f"{change.arn} was not attached to {resource_name}"
+                log_data["error"] = f"{change.arn} was not attached to {resource_type}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1514,7 +1503,7 @@ async def remove_expired_request_changes(
         elif change.change_type == "resource_tag":
             try:
                 await prune_iam_resource_tag(
-                    client, resource_name, principal_name, change.key, change.value
+                    client, resource_type, principal_name, change.key, change.value
                 )
                 change.status = Status.expired
                 should_update_policy_request = True
@@ -1522,7 +1511,7 @@ async def remove_expired_request_changes(
 
             except client.exceptions.NoSuchEntityException:
                 log_data["message"] = "Policy was not found"
-                log_data["error"] = f"{change.key} was not attached to {resource_name}"
+                log_data["error"] = f"{change.key} was not attached to {resource_type}"
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
@@ -1596,8 +1585,8 @@ async def remove_expired_request_changes(
 
                     existing_policy = await get_resource_policy(
                         resource_account,
+                        resource_service,
                         resource_type,
-                        resource_name,
                         resource_region,
                         tenant,
                         user,
@@ -1632,29 +1621,29 @@ async def remove_expired_request_changes(
 
                 existing_policy["Statement"] = new_policy_statement
 
-                if resource_type == "s3":
+                if resource_service == "s3":
                     if len(new_policy_statement) == 0:
                         await aio_wrapper(
                             client.delete_bucket_policy,
-                            Bucket=resource_name,
+                            Bucket=resource_type,
                             ExpectedBucketOwner=resource_account,
                         )
                     else:
                         await aio_wrapper(
                             client.put_bucket_policy,
-                            Bucket=resource_name,
+                            Bucket=resource_type,
                             Policy=ujson.dumps(existing_policy),
                         )
-                elif resource_type == "sns":
+                elif resource_service == "sns":
                     await aio_wrapper(
                         client.set_topic_attributes,
                         TopicArn=change.arn,
                         AttributeName="Policy",
                         AttributeValue=ujson.dumps(existing_policy),
                     )
-                elif resource_type == "sqs":
+                elif resource_service == "sqs":
                     queue_url: dict = await aio_wrapper(
-                        client.get_queue_url, QueueName=resource_name
+                        client.get_queue_url, QueueName=resource_type
                     )
 
                     if len(new_policy_statement) == 0:
@@ -1670,7 +1659,7 @@ async def remove_expired_request_changes(
                             QueueUrl=queue_url.get("QueueUrl"),
                             Attributes={"Policy": ujson.dumps(existing_policy)},
                         )
-                elif resource_type == "iam":
+                elif resource_service == "iam":
                     await aio_wrapper(
                         client.update_assume_role_policy,
                         RoleName=principal_name,
@@ -1691,7 +1680,7 @@ async def remove_expired_request_changes(
             extended_request.request_status = RequestStatus.expired
             await IAMRequest.write_v2(extended_request, tenant)
 
-            if resource_name == "role":
+            if resource_type == "role":
                 await IAMRole.get(
                     tenant,
                     resource_account,
@@ -1700,7 +1689,7 @@ async def remove_expired_request_changes(
                     run_sync=True,
                 )
 
-            elif resource_name == "user":
+            elif resource_type == "user":
                 from common.aws.iam.user.utils import fetch_iam_user
 
                 await fetch_iam_user(
@@ -1772,84 +1761,6 @@ def get_aws_principal_owner(role_details: Dict[str, Any], tenant: str) -> Option
             if role_tag["Key"] == owner_tag_name:
                 return role_tag["Value"]
     return owner
-
-
-async def resource_arn_known_in_aws_config(
-    resource_arn: str,
-    tenant: str,
-    run_query: bool = True,
-    run_query_with_aggregator: bool = True,
-) -> bool:
-    """
-    Determines if the resource ARN is known in AWS Config. AWS config does not store all resource
-    types, nor will it account for cross-organizational resources, so the result of this function shouldn't be used
-    to determine if a resource "exists" or not.
-
-    A more robust approach is determining the resource type and querying AWS API directly to see if it exists, but this
-    requires a lot of code.
-
-    Note: This data may be stale by ~ 1 hour and 15 minutes (local results caching + typical AWS config delay)
-
-    :param resource_arn: ARN of the resource we want to look up
-    :param run_query: Should we run an AWS config query if we're not able to find the resource in our AWS Config cache?
-    :param run_query_with_aggregator: Should we run the AWS Config query on our AWS Config aggregator?
-    :return:
-    """
-    red = RedisHandler().redis_sync(tenant)
-    expiration_seconds: int = config.get_tenant_specific_key(
-        "aws.resource_arn_known_in_aws_config.expiration_seconds",
-        tenant,
-        3600,
-    )
-    known_arn = False
-    if not resource_arn.startswith("arn:aws:"):
-        return known_arn
-
-    resources_from_aws_config_redis_key: str = config.get_tenant_specific_key(
-        "aws_config_cache.redis_key",
-        tenant,
-        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
-    )
-
-    if red.exists(resources_from_aws_config_redis_key) and red.hget(
-        resources_from_aws_config_redis_key, resource_arn
-    ):
-        return True
-
-    resource_arn_exists_temp_matches_redis_key: str = config.get_tenant_specific_key(
-        "resource_arn_known_in_aws_config.redis.temp_matches_key",
-        tenant,
-        f"{tenant}_TEMP_QUERIED_RESOURCE_ARN_CACHE",
-    )
-
-    # To prevent repetitive queries against AWS config, first see if we've already ran a query recently
-    result = await redis_hgetex(
-        resource_arn_exists_temp_matches_redis_key, resource_arn, tenant
-    )
-    if result:
-        return result["known"]
-
-    if not run_query:
-        return False
-
-    r = await aio_wrapper(
-        query,
-        f"select arn where arn = '{resource_arn}'",
-        tenant,
-        use_aggregator=run_query_with_aggregator,
-    )
-    if r:
-        known_arn = True
-    # To prevent future repetitive queries on AWS Config, set our result in Redis with an expiration
-    await redis_hsetex(
-        resource_arn_exists_temp_matches_redis_key,
-        resource_arn,
-        {"known": known_arn},
-        expiration_seconds,
-        tenant,
-    )
-
-    return known_arn
 
 
 async def simulate_iam_principal_action(

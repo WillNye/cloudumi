@@ -4,7 +4,7 @@ import os
 import random
 import unittest
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import boto3
 import fakeredis
@@ -37,7 +37,6 @@ MOCK_ROLE = {
     "arn": "arn:aws:iam::123456789012:role/FakeRole",
     "name": "FakeRole",
     "accountId": "123456789012",
-    "ttl": 1557325374,
     "policy": {
         "Path": "/",
         "RoleId": "ABCDEFG",
@@ -472,12 +471,6 @@ def iamrole_table(dynamodb):
             {"AttributeName": "entity_id", "KeyType": "RANGE"},
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 1000, "WriteCapacityUnits": 1000},
-    )
-
-    # Apply a TTL:
-    dynamodb.update_time_to_live(
-        TableName="iamroles_multitenant",
-        TimeToLiveSpecification={"Enabled": True, "AttributeName": "ttl"},
     )
 
     yield dynamodb
@@ -1203,7 +1196,6 @@ def user_iam_role(iamrole_table, www_user):
         arn=www_user.get("Arn"),
         name=www_user.get("RoleName"),
         accountId="123456789012",
-        ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
         policy=IAMRole().dump_json_attr(www_user),
         tenant=tenant,
         entity_id=f"{www_user.get('Arn')}||{tenant}",

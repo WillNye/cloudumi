@@ -120,6 +120,7 @@ paths:
             application/json:
               schema:
                 oneOf:
+                  - $ref: "#/components/schemas/PolicyCondenserChangeModel"
                   - $ref: "#/components/schemas/InlinePolicyChangeModel"
                   - $ref: "#/components/schemas/ManagedPolicyChangeModel"
                   - $ref: "#/components/schemas/ResourcePolicyChangeModel"
@@ -368,6 +369,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TenantDetailsModel"
+
+  /api/v3/resource/history/{resource_arn}:
+    get:
+      summary: Retrieves all changes made to a resource and the resources it inherits from over the last 90 days.
+      tags:
+        - tenant_details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConfigurationEventModel"
 
   /roles/{account_id}/{role_name}:
     get:
@@ -1261,6 +1277,23 @@ components:
                 - json
                 - hcl
                 - text
+    PolicyCondenserChangeModel:
+      allOf:
+        - $ref: "#/components/schemas/ChangeModel"
+        - type: object
+          properties:
+            policy_name:
+              type: string
+            change_type:
+              type: string
+              pattern: "policy_condenser"
+            detach_managed_policies:
+              type: boolean
+              default: true
+            policy:
+              $ref: "#/components/schemas/PolicyModel"
+            old_policy:
+              $ref: "#/components/schemas/PolicyModel"
     InlinePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1443,6 +1476,7 @@ components:
           type: array
           items:
             anyOf:
+              - $ref: "#/components/schemas/PolicyCondenserChangeModel"
               - $ref: "#/components/schemas/InlinePolicyChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyChangeModel"
               - $ref: "#/components/schemas/PermissionsBoundaryChangeModel"
@@ -1539,6 +1573,87 @@ components:
           type: string
           description: Statement identifier
           pattern: "^([a-zA-Z0-9]+)*"
+    PolicyDocumentModel:
+      type: object
+      properties:
+        Version:
+          type: string
+        Statement:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/PolicyStatement"
+    PolicyVersionModel:
+      type: object
+      properties:
+        IsDefaultVersion:
+          type: boolean
+        CreateDate:
+          type: string
+          format: date-time
+        document:
+          $ref: "#/components/schemas/PolicyDocumentModel"
+    ConfigurationChangeModel:
+      type: object
+      properties:
+        version:
+          type: string
+        configurationItemStatus:
+          type: string
+        configurationItemCaptureTime:
+          type: string
+          format: date-time
+        arn:
+          type: string
+        resourceType:
+          type: string
+        resourceName:
+          type: string
+        awsRegion:
+          type: string
+        availabilityZone:
+          type: string
+        resourceCreationTime:
+          type: string
+          format: date-time
+        tags:
+          type: object
+        relatedEvents:
+          type: array
+        relationships:
+          type: array
+        configuration:
+          type: object
+          properties:
+            policyName:
+              type: string
+            arn:
+              type: string
+            path:
+              type: string
+            createDate:
+              type: string
+              format: date-time
+            updateDate:
+              type: string
+              format: date-time
+            policyVersionList:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/PolicyVersionModel"
+    ConfigurationEventModel:
+      type: object
+      properties:
+        config_change:
+          $ref: "#/components/schemas/ConfigurationChangeModel"
+        updated_at:
+          type: string
+          format: date-time
+        rollback_supported:
+          type: boolean
+        resource_url:
+          type: string
     CommentModel:
       type: object
       required:

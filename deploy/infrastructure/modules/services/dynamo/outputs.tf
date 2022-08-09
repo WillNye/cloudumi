@@ -45,7 +45,7 @@ output "cloudumi_identity_users_multitenant_id" {
 
 output "noq_api_keys_id" {
   description = "ID of noq api keys"
-  value       = aws_dynamodb_table.noq_api_keys.id
+  value       = aws_dynamodb_table.noq_api_keys_v2.id
 }
 
 output "cloudumi_iamroles_multitenant_id" {

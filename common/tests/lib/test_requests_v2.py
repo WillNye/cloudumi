@@ -3,6 +3,7 @@ import unittest
 
 import boto3
 import pytest
+from cachetools import TTLCache
 from mock import patch
 from pydantic import ValidationError
 
@@ -576,18 +577,19 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_generate_resource_policies(self):
-        from common.lib.redis import RedisHandler
+        from common.aws.utils import ResourceAccountCache
         from common.lib.v2.requests import generate_resource_policies
 
-        # Redis is globally mocked. Let's store and retrieve a fake value
-        red = RedisHandler().redis_sync(tenant)
-        red.hset(
-            f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
-            mapping={
-                "arn:aws:s3:::test_bucket": json.dumps({"accountId": "123456789013"}),
-                "arn:aws:s3:::test_bucket_2": json.dumps({"accountId": "123456789013"}),
-            },
-        )
+        if not ResourceAccountCache._tenant_resources.get(tenant):
+            ResourceAccountCache._tenant_resources[tenant] = TTLCache(
+                maxsize=1000, ttl=120
+            )
+        ResourceAccountCache._tenant_resources[tenant][
+            "arn:aws:s3:::test_bucket"
+        ] = "123456789013"
+        ResourceAccountCache._tenant_resources[tenant][
+            "arn:aws:s3:::test_bucket_2"
+        ] = "123456789013"
 
         inline_policy_change = {
             "principal": {
@@ -781,7 +783,8 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(seen_resource_two)
         self.assertTrue(seen_resource_three)
         self.assertTrue(seen_resource_four)
-        red.delete(f"{tenant}_AWSCONFIG_RESOURCE_CACHE")
+        ResourceAccountCache._tenant_resources[tenant].pop("arn:aws:s3:::test_bucket")
+        ResourceAccountCache._tenant_resources[tenant].pop("arn:aws:s3:::test_bucket_2")
 
     async def test_apply_changes_to_role_inline_policy(self):
         from common.config import config

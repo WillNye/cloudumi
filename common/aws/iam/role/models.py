@@ -1,6 +1,6 @@
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, Iterable, Optional, Sequence, Type
 
 from botocore.exceptions import ClientError
@@ -56,7 +56,6 @@ class IAMRole(NoqModel):
     templated = UnicodeAttribute(null=True)
     permissions_boundary = NoqMapAttribute(null=True)
     tags = ListAttribute(of=TagMap, null=True)
-    ttl = NumberAttribute()
     last_updated = NumberAttribute()
 
     @property
@@ -80,12 +79,6 @@ class IAMRole(NoqModel):
         return self._policy_dict
 
     @property
-    def is_expired(self) -> bool:
-        if not self.ttl:
-            return False
-        return bool(datetime.fromtimestamp(float(self.ttl)) < datetime.utcnow())
-
-    @property
     def terraform(self) -> str:
         if not self.policy_dict:
             return ""
@@ -104,8 +97,6 @@ class IAMRole(NoqModel):
             return ""
 
     def _normalize_object(self):
-        if self.ttl:
-            self.ttl = int(self.ttl)
         if self.policy and isinstance(self.policy, str):
             self.policy = json.loads(self.policy)
 
@@ -148,13 +139,10 @@ class IAMRole(NoqModel):
                 log_data["message"] = "Role is missing in DDB. Going out to AWS."
                 stats.count("aws.fetch_iam_role.missing_dynamo", tags=stat_tags)
 
-        if not iam_role or iam_role.is_expired:
+        if not iam_role:
             if force_refresh:
                 log_data["message"] = "Force refresh is enabled. Going out to AWS."
                 stats.count("aws.fetch_iam_role.force_refresh", tags=stat_tags)
-            elif iam_role and iam_role.is_expired:
-                log_data["message"] = "Role is out of date. Going out to AWS."
-                stats.count("aws.fetch_iam_role.is_expired", tags=stat_tags)
             log.debug(log_data)
 
             try:
@@ -209,7 +197,6 @@ class IAMRole(NoqModel):
                 permissions_boundary=role.get("PermissionsBoundary", {}),
                 owner=get_aws_principal_owner(role, tenant),
                 last_updated=last_updated,
-                ttl=int((datetime.utcnow() + timedelta(hours=6)).timestamp()),
             )
             await iam_role.save()
 
@@ -269,7 +256,6 @@ class IAMRole(NoqModel):
         # When this is stable we'll replace existing logic which just calls save for each role
 
         last_updated: int = int((datetime.utcnow()).timestamp())
-        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
 
         with cls.batch_write() as batch:
             for role in filtered_iam_roles:
@@ -287,7 +273,6 @@ class IAMRole(NoqModel):
                         permissions_boundary=role.get("PermissionsBoundary", {}),
                         owner=get_aws_principal_owner(role, tenant),
                         last_updated=last_updated,
-                        ttl=ttl,
                     )
                 )
 
@@ -301,7 +286,6 @@ class IAMRole(NoqModel):
             config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
         )()
         last_updated: int = int((datetime.utcnow()).timestamp())
-        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
         filtered_iam_roles = []
         cache_refresh_required = False
 
@@ -335,7 +319,6 @@ class IAMRole(NoqModel):
                 permissions_boundary=role.get("PermissionsBoundary", {}),
                 owner=get_aws_principal_owner(role, tenant),
                 last_updated=last_updated,
-                ttl=ttl,
             ).save()
 
         for role in iam_roles:
@@ -347,17 +330,9 @@ class IAMRole(NoqModel):
     @classmethod
     async def _parse_results(cls, results: ResultIterator[_T]) -> list:
         iam_roles = []
-        expired_roles = []
         for iam_role in results:
-            if not iam_role.is_expired:
-                iam_role._normalize_object()
-                iam_roles.append(iam_role)
-            else:
-                expired_roles.append(iam_role)
-
-        if expired_roles:
-            for iam_role in expired_roles:
-                await iam_role.delete()
+            iam_role._normalize_object()
+            iam_roles.append(iam_role)
 
         return iam_roles
 

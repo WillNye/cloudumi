@@ -16,7 +16,7 @@ from common.config import config, models
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import rate_limited, sts_conn
-from common.lib.asyncio import aio_wrapper
+from common.lib.asyncio import NoqSemaphore, aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.cloud_credential_authorization_mapping import RoleAuthorizations
 from common.lib.plugins import get_plugin_by_name
@@ -639,12 +639,12 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, tenant):
 
 @rate_limited()
 @sts_conn("iam", service_type="client")
-def get_role_inline_policy_names(role, client=None, **kwargs):
+def get_role_inline_policy_names(role: str, client=None, **kwargs):
     marker = {}
     inline_policies = []
 
     while True:
-        response = client.list_role_policies(RoleName=role["RoleName"], **marker)
+        response = client.list_role_policies(RoleName=role, **marker)
         inline_policies.extend(response["PolicyNames"])
 
         if response["IsTruncated"]:
@@ -655,18 +655,20 @@ def get_role_inline_policy_names(role, client=None, **kwargs):
 
 @sts_conn("iam", service_type="client")
 @rate_limited()
-def get_role_inline_policy_document(role, policy_name, client=None, **kwargs):
-    response = client.get_role_policy(RoleName=role["RoleName"], PolicyName=policy_name)
+def get_role_inline_policy_document(role: str, policy_name: str, client=None, **kwargs):
+    response = client.get_role_policy(RoleName=role, PolicyName=policy_name)
     return response.get("PolicyDocument")
 
 
-def get_role_inline_policies(role, **kwargs):
-    policy_names = get_role_inline_policy_names(role, **kwargs)
+def get_role_inline_policies(role: dict, **kwargs):
+    policy_names = get_role_inline_policy_names(role["RoleName"], **kwargs)
 
     policies = zip(
         policy_names,
         Parallel(n_jobs=20, backend="threading")(
-            delayed(get_role_inline_policy_document)(role, policy_name, **kwargs)
+            delayed(get_role_inline_policy_document)(
+                role["RoleName"], policy_name, **kwargs
+            )
             for policy_name in policy_names
         ),
     )
@@ -717,6 +719,23 @@ def get_role_managed_policy_documents(role, client=None, **kwargs):
     policy_documents = Parallel(n_jobs=20, backend="threading")(delayed_gmpd_calls)
 
     return dict(zip(policy_names, policy_documents))
+
+
+async def aio_get_role_managed_policy_documents(role: str, iam_client):
+    from common.aws.iam.policy.utils import (
+        aio_get_managed_policy_document,
+        aio_list_managed_policies_for_resource,
+    )
+
+    sem = NoqSemaphore(aio_get_managed_policy_document, batch_size=20)
+    policies = await aio_list_managed_policies_for_resource("role", role, iam_client)
+
+    return await sem.process(
+        [
+            {"policy_arn": policy["PolicyArn"], "iam_client": iam_client}
+            for policy in policies
+        ]
+    )
 
 
 async def update_role_tear_config(
@@ -826,6 +845,8 @@ async def get_authorized_group_map(
         )
 
         for tag in iam_role.tags:
+            if not tag["Value"]:
+                continue
             if tag["Key"] in authorized_group_tags:
                 splitted_groups = tag["Value"].split(":")
                 for group in splitted_groups:

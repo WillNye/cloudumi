@@ -96,8 +96,6 @@ export const TypeaheadBlockComponent = (props) => {
     )
   })
 
-  let formattedResults = results
-
   return (
     <Form.Field required={props.required || false}>
       <label>{props.label || 'Enter Value'}</label>
@@ -109,8 +107,8 @@ export const TypeaheadBlockComponent = (props) => {
         onSearchChange={_.debounce(handleSearchChange, 500, {
           leading: true,
         })}
-        wn={handleKeyDown}
-        results={formattedResults}
+        onKeyDown={handleKeyDown}
+        results={results}
         value={value}
         showNoResults={false}
       />
