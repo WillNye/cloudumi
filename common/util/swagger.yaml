@@ -1,7 +1,6 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
 # consoleme/models.py:
 # `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' ; black ../models.py`
-
 # To exclude a property from being returned when calling model.dict() by default add the property is_secret: true
 
 openapi: 3.0.0
@@ -2545,6 +2544,12 @@ components:
           description: |-
             Options for automatically onboarded accounts. If "read_only" is configured,
             automatically onboarded accounts will be configured in a read-only state.
+          items:
+            type: string
+          default: []
+        accounts_excluded_from_automatic_onboard:
+          type: array
+          description: Accounts that can not or should not be automatically onboarded
           items:
             type: string
           default: []
