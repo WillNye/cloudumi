@@ -1,6 +1,6 @@
 import json
 
-from functional_tests.conftest import FunctionalTest
+from functional_tests.conftest import TEST_ROLE_ARN, FunctionalTest
 
 
 class TestRoles(FunctionalTest):
@@ -34,7 +34,7 @@ class TestRoles(FunctionalTest):
 
     def test_role_page_login(self):
         res = self.make_request(
-            "/api/v2/role_login/767:role/NullRole",
+            f"/api/v2/role_login/{TEST_ROLE_ARN}",
             follow_redirects=False,
             request_timeout=120,
         )
@@ -50,7 +50,7 @@ class TestRoles(FunctionalTest):
             {
                 "type": "redirect",
                 "reason": "console_login",
-                "role": "arn:aws:iam::759357822767:role/NullRole",
+                "role": TEST_ROLE_ARN,
             },
         )
 

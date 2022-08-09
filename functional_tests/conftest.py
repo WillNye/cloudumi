@@ -6,14 +6,21 @@ from tornado.testing import AsyncHTTPTestCase
 
 from common.lib.jwt import generate_jwt_token
 
+TEST_ACCOUNT_ID = "759357822767"
+TEST_ROLE = "NullRole"
+TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
+TEST_USER_NAME = "testing@noq.dev"
+TEST_USER_GROUPS = ["engineering@noq.dev"]
+TEST_USER_DOMAIN = "corp_staging_noq_dev"
+
 
 class FunctionalTest(AsyncHTTPTestCase):
     maxDiff = None
     token = asyncio.run(
         generate_jwt_token(
-            "testing@noq.dev",
-            ["engineering@noq.dev"],
-            "corp_staging_noq_dev",
+            TEST_USER_NAME,
+            TEST_USER_GROUPS,
+            TEST_USER_DOMAIN,
             eula_signed=True,
         )
     )

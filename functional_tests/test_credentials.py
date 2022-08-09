@@ -1,9 +1,9 @@
-from functional_tests.conftest import FunctionalTest
+from functional_tests.conftest import TEST_ROLE_ARN, FunctionalTest
 
 
 class TestCredentials(FunctionalTest):
     def test_get_credentials(self):
-        data = {"requested_role": "arn:aws:iam::759357822767:role/NullRole"}
+        data = {"requested_role": TEST_ROLE_ARN}
         r = self.make_request("/api/v1/get_credentials", data, method="post")
 
         self.assertEqual(r.code, 200)
