@@ -5,7 +5,7 @@ load("//util/tests:defs.bzl", "pytest_test")
 INT_DEPS = [
     "//common/config/tests:test_files",
     "//common/lib/cognito/tests:test_files",
-    "//common/lib/jwt:lib",
+    "//common/lib",
     "//common/tests:test_files",
     "//util/tests:test_dependencies_lib",
 ]
