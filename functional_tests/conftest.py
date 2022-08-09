@@ -7,6 +7,7 @@ from tornado.testing import AsyncHTTPTestCase
 from common.lib.jwt import generate_jwt_token
 
 TEST_ACCOUNT_ID = "759357822767"
+TEST_ACCOUNT_NAME = "development"
 TEST_ROLE = "NullRole"
 TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
 TEST_USER_NAME = "testing@noq.dev"

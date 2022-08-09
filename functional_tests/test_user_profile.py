@@ -1,6 +1,6 @@
 import json
 
-from functional_tests.conftest import FunctionalTest
+from functional_tests.conftest import TEST_ACCOUNT_ID, TEST_ACCOUNT_NAME, FunctionalTest
 
 
 class TestUserProfile(FunctionalTest):
@@ -11,8 +11,8 @@ class TestUserProfile(FunctionalTest):
 
         accounts = res_j.pop("accounts")
 
-        self.assertIn("759357822767", accounts.keys())
-        self.assertIn("development", accounts.values())
+        self.assertIn(TEST_ACCOUNT_ID, accounts.keys())
+        self.assertIn(TEST_ACCOUNT_NAME, accounts.values())
 
         self.assertEqual(
             res_j,
