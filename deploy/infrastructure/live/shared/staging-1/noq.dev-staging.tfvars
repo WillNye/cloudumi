@@ -45,7 +45,7 @@ dax_node_count = 1
 redis_node_type = "cache.t3.micro"
 
 # Sentry
-sentry_dsn = "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
+sentry_dsn = "https://7113898274d641d3923e0b163a74e6fe@o1134078.ingest.sentry.io/6625267"
 
 s3_access_log_bucket         = "s3-access-logs.259868150464.us-west-2"
 elasticache_node_type        = "cache.t3.micro"

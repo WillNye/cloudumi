@@ -84,20 +84,12 @@ const ResourcePolicyChangeComponent = (props) => {
     [change] // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  const handleOnSubmitChange = useCallback(async () => {
-    if (change.read_only) {
-      setIsApprovalModalOpen(true)
-    } else {
-      onSubmitChange()
-    }
-  }, [change.read_only]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const onSubmitChange = useCallback(
     async (credentials = null) => {
       await sendProposedPolicyWithHooks(
         'apply_change',
         change,
-        null,
+        newStatement,
         requestID,
         setIsLoading,
         setButtonResponseMessage,
@@ -105,8 +97,16 @@ const ResourcePolicyChangeComponent = (props) => {
         credentials
       )
     },
-    [change, requestID] // eslint-disable-line react-hooks/exhaustive-deps
+    [change, requestID, newStatement] // eslint-disable-line react-hooks/exhaustive-deps
   )
+
+  const handleOnSubmitChange = useCallback(async () => {
+    if (change.read_only) {
+      setIsApprovalModalOpen(true)
+    } else {
+      onSubmitChange()
+    }
+  }, [change, onSubmitChange])
 
   const handleUpdate = useCallback(async () => {
     await sendProposedPolicyWithHooks(

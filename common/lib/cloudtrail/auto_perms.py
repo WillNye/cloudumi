@@ -28,12 +28,16 @@ def process_event(event: Dict[str, Any], account_id: str, tenant: str):
     access_undenied_config.account_id = access_undenied_config.session.client(
         "sts"
     ).get_caller_identity()["Account"]
-    spoke_account_name = (
-        ModelAdapter(SpokeAccount)
-        .load_config("spoke_accounts", tenant)
-        .with_query({"account_id": account_id})
-        .first.name
-    )
+    try:
+        spoke_account_name = (
+            ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", tenant)
+            .with_query({"account_id": account_id})
+            .first.name
+        )
+    except ValueError:
+        # Account no longer a part of the tenant
+        return None
     access_undenied_config.tenant = tenant
     access_undenied_config.region = config.region
     access_undenied_config.iam_client = boto3_cached_conn(

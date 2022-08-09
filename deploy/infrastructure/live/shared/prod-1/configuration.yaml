@@ -93,6 +93,6 @@ _global_:
           - host: noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com
             port: 6379
   sentry:
-    dsn: https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3
+    dsn: https://50b9f954977449db94bf4d1a8b9a8084@o1134078.ingest.sentry.io/6625264
   google_analytics:
     tracking_id: G-P5K1SQF3P6

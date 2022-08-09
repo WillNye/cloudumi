@@ -1,6 +1,6 @@
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_python//python:packaging.bzl", "py_wheel")
-load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image")
 load("@io_bazel_rules_docker//python:image.bzl", "py_layer")
 load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
@@ -25,7 +25,8 @@ filegroup(
     name = "docs_sources",
     srcs = glob([
         "docs/**/*",
-    ])
+    ]),
+    visibility = ["//visibility:public"],
 )
 
 INT_DEPS = [
@@ -204,49 +205,6 @@ py_layer(
     deps = INT_DEPS,
 )
 
-container_layer(
-    name = "config_layer",
-    files = [
-        "//configs/development_account:configs",
-    ],
-    data_path = ".",
-    directory = "/",
-)
-
-container_layer(
-    name = "web_site_layer",
-    files = [
-        "//frontend:build",
-        ":docs_sources",
-    ],
-    data_path = ".",
-    directory = "/",
-)
-
-container_layer(
-    name = "sshd_config_layer",
-    files = [
-        "//api/util:sshd_config",
-    ],
-    directory = "/etc/ssh",
-)
-
-container_layer(
-    name = "newrelic_layer",
-    files = [
-        "//api/util:newrelic.ini",
-    ],
-    directory = "/etc/newrelic",
-)
-
-container_layer(
-    name = "weep_layer",
-    files = [
-        "@weep//file",
-    ],
-    directory = "/usr/bin",
-)
-
 container_image(
     name = "base-api-dev-local",
     base = "//docker/base:base_docker",
@@ -258,11 +216,11 @@ container_image(
         "DEBUG": "1",
     },
     layers = [
-        ":config_layer",
-        ":web_site_layer",
-        ":sshd_config_layer",
-        ":newrelic_layer",
-        ":weep_layer",
+        "//deploy/layers:config",
+        "//deploy/layers:web_site",
+        "//deploy/layers:api.sshd_config",
+        "//deploy/layers:newrelic",
+        "//deploy/layers:weep",
     ],
     ports = ["8092", "2222"],
     symlinks = {
@@ -279,11 +237,11 @@ container_image(
         "DEBUG": "1",
     },
     layers = [
-        ":config_layer",
-        ":web_site_layer",
-        ":sshd_config_layer",
-        ":newrelic_layer",
-        ":weep_layer",
+        "//deploy/layers:config",
+        "//deploy/layers:web_site",
+        "//deploy/layers:api.sshd_config",
+        "//deploy/layers:newrelic",
+        "//deploy/layers:weep",
     ],
     ports = ["8092", "2222"],
     symlinks = {

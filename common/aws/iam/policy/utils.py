@@ -196,6 +196,43 @@ def get_managed_policy_document(
     return policy_document["PolicyVersion"]["Document"]
 
 
+async def aio_get_managed_policy_document(policy_arn: str, iam_client) -> dict:
+    """Retrieve the currently active (i.e. 'default') policy version document for a policy.
+    :return:
+    """
+
+    policy_metadata = await aio_wrapper(iam_client.get_policy, PolicyArn=policy_arn)
+    policy_document = await aio_wrapper(
+        iam_client.get_policy_version,
+        PolicyArn=policy_arn,
+        VersionId=policy_metadata["Policy"]["DefaultVersionId"],
+    )
+    policy_document = policy_document["PolicyVersion"]["Document"]
+    return {"PolicyDocument": policy_document, "PolicyArn": policy_arn}
+
+
+async def aio_list_managed_policies_for_resource(
+    resource_type: str, resource_name: str, iam_client
+):
+    resource_type = resource_type.lower()
+    assert resource_type in ["user", "role"]
+
+    policies = []
+    boto_params = {f"{resource_type.title()}Name": resource_name}
+    list_managed_policies_call = getattr(
+        iam_client, f"list_attached_{resource_type}_policies"
+    )
+
+    while True:
+        response = await aio_wrapper(list_managed_policies_call, **boto_params)
+        policies.extend(response["AttachedPolicies"])
+
+        if response["IsTruncated"]:
+            boto_params["Marker"] = response["Marker"]
+        else:
+            return policies
+
+
 @sts_conn("iam", service_type="client")
 @aws_paginated("Policies")
 @rate_limited()
