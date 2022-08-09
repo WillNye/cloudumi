@@ -44,6 +44,12 @@ from sentry_sdk.integrations.tornado import TornadoIntegration
 
 from common.aws.iam.policy.utils import get_all_managed_policies
 from common.aws.iam.role.models import IAMRole
+from common.aws.organizations.utils import (
+    autodiscover_aws_org_accounts,
+    cache_org_structure,
+    onboard_new_accounts_from_orgs,
+    sync_account_names_from_orgs,
+)
 from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config.models import ModelAdapter
@@ -68,12 +74,6 @@ from common.lib.aws.utils import (
     get_enabled_regions_for_account,
     remove_expired_requests_for_tenants,
     remove_expired_tenant_requests,
-)
-from common.aws.organizations.utils import (
-    autodiscover_aws_org_accounts,
-    cache_org_structure,
-    onboard_new_accounts_from_orgs,
-    sync_account_names_from_orgs,
 )
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
@@ -2309,11 +2309,8 @@ def cache_organization_structure(tenant=None) -> Dict:
     }
 
     # Loop through all accounts and add organizations if enabled
-    if config.get_tenant_specific_key(
-        "cache_organization_structure.autodiscover_aws_org_accounts", tenant, True
-    ):
-        orgs_accounts_added = async_to_sync(autodiscover_aws_org_accounts)(tenant)
-        log_data["orgs_accounts_added"] = list(orgs_accounts_added)
+    orgs_accounts_added = async_to_sync(autodiscover_aws_org_accounts)(tenant)
+    log_data["orgs_accounts_added"] = list(orgs_accounts_added)
     # Onboard spoke accounts if enabled for org
     log_data["accounts_onboarded"] = async_to_sync(onboard_new_accounts_from_orgs)(
         tenant
@@ -2325,6 +2322,13 @@ def cache_organization_structure(tenant=None) -> Dict:
 
     try:
         org_structure = async_to_sync(cache_org_structure)(tenant)
+        log.debug(
+            {
+                **log_data,
+                "message": "Successfully cached organization structure",
+                "num_organizations": len(org_structure),
+            }
+        )
     except MissingConfigurationValue as e:
         log.debug(
             {
@@ -2333,14 +2337,15 @@ def cache_organization_structure(tenant=None) -> Dict:
                 "error": str(e),
             }
         )
-        return log_data
-    log.debug(
-        {
-            **log_data,
-            "message": "Successfully cached organization structure",
-            "num_organizations": len(org_structure),
-        }
-    )
+    except Exception as err:
+        log.exception(
+            {
+                **log_data,
+                "error": str(err),
+            }
+        )
+        raise
+
     return log_data
 
 

@@ -25,9 +25,7 @@ from common.exceptions.exceptions import (
     MissingConfigurationValue,
 )
 from common.lib import noq_json as ujson
-from common.lib.account_indexers.aws_organizations import (
-    retrieve_scps_for_organization,
-)
+from common.lib.account_indexers.aws_organizations import retrieve_scps_for_organization
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.s3 import (

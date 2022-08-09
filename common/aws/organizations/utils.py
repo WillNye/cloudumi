@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple, Set
+from typing import Any, Dict, Set, Tuple
 
 import boto3
 
@@ -10,13 +10,18 @@ from common.lib.account_indexers.aws_organizations import retrieve_org_structure
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
-from common.lib.cache import retrieve_json_data_from_redis_or_s3, store_json_results_in_redis_and_s3
-from common.models import OrgAccount, SpokeAccount, HubAccount
+from common.lib.cache import (
+    retrieve_json_data_from_redis_or_s3,
+    store_json_results_in_redis_and_s3,
+)
+from common.models import HubAccount, OrgAccount, SpokeAccount
 
 log = config.get_logger()
 
 
-def get_organizations_client(tenant: str, account_id: str, assume_role: str, read_only: bool = True):
+def get_organizations_client(
+    tenant: str, account_id: str, assume_role: str, read_only: bool = True
+):
     return boto3_cached_conn(
         "organizations",
         tenant,
@@ -28,9 +33,7 @@ def get_organizations_client(tenant: str, account_id: str, assume_role: str, rea
             region_name=config.region,
             endpoint_url=f"https://sts.{config.region}.amazonaws.com",
         ),
-        client_kwargs=config.get_tenant_specific_key(
-            "boto3.client_kwargs", tenant, {}
-        ),
+        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         session_name=sanitize_session_name("noq_autodiscover_aws_org_accounts"),
         read_only=read_only,
     )
@@ -74,8 +77,12 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> list[str]:
         if not org_account.automatically_onboard_accounts or not org_account.role_names:
             continue
 
-        spoke_role_name = spoke_accounts.with_query({"account_id": org_account.account_id}).first.name
-        org_client = get_organizations_client(tenant, org_account.account_id, spoke_role_name)
+        spoke_role_name = spoke_accounts.with_query(
+            {"account_id": org_account.account_id}
+        ).first.name
+        org_client = get_organizations_client(
+            tenant, org_account.account_id, spoke_role_name
+        )
         try:
             paginator = org_client.get_paginator("list_accounts")
             for page in paginator.paginate():
@@ -213,7 +220,8 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> list[str]:
                                 ],
                             )
                             log.debug(
-                                {   "message": "Account onboarded successfully.",
+                                {
+                                    "message": "Account onboarded successfully.",
                                     "stack_id": response["StackId"],
                                     **log_data,
                                 }
@@ -239,11 +247,15 @@ async def sync_account_names_from_orgs(tenant: str) -> dict[str, str]:
     spoke_accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant)
     for org_account_id in org_account_ids:
         try:
-            spoke_account = spoke_accounts.with_query({"account_id": org_account_id}).first
+            spoke_account = spoke_accounts.with_query(
+                {"account_id": org_account_id}
+            ).first
         except ValueError:
             continue
 
-        org_client = get_organizations_client(tenant, org_account_id, spoke_account.name)
+        org_client = get_organizations_client(
+            tenant, org_account_id, spoke_account.name
+        )
         try:
             paginator = org_client.get_paginator("list_accounts")
             for page in paginator.paginate():
@@ -258,7 +270,9 @@ async def sync_account_names_from_orgs(tenant: str) -> dict[str, str]:
                 continue  # TODO: Maybe remove this condition?
             if account_id not in org_account_id_to_name:
                 continue
-            spoke_account_to_replace = spoke_accounts.with_query({"account_id": account_id}).first
+            spoke_account_to_replace = spoke_accounts.with_query(
+                {"account_id": account_id}
+            ).first
             spoke_account_to_replace.account_name = org_account_id_to_name[account_id]
             await spoke_accounts.from_dict(spoke_account_to_replace).with_object_key(
                 ["account_id"]
@@ -343,7 +357,9 @@ async def cache_org_structure(tenant: str) -> Dict[str, Any]:
         ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
     ):
         org_account_id = organization.account_id
-        role_to_assume = spoke_accounts.with_query({"account_id": org_account_id}).first.name
+        role_to_assume = spoke_accounts.with_query(
+            {"account_id": org_account_id}
+        ).first.name
         if not org_account_id:
             raise MissingConfigurationValue(
                 "Your AWS Organizations Master Account ID is not specified in configuration. "
