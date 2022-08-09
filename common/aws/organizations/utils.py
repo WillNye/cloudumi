@@ -1,6 +1,7 @@
 from typing import Any, Dict, Set, Tuple
 
 import boto3
+import sentry_sdk
 
 from common.config import config
 from common.config.models import ModelAdapter
@@ -230,8 +231,17 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> list[str]:
                             break
                         except Exception as e:
                             log.error({"error": str(e), **log_data}, exc_info=True)
+                            sentry_sdk.capture_exception()
         except Exception as e:
-            log.error(f"Unable to retrieve roles from AWS Organizations: {e}")
+            log.error(
+                {
+                    "error": f"Unable to retrieve roles from AWS Organizations: {e}",
+                    **log_data,
+                },
+                exc_info=True,
+            )
+            sentry_sdk.capture_exception()
+
     return new_accounts_onboarded
 
 
@@ -240,12 +250,14 @@ async def sync_account_names_from_orgs(tenant: str) -> dict[str, str]:
     org_account_id_to_name = {}
     account_names_synced = {}
     accounts_d: Dict[str, str] = await get_account_id_to_name_mapping(tenant)
-    org_account_ids = [
-        org.account_id
-        for org in ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
-    ]
+    org_accounts = ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
     spoke_accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant)
-    for org_account_id in org_account_ids:
+    for org_account in org_accounts:
+        if not org_account.sync_account_names:
+            continue
+
+        org_account_id = org_account.account_id
+
         try:
             spoke_account = spoke_accounts.with_query(
                 {"account_id": org_account_id}
@@ -362,7 +374,7 @@ async def cache_org_structure(tenant: str) -> Dict[str, Any]:
         ).first.name
         if not org_account_id:
             raise MissingConfigurationValue(
-                "Your AWS Organizations Master Account ID is not specified in configuration. "
+                "Your AWS Organizations Management Account ID is not specified in configuration. "
                 "Unable to sync accounts from "
                 "AWS Organizations"
             )

@@ -2342,8 +2342,10 @@ def cache_organization_structure(tenant=None) -> Dict:
             {
                 **log_data,
                 "error": str(err),
-            }
+            },
+            exc_info=True,
         )
+        sentry_sdk.capture_exception()
         raise
 
     return log_data
