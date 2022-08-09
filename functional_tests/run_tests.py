@@ -12,6 +12,8 @@ parser.add_argument(
     "--stage",
     help="Stage of deployment. Functional tests only run in staging",
 )
+
+parser.add_argument("--loc", help="Location of functional tests", default=".")
 args = parser.parse_args()
 
 if args.stage != "staging":
@@ -25,7 +27,7 @@ class MyPlugin:
 
 def run():
     logger.info("Running functional tests")
-    if pytest.main(["-qq"], plugins=[MyPlugin()]) in [
+    if pytest.main([args.loc], plugins=[MyPlugin()]) in [
         ExitCode.TESTS_FAILED,
         ExitCode.USAGE_ERROR,
     ]:

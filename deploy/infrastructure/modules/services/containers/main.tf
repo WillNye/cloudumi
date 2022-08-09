@@ -251,7 +251,7 @@ resource "aws_iam_role" "ecs_task_role" {
             "s3:GetBucketPolicy",
             "s3:GetBucketTagging",
             "s3:ListBucket",
-            "s3:ListObjectVersions",
+            "s3:ListBucketVersions",
             "sns:GetTopicAttributes",
             "sns:ListTagsForResource",
             "sns:ListTopics",
