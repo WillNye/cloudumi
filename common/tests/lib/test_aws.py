@@ -95,7 +95,7 @@ class TestAwsLib(TestCase):
         )
 
     def test_is_member_of_ou(self):
-        from common.lib.aws.utils import _is_member_of_ou
+        from common.aws.organizations.utils import _is_member_of_ou
 
         fake_org = {
             "Id": "r",
