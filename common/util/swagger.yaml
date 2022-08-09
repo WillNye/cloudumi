@@ -2481,13 +2481,9 @@ components:
         hub_account_arn:
           type: string
           description: Links to the designated hub role ARN
-        org_management_account:
+        master_for_account:
           type: boolean
-          description: Optional value (defaults to false) to indicate whether this spoke role has access to the org
-          default: false
-        org_access_checked:
-          type: boolean
-          description: Indicates where this spoke role has been checked for org access already.
+          description: Optional value (defaults to false) to indicate whether this spoke role has master access rights on the account
           default: false
         owners:
           type: array
@@ -2536,28 +2532,6 @@ components:
         owner:
           type: string
           description: AWS account owner
-        automatically_onboard_accounts:
-          type: boolean
-          description: Automatically Onboard accounts from this org.
-          default: false
-        automatically_onboard_accounts_options:
-          type: array
-          description: |-
-            Options for automatically onboarded accounts. If "read_only" is configured,
-            automatically onboarded accounts will be configured in a read-only state.
-          items:
-            type: string
-          default: []
-        sync_account_names:
-          type: boolean
-          description: Automatically Sync Account Names from this Org
-          default: true
-        role_names:
-          type: array
-          description: "A list of the role names to attempt to assume on accounts in the org"
-          items:
-            type: string
-          default: ["OrganizationAccountAccessRole", "AWSControlTowerExecution"]
     GoogleOIDCSSOIDPProvider:
       type: object
       required:

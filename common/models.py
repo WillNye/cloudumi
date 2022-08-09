@@ -747,13 +747,9 @@ class SpokeAccount(BaseModel):
     hub_account_arn: Optional[str] = Field(
         None, description="Links to the designated hub role ARN"
     )
-    org_management_account: Optional[bool] = Field(
+    master_for_account: Optional[bool] = Field(
         False,
-        description="Optional value (defaults to false) to indicate whether this spoke role has access to the org",
-    )
-    org_access_checked: Optional[bool] = Field(
-        False,
-        description="Indicates where this spoke role has been checked for org access already.",
+        description="Optional value (defaults to false) to indicate whether this spoke role has master access rights on the account",
     )
     owners: Optional[List[str]] = Field(
         [], description="Optional user or group that owns the account"
@@ -786,20 +782,6 @@ class OrgAccount(BaseModel):
     )
     account_name: Optional[str] = Field(None, description="AWS account name")
     owner: Optional[str] = Field(None, description="AWS account owner")
-    automatically_onboard_accounts: Optional[bool] = Field(
-        False, description="Automatically Onboard accounts from this org."
-    )
-    automatically_onboard_accounts_options: Optional[List[str]] = Field(
-        [],
-        description='Options for automatically onboarded accounts. If "read_only" is configured,\nautomatically onboarded accounts will be configured in a read-only state.',
-    )
-    sync_account_names: Optional[bool] = Field(
-        True, description="Automatically Sync Account Names from this Org"
-    )
-    role_names: Optional[List[str]] = Field(
-        ["OrganizationAccountAccessRole", "AWSControlTowerExecution"],
-        description="A list of the role names to attempt to assume on accounts in the org",
-    )
 
 
 class GoogleOIDCSSOIDPProvider(BaseModel):
