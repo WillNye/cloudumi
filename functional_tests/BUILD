@@ -7,6 +7,7 @@ INT_DEPS = [
     "//common/lib/cognito/tests:test_files",
     "//common/lib",
     "//common/tests:test_files",
+    "//util/log:lib",
 ]
 
 EXT_DEPS = [

@@ -1,6 +1,8 @@
 # content of myinvoke.py
 import pytest
+from pytest import ErrorCode
 import sys
+from util.log import logger
 
 
 class MyPlugin:
@@ -9,5 +11,6 @@ class MyPlugin:
 
 
 def run():
+    logger.info("Running functional tests")
     if pytest.main(["-qq"], plugins=[MyPlugin()]) in [ErrorCode.TESTS_FAILED, ErrorCode.USAGE_ERROR]:
         raise RuntimeError(f"Functional tests failed")
