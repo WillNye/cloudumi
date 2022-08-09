@@ -7,7 +7,6 @@ INT_DEPS = [
     "//common/lib/cognito/tests:test_files",
     "//common/lib",
     "//common/tests:test_files",
-    "//util/tests:test_dependencies_lib",
 ]
 
 EXT_DEPS = [
@@ -17,15 +16,6 @@ EXT_DEPS = [
     requirement("tornado"),
     requirement("ujson"),
 ]
-
-pytest_test(
-    name = "functional_tests",
-    deps = INT_DEPS + EXT_DEPS,
-    whitelist = [
-        "common",
-        "api",
-    ],
-)
 
 filegroup(
     name = "src",
