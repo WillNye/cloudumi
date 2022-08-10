@@ -55,7 +55,7 @@ resource "aws_elasticache_cluster" "redis" {
   node_type                = var.elasticache_node_type
   num_cache_nodes          = 1
   parameter_group_name     = aws_elasticache_parameter_group.redis_parameter_group.name
-  engine_version           = "3.2.10"
+  engine_version           = "6.2"
   port                     = 6379
   apply_immediately        = true
   security_group_ids       = [aws_security_group.redis_sg.id]
@@ -65,11 +65,21 @@ resource "aws_elasticache_cluster" "redis" {
 
 resource "aws_elasticache_parameter_group" "redis_parameter_group" {
   name   = "${var.cluster_id}-redis-parameter-group"
-  family = "redis3.2"
+  family = "redis6.x"
 
   parameter {
     name  = "repl-backlog-size"
     value = "16384"
+  }
+
+  parameter {
+    name  = "appendonly"
+    value = "yes"
+  }
+
+  parameter {
+    name  = "maxmemory-policy"
+    value = "noeviction"
   }
 }
 
