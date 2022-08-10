@@ -1,7 +1,6 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
 # consoleme/models.py:
 # `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' ; black ../models.py`
-
 # To exclude a property from being returned when calling model.dict() by default add the property is_secret: true
 
 openapi: 3.0.0
@@ -2458,8 +2457,7 @@ components:
           default: false
 
     MfaDetails:
-      type:
-        object
+      type: object
       required:
         - provider
         - url
@@ -2475,8 +2473,7 @@ components:
           type: string
 
     MfaSupport:
-      type:
-        object
+      type: object
       properties:
         enabled:
           type: boolean
@@ -2485,8 +2482,7 @@ components:
           default: true
 
     TearTeamConfig:
-      type:
-        object
+      type: object
       required:
         - name
       properties:
@@ -2513,8 +2509,7 @@ components:
           $ref: "#/components/schemas/MfaSupport"
 
     TearRoleConfig:
-      type:
-        object
+      type: object
       required:
         - name
       properties:
@@ -2541,8 +2536,7 @@ components:
           $ref: "#/components/schemas/MfaSupport"
 
     TearAccountConfig:
-      type:
-        object
+      type: object
       required:
         - id
       properties:
@@ -2569,8 +2563,7 @@ components:
           $ref: "#/components/schemas/MfaSupport"
 
     CustomTearConfigs:
-      type:
-        object
+      type: object
       properties:
         team_configs:
           type: array
@@ -2589,8 +2582,7 @@ components:
           default: []
 
     TearConfig:
-      type:
-        object
+      type: object
       properties:
         active_users_tag:
           type: string
@@ -2645,9 +2637,13 @@ components:
         hub_account_arn:
           type: string
           description: Links to the designated hub role ARN
-        master_for_account:
+        org_management_account:
           type: boolean
-          description: Optional value (defaults to false) to indicate whether this spoke role has master access rights on the account
+          description: Optional value (defaults to false) to indicate whether this spoke role has access to the org
+          default: false
+        org_access_checked:
+          type: boolean
+          description: Indicates where this spoke role has been checked for org access already.
           default: false
         owners:
           type: array
@@ -2696,6 +2692,34 @@ components:
         owner:
           type: string
           description: AWS account owner
+        automatically_onboard_accounts:
+          type: boolean
+          description: Automatically Onboard accounts from this org.
+          default: false
+        automatically_onboard_accounts_options:
+          type: array
+          description: |-
+            Options for automatically onboarded accounts. If "read_only" is configured,
+            automatically onboarded accounts will be configured in a read-only state.
+          items:
+            type: string
+          default: []
+        accounts_excluded_from_automatic_onboard:
+          type: array
+          description: Accounts that can not or should not be automatically onboarded
+          items:
+            type: string
+          default: []
+        sync_account_names:
+          type: boolean
+          description: Automatically Sync Account Names from this Org
+          default: true
+        role_names:
+          type: array
+          description: "A list of the role names to attempt to assume on accounts in the org"
+          items:
+            type: string
+          default: ["OrganizationAccountAccessRole", "AWSControlTowerExecution"]
     GoogleOIDCSSOIDPProvider:
       type: object
       required:

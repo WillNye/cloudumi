@@ -4,7 +4,7 @@ import json
 import re
 import sys
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 import sentry_sdk
 from botocore.exceptions import ClientError
@@ -15,6 +15,7 @@ from common.aws.iam.policy.utils import (
     should_exclude_policy_from_comparison,
 )
 from common.aws.iam.role.config import get_active_tear_users_tag
+from common.aws.organizations.utils import get_organizational_units_for_account
 from common.aws.utils import ResourceSummary, get_resource_tag
 from common.config import config
 from common.config.models import ModelAdapter
@@ -24,10 +25,7 @@ from common.exceptions.exceptions import (
     MissingConfigurationValue,
 )
 from common.lib import noq_json as ujson
-from common.lib.account_indexers.aws_organizations import (
-    retrieve_org_structure,
-    retrieve_scps_for_organization,
-)
+from common.lib.account_indexers.aws_organizations import retrieve_scps_for_organization
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.s3 import (
@@ -709,137 +707,6 @@ async def cache_all_scps(tenant) -> Dict[str, Any]:
         all_scps, redis_key=redis_key, s3_bucket=s3_bucket, s3_key=s3_key, tenant=tenant
     )
     return all_scps
-
-
-async def get_org_structure(tenant, force_sync=False) -> Dict[str, Any]:
-    """Retrieve a dictionary containing the organization structure
-
-    Args:
-        force_sync: force a cache update
-    """
-    redis_key = config.get_tenant_specific_key(
-        "cache_organization_structure.redis.key.org_structure_key",
-        tenant,
-        f"{tenant}_AWS_ORG_STRUCTURE",
-    )
-    org_structure = await retrieve_json_data_from_redis_or_s3(
-        redis_key,
-        s3_bucket=config.get_tenant_specific_key(
-            "cache_organization_structure.s3.bucket", tenant
-        ),
-        s3_key=config.get_tenant_specific_key(
-            "cache_organization_structure.s3.file",
-            tenant,
-            "scps/cache_org_structure_v1.json.gz",
-        ),
-        default={},
-        tenant=tenant,
-    )
-    if force_sync or not org_structure:
-        org_structure = await cache_org_structure(tenant)
-    return org_structure
-
-
-async def cache_org_structure(tenant: str) -> Dict[str, Any]:
-    """Store a dictionary of the organization structure in the cache"""
-    all_org_structure = {}
-    for organization in (
-        ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
-    ):
-        org_account_id = organization.account_id
-        role_to_assume = (
-            ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", tenant)
-            .with_query({"account_id": org_account_id})
-            .first.name
-        )
-        if not org_account_id:
-            raise MissingConfigurationValue(
-                "Your AWS Organizations Master Account ID is not specified in configuration. "
-                "Unable to sync accounts from "
-                "AWS Organizations"
-            )
-
-        if not role_to_assume:
-            raise MissingConfigurationValue(
-                "Noq doesn't know what role to assume to retrieve account information "
-                "from AWS Organizations. please set the appropriate configuration value."
-            )
-        org_structure = await retrieve_org_structure(
-            org_account_id, tenant, role_to_assume=role_to_assume, region=config.region
-        )
-        all_org_structure.update(org_structure)
-    redis_key = config.get_tenant_specific_key(
-        "cache_organization_structure.redis.key.org_structure_key",
-        tenant,
-        f"{tenant}_AWS_ORG_STRUCTURE",
-    )
-    s3_bucket = None
-    s3_key = None
-    if config.region == config.get_tenant_specific_key(
-        "celery.active_region", tenant, config.region
-    ) or config.get("_global_.environment") in [
-        "dev",
-        "test",
-    ]:
-        s3_bucket = config.get_tenant_specific_key(
-            "cache_organization_structure.s3.bucket", tenant
-        )
-        s3_key = config.get_tenant_specific_key(
-            "cache_organization_structure.s3.file",
-            tenant,
-            "scps/cache_org_structure_v1.json.gz",
-        )
-    await store_json_results_in_redis_and_s3(
-        all_org_structure,
-        redis_key=redis_key,
-        s3_bucket=s3_bucket,
-        s3_key=s3_key,
-        tenant=tenant,
-    )
-    return all_org_structure
-
-
-async def _is_member_of_ou(
-    identifier: str, ou: Dict[str, Any]
-) -> Tuple[bool, Set[str]]:
-    """Recursively walk org structure to determine if the account or OU is in the org and, if so, return all OUs of which the account or OU is a member
-
-    Args:
-        identifier: AWS account or OU ID
-        ou: dictionary representing the organization/organizational unit structure to search
-    """
-    found = False
-    ou_path = set()
-    for child in ou.get("Children", []):
-        if child.get("Id") == identifier:
-            found = True
-        elif child.get("Type") == "ORGANIZATIONAL_UNIT":
-            found, ou_path = await _is_member_of_ou(identifier, child)
-        if found:
-            ou_path.add(ou.get("Id"))
-            break
-    return found, ou_path
-
-
-async def get_organizational_units_for_account(
-    identifier: str,
-    tenant: str,
-) -> Set[str]:
-    """Return a set of Organizational Unit IDs for a given account or OU ID
-
-    Args:
-        identifier: AWS account or OU ID
-    """
-    all_orgs = await get_org_structure(tenant)
-    organizational_units = set()
-    for org_id, org_structure in all_orgs.items():
-        found, organizational_units = await _is_member_of_ou(identifier, org_structure)
-        if found:
-            break
-    if not organizational_units:
-        log.warning("could not find account in organization")
-    return organizational_units
 
 
 async def _scp_targets_account_or_ou(
