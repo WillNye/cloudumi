@@ -2000,7 +2000,15 @@ def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict
         for result in results:
             result["ttl"] = ttl
             result["tenant"] = tenant
-            result["entity_id"] = result["arn"]
+            alternative_entity_id = "|||".join(
+                [
+                    result.get("accountId"),
+                    result.get("awsRegion"),
+                    result.get("resourceId"),
+                    result.get("resourceType"),
+                ]
+            )
+            result["entity_id"] = result.get("arn", alternative_entity_id)
             if result.get("arn"):
                 if redis_result_set.get(result["arn"]):
                     continue
