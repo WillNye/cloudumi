@@ -1,0 +1,275 @@
+// Color palette
+$black: #000 !default;
+$white: #fff !default;
+
+$black-1: #16121c !default;
+$black-2: #2d2d41 !default;
+$black-3: #40405d !default;
+
+$black-opacity: rgba($black-1, 0.5) !default;
+$black-opacity-hover: rgba($black-1, 0.8) !default;
+
+$gray-1: #75747e !default;
+$gray-2: #a0a0a9 !default;
+$gray-3: #bebdc4 !default;
+$gray-4: #e2e2ea !default;
+$gray-5: #f0f0f7 !default;
+$gray-6: #fafafc !default;
+
+$green-0: #468a6f !default;
+$green-1: #54a788 !default;
+$green-2: #cde7de !default;
+$green-3: #edf7f4 !default;
+$green-4: $green-3 !default;
+
+$green: $green-1 !default;
+
+$orange-0: #b86910 !default;
+$orange-1: #ffad00 !default;
+$orange-2: #fbe3c4 !default;
+$orange-3: #fff8ef !default;
+$orange-4: $orange-3 !default;
+$orange-action: #f09e3a !default;
+
+$red-0: #d85430 !default;
+$red-1: #ff7d5a !default;
+$red-2: #ffdace !default;
+$red-3: #fff3ed !default;
+$red-4: $red-3 !default;
+
+$red: $red-1 !default;
+
+$blue-0: #0e61b4 !default;
+$blue-1: #0970ce !default;
+$blue-2: #b6d4f1 !default;
+$blue-3: #e6f1fb !default;
+$blue-4: $blue-3 !default;
+
+$blue: $blue-1 !default;
+
+$brand-color-1: $blue-1 !default;
+$brand-color-2: $blue-2 !default;
+$brand-color-3: $blue-3 !default;
+$brand-color-4: $blue-4 !default;
+
+$brand-color: $brand-color-1 !default;
+
+$cta-color-1: $green-1 !default;
+$cta-color-2: $green-2 !default;
+$cta-color-3: $green-3 !default;
+$cta-color-4: $green-4 !default;
+
+$cta-color: $cta-color-1 !default;
+
+// Blocks and sizes
+$corner-default: 4px !default;
+$corner-medium: 6px !default;
+$corner-soft: 12px !default;
+$corner-softer: 16px !default;
+
+// Vertical sizes
+$v-6: 6px !default;
+$v-12: 12px !default;
+$v-16: 16px !default;
+$v-20: 20px !default;
+
+$v-24: 24px !default;
+$v-30: 30px !default;
+$v-36: 36px !default;
+$v-42: 42px !default;
+
+$v-48: 48px !default;
+$v-64: 64px !default;
+$v-88: 88px !default;
+$v-124: 124px !default;
+
+// Horizontal sizes
+$h-5: 5px !default;
+$h-10: 10px !default;
+$h-20: 20px !default;
+$h-40: 40px !default;
+$h-60: 60px !default;
+$h-80: 80px !default;
+$h-120: 120px !default;
+
+//Typography
+$font-content: 'Roboto', sans-serif !default;
+$font-title: 'Hind Vadodara', sans-serif !default;
+$font-pacifico: 'Pacifico', pacifico !default;
+
+$font-regular-size: 16px !default;
+$line-height-regular: $v-24 !default;
+
+$font-mobile-size: 14px !default;
+$line-height-mobile: $v-20 !default;
+
+$font-label-size: 12px !default;
+$line-height-label: $v-16 !default;
+
+$h0-size: 65px !default;
+$h0-line-height: $v-88 !default;
+
+$h1-size: 50px !default;
+$h1-line-height: $v-64 !default;
+
+$h2-size: 40px !default;
+$h2-line-height: $v-48 !default;
+
+$h3-size: 30px !default;
+$h3-line-height: $v-42 !default;
+
+$h4-size: 22px !default;
+$h4-line-height: $v-30 !default;
+
+$h5-size: 18px !default;
+$h5-line-height: $v-24 !default;
+
+$h6-size: 16px !default;
+$h6-line-height: $v-20 !default;
+
+// Extra extra small screen / phone (iPhone 5)
+$screen-xxs: 320px !default;
+$screen-xxs-min: $screen-xxs !default;
+
+// Extra small screen / phone
+$screen-xs: 480px !default;
+$screen-xs-min: $screen-xs !default;
+$screen-phone: $screen-xs-min !default;
+
+// Small screen / tablet
+$screen-sm: 768px !default;
+$screen-sm-min: $screen-sm !default;
+$screen-tablet: $screen-sm-min !default;
+
+// Medium screen / desktop
+$screen-md: 992px !default;
+$screen-md-min: $screen-md !default;
+$screen-desktop: $screen-md-min !default;
+
+// Large screen / wide desktop
+$screen-lg: 1200px !default;
+$screen-lg-min: $screen-lg !default;
+$screen-lg-desktop: $screen-lg-min !default;
+
+// So media queries don't overlap when required, provide a maximum
+$screen-xxs-max: 374px !default;
+$screen-xs-max: ($screen-sm-min - 1) !default;
+$screen-sm-max: ($screen-md-min - 1) !default;
+$screen-md-max: ($screen-lg-min - 1) !default;
+
+$container-lg: 940px !default;
+$container-xl: 1180px !default;
+
+// Z-index
+$z-index-under-layer: -1 !default;
+$z-index-0: 0 !default;
+$z-index-1: 1 !default;
+$z-index-2: 2 !default;
+$z-index-100: 100 !default;
+$z-index-top: 1030 !default;
+
+//Animation
+$transition-1: 200ms !default;
+$transition-2: 400ms !default;
+$transition-3: 600ms !default;
+$transition-4: 800ms !default;
+$transition-5: 1000ms !default;
+
+// Media queries mixins
+@mixin phone-small {
+  @media screen and (max-width: #{$screen-xxs-max}) {
+    @content;
+  }
+}
+
+@mixin phone {
+  @media screen and (max-width: #{$screen-xs-max}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media screen and (max-width: #{$screen-sm-max}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media screen and (max-width: #{$screen-md-max}) {
+    @content;
+  }
+}
+
+@mixin desktop-wide {
+  @media screen and (min-width: #{$screen-md-max}) {
+    @content;
+  }
+}
+
+@mixin not-phone-small {
+  @media screen and (min-width: #{$screen-xxs-max}) {
+    @content;
+  }
+}
+
+@mixin not-phone {
+  @media screen and (min-width: #{$screen-sm-min}) {
+    @content;
+  }
+}
+
+@mixin not-tablet {
+  @media screen and (min-width: #{$screen-md-min}) {
+    @content;
+  }
+}
+
+@mixin min-width($width) {
+  @media screen and (min-width: #{$width}) {
+    @content;
+  }
+}
+
+@mixin max-width($width) {
+  @media screen and (max-width: #{$width}) {
+    @content;
+  }
+}
+
+@mixin min-height($height) {
+  @media screen and (min-height: #{$height}) {
+    @content;
+  }
+}
+
+@mixin max-height($height) {
+  @media screen and (max-height: #{$height}) {
+    @content;
+  }
+}
+
+// Position
+@mixin flex-center {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+// Other mixins
+@mixin border {
+  border: 1px solid rgba($gray-4, 1);
+  border-radius: $corner-default;
+}
+
+@mixin border-soft {
+  border: 1px solid rgba($gray-4, 1);
+  border-radius: $corner-soft;
+}
+
+@mixin border-shadow($size, $color) {
+  box-shadow: 0 0 0 $size $color;
+}
+
+@mixin inner-border-shadow($size, $color) {
+  box-shadow: inset 0 0 0 $size $color;
+}

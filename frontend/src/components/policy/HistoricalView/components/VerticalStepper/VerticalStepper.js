@@ -4,7 +4,14 @@ import { formatISODate } from '../../utils'
 import './VerticalStepper.scss'
 
 const VerticalStepper = (props) => {
-  const { resourceHistory, handleVersionChange, resourceArn } = props
+  const {
+    resourceHistory,
+    handleVersionChange,
+    resourceArn,
+    diffChanges,
+    handleAssociatedHistoryChange,
+    associatedHistoryChange,
+  } = props
 
   const [showAssociatedPolicy, setShowAssociatedPolicy] = useState(true)
 
@@ -16,6 +23,21 @@ const VerticalStepper = (props) => {
       (version) => version.config_change.arn === resourceArn
     )
   }, [showAssociatedPolicy, resourceHistory, resourceArn])
+
+  const activeElementIds = useMemo(() => {
+    const { oldVersion, newVersion } = diffChanges
+    const activeIds = []
+    if (oldVersion) {
+      activeIds.push(oldVersion.updated_at)
+    }
+    if (newVersion) {
+      activeIds.push(newVersion.updated_at)
+    }
+    if (associatedHistoryChange) {
+      activeIds.push(associatedHistoryChange.updated_at)
+    }
+    return activeIds
+  }, [diffChanges, associatedHistoryChange])
 
   return (
     <div className='vertical-stepper'>
@@ -33,11 +55,15 @@ const VerticalStepper = (props) => {
       <Divider horizontal />
 
       <div className='steps'>
-        {filteredResourceHistory.map((version, index) =>
-          resourceArn === version.config_change.arn ? (
-            <div className='steps__step' key={index}>
+        {filteredResourceHistory.map((version, index) => {
+          const isActive = activeElementIds.includes(version.updated_at)
+          return resourceArn === version.config_change.arn ? (
+            <div
+              className={`${isActive ? 'steps__step__active' : 'steps__step'}`}
+              key={index}
+            >
               <div
-                className='steps__step-header'
+                className={`steps__step-header ${isActive && 'steps__active'}`}
                 onClick={() => handleVersionChange(version)}
               >
                 <div className='steps__header'>
@@ -49,13 +75,24 @@ const VerticalStepper = (props) => {
               </div>
             </div>
           ) : (
-            <div className='steps__step' key={index}>
+            <div
+              className={`${
+                activeElementIds.includes(version.updated_at)
+                  ? 'steps__step__active'
+                  : 'steps__step'
+              }`}
+              key={index}
+            >
               <div
                 className='steps__step-header'
-                onClick={() => handleVersionChange(version)}
+                onClick={() => handleAssociatedHistoryChange(version)}
               >
                 <div className='steps__subheader'>Associated policy change</div>
-                <Segment>
+                <Segment
+                  className={`steps__step-header ${
+                    isActive && 'steps__active'
+                  }`}
+                >
                   <div className='steps__header'>
                     {formatISODate(version.updated_at)}
                   </div>
@@ -66,7 +103,7 @@ const VerticalStepper = (props) => {
               </div>
             </div>
           )
-        )}
+        })}
       </div>
     </div>
   )

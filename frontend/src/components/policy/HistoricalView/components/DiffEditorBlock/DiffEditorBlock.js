@@ -9,7 +9,7 @@ import { DEFAULT_EDITOR_OPTIONS } from './constants'
 import './DiffEditorBlock.scss'
 
 const DiffEditorBlock = (props) => {
-  const { diffChanges } = props
+  const { diffChanges, associatedHistoryChange } = props
 
   const [renderSideBySide, setRenderSideBySide] = useState(true)
 
@@ -41,7 +41,11 @@ const DiffEditorBlock = (props) => {
       </div>
 
       <div>
-        <DoubleViewHeader diffChanges={diffChanges} />
+        <DoubleViewHeader
+          diffChanges={diffChanges}
+          renderSideBySide={renderSideBySide}
+          associatedHistoryChange={associatedHistoryChange}
+        />
       </div>
 
       <DiffEditor
@@ -54,7 +58,9 @@ const DiffEditorBlock = (props) => {
           2
         )}
         modified={JSON.stringify(
-          diffChanges.newVersion?.config_change || {},
+          diffChanges.newVersion?.config_change ||
+            associatedHistoryChange ||
+            {},
           null,
           2
         )}

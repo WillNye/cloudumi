@@ -1,5 +1,24 @@
+@import '../../variables.default.scss';
+
 .historical-view {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  width: 100%;
+
+  @include tablet() {
+    flex-direction: column;
+  }
+
+  &__not-found {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    &__text {
+      text-align: center;
+      padding: 50px;
+      font-size: 14px;
+    }
+  }
 }
