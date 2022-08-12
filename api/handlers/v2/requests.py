@@ -57,6 +57,7 @@ from common.models import (
 from common.models import Status2 as WebStatus
 from common.models import WebResponse
 from common.user_request.models import IAMRequest
+from common.user_request.utils import get_tear_config
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -71,15 +72,16 @@ async def validate_request_creation(
         (c for c in request.changes.changes if c.change_type == "tear_can_assume_role"),
         None,
     ):
+        tenant = handler.ctx.tenant
+        role_arn = tear_change.principal.principal_arn
         tear_supported_roles = await get_tear_supported_roles_by_tag(
-            handler.eligible_roles, handler.groups, handler.ctx.tenant
+            handler.eligible_roles, handler.groups, tenant
         )
-        tear_supported_roles = [role["arn"] for role in tear_supported_roles]
+        tear_supported_role = [
+            role["arn"] for role in tear_supported_roles if role["arn"] == role_arn
+        ]
 
-        if (
-            not tear_supported_roles
-            or tear_change.principal.principal_arn not in tear_supported_roles
-        ):
+        if not tear_supported_role:
             err += f"No TEAR support for {tear_change.principal.principal_arn} or access already exists. "
 
         if not request.expiration_date:
@@ -94,15 +96,20 @@ async def validate_request_creation(
             )
             return await handler.finish()
 
-        is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
-        if not is_authenticated:
-            handler.set_status(403)
-            handler.write(
-                WebResponse(staus=WebStatus.error, errors=[err]).json(
-                    exclude_unset=True, exclude_none=True
+        resource_summary = await ResourceSummary.set(tenant, role_arn)
+        tear_config = get_tear_config(
+            tenant, resource_summary.account, resource_summary.name
+        )
+        if tear_config.mfa.enabled:
+            is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
+            if not is_authenticated:
+                handler.set_status(403)
+                handler.write(
+                    WebResponse(staus=WebStatus.error, errors=[err]).json(
+                        exclude_unset=True, exclude_none=True
+                    )
                 )
-            )
-            return await handler.finish()
+                return await handler.finish()
 
         request.admin_auto_approve = False
 
@@ -368,6 +375,7 @@ class RequestHandler(BaseAPIV2Handler):
 
             admin_approved = False
             approval_rule_approved = False
+            auto_approved = False
 
             if extended_request.principal.principal_type == "AwsResource":
                 # TODO: Provide a note to the requester that admin_auto_approve will apply the requested policies only.
@@ -423,13 +431,42 @@ class RequestHandler(BaseAPIV2Handler):
                         return
                 else:
                     # If admin auto approve is false, check for auto-approve rule eligibility
-                    is_eligible_for_auto_approve_rule = (
+                    is_eligible_for_auto_approve = (
                         await is_request_eligible_for_auto_approval(
-                            extended_request, self.user
+                            tenant, extended_request, self.user, self.groups
                         )
                     )
-                    # If we have only made requests that are eligible for auto-approval rule, check against them
-                    if is_eligible_for_auto_approve_rule:
+                    is_tear_request = bool(
+                        len(extended_request.changes.changes) == 1
+                        and extended_request.changes.changes[0].change_type
+                        == "tear_can_assume_role"
+                    )
+                    if is_eligible_for_auto_approve and is_tear_request:
+                        tear_base_key = "temporary_elevated_access_requests"
+                        extended_request.request_status = RequestStatus.approved
+                        stats.count(
+                            f"{log_data['function']}.tear_auto_approved",
+                            tags={
+                                "user": self.user,
+                                "tenant": tenant,
+                            },
+                        )
+                        tear_approval_comment = CommentModel(
+                            id=str(uuid.uuid4()),
+                            timestamp=int(time.time()),
+                            user_email="NOQ",
+                            last_modified=int(time.time()),
+                            text="Elevated access auto-approved based on config",
+                        )
+                        extended_request.comments.append(tear_approval_comment)
+                        extended_request.reviewer = f"Auto-Approved as determined by your {tear_base_key} config"
+                        log_data["tear_auto_approved"] = True
+                        log_data["request"] = extended_request.dict()
+                        log.debug(log_data)
+                        auto_approved = True
+
+                    elif is_eligible_for_auto_approve:
+                        # If we have only made requests that are eligible for auto-approval rule, check against them
                         should_auto_approve_request = (
                             await should_auto_approve_policy_v2(
                                 extended_request, self.user, self.groups, tenant
@@ -446,9 +483,9 @@ class RequestHandler(BaseAPIV2Handler):
                                 },
                             )
                             approving_rules = []
-                            for approving_rule in should_auto_approve_request[
-                                "approving_rules"
-                            ]:
+                            for approving_rule in should_auto_approve_request.get(
+                                "approving_rules", []
+                            ):
                                 approving_rule_comment = CommentModel(
                                     id=str(uuid.uuid4()),
                                     timestamp=int(time.time()),
@@ -550,6 +587,13 @@ class RequestHandler(BaseAPIV2Handler):
                         }
                     )
                 )
+
+                log.warning(
+                    {
+                        "message": f"Calling parse_and_apply_policy_request_modification with {auto_approved}"
+                    }
+                )
+
                 policy_apply_response = (
                     await parse_and_apply_policy_request_modification(
                         extended_request,
@@ -560,6 +604,7 @@ class RequestHandler(BaseAPIV2Handler):
                         tenant,
                         approval_rule_approved=approval_rule_approved,
                         cloud_credentials=changes.credentials,
+                        auto_approved=auto_approved,
                     )
                 )
                 response.errors = policy_apply_response.errors
@@ -585,9 +630,11 @@ class RequestHandler(BaseAPIV2Handler):
             log_data["response"] = response.dict()
             log.debug(log_data)
 
-        await aws.send_communications_new_policy_request(
-            extended_request, admin_approved, approval_rule_approved, tenant
-        )
+        if not auto_approved:
+            await aws.send_communications_new_policy_request(
+                extended_request, admin_approved, approval_rule_approved, tenant
+            )
+
         await send_slack_notification_new_request(
             extended_request, admin_approved, approval_rule_approved, tenant
         )
