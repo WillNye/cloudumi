@@ -2481,20 +2481,20 @@ components:
             Indicate if MFA should be used to submit the request
           default: true
 
-    TearTeamConfig:
+    TearGroupConfig:
       type: object
       required:
         - name
       properties:
         name:
           type: string
-          description: The name of the team
+          description: The name of the group
         active_users_tag:
           type: string
           description: Customer-specified or default tag used on roles to denote users that currently have TEAR access
         supported_groups_tag:
           type: string
-          description: Customer-specified or default tag used on roles to denote groups that can request TEAR access
+          description: Customer-specified or default tag used on roles to that a group can request TEAR access
         requires_approval:
           type: boolean
           description: |-
@@ -2504,7 +2504,7 @@ components:
           type: boolean
           description: |-
             Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
-          default: false
+          default: true
         mfa:
           $ref: "#/components/schemas/MfaSupport"
 
@@ -2531,7 +2531,7 @@ components:
           type: boolean
           description: |-
             Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
-          default: false
+          default: true
         mfa:
           $ref: "#/components/schemas/MfaSupport"
 
@@ -2558,17 +2558,17 @@ components:
           type: boolean
           description: |-
             Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
-          default: false
+          default: true
         mfa:
           $ref: "#/components/schemas/MfaSupport"
 
     CustomTearConfigs:
       type: object
       properties:
-        team_configs:
+        group_configs:
           type: array
           items:
-            $ref: "#/components/schemas/TearTeamConfig"
+            $ref: "#/components/schemas/TearGroupConfig"
           default: []
         role_configs:
           type: array
