@@ -113,7 +113,7 @@ class IAMRole(NoqModel):
         arn: str,
         force_refresh: bool = False,
         run_sync: bool = False,
-    ):
+    ) -> "IAMRole":
         from common.aws.iam.utils import _cloudaux_to_aws
         from common.lib.aws.utils import get_aws_principal_owner
 

@@ -1,15 +1,12 @@
 from typing import Any, List
 
-from common.aws.iam.role.config import (
-    get_active_tear_users_tag,
-    get_tear_support_groups_tag,
-)
 from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
+from common.user_request.utils import get_active_tear_users_tag, get_tear_config
 
 
 async def get_identity_arns_for_account(
@@ -91,11 +88,11 @@ async def retrieve_iam_managed_policies_for_tenant(
     return formatted_policies
 
 
-async def get_user_active_tear_roles_by_tag(user: str, tenant: str) -> list[str]:
+async def get_user_active_tear_roles_by_tag(tenant: str, user: str) -> list[str]:
     """Get active TEAR roles for a given user
 
-    :param user: List of groups to check against
     :param tenant: The tenant to check against
+    :param user:
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
@@ -111,6 +108,10 @@ async def get_user_active_tear_roles_by_tag(user: str, tenant: str) -> list[str]
     tear_users_tag = get_active_tear_users_tag(tenant)
 
     for iam_role in all_iam_roles:
+        tear_config = get_tear_config(tenant, role=iam_role.name)
+        if not tear_config.enabled:
+            continue
+
         if active_tear_users := get_resource_tag(
             iam_role.policy, tear_users_tag, True, set()
         ):
@@ -133,11 +134,6 @@ async def get_tear_supported_roles_by_tag(
     """
     from common.aws.utils import get_resource_tag
 
-    if not config.get_tenant_specific_key(
-        "temporary_elevated_access_requests.enabled", tenant, False
-    ):
-        return []
-
     escalated_roles = dict()
     all_iam_roles = await IAMRole.query(tenant)
 
@@ -145,9 +141,14 @@ async def get_tear_supported_roles_by_tag(
         if iam_role.arn in eligible_roles:
             continue
 
+        tear_config = get_tear_config(tenant, role=iam_role.name)
+        if not tear_config.enabled:
+            continue
+
         role = iam_role.dict()
-        tear_support_tag = get_tear_support_groups_tag(tenant)
-        if tear_groups := get_resource_tag(role, tear_support_tag, True, set()):
+        if tear_groups := get_resource_tag(
+            role, tear_config.supported_groups_tag, True, set()
+        ):
             if any(group in tear_groups for group in groups):
                 escalated_roles[iam_role.arn] = role
 

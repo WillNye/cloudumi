@@ -7,10 +7,6 @@ from botocore.exceptions import ClientError
 from joblib import Parallel, delayed
 
 import common.lib.noq_json as json
-from common.aws.iam.role.config import (
-    get_active_tear_users_tag,
-    get_tear_support_groups_tag,
-)
 from common.aws.iam.utils import get_tenant_iam_conn
 from common.config import config, models
 from common.exceptions.exceptions import MissingConfigurationValue
@@ -742,6 +738,10 @@ async def update_role_tear_config(
     tenant, user, role_name, account_id: str, tear_config: PrincipalModelTearConfig
 ) -> [bool, str]:
     from common.aws.iam.role.models import IAMRole
+    from common.user_request.utils import (
+        get_active_tear_users_tag,
+        get_tear_supported_groups_tag,
+    )
 
     client = await aio_wrapper(
         get_tenant_iam_conn,
@@ -765,7 +765,7 @@ async def update_role_tear_config(
                     "Value": ":".join(tear_config.active_users),
                 },
                 {
-                    "Key": get_tear_support_groups_tag(tenant),
+                    "Key": get_tear_supported_groups_tag(tenant),
                     "Value": ":".join(tear_config.supported_groups),
                 },
             ],

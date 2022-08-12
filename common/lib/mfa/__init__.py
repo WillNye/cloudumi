@@ -8,13 +8,6 @@ log = config.get_logger()
 
 async def mfa_verify(tenant: str, user: str, **kwargs) -> tuple[bool, Union[None, str]]:
     """Resolve tenant and user provider info, normalize request and pass info to provider authentication function"""
-
-    if not config.get_tenant_specific_key(
-        "temporary_elevated_access_requests.mfa.enabled", tenant, True
-    ):
-        log.debug({"message": "MFA disabled for tenant", "tenant": tenant})
-        return True, None
-
     mfa_details = config.get_tenant_specific_key("secrets.mfa", tenant)
     if not mfa_details:
         raise AttributeError("MFA is not configured for this tenant")

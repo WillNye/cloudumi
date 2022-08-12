@@ -538,6 +538,7 @@ async def should_auto_approve_policy_v2(
 async def send_communications_policy_change_request_v2(
     extended_request: ExtendedRequestModel,
     tenant: str,
+    auto_approved: bool = False,
 ):
     """
         Send an email for a status change for a policy request
@@ -546,7 +547,9 @@ async def send_communications_policy_change_request_v2(
     :return:
     """
     request_uri = await get_policy_request_uri_v2(extended_request, tenant)
-    await send_policy_request_status_update_v2(extended_request, request_uri, tenant)
+    await send_policy_request_status_update_v2(
+        extended_request, request_uri, tenant, auto_approved=auto_approved
+    )
 
 
 async def send_communications_new_comment(
