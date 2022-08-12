@@ -3439,9 +3439,7 @@ async def parse_and_apply_policy_request_modification(
         )
         # maybe_approve_reject_request already sends approved requests so no need to send it twice
         if not auto_approved:
-            await send_communications_policy_change_request_v2(
-                extended_request, tenant
-            )
+            await send_communications_policy_change_request_v2(extended_request, tenant)
         await update_resource_in_dynamo(
             tenant, extended_request.principal.principal_arn, force_refresh
         )
