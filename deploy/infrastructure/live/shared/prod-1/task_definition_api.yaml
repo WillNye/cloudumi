@@ -14,7 +14,7 @@ containerDefinitions:
     entryPoint:
       - bash
       - "-c"
-      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; python /app/api/container.binary.runfiles/cloudumi/api/__main__.py'
+      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; python /app/api/container.binary.runfiles/cloudumi/functional_tests/run_tests.py --stage prod --loc /app/api/container.binary.runfiles/cloudumi/functional_tests/; python /app/api/container.binary.runfiles/cloudumi/api/__main__.py'
     linuxParameters:
       devices: []
       initProcessEnabled: true
