@@ -15,6 +15,34 @@ log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
+async def _send_slack_notification(tenant, log_data, payload):
+    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
+        return
+
+    slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
+    if not slack_webhook_url:
+        log_data["message"] = "Missing webhook URL for slack notification"
+        log.error(log_data)
+        return
+
+    http_headers = HTTPHeaders({"Content-Type": "application/json"})
+    http_req = HTTPRequest(
+        url=slack_webhook_url,
+        method="POST",
+        headers=http_headers,
+        body=json.dumps(payload),
+    )
+    http_client = AsyncHTTPClient(force_instance=True)
+    try:
+        await http_client.fetch(request=http_req)
+        log_data["message"] = "Slack notification sent"
+        log.debug(log_data)
+    except (ConnectionError, HTTPClientError) as e:
+        log_data["message"] = "Error occurred sending slack notification"
+        log_data["error"] = str(e)
+        log.error(log_data)
+
+
 async def send_slack_notification_new_request(
     extended_request: ExtendedRequestModel,
     admin_approved,
@@ -24,9 +52,6 @@ async def send_slack_notification_new_request(
     """
     Sends a notification using specified webhook URL about a new request created
     """
-    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
-        return
-
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     requester = extended_request.requester_email
     arn = extended_request.principal.principal_arn
@@ -50,11 +75,6 @@ async def send_slack_notification_new_request(
         "approval_rule_approved": approval_rule_approved,
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
-    if not slack_webhook_url:
-        log_data["message"] = "Missing webhook URL for slack notification"
-        log.error(log_data)
-        return
     payload = await get_payload(
         extended_request,
         requester,
@@ -63,22 +83,7 @@ async def send_slack_notification_new_request(
         approval_rule_approved,
         tenant,
     )
-    http_headers = HTTPHeaders({"Content-Type": "application/json"})
-    http_req = HTTPRequest(
-        url=slack_webhook_url,
-        method="POST",
-        headers=http_headers,
-        body=json.dumps(payload),
-    )
-    http_client = AsyncHTTPClient(force_instance=True)
-    try:
-        await http_client.fetch(request=http_req)
-        log_data["message"] = "Slack notification sent"
-        log.debug(log_data)
-    except (ConnectionError, HTTPClientError) as e:
-        log_data["message"] = "Error occurred sending slack notification"
-        log_data["error"] = str(e)
-        log.error(log_data)
+    await _send_slack_notification(tenant, log_data, payload)
 
 
 async def get_payload(
@@ -144,9 +149,6 @@ async def send_slack_notification_new_group_request(
     """
     Sends a notification using specified webhook URL about a new identity request
     """
-    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
-        return
-
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     requester = request.requester.username
     requested_users = ", ".join(user.username for user in request.users)
@@ -162,30 +164,10 @@ async def send_slack_notification_new_group_request(
         "request": json.loads(request.json()),
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
-    if not slack_webhook_url:
-        log_data["message"] = "Missing webhook URL for slack notification"
-        log.error(log_data)
-        return
     payload = await get_payload_for_group_request(
         request, requester, requested_users, requested_groups, tenant
     )
-    http_headers = HTTPHeaders({"Content-Type": "application/json"})
-    http_req = HTTPRequest(
-        url=slack_webhook_url,
-        method="POST",
-        headers=http_headers,
-        body=json.dumps(payload),
-    )
-    http_client = AsyncHTTPClient(force_instance=True)
-    try:
-        await http_client.fetch(request=http_req)
-        log_data["message"] = "Slack notification sent"
-        log.debug(log_data)
-    except (ConnectionError, HTTPClientError) as e:
-        log_data["message"] = "Error occurred sending slack notification"
-        log_data["error"] = str(e)
-        log.error(log_data)
+    await _send_slack_notification(tenant, log_data, payload)
 
 
 async def get_payload_for_group_request(
@@ -302,9 +284,6 @@ async def send_slack_notification_new_notification(
     """
     Sends a notification using specified webhook URL about a new identity request
     """
-    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
-        return
-
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
 
     log_data: dict = {
@@ -317,29 +296,51 @@ async def send_slack_notification_new_notification(
         "session_name": session_name,
     }
     log.debug(log_data)
-    slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
-    if not slack_webhook_url:
-        log_data["message"] = "Missing webhook URL for slack notification"
-        log.error(log_data)
-        return
     message = "We've generated a policy to resolve a detected permissions error"
     request_url = config.get_tenant_specific_key("url", tenant) + encoded_request_url
     payload = await get_payload_for_policy_notification(
         message, session_name, arn, event_call, resource, source_ip, request_url
     )
-    http_headers = HTTPHeaders({"Content-Type": "application/json"})
-    http_req = HTTPRequest(
-        url=slack_webhook_url,
-        method="POST",
-        headers=http_headers,
-        body=json.dumps(payload),
-    )
-    http_client = AsyncHTTPClient(force_instance=True)
-    try:
-        await http_client.fetch(request=http_req)
-        log_data["message"] = "Slack notification sent"
-        log.debug(log_data)
-    except (ConnectionError, HTTPClientError) as e:
-        log_data["message"] = "Error occurred sending slack notification"
-        log_data["error"] = str(e)
-        log.error(log_data)
+    await _send_slack_notification(tenant, log_data, payload)
+
+
+# TODO|steven: Unused identities slack notification is still WIP
+def get_payload_for_unused_identities(message, account_id):
+
+    payload = {
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": message,
+                },
+            },
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": f"*Account ID* \n {account_id}"},
+            },
+        ]
+    }
+    return payload
+
+
+# TODO|steven: Unused identities slack notification is still WIP
+async def send_slack_notification_unused_identities(tenant, account_id):
+    """
+    Sends a notification using specified webhook URL about a new identity request
+    """
+    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
+        return
+
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+
+    log_data: dict = {
+        "function": function,
+        "tenant": tenant,
+        "account_id": account_id,
+    }
+    log.debug(log_data)
+    message = "WIP - unused identities"
+    payload = get_payload_for_unused_identities(message, account_id)
+    await _send_slack_notification(tenant, log_data, payload)
