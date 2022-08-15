@@ -34,3 +34,15 @@ export const getNewDiffChanges = (diffChanges, newChange) => {
     return updateDiffChanges(oldVersion, newChange)
   }
 }
+
+export const getPreviousAssociatedPolicy = (resourceHistory, newVersion) => {
+  const newVersionDateTime = new Date(newVersion.updated_at).getTime()
+  const previousVersion = resourceHistory.find((version) => {
+    const dateTime = new Date(version.updated_at).getTime()
+    return (
+      version.config_change.arn === newVersion.config_change.arn &&
+      newVersionDateTime > dateTime
+    )
+  })
+  return previousVersion ?? null
+}

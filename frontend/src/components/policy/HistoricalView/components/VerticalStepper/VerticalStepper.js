@@ -11,6 +11,7 @@ const VerticalStepper = (props) => {
     diffChanges,
     handleAssociatedHistoryChange,
     associatedHistoryChange,
+    previousAssociatedChange,
   } = props
 
   const [showAssociatedPolicy, setShowAssociatedPolicy] = useState(true)
@@ -36,8 +37,11 @@ const VerticalStepper = (props) => {
     if (associatedHistoryChange) {
       activeIds.push(associatedHistoryChange.updated_at)
     }
+    if (previousAssociatedChange) {
+      activeIds.push(previousAssociatedChange.updated_at)
+    }
     return activeIds
-  }, [diffChanges, associatedHistoryChange])
+  }, [diffChanges, associatedHistoryChange, previousAssociatedChange])
 
   return (
     <div className='vertical-stepper'>

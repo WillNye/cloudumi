@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { usePolicyContext } from '../hooks/PolicyProvider'
 import DiffEditorBlock from './components/DiffEditorBlock'
 import VerticalStepper from './components/VerticalStepper'
-import { getNewDiffChanges } from './utils'
+import { getNewDiffChanges, getPreviousAssociatedPolicy } from './utils'
 import './HistoricalView.scss'
 
 const HistoricalView = () => {
@@ -12,6 +12,7 @@ const HistoricalView = () => {
 
   const [resourceHistory, setResourceHistory] = useState([])
   const [associatedHistoryChange, setAssociatedHistoryChange] = useState(null)
+  const [previousAssociatedChange, setPreviousAssociatedChange] = useState(null)
   const [diffChanges, setDiffChanges] = useState({
     newVersion: null,
     oldVersion: null,
@@ -46,19 +47,26 @@ const HistoricalView = () => {
     getResourceHistory().then()
   }, []) // eslint-disable-line
 
-  const handleAssociatedHistoryChange = (newVersion) => {
-    setAssociatedHistoryChange(newVersion)
-    setDiffChanges({
-      newVersion: null,
-      oldVersion: null,
-    })
-  }
+  const handleAssociatedHistoryChange = useCallback(
+    (newVersion) => {
+      setAssociatedHistoryChange(newVersion)
+      setPreviousAssociatedChange(
+        getPreviousAssociatedPolicy(resourceHistory, newVersion)
+      )
+      setDiffChanges({
+        newVersion: null,
+        oldVersion: null,
+      })
+    },
+    [resourceHistory]
+  )
 
   const handleVersionChange = useCallback(
     (version) => {
       const { oldVersion, newVersion } = diffChanges
 
       setAssociatedHistoryChange(null)
+      setPreviousAssociatedChange(null)
 
       if (!newVersion) {
         setDiffChanges({ ...diffChanges, newVersion: version })
@@ -92,10 +100,12 @@ const HistoricalView = () => {
             resourceArn={resource.arn}
             diffChanges={diffChanges}
             associatedHistoryChange={associatedHistoryChange}
+            previousAssociatedChange={previousAssociatedChange}
           />
           <DiffEditorBlock
             diffChanges={diffChanges}
             associatedHistoryChange={associatedHistoryChange}
+            previousAssociatedChange={previousAssociatedChange}
           />
         </>
       ) : (
