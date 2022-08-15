@@ -48,7 +48,8 @@
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
-        "PYTHONASYNCIODEBUG": "1"
+        "PYTHONASYNCIODEBUG": "1",
+        "AWS_REGION": "us-west-2"
       }
     },
     {
