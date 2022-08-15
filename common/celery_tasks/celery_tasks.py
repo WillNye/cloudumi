@@ -44,6 +44,12 @@ from sentry_sdk.integrations.tornado import TornadoIntegration
 
 from common.aws.iam.policy.utils import get_all_managed_policies
 from common.aws.iam.role.models import IAMRole
+from common.aws.organizations.utils import (
+    autodiscover_aws_org_accounts,
+    cache_org_structure,
+    onboard_new_accounts_from_orgs,
+    sync_account_names_from_orgs,
+)
 from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config.models import ModelAdapter
@@ -64,7 +70,6 @@ from common.lib.aws.typeahead_cache import cache_aws_resource_details
 from common.lib.aws.utils import (
     allowed_to_sync_role,
     cache_all_scps,
-    cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
     remove_expired_requests_for_tenants,
@@ -1097,13 +1102,13 @@ def cache_access_advisor_across_accounts(tenant: str) -> Dict:
     log_data["num_accounts"] = len(accounts_d.keys())
 
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment") == "prod":
-            cache_access_advisor_for_account.delay(tenant, account_id)
-        else:
+        if config.get("_global_.environment") == "test":
             if account_id in config.get_tenant_specific_key(
                 "celery.test_account_ids", tenant, []
             ):
                 cache_access_advisor_for_account.delay(tenant, account_id)
+        else:
+            cache_access_advisor_for_account.delay(tenant, account_id)
 
     stats.count(f"{function}.success")
     log.debug(log_data)
@@ -1111,7 +1116,7 @@ def cache_access_advisor_across_accounts(tenant: str) -> Dict:
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advior_across_accounts_for_all_tenants() -> Dict:
+def cache_access_advisor_across_accounts_for_all_tenants() -> Dict:
     """Triggers `cache_access_advisor_across_accounts` task for each tenant.
 
     :return: Number of tenants that had tasks triggered.
@@ -1354,13 +1359,13 @@ def cache_managed_policies_across_accounts(tenant=None) -> bool:
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all accounts
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment") == "prod":
-            cache_managed_policies_for_account.delay(account_id, tenant=tenant)
-        else:
+        if config.get("_global_.environment") == "test":
             if account_id in config.get_tenant_specific_key(
                 "celery.test_account_ids", tenant, []
             ):
                 cache_managed_policies_for_account.delay(account_id, tenant=tenant)
+        else:
+            cache_managed_policies_for_account.delay(account_id, tenant=tenant)
 
     stats.count(f"{function}.success")
     return True
@@ -1416,13 +1421,14 @@ def cache_s3_buckets_across_accounts(
     ) or config.get("_global_.environment") in ["dev"]:
         # Call tasks to enumerate all S3 buckets across all accounts
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
+
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1511,13 +1517,13 @@ def cache_sqs_queues_across_accounts(
         "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1602,13 +1608,13 @@ def cache_sns_topics_across_accounts(
         "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1994,7 +2000,15 @@ def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict
         for result in results:
             result["ttl"] = ttl
             result["tenant"] = tenant
-            result["entity_id"] = result["arn"]
+            alternative_entity_id = "|||".join(
+                [
+                    result.get("accountId"),
+                    result.get("awsRegion"),
+                    result.get("resourceId"),
+                    result.get("resourceType"),
+                ]
+            )
+            result["entity_id"] = result.get("arn", alternative_entity_id)
             if result.get("arn"):
                 if redis_result_set.get(result["arn"]):
                     continue
@@ -2089,25 +2103,16 @@ def cache_resources_from_aws_config_across_accounts(
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all tenant accounts
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment", None) in [
-            "prod",
-            "dev",
-        ]:
-            tasks.append(
-                cache_resources_from_aws_config_for_account.s(account_id, tenant)
-            )
-        elif account_id in config.get_tenant_specific_key(
-            "celery.test_account_ids", tenant, []
-        ):
-            tasks.append(
-                cache_resources_from_aws_config_for_account.s(account_id, tenant)
-            )
+        if config.get("_global_.environment", None) == "test":
+            if account_id in config.get_tenant_specific_key(
+                "celery.test_account_ids", tenant, []
+            ):
+                tasks.append(
+                    cache_resources_from_aws_config_for_account.s(account_id, tenant)
+                )
         else:
-            log.debug(
-                {
-                    **log_data,
-                    "message": "Not running task because we're not in prod|dev, and we don't have any test account IDs",
-                }
+            tasks.append(
+                cache_resources_from_aws_config_for_account.s(account_id, tenant)
             )
     if tasks:
         if run_subtasks:
@@ -2303,8 +2308,27 @@ def cache_organization_structure(tenant=None) -> Dict:
         "tenant": tenant,
     }
 
+    # Loop through all accounts and add organizations if enabled
+    orgs_accounts_added = async_to_sync(autodiscover_aws_org_accounts)(tenant)
+    log_data["orgs_accounts_added"] = list(orgs_accounts_added)
+    # Onboard spoke accounts if enabled for org
+    log_data["accounts_onboarded"] = async_to_sync(onboard_new_accounts_from_orgs)(
+        tenant
+    )
+    # Sync account names if enabled in org
+    log_data["account_names_synced"] = async_to_sync(sync_account_names_from_orgs)(
+        tenant
+    )
+
     try:
         org_structure = async_to_sync(cache_org_structure)(tenant)
+        log.debug(
+            {
+                **log_data,
+                "message": "Successfully cached organization structure",
+                "num_organizations": len(org_structure),
+            }
+        )
     except MissingConfigurationValue as e:
         log.debug(
             {
@@ -2313,14 +2337,17 @@ def cache_organization_structure(tenant=None) -> Dict:
                 "error": str(e),
             }
         )
-        return log_data
-    log.debug(
-        {
-            **log_data,
-            "message": "Successfully cached organization structure",
-            "num_organizations": len(org_structure),
-        }
-    )
+    except Exception as err:
+        log.exception(
+            {
+                **log_data,
+                "error": str(err),
+            },
+            exc_info=True,
+        )
+        sentry_sdk.capture_exception()
+        raise
+
     return log_data
 
 
@@ -2820,8 +2847,8 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
-    "cache_access_advior_across_accounts_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.cache_access_advior_across_accounts_for_all_tenants",
+    "cache_access_advisor_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },
