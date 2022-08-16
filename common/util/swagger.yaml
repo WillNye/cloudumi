@@ -2455,6 +2455,112 @@ components:
           description: |-
             Optional value (defaults to false) to indicate whether Noq has the ability to modify resources on the hub account.
           default: false
+
+    MfaDetails:
+      type: object
+      required:
+        - provider
+        - url
+        - api_token
+      properties:
+        provider:
+          type: string
+          enum:
+            - okta
+        url:
+          type: string
+        api_token:
+          type: string
+
+    MfaSupport:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: |-
+            Indicate if MFA should be used to submit the request
+          default: true
+
+    IncludeIgnoreAccountList:
+      type: object
+      properties:
+        include:
+          type: array
+          items:
+            type: string
+          default: []
+        ignore:
+          type: array
+          items:
+            type: string
+          default: []
+
+    TearApprovalRule:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        requires_approval:
+          type: boolean
+          description: |-
+            Optional value (defaults to true) to indicate whether Temporary Elevated Access requests require approval.
+          default: true
+        enabled:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
+          default: true
+        mfa:
+          $ref: "#/components/schemas/MfaSupport"
+        groups:
+          type: array
+          items:
+            type: string
+          default: []
+        roles:
+          type: array
+          items:
+            type: string
+          default: []
+        accounts:
+          $ref: "#/components/schemas/IncludeIgnoreAccountList"
+
+    TearConfig:
+      type: object
+      properties:
+        active_users_tag:
+          type: string
+          description: Customer-specified or default tag used on roles to denote users that currently have TEAR access
+        supported_groups_tag:
+          type: string
+          description: Customer-specified or default tag used on roles to denote groups that can request TEAR access
+        requires_approval:
+          type: boolean
+          description: |-
+            Optional value (defaults to true) to indicate whether Temporary Elevated Access requests require approval.
+          default: true
+        enabled:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
+          default: false
+        mfa:
+          $ref: "#/components/schemas/MfaSupport"
+        approval_rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/TearApprovalRule"
+          default: []
+
+    Secrets:
+      type: object
+      properties:
+        mfa:
+          $ref: "#/components/schemas/MfaDetails"
+          is_secret: true
+
     SpokeAccount:
       type: object
       required:

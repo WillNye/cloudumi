@@ -99,7 +99,7 @@ class EligibleRoleHandler(BaseHandler):
         tenant = self.ctx.tenant
 
         roles = []
-        active_tear_roles = await get_user_active_tear_roles_by_tag(self.user, tenant)
+        active_tear_roles = await get_user_active_tear_roles_by_tag(tenant, self.user)
 
         for arn in self.eligible_roles:
             role_name = arn.split("/")[-1]

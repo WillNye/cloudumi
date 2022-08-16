@@ -1344,15 +1344,18 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         self, tenant, return_format="dict", filter_secrets=False
     ) -> bytes:
         """Retrieve dynamic configuration yaml synchronously"""
-        c = b""
-        current_config = self.tenant_static_configs.get_item(
-            Key={"tenant": tenant, "id": "master"}
-        )
+        compressed_config = b""
+        current_config = self.tenant_static_configs
         if not current_config:
-            return c
-        compressed_config = current_config.get("Item", {}).get("config", "")
+            return compressed_config
+
+        if current_config := current_config.get_item(
+            Key={"tenant": tenant, "id": "master"}
+        ):
+            compressed_config = current_config.get("Item", {}).get("config", "")
+
         if not compressed_config:
-            return c
+            return compressed_config
 
         c = compressed_config
         c_dict = yaml.load(c)

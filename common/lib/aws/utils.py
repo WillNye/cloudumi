@@ -14,7 +14,6 @@ from common.aws.iam.policy.utils import (
     get_resource_policy,
     should_exclude_policy_from_comparison,
 )
-from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.organizations.utils import get_organizational_units_for_account
 from common.aws.utils import ResourceSummary, get_resource_tag
 from common.config import config
@@ -53,6 +52,7 @@ from common.models import (
     Status,
 )
 from common.user_request.models import IAMRequest
+from common.user_request.utils import get_active_tear_users_tag
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -502,7 +502,7 @@ async def delete_iam_user(account_id, iam_user_name, username, tenant: str) -> b
 
 async def prune_iam_resource_tag(
     boto_conn, resource_type: str, resource_id: str, tag: str, value: str = None
-):
+) -> bool:
     """Removes a subset of a tag or the entire tag from a supported IAM resource"""
     assert resource_type in ["role", "user", "policy"]
 
@@ -520,6 +520,9 @@ async def prune_iam_resource_tag(
         getattr(boto_conn, f"list_{resource_type}_tags"), **boto_kwargs
     )
     resource_tag = get_resource_tag(resource_tags, tag, True, set())
+    if value not in resource_tag:
+        return False
+
     resource_tag.remove(value)
 
     if resource_tag:
@@ -532,6 +535,7 @@ async def prune_iam_resource_tag(
         await aio_wrapper(
             getattr(boto_conn, f"untag_{resource_type}"), TagKeys=[tag], **boto_kwargs
         )
+    return True
 
 
 async def fetch_iam_user_details(account_id, iam_user_name, tenant, user):
@@ -1025,7 +1029,6 @@ async def remove_expired_request_changes(
             request_user = extended_request.requester_info.extended_info.get(
                 "userName", None
             )
-
             try:
                 await prune_iam_resource_tag(
                     client,
