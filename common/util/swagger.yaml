@@ -2481,20 +2481,27 @@ components:
             Indicate if MFA should be used to submit the request
           default: true
 
-    TearGroupConfig:
+    IncludeIgnoreAccountList:
+      type: object
+      properties:
+        include:
+          type: array
+          items:
+            type: string
+          default: []
+        ignore:
+          type: array
+          items:
+            type: string
+          default: []
+
+    TearApprovalRule:
       type: object
       required:
         - name
       properties:
         name:
           type: string
-          description: The name of the group
-        active_users_tag:
-          type: string
-          description: Customer-specified or default tag used on roles to denote users that currently have TEAR access
-        supported_groups_tag:
-          type: string
-          description: Customer-specified or default tag used on roles to that a group can request TEAR access
         requires_approval:
           type: boolean
           description: |-
@@ -2507,79 +2514,18 @@ components:
           default: true
         mfa:
           $ref: "#/components/schemas/MfaSupport"
-
-    TearRoleConfig:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-          description: The name of the role
-        active_users_tag:
-          type: string
-          description: Customer-specified or default tag used on roles to denote users that currently have TEAR access
-        supported_groups_tag:
-          type: string
-          description: Customer-specified or default tag used on roles to denote groups that can request TEAR access
-        requires_approval:
-          type: boolean
-          description: |-
-            Optional value (defaults to true) to indicate whether Temporary Elevated Access requests require approval.
-          default: true
-        enabled:
-          type: boolean
-          description: |-
-            Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
-          default: true
-        mfa:
-          $ref: "#/components/schemas/MfaSupport"
-
-    TearAccountConfig:
-      type: object
-      required:
-        - id
-      properties:
-        id:
-          type: string
-          description: The account id
-        active_users_tag:
-          type: string
-          description: Customer-specified or default tag used on roles to denote users that currently have TEAR access
-        supported_groups_tag:
-          type: string
-          description: Customer-specified or default tag used on roles to denote groups that can request TEAR access
-        requires_approval:
-          type: boolean
-          description: |-
-            Optional value (defaults to true) to indicate whether Temporary Elevated Access requests require approval.
-          default: true
-        enabled:
-          type: boolean
-          description: |-
-            Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
-          default: true
-        mfa:
-          $ref: "#/components/schemas/MfaSupport"
-
-    CustomTearConfigs:
-      type: object
-      properties:
-        group_configs:
+        groups:
           type: array
           items:
-            $ref: "#/components/schemas/TearGroupConfig"
+            type: string
           default: []
-        role_configs:
+        roles:
           type: array
           items:
-            $ref: "#/components/schemas/TearRoleConfig"
+            type: string
           default: []
-        account_configs:
-          type: array
-          items:
-            $ref: "#/components/schemas/TearAccountConfig"
-          default: []
+        accounts:
+          $ref: "#/components/schemas/IncludeIgnoreAccountList"
 
     TearConfig:
       type: object
@@ -2602,8 +2548,11 @@ components:
           default: false
         mfa:
           $ref: "#/components/schemas/MfaSupport"
-        custom_configs:
-          $ref: "#/components/schemas/CustomTearConfigs"
+        approval_rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/TearApprovalRule"
+          default: []
 
     Secrets:
       type: object

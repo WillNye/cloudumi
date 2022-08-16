@@ -97,9 +97,7 @@ async def validate_request_creation(
             return await handler.finish()
 
         resource_summary = await ResourceSummary.set(tenant, role_arn)
-        tear_config = get_tear_config(
-            tenant, resource_summary.account, resource_summary.name
-        )
+        tear_config = get_tear_config(resource_summary)
         if tear_config.mfa.enabled:
             is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
             if not is_authenticated:

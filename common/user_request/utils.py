@@ -1,29 +1,46 @@
 import asyncio
 import json
+import re
 import time
 from hashlib import sha1
-from typing import Union
 
 from common.aws.iam.role.models import IAMRole
 from common.aws.utils import ResourceSummary, get_resource_tag
 from common.config import config, models
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.auth import is_tenant_admin
+from common.lib.timeout import Timeout
 from common.models import (
     CloudCredentials,
     Command,
     ExtendedRequestModel,
     MfaSupport,
     PolicyRequestModificationRequestModel,
-    TearAccountConfig,
     TearConfig,
-    TearGroupConfig,
-    TearRoleConfig,
 )
 
 log = config.get_logger(__name__)
 TEAR_SUPPORT_TAG = "noq-tear-supported-groups"
 TEAR_USERS_TAG = "noq-tear-active-users"
+
+
+def re_match_any_pattern(str_obj: str, regex_patterns: list[str]) -> bool:
+    if str_obj == "*" or any(regex == "*" for regex in regex_patterns):
+        return True
+
+    try:
+        with Timeout(seconds=5):
+            return any(re.match(regex, str_obj) for regex in regex_patterns)
+    except TimeoutError as err:
+        log.critical(
+            {
+                "error": str(err),
+                "message": "regex timed out",
+                "regex_patterns": regex_patterns,
+                "string": str_obj,
+            }
+        )
+        return False
 
 
 async def generate_dict_hash(dict_obj: dict) -> str:
@@ -150,8 +167,8 @@ def mfa_enabled_for_config(tear_config):
 
 
 def get_tear_config(
-    tenant: str, account: str = None, role: str = None, user_groups: list[str] = None
-) -> Union[TearConfig | TearRoleConfig | TearAccountConfig | TearGroupConfig]:
+    resource_summary: ResourceSummary, user_groups: list[str] = None
+) -> TearConfig:
     """Retrieve the proper TEAR config based on provided account, role, and user groups with tear access to the role.
     Config priority:
         1: group
@@ -162,6 +179,10 @@ def get_tear_config(
         2: role
         3: account
     """
+    tenant = resource_summary.tenant
+    role = resource_summary.name
+    account = resource_summary.account
+
     tear_config: TearConfig = (
         models.ModelAdapter(TearConfig)
         .load_config("temporary_elevated_access_requests", tenant)
@@ -180,7 +201,7 @@ def get_tear_config(
     tear_config.supported_groups_tag = get_tear_supported_groups_tag(tenant)
     tear_config.active_users_tag = get_active_tear_users_tag(tenant)
 
-    if not tear_config.custom_configs:
+    if not tear_config.approval_rules:
         return tear_config
 
     config_attrs = [
@@ -188,66 +209,29 @@ def get_tear_config(
         "enabled",
         "mfa",
     ]
-    custom_tear_config = None
 
-    if user_groups and (tear_groups := tear_config.custom_configs.group_configs):
-        # In the event the user is part of multiple groups with TEAR access the group requiring the least auth is used
-        # Currently, this is the order from highest to lowest priority:
-        # requires_approval=False, mfa_enabled=False, enabled=True, enabled=False
-        tear_group_map = {tear_group.name: tear_group for tear_group in tear_groups}
-        for user_group in user_groups:
-            tear_group = tear_group_map.get(user_group)
-            if not tear_group:
+    for approval_rule in tear_config.approval_rules:
+        rule_hit = False
+
+        if ignore_accounts := approval_rule.accounts.ignore:
+            if any(re.match(account_re, account) for account_re in ignore_accounts):
                 continue
-            elif (
-                custom_tear_config
-                and custom_tear_config.enabled
-                and not tear_group.enabled
-            ):
-                continue
-            elif not tear_group.requires_approval:
-                custom_tear_config = tear_group
-                break
-            elif not custom_tear_config:
-                custom_tear_config = tear_group
-            elif mfa_enabled_for_config(
-                custom_tear_config
-            ) and not mfa_enabled_for_config(tear_group):
-                custom_tear_config = tear_group
-            elif tear_group.enabled and not custom_tear_config.enabled:
-                custom_tear_config = tear_group
 
-    if (
-        role
-        and not custom_tear_config
-        and (tear_roles := tear_config.custom_configs.role_configs)
-    ):
-        for tear_role in tear_roles:
-            if role == tear_role.name:
-                custom_tear_config = tear_role
-                break
+        if include_accounts := approval_rule.accounts.include:
+            rule_hit = re_match_any_pattern(account, include_accounts)
 
-    if (
-        account
-        and not custom_tear_config
-        and (tear_accounts := tear_config.custom_configs.account_configs)
-    ):
-        for tear_account in tear_accounts:
-            if account == tear_account.id and tear_account.enabled:
-                custom_tear_config = tear_account
-                break
+        if not rule_hit:
+            rule_hit = re_match_any_pattern(role, approval_rule.roles)
 
-    if custom_tear_config:
-        # Tags are set globally so set the tags for the custom config
-        custom_tear_config.active_users_tag = tear_config.active_users_tag
-        custom_tear_config.supported_groups_tag = tear_config.supported_groups_tag
+        if user_groups and not rule_hit:
+            for group in user_groups:
+                if rule_hit := re_match_any_pattern(group, approval_rule.groups):
+                    break
 
-        # Use the parent (tear_config) as the default for attributes that weren't set.
-        for config_attr in config_attrs:
-            if getattr(custom_tear_config, config_attr, None) is None:
-                parent_val = getattr(tear_config, config_attr, None)
-                setattr(custom_tear_config, config_attr, parent_val)
-        return custom_tear_config
+        if rule_hit:
+            for config_attr in config_attrs:
+                if (attr_val := getattr(approval_rule, config_attr, None)) is not None:
+                    setattr(tear_config, config_attr, attr_val)
 
     return tear_config
 
@@ -263,13 +247,11 @@ def get_user_tear_groups_for_role(
 
 async def get_tear_config_for_request(
     tenant: str, arn: str, user_groups: list[str]
-) -> Union[TearConfig | TearRoleConfig | TearAccountConfig | TearGroupConfig]:
+) -> TearConfig:
     resource_summary = await ResourceSummary.set(tenant, arn)
     iam_role = await IAMRole.get(tenant, resource_summary.account, resource_summary.arn)
     tear_groups = get_user_tear_groups_for_role(tenant, iam_role, user_groups)
-    return get_tear_config(
-        tenant, resource_summary.account, resource_summary.name, tear_groups
-    )
+    return get_tear_config(resource_summary, tear_groups)
 
 
 def get_active_tear_users_tag(tenant: str) -> str:

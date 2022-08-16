@@ -96,7 +96,7 @@ async def get_user_active_tear_roles_by_tag(tenant: str, user: str) -> list[str]
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
-    from common.aws.utils import get_resource_tag
+    from common.aws.utils import ResourceSummary, get_resource_tag
 
     if not config.get_tenant_specific_key(
         "temporary_elevated_access_requests.enabled", tenant, False
@@ -108,7 +108,8 @@ async def get_user_active_tear_roles_by_tag(tenant: str, user: str) -> list[str]
     tear_users_tag = get_active_tear_users_tag(tenant)
 
     for iam_role in all_iam_roles:
-        tear_config = get_tear_config(tenant, role=iam_role.name)
+        resource_summary = await ResourceSummary.set(tenant, iam_role.arn)
+        tear_config = get_tear_config(resource_summary)
         if not tear_config.enabled:
             continue
 
@@ -132,7 +133,7 @@ async def get_tear_supported_roles_by_tag(
 
     :return: A list of roles that can be used as part of the TEAR workflow
     """
-    from common.aws.utils import get_resource_tag
+    from common.aws.utils import ResourceSummary, get_resource_tag
 
     escalated_roles = dict()
     all_iam_roles = await IAMRole.query(tenant)
@@ -140,8 +141,8 @@ async def get_tear_supported_roles_by_tag(
     for iam_role in all_iam_roles:
         if iam_role.arn in eligible_roles:
             continue
-
-        tear_config = get_tear_config(tenant, role=iam_role.name)
+        resource_summary = await ResourceSummary.set(tenant, iam_role.arn)
+        tear_config = get_tear_config(resource_summary)
         if not tear_config.enabled:
             continue
 
