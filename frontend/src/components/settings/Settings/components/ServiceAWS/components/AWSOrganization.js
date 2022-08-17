@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
@@ -11,6 +11,9 @@ import { TableTopBar } from '../../utils'
 import { Bar, Fill } from 'lib/Misc'
 
 export const AWSOrganization = () => {
+  const [defaultValues, setDefaultValues] = useState({})
+  const [editMode, setEditMode] = useState(false)
+
   const { get, post, remove } = useApi('services/aws/account/org', {
     shouldPersist: true,
   })
@@ -35,6 +38,15 @@ export const AWSOrganization = () => {
           error(errorsMap || message)
         })
     }
+    if (action === 'edit') {
+      const newDefaultValues = {
+        ...rowValues,
+        account_name: `${rowValues.account_name} - ${rowValues.account_id}`,
+      }
+      setDefaultValues(newDefaultValues)
+      setEditMode(true)
+      openModal()
+    }
   }
 
   const handleFinish = () => {
@@ -42,7 +54,11 @@ export const AWSOrganization = () => {
     get.do()
   }
 
-  const handleClose = post.reset
+  const handleClose = () => {
+    setEditMode(false)
+    setDefaultValues({})
+    post.reset()
+  }
 
   const columns = awsOrganizationColumns({ handleClick })
 
@@ -93,7 +109,12 @@ export const AWSOrganization = () => {
       </DatatableWrapper>
 
       <ModalComponent onClose={handleClose} hideConfirm>
-        <NewOrganization closeModal={closeModal} onFinish={handleFinish} />
+        <NewOrganization
+          closeModal={closeModal}
+          onFinish={handleFinish}
+          defaultValues={defaultValues}
+          editMode={editMode}
+        />
       </ModalComponent>
     </>
   )
