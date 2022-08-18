@@ -2626,7 +2626,6 @@ components:
     OrgAccount:
       type: object
       required:
-        - uuid
         - org_id
       properties:
         uuid:
