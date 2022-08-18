@@ -1,3 +1,5 @@
+import uuid
+
 import sentry_sdk
 import tornado.escape
 
@@ -336,6 +338,17 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             "tenant_details.external_id", tenant
         )
         data["external_id"] = external_id
+
+        # Automatically generate uuid if not provided
+        uuid_identifiers = [
+            x
+            for x in self._identifying_keys
+            if self._model_class.schema().get("properties", {}).get(x, {}).get("format")
+            == "uuid"
+        ]
+        for uuid_identifier in uuid_identifiers:
+            if not data.get(uuid_identifier):
+                data[uuid_identifier] = uuid.uuid4()
 
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time
