@@ -362,9 +362,9 @@ class TestAwsLib(TestCase):
         from common.user_request.models import IAMRequest
 
         account_id = "123456789012"
-        current_dateint = datetime.today().strftime("%Y%m%d")
-        past_dateint = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
-        future_dateint = (datetime.today() + timedelta(days=5)).strftime("%Y%m%d")
+        current_datestr = str(datetime.today())
+        past_datestr = str(datetime.today() - timedelta(days=1))
+        future_datestr = str(datetime.today() + timedelta(days=5))
 
         test_role_name = "TestRequestsLibV2RoleName"
         policy_name = "test_inline_policy_change"
@@ -389,7 +389,7 @@ class TestAwsLib(TestCase):
                 "policy_sha256": "55d03ad7a2a447e6e883c520edcd8e5e3083c2f83fa1c390cee3f7dbedf28533",
             },
             "old_policy": None,
-            "expiration_date": current_dateint,
+            "expiration_date": current_datestr,
         }
         inline_policy_change_model = InlinePolicyChangeModel.parse_obj(
             inline_policy_change
@@ -413,7 +413,7 @@ class TestAwsLib(TestCase):
 
         # Should be deleted if date is current date
         extended_request.request_status = RequestStatus.approved
-        extended_request.expiration_date = current_dateint
+        extended_request.expiration_date = current_datestr
         extended_request.changes.changes[0].status = Status.applied
         async_to_sync(IAMRequest.write_v2)(extended_request, tenant)
         async_to_sync(remove_expired_tenant_requests)(tenant)
@@ -428,7 +428,7 @@ class TestAwsLib(TestCase):
 
         # Should be deleted if date is past date
         extended_request.request_status = RequestStatus.approved
-        extended_request.expiration_date = past_dateint
+        extended_request.expiration_date = past_datestr
         extended_request.changes.changes[0].status = Status.applied
         async_to_sync(IAMRequest.write_v2)(extended_request, tenant)
         async_to_sync(remove_expired_tenant_requests)(tenant)
@@ -443,7 +443,7 @@ class TestAwsLib(TestCase):
         self.assertEqual(extended_request.changes.changes[0].status, Status.expired)
 
         # Should not be deleted if date is future date
-        extended_request.expiration_date = future_dateint
+        extended_request.expiration_date = future_datestr
         extended_request.request_status = RequestStatus.approved
         extended_request.changes.changes[0].status = Status.applied
         async_to_sync(IAMRequest.write_v2)(extended_request, tenant)
