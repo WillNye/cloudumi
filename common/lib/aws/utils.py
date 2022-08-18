@@ -52,7 +52,7 @@ from common.models import (
     Status,
 )
 from common.user_request.models import IAMRequest
-from common.user_request.utils import get_active_tear_users_tag
+from common.user_request.utils import get_active_tear_users_tag, get_expiry_sid_str
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -825,10 +825,9 @@ async def remove_expired_request_changes(
     from common.lib.v2.aws_principals import get_role_details
 
     should_update_policy_request = False
-    current_dateint = datetime.today().strftime("%Y%m%d")
     if (
         not extended_request.expiration_date
-        or str(extended_request.expiration_date) > current_dateint
+        or extended_request.expiration_date > datetime.utcnow()
     ):
         return
 
@@ -1104,9 +1103,9 @@ async def remove_expired_request_changes(
                     existing_policy = role.assume_role_policy_document
 
                 for statement in existing_policy.get("Statement", []):
-                    if str(extended_request.expiration_date) in statement.get(
-                        "Sid", ""
-                    ):
+                    if get_expiry_sid_str(
+                        extended_request.expiration_date
+                    ) in statement.get("Sid", ""):
                         continue
                     new_policy_statement.append(statement)
 

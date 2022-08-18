@@ -2,6 +2,7 @@ import asyncio
 import json
 import re
 import time
+from datetime import datetime, timezone
 from hashlib import sha1
 
 from common.aws.iam.role.models import IAMRole
@@ -22,6 +23,19 @@ from common.models import (
 log = config.get_logger(__name__)
 TEAR_SUPPORT_TAG = "noq-tear-supported-groups"
 TEAR_USERS_TAG = "noq-tear-active-users"
+
+
+def normalize_expiration_date(request):
+    if expiration_date := getattr(request, "expiration_date", None):
+        if utc_offset := expiration_date.utcoffset():
+            expiration_date -= utc_offset
+        request.expiration_date = expiration_date.replace(tzinfo=timezone.utc)
+
+    return request
+
+
+def get_expiry_sid_str(dt_obj: datetime) -> str:
+    return dt_obj.strftime("%Y%m%d_%H%M%S")
 
 
 def re_match_any_pattern(str_obj: str, regex_patterns: list[str]) -> bool:
@@ -50,11 +64,15 @@ async def generate_dict_hash(dict_obj: dict) -> str:
 
 
 async def update_extended_request_expiration_date(
-    tenant: str, user: str, extended_request: ExtendedRequestModel, expiration_date: int
+    tenant: str,
+    user: str,
+    extended_request: ExtendedRequestModel,
+    expiration_date: datetime,
 ) -> ExtendedRequestModel:
     from common.lib.change_request import generate_policy_name, generate_policy_sid
 
     extended_request.expiration_date = expiration_date
+    extended_request = normalize_expiration_date(extended_request)
 
     for change in extended_request.changes.changes:
         if change.change_type == "inline_policy":
@@ -214,7 +232,7 @@ def get_tear_config(
         rule_hit = False
 
         if ignore_accounts := approval_rule.accounts.ignore:
-            if any(re.match(account_re, account) for account_re in ignore_accounts):
+            if re_match_any_pattern(account, ignore_accounts):
                 continue
 
         if include_accounts := approval_rule.accounts.include:
