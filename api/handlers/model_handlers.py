@@ -343,12 +343,15 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
         uuid_identifiers = [
             x
             for x in self._identifying_keys
-            if self._model_class.schema().get("properties", {}).get(x, {}).get("format")
+            if self._model_class.schema()
+            .get("properties", {})
+            .get(x.capitalize(), {})
+            .get("format")
             == "uuid"
         ]
         for uuid_identifier in uuid_identifiers:
             if not data.get(uuid_identifier):
-                data[uuid_identifier] = uuid.uuid4()
+                data[uuid_identifier] = str(uuid.uuid4())
 
         # Note: we are accepting one item posted at a time; in the future we might support
         # multiple items posted at a time

@@ -1,4 +1,5 @@
 from io import StringIO
+from uuid import UUID
 
 from ruamel.yaml import YAML
 
@@ -21,4 +22,8 @@ yaml_pure = CloudUmiYaml(typ="safe", pure=True)
 yaml.preserve_quotes = True
 yaml.indent(mapping=2, sequence=4, offset=2)
 yaml.representer.ignore_aliases = lambda *data: True
+
+# Ability to serialize UUID objects
+yaml.register_class(UUID)
+
 yaml.width = 4096
