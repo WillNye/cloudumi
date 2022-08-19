@@ -150,6 +150,12 @@ const InlinePolicyChangeComponent = (props) => {
           Inline Policy Change - {change.policy_name} {newPolicy}
         </Header>
       )
+    } else if (change.change_type === 'policy_condenser') {
+      return (
+        <Header size='large'>
+          Condensed Effective Permissions Policy Change
+        </Header>
+      )
     } else {
       return <Header size='large'>Managed Policy Change</Header>
     }
@@ -226,19 +232,36 @@ const InlinePolicyChangeComponent = (props) => {
 
       <Grid.Row columns='equal'>
         <Grid.Column>
-          <Header
-            size='medium'
-            content='Current Policy'
-            subheader='This is a read-only view of the current policy in AWS.'
-          />
+          {change.change_type === 'policy_condenser' ? (
+            <Header
+              size='medium'
+              content='Effective Permissions Policy'
+              subheader='This is a read-only view of the current effective permissions policy in AWS.'
+            ></Header>
+          ) : (
+            <Header
+              size='medium'
+              content='Current Policy'
+              subheader='This is a read-only view of the current policy in AWS.'
+            />
+          )}
         </Grid.Column>
         <Grid.Column>
-          <Header
-            size='medium'
-            content='Proposed Policy'
-            subheader='This is an editable view of the proposed policy.
+          {change.change_type === 'policy_condenser' ? (
+            <Header
+              size='medium'
+              content='Condensed Effective Permissions Policy'
+              subheader='This is an editable view of the condensed effective permissions policy.
+            An approver can modify the policy before approving and applying it.'
+            ></Header>
+          ) : (
+            <Header
+              size='medium'
+              content='Proposed Policy'
+              subheader='This is an editable view of the proposed policy.
               An approver can modify the proposed policy before approving and applying it.'
-          />
+            />
+          )}
         </Grid.Column>
       </Grid.Row>
 

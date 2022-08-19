@@ -1,13 +1,27 @@
 import React, { useState } from 'react'
-import { Header, Segment, Icon, Message, Tab } from 'semantic-ui-react'
+import {
+  Header,
+  Segment,
+  Icon,
+  Message,
+  Tab,
+  Button,
+  Divider,
+  Grid,
+} from 'semantic-ui-react'
 import MonacoDiffComponent from '../blocks/MonacoDiffComponent'
 import useEffectivePermissions from './hooks/useEffectivePermissions'
+import { JustificationModal } from './PolicyModals'
 import { ReadOnlyPolicyMonacoEditor } from './PolicyMonacoEditor'
 
 const EffectivePermissions = () => {
   const [error, setError] = useState(null)
   const [messages, setMessages] = useState([])
-  const { resourceEffectivePermissions } = useEffectivePermissions()
+  const {
+    resourceEffectivePermissions,
+    handleEffectivePolicySubmit,
+    setModalWithAdminAutoApprove,
+  } = useEffectivePermissions()
 
   const onLintError = (lintErrors) => {
     if (lintErrors.length > 0) {
@@ -17,6 +31,10 @@ const EffectivePermissions = () => {
       setError(false)
       setMessages([])
     }
+  }
+
+  const onEffectivePolicySubmit = () => {
+    setModalWithAdminAutoApprove(false)
   }
 
   const panes = [
@@ -83,7 +101,6 @@ const EffectivePermissions = () => {
                 </>
               ) : null}
             </Segment>
-            {/* <JustificationModal handleSubmit={handleAssumeRolePolicySubmit} /> */}
           </>
         </Tab.Pane>
       ),
@@ -120,9 +137,32 @@ const EffectivePermissions = () => {
     },
   ]
 
-  // TODO: Make it possible to request a change that removes all unused permissions
   // TODO: Give the user commands to do this manually
-  return <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
+  return (
+    <>
+      <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
+      <Divider horizontal />
+      <Grid columns={1} centered>
+        <Grid.Row>
+          <Grid.Column textAlign='center'>
+            <Button
+              primary
+              icon='send'
+              content='Request Condense Policy and Remove Unused Permissions'
+              onClick={onEffectivePolicySubmit}
+              disabled={
+                !resourceEffectivePermissions?.effective_policy_unused_permissions_removed
+              }
+            />
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
+      <JustificationModal
+        handleSubmit={handleEffectivePolicySubmit}
+        showDetachManagedPolicy
+      />
+    </>
+  )
 }
 
 export default EffectivePermissions

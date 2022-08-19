@@ -20,7 +20,10 @@ import ResourcePolicyChangeComponent from '../blocks/ResourcePolicyChangeCompone
 import ResourceTagChangeComponent from '../blocks/ResourceTagChangeComponent'
 import ExpirationDateBlockComponent from 'components/blocks/ExpirationDateBlockComponent'
 import TemporaryEscalationComponent from 'components/blocks/TemporaryEscalationBlockComponent'
-import { checkContainsReadOnlyAccount } from '../selfservice/utils'
+import {
+  checkContainsReadOnlyAccount,
+  containsCondensedPolicyChange,
+} from '../selfservice/utils'
 
 class PolicyRequestReview extends Component {
   constructor(props) {
@@ -421,21 +424,26 @@ class PolicyRequestReview extends Component {
       extendedRequest.changes?.changes || []
     )
 
-    const expirationDateContent = hasReadOnlyAccountPolicy ? (
-      <Message
-        info
-        header='Policy request affects a read-only account'
-        content='Temporary policy requests are disabled for requests affecting read-only accounts.'
-      />
-    ) : (
-      <ExpirationDateBlockComponent
-        expiration_date={extendedRequest.expiration_date || null}
-        reloadDataFromBackend={this.reloadDataFromBackend}
-        requestID={requestID}
-        sendRequestCommon={this.props.sendRequestCommon}
-        requestReadOnly={requestReadOnly}
-      />
+    const hasCondensedPolicy = containsCondensedPolicyChange(
+      extendedRequest.changes?.changes || []
     )
+
+    const expirationDateContent =
+      hasReadOnlyAccountPolicy || hasCondensedPolicy ? (
+        <Message
+          info
+          header='Policy request affects a read-only account or Effective Permissions'
+          content='Temporary policy requests are disabled for requests affecting read-only accounts and .'
+        />
+      ) : (
+        <ExpirationDateBlockComponent
+          expiration_date={extendedRequest.expiration_date || null}
+          reloadDataFromBackend={this.reloadDataFromBackend}
+          requestID={requestID}
+          sendRequestCommon={this.props.sendRequestCommon}
+          requestReadOnly={requestReadOnly}
+        />
+      )
 
     const templateContent = template ? (
       <Message negative>
@@ -456,6 +464,23 @@ class PolicyRequestReview extends Component {
       extendedRequest.changes.changes.length > 0 ? (
         <>
           {extendedRequest.changes.changes.map((change, index) => {
+            if (change.change_type === 'policy_condenser') {
+              return (
+                <InlinePolicyChangeComponent
+                  key={index}
+                  change={change}
+                  config={requestConfig}
+                  changesConfig={changesConfig}
+                  requestReadOnly={requestReadOnly}
+                  updatePolicyDocument={this.updatePolicyDocument}
+                  reloadDataFromBackend={this.reloadDataFromBackend}
+                  requestID={requestID}
+                  sendProposedPolicy={this.sendProposedPolicy}
+                  sendRequestCommon={this.props.sendRequestCommon}
+                />
+              )
+            }
+
             if (change.change_type === 'generic_file') {
               return (
                 <InlinePolicyChangeComponent
@@ -472,6 +497,7 @@ class PolicyRequestReview extends Component {
                 />
               )
             }
+
             if (
               change.change_type === 'inline_policy' ||
               change.change_type === 'managed_policy_resource'

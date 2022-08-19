@@ -2,7 +2,9 @@ import React, { useState } from 'react'
 import { DateTime } from 'luxon'
 import {
   Button,
+  Checkbox,
   Dimmer,
+  Divider,
   Form,
   Header,
   Loader,
@@ -39,7 +41,11 @@ const StatusMessage = ({ message, isSuccess }) => {
   return null
 }
 
-export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
+export const JustificationModal = ({
+  handleSubmit,
+  showExpirationDate,
+  showDetachManagedPolicy = false,
+}) => {
   const {
     adminAutoApprove = false,
     context = 'inline_policy',
@@ -55,6 +61,7 @@ export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
   const [message, setMessage] = useState('')
   const [justification, setJustification] = useState('')
   const [expirationDate, setExpirationDate] = useState(null)
+  const [detachManagedPolicy, setDetachManagedPolicy] = useState(true)
 
   const handleJustificationUpdate = (e) => {
     setJustification(e.target.value)
@@ -75,6 +82,7 @@ export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
       context,
       justification,
       expirationDate,
+      detachManagedPolicies: detachManagedPolicy,
     })
 
     setMessage(response.message)
@@ -145,6 +153,17 @@ export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
                     onChange={handleSetPolicyExpiration}
                     type='basic'
                     compact
+                  />
+                </>
+              )}
+
+              {showDetachManagedPolicy && (
+                <>
+                  <Divider horizontal />
+                  <Checkbox
+                    label='Show Detach Managed Policy'
+                    onChange={(e, data) => setDetachManagedPolicy(data.checked)}
+                    checked={detachManagedPolicy}
                   />
                 </>
               )}
