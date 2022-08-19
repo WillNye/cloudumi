@@ -426,7 +426,9 @@ class BaseHandler(TornadoRequestHandler):
             res = await validate_and_return_jwt_token(auth_cookie, tenant)
             if isinstance(res, dict):
                 self.user = res.get("user")
-                self.groups = res.get("groups")
+                # Add groups_pending_eula so authorization_flow works as expected
+                # If EULA isn't signed groups will be cleared at the end of the auth flow
+                self.groups = res.get("groups", []) + res.get("groups_pending_eula", [])
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)

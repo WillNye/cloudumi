@@ -42,7 +42,7 @@ class Aws:
         self, role: str, user_email: str, account_id: str, user_role_name: str = "user"
     ) -> str:
         """Call out to the lambda function to provision the per-user role for the account."""
-        raise NotImplementedError("This feature isn't enabled in ConsoleMe OSS")
+        raise NotImplementedError("This feature isn't enabled in NOQ OSS")
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(2),

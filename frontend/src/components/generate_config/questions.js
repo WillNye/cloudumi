@@ -7,7 +7,7 @@ export const questions_json = {
       isRequired: true,
       name: 'application_admin_PLACEHOLDER_0',
       title:
-        "What should the value be for Adminstrator of ConsoleMe (Enter your team's (or just your) username/email here. This user (or members of the group) will have full admin capabilities in ConsoleMe,\nand be used as the default approvers of IAM policy requests.)?",
+        "What should the value be for Adminstrator of NOQ (Enter your team's (or just your) username/email here. This user (or members of the group) will have full admin capabilities in NOQ,\nand be used as the default approvers of IAM policy requests.)?",
       type: 'text',
     },
     {
@@ -37,7 +37,7 @@ export const questions_json = {
     },
     {
       choices: [
-        'Single account mode (ConsoleMe only gathers information an permits changes to the account it has credentials for. No further configuration needed)',
+        'Single account mode (NOQ only gathers information an permits changes to the account it has credentials for. No further configuration needed)',
         'Configuration File',
         'AWS Organizations',
         'Swag (https://github.com/Netflix-Skunkworks/swag-api)',
@@ -54,7 +54,7 @@ export const questions_json = {
       isRequired: true,
       name: 'account_ids_to_name_PLACEHOLDER_5',
       title:
-        'Please provide a comma-seperated list of accounts IDs to name mapping (this will be accounts that ConsoleMe should cache information for, for example: 1234: prod, 5678: test)',
+        'Please provide a comma-seperated list of accounts IDs to name mapping (this will be accounts that NOQ should cache information for, for example: 1234: prod, 5678: test)',
       type: 'text',
       visibleIf: "{__accounts_choice} = 'Configuration File'",
     },
@@ -70,7 +70,7 @@ export const questions_json = {
       isRequired: true,
       name: 'cache_accounts_from_aws_organizations.organizations_master_role_to_assume_PLACEHOLDER_7',
       title:
-        'What should the value be for role for the organization master account (name of the role that consoleme will attempt to assume on your Organizations master account to retrieve account information)?',
+        'What should the value be for role for the organization master account (name of the role that NOQ will attempt to assume on your Organizations master account to retrieve account information)?',
       type: 'text',
       visibleIf: "{__accounts_choice} = 'AWS Organizations'",
     },
@@ -88,7 +88,7 @@ export const questions_json = {
       isRequired: true,
       name: 'policies.role_name_PLACEHOLDER_9',
       title:
-        "What should the value be for multi-account support (ConsoleMe's multi-account support works with a hub and spoke design. Your central (hub) AWS account will need an\nIAM role on all of your (spoke) accounts that it can assume to gather resource information and make changes on the\naccount. (Yes, this role will be needed on the central account as well. If configured, ConsoleMe will always\nattempt to assume a role when attempting operations on a different account).)?",
+        "What should the value be for multi-account support (NOQ's multi-account support works with a hub and spoke design. Your central (hub) AWS account will need an\nIAM role on all of your (spoke) accounts that it can assume to gather resource information and make changes on the\naccount. (Yes, this role will be needed on the central account as well. If configured, NOQ will always\nattempt to assume a role when attempting operations on a different account).)?",
       type: 'text',
       visibleIf:
         "{__accounts_choice} = 'Configuration File' or {__accounts_choice} = 'AWS Organizations' or {__accounts_choice} = 'Swag (https://github.com/Netflix-Skunkworks/swag-api)'",
@@ -318,7 +318,7 @@ export const questions_json = {
       isRequired: true,
       name: 's3_cache_bucket_PLACEHOLDER_35',
       title:
-        "What should the value be for ConsoleMe's S3 bucket (a (preferably versioned) S3 bucket that I can cache and retrieve data from? The role that ConsoleMe runs\nas must have access to this bucket)?",
+        "What should the value be for NOQ's S3 bucket (a (preferably versioned) S3 bucket that I can cache and retrieve data from? The role that NOQ runs\nas must have access to this bucket)?",
       type: 'text',
     },
     {
@@ -332,14 +332,14 @@ export const questions_json = {
       defaultValue: 'redis://{redis.host.global_PLACEHOLDER_36}:6379/1',
       name: 'celery.broker.global_PLACEHOLDER_37',
       title:
-        'What should the value be for the redis host and database that ConsoleMe can use as the Celery broker? Elasticache Redis is preferred. This time, please enter a\nfully qualified redis URL because Celery expects it. (Is there a redis host ConsoleMe can use as the Celery backend? Fully qualified URL required this time. If you want to\nreuse an existing endpoint, please select a different database than the one you used before (The default is /0,\nso just add /1 to the end of your url))?',
+        'What should the value be for the redis host and database that NOQ can use as the Celery broker? Elasticache Redis is preferred. This time, please enter a\nfully qualified redis URL because Celery expects it. (Is there a redis host NOQ can use as the Celery backend? Fully qualified URL required this time. If you want to\nreuse an existing endpoint, please select a different database than the one you used before (The default is /0,\nso just add /1 to the end of your url))?',
       type: 'text',
     },
     {
       defaultValue: 'redis://{redis.host.global_PLACEHOLDER_36}:6379/2',
       name: 'celery.broker.global_PLACEHOLDER_38',
       title:
-        'What should the value be for Is there a redis host ConsoleMe can use as the Celery backend? Fully qualified URL required this time. If you want to\nreuse an existing endpoint, please select a different database than the one you used before (change /1 to /2) (Is there a redis host ConsoleMe can use as the Celery broker? Elasticache cluster preferred.)?',
+        'What should the value be for Is there a redis host NOQ can use as the Celery backend? Fully qualified URL required this time. If you want to\nreuse an existing endpoint, please select a different database than the one you used before (change /1 to /2) (Is there a redis host NOQ can use as the Celery broker? Elasticache cluster preferred.)?',
       type: 'text',
     },
     {
@@ -360,7 +360,7 @@ export const questions_json = {
       isRequired: true,
       name: 'ses.arn_PLACEHOLDER_41',
       title:
-        'What should the value be for SES ARN (SES configuration is necessary for ConsoleMe to send e-mails to your users. ConsoleMe sends e-mails to notify\nadministrators and requesters about policy requests applicable to them.)?',
+        'What should the value be for SES ARN (SES configuration is necessary for NOQ to send e-mails to your users. NOQ sends e-mails to notify\nadministrators and requesters about policy requests applicable to them.)?',
       type: 'text',
     },
     {
@@ -368,7 +368,7 @@ export const questions_json = {
       isRequired: true,
       name: 'ses.region_PLACEHOLDER_42',
       title:
-        'What should the value be for SES region (SES configuration is necessary for ConsoleMe to send e-mails to your users. ConsoleMe sends e-mails to notify\nadministrators and requesters about policy requests applicable to them.)?',
+        'What should the value be for SES region (SES configuration is necessary for NOQ to send e-mails to your users. NOQ sends e-mails to notify\nadministrators and requesters about policy requests applicable to them.)?',
       type: 'text',
     },
     {
@@ -377,7 +377,7 @@ export const questions_json = {
       isRequired: true,
       name: 'ses.consoleme.sender_PLACEHOLDER_43',
       title:
-        'Which email should be used for the SES email address ConsoleMe sends mail from (SES configuration is necessary for ConsoleMe to send e-mails to your users. ConsoleMe sends e-mails to notify\nadministrators and requesters about policy requests applicable to them.)?',
+        'Which email should be used for the SES email address NOQ sends mail from (SES configuration is necessary for NOQ to send e-mails to your users. NOQ sends e-mails to notify\nadministrators and requesters about policy requests applicable to them.)?',
       type: 'text',
       validators: [
         {
@@ -396,7 +396,7 @@ export const questions_json = {
       inputType: 'email',
       name: 'support_contact_PLACEHOLDER_45',
       title:
-        "Which email should be used for the support contact (This information is displayed in ConsoleMe's sidebar)?",
+        "Which email should be used for the support contact (This information is displayed in NOQ's sidebar)?",
       type: 'text',
       validators: [
         {
@@ -408,7 +408,7 @@ export const questions_json = {
       defaultValue: 'https://www.example.com/slack/channel',
       name: 'support_chat_url_PLACEHOLDER_46',
       title:
-        "What should the value be for support chat URL (This information is displayed in ConsoleMe's sidebar)?",
+        "What should the value be for support chat URL (This information is displayed in NOQ's sidebar)?",
       type: 'text',
     },
     {
@@ -416,14 +416,14 @@ export const questions_json = {
         'Please contact us at {support_contact_PLACEHOLDER_45} if you have any questions or concerns.',
       name: 'ses.support_reference_PLACEHOLDER_47',
       title:
-        'What should the value be for support reference added to the bottom of ConsoleMe emails that are sent to end-users (When ConsoleMe sends e-mail, the end of the message will contain this string.)?',
+        'What should the value be for support reference added to the bottom of NOQ emails that are sent to end-users (When NOQ sends e-mail, the end of the message will contain this string.)?',
       type: 'text',
     },
     {
       defaultValue: 'https://hawkins.gitbook.io/consoleme/',
       name: 'documentation_page_PLACEHOLDER_48',
       title:
-        "What should the value be for documentation page for more information (This information is displayed in ConsoleMe's sidebar)?",
+        "What should the value be for documentation page for more information (This information is displayed in NOQ's sidebar)?",
       type: 'text',
     },
     {
@@ -466,7 +466,7 @@ export const questions_json = {
       defaultValue: 'consoleme-authorized',
       name: 'cloud_credential_authorization_mapping.role_tags.authorized_groups_tags_PLACEHOLDER_53',
       title:
-        'Please provide a comma-seperated list of the tags on an IAM role that indicate the users/groups authorized to get credentials for a role\nin both the ConsoleMe UI and via CLI. You must prevent non-administrative users from modifying\nthese tags via an AWS Service Control Policy on your Organizations Master account. (ConsoleMe uses IAM role tags to determine who gets access to a role. Read more about this feature\nhere: https://hawkins.gitbook.io/consoleme/configuration/role-credential-authorization/role-tagging-recommended)',
+        'Please provide a comma-seperated list of the tags on an IAM role that indicate the users/groups authorized to get credentials for a role\nin both the NOQ UI and via CLI. You must prevent non-administrative users from modifying\nthese tags via an AWS Service Control Policy on your Organizations Master account. (NOQ uses IAM role tags to determine who gets access to a role. Read more about this feature\nhere: https://hawkins.gitbook.io/consoleme/configuration/role-credential-authorization/role-tagging-recommended)',
       type: 'text',
     },
     {
@@ -474,7 +474,7 @@ export const questions_json = {
       defaultValue: 'consoleme-owner-dl,consoleme-authorized-cli-only',
       name: 'cloud_credential_authorization_mapping.role_tags.authorized_groups_cli_only_tags_PLACEHOLDER_54',
       title:
-        'Please provide a comma-seperated list of the tags on an IAM role that indicate the users/groups authorized to get credentials for a role\nvia the CLI only. You must prevent non-administrative users from modifying\nthese tags via an AWS Service Control Policy on your Organizations Master account. (ConsoleMe uses IAM role tags to determine who gets access to a role. Read more about this feature\nhere: https://hawkins.gitbook.io/consoleme/configuration/role-credential-authorization/role-tagging-recommended)',
+        'Please provide a comma-seperated list of the tags on an IAM role that indicate the users/groups authorized to get credentials for a role\nvia the CLI only. You must prevent non-administrative users from modifying\nthese tags via an AWS Service Control Policy on your Organizations Master account. (NOQ uses IAM role tags to determine who gets access to a role. Read more about this feature\nhere: https://hawkins.gitbook.io/consoleme/configuration/role-credential-authorization/role-tagging-recommended)',
       type: 'text',
     },
   ],

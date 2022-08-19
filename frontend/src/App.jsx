@@ -13,7 +13,7 @@ import ConsoleMeDynamicConfig from './components/DynamicConfig'
 import PolicyRequestReview from './components/request/PolicyRequestsReview'
 import PolicyEditor from './components/policy/PolicyEditor'
 import ConsoleLogin from './components/ConsoleLogin'
-import ConsoleMeChallengeValidator from './components/challenge/ConsoleMeChallengeValidator'
+import ChallengeValidator from './components/challenge/ChallengeValidator'
 import CreateCloneFeature from './components/roles/CreateCloneFeature'
 // import Login from './components/Login'
 import Logout from './components/Logout'
@@ -135,7 +135,7 @@ function App() {
           key='challenge_validator'
           exact
           path='/challenge_validator/:challengeToken'
-          component={ConsoleMeChallengeValidator}
+          component={ChallengeValidator}
         />
         <ProtectedDashboardRoute
           key='create_role'
