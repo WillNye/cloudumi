@@ -6,12 +6,7 @@ import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { SelectAccount } from '../../../utils'
 import { Bar, Fill } from 'lib/Misc'
 
-export const NewOrganization = ({
-  closeModal,
-  onFinish,
-  defaultValues,
-  editMode,
-}) => {
+export const NewOrganization = ({ closeModal, onFinish, defaultValues }) => {
   const { register, handleSubmit, watch, setValue } = useForm({ defaultValues })
 
   const { post } = useApi('services/aws/account/org')
@@ -66,10 +61,7 @@ export const NewOrganization = ({
       <Form onSubmit={handleSubmit(onSubmit)}>
         <Form.Field>
           <label>Organization Id</label>
-          <input
-            {...register('org_id', { required: true })}
-            disabled={editMode}
-          />
+          <input {...register('org_id', { required: true })} />
         </Form.Field>
 
         <SelectAccount

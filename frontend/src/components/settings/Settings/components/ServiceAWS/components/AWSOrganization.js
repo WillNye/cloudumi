@@ -12,7 +12,6 @@ import { Bar, Fill } from 'lib/Misc'
 
 export const AWSOrganization = () => {
   const [defaultValues, setDefaultValues] = useState({})
-  const [editMode, setEditMode] = useState(false)
 
   const { get, post, remove } = useApi('services/aws/account/org', {
     shouldPersist: true,
@@ -29,7 +28,7 @@ export const AWSOrganization = () => {
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do({ org_id: rowValues?.org_id })
+        .do({ uuid: rowValues?.uuid })
         .then(() => {
           success('Organization removed')
           get.do()
@@ -44,7 +43,6 @@ export const AWSOrganization = () => {
         account_name: `${rowValues.account_name} - ${rowValues.account_id}`,
       }
       setDefaultValues(newDefaultValues)
-      setEditMode(true)
       openModal()
     }
   }
@@ -55,7 +53,6 @@ export const AWSOrganization = () => {
   }
 
   const handleClose = () => {
-    setEditMode(false)
     setDefaultValues({})
     post.reset()
   }
@@ -113,7 +110,6 @@ export const AWSOrganization = () => {
           closeModal={closeModal}
           onFinish={handleFinish}
           defaultValues={defaultValues}
-          editMode={editMode}
         />
       </ModalComponent>
     </>
