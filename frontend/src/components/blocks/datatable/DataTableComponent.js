@@ -62,7 +62,7 @@ const DataTableComponent = ({ config, mock }) => {
     )
   }
 
-  // TODO, if redirection is happening within ConsoleMe namespace then use useHistory
+  // TODO, if redirection is happening within NOQ namespace then use useHistory
   if (redirect) {
     return (
       <BrowserRouter forceRefresh>

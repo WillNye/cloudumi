@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Header } from 'semantic-ui-react'
-import ConsoleMeDataTable from '../blocks/datatable/DataTableComponent'
+import DataTable from '../blocks/datatable/DataTableComponent'
 import { useAuth } from '../../auth/AuthProviderDefault'
 import ReactMarkdown from 'react-markdown'
 
@@ -41,7 +41,7 @@ const RequestTable = () => {
           />
         </Header.Subheader>
       </Header>
-      <ConsoleMeDataTable config={tableConfig} {...auth} />
+      <DataTable config={tableConfig} {...auth} />
     </>
   )
 }
