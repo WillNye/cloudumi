@@ -28,7 +28,7 @@ export const AWSOrganization = () => {
   const handleClick = (action, rowValues) => {
     if (action === 'remove') {
       remove
-        .do({ uuid: rowValues?.uuid })
+        .do({ uuid: rowValues?.uuid, org_id: rowValues?.org_id })
         .then(() => {
           success('Organization removed')
           get.do()
