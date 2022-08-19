@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Button, Header } from 'semantic-ui-react'
-import ConsoleMeDataTable from '../blocks/datatable/DataTableComponent'
+import DataTable from '../blocks/datatable/DataTableComponent'
 import ReactMarkdown from 'react-markdown'
 import { useAuth } from '../../auth/AuthProviderDefault'
 
@@ -45,7 +45,7 @@ const IdentityUsersTable = () => {
       <Button basic color='blue'>
         Add User
       </Button>
-      <ConsoleMeDataTable config={tableConfig} {...auth} />
+      <DataTable config={tableConfig} {...auth} />
     </>
   )
 }

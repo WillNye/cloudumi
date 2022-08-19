@@ -74,9 +74,8 @@ const Issues = () => {
             Recent Permission Errors {errorLink()}
             <Header.Subheader>
               This section shows Cloudtrail permission errors discovered for
-              this resource in the last 24 hours. If enabled, ConsoleMe will
-              generate a policy to try to resolve the issue. This is an alpha
-              feature.
+              this resource in the last 24 hours. If enabled, NOQ will generate
+              a policy to try to resolve the issue. This is an alpha feature.
             </Header.Subheader>
           </Header>
           <Table celled>

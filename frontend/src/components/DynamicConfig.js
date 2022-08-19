@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../auth/AuthProviderDefault'
 import { getLocalStorageSettings } from '../helpers/utils'
 
-function ConsoleMeDynamicConfig() {
+function DynamicConfig() {
   const [config, setConfig] = useState('')
   const [configSha256, setConfigSha256] = useState('')
   const [statusMessage, setStatusMessage] = useState(null)
@@ -111,4 +111,4 @@ function ConsoleMeDynamicConfig() {
   )
 }
 
-export default ConsoleMeDynamicConfig
+export default DynamicConfig

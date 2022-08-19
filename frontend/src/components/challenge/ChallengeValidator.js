@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/AuthProviderDefault'
 import { Button } from 'semantic-ui-react'
 import ReactMarkdown from 'react-markdown'
 
-const ConsoleMeChallengeValidator = () => {
+const ChallengeValidator = () => {
   const { challengeToken } = useParams()
   const [result, setResult] = useState('')
   const [showApproveButton, setShowApproveButton] = useState(false)
@@ -50,4 +50,4 @@ const ConsoleMeChallengeValidator = () => {
   )
 }
 
-export default ConsoleMeChallengeValidator
+export default ChallengeValidator
