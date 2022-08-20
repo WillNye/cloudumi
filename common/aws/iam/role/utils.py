@@ -913,6 +913,9 @@ async def get_roles_as_resource(
 ):
     from common.aws.iam.role.models import IAMRole
 
+    if not viewable_accounts:
+        return resource_map
+
     account_map = await get_account_id_to_name_mapping(tenant)
 
     iam_roles = await IAMRole.query(

@@ -8,6 +8,7 @@ import {
   Loader,
   Message,
   Segment,
+  Table,
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import {
@@ -150,6 +151,25 @@ const InlinePolicyChangeComponent = (props) => {
           Inline Policy Change - {change.policy_name} {newPolicy}
         </Header>
       )
+    } else if (change.change_type === 'policy_condenser') {
+      return (
+        <div>
+          <Header size='large'>Simplified Policy Change</Header>
+          <br />
+          <Table celled definition striped collapsing>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell>
+                  <b>Remove Managed Policies</b>
+                </Table.Cell>
+                <Table.Cell>
+                  {change.detach_managed_policies ? 'Yes' : 'No'}
+                </Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table>
+        </div>
+      )
     } else {
       return <Header size='large'>Managed Policy Change</Header>
     }
@@ -226,19 +246,37 @@ const InlinePolicyChangeComponent = (props) => {
 
       <Grid.Row columns='equal'>
         <Grid.Column>
-          <Header
-            size='medium'
-            content='Current Policy'
-            subheader='This is a read-only view of the current policy in AWS.'
-          />
+          {change.change_type === 'policy_condenser' ? (
+            <Header
+              size='medium'
+              content='Existing Policies (Simplified)'
+              subheader='This is a read-only view of the current policies of the
+              identity condensed and minimized into a single policy.'
+            ></Header>
+          ) : (
+            <Header
+              size='medium'
+              content='Current Policy'
+              subheader='This is a read-only view of the current policy in AWS.'
+            />
+          )}
         </Grid.Column>
         <Grid.Column>
-          <Header
-            size='medium'
-            content='Proposed Policy'
-            subheader='This is an editable view of the proposed policy.
+          {change.change_type === 'policy_condenser' ? (
+            <Header
+              size='medium'
+              content='Proposed Policy (With Unused Permissions Removed)'
+              subheader='This is an editable view of the simplifed policy with unused permissions removed.
+            An approver can modify the policy before approving and applying it.'
+            ></Header>
+          ) : (
+            <Header
+              size='medium'
+              content='Proposed Policy'
+              subheader='This is an editable view of the proposed policy.
               An approver can modify the proposed policy before approving and applying it.'
-          />
+            />
+          )}
         </Grid.Column>
       </Grid.Row>
 

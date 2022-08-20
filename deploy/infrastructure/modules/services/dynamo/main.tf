@@ -487,14 +487,14 @@ resource "aws_dynamodb_table" "cloudumi_iamroles_multitenant_v2" {
   name           = "${var.cluster_id}_cloudumi_iamroles_multitenant_v2"
   hash_key       = "tenant"
   range_key      = "entity_id"
-  read_capacity  = 1
-  write_capacity = 10
+  read_capacity  = 10
+  write_capacity = 15
   global_secondary_index {
     name            = "tenant_index"
     hash_key        = "tenant"
     projection_type = "ALL"
-    read_capacity   = 1
-    write_capacity  = 10
+    read_capacity   = 10
+    write_capacity  = 15
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
@@ -591,14 +591,14 @@ resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant_v2" {
   hash_key       = "tenant"
   range_key      = "entity_id"
   read_capacity  = 1
-  write_capacity = 1
+  write_capacity = 5
   global_secondary_index {
     name            = "tenant-arn-index"
     hash_key        = "tenant"
     range_key       = "arn"
     projection_type = "ALL"
     read_capacity   = 1
-    write_capacity  = 1
+    write_capacity  = 5
   }
   global_secondary_index {
     name            = "tenant-index"
@@ -688,7 +688,8 @@ module "table_autoscaling_v2_10" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
   table_name         = aws_dynamodb_table.cloudumi_iamroles_multitenant_v2.id
-  write_min_capacity = 10
+  read_min_capacity  = 10
+  write_min_capacity = 15
 }
 
 module "table_autoscaling_v2_11" {
@@ -699,5 +700,6 @@ module "table_autoscaling_v2_11" {
 module "table_autoscaling_v2_12" {
   source = "snowplow-devops/dynamodb-autoscaling/aws"
 
-  table_name = aws_dynamodb_table.cloudumi_resource_cache_multitenant_v2.id
+  table_name         = aws_dynamodb_table.cloudumi_resource_cache_multitenant_v2.id
+  write_min_capacity = 5
 }
