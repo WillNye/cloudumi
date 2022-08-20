@@ -222,7 +222,7 @@ const IAMRolePolicy = () => {
     tabs.push({
       menuItem: {
         key: 'effective_permissions',
-        content: <>Effective Policy and Unused Permissions</>,
+        content: <>Simplified Policy</>,
       },
       render: () => {
         return (

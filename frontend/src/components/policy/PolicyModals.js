@@ -2,7 +2,9 @@ import React, { useState } from 'react'
 import { DateTime } from 'luxon'
 import {
   Button,
+  Checkbox,
   Dimmer,
+  Divider,
   Form,
   Header,
   Loader,
@@ -39,7 +41,11 @@ const StatusMessage = ({ message, isSuccess }) => {
   return null
 }
 
-export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
+export const JustificationModal = ({
+  handleSubmit,
+  showExpirationDate,
+  showDetachManagedPolicy = false,
+}) => {
   const {
     adminAutoApprove = false,
     context = 'inline_policy',
@@ -55,6 +61,7 @@ export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
   const [message, setMessage] = useState('')
   const [justification, setJustification] = useState('')
   const [expirationDate, setExpirationDate] = useState(null)
+  const [detachManagedPolicy, setDetachManagedPolicy] = useState(true)
 
   const handleJustificationUpdate = (e) => {
     setJustification(e.target.value)
@@ -75,6 +82,7 @@ export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
       context,
       justification,
       expirationDate,
+      detachManagedPolicies: detachManagedPolicy,
     })
 
     setMessage(response.message)
@@ -119,6 +127,17 @@ export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
           <StatusMessage isSuccess={isSuccess} message={message} />
           {!isSuccess && (
             <>
+              {showDetachManagedPolicy && (
+                <>
+                  You are about to request a generated policy that contains all
+                  of the actions taken by your AWS Identity in the past 90 days.
+                  It will replace all of your existing inline policies, and if
+                  desired, your managed policies as well. You will have the
+                  opportunity to modify this policy before it is approved.
+                  <br />
+                  <br />
+                </>
+              )}
               <Form>
                 <TextArea
                   placeholder='Tell us why you need this change'
@@ -132,7 +151,7 @@ export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
                 <>
                   <Header as='h6'>
                     <Header.Subheader>
-                      (Optional) Set expiration date for requested policy If no
+                      (Optional) Set expiration date for requested policy. If no
                       date is set, the policy will not expire.
                     </Header.Subheader>
                   </Header>
@@ -145,6 +164,17 @@ export const JustificationModal = ({ handleSubmit, showExpirationDate }) => {
                     onChange={handleSetPolicyExpiration}
                     type='basic'
                     compact
+                  />
+                </>
+              )}
+
+              {showDetachManagedPolicy && (
+                <>
+                  <Divider horizontal />
+                  <Checkbox
+                    label='Also Detach Existing Managed Policies'
+                    onChange={(e, data) => setDetachManagedPolicy(data.checked)}
+                    checked={detachManagedPolicy}
                   />
                 </>
               )}
