@@ -48,7 +48,9 @@ const EffectivePermissions = () => {
               <Header.Subheader>
                 <br />
                 This feature allows you to view the simplified policy of your
-                identity.
+                identity. Information on this page may be up to 8 hours out of
+                date. Please note this is a beta feature. We would appreciate
+                your feedback and ideas for improvement.
                 <br />
                 <br />
                 A policy is simplifed by combining all of the identity's inline
