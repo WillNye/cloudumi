@@ -20,4 +20,4 @@ class SpokeAccountConfigurationCrudHandler(MultiItemConfigurationCrudHandler):
 class OrgAccountConfigurationCrudHandler(MultiItemConfigurationCrudHandler):
     _model_class = OrgAccount
     _config_key = "org_accounts"
-    _identifying_keys = ["org_id"]
+    _identifying_keys = ["uuid"]

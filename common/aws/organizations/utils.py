@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Dict, Set, Tuple
 
 import boto3
@@ -401,6 +402,10 @@ async def autodiscover_aws_org_accounts(tenant: str) -> set[str]:
 
 async def cache_org_structure(tenant: str) -> Dict[str, Any]:
     """Store a dictionary of the organization structure in the cache"""
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "tenant": tenant,
+    }
     all_org_structure = {}
     spoke_accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant)
     for organization in (
@@ -422,10 +427,27 @@ async def cache_org_structure(tenant: str) -> Dict[str, Any]:
                 "Noq doesn't know what role to assume to retrieve account information "
                 "from AWS Organizations. please set the appropriate configuration value."
             )
-        org_structure = await retrieve_org_structure(
-            org_account_id, tenant, role_to_assume=role_to_assume, region=config.region
-        )
-        all_org_structure.update(org_structure)
+        try:
+            org_structure = await retrieve_org_structure(
+                org_account_id,
+                tenant,
+                role_to_assume=role_to_assume,
+                region=config.region,
+            )
+            all_org_structure.update(org_structure)
+        except Exception as e:
+            sentry_sdk.capture_exception()
+            log.error(
+                {
+                    **log_data,
+                    "message": "Unable to retrieve roles from AWS Organizations",
+                    "error": str(e),
+                    "org_account_id": org_account_id,
+                    "role_to_assume": role_to_assume,
+                    "region": config.region,
+                },
+                exc_info=True,
+            )
     redis_key = config.get_tenant_specific_key(
         "cache_organization_structure.redis.key.org_structure_key",
         tenant,

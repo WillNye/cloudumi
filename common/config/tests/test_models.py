@@ -27,7 +27,7 @@ class UnitTestModel(BaseModel):
     hub_account_arn: str = Field(
         ..., description="Links to the designated hub role ARN"
     )
-    master_for_account: Optional[bool] = Field(
+    org_management_account: Optional[bool] = Field(
         False,
         description="Optional value (defaults to false) to indicate whether this spoke role has master access rights on the account",
     )
@@ -39,7 +39,7 @@ test_model_dict = {
     "role_arn": "iam:aws:something:::yes",
     "external_id": "test_external_id",
     "hub_account_arn": "iam:aws:hub:account:this",
-    "master_for_account": True,
+    "org_management_account": True,
 }
 
 test_model_list_dict = [
@@ -49,7 +49,7 @@ test_model_list_dict = [
         "role_arn": "iam:aws:something:::yes",
         "external_id": "test_external_id",
         "hub_account_arn": "iam:aws:hub:account:this",
-        "master_for_account": True,
+        "org_management_account": True,
     },
     {
         "name": "test_model_two",
@@ -57,7 +57,7 @@ test_model_list_dict = [
         "role_arn": "iam:aws:something:::yes",
         "external_id": "test_external_id",
         "hub_account_arn": "iam:aws:hub:account:this",
-        "master_for_account": True,
+        "org_management_account": True,
     },
 ]
 
@@ -125,7 +125,7 @@ class UnitTestModels(TestCase):
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
-            "master_for_account": True,
+            "org_management_account": True,
         }
         tenant_config["auth"]["other"] = dict()
         tenant_config["auth"]["other"]["something"] = {
@@ -168,7 +168,7 @@ class UnitTestModels(TestCase):
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
-            "master_for_account": True,
+            "org_management_account": True,
         }
         model_adapter = (
             ModelAdapter(UnitTestModel)
@@ -198,7 +198,7 @@ class UnitTestModels(TestCase):
             "role_arn": "iam:aws:something:::yes_before",
             "external_id": "test_external_id_before",
             "hub_account_arn": "iam:aws:hub:account:this_Before",
-            "master_for_account": True,
+            "org_management_account": True,
         }
         tenant_config["auth"]["other"] = dict()
         tenant_config["auth"]["other"]["something"] = {
@@ -320,7 +320,7 @@ class UnitTestModels(TestCase):
                     "role_arn": "iam:aws:something:::yes",
                     "external_id": "test_external_id",
                     "hub_account_arn": "iam:aws:hub:account:this",
-                    "master_for_account": True,
+                    "org_management_account": True,
                 }
             )
         )
@@ -350,7 +350,7 @@ class UnitTestModels(TestCase):
                     "role_arn": "iam:aws:something:::no",
                     "external_id": "_test_update_",
                     "hub_account_arn": "iam:aws:hub:account:that",
-                    "master_for_account": False,
+                    "org_management_account": False,
                 }
             )
         )
@@ -369,5 +369,5 @@ class UnitTestModels(TestCase):
         assert test_model_one.get("role_arn") == "iam:aws:something:::no"
         assert test_model_one.get("external_id") == "_test_update_"
         assert test_model_one.get("hub_account_arn") == "iam:aws:hub:account:that"
-        assert test_model_one.get("master_for_account") is False
+        assert test_model_one.get("org_management_account") is False
         assert async_to_sync(model_adapter.delete_list)()

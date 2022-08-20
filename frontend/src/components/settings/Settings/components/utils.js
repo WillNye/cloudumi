@@ -5,11 +5,18 @@ import { Fill, Bar } from 'lib/Misc'
 import { useApi } from 'hooks/useApi'
 import { useHelpModal } from 'lib/hooks/useHelpModal'
 
-export const SelectAccount = ({ register, label, options = [] }) => {
+export const SelectAccount = ({
+  register,
+  label,
+  options = [],
+  onOptionsLoad,
+}) => {
   const { get } = useApi('services/aws/account/spoke')
 
   useEffect(() => {
-    get.do()
+    get.do().then(() => {
+      onOptionsLoad && onOptionsLoad()
+    })
     return () => {
       get.reset()
     }
