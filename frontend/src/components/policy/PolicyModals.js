@@ -127,6 +127,17 @@ export const JustificationModal = ({
           <StatusMessage isSuccess={isSuccess} message={message} />
           {!isSuccess && (
             <>
+              {showDetachManagedPolicy && (
+                <>
+                  You are about to request a generated policy that contains all
+                  of the actions taken by your AWS Identity in the past 90 days.
+                  It will replace all of your existing inline policies, and if
+                  desired, your managed policies as well. You will have the
+                  opportunity to modify this policy before it is approved.
+                  <br />
+                  <br />
+                </>
+              )}
               <Form>
                 <TextArea
                   placeholder='Tell us why you need this change'
@@ -140,7 +151,7 @@ export const JustificationModal = ({
                 <>
                   <Header as='h6'>
                     <Header.Subheader>
-                      (Optional) Set expiration date for requested policy If no
+                      (Optional) Set expiration date for requested policy. If no
                       date is set, the policy will not expire.
                     </Header.Subheader>
                   </Header>
@@ -161,7 +172,7 @@ export const JustificationModal = ({
                 <>
                   <Divider horizontal />
                   <Checkbox
-                    label='Show Detach Managed Policy'
+                    label='Also Detach Existing Managed Policies'
                     onChange={(e, data) => setDetachManagedPolicy(data.checked)}
                     checked={detachManagedPolicy}
                   />

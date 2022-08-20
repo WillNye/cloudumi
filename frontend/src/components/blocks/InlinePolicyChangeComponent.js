@@ -8,6 +8,7 @@ import {
   Loader,
   Message,
   Segment,
+  Table,
 } from 'semantic-ui-react'
 import MonacoDiffComponent from './MonacoDiffComponent'
 import {
@@ -152,9 +153,22 @@ const InlinePolicyChangeComponent = (props) => {
       )
     } else if (change.change_type === 'policy_condenser') {
       return (
-        <Header size='large'>
-          Condensed Effective Permissions Policy Change
-        </Header>
+        <div>
+          <Header size='large'>Simplified Policy Change</Header>
+          <br />
+          <Table celled definition striped collapsing>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell>
+                  <b>Remove Managed Policies</b>
+                </Table.Cell>
+                <Table.Cell>
+                  {change.detach_managed_policies ? 'Yes' : 'No'}
+                </Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table>
+        </div>
       )
     } else {
       return <Header size='large'>Managed Policy Change</Header>
@@ -235,8 +249,9 @@ const InlinePolicyChangeComponent = (props) => {
           {change.change_type === 'policy_condenser' ? (
             <Header
               size='medium'
-              content='Effective Permissions Policy'
-              subheader='This is a read-only view of the current effective permissions policy in AWS.'
+              content='Existing Policies (Simplified)'
+              subheader='This is a read-only view of the current policies of the
+              identity condensed and minimized into a single policy.'
             ></Header>
           ) : (
             <Header
@@ -250,8 +265,8 @@ const InlinePolicyChangeComponent = (props) => {
           {change.change_type === 'policy_condenser' ? (
             <Header
               size='medium'
-              content='Condensed Effective Permissions Policy'
-              subheader='This is an editable view of the condensed effective permissions policy.
+              content='Proposed Policy (With Unused Permissions Removed)'
+              subheader='This is an editable view of the simplifed policy with unused permissions removed.
             An approver can modify the policy before approving and applying it.'
             ></Header>
           ) : (

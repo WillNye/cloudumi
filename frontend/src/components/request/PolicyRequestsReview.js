@@ -311,8 +311,23 @@ class PolicyRequestReview extends Component {
     const requestDetails = extendedRequest ? (
       <Table celled definition striped>
         <Table.Body>
+          {extendedRequest.arn_url ? (
+            <Table.Row>
+              <Table.Cell>ARN</Table.Cell>
+              <Table.Cell>
+                <a
+                  href={extendedRequest.arn_url}
+                  target='_blank'
+                  rel='noreferrer'
+                >
+                  {' '}
+                  {extendedRequest?.principal?.principal_arn}
+                </a>
+              </Table.Cell>
+            </Table.Row>
+          ) : null}
           <Table.Row>
-            <Table.Cell>User</Table.Cell>
+            <Table.Cell>Requester</Table.Cell>
             <Table.Cell>
               <Header size='medium'>
                 {requesterName}
@@ -370,21 +385,6 @@ class PolicyRequestReview extends Component {
               <Table.Cell negative>{extendedRequest.request_status}</Table.Cell>
             )}
           </Table.Row>
-          {extendedRequest.arn_url ? (
-            <Table.Row>
-              <Table.Cell>ARN</Table.Cell>
-              <Table.Cell>
-                <a
-                  href={extendedRequest.arn_url}
-                  target='_blank'
-                  rel='noreferrer'
-                >
-                  {' '}
-                  {extendedRequest?.principal?.principal_arn}
-                </a>
-              </Table.Cell>
-            </Table.Row>
-          ) : null}
           {extendedRequest.reviewer ? (
             <Table.Row>
               <Table.Cell>Reviewer</Table.Cell>
@@ -668,9 +668,7 @@ class PolicyRequestReview extends Component {
     const pageContent =
       messagesToShow === null ? (
         <>
-          <Header size='huge'>
-            Request Review for: {extendedRequest?.principal?.principal_arn}
-          </Header>
+          <Header>Policy Request Review</Header>
           {requestDetails}
           {templateContent}
           {descriptionContent}

@@ -39,19 +39,41 @@ const EffectivePermissions = () => {
 
   const panes = [
     {
-      menuItem: 'Effective and Unused Permissions',
+      menuItem: 'Simplified Policy',
       render: () => (
         <Tab.Pane attached={false}>
           <>
             <Header as='h2'>
-              Effective Permissions
+              Simplified Policy
               <Header.Subheader>
-                The effective permissions of a role are a combination of the
-                permissions contained in a role's inline policies and managed
-                policies. The effective permissions are de-duplicated,
-                minimized, and alphabetically sorted. This policy shows all
-                permissions removed if they have not been used in the last 90
-                days.
+                <br />
+                This feature allows you to view the simplified policy of your
+                identity.
+                <br />
+                <br />
+                A policy is simplifed by combining all of the identity's inline
+                and managed policies into a single policy. Permissions are then
+                de-duplicated and alphabetically sorted.
+                <br />
+                <br />
+                This view also utilizes data from Access Advisor to show
+                permissions that have not been used in the last 90 days.
+                <br />
+                <br />
+                The button on the bottom allows you to request that the policies
+                of this identity be replaced with the simplified policy, with
+                unused permissions removed. You will be prompted before a
+                justification before the request is created. An administrator,
+                or a delegated administrator for the account, will need to
+                approve the request before it is applied.
+                <br />
+                <br />
+                After the request is approved, Noq will proceed to add the
+                simplified policy to the identity, and then remove all existing
+                inline policies and detach managed policies. The removal of
+                managed policies is optional. If you would like more control
+                over the simplified policy, you may view and utilize the Python
+                or AWS CLI versions.
               </Header.Subheader>
             </Header>
             <Segment
@@ -72,7 +94,7 @@ const EffectivePermissions = () => {
                   {resourceEffectivePermissions.effective_policy !==
                   resourceEffectivePermissions.effective_policy_unused_permissions_removed ? (
                     <MonacoDiffComponent
-                      renderSideBySide={false}
+                      renderSideBySide={true}
                       onLintError={onLintError}
                       oldValue={JSON.stringify(
                         resourceEffectivePermissions.effective_policy,
@@ -87,6 +109,7 @@ const EffectivePermissions = () => {
                       enableJSON={true}
                       enableTerraform={false}
                       enableCloudFormation={false}
+                      readOnly={false}
                     />
                   ) : (
                     <ReadOnlyPolicyMonacoEditor
@@ -106,7 +129,7 @@ const EffectivePermissions = () => {
       ),
     },
     {
-      menuItem: 'Remove Unused Permissions With AWS CLI',
+      menuItem: 'Simplify Policy with AWS CLI',
       render: () => (
         <Tab.Pane attached={false}>
           <ReadOnlyPolicyMonacoEditor
@@ -121,7 +144,7 @@ const EffectivePermissions = () => {
       ),
     },
     {
-      menuItem: 'Remove Unused Permissions With Python',
+      menuItem: 'Simplify Policy With Python',
       render: () => (
         <Tab.Pane attached={false}>
           <ReadOnlyPolicyMonacoEditor
@@ -148,7 +171,7 @@ const EffectivePermissions = () => {
             <Button
               primary
               icon='send'
-              content='Request Condense Policy and Remove Unused Permissions'
+              content='Request Condensed Policy with Unused Permissions Removed'
               onClick={onEffectivePolicySubmit}
               disabled={
                 !resourceEffectivePermissions?.effective_policy_unused_permissions_removed
