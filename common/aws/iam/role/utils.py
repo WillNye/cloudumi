@@ -802,6 +802,14 @@ async def update_role_tear_config(
 
 
 async def update_assume_role_policy_trust_noq(tenant, user, role_name, account_id):
+    log_data = {
+        "function": "update_assume_role_policy_trust_noq",
+        "message": "Updating assume role policy",
+        "tenant": tenant,
+        "user": user,
+        "role_name": role_name,
+        "account_id": account_id,
+    }
     client = await aio_wrapper(
         get_tenant_iam_conn,
         tenant,
@@ -835,6 +843,7 @@ async def update_assume_role_policy_trust_noq(tenant, user, role_name, account_i
     client.update_assume_role_policy(
         RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
     )
+    log.debug(log_data)
     return True
 
 

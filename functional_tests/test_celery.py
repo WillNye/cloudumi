@@ -58,7 +58,6 @@ class TestCelery(FunctionalTest):
                 ),
                 executor.submit(
                     celery.handle_tenant_aws_integration_queue,
-                    TEST_USER_DOMAIN_US,
                 ),
                 executor.submit(
                     celery.cache_access_advisor_for_account,
