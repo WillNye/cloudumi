@@ -445,7 +445,7 @@ class Configuration(metaclass=Singleton):
         #         self.tenant_configs[tenant]["last_updated"] = last_updated
         # If local variables and Redis config cache for the tenant are still older than 60 seconds,
         # pull from Dynamo, update local cache, redis cache, and in-memory variables
-        if current_time - last_updated > 60:
+        if current_time - last_updated > 10:
             self.copy_tenant_config_dynamo_to_redis(tenant)
 
         # Convert commented map to dictionary
