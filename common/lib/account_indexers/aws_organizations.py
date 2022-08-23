@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Dict, List, Literal
 
 import botocore.exceptions
@@ -18,6 +19,8 @@ from common.models import (
     ServiceControlPolicyTargetModel,
     SpokeAccount,
 )
+
+log = config.get_logger()
 
 
 async def retrieve_accounts_from_aws_organizations(tenant) -> CloudAccountModelArray:
@@ -282,7 +285,7 @@ async def retrieve_org_structure(
 async def retrieve_scps_for_organization(
     org_account_id: str,
     tenant: str,
-    role_to_assume: str = "ConsoleMe",
+    role_to_assume: str = "NoqSpokeRole",
     region: str = "us-east-1",
 ) -> List[ServiceControlPolicyModel]:
     """Return a ServiceControlPolicyArrayModel containing all SCPs for an organization
@@ -291,6 +294,15 @@ async def retrieve_scps_for_organization(
         org_account_id: ID for AWS account containing org(s)
         region: AWS region
     """
+
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "org_account_id": org_account_id,
+        "tenant": tenant,
+        "role_to_assume": role_to_assume,
+        "region": region,
+    }
+
     conn_details = {
         "tenant": tenant,
         "assume_role": role_to_assume,
@@ -316,6 +328,13 @@ async def retrieve_scps_for_organization(
                 policy=ServiceControlPolicyDetailsModel(**policy),
             )
             all_scp_objects.append(scp_object.dict())
-    except botocore.exceptions.ClientError:
-        pass
+    except botocore.exceptions.ClientError as e:
+        log.error(
+            {
+                **log_data,
+                "message": "Unable to get IAM principal owner",
+                "error": str(e),
+            },
+            exc_info=True,
+        )
     return all_scp_objects

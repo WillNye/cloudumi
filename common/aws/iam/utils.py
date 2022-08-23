@@ -2,6 +2,7 @@ import copy
 import json
 import os
 import pathlib
+import sys
 from typing import Optional
 
 from common.config import config
@@ -9,6 +10,8 @@ from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
 from common.models import SpokeAccount
+
+log = config.get_logger()
 
 with open(
     os.path.join(
@@ -46,7 +49,7 @@ def get_tenant_iam_conn(
         retry_max_attempts=2,
         client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
         session_name=sanitize_session_name(session_name),
-        **kwargs
+        **kwargs,
     )
 
 
@@ -104,6 +107,10 @@ async def get_iam_principal_owner(arn: str, tenant: str) -> Optional[str]:
     from common.aws.iam.user.utils import fetch_iam_user
     from common.aws.utils import ResourceSummary
 
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "arn": arn,
+    }
     principal_details = {}
     resource_summary = await ResourceSummary.set(tenant, arn)
     principal_type = resource_summary.resource_type
@@ -115,6 +122,14 @@ async def get_iam_principal_owner(arn: str, tenant: str) -> Optional[str]:
 
         elif principal_type == "user":
             principal_details = await fetch_iam_user(account_id, arn, tenant)
-    except ValueError:
+    except ValueError as e:
+        log.error(
+            {
+                **log_data,
+                "message": "Unable to get IAM principal owner",
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         return None
     return principal_details.get("owner")

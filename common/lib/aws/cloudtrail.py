@@ -1,5 +1,6 @@
 import base64
 import json as original_json
+import sys
 import time
 from collections import defaultdict
 
@@ -21,6 +22,8 @@ from common.lib.notifications.models import (
 from common.lib.slack import send_slack_notification_new_notification
 from common.models import SpokeAccount
 
+log = config.get_logger()
+
 
 class CloudTrail:
     async def process_cloudtrail_errors(self, tenant, user) -> object:
@@ -30,6 +33,12 @@ class CloudTrail:
 
         :return:
         """
+
+        log_data = {
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "tenant": tenant,
+            "user": user,
+        }
         notification_ttl_seconds = config.get_tenant_specific_key(
             "process_cloudtrail_errors.notification_ttl",
             tenant,
@@ -74,8 +83,16 @@ class CloudTrail:
                     .first.name
                 )
 
-            except ValueError:
+            except ValueError as e:
                 # We don't have a spoke account for tenant
+                log.error(
+                    {
+                        **log_data,
+                        "message": "Unable to get IAM principal owner",
+                        "error": str(e),
+                    },
+                    exc_info=True,
+                )
                 continue
             principal_name = resource_summary.name
             url_role_path = (
