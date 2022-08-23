@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Literal
 
+import botocore.exceptions
 from botocore.exceptions import ClientError
 
 from common.config import config
@@ -301,15 +302,20 @@ async def retrieve_scps_for_organization(
         ),
     }
     ca = ConsoleMeCloudAux(**conn_details)
-    all_scp_metadata = await aio_wrapper(_list_service_control_policies, ca)
     all_scp_objects = []
-    for scp_metadata in all_scp_metadata:
-        targets = await aio_wrapper(_list_targets_for_policy, ca, scp_metadata["Id"])
-        policy = await _get_service_control_policy(ca, scp_metadata["Id"])
-        target_models = [ServiceControlPolicyTargetModel(**t) for t in targets]
-        scp_object = ServiceControlPolicyModel(
-            targets=target_models,
-            policy=ServiceControlPolicyDetailsModel(**policy),
-        )
-        all_scp_objects.append(scp_object.dict())
+    try:
+        all_scp_metadata = await aio_wrapper(_list_service_control_policies, ca)
+        for scp_metadata in all_scp_metadata:
+            targets = await aio_wrapper(
+                _list_targets_for_policy, ca, scp_metadata["Id"]
+            )
+            policy = await _get_service_control_policy(ca, scp_metadata["Id"])
+            target_models = [ServiceControlPolicyTargetModel(**t) for t in targets]
+            scp_object = ServiceControlPolicyModel(
+                targets=target_models,
+                policy=ServiceControlPolicyDetailsModel(**policy),
+            )
+            all_scp_objects.append(scp_object.dict())
+    except botocore.exceptions.ClientError:
+        pass
     return all_scp_objects

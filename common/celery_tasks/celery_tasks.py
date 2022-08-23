@@ -20,6 +20,7 @@ import celery
 import sentry_sdk
 from asgiref.sync import async_to_sync
 from billiard.exceptions import SoftTimeLimitExceeded
+from botocore.exceptions import ClientError
 from celery import group
 from celery.app.task import Context
 from celery.concurrency import asynpool
@@ -1785,20 +1786,25 @@ def cache_sns_topics_for_account(
             if not spoke_role_name:
                 log.error({**log_data, "message": "No spoke role name found"})
                 return
-            topics = list_topics(
-                tenant=tenant,
-                account_number=account_id,
-                assume_role=spoke_role_name,
-                region=region,
-                read_only=True,
-                sts_client_kwargs=dict(
-                    region_name=config.region,
-                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-                ),
-                client_kwargs=config.get_tenant_specific_key(
-                    "boto3.client_kwargs", tenant, {}
-                ),
-            )
+            topics = []
+            try:
+                topics = list_topics(
+                    tenant=tenant,
+                    account_number=account_id,
+                    assume_role=spoke_role_name,
+                    region=region,
+                    read_only=True,
+                    sts_client_kwargs=dict(
+                        region_name=config.region,
+                        endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                    ),
+                    client_kwargs=config.get_tenant_specific_key(
+                        "boto3.client_kwargs", tenant, {}
+                    ),
+                )
+            except ClientError as e:
+                if "AuthorizationError" not in str(e):
+                    raise
             for topic in topics:
                 all_topics.add(topic["TopicArn"])
         except Exception as e:

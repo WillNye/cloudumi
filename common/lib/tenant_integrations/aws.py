@@ -889,6 +889,11 @@ async def handle_tenant_integration_queue(
                     "common.celery_tasks.celery_tasks.cache_organization_structure",
                     kwargs={"tenant": tenant},
                 )
+                celery_app.send_task(
+                    "common.celery_tasks.celery_tasks.cache_scps_across_organizations",
+                    kwargs={"tenant": tenant},
+                    countdown=120,
+                )
 
             except Exception:
                 raise

@@ -109,8 +109,12 @@ async def get_iam_principal_owner(arn: str, tenant: str) -> Optional[str]:
     principal_type = resource_summary.resource_type
     account_id = resource_summary.account
     # trying to find principal for subsequent queries
-    if principal_type == "role":
-        principal_details = (await IAMRole.get(tenant, account_id, arn)).dict()
-    elif principal_type == "user":
-        principal_details = await fetch_iam_user(account_id, arn, tenant)
+    try:
+        if principal_type == "role":
+            principal_details = (await IAMRole.get(tenant, account_id, arn)).dict()
+
+        elif principal_type == "user":
+            principal_details = await fetch_iam_user(account_id, arn, tenant)
+    except ValueError:
+        return None
     return principal_details.get("owner")
