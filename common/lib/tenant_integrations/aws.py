@@ -347,7 +347,7 @@ async def handle_spoke_account_registration(body):
         role_arn=spoke_role_arn,
         external_id=external_id,
         hub_account_arn=hub_account.role_arn,
-        master_for_account=master_account,
+        org_management_account=master_account,
         read_only=read_only,
     )
     await models.ModelAdapter(SpokeAccount).load_config(
@@ -882,6 +882,15 @@ async def handle_tenant_integration_queue(
                 )
                 celery_app.send_task(
                     "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task",
+                    kwargs={"tenant": tenant},
+                    countdown=120,
+                )
+                celery_app.send_task(
+                    "common.celery_tasks.celery_tasks.cache_organization_structure",
+                    kwargs={"tenant": tenant},
+                )
+                celery_app.send_task(
+                    "common.celery_tasks.celery_tasks.cache_scps_across_organizations",
                     kwargs={"tenant": tenant},
                     countdown=120,
                 )

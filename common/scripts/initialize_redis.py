@@ -126,5 +126,8 @@ else:
         celery.cache_self_service_typeahead_task(tenant)
         celery.cache_policies_table_details(tenant)
         celery.cache_credential_authorization_mapping(tenant)
+        celery.cache_org_structure(tenant)
+        celery.cache_all_scps(tenant)
+        celery.cache_scps_across_organizations(tenant)
 total_time = int(time.time()) - start_time
 print(f"Done caching data in Redis. It took {total_time} seconds")

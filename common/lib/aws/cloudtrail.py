@@ -1,5 +1,6 @@
 import base64
 import json as original_json
+import sys
 import time
 from collections import defaultdict
 
@@ -9,6 +10,7 @@ from boto3.dynamodb.types import Binary  # noqa
 from common.aws.iam.utils import get_iam_principal_owner
 from common.aws.utils import ResourceSummary
 from common.config import config
+from common.config.models import ModelAdapter
 from common.lib.aws.utils import simulate_iam_principal_action
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.dynamo import UserDynamoHandler
@@ -18,6 +20,9 @@ from common.lib.notifications.models import (
     ConsoleMeUserNotificationAction,
 )
 from common.lib.slack import send_slack_notification_new_notification
+from common.models import SpokeAccount
+
+log = config.get_logger()
 
 
 class CloudTrail:
@@ -28,6 +33,12 @@ class CloudTrail:
 
         :return:
         """
+
+        log_data = {
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "tenant": tenant,
+            "user": user,
+        }
         notification_ttl_seconds = config.get_tenant_specific_key(
             "process_cloudtrail_errors.notification_ttl",
             tenant,
@@ -64,6 +75,25 @@ class CloudTrail:
             principal_owner = await get_iam_principal_owner(arn, tenant)
             principal_type = "iam" + resource_summary.resource_type
             account_id = resource_summary.account
+            try:
+                (
+                    ModelAdapter(SpokeAccount)
+                    .load_config("spoke_accounts", tenant)
+                    .with_query({"account_id": account_id})
+                    .first.name
+                )
+
+            except ValueError as e:
+                # We don't have a spoke account for tenant
+                log.error(
+                    {
+                        **log_data,
+                        "message": "Unable to get IAM principal owner",
+                        "error": str(e),
+                    },
+                    exc_info=True,
+                )
+                continue
             principal_name = resource_summary.name
             url_role_path = (
                 f"/policies/edit/{account_id}/{principal_type}/{principal_name}"

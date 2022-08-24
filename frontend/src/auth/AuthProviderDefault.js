@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
         }
       ).then((res) => res.json())
 
-      // ConsoleMe backend returns a response containing a redirection to IDP for authentication.
+      // NOQ backend returns a response containing a redirection to IDP for authentication.
       if (auth.type === 'redirect' && auth.reason === 'unauthenticated') {
         if (auth.redirect_url !== history?.location?.pathname) {
           window.location.href = auth.redirect_url
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
       // User is now authenticated so retrieve user profile.
       const user = await sendRequestCommon(null, '/api/v2/user_profile', 'get')
 
-      // If backend Consoleme is configured with google analytics, let's set it up here
+      // If backend NOQ is configured with google analytics, let's set it up here
       if (user?.site_config?.google_analytics?.tracking_id) {
         ReactGA.initialize(
           user.site_config.google_analytics.tracking_id,

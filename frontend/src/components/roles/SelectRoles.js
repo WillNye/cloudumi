@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Header } from 'semantic-ui-react'
-import ConsoleMeDataTable from '../blocks/datatable/DataTableComponent'
+import DataTable from '../blocks/datatable/DataTableComponent'
 import ReactMarkdown from 'react-markdown'
 import { useAuth } from '../../auth/AuthProviderDefault'
 
@@ -40,7 +40,7 @@ const SelectRoles = () => {
           />
         </Header.Subheader>
       </Header>
-      <ConsoleMeDataTable config={tableConfig} {...auth} />
+      <DataTable config={tableConfig} {...auth} />
     </>
   )
 }

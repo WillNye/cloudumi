@@ -7,7 +7,7 @@ pytest := PYTHONDONTWRITEBYTECODE=1 \
 	--cov-config .coveragerc --cov common --cov api \
 	--async-test-timeout=1600 --timeout=1600 -n auto \
 	--asyncio-mode=auto --dist loadscope \
-    --ignore-glob 'bazel*' .
+    --ignore-glob 'bazel*' --ignore 'functional_tests'  .
 
 pytest_single_process := PYTHONDONTWRITEBYTECODE=1 \
 	PYTEST_PLUGINS=util.tests.fixtures.fixtures \
@@ -18,7 +18,7 @@ pytest_single_process := PYTHONDONTWRITEBYTECODE=1 \
 	--cov-config .coveragerc --cov common --cov api \
 	--async-test-timeout=1600 --timeout=1600 \
 	--asyncio-mode=auto \
-    --ignore-glob 'bazel*' .
+    --ignore-glob 'bazel*' --ignore 'functional_tests' .
 
 html_report := --cov-report html
 test_args := --cov-report term-missing

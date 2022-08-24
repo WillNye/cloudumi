@@ -93,6 +93,12 @@ async def _get_iam_role_async(
                 get_role_inline_policies, {"RoleName": role_name}, tenant=tenant, **conn
             ),
         ),
+        # loop.run_in_executor(
+        #     executor,
+        #     functools.partial(
+        #         list_instance_profiles_for_role, {"RoleName": role_name}, tenant=tenant, **conn
+        #     ),
+        # ),
     ]
     # completed, pending = await asyncio.wait(tasks)
     # results = [t.result() for t in completed]
@@ -108,6 +114,7 @@ async def _get_iam_role_async(
     role = results[0]["Role"]
     role["ManagedPolicies"] = results[1]
     role["InlinePolicies"] = results[2]
+    # role["InstanceProfiles"] = results[3]
 
     # role = {}
     #
@@ -656,6 +663,21 @@ def get_role_inline_policy_document(role: str, policy_name: str, client=None, **
     return response.get("PolicyDocument")
 
 
+@sts_conn("iam", service_type="client")
+@rate_limited()
+def list_instance_profiles_for_role(role: dict, client=None, **kwargs):
+    response = client.list_instance_profiles_for_role(RoleName=role)
+    instance_profiles = []
+    for x in response["InstanceProfiles"]:
+        instance_profiles.append(
+            {
+                "InstanceProfileName": x["InstanceProfileName"],
+                "InstanceProfileId": x["InstanceProfileId"],
+            }
+        )
+    return instance_profiles
+
+
 def get_role_inline_policies(role: dict, **kwargs):
     policy_names = get_role_inline_policy_names(role["RoleName"], **kwargs)
 
@@ -780,6 +802,14 @@ async def update_role_tear_config(
 
 
 async def update_assume_role_policy_trust_noq(tenant, user, role_name, account_id):
+    log_data = {
+        "function": "update_assume_role_policy_trust_noq",
+        "message": "Updating assume role policy",
+        "tenant": tenant,
+        "user": user,
+        "role_name": role_name,
+        "account_id": account_id,
+    }
     client = await aio_wrapper(
         get_tenant_iam_conn,
         tenant,
@@ -813,6 +843,7 @@ async def update_assume_role_policy_trust_noq(tenant, user, role_name, account_i
     client.update_assume_role_policy(
         RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
     )
+    log.debug(log_data)
     return True
 
 
@@ -890,6 +921,9 @@ async def get_roles_as_resource(
     tenant: str, viewable_accounts: set, resource_map: dict
 ):
     from common.aws.iam.role.models import IAMRole
+
+    if not viewable_accounts:
+        return resource_map
 
     account_map = await get_account_id_to_name_mapping(tenant)
 

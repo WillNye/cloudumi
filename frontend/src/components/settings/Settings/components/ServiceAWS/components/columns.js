@@ -31,12 +31,19 @@ export const awsOrganizationColumns = ({ handleClick }) => [
   },
   {
     Header: 'Actions',
-    width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleClick('remove', row?.original)}>
-        Remove
-      </Button>
+      <Bar>
+        <Button size='mini' onClick={() => handleClick('edit', row?.original)}>
+          Edit
+        </Button>
+        <Button
+          size='mini'
+          onClick={() => handleClick('remove', row?.original)}
+        >
+          Remove
+        </Button>
+      </Bar>
     ),
   },
 ]

@@ -2651,6 +2651,10 @@ components:
       required:
         - org_id
       properties:
+        uuid:
+          type: string
+          format: uuid
+          description: NOQ needs a unique internal identifier to make this work correctly with the frontend
         org_id:
           type: string
           description: A unique identifier designating the identity of the organization

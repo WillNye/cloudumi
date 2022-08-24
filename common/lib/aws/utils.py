@@ -658,6 +658,11 @@ async def get_all_scps(
 
 async def cache_all_scps(tenant) -> Dict[str, Any]:
     """Store a dictionary of all Service Control Policies across organizations in the cache"""
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "message": "Attempting to cache all Service Control Policies",
+        "tenant": tenant,
+    }
     all_scps = {}
     for organization in (
         ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
@@ -682,10 +687,25 @@ async def cache_all_scps(tenant) -> Dict[str, Any]:
                 "Noq doesn't know what role to assume to retrieve account information "
                 "from AWS Organizations. please set the appropriate configuration value."
             )
-        org_scps = await retrieve_scps_for_organization(
-            org_account_id, tenant, role_to_assume=role_to_assume, region=config.region
-        )
-        all_scps[org_account_id] = org_scps
+        try:
+            org_scps = await retrieve_scps_for_organization(
+                org_account_id,
+                tenant,
+                role_to_assume=role_to_assume,
+                region=config.region,
+            )
+            all_scps[org_account_id] = org_scps
+        except Exception as e:
+            sentry_sdk.capture_exception()
+            log.error(
+                {
+                    **log_data,
+                    "org_account_id": org_account_id,
+                    "role_to_assume": role_to_assume,
+                    "region": config.region,
+                    "error": str(e),
+                }
+            )
     redis_key = config.get_tenant_specific_key(
         "cache_scps_across_organizations.redis.key.all_scps_key",
         tenant,

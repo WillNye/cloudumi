@@ -63,7 +63,7 @@ spoke_accounts:
     role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
-    master_for_account: false
+    org_management_account: false
     owners: []
     viewers: []
     delegate_admin_to_owner: false
@@ -74,7 +74,7 @@ spoke_accounts:
     role_arn: arn:aws:iam::350876197038:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
-    master_for_account: false
+    org_management_account: false
     owners: []
     viewers: []
     delegate_admin_to_owner: false
@@ -85,7 +85,7 @@ spoke_accounts:
     role_arn: arn:aws:iam::259868150464:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
-    master_for_account: false
+    org_management_account: false
     owners: []
     viewers: []
     delegate_admin_to_owner: false
@@ -96,7 +96,7 @@ spoke_accounts:
     role_arn: arn:aws:iam::793450268703:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
-    master_for_account: false
+    org_management_account: false
     owners: []
     viewers: []
     delegate_admin_to_owner: false
@@ -235,14 +235,14 @@ spoke_accounts:
     role_arn: arn:aws:iam::759357822767:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
-    master_for_account: false
+    org_management_account: false
   - name: NoqSpokeRoleLocalDev
     account_name: development_2
     account_id: '350876197038'
     role_arn: arn:aws:iam::350876197038:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
-    master_for_account: false
+    org_management_account: false
     owners: []
     viewers: []
     delegate_admin_to_owner: false
@@ -253,7 +253,7 @@ spoke_accounts:
     role_arn: arn:aws:iam::259868150464:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
-    master_for_account: false
+    org_management_account: false
     owners: []
     viewers: []
     delegate_admin_to_owner: false
@@ -264,7 +264,7 @@ spoke_accounts:
     role_arn: arn:aws:iam::793450268703:role/NoqSpokeRoleLocalDev
     external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
     hub_account_arn: arn:aws:iam::759357822767:role/NoqCentralRoleLocalDev
-    master_for_account: false
+    org_management_account: false
     owners: []
     viewers: []
     delegate_admin_to_owner: false
