@@ -1,0 +1,69 @@
+Resources:
+  SpokeRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Ref CentralRoleArnParameter
+            Action:
+              - "sts:AssumeRole"
+              - "sts:TagSession"
+      RoleName: !Ref SpokeRoleNameParameter
+      Policies:
+        - PolicyName: "spoke-acct-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  Fn::If:
+                    - ReadOnlyModeEnabled
+                    - - "{{ initial_action }}"{% for action in read_only_actions %}
+                      - "{{ action }}"{% endfor %}
+                    - - "{{ initial_action }}"{% for action in read_write_actions %}
+                      - "{{ action }}"{% endfor %}
+                Resource: "*"
+  SnsCustomResource:
+    Type: "Custom::SnsCustomResource"
+    DependsOn: "SpokeRole"
+    Properties:
+      ServiceToken: !Ref RegistrationTopicArnParameter
+      IntegrationName: !Ref "AWS::StackName"
+      Host: !Ref HostParameter
+      ActionType: "AWSSpokeAcctRegistration"
+      TemplateVersion: 1.5
+      AWSAccountId: !Ref "AWS::AccountId"
+      CentralRoleArn: !Ref CentralRoleArnParameter
+      SpokeRoleName: !Ref SpokeRoleNameParameter
+      ExternalId: !Ref ExternalIDParameter
+      ReadOnlyMode: !Ref ReadOnlyModeParameter
+
+Conditions:
+  ReadOnlyModeEnabled: !Equals [true, !Ref ReadOnlyModeParameter]
+
+Parameters:
+  {{ parameters }}
+
+Outputs:
+  CentralRoleArn:
+    Description: The central role in the customer's environment that will be allowed to assume the created spoke role.
+    Value: !Ref CentralRoleArnParameter
+  ExternalID:
+    Description: ExternalID to share with the SaaS for verification
+    Value: !Ref ExternalIDParameter
+  Host:
+    Description: Host to share with the SaaS provider for deployment
+    Value: !Ref HostParameter
+  SpokeRoleName:
+    Description: The name of the spoke role in each customer account.
+    Value: !Ref SpokeRoleNameParameter
+  RegistrationTopicArnParameter:
+    Description: SNS Registration queue ARN
+    Value: !Ref RegistrationTopicArnParameter
+  ReadOnly:
+    Description: Does NOQ only have read access to the account
+    Value: !Ref ReadOnlyModeParameter
