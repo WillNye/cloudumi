@@ -24,8 +24,10 @@ copy_to_bin(
             "public/**/*",
             "src/**/*",
         ],
-        exclude = _TESTS,
+        exclude = _TESTS + [
+        ],
     ) + [
+        "//frontend/src/assets",
         "jsconfig.json",
         "package.json",
         "yarn.lock",
