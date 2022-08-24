@@ -11,6 +11,7 @@ import InlinePolicy from './InlinePolicy'
 import Issues from './Issues'
 import Tags from './Tags'
 import ConfigureAccess from './ConfigureAccess'
+import HistoricalView from './HistoricalView'
 
 const IAMRolePolicy = () => {
   const all = usePolicyContext()
@@ -164,6 +165,22 @@ const IAMRolePolicy = () => {
         )
       },
     },
+
+    {
+      menuItem: {
+        key: 'resource_history',
+        content: (() => {
+          return 'Resource History'
+        })(),
+      },
+      render: () => {
+        return (
+          <Tab.Pane>
+            <HistoricalView />
+          </Tab.Pane>
+        )
+      },
+    },
   ])
 
   if (all?.resource?.terraform) {
@@ -205,7 +222,7 @@ const IAMRolePolicy = () => {
     tabs.push({
       menuItem: {
         key: 'effective_permissions',
-        content: <>Effective Policy and Unused Permissions</>,
+        content: <>Simplified Policy</>,
       },
       render: () => {
         return (

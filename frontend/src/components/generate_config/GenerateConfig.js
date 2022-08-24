@@ -44,7 +44,7 @@ function GenerateConfig() {
   }
   const onComplete = (results) => {
     setComplete(true)
-    let resultsConsoleMeStyle = {}
+    let resultsNOQStyle = {}
     const [specialTypes, formatTypes] = getSpecialTypes(
       questions_json.questions
     )
@@ -76,7 +76,7 @@ function GenerateConfig() {
           updatedValue.forEach(function (part, index) {
             this[index] = this[index].trim()
           }, updatedValue)
-          updateNestedObj(resultsConsoleMeStyle, updatedKey, updatedValue)
+          updateNestedObj(resultsNOQStyle, updatedKey, updatedValue)
         } else if (
           specialTypes.hasOwnProperty(key) &&
           specialTypes[key] === 'list_dict'
@@ -87,13 +87,13 @@ function GenerateConfig() {
             const splits = val.split(':')
             updatedValueDict[splits[0].trim()] = splits[1].trim()
           })
-          updateNestedObj(resultsConsoleMeStyle, updatedKey, updatedValueDict)
+          updateNestedObj(resultsNOQStyle, updatedKey, updatedValueDict)
         } else {
-          updateNestedObj(resultsConsoleMeStyle, updatedKey, value)
+          updateNestedObj(resultsNOQStyle, updatedKey, value)
         }
       }
     }
-    setResults(resultsConsoleMeStyle)
+    setResults(resultsNOQStyle)
   }
   const updateNestedObj = (d, k, v) => {
     if (k.includes('.')) {
@@ -113,7 +113,7 @@ function GenerateConfig() {
     })
   }
   const downloadConfig = () => {
-    const fileName = `consoleme_generated_config_${new Date().getTime()}.yaml`
+    const fileName = `noq_generated_config_${new Date().getTime()}.yaml`
     const data = yaml.dump(results, 4)
     const blob = new Blob([data], { type: 'yaml' })
     const href = URL.createObjectURL(blob)
@@ -143,8 +143,8 @@ function GenerateConfig() {
     return (
       <Segment>
         <Header>
-          Your ConsoleMe configuration has been generated! You can either copy
-          it to clipboard, or download it as a file by clicking below.
+          Your NOQ configuration has been generated! You can either copy it to
+          clipboard, or download it as a file by clicking below.
         </Header>
         <Popup
           content='Copy to Clipboard'

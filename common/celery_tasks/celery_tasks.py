@@ -20,6 +20,7 @@ import celery
 import sentry_sdk
 from asgiref.sync import async_to_sync
 from billiard.exceptions import SoftTimeLimitExceeded
+from botocore.exceptions import ClientError
 from celery import group
 from celery.app.task import Context
 from celery.concurrency import asynpool
@@ -1102,13 +1103,13 @@ def cache_access_advisor_across_accounts(tenant: str) -> Dict:
     log_data["num_accounts"] = len(accounts_d.keys())
 
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment") == "prod":
-            cache_access_advisor_for_account.delay(tenant, account_id)
-        else:
+        if config.get("_global_.environment") == "test":
             if account_id in config.get_tenant_specific_key(
                 "celery.test_account_ids", tenant, []
             ):
                 cache_access_advisor_for_account.delay(tenant, account_id)
+        else:
+            cache_access_advisor_for_account.delay(tenant, account_id)
 
     stats.count(f"{function}.success")
     log.debug(log_data)
@@ -1116,7 +1117,7 @@ def cache_access_advisor_across_accounts(tenant: str) -> Dict:
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advior_across_accounts_for_all_tenants() -> Dict:
+def cache_access_advisor_across_accounts_for_all_tenants() -> Dict:
     """Triggers `cache_access_advisor_across_accounts` task for each tenant.
 
     :return: Number of tenants that had tasks triggered.
@@ -1359,13 +1360,13 @@ def cache_managed_policies_across_accounts(tenant=None) -> bool:
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all accounts
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment") == "prod":
-            cache_managed_policies_for_account.delay(account_id, tenant=tenant)
-        else:
+        if config.get("_global_.environment") == "test":
             if account_id in config.get_tenant_specific_key(
                 "celery.test_account_ids", tenant, []
             ):
                 cache_managed_policies_for_account.delay(account_id, tenant=tenant)
+        else:
+            cache_managed_policies_for_account.delay(account_id, tenant=tenant)
 
     stats.count(f"{function}.success")
     return True
@@ -1421,13 +1422,14 @@ def cache_s3_buckets_across_accounts(
     ) or config.get("_global_.environment") in ["dev"]:
         # Call tasks to enumerate all S3 buckets across all accounts
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
+
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1516,13 +1518,13 @@ def cache_sqs_queues_across_accounts(
         "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1607,13 +1609,13 @@ def cache_sns_topics_across_accounts(
         "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1784,20 +1786,25 @@ def cache_sns_topics_for_account(
             if not spoke_role_name:
                 log.error({**log_data, "message": "No spoke role name found"})
                 return
-            topics = list_topics(
-                tenant=tenant,
-                account_number=account_id,
-                assume_role=spoke_role_name,
-                region=region,
-                read_only=True,
-                sts_client_kwargs=dict(
-                    region_name=config.region,
-                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-                ),
-                client_kwargs=config.get_tenant_specific_key(
-                    "boto3.client_kwargs", tenant, {}
-                ),
-            )
+            topics = []
+            try:
+                topics = list_topics(
+                    tenant=tenant,
+                    account_number=account_id,
+                    assume_role=spoke_role_name,
+                    region=region,
+                    read_only=True,
+                    sts_client_kwargs=dict(
+                        region_name=config.region,
+                        endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                    ),
+                    client_kwargs=config.get_tenant_specific_key(
+                        "boto3.client_kwargs", tenant, {}
+                    ),
+                )
+            except ClientError as e:
+                if "AuthorizationError" not in str(e):
+                    raise
             for topic in topics:
                 all_topics.add(topic["TopicArn"])
         except Exception as e:
@@ -1999,7 +2006,15 @@ def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict
         for result in results:
             result["ttl"] = ttl
             result["tenant"] = tenant
-            result["entity_id"] = result["arn"]
+            alternative_entity_id = "|||".join(
+                [
+                    result.get("accountId"),
+                    result.get("awsRegion"),
+                    result.get("resourceId"),
+                    result.get("resourceType"),
+                ]
+            )
+            result["entity_id"] = result.get("arn", alternative_entity_id)
             if result.get("arn"):
                 if redis_result_set.get(result["arn"]):
                     continue
@@ -2094,25 +2109,16 @@ def cache_resources_from_aws_config_across_accounts(
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all tenant accounts
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment", None) in [
-            "prod",
-            "dev",
-        ]:
-            tasks.append(
-                cache_resources_from_aws_config_for_account.s(account_id, tenant)
-            )
-        elif account_id in config.get_tenant_specific_key(
-            "celery.test_account_ids", tenant, []
-        ):
-            tasks.append(
-                cache_resources_from_aws_config_for_account.s(account_id, tenant)
-            )
+        if config.get("_global_.environment", None) == "test":
+            if account_id in config.get_tenant_specific_key(
+                "celery.test_account_ids", tenant, []
+            ):
+                tasks.append(
+                    cache_resources_from_aws_config_for_account.s(account_id, tenant)
+                )
         else:
-            log.debug(
-                {
-                    **log_data,
-                    "message": "Not running task because we're not in prod|dev, and we don't have any test account IDs",
-                }
+            tasks.append(
+                cache_resources_from_aws_config_for_account.s(account_id, tenant)
             )
     if tasks:
         if run_subtasks:
@@ -2847,8 +2853,8 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
-    "cache_access_advior_across_accounts_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.cache_access_advior_across_accounts_for_all_tenants",
+    "cache_access_advisor_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },
