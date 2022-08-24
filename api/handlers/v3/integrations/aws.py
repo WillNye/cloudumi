@@ -1,13 +1,18 @@
 import urllib.parse
 
+from common.aws.cloud_formations.utils import (
+    CF_CAPABILITIES,
+    get_cf_aws_cli_cmd,
+    get_cf_tf_body,
+    get_template_url,
+    validate_params,
+)
 from common.config import config, models
-from common.config.models import ModelAdapter
-from common.handlers.base import BaseHandler
-from common.lib.auth import is_tenant_admin
-from common.models import HubAccount, SpokeAccount, WebResponse
+from common.handlers.base import BaseAdminHandler
+from common.models import HubAccount, WebResponse
 
 
-class AwsIntegrationHandler(BaseHandler):
+class AwsIntegrationHandler(BaseAdminHandler):
     """
     AWS Integration Handler
     """
@@ -17,23 +22,19 @@ class AwsIntegrationHandler(BaseHandler):
         Get AWS Integration
         """
         tenant = self.ctx.tenant
-        if not is_tenant_admin(self.user, self.groups, tenant):
-            self.set_status(403)
-            return
-        external_id = config.get_tenant_specific_key(
-            "tenant_details.external_id", tenant
-        )
-        if not external_id:
+        try:
+            central_role_parameters = validate_params(tenant, "central")
+        except AssertionError as err:
             self.set_status(400)
-            res = WebResponse(status_code=400, message="External ID not found")
+            res = WebResponse(status_code=400, message=str(err))
             self.write(res.json(exclude_unset=True, exclude_none=True))
             return
-        cluster_role = config.get("_global_.integrations.aws.node_role")
-        if not cluster_role:
-            self.set_status(400)
-            res = WebResponse(status_code=400, message="Cluster role not found")
-            self.write(res.json(exclude_unset=True, exclude_none=True))
-            return
+
+        region = config.get("_global_.integrations.aws.region", "us-west-2")
+        central_role_template_url = get_template_url("central")
+        spoke_role_template_url = get_template_url("spoke")
+        external_id = central_role_parameters["ExternalIDParameter"]
+        cluster_role = central_role_parameters["ClusterRoleParameter"]
         central_role_trust_policy = {
             "Version": "2012-10-17",
             "Statement": [
@@ -45,68 +46,18 @@ class AwsIntegrationHandler(BaseHandler):
                 }
             ],
         }
-        account_id = config.get("_global_.integrations.aws.account_id")
-        cluster_id = config.get("_global_.deployment.cluster_id")
-        region = config.get("_global_.integrations.aws.region", "us-west-2")
-        registration_topic_arn = config.get(
-            "_global_.integrations.aws.registration_topic_arn",
-            f"arn:aws:sns:{region}:{account_id}:{cluster_id}-registration-topic",
-        )
-        central_role_template_url = config.get(
-            "_global_.integrations.aws.registration_central_role_cf_template",
-            "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml",
-        )
 
-        spoke_role_template_url = config.get(
-            "_global_.integrations.aws.registration_spoke_role_cf_template",
-            "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml",
-        )
-
-        capabilities = ["CAPABILITY_NAMED_IAM"]
         stack_name = config.get(
             "_global_.integrations.aws.central_role_name", "NoqCentralRole"
         )
-        spoke_stack_name = config.get(
-            "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
-        )
 
-        central_role = ModelAdapter(HubAccount).load_config("hub_account", tenant).model
-        if central_role:
-            central_role_name = central_role.name
-        else:
-            central_role_name = config.get(
-                "_global_.integrations.aws.central_role_name", "NoqCentralRole"
-            )
-        spoke_roles = (
-            ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).models
-        )
-        if spoke_roles:
-            spoke_role_name = spoke_roles[0].name
-            spoke_stack_name = spoke_role_name
-        else:
-            spoke_role_name = config.get(
-                "_global_.integrations.aws.spoke_role_name", "NoqSpokeRole"
-            )
-        central_role_parameters = [
-            {"ParameterKey": "ExternalIDParameter", "ParameterValue": external_id},
-            {"ParameterKey": "HostParameter", "ParameterValue": tenant},
-            {
-                "ParameterKey": "ClusterRoleParameter",
-                "ParameterValue": cluster_role,
-            },
-            {
-                "ParameterKey": "CentralRoleNameParameter",
-                "ParameterValue": central_role_name,
-            },
-            {
-                "ParameterKey": "SpokeRoleNameParameter",
-                "ParameterValue": spoke_role_name,
-            },
-            {
-                "ParameterKey": "RegistrationTopicArnParameter",
-                "ParameterValue": registration_topic_arn,
-            },
+        central_role_name = central_role_parameters["CentralRoleNameParameter"]
+        spoke_role_name = central_role_parameters["SpokeRoleNameParameter"]
+        spoke_stack_name = spoke_role_name
+        registration_topic_arn = central_role_parameters[
+            "RegistrationTopicArnParameter"
         ]
+
         res = WebResponse(
             status="success",
             status_code=200,
@@ -128,12 +79,16 @@ class AwsIntegrationHandler(BaseHandler):
                     "external_id": external_id,
                     "node_role": config.get("_global_.integrations.aws.node_role"),
                     "role_trust_policy": central_role_trust_policy,
-                    "capabilities": capabilities,
+                    "capabilities": CF_CAPABILITIES,
                 },
                 "spoke_account_role": {
                     # We can't configure a customer's spoke roles until their central role is configured, due to the
                     # assume role relationship.
                     "status": "ineligible"
+                },
+                "commands": {
+                    "aws": {"central": get_cf_aws_cli_cmd(tenant, "central")},
+                    "terraform": {"central": get_cf_tf_body(tenant, "central")},
                 },
             },
         )
@@ -142,24 +97,15 @@ class AwsIntegrationHandler(BaseHandler):
             models.ModelAdapter(HubAccount).load_config("hub_account", tenant).model
         )
         if hub_account:
-            customer_central_account_role = hub_account.role_arn
-            spoke_role_parameters = [
-                {"ParameterKey": "ExternalIDParameter", "ParameterValue": external_id},
-                {
-                    "ParameterKey": "CentralRoleArnParameter",
-                    "ParameterValue": customer_central_account_role,
-                },
-                {"ParameterKey": "HostParameter", "ParameterValue": tenant},
-                {
-                    "ParameterKey": "SpokeRoleNameParameter",
-                    "ParameterValue": spoke_role_name,
-                },
-                {
-                    "ParameterKey": "RegistrationTopicArnParameter",
-                    "ParameterValue": registration_topic_arn,
-                },
-            ]
+            try:
+                spoke_role_parameters = validate_params(tenant, "spoke")
+            except AssertionError as err:
+                self.set_status(400)
+                res = WebResponse(status_code=400, message=str(err))
+                self.write(res.json(exclude_unset=True, exclude_none=True))
+                return
 
+            customer_central_account_role = hub_account.role_arn
             spoke_role_trust_policy = {
                 "Version": "2012-10-17",
                 "Statement": [
@@ -187,7 +133,10 @@ class AwsIntegrationHandler(BaseHandler):
                 "stack_name": spoke_stack_name,
                 "parameters": spoke_role_parameters,
                 "role_trust_policy": spoke_role_trust_policy,
-                "capabilities": capabilities,
+                "capabilities": CF_CAPABILITIES,
                 "external_id": external_id,
             }
+            res.data["commands"]["aws"]["spoke"] = get_cf_aws_cli_cmd(tenant, "spoke")
+            res.data["commands"]["terraform"]["spoke"] = get_cf_tf_body(tenant, "spoke")
+
         self.write(res.json(exclude_unset=True, exclude_none=True))
