@@ -14,7 +14,8 @@ filegroup(
 filegroup(
     name = "template_files",
     srcs = glob([
-        "templates/*.py.j2"
+        "templates/*.j2",
+        "templates/*.png"
     ]),
     visibility = ["//visibility:public"],
 )

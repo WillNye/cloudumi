@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import random
 import time
+from datetime import date
 from secrets import token_urlsafe
 from urllib.parse import urlparse
 
@@ -11,6 +12,8 @@ import sentry_sdk
 import tornado.escape
 import tornado.web
 from email_validator import validate_email
+from jinja2 import FileSystemLoader, select_autoescape
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from api.handlers.v3.tenant_registration.models import NewTenantRegistration
 from common.config import config
@@ -34,7 +37,7 @@ async def generate_dev_domain(dev_mode):
             return dev_domain
 
 
-async def create_user_pool(noq_subdomain):
+async def create_user_pool(noq_subdomain, domain_fqdn):
     cognito = boto3.client("cognito-idp", region_name=config.region)
     # a = cognito.describe_user_pool(UserPoolId="us-east-1_nvTFqJY2L")
     # print(a)
@@ -56,6 +59,17 @@ async def create_user_pool(noq_subdomain):
         print("User pool already exists")
         raise Exception("User Pool Already Exists")
     # COGNITO: You need a custom domain too
+    env = ImmutableSandboxedEnvironment(
+        loader=FileSystemLoader("common/templates"),
+        extensions=["jinja2.ext.loopcontrols"],
+        autoescape=select_autoescape(),
+    )
+    todays_date = date.today()
+    cognito_invitation_message_template = env.get_template("cognito_invitation.j2")
+    cognito_invitation_message = cognito_invitation_message_template.render(
+        year=todays_date.year, domain=domain_fqdn
+    )
+    cognito_email_subject = "Your temporary password for Noq"
     response = cognito.create_user_pool(
         PoolName=user_pool_name,
         Schema=[
@@ -239,6 +253,10 @@ async def create_user_pool(noq_subdomain):
         AdminCreateUserConfig={
             "AllowAdminCreateUserOnly": True,
             "UnusedAccountValidityDays": 7,
+            "InviteMessageTemplate": {
+                "EmailMessage": cognito_invitation_message,
+                "EmailSubject": cognito_email_subject,
+            },
         },
         # TODO: Enable advanced security mode
         # UserPoolAddOns={
@@ -390,6 +408,24 @@ async def create_user_pool_domain(user_pool_id, user_pool_domain_name):
         UserPoolId=user_pool_id, Domain=user_pool_domain_name
     )
     return user_pool_domain
+
+
+async def set_login_page_ui(user_pool_id):
+    cognito = boto3.client("cognito-idp", region_name=config.region)
+    env = ImmutableSandboxedEnvironment(
+        loader=FileSystemLoader("common/templates"),
+        extensions=["jinja2.ext.loopcontrols"],
+        autoescape=select_autoescape(),
+    )
+    cognito_login_css_template = env.get_template("cognito_login_page.css.j2")
+    cognito_login_css = cognito_login_css_template.render()
+    nog_logo = open("common/templates/NoqLogo.png", "rb").read()
+    return cognito.set_ui_customization(
+        UserPoolId=user_pool_id,
+        ClientId="ALL",
+        CSS=cognito_login_css,
+        ImageFile=nog_logo,
+    )
 
 
 class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
@@ -566,7 +602,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             port = ""
         dev_domain_url = uri_scheme + dev_domain.replace("_", ".") + port
         # create new tenant
-        user_pool_id = await create_user_pool(dev_domain)
+        user_pool_id = await create_user_pool(dev_domain, dev_domain_url)
         user_pool_domain = await create_user_pool_domain(
             user_pool_id, cognito_url_domain
         )
@@ -584,6 +620,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             cognito_client_id,
             cognito_user_pool_client_secret,
         ) = await create_user_pool_client(user_pool_id, dev_domain_url)
+        await set_login_page_ui(user_pool_id)
         try:
             await create_user_pool_user(
                 user_pool_id,
