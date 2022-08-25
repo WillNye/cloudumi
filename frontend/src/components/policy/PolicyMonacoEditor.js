@@ -8,7 +8,7 @@ import {
 } from '../../helpers/utils'
 import { usePolicyContext } from './hooks/PolicyProvider'
 import { useAuth } from '../../auth/AuthProviderDefault'
-import './PolicyMonacoEditor.css'
+import './PolicyMonacoEditor.scss'
 
 const editorOptions = {
   selectOnLineNumbers: true,

@@ -181,3 +181,20 @@ while True:
                         rollout_finalized = True
                         break
         time.sleep(5)
+
+
+tasks = ecs_client.list_tasks(
+    cluster=cluster_name,
+    maxResults=100,
+)
+
+task_details = ecs_client.describe_tasks(
+    cluster=cluster_name,
+    tasks=tasks["taskArns"],
+)
+
+print("Commands to view task logs: ")
+for task in task_details["tasks"]:
+    task_id = task["taskArn"].split("/")[-1]
+    print("ARN {} : ".format(task["taskDefinitionArn"]))
+    print(f"AWS_PROFILE={os.environ['AWS_PROFILE']} ecs-cli logs --region {region} --task-id {task_id} -c {cluster_name} --follow\n")
