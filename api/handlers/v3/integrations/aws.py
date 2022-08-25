@@ -65,14 +65,14 @@ class AwsIntegrationHandler(BaseAdminHandler):
                 "read_write": {
                     "central_account_role": {
                         "cloudformation_url": (
-                                f"https://console.aws.amazon.com/cloudformation/home?region={region}"
-                                + "#/stacks/quickcreate?templateURL="
-                                + urllib.parse.quote(central_role_template_url)
-                                + f"&param_ExternalIDParameter={external_id}&param_HostParameter={tenant}&stackName={stack_name}"
-                                + f"&param_ClusterRoleParameter={cluster_role}"
-                                + f"&param_CentralRoleNameParameter={central_role_name}"
-                                + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
-                                + f"&param_SpokeRoleNameParameter={spoke_role_name}"
+                            f"https://console.aws.amazon.com/cloudformation/home?region={region}"
+                            + "#/stacks/quickcreate?templateURL="
+                            + urllib.parse.quote(central_role_template_url)
+                            + f"&param_ExternalIDParameter={external_id}&param_HostParameter={tenant}&stackName={stack_name}"
+                            + f"&param_ClusterRoleParameter={cluster_role}"
+                            + f"&param_CentralRoleNameParameter={central_role_name}"
+                            + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
+                            + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                         ),
                         "template_url": central_role_template_url,
                         "stack_name": stack_name,
@@ -89,24 +89,28 @@ class AwsIntegrationHandler(BaseAdminHandler):
                     },
                     "commands": {
                         "aws": {"central": await get_cf_aws_cli_cmd(tenant, "central")},
-                        "terraform": {"central": await get_cf_tf_body(tenant, "central")},
+                        "terraform": {
+                            "central": await get_cf_tf_body(tenant, "central")
+                        },
                     },
                 },
                 "read_only": {
                     "central_account_role": {
                         "cloudformation_url": (
-                                f"https://console.aws.amazon.com/cloudformation/home?region={region}"
-                                + "#/stacks/quickcreate?templateURL="
-                                + urllib.parse.quote(central_role_template_url)
-                                + f"&param_ExternalIDParameter={external_id}&param_HostParameter={tenant}&stackName={stack_name}"
-                                + f"&param_ClusterRoleParameter={cluster_role}"
-                                + f"&param_CentralRoleNameParameter={central_role_name}"
-                                + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
-                                + f"&param_SpokeRoleNameParameter={spoke_role_name}"
+                            f"https://console.aws.amazon.com/cloudformation/home?region={region}"
+                            + "#/stacks/quickcreate?templateURL="
+                            + urllib.parse.quote(central_role_template_url)
+                            + f"&param_ExternalIDParameter={external_id}&param_HostParameter={tenant}&stackName={stack_name}"
+                            + f"&param_ClusterRoleParameter={cluster_role}"
+                            + f"&param_CentralRoleNameParameter={central_role_name}"
+                            + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
+                            + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                         ),
                         "template_url": central_role_template_url,
                         "stack_name": stack_name,
-                        "parameters": await validate_params(tenant, "central", read_only_mode=True),
+                        "parameters": await validate_params(
+                            tenant, "central", read_only_mode=True
+                        ),
                         "external_id": external_id,
                         "node_role": config.get("_global_.integrations.aws.node_role"),
                         "role_trust_policy": central_role_trust_policy,
@@ -118,8 +122,12 @@ class AwsIntegrationHandler(BaseAdminHandler):
                         "status": "ineligible"
                     },
                     "commands": {
-                        "aws": {"central": await get_cf_aws_cli_cmd(tenant, "central", True)},
-                        "terraform": {"central": await get_cf_tf_body(tenant, "central", True)},
+                        "aws": {
+                            "central": await get_cf_aws_cli_cmd(tenant, "central", True)
+                        },
+                        "terraform": {
+                            "central": await get_cf_tf_body(tenant, "central", True)
+                        },
                     },
                 },
             },
@@ -144,7 +152,9 @@ class AwsIntegrationHandler(BaseAdminHandler):
             for account_access in ["read_write", "read_only"]:
                 read_only_mode = bool(account_access == "read_only")
                 try:
-                    spoke_role_parameters = await validate_params(tenant, "spoke", read_only_mode)
+                    spoke_role_parameters = await validate_params(
+                        tenant, "spoke", read_only_mode
+                    )
                 except AssertionError as err:
                     self.set_status(400)
                     res = WebResponse(status_code=400, message=str(err))
@@ -154,15 +164,15 @@ class AwsIntegrationHandler(BaseAdminHandler):
                 res.data[account_access]["spoke_account_role"] = {
                     "status": "eligible",
                     "cloudformation_url": (
-                            f"https://console.aws.amazon.com/cloudformation/home?region={region}"
-                            + "#/stacks/quickcreate?templateURL="
-                            + urllib.parse.quote(spoke_role_template_url)
-                            + f"&param_ExternalIDParameter={external_id}"
-                            + f"&param_HostParameter={tenant}"
-                            + f"&param_CentralRoleArnParameter={customer_central_account_role}"
-                            + f"&param_SpokeRoleNameParameter={spoke_role_name}"
-                            + f"&stackName={spoke_stack_name}"
-                            + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
+                        f"https://console.aws.amazon.com/cloudformation/home?region={region}"
+                        + "#/stacks/quickcreate?templateURL="
+                        + urllib.parse.quote(spoke_role_template_url)
+                        + f"&param_ExternalIDParameter={external_id}"
+                        + f"&param_HostParameter={tenant}"
+                        + f"&param_CentralRoleArnParameter={customer_central_account_role}"
+                        + f"&param_SpokeRoleNameParameter={spoke_role_name}"
+                        + f"&stackName={spoke_stack_name}"
+                        + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
                     ),
                     "template_url": spoke_role_template_url,
                     "stack_name": spoke_stack_name,
