@@ -419,7 +419,13 @@ async def set_login_page_ui(user_pool_id):
     )
     cognito_login_css_template = env.get_template("cognito_login_page.css.j2")
     cognito_login_css = cognito_login_css_template.render()
-    nog_logo = open("common/templates/NoqLogo.png", "rb").read()
+    nog_logo = open(
+        config.get(
+            "_global_.tenant_registration.set_login_page_ui.logo_location",
+            "common/templates/NoqLogo.png",
+        ),
+        "rb",
+    ).read()
     return cognito.set_ui_customization(
         UserPoolId=user_pool_id,
         ClientId="ALL",
