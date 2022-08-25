@@ -111,6 +111,9 @@ _global_:
             port: "9004"
           - host: redis-cluster
             port: "9005"
+  tenant_registration:
+    set_login_page_ui:
+      logo_location: frontend/src/assets/NoqLogo.png
 # Localhost configuration
 #  redis:
 #    cluster_mode:
