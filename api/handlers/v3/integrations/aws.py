@@ -87,8 +87,14 @@ class AwsIntegrationHandler(BaseAdminHandler):
                     "status": "ineligible"
                 },
                 "commands": {
-                    "aws": {"central": await get_cf_aws_cli_cmd(tenant, "central")},
-                    "terraform": {"central": await get_cf_tf_body(tenant, "central")},
+                    "read_write": {
+                        "aws": {"central": await get_cf_aws_cli_cmd(tenant, "central")},
+                        "terraform": {"central": await get_cf_tf_body(tenant, "central")},
+                    },
+                    "read_only": {
+                        "aws": {"central": await get_cf_aws_cli_cmd(tenant, "central", True)},
+                        "terraform": {"central": await get_cf_tf_body(tenant, "central", True)},
+                    },
                 },
             },
         )
@@ -136,11 +142,13 @@ class AwsIntegrationHandler(BaseAdminHandler):
                 "capabilities": CF_CAPABILITIES,
                 "external_id": external_id,
             }
-            res.data["commands"]["aws"]["spoke"] = await get_cf_aws_cli_cmd(
-                tenant, "spoke"
-            )
-            res.data["commands"]["terraform"]["spoke"] = await get_cf_tf_body(
-                tenant, "spoke"
-            )
+            for account_access in ["read_write", "read_only"]:
+                read_only_mode = bool(account_access == "read_only")
+                res.data["commands"][account_access]["aws"][
+                    "spoke"
+                ] = await get_cf_aws_cli_cmd(tenant, "spoke", read_only_mode)
+                res.data["commands"][account_access]["terraform"][
+                    "spoke"
+                ] = await get_cf_tf_body(tenant, "spoke", read_only_mode)
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
