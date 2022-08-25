@@ -8,8 +8,8 @@
       "type": "image/x-icon"
     },
     {
-      "src": "images/logos/logo192.png",
-      "type": "image/png",
+      "src": "images/NoqLogo.svg",
+      "type": "image/svg",
       "sizes": "192x192"
     }
   ],
