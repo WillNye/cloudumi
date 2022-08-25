@@ -1,11 +1,19 @@
 import React, { useState } from 'react'
-import { Button, Dropdown, Menu, Label, Message } from 'semantic-ui-react'
+import {
+  Button,
+  Dropdown,
+  Menu,
+  Label,
+  Message,
+  Image,
+} from 'semantic-ui-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProviderDefault'
 import ReactMarkdown from 'react-markdown'
 import SettingsModal from './SettingsModal'
 import { NotificationsModal } from './notifications/Notifications'
 import { useNotifications } from './hooks/notifications'
+import NoqLogo from '../assets/NoqLogo.svg'
 
 const NavHeader = ({ showMenuItems = true }) => {
   const { user } = useAuth()
@@ -204,12 +212,7 @@ const NavHeader = ({ showMenuItems = true }) => {
           }}
           href='/'
         >
-          {/* <Image
-            size="mini"
-            src="/images/logos/logo192.png"
-            style={{ marginRight: "1.5em" }}
-          /> */}
-          NOQ
+          <Image size='small' src={NoqLogo} style={{ marginRight: '1.5em' }} />
         </Menu.Item>
         {showMenuItems && (
           <Menu.Menu position='left'>
