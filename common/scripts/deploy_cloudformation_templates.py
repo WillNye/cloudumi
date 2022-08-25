@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 import boto3
@@ -5,7 +6,7 @@ import click
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
-def generate_cf_templates(upload: bool = True, suffix: str = ""):
+async def generate_cf_templates(upload: bool = True, suffix: str = ""):
     from common.aws.cloud_formations.utils import (
         CF_ACCOUNT_TYPES,
         CF_TEMPLATE_DIR,
@@ -30,12 +31,12 @@ def generate_cf_templates(upload: bool = True, suffix: str = ""):
 
     for account_type in CF_ACCOUNT_TYPES:
         cf_template = env.get_template(f"cloudumi_{account_type}_role.yaml.j2")
-        permissions = get_permissions()
+        permissions = await get_permissions()
 
         # To play nice with the CloudFormation formatting
         initial_action = permissions["read"].pop(0)
         del permissions["write"][0]
-        parameters = yaml.dump(get_cf_parameters(account_type))
+        parameters = yaml.dump(await get_cf_parameters(account_type))
         lines = parameters.splitlines()
         parameters = "\n  ".join(lines)
 
@@ -72,7 +73,7 @@ def run(upload: bool, suffix: str):
         "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
     )
     os.environ.setdefault("AWS_PROFILE", "noq_cluster_dev")
-    generate_cf_templates(upload, suffix)
+    asyncio.run(generate_cf_templates(upload, suffix))
 
 
 if __name__ == "__main__":

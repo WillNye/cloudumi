@@ -4,6 +4,7 @@ import re
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from common.config import config, models
+from common.lib.asyncio import aio_wrapper
 from common.lib.yaml import yaml_safe as yaml
 from common.models import HubAccount, SpokeAccount
 
@@ -16,9 +17,9 @@ def camel_to_snake(str_obj: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", str_obj).lower()
 
 
-def load_yaml(file_name: str):
+async def load_yaml(file_name: str):
     with open(f"{CF_TEMPLATE_DIR}/{file_name}.yaml", "r") as ymlfile:
-        return yaml.load(ymlfile)
+        return await aio_wrapper(yaml.load, ymlfile)
 
 
 def get_stack_name(account_type: str) -> str:
@@ -34,26 +35,26 @@ def get_template_url(account_type: str) -> str:
     )
 
 
-def get_permissions() -> dict[list[str]]:
-    all_permissions = load_yaml("permissions")
+async def get_permissions() -> dict[list[str]]:
+    all_permissions = await load_yaml("permissions")
     all_permissions["write"].extend(all_permissions["read"])
     all_permissions["write"] = sorted(list(set(all_permissions["write"])))
     all_permissions["read"] = sorted(list(set(all_permissions["read"])))
     return all_permissions
 
 
-def get_cf_parameters(account_type: str):
+async def get_cf_parameters(account_type: str):
     assert account_type in CF_ACCOUNT_TYPES
-    parameters = load_yaml("parameters")
+    parameters = await load_yaml("parameters")
     return {**parameters["shared"], **parameters[account_type]}
 
 
-def validate_params(
+async def validate_params(
     tenant: str, account_type: str, read_only_mode: bool = False
 ) -> dict:
     """Validates user provided values while setting params that are resolved internally like external id"""
 
-    cf_parameters = get_cf_parameters(account_type)
+    cf_parameters = await get_cf_parameters(account_type)
     global_vals = config.get("_global_.integrations.aws")
     # Ultimately resolve this when tenants are sharded out
     response_params = {
@@ -113,10 +114,12 @@ def validate_params(
     return response_params
 
 
-def get_cf_tf_body(tenant: str, account_type: str, read_only_mode: bool = False) -> str:
+async def get_cf_tf_body(
+    tenant: str, account_type: str, read_only_mode: bool = False
+) -> str:
     """Returns a valid terraform cloudformation module"""
 
-    params = validate_params(tenant, account_type, read_only_mode)
+    params = await validate_params(tenant, account_type, read_only_mode)
     stack_name = get_stack_name(account_type)
     template_url = get_template_url(account_type)
     env = Environment(
@@ -124,11 +127,12 @@ def get_cf_tf_body(tenant: str, account_type: str, read_only_mode: bool = False)
         extensions=["jinja2.ext.loopcontrols"],
         autoescape=select_autoescape(),
     )
-    template = env.get_template("cf_module.tf.j2")
+    template = await aio_wrapper(env.get_template, "cf_module.tf.j2")
     capability_str = str(
         ", ".join([f'"{capability}"' for capability in CF_CAPABILITIES])
     )
-    return template.render(
+    return await aio_wrapper(
+        template.render,
         stack_name=stack_name,
         template_url=template_url,
         parameters=params,
@@ -136,11 +140,11 @@ def get_cf_tf_body(tenant: str, account_type: str, read_only_mode: bool = False)
     )
 
 
-def get_cf_aws_cli_cmd(
+async def get_cf_aws_cli_cmd(
     tenant: str, account_type: str, read_only_mode: bool = False
 ) -> str:
     """Returns the AWS CLI command to create the cloudformation stack"""
-    params = validate_params(tenant, account_type, read_only_mode)
+    params = await validate_params(tenant, account_type, read_only_mode)
     stack_name = get_stack_name(account_type)
     template_url = get_template_url(account_type)
 

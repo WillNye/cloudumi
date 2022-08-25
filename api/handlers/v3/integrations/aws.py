@@ -23,7 +23,7 @@ class AwsIntegrationHandler(BaseAdminHandler):
         """
         tenant = self.ctx.tenant
         try:
-            central_role_parameters = validate_params(tenant, "central")
+            central_role_parameters = await validate_params(tenant, "central")
         except AssertionError as err:
             self.set_status(400)
             res = WebResponse(status_code=400, message=str(err))
@@ -87,8 +87,8 @@ class AwsIntegrationHandler(BaseAdminHandler):
                     "status": "ineligible"
                 },
                 "commands": {
-                    "aws": {"central": get_cf_aws_cli_cmd(tenant, "central")},
-                    "terraform": {"central": get_cf_tf_body(tenant, "central")},
+                    "aws": {"central": await get_cf_aws_cli_cmd(tenant, "central")},
+                    "terraform": {"central": await get_cf_tf_body(tenant, "central")},
                 },
             },
         )
@@ -98,7 +98,7 @@ class AwsIntegrationHandler(BaseAdminHandler):
         )
         if hub_account:
             try:
-                spoke_role_parameters = validate_params(tenant, "spoke")
+                spoke_role_parameters = await validate_params(tenant, "spoke")
             except AssertionError as err:
                 self.set_status(400)
                 res = WebResponse(status_code=400, message=str(err))
@@ -136,7 +136,11 @@ class AwsIntegrationHandler(BaseAdminHandler):
                 "capabilities": CF_CAPABILITIES,
                 "external_id": external_id,
             }
-            res.data["commands"]["aws"]["spoke"] = get_cf_aws_cli_cmd(tenant, "spoke")
-            res.data["commands"]["terraform"]["spoke"] = get_cf_tf_body(tenant, "spoke")
+            res.data["commands"]["aws"]["spoke"] = await get_cf_aws_cli_cmd(
+                tenant, "spoke"
+            )
+            res.data["commands"]["terraform"]["spoke"] = await get_cf_tf_body(
+                tenant, "spoke"
+            )
 
         self.write(res.json(exclude_unset=True, exclude_none=True))
