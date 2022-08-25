@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useReducer } from 'react'
 import { getCookie } from '../helpers/utils'
 import ReactGA from 'react-ga'
+import { INTERNAL_SERVER_ERROR_CODES } from './constants'
 
 const initialAuthState = {
   user: null, // user profile data
   isSessionExpired: false,
+  isInternalServerError: false,
 }
 
 const AuthContext = createContext(initialAuthState)
@@ -31,6 +33,13 @@ const reducer = (state, action) => {
       return {
         ...state,
         isSessionExpired,
+      }
+    }
+    case 'INTERNAL_SERVER_ERROR': {
+      const { isInternalServerError } = action
+      return {
+        ...state,
+        isInternalServerError,
       }
     }
     default: {
@@ -98,7 +107,7 @@ export const AuthProvider = ({ children }) => {
       // exception from handling the html file instead of application/json type.
       // Toggle the re-authentication modal to login back users if it's using ALB type of authentication system.
       console.error(error)
-      setIsSessionExpired(true)
+      setIsInternalServerError(true)
     }
   }
 
@@ -112,6 +121,13 @@ export const AuthProvider = ({ children }) => {
     dispatch({
       type: 'SESSION_EXPIRED',
       isSessionExpired,
+    })
+  }
+
+  const setIsInternalServerError = (isInternalServerError) => {
+    dispatch({
+      type: 'INTERNAL_SERVER_ERROR',
+      isInternalServerError,
     })
   }
 
@@ -159,6 +175,8 @@ export const AuthProvider = ({ children }) => {
           })
         } else if (response?.status === 401) {
           setIsSessionExpired(true)
+        } else if (INTERNAL_SERVER_ERROR_CODES.includes(response?.status)) {
+          setIsInternalServerError(true)
         }
 
         try {
@@ -176,7 +194,7 @@ export const AuthProvider = ({ children }) => {
         // fetch will raise an exception if it fetches an data that is not json such as html showing re-authentication
         // is required. This is to handle such case where ALB type of authentication is being used.
         console.error(error)
-        setIsSessionExpired(true)
+        setIsInternalServerError(true)
         return null
       })
   }
@@ -293,6 +311,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         setIsSessionExpired,
+        setIsInternalServerError,
         sendRequestCommon,
         sendRequestV2,
         sendProposedPolicyWithHooks,

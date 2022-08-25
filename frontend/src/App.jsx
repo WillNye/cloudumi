@@ -29,30 +29,32 @@ import { Settings } from './components/settings/Settings'
 import { MainProvider } from './MainProvider'
 import AutomatedPermissions from 'components/AutomatedPermissions'
 import EULA from './components/EULA'
+import ErrorBoundary from 'components/ErrorBoundary'
 
 function App() {
   return (
     <BrowserRouter>
-      <Switch>
-        <ProtectedDashboardRoute
-          key='roles'
-          exact
-          path='/'
-          component={SelectRoles}
-        />
-        <ProtectedDashboardRoute
-          key='selfservice'
-          exact
-          path='/selfservice'
-          component={ConsoleMeSelfService}
-        />
-        <ProtectedDashboardRoute
-          key='policies'
-          exact
-          path='/policies'
-          component={PolicyTable}
-        />
-        {/* <ProtectedDashboardRoute
+      <ErrorBoundary>
+        <Switch>
+          <ProtectedDashboardRoute
+            key='roles'
+            exact
+            path='/'
+            component={SelectRoles}
+          />
+          <ProtectedDashboardRoute
+            key='selfservice'
+            exact
+            path='/selfservice'
+            component={ConsoleMeSelfService}
+          />
+          <ProtectedDashboardRoute
+            key='policies'
+            exact
+            path='/policies'
+            component={PolicyTable}
+          />
+          {/* <ProtectedDashboardRoute
           key='groups'
           exact
           path='/groups'
@@ -91,95 +93,96 @@ function App() {
           path='/group_requests'
           component={IdentityRequestsTable}
         /> */}
-        <ProtectedDashboardRoute
-          key='review'
-          exact
-          path='/policies/request/:requestID'
-          component={PolicyRequestReview}
-        />
-        <ProtectedDashboardRoute
-          key='requests'
-          exact
-          path='/requests'
-          component={ConsoleMeRequestTable}
-        />
-        <ProtectedDashboardRoute
-          key='resource_policy'
-          path='/policies/edit/:accountID/:serviceType/*/:resourceName'
-          component={PolicyEditor}
-        />
-        <ProtectedDashboardRoute
-          key='iamrole_policy'
-          path='/policies/edit/:accountID/:serviceType/:resourceName'
-          component={PolicyEditor}
-        />
-        <ProtectedDashboardRoute
-          key='config'
-          exact
-          path='/config'
-          component={ConsoleMeDynamicConfig}
-        />
-        {/* <ProtectedDashboardRoute
+          <ProtectedDashboardRoute
+            key='review'
+            exact
+            path='/policies/request/:requestID'
+            component={PolicyRequestReview}
+          />
+          <ProtectedDashboardRoute
+            key='requests'
+            exact
+            path='/requests'
+            component={ConsoleMeRequestTable}
+          />
+          <ProtectedDashboardRoute
+            key='resource_policy'
+            path='/policies/edit/:accountID/:serviceType/*/:resourceName'
+            component={PolicyEditor}
+          />
+          <ProtectedDashboardRoute
+            key='iamrole_policy'
+            path='/policies/edit/:accountID/:serviceType/:resourceName'
+            component={PolicyEditor}
+          />
+          <ProtectedDashboardRoute
+            key='config'
+            exact
+            path='/config'
+            component={ConsoleMeDynamicConfig}
+          />
+          {/* <ProtectedDashboardRoute
           key='generate_config'
           exact
           path='/generate_config'
           component={GenerateConfig}
         /> */}
-        <ProtectedDashboardRoute
-          key='role_query'
-          exact
-          path='/role/:roleQuery+'
-          component={ConsoleLogin}
-        />
-        <ProtectedDashboardRoute
-          key='challenge_validator'
-          exact
-          path='/challenge_validator/:challengeToken'
-          component={ChallengeValidator}
-        />
-        <ProtectedDashboardRoute
-          key='create_role'
-          exact
-          path='/create_role'
-          component={CreateCloneFeature}
-        />
-        <ProtectedDashboardRoute
-          key='settings'
-          exact
-          path='/settings'
-          origin='/settings'
-          component={Settings}
-        />
-        <ProtectedDashboardRoute
-          key='settings'
-          exact
-          path='/settings/:tabName'
-          origin='/settings'
-          component={Settings}
-        />
-        <ProtectedDashboardRoute
-          key='downloads'
-          exact
-          path='/downloads'
-          component={Downloads}
-        />
-        <ProtectedDashboardRoute
-          key='automated_permissions'
-          exact
-          path='/automated_permissions'
-          component={AutomatedPermissions}
-        />
-        <ProtectedRoute key='eula' exact path='/eula' component={EULA} />
-        <ProtectedDashboardRoute
-          key='logout'
-          exact
-          path='/logout'
-          component={Logout}
-        />
-        {/* <Route key='login' exact path='/login' component={Login} /> */}
-        <Route component={NoMatch} />
-      </Switch>
-      <AuthenticateModal />
+          <ProtectedDashboardRoute
+            key='role_query'
+            exact
+            path='/role/:roleQuery+'
+            component={ConsoleLogin}
+          />
+          <ProtectedDashboardRoute
+            key='challenge_validator'
+            exact
+            path='/challenge_validator/:challengeToken'
+            component={ChallengeValidator}
+          />
+          <ProtectedDashboardRoute
+            key='create_role'
+            exact
+            path='/create_role'
+            component={CreateCloneFeature}
+          />
+          <ProtectedDashboardRoute
+            key='settings'
+            exact
+            path='/settings'
+            origin='/settings'
+            component={Settings}
+          />
+          <ProtectedDashboardRoute
+            key='settings'
+            exact
+            path='/settings/:tabName'
+            origin='/settings'
+            component={Settings}
+          />
+          <ProtectedDashboardRoute
+            key='downloads'
+            exact
+            path='/downloads'
+            component={Downloads}
+          />
+          <ProtectedDashboardRoute
+            key='automated_permissions'
+            exact
+            path='/automated_permissions'
+            component={AutomatedPermissions}
+          />
+          <ProtectedRoute key='eula' exact path='/eula' component={EULA} />
+          <ProtectedDashboardRoute
+            key='logout'
+            exact
+            path='/logout'
+            component={Logout}
+          />
+          {/* <Route key='login' exact path='/login' component={Login} /> */}
+          <Route component={NoMatch} />
+        </Switch>
+        <AuthenticateModal />
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
