@@ -1,0 +1,1 @@
+export const INTERNAL_SERVER_ERROR_CODES = [500, 504]

@@ -73,6 +73,8 @@ class AwsIntegrationHandler(BaseAdminHandler):
                             + f"&param_CentralRoleNameParameter={central_role_name}"
                             + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
                             + f"&param_SpokeRoleNameParameter={spoke_role_name}"
+                            + f"&param_SpokeRoleNameParameter={spoke_role_name}"
+                            + "&param_ReadOnlyModeParameter=false"
                         ),
                         "template_url": central_role_template_url,
                         "stack_name": stack_name,
@@ -105,6 +107,7 @@ class AwsIntegrationHandler(BaseAdminHandler):
                             + f"&param_CentralRoleNameParameter={central_role_name}"
                             + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
                             + f"&param_SpokeRoleNameParameter={spoke_role_name}"
+                            + "&param_ReadOnlyModeParameter=true"
                         ),
                         "template_url": central_role_template_url,
                         "stack_name": stack_name,
