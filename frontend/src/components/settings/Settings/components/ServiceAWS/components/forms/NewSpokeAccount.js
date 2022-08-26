@@ -58,7 +58,10 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
   const aws = useContext(ApiContext)
 
   const handleClick = () => {
-    window.open(aws.data?.spoke_account_role?.cloudformation_url, '_blank')
+    window.open(
+      aws.data?.read_write?.spoke_account_role?.cloudformation_url,
+      '_blank'
+    )
     closeModal()
   }
 
@@ -240,7 +243,9 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
               Execute CloudFormation
             </Button>
             <CopyButton
-              value={aws.data?.spoke_account_role?.cloudformation_url}
+              value={
+                aws.data?.read_write?.spoke_account_role?.cloudformation_url
+              }
             />
           </Bar>
         </>
