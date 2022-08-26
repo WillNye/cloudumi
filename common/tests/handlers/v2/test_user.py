@@ -4,14 +4,14 @@ import pytest
 from asgiref.sync import async_to_sync
 
 from util.tests.fixtures.globals import tenant
-from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import NOQAsyncHTTPTestCase
 
 
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("populate_caches")
-class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
+class TestUserRegistrationApi(NOQAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
 
@@ -78,7 +78,7 @@ class TestUserRegistrationApi(ConsoleMeAsyncHTTPTestCase):
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("populate_caches")
-class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
+class TestLoginApi(NOQAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
 
@@ -174,7 +174,7 @@ class TestLoginApi(ConsoleMeAsyncHTTPTestCase):
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("populate_caches")
-class TestUserApi(ConsoleMeAsyncHTTPTestCase):
+class TestUserApi(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 

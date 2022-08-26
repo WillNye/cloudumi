@@ -1,13 +1,13 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
-# consoleme/models.py:
+# noq/models.py:
 # `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' ; black ../models.py`
 # To exclude a property from being returned when calling model.dict() by default add the property is_secret: true
 
 openapi: 3.0.0
 info:
-  description: ConsoleMe API definition
+  description: NOQ API definition
   version: "2.0.0"
-  title: ConsoleMe v2 API
+  title: NOQ v2 API
   contact:
     email: consoleme-owners@netflix.com
   license:
@@ -17,7 +17,7 @@ servers:
   - url: "{server}/api/v2"
     variables:
       server:
-        default: https://consoleme.example.com
+        default: https://noq.example.com
 tags:
   - name: roles
     description: IAM Role endpoints
@@ -695,7 +695,7 @@ components:
           type: string
           readOnly: true
         policy_sha256:
-          description: hash of the most recent resource policy seen by ConsoleMe
+          description: hash of the most recent resource policy seen by NOQ
           type: string
           readOnly: true
         policy:

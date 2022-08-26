@@ -367,20 +367,20 @@ class Aws:
     ):
         """
                 This will auto-approve a policy based on a comparison of policy to auto-approval rules with AWS Zelkova.
-                Zelkova is not GA at the time of writing, hence this code is not in OSS consoleme. Anyone wishing to make use of
+                Zelkova is not GA at the time of writing, hence this code is not in OSS NOQ. Anyone wishing to make use of
                 this code will need to perform the following steps:
 
-                1) You'll need to ask your AWS TAM to enable Zelkova on the account you have ConsoleMe deployed to.
-                2) You'll need to put a special JSON model for Zelkova in your consoleme instances under
-                /etc/aws/models/zelkova/2018-01-29/service-2.json . If you run ConsoleMe locally for development, also put it
+                1) You'll need to ask your AWS TAM to enable Zelkova on the account you have NOQ deployed to.
+                2) You'll need to put a special JSON model for Zelkova in your NOQ instances under
+                /etc/aws/models/zelkova/2018-01-29/service-2.json . If you run NOQ locally for development, also put it
                 in ~/.aws/models/zelkova/2018-01-29/service-2.json
-                3) You'll need to make your own internal consoleme plugin set if you don't already have one.
+                3) You'll need to make your own internal NOQ plugin set if you don't already have one.
                 Basically, copy the contents of the default_plugins folder to a new repository internal to your company.
-                You'll need to pip install this into ConsoleMe OSS for your deployment.
+                You'll need to pip install this into NOQ OSS for your deployment.
                 4) In your plugin set, there's a function called should_auto_approve_policy_v2 that needs to be overridden.
                 We can provide the code to this when ready.
 
-                Once this is set up, you can use ConsoleMe's Dynamic Configuration (ex: https://your_consoleme_domain/config)
+                Once this is set up, you can use NOQ's Dynamic Configuration (ex: https://your_NOQ_domain/config)
                 and write rules. Here's an example:
 
         policy_request_autoapprove_rules:
