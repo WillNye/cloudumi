@@ -12,14 +12,14 @@ from tornado.httpclient import AsyncHTTPClient
 # from tornado.options import options
 from tornado.testing import AsyncHTTPTestCase
 
-from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import NOQAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
 
 
 @pytest.mark.usefixtures("aws_credentials")
-class TestMain(ConsoleMeAsyncHTTPTestCase):
+class TestMain(NOQAsyncHTTPTestCase):
     """Docstring in public class."""
 
     def setUp(self):

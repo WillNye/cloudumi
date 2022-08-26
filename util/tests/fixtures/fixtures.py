@@ -29,7 +29,7 @@ from util.tests.fixtures.globals import tenant
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["ASYNC_TEST_TIMEOUT"] = "100"
 
-# This must be set before loading ConsoleMe's configuration
+# This must be set before loading NOQ's configuration
 if not os.environ.get("CONFIG_LOCATION"):
     os.environ["CONFIG_LOCATION"] = "util/tests/test_configuration.yaml"
 

@@ -7,7 +7,7 @@ from mock import MagicMock, patch
 
 import common.lib.noq_json as json
 from util.tests.fixtures.fixtures import MockRedisHandler
-from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import NOQAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
@@ -25,7 +25,7 @@ mock_policy_redis = MagicMock(
 
 
 @pytest.mark.usefixtures("dynamodb")
-class TestPolicyResourceEditHandler(ConsoleMeAsyncHTTPTestCase):
+class TestPolicyResourceEditHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 

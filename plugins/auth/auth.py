@@ -178,7 +178,7 @@ class Auth:
             if google_groups:
                 groups.extend(google_groups)
         if groups_to_add_for_all_users:
-            # Optionally consider ConsoleMe users a member of these additional groups
+            # Optionally consider NOQ users a member of these additional groups
             groups.extend(groups_to_add_for_all_users)
         if not groups:
             log.error(
