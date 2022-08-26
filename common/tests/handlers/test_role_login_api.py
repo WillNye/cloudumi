@@ -5,7 +5,7 @@ import sys
 import pytest
 
 import common.lib.noq_json as json
-from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import NOQAsyncHTTPTestCase
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(APP_ROOT, ".."))
@@ -15,7 +15,7 @@ sys.path.append(os.path.join(APP_ROOT, ".."))
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("dynamodb")
-class TestRoleLoginApi(ConsoleMeAsyncHTTPTestCase):
+class TestRoleLoginApi(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 

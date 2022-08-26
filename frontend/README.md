@@ -19,9 +19,9 @@
 
 ## Notes
 
-- ConsoleMe UI is a SPA (Single Page Application).
+- NOQ UI is a SPA (Single Page Application).
 - Page Components are protected by `auth/ProtectedRoute.js` and requires authentication via `auth/AuthProviderDefault.js`.
-- ConsoleMe UI components are currently written in both Classes and Hooks. We will move to React Hooks entirely over time.
+- NOQ UI components are currently written in both Classes and Hooks. We will move to React Hooks entirely over time.
 - The react-app-wired module is used to start/build because of [Monaco Editor](https://microsoft.github.io/monaco-editor/). This was required due to how Monaco Editor was written.
 
 # Available Scripts
@@ -44,9 +44,9 @@ DANGEROUSLY_DISABLE_HOST_CHECK=true
 ## `HTTPS=true yarn start`
 
 Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser. (You should also run the ConsoleMe Python backend to see data)
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser. (You should also run the NOQ Python backend to see data)
 
-ConsoleMe UI uses `proxy` in `package.json` file to proxy api backend requests to [http://localhost:8081](http://localhost:8081) for local development.
+NOQ UI uses `proxy` in `package.json` file to proxy api backend requests to [http://localhost:8081](http://localhost:8081) for local development.
 
 ## `yarn build:prod`
 
@@ -55,8 +55,8 @@ It correctly bundles React in production mode and optimizes the build for the be
 
 The build is minified and the filenames include the hashes.<br />
 
-Once the build is done, it copies the files in build directory to ../consoleme/templates directory to package them with backend code.
-You can locally test this by accessing `http://localhost:8081` to see the actual build output served from ConsoleMe Tornado server.
+Once the build is done, it copies the files in build directory to ../noq/templates directory to package them with backend code.
+You can locally test this by accessing `http://localhost:8081` to see the actual build output served from NOQ Tornado server.
 
 ## `yarn lint` and `yarn lint:fix`
 

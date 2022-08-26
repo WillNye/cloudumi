@@ -3,14 +3,14 @@ import json
 import pytest
 
 from util.tests.fixtures.globals import tenant
-from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import NOQAsyncHTTPTestCase
 
 
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("dynamodb")
-class TestAwsIamUsers(ConsoleMeAsyncHTTPTestCase):
+class TestAwsIamUsers(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 
