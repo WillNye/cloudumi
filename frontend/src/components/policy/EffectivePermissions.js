@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Header,
   Segment,
@@ -17,11 +17,31 @@ import { ReadOnlyPolicyMonacoEditor } from './PolicyMonacoEditor'
 const EffectivePermissions = () => {
   const [error, setError] = useState(null)
   const [messages, setMessages] = useState([])
+  const [value, setValue] = useState(null)
+
   const {
     resourceEffectivePermissions,
     handleEffectivePolicySubmit,
     setModalWithAdminAutoApprove,
+    setNewStatement,
   } = useEffectivePermissions()
+
+  const unUsedPermissions = useMemo(() => {
+    return (
+      resourceEffectivePermissions?.effective_policy_unused_permissions_removed ||
+      null
+    )
+  }, [resourceEffectivePermissions])
+
+  useEffect(
+    function onUnUsedPermissionsUpdate() {
+      if (unUsedPermissions) {
+        setNewStatement(unUsedPermissions)
+        setValue(JSON.stringify(unUsedPermissions, null, 2))
+      }
+    },
+    [unUsedPermissions, setNewStatement]
+  )
 
   const onLintError = (lintErrors) => {
     if (lintErrors.length > 0) {
@@ -33,9 +53,14 @@ const EffectivePermissions = () => {
     }
   }
 
-  const onEffectivePolicySubmit = () => {
-    setModalWithAdminAutoApprove(false)
+  const onValueChange = (newValue) => {
+    setValue(newValue)
   }
+
+  const onEffectivePolicySubmit = useCallback(() => {
+    setNewStatement(JSON.parse(value))
+    setModalWithAdminAutoApprove(false)
+  }, [value, setNewStatement, setModalWithAdminAutoApprove])
 
   const panes = [
     {
@@ -98,16 +123,13 @@ const EffectivePermissions = () => {
                     <MonacoDiffComponent
                       renderSideBySide={true}
                       onLintError={onLintError}
+                      onValueChange={onValueChange}
                       oldValue={JSON.stringify(
                         resourceEffectivePermissions.effective_policy,
                         null,
                         2
                       )}
-                      newValue={JSON.stringify(
-                        resourceEffectivePermissions.effective_policy_unused_permissions_removed,
-                        null,
-                        2
-                      )}
+                      newValue={JSON.stringify(unUsedPermissions, null, 2)}
                       enableJSON={true}
                       enableTerraform={false}
                       enableCloudFormation={false}
@@ -169,14 +191,15 @@ const EffectivePermissions = () => {
       <Divider horizontal />
       <Grid columns={1} centered>
         <Grid.Row>
-          <Grid.Column textAlign='center'>
+          <Grid.Column textAlign='right'>
             <Button
               primary
               icon='send'
-              content='Request Condensed Policy with Unused Permissions Removed'
+              content='Request for Simplified Policy'
               onClick={onEffectivePolicySubmit}
               disabled={
-                !resourceEffectivePermissions?.effective_policy_unused_permissions_removed
+                !resourceEffectivePermissions?.effective_policy_unused_permissions_removed ||
+                !!error
               }
             />
           </Grid.Column>
