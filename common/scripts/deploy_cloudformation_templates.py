@@ -7,19 +7,15 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
 async def generate_cf_templates(upload: bool = True, suffix: str = ""):
-    from common.aws.cloud_formations.utils import (
-        CF_ACCOUNT_TYPES,
-        CF_TEMPLATE_DIR,
-        get_cf_parameters,
-        get_permissions,
-    )
+    from common.aws.cloud_formations.utils import CF_ACCOUNT_TYPES, get_cf_parameters, get_permissions, get_cf_tf_body, get_cf_aws_cli_cmd
+    from common.templates import TEMPLATE_DIR
     from common.lib.yaml import yaml
 
     destination_dir = os.path.dirname(__file__).replace("common/scripts", "deploy")
 
     suffix = suffix if not suffix or suffix.startswith("_") else f"_{suffix}"
     env = Environment(
-        loader=FileSystemLoader(CF_TEMPLATE_DIR),
+        loader=FileSystemLoader(TEMPLATE_DIR),
         extensions=["jinja2.ext.loopcontrols"],
         autoescape=select_autoescape(),
     )
@@ -54,6 +50,9 @@ async def generate_cf_templates(upload: bool = True, suffix: str = ""):
 
         if upload:
             s3_client.upload_file(file_path, "cloudumi-cf-templates", file_name)
+
+        print(await get_cf_tf_body("localhost", account_type))
+        print(await get_cf_aws_cli_cmd("localhost", account_type))
 
 
 @click.command()

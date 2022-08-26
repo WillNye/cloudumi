@@ -7,8 +7,9 @@ from common.config import config, models
 from common.lib.asyncio import aio_wrapper
 from common.lib.yaml import yaml_safe as yaml
 from common.models import HubAccount, SpokeAccount
+from common.templates import TEMPLATE_DIR
 
-CF_TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "data")
+CF_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 CF_ACCOUNT_TYPES = ["central", "spoke"]
 CF_CAPABILITIES = ["CAPABILITY_NAMED_IAM"]
 
@@ -18,7 +19,7 @@ def camel_to_snake(str_obj: str) -> str:
 
 
 async def load_yaml(file_name: str):
-    with open(f"{CF_TEMPLATE_DIR}/{file_name}.yaml", "r") as ymlfile:
+    with open(f"{CF_DATA_DIR}/{file_name}.yaml", "r") as ymlfile:
         return await aio_wrapper(yaml.load, ymlfile)
 
 
@@ -123,7 +124,7 @@ async def get_cf_tf_body(
     stack_name = get_stack_name(account_type)
     template_url = get_template_url(account_type)
     env = Environment(
-        loader=FileSystemLoader(CF_TEMPLATE_DIR),
+        loader=FileSystemLoader(TEMPLATE_DIR),
         extensions=["jinja2.ext.loopcontrols"],
         autoescape=select_autoescape(),
     )
