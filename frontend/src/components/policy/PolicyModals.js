@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { DateTime } from 'luxon'
 import {
   Button,
@@ -68,7 +68,7 @@ export const JustificationModal = ({
   }
 
   // TODO, there are too many state updates happening here. try do more in the reducer.
-  const handleJustificationSubmit = async () => {
+  const handleJustificationSubmit = useCallback(async () => {
     if (!justification) {
       setMessage('No empty justification is allowed.')
       setIsSuccess(false)
@@ -89,9 +89,18 @@ export const JustificationModal = ({
     setIsPolicyEditorLoading(false)
     setIsSuccess(response.request_created)
     setJustification('')
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    handleSubmit,
+    justification,
+    adminAutoApprove,
+    detachManagedPolicy,
+    expirationDate,
+    context,
+    resource,
+  ])
 
-  const handleSetPolicyExpiration = (event, data) => {
+  const handleSetPolicyExpiration = (_event, data) => {
     if (!data?.value) {
       return
     }
