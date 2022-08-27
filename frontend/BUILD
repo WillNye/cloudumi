@@ -114,11 +114,9 @@ genrule(
    outs = [
         "running",
     ],
-   cmd = "aws s3 sync frontend/dist/ $BUCKETPATH",
+   cmd = "aws s3 sync frontend/dist/ $(BUCKETPATH)",
    exec_tools = ["//frontend:build"]
 )
-
-exports_files(["build"])
 
 react_scripts(
     name = "start",
