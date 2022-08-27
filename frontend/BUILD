@@ -97,7 +97,7 @@ react_scripts(
     name = "build",
     args = [
         "--node_options=--require=./$(execpath chdir.cjs)",
-        "build",
+        "build_and_upload",
     ],
     data = _RUNTIME_DEPS,
     env = {
