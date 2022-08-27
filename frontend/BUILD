@@ -91,13 +91,20 @@ _DEV_DEPS = [
     "@npm//react-scripts",
 ]
 
+genrule(
+   name = "upload",
+   srcs = glob(["./build/**"]),
+   cmds = "aws s3 sync frontend/dist/ $BUCKETPATH",
+   deps = ["//frontend:build"]
+)
+
 react_scripts(
     # Note: If you want to change the name make sure you update BUILD_PATH below accordingly
     # https://create-react-app.dev/docs/advanced-configuration/
     name = "build",
     args = [
         "--node_options=--require=./$(execpath chdir.cjs)",
-        "build_and_upload",
+        "build",
     ],
     data = _RUNTIME_DEPS,
     env = {
