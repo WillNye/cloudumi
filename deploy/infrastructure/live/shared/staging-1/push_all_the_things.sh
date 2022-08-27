@@ -20,8 +20,11 @@ echo "Setting S3 and CloudFront URL for Static Frontend Content"
 echo
 export VERSION=$(git describe --tags --abbrev=0)
 export BRANCH=$(git rev-parse --short HEAD)
-export BUCKETPATH=s3://noq-global-frontend/$VERSION/$BRANCH/
+export BUCKET_PATH=s3://noq-global-frontend/$VERSION/$BRANCH/
 export PUBLIC_URL=https://d2mxcvfujf7a5q.cloudfront.net/$VERSION/$BRANCH/
+
+yarn --cwd frontend build_template
+aws s3 sync frontend/dist/ $BUCKET_PATH
 
 echo
 echo "Updating aws-cli"

@@ -68,7 +68,6 @@ container_layer(
     name = "web_site",
     files = [
         "//frontend:build",
-        "//frontend:upload",
         "//api:docs_sources",
     ],
     data_path = ".",
