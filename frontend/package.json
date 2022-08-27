@@ -48,8 +48,7 @@
     "lint:fix": "prettier --write './src/**/*.{jsx,js}'",
     "copy": "cp -a dist/ ../api/templates",
     "clean": "rm -rf dist && rm -rf ../api/templates",
-    "build_template": "yarn run clean && yarn build && yarn run copy",
-    "build_and_upload": "yarn build && aws s3 sync frontend/dist/ $BUCKETPATH"
+    "build_template": "yarn run clean && yarn build && yarn run copy"
   },
   "eslintConfig": {
     "extends": "react-app"

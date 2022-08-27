@@ -110,7 +110,7 @@ react_scripts(
 
 genrule(
    name = "upload",
-   srcs = [glob(["build/**"])],
+   srcs = glob(["build/**"]),
    outs = [
         "running",
     ],
