@@ -91,13 +91,6 @@ _DEV_DEPS = [
     "@npm//react-scripts",
 ]
 
-genrule(
-   name = "upload",
-   srcs = glob(["./build/**"]),
-   cmds = "aws s3 sync frontend/dist/ $BUCKETPATH",
-   deps = ["//frontend:build"]
-)
-
 react_scripts(
     # Note: If you want to change the name make sure you update BUILD_PATH below accordingly
     # https://create-react-app.dev/docs/advanced-configuration/
@@ -114,6 +107,18 @@ react_scripts(
     output_dir = True,
     visibility = ["//visibility:public"],
 )
+
+genrule(
+   name = "upload",
+   srcs = [glob(["build/**"])],
+   outs = [
+        "running",
+    ],
+   cmd = "aws s3 sync frontend/dist/ $BUCKETPATH",
+   exec_tools = ["//frontend:build"]
+)
+
+exports_files(["build"])
 
 react_scripts(
     name = "start",
