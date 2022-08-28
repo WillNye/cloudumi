@@ -208,14 +208,14 @@ const MonacoDiffComponent = (props) => {
           <Button.Group>
             <Button
               icon
-              color={renderSideBySide ? 'grey' : 'grey'}
+              color={'grey'}
               onClick={() => setRenderSideBySide(true)}
             >
               <Icon size='large' name='columns' />
             </Button>
             <Button
               icon
-              color={renderSideBySide ? 'grey' : 'grey'}
+              color={'grey'}
               onClick={() => setRenderSideBySide(false)}
             >
               <Icon size='large' name='square outline' />

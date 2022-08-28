@@ -82,7 +82,7 @@ const DataTableComponent = ({ config, mock }) => {
 
       <DataTableActionsComponent filters={filters} tableConfig={tableConfig} />
 
-      <Table sortable celled compact selectable striped>
+      <Table sortable basic='very' celled compact selectable collapsing>
         <DataTableColumnsComponent
           column={column}
           data={data}

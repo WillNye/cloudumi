@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Button,
   Dimmer,
@@ -240,13 +240,12 @@ const InlinePolicyChangeComponent = (props) => {
     change.status === 'applied' ||
     change.status === 'cancelled'
 
-  let renderSideBySide = true
-  if (
-    change.change_type === 'policy_condenser' &&
-    change?.remove_unused_permissions === false
-  ) {
-    renderSideBySide = false
-  }
+  const renderSideBySide = useMemo(() => {
+    return !(
+      change.change_type === 'policy_condenser' &&
+      change?.remove_unused_permissions === false
+    )
+  }, [change])
 
   const policyChangeContent = change ? (
     <Grid fluid>
