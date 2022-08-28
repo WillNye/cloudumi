@@ -535,3 +535,45 @@ export const ReadOnlyPolicyMonacoEditor = ({
     </>
   )
 }
+
+export const BasePolicyMonacoEditor = ({
+  policy,
+  defaultLanguage = 'json',
+  onChange = () => {},
+  json = true,
+  readOnly = false,
+}) => {
+  const EditorOptions = {
+    ...editorOptions,
+    readOnly: readOnly,
+    json: json,
+    defaultLanguage: defaultLanguage,
+  }
+  const editorTheme = getLocalStorageSettings('editorTheme')
+  let policyValue = policy
+  if (json) {
+    policyValue = JSON.stringify(policy, null, '\t')
+  }
+  return (
+    <>
+      <Segment
+        attached
+        style={{
+          border: 0,
+          padding: 0,
+        }}
+      >
+        <Editor
+          height='540px'
+          defaultLanguage='json'
+          theme={editorTheme}
+          value={policyValue}
+          options={EditorOptions}
+          onMount={editorDidMount}
+          onChange={onChange}
+          textAlign='center'
+        />
+      </Segment>
+    </>
+  )
+}

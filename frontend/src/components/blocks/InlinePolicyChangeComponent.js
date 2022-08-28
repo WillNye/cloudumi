@@ -160,7 +160,7 @@ const InlinePolicyChangeComponent = (props) => {
             <Table.Body>
               <Table.Row>
                 <Table.Cell>
-                  <b>Remove Managed Policies</b>
+                  <b>Remove Managed Policies when approved?</b>
                 </Table.Cell>
                 <Table.Cell>
                   {change.detach_managed_policies ? 'Yes' : 'No'}
@@ -240,44 +240,71 @@ const InlinePolicyChangeComponent = (props) => {
     change.status === 'applied' ||
     change.status === 'cancelled'
 
+  let renderSideBySide = true
+  if (
+    change.change_type === 'policy_condenser' &&
+    change?.remove_unused_permissions === false
+  ) {
+    renderSideBySide = false
+  }
+
   const policyChangeContent = change ? (
     <Grid fluid>
       <ResourceChangeApprovers allowedAdmins={allowedAdmins} />
 
       <Grid.Row columns='equal'>
-        <Grid.Column>
-          {change.change_type === 'policy_condenser' ? (
+        {change.change_type === 'policy_condenser' &&
+        change?.remove_unused_permissions === false ? (
+          <Grid.Column>
             <Header
               size='medium'
               content='Existing Policies (Simplified)'
-              subheader='This is a read-only view of the current policies of the
+              subheader='This view shows the current inline and managed policies of the
               identity condensed and minimized into a single policy.'
             ></Header>
-          ) : (
-            <Header
-              size='medium'
-              content='Current Policy'
-              subheader='This is a read-only view of the current policy in AWS.'
-            />
-          )}
-        </Grid.Column>
-        <Grid.Column>
-          {change.change_type === 'policy_condenser' ? (
-            <Header
-              size='medium'
-              content='Proposed Policy (With Unused Permissions Removed)'
-              subheader='This is an editable view of the simplifed policy with unused permissions removed.
+          </Grid.Column>
+        ) : null}
+
+        {change.change_type === 'policy_condenser' &&
+        change?.remove_unused_permissions === true ? (
+          <>
+            <Grid.Column>
+              <Header
+                size='medium'
+                content='Existing Policies (Simplified)'
+                subheader='This is a read-only view of the current policies of the
+              identity condensed and minimized into a single policy.'
+              ></Header>
+            </Grid.Column>
+            <Grid.Column>
+              <Header
+                size='medium'
+                content='Proposed Policy (With Unused Permissions Removed)'
+                subheader='This is an editable view of the simplifed policy with unused permissions removed.
             An approver can modify the policy before approving and applying it.'
-            ></Header>
-          ) : (
-            <Header
-              size='medium'
-              content='Proposed Policy'
-              subheader='This is an editable view of the proposed policy.
+              ></Header>
+            </Grid.Column>
+          </>
+        ) : null}
+        {change.change_type !== 'policy_condenser' ? (
+          <>
+            <Grid.Column>
+              <Header
+                size='medium'
+                content='Current Policy'
+                subheader='This is a read-only view of the current policy in AWS.'
+              />
+            </Grid.Column>
+            <Grid.Column>
+              <Header
+                size='medium'
+                content='Proposed Policy'
+                subheader='This is an editable view of the proposed policy.
               An approver can modify the proposed policy before approving and applying it.'
-            />
-          )}
-        </Grid.Column>
+              />
+            </Grid.Column>
+          </>
+        ) : null}
       </Grid.Row>
 
       <Grid.Row>
@@ -295,6 +322,7 @@ const InlinePolicyChangeComponent = (props) => {
             enableTerraform={true}
             enableCloudFormation={true}
             pythonScript={change?.python_script}
+            renderSideBySide={renderSideBySide}
           />
         </Grid.Column>
       </Grid.Row>

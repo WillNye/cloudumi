@@ -1289,6 +1289,9 @@ components:
             detach_managed_policies:
               type: boolean
               default: true
+            remove_unused_permissions:
+              type: boolean
+              default: false
             policy:
               $ref: "#/components/schemas/PolicyModel"
             old_policy:
