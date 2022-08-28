@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { Button, Form, Icon, Message, Segment } from 'semantic-ui-react'
 import Editor, { useMonaco } from '@monaco-editor/react'
 import {
@@ -509,10 +509,12 @@ export const ReadOnlyPolicyMonacoEditor = ({
     defaultLanguage: defaultLanguage,
   }
   const editorTheme = getLocalStorageSettings('editorTheme')
-  let policyValue = policy
-  if (json) {
-    policyValue = JSON.stringify(policy, null, '\t')
-  }
+  const policyValue = useMemo(() => {
+    if (json) {
+      return JSON.stringify(policy, null, '\t')
+    }
+    return policy
+  }, [policy, json])
   return (
     <>
       <Segment
@@ -550,10 +552,14 @@ export const BasePolicyMonacoEditor = ({
     defaultLanguage: defaultLanguage,
   }
   const editorTheme = getLocalStorageSettings('editorTheme')
-  let policyValue = policy
-  if (json) {
-    policyValue = JSON.stringify(policy, null, '\t')
-  }
+
+  const policyValue = useMemo(() => {
+    if (json) {
+      return JSON.stringify(policy, null, '\t')
+    }
+    return policy
+  }, [policy, json])
+
   return (
     <>
       <Segment
