@@ -727,6 +727,8 @@ class RequestsHandler(BaseAPIV2Handler):
                 requests_to_write.append(request)
         else:
             requests_to_write = requests[0:limit]
+
+        requests_to_write = sorted(requests_to_write, key=lambda d: d['request_time'], reverse=True)
         filtered_count = len(requests_to_write)
         res = DataTableResponse(
             totalCount=total_count, filteredCount=filtered_count, data=requests_to_write
@@ -1051,35 +1053,36 @@ class RequestsPageConfigHandler(BaseHandler):
                 "allowJsonExport": True,
                 "columns": [
                     {
+                        "placeholder": "Request ID",
+                        "key": "request_id",
+                        "type": "link",
+                        "style": {"whiteSpace": "normal", "wordBreak": "break-all"},
+                        "width": 4,
+                    },
+                    {
                         "placeholder": "Username",
                         "key": "username",
                         "type": "input",
-                        "style": {"width": "100px"},
+                        "width": 3,
                     },
                     {
                         "placeholder": "Arn",
                         "key": "arn",
                         "type": "link",
                         "style": {"whiteSpace": "normal", "wordBreak": "break-all"},
-                        "width": 3,
+                        "width": 5,
                     },
                     {
                         "placeholder": "Request Time",
                         "key": "request_time",
                         "type": "daterange",
+                        "width": 2,
                     },
                     {
                         "placeholder": "Status",
                         "key": "status",
                         "type": "dropdown",
-                        "style": {"width": "90px"},
-                    },
-                    {
-                        "placeholder": "Request ID",
-                        "key": "request_id",
-                        "type": "link",
-                        "style": {"whiteSpace": "normal", "wordBreak": "break-all"},
-                        "width": 2,
+                        "width": 1,
                     },
                 ],
             },
