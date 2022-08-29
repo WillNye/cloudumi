@@ -1,13 +1,18 @@
 import { DateTime } from 'luxon'
 
-export const formatISODate = (date) => {
-  const jsdate = new Date(date)
-  const dateObj = DateTime.fromJSDate(jsdate)
-  return dateObj.toUTC().toFormat('dd MMM yyyy, hh:mm a')
+export const formatISODate = (stringDate) => {
+  const dateObj = DateTime.fromSQL(stringDate, { zone: 'utc' })
+  return dateObj.toFormat('dd MMM yyyy, hh:mm a')
 }
 
-const compareDates = (startDate, endDate) =>
-  new Date(startDate).getTime() > new Date(endDate).getTime()
+const covertToJsDate = (stringDate) => {
+  const dateObj = DateTime.fromSQL(stringDate, { zone: 'utc' })
+  return dateObj.toJSDate()
+}
+
+const compareDates = (startDate, endDate) => {
+  return covertToJsDate(startDate).getTime() > covertToJsDate(endDate).getTime()
+}
 
 const updateDiffChanges = (newChange, oldChange) => {
   if (compareDates(newChange.updated_at, oldChange.updated_at)) {
@@ -36,9 +41,9 @@ export const getNewDiffChanges = (diffChanges, newChange) => {
 }
 
 export const getPreviousAssociatedPolicy = (resourceHistory, newVersion) => {
-  const newVersionDateTime = new Date(newVersion.updated_at).getTime()
+  const newVersionDateTime = covertToJsDate(newVersion.updated_at).getTime()
   const previousVersion = resourceHistory.find((version) => {
-    const dateTime = new Date(version.updated_at).getTime()
+    const dateTime = covertToJsDate(version.updated_at).getTime()
     return (
       version.config_change.arn === newVersion.config_change.arn &&
       newVersionDateTime > dateTime
