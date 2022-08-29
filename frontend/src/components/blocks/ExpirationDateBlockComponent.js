@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { DateTime } from 'luxon'
 import { Button, Header, Icon, Message, Segment, Form } from 'semantic-ui-react'
 import SemanticDatepicker from 'react-semantic-ui-datepickers'
+import DateTimePicker from './DateTimePicker'
 
 const ExpirationDateBlockComponent = ({
   reloadDataFromBackend,
@@ -137,6 +138,8 @@ const ExpirationDateBlockComponent = ({
       </Header>
       {messagesToShow}
       {dateInput}
+
+      <DateTimePicker />
     </Segment>
   )
 }
