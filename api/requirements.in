@@ -21,7 +21,7 @@ jsonschema
 kombu
 marshmallow
 mkdocs
-newrelic
+newrelic --no-binary=newrelic
 okta
 okta-jwt
 onelogin

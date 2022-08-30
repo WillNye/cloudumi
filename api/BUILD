@@ -226,6 +226,7 @@ container_image(
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
+    data_path = "/",
     docker_run_flags = "-v ~/.aws:/root/.aws -v /etc/weep:/etc/weep",
 )
 
@@ -244,6 +245,7 @@ container_image(
         "//deploy/layers:weep",
     ],
     ports = ["8092", "2222"],
+    data_path = "/",
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
