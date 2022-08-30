@@ -19,7 +19,6 @@ if os.getenv("DEBUG"):
 import asyncio
 import logging
 
-import newrelic.agent
 import tornado.autoreload
 import tornado.httpserver
 import tornado.ioloop
@@ -49,7 +48,6 @@ if configured_profiler:
     else:
         raise ValueError(f"Profiler {configured_profiler} not supported")
 
-newrelic.agent.initialize()
 logging.basicConfig(level=logging.DEBUG, format=config.get("_global_.logging.format"))
 logging.getLogger("_global_.urllib3.connectionpool").setLevel(logging.CRITICAL)
 log = config.get_logger()
