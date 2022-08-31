@@ -1225,7 +1225,7 @@ async def remove_expired_tenant_requests(tenant: str):
 
     for request in all_requests:
         await remove_expired_request_changes(
-            ExtendedRequestModel.parse_obj(request.extended_request.dict()),
+            ExtendedRequestModel.parse_obj(await request.get_extended_request_dict()),
             tenant,
             None,
         )

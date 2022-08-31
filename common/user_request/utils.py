@@ -2,8 +2,8 @@ import asyncio
 import json
 import re
 import time
-from typing import get_args, get_type_hints
 from hashlib import sha1
+from typing import get_args, get_type_hints
 
 from common.aws.iam.role.models import IAMRole
 from common.aws.utils import ResourceSummary, get_resource_tag
@@ -39,13 +39,18 @@ class ChangeValidator:
             change_models = get_args(get_args(change_list_hint)[0])
             for change_model in change_models:
                 change_type_field = change_model.__dict__["__fields__"]["change_type"]
-                cls._change_types.add(change_model.get_field_type(change_type_field).__dict__["regex"])
+                cls._change_types.add(
+                    change_model.get_field_type(change_type_field).__dict__["regex"]
+                )
 
         return cls._change_types
 
     @classmethod
     def is_valid(cls, change_type: str) -> bool:
-        return any(re.match(change_type_re, change_type) for change_type_re in cls.change_types())
+        return any(
+            re.match(change_type_re, change_type)
+            for change_type_re in cls.change_types()
+        )
 
 
 def re_match_any_pattern(str_obj: str, regex_patterns: list[str]) -> bool:

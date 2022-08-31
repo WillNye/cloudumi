@@ -777,7 +777,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
 
         await request.set_change_metadata()
         extended_request = ExtendedRequestModel.parse_obj(
-            request.extended_request.dict()
+            await request.get_extended_request_dict()
         )
         return extended_request, request.last_updated
 
@@ -852,7 +852,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             # Refresh the commands now that the policies in the script have changed
             await updated_request.set_change_metadata()
             extended_request = ExtendedRequestModel.parse_obj(
-                updated_request.extended_request.dict()
+                await updated_request.get_extended_request_dict()
             )
 
         populate_old_managed_policies_result = concurrent_results[2]
@@ -865,7 +865,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             # Refresh the commands now that the policies in the script have changed
             await updated_request.set_change_metadata()
             extended_request = ExtendedRequestModel.parse_obj(
-                updated_request.extended_request.dict()
+                await updated_request.get_extended_request_dict()
             )
 
         accounts_ids = await get_extended_request_account_ids(extended_request, tenant)
