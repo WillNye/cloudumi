@@ -97,7 +97,7 @@ async def validate_request_creation(
             return await handler.finish()
 
         resource_summary = await ResourceSummary.set(tenant, role_arn)
-        tra_config = get_tra_config(resource_summary)
+        tra_config = await get_tra_config(resource_summary)
         if tra_config.mfa.enabled:
             is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
             if not is_authenticated:

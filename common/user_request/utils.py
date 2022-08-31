@@ -195,7 +195,7 @@ def mfa_enabled_for_config(tra_config):
     return bool(tra_config.mfa and tra_config.mfa.enabled)
 
 
-def get_tra_config(
+async def get_tra_config(
     resource_summary: ResourceSummary, user_groups: list[str] = None
 ) -> TraConfig:
     """Retrieve the proper TRA config based on provided account, role, and user groups with temp access to the role.
@@ -211,22 +211,33 @@ def get_tra_config(
     tenant = resource_summary.tenant
     role = resource_summary.name
     account = resource_summary.account
+    update_config = False
 
     tra_config: TraConfig = (
         models.ModelAdapter(TraConfig).load_config(TRA_CONFIG_BASE_KEY, tenant).model
     )
     if not tra_config:
-        return TraConfig()  # Default config
+        update_config = True
+        tra_config = TraConfig()  # Default config
 
     # Set defaults
     if not tra_config.mfa:
+        update_config = True
         tra_config.mfa = MfaSupport()
         # if mfa hasn't been explicitly set the default by checking if tenant has mfa support
         tra_config.mfa.enabled = bool(
             config.get_tenant_specific_key("secrets.mfa", tenant, False)
         )
-    tra_config.supported_groups_tag = get_tra_supported_groups_tag(tenant)
-    tra_config.active_users_tag = get_active_tra_users_tag(tenant)
+
+    if not tra_config.supported_groups_tag:
+        update_config = True
+        tra_config.supported_groups_tag = get_tra_supported_groups_tag(tenant)
+        tra_config.active_users_tag = get_active_tra_users_tag(tenant)
+
+    if update_config:
+        await models.ModelAdapter(TraConfig).load_config(
+            TRA_CONFIG_BASE_KEY, tenant
+        ).from_model(tra_config).store_item()
 
     if not tra_config.approval_rules:
         return tra_config
@@ -278,7 +289,7 @@ async def get_tra_config_for_request(
     resource_summary = await ResourceSummary.set(tenant, arn)
     iam_role = await IAMRole.get(tenant, resource_summary.account, resource_summary.arn)
     tra_groups = get_user_tra_groups_for_role(tenant, iam_role, user_groups)
-    return get_tra_config(resource_summary, tra_groups)
+    return await get_tra_config(resource_summary, tra_groups)
 
 
 def get_active_tra_users_tag(tenant: str) -> str:
