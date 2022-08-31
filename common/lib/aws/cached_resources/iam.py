@@ -6,7 +6,7 @@ from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
-from common.user_request.utils import get_active_tear_users_tag, get_tear_config
+from common.user_request.utils import get_active_tra_users_tag, get_tra_config
 
 
 async def get_identity_arns_for_account(
@@ -88,50 +88,51 @@ async def retrieve_iam_managed_policies_for_tenant(
     return formatted_policies
 
 
-async def get_user_active_tear_roles_by_tag(tenant: str, user: str) -> list[str]:
-    """Get active TEAR roles for a given user
+async def get_user_active_tra_roles_by_tag(tenant: str, user: str) -> list[str]:
+    """Get active TRA roles for a given user
 
     :param tenant: The tenant to check against
     :param user:
 
-    :return: A list of roles that can be used as part of the TEAR workflow
+    :return: A list of roles that can be used as part of the TRA workflow
     """
     from common.aws.utils import ResourceSummary, get_resource_tag
+    from common.user_request.utils import TRA_CONFIG_BASE_KEY
 
     if not config.get_tenant_specific_key(
-        "temporary_elevated_access_requests.enabled", tenant, False
+        f"{TRA_CONFIG_BASE_KEY}.enabled", tenant, False
     ):
         return []
 
-    active_tear_roles = set()
+    active_tra_roles = set()
     all_iam_roles = await IAMRole.query(tenant)
-    tear_users_tag = get_active_tear_users_tag(tenant)
+    tra_users_tag = get_active_tra_users_tag(tenant)
 
     for iam_role in all_iam_roles:
         resource_summary = await ResourceSummary.set(tenant, iam_role.arn)
-        tear_config = get_tear_config(resource_summary)
-        if not tear_config.enabled:
+        tra_config = get_tra_config(resource_summary)
+        if not tra_config.enabled:
             continue
 
-        if active_tear_users := get_resource_tag(
-            iam_role.policy, tear_users_tag, True, set()
+        if active_tra_users := get_resource_tag(
+            iam_role.policy, tra_users_tag, True, set()
         ):
-            if user in active_tear_users:
-                active_tear_roles.add(iam_role.arn)
+            if user in active_tra_users:
+                active_tra_roles.add(iam_role.arn)
 
-    return list(active_tear_roles)
+    return list(active_tra_roles)
 
 
-async def get_tear_supported_roles_by_tag(
+async def get_tra_supported_roles_by_tag(
     eligible_roles: list[str], groups: list[str], tenant: str
 ) -> list[dict]:
-    """Get TEAR supported roles given a list of groups and already usable roles
+    """Get TRA supported roles given a list of groups and already usable roles
 
     :param eligible_roles: Roles that are already accessible and can be ignored
     :param groups: List of groups to check against
     :param tenant: The tenant to check against
 
-    :return: A list of roles that can be used as part of the TEAR workflow
+    :return: A list of roles that can be used as part of the TRA workflow
     """
     from common.aws.utils import ResourceSummary, get_resource_tag
 
@@ -142,15 +143,15 @@ async def get_tear_supported_roles_by_tag(
         if iam_role.arn in eligible_roles:
             continue
         resource_summary = await ResourceSummary.set(tenant, iam_role.arn)
-        tear_config = get_tear_config(resource_summary)
-        if not tear_config.enabled:
+        tra_config = get_tra_config(resource_summary)
+        if not tra_config.enabled:
             continue
 
         role = iam_role.dict()
-        if tear_groups := get_resource_tag(
-            role, tear_config.supported_groups_tag, True, set()
+        if tra_groups := get_resource_tag(
+            role, tra_config.supported_groups_tag, True, set()
         ):
-            if any(group in tear_groups for group in groups):
+            if any(group in tra_groups for group in groups):
                 escalated_roles[iam_role.arn] = role
 
     return list(escalated_roles.values())

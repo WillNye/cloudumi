@@ -52,7 +52,7 @@ from common.models import (
     Status,
 )
 from common.user_request.models import IAMRequest
-from common.user_request.utils import get_active_tear_users_tag
+from common.user_request.utils import get_active_tra_users_tag
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -1045,7 +1045,7 @@ async def remove_expired_request_changes(
                 log.error(log_data, exc_info=True)
                 sentry_sdk.capture_exception()
 
-        elif change.change_type == "tear_can_assume_role":
+        elif change.change_type == "tra_can_assume_role":
             request_user = extended_request.requester_info.extended_info.get(
                 "userName", None
             )
@@ -1054,7 +1054,7 @@ async def remove_expired_request_changes(
                     client,
                     "role",
                     principal_name,
-                    get_active_tear_users_tag(tenant),
+                    get_active_tra_users_tag(tenant),
                     request_user,
                 )
                 change.status = Status.expired

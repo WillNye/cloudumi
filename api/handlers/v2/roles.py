@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
-from common.aws.iam.role.utils import update_role_access_config, update_role_tear_config
+from common.aws.iam.role.utils import update_role_access_config, update_role_tra_config
 from common.config import config
 from common.handlers.base import BaseAdminHandler, BaseAPIV2Handler, BaseMtlsHandler
 from common.lib.auth import (
@@ -18,7 +18,7 @@ from common.lib.auth import (
     can_delete_iam_principals_app,
     get_accounts_user_can_view_resources_for,
 )
-from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
+from common.lib.aws.cached_resources.iam import get_tra_supported_roles_by_tag
 from common.lib.aws.utils import allowed_to_sync_role
 from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name
@@ -26,7 +26,7 @@ from common.lib.v2.aws_principals import get_eligible_role_details, get_role_det
 from common.models import (
     CloneRoleRequestModel,
     PrincipalModelRoleAccessConfig,
-    PrincipalModelTearConfig,
+    PrincipalModelTraConfig,
     RoleCreationRequestModel,
     Status2,
     WebResponse,
@@ -238,7 +238,7 @@ class RolesHandler(BaseAPIV2Handler):
     async def get(self):
         payload = {
             "eligible_roles": self.eligible_roles,
-            "escalated_roles": await get_tear_supported_roles_by_tag(
+            "escalated_roles": await get_tra_supported_roles_by_tag(
                 self.eligible_roles, self.groups, self.ctx.tenant
             ),
         }
@@ -839,7 +839,7 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
         await self.finish()
 
 
-class RoleTearConfigHandler(BaseAdminHandler):
+class RoleTraConfigHandler(BaseAdminHandler):
     """Handler for /api/v2/roles/{accountNumber}/{roleName}/elevated-access-config
 
     Allows an admin to update access to a specific role in an account.
@@ -855,7 +855,7 @@ class RoleTearConfigHandler(BaseAdminHandler):
         log_data = {
             "function": "RoleDetailHandler.put",
             "user": self.user,
-            "message": "Updating Role TEAR Config",
+            "message": "Updating Role TRA Config",
             "user-agent": self.request.headers.get("User-Agent"),
             "request_id": self.request_uuid,
             "account_id": account_id,
@@ -865,7 +865,7 @@ class RoleTearConfigHandler(BaseAdminHandler):
         log.debug(log_data)
 
         try:
-            tear_config = PrincipalModelTearConfig.parse_raw(self.request.body)
+            tra_config = PrincipalModelTraConfig.parse_raw(self.request.body)
         except ValidationError as e:
             log_data["message"] = "Validation Exception"
             log.error(log_data, exc_info=True)
@@ -880,8 +880,8 @@ class RoleTearConfigHandler(BaseAdminHandler):
             self.write_error(400, message="Error validating input: " + str(e))
             return
 
-        update_successful, err = await update_role_tear_config(
-            tenant, self.user, role_name, account_id, tear_config
+        update_successful, err = await update_role_tra_config(
+            tenant, self.user, role_name, account_id, tra_config
         )
         if not update_successful:
             self.set_status(500, err)

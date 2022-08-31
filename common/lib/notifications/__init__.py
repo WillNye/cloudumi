@@ -398,11 +398,10 @@ async def send_policy_request_status_update_v2(
     request_approvers = set()
     request_approvers.add(user_email)
     principal = await get_principal_friendly_name(extended_request.principal)
-    is_tear_request = any(
-        c.change_type == "tear_can_assume_role"
-        for c in extended_request.changes.changes
+    is_tra_request = any(
+        c.change_type == "tra_can_assume_role" for c in extended_request.changes.changes
     )
-    change_type = "Policy Change" if not is_tear_request else "Temporary Access"
+    change_type = "Policy Change" if not is_tra_request else "Temporary Access"
 
     if extended_request.request_status == RequestStatus.pending:
         subject = f"{app_name}: {change_type} request for {principal} has been created"
@@ -412,7 +411,7 @@ async def send_policy_request_status_update_v2(
             extended_request, tenant
         )
         request_approvers.update(resource_admins)
-    elif extended_request.request_status == RequestStatus.approved and is_tear_request:
+    elif extended_request.request_status == RequestStatus.approved and is_tra_request:
         subject = f"{app_name}: {user_email} has been granted temporary access to {principal}."
         message = subject
         if auto_approved:
