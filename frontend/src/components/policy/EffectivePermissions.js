@@ -19,13 +19,13 @@ const EffectivePermissions = () => {
   const [messages, setMessages] = useState([])
 
   // Existing value which is the modified Unused Policy value. This only applies on the
-  // Simplified Permissions excluding Unused Permissions pane
+  // Simplified Policy excluding Unused Permissions pane
   const [value, setValue] = useState(null)
 
-  // The value of the Simplified Permissions, only applies to the pane that only views the Simplifed Permissions
+  // The value of the Simplified Policy, only applies to the pane that only views the Simplifed Permissions
   // and not the Simplifed Permissions that exclude unused permissions.
   const [simplifiedPolicyValue, setSimplifedPolicyValue] = useState(null)
-  const [activePaneText, setActivePaneText] = useState('Simplified Permissions')
+  const [activePaneText, setActivePaneText] = useState('Simplified Policy')
 
   const setActivePane = (e, data) => {
     const menuItem = data.panes[data.activeIndex]
@@ -103,7 +103,7 @@ const EffectivePermissions = () => {
 
   const panes = [
     {
-      menuItem: 'Simplified Permissions',
+      menuItem: 'Simplified Policy',
       render: () => (
         <Tab.Pane attached={false}>
           <>
@@ -136,7 +136,7 @@ const EffectivePermissions = () => {
       ),
     },
     {
-      menuItem: 'Simplified Permissions, excluding Unused Permissions',
+      menuItem: 'Simplified Policy, excluding Unused Permissions',
       render: () => (
         <Tab.Pane attached={false}>
           <>
@@ -191,31 +191,20 @@ const EffectivePermissions = () => {
   return (
     <>
       <Header as='h2'>
-        Simplified Permissions
+        Simplified Policy
         <Header.Subheader>
           <br />
           This feature shows a simplified version of your identity's
           permissions. A policy is simplified by combining all of the identity's
           inline and managed policies into a single policy. Permissions are then
-          de-duplicated and alphabetically sorted.
-          <br />
-          <br />
-          This view also utilizes data from Access Advisor to show permissions
-          that have not been used in the last 90 days.
-          <br />
-          <br />
-          The button on the bottom allows you to request that the policies of
-          this identity be replaced with the simplified permissions, optionally
-          with unused permissions removed. You will be prompted before a
-          justification before the request is created. An administrator, or a
-          delegated administrator for the account will need to approve the
-          request before it is applied.
-          <br />
-          <br />
-          After the request is approved, Noq will proceed to add the simplified
-          permissions to the identity, and then remove all existing inline
-          policies and detach managed policies. The removal of managed policies
-          is optional.
+          de-duplicated and alphabetically sorted. This view also utilizes data
+          from Access Advisor to show permissions that have not been used in the
+          last 90 days. Please read the
+          <a href='/docs/features/permissions_management_and_request_framework/simplified_policy/'>
+            {' '}
+            documentation{' '}
+          </a>
+          for more information.
           <br />
           <br />
           Information on this page may be up to 8 hours out of date. Please note
@@ -229,8 +218,7 @@ const EffectivePermissions = () => {
         onTabChange={setActivePane}
       />
       <Divider horizontal />
-      {activePaneText ===
-      'Simplified Permissions, excluding Unused Permissions' ? (
+      {activePaneText === 'Simplified Policy, excluding Unused Permissions' ? (
         <>
           <Grid columns={1} centered>
             <Grid.Row>
@@ -256,7 +244,7 @@ const EffectivePermissions = () => {
           />
         </>
       ) : null}
-      {activePaneText === 'Simplified Permissions' ? (
+      {activePaneText === 'Simplified Policy' ? (
         <>
           <Grid columns={1} centered>
             <Grid.Row>
@@ -264,7 +252,7 @@ const EffectivePermissions = () => {
                 <Button
                   primary
                   icon='send'
-                  content={'Request Simplified Permissions'}
+                  content={'Request Simplified Policy'}
                   onClick={onSimplifedPolicySubmit}
                   disabled={
                     !resourceEffectivePermissions?.effective_policy || !!error
