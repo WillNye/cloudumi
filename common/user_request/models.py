@@ -321,3 +321,13 @@ class IAMRequest(NoqModel):
             ] = python_script
 
         self.extended_request = self_dict["extended_request"]
+
+    async def get_extended_request_dict(self):
+        from common.user_request.utils import ChangeValidator
+
+        er_dict = self.extended_request.dict()
+
+        # tra_can_assume_role
+        # tear_can_assume_role
+        for elem, change in enumerate(er_dict.get("changes", {}).get("changes", [])):
+            print(elem, change)

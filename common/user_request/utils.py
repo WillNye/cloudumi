@@ -2,6 +2,7 @@ import asyncio
 import json
 import re
 import time
+from typing import get_args, get_type_hints
 from hashlib import sha1
 
 from common.aws.iam.role.models import IAMRole
@@ -11,6 +12,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.auth import is_tenant_admin
 from common.lib.timeout import Timeout
 from common.models import (
+    ChangeModelArray,
     CloudCredentials,
     Command,
     ExtendedRequestModel,
@@ -23,6 +25,27 @@ log = config.get_logger(__name__)
 TRA_SUPPORT_TAG = "noq-tra-supported-groups"
 TRA_USERS_TAG = "noq-tra-active-users"
 TRA_CONFIG_BASE_KEY = "temporary_role_access_requests"
+
+
+class ChangeValidator:
+    _change_types = set()
+
+    @classmethod
+    def change_types(cls):
+        if not cls._change_types:
+            # Change type hint is List[Union[ChangeTypes...]]
+            # Parse that out to get all supported change types
+            change_list_hint = get_type_hints(ChangeModelArray)["changes"]
+            change_models = get_args(get_args(change_list_hint)[0])
+            for change_model in change_models:
+                change_type_field = change_model.__dict__["__fields__"]["change_type"]
+                cls._change_types.add(change_model.get_field_type(change_type_field).__dict__["regex"])
+
+        return cls._change_types
+
+    @classmethod
+    def is_valid(cls, change_type: str) -> bool:
+        return any(re.match(change_type_re, change_type) for change_type_re in cls.change_types())
 
 
 def re_match_any_pattern(str_obj: str, regex_patterns: list[str]) -> bool:
