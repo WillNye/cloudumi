@@ -27,6 +27,7 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 
 from api.routes import make_app
 from common.config import config
+from common.handlers.external_processes import kill_proc, launch_proc
 from common.lib.plugins import get_plugin_by_name
 
 configured_profiler = config.get("_global_.profiler")
@@ -107,6 +108,13 @@ def init():
 
         log.debug({"message": "Server started", "port": port})
         signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
+        try:
+            launch_proc(
+                "fluent-bit",
+                "/opt/fluent-bit/bin/fluent-bit -c /etc/fluent-bit/fluent-bit.conf",
+            )
+        except ValueError:
+            log.warning("Could not launch fluent-bit")
         loop = asyncio.get_event_loop()
         for s in signals:
             loop.add_signal_handler(
@@ -116,6 +124,10 @@ def init():
             loop.run_forever()
         finally:
             loop.close()
+            try:
+                kill_proc("fluent-bit")
+            except ValueError:
+                log.warning("fluent-bit process not found")
             if configured_profiler:
                 if configured_profiler == "pprofile":
                     profiler.disable()
