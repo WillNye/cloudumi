@@ -8,14 +8,14 @@
 
 
 
-        <link rel="canonical" href="https://docs.noq.dev/docs/features/planned/pagerduty_integration/">
+        <link rel="canonical" href="https://docs.noq.dev/docs/features/permissions_management_and_request_framework/simplified_policy/">
 
       <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
 
 
 
-        <title>Pagerduty integration - Noq Docs</title>
+        <title>Simplified Policy and Removing Unused Permissions - Noq Docs</title>
 
 
 
@@ -75,6 +75,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
 
+
+        <a href="#simplified-policy" class="md-skip">
+          Skip to content
+        </a>
+
     </div>
     <div data-md-component="announce">
 
@@ -104,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
 
-              Pagerduty integration
+              Simplified Policy and Removing Unused Permissions
 
           </span>
         </div>
@@ -801,10 +806,12 @@
 
 
 
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" >
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" checked>
 
 
 
@@ -1007,10 +1014,14 @@
 
 
 
-    <li class="md-nav__item md-nav__item--nested">
 
 
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_2" type="checkbox" id="__nav_8_2" >
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+
+
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_2" type="checkbox" id="__nav_8_2" checked>
+
+
 
 
 
@@ -1055,7 +1066,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/autogenerate_x_account_permissions/" class="md-nav__link">
+      <a href="../autogenerate_x_account_permissions/" class="md-nav__link">
         Autogenerate Cross Account Requests
       </a>
     </li>
@@ -1069,7 +1080,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/automatically_approve_low_risk_requests/" class="md-nav__link">
+      <a href="../automatically_approve_low_risk_requests/" class="md-nav__link">
         Automatically Approve Low-Risk Requests
       </a>
     </li>
@@ -1083,7 +1094,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/customizable_policy_requests/" class="md-nav__link">
+      <a href="../customizable_policy_requests/" class="md-nav__link">
         Customize Policy Requests Before Approving
       </a>
     </li>
@@ -1097,7 +1108,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/permissions_are_crud/" class="md-nav__link">
+      <a href="../permissions_are_crud/" class="md-nav__link">
         Customizable CRUD Mapping for Permissions
       </a>
     </li>
@@ -1111,7 +1122,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/decentralized_request_management/" class="md-nav__link">
+      <a href="../decentralized_request_management/" class="md-nav__link">
         Decentralized Request Management
       </a>
     </li>
@@ -1124,8 +1135,117 @@
 
 
 
+
+
+    <li class="md-nav__item md-nav__item--active">
+
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+
+
+
+
+
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Simplified Policy and Removing Unused Permissions
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Simplified Policy and Removing Unused Permissions
+      </a>
+
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+
+
+
+
+
+
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+
+        <li class="md-nav__item">
+  <a href="#how-does-it-work" class="md-nav__link">
+    How does it work?
+  </a>
+
+</li>
+
+        <li class="md-nav__item">
+  <a href="#tutorial" class="md-nav__link">
+    Tutorial
+  </a>
+
+    <nav class="md-nav" aria-label="Tutorial">
+      <ul class="md-nav__list">
+
+          <li class="md-nav__item">
+  <a href="#creating-a-request-to-simplify-policies" class="md-nav__link">
+    Creating a request to Simplify Policies
+  </a>
+
+</li>
+
+          <li class="md-nav__item">
+  <a href="#approving-or-rejecting-a-simplified-policy-request" class="md-nav__link">
+    Approving or Rejecting a Simplified Policy Request
+  </a>
+
+</li>
+
+      </ul>
+    </nav>
+
+</li>
+
+        <li class="md-nav__item">
+  <a href="#how-to" class="md-nav__link">
+    How-To
+  </a>
+
+    <nav class="md-nav" aria-label="How-To">
+      <ul class="md-nav__list">
+
+          <li class="md-nav__item">
+  <a href="#include-or-exclude-managed-policies-from-a-simplified-policy-request" class="md-nav__link">
+    Include or exclude Managed Policies from a Simplified Policy Request
+  </a>
+
+</li>
+
+          <li class="md-nav__item">
+  <a href="#update-the-requested-policy" class="md-nav__link">
+    Update the requested policy
+  </a>
+
+</li>
+
+      </ul>
+    </nav>
+
+</li>
+
+    </ul>
+
+</nav>
+
+    </li>
+
+
+
+
+
+
+
+
+
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/restrict_viewers_of_account_resources/" class="md-nav__link">
+      <a href="../restrict_viewers_of_account_resources/" class="md-nav__link">
         Restrict Viewers of Account Resources
       </a>
     </li>
@@ -1139,7 +1259,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/self_service_permissions/" class="md-nav__link">
+      <a href="../self_service_permissions/" class="md-nav__link">
         Self-Service Permissions
       </a>
     </li>
@@ -1153,7 +1273,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/temporary_policy_requests/" class="md-nav__link">
+      <a href="../temporary_policy_requests/" class="md-nav__link">
         Temporary Policy Requests
       </a>
     </li>
@@ -1167,7 +1287,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/temporary_role_access/" class="md-nav__link">
+      <a href="../temporary_role_access/" class="md-nav__link">
         Temporary Role Access
       </a>
     </li>
@@ -1181,7 +1301,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../permissions_management_and_request_framework/typeaheads_across_known_resources/" class="md-nav__link">
+      <a href="../typeaheads_across_known_resources/" class="md-nav__link">
         Typeaheads across all known resources
       </a>
     </li>
@@ -1358,7 +1478,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../automatic_permissions_generation/" class="md-nav__link">
+      <a href="../../planned/automatic_permissions_generation/" class="md-nav__link">
         Automatic Permissions Generation
       </a>
     </li>
@@ -1372,7 +1492,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../unused_permissions_removal/" class="md-nav__link">
+      <a href="../../planned/unused_permissions_removal/" class="md-nav__link">
         Unused Permissions Removal
       </a>
     </li>
@@ -1386,7 +1506,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../multi_role_wizard_selection/" class="md-nav__link">
+      <a href="../../planned/multi_role_wizard_selection/" class="md-nav__link">
         Multi-Role Self-Service
       </a>
     </li>
@@ -1400,7 +1520,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../multi_tag_wizard_request/" class="md-nav__link">
+      <a href="../../planned/multi_tag_wizard_request/" class="md-nav__link">
         Self-Service Wizard for Tagging
       </a>
     </li>
@@ -1414,7 +1534,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../2fa_step_up/" class="md-nav__link">
+      <a href="../../planned/2fa_step_up/" class="md-nav__link">
         2-Factor Step-Up
       </a>
     </li>
@@ -1457,60 +1577,6 @@
 
 
 
-        <label class="md-nav__link" for="__nav_9">
-          Swagger
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-
-      <nav class="md-nav" aria-label="Swagger" data-md-level="1">
-        <label class="md-nav__title" for="__nav_9">
-          <span class="md-nav__icon md-icon"></span>
-          Swagger
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-
-
-
-
-
-
-    <li class="md-nav__item">
-      <a href="../../../swagger/swagger/" class="md-nav__link">
-        Swagger Documentation
-      </a>
-    </li>
-
-
-
-
-        </ul>
-      </nav>
-    </li>
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-
-
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_10" type="checkbox" id="__nav_10" >
-
-
-
-
-
-
-
-
 
 
 
@@ -1534,14 +1600,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../../reference/style_guide/">Documentation Style Guide</a>
 
-            <label for="__nav_10">
+            <label for="__nav_9">
               <span class="md-nav__icon md-icon"></span>
             </label>
 
         </div>
 
       <nav class="md-nav" aria-label="Documentation Style Guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_10">
+        <label class="md-nav__title" for="__nav_9">
           <span class="md-nav__icon md-icon"></span>
           Documentation Style Guide
         </label>
@@ -1685,6 +1751,77 @@
 
 
 
+
+
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+
+        <li class="md-nav__item">
+  <a href="#how-does-it-work" class="md-nav__link">
+    How does it work?
+  </a>
+
+</li>
+
+        <li class="md-nav__item">
+  <a href="#tutorial" class="md-nav__link">
+    Tutorial
+  </a>
+
+    <nav class="md-nav" aria-label="Tutorial">
+      <ul class="md-nav__list">
+
+          <li class="md-nav__item">
+  <a href="#creating-a-request-to-simplify-policies" class="md-nav__link">
+    Creating a request to Simplify Policies
+  </a>
+
+</li>
+
+          <li class="md-nav__item">
+  <a href="#approving-or-rejecting-a-simplified-policy-request" class="md-nav__link">
+    Approving or Rejecting a Simplified Policy Request
+  </a>
+
+</li>
+
+      </ul>
+    </nav>
+
+</li>
+
+        <li class="md-nav__item">
+  <a href="#how-to" class="md-nav__link">
+    How-To
+  </a>
+
+    <nav class="md-nav" aria-label="How-To">
+      <ul class="md-nav__list">
+
+          <li class="md-nav__item">
+  <a href="#include-or-exclude-managed-policies-from-a-simplified-policy-request" class="md-nav__link">
+    Include or exclude Managed Policies from a Simplified Policy Request
+  </a>
+
+</li>
+
+          <li class="md-nav__item">
+  <a href="#update-the-requested-policy" class="md-nav__link">
+    Update the requested policy
+  </a>
+
+</li>
+
+      </ul>
+    </nav>
+
+</li>
+
+    </ul>
+
 </nav>
                   </div>
                 </div>
@@ -1697,9 +1834,52 @@
 
 
 
-  <h1>Pagerduty integration</h1>
-
-
+<h1 id="simplified-policy"><strong>Simplified Policy</strong><a class="headerlink" href="#simplified-policy" title="Permanent link">&para;</a></h1>
+<p>Have you ever wanted to determine what permissions an IAM role or IAM user was using, only to discover a confusing mix of inline
+and managed policies? Did you ever run across redundant permissions,
+or a large collection of unsorted actions or resources? Did you ever run into limits on the size or number of policies for an identity?</p>
+<p>If so, Noq's "Simplifed Policy" feature is for you. With this feature, we intend to make a role's
+policy more comprehensible and easier to understand. We will enable you to tell which
+of these permissions are actually being used by the identity.</p>
+<h2 id="how-does-it-work"><strong>How does it work?</strong><a class="headerlink" href="#how-does-it-work" title="Permanent link">&para;</a></h2>
+<p>Noq will create a simplified policy for a role by combining all of an identity's inline and managed policies. We then de-duplicate and alphabetize your actions and resources. For example, if you have a policy with <code>"Action": "s3:*", "Effect": "Allow", "Resource": "*"</code> and <code>"Action": "s3:GetObject", "Effect": "Allow", "Resource": "arn:aws:s3:::bucket"</code>, the first policy would supersede the second one and you would be left with: <code>"Action": "s3:*", "Effect": "Allow", "Resource": "*"</code>. Noq also supports more complicated scenarios, with multiple actions and resources. Users can safely request that all of an identity's policies are replaced with the simplified policy.</p>
+<p>Noq also utilizes data from Access Advisor to show permissions that have not been used in the last 90 days, and provides a mechanism for a user to request a simplified policy with all unused permissions removed. After the request is approved by an administrator, Noq will add the simplified policy to the identity, then remove all existing inline and managed policies from the role. If desired, the managed policies on the role can be retained.</p>
+<h2 id="tutorial"><strong>Tutorial</strong><a class="headerlink" href="#tutorial" title="Permanent link">&para;</a></h2>
+<h3 id="creating-a-request-to-simplify-policies"><strong>Creating a request to Simplify Policies</strong><a class="headerlink" href="#creating-a-request-to-simplify-policies" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Search for an IAM role or IAM user under <strong>Resources</strong> -&gt; <strong>All Cloud Resources</strong></li>
+<li>Click on the identity's ARN to visit the identity's policy editor page</li>
+<li>Click <em>Simplified Policy</em> in the menu bar</li>
+<li>Click <em>Simplified Policy</em> to view <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/policy_condenser/view_edit_simplified_policy.png" style="display: block; margin: auto; width:100%" /></li>
+<li>To request a simplified policy, click <em>Request Simplified Policy</em>. Alternatively, you can visit the "Simplifed Policy, excluding Unused Permissions" tab and click <em>Request Simplified Policy with Unused Permissions Removed</em></li>
+<li>A modal will display. Provide the justification and click "Submit". <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/policy_condenser/submit_request.png" style="display: block; margin: auto; width:100" /></li>
+<li>After the request has been submitted successfully you will be provided the request id which links to the request. <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/policy_condenser/request_created.png" style="display: block; margin: auto; width:100%" /></li>
+<li>From the request detail page you can check the status of your request.</li>
+<li>Once it has been approved you will be notified via E-Mail and/or Slack.</li>
+</ol>
+<h3 id="approving-or-rejecting-a-simplified-policy-request"><strong>Approving or Rejecting a Simplified Policy Request</strong><a class="headerlink" href="#approving-or-rejecting-a-simplified-policy-request" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Click "Resources" in the navigation bar. From there, click "All Policy Requests" <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/request_dropdown.png" style="display: block; margin: auto; width:100%" /></li>
+<li>Click the Request ID of the request to be approved. <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/select_request.png" style="display: block; margin: auto; width:100%" /></li>
+<li>Review the generated policy. <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/policy_condenser/view_the_request.png" style="display: block; margin: auto; width:100%" /></li>
+<li>To apply the change click "Apply Change" or to reject the change click "Reject Change". You will only be able to apply the change if you are
+   a super administrator or a delegated administrator of the account in Noq</li>
+</ol>
+<h2 id="how-to"><strong>How-To</strong><a class="headerlink" href="#how-to" title="Permanent link">&para;</a></h2>
+<h3 id="include-or-exclude-managed-policies-from-a-simplified-policy-request"><strong>Include or exclude Managed Policies from a Simplified Policy Request</strong><a class="headerlink" href="#include-or-exclude-managed-policies-from-a-simplified-policy-request" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Go to the details page of the role and select <code>Simplified Policy</code> in the menu.</li>
+<li>Scroll down until you see the button "Request Condensed Policy with Unused Permissions Removed" and click it  <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/policy_condenser/click_create_request.png" style="display: block; margin: auto; width:100%" /></li>
+<li>A modal will display. <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/policy_condenser/submit_request.png" style="display: block; margin: auto; width:100%" /></li>
+<li>Inside the modal is an option to "Also Detach Existing Managed Policies". If Selected, the Managed Policies attached to the role will be detached as part of the request.</li>
+</ol>
+<h3 id="update-the-requested-policy"><strong>Update the requested policy</strong><a class="headerlink" href="#update-the-requested-policy" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Click "Resources" in the navigation bar. From there, click "All Policy Requests" <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/request_dropdown.png" style="display: block; margin: auto; width:100%" /></li>
+<li>Click the Request ID of the request to be approved. <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/select_request.png" style="display: block; margin: auto; width:100%" /></li>
+<li>Update the "Proposed Policy" as needed. <img alt="Simplified Policy" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/policy_condenser/view_the_request.png" style="display: block; margin: auto; width:100%" /></li>
+<li>Scroll down, within the change click "Update Change"</li>
+</ol>
 
 
             </article>
@@ -1710,6 +1890,42 @@
       </main>
 
         <footer class="md-footer">
+
+
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+
+
+        <a href="../decentralized_request_management/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Decentralized Request Management" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Decentralized Request Management
+            </div>
+          </div>
+        </a>
+
+
+
+        <a href="../restrict_viewers_of_account_resources/" class="md-footer__link md-footer__link--next" aria-label="Next: Restrict Viewers of Account Resources" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Restrict Viewers of Account Resources
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+
+    </nav>
 
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
