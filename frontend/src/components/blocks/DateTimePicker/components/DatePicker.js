@@ -1,15 +1,18 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import SemanticDatepicker from 'react-semantic-ui-datepickers'
 import { parseDate } from '../utils'
 
-const DatePicker = ({ setDate, isDisabled, value }) => {
-  const handleOnChange = (_event, data) => {
-    if (!data?.value) {
-      setDate(null)
-      return
-    }
-    setDate(data.value)
-  }
+const DatePicker = ({ handleOnDateChange, isDisabled, value }) => {
+  const handleOnChange = useCallback(
+    (_event, data) => {
+      if (!data?.value) {
+        handleOnDateChange(null)
+        return
+      }
+      handleOnDateChange(data.value)
+    },
+    [handleOnDateChange]
+  )
 
   return (
     <SemanticDatepicker
