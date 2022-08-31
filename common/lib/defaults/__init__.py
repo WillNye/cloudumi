@@ -35,14 +35,22 @@ permissions_map:
           - s3:GetObjectVersionTagging
           - s3:GetObjectAcl
           - s3:GetObjectVersionAcl
+          - s3:GetBucket*
       - name: put
         text: Put
         permissions:
           - s3:PutObject
           - s3:PutObjectTagging
           - s3:PutObjectVersionTagging
+          - s3:PutObjectLegalHold
           - s3:ListMultipartUploadParts*
-          - s3:AbortMultipartUpload
+          - s3:PutObjectRetention
+          - s3:Abort*
+      - name: put_object_acl
+        text: PutObjectAcl
+        permissions:
+          - s3:PutObjectAcl
+          - s3:PutObjectVersionAcl
       - name: delete
         text: Delete
         permissions:
@@ -73,6 +81,7 @@ permissions_map:
           - sqs:GetQueueUrl
           - sqs:ReceiveMessage
           - sqs:DeleteMessage
+          - sqs:ChangeMessageVisibility
       - name: set_queue_attributes
         text: Set Queue Attributes
         permissions:
@@ -81,6 +90,8 @@ permissions_map:
         text: Purge Queue (You monster!)
         permissions:
           - sqs:PurgeQueue
+          - sqs:GetQueueAttributes
+          - sqs:GetQueueUrl
   sns:
     text: SNS Topic
     description: ""
@@ -123,6 +134,14 @@ permissions_map:
         text: PassRole
         permissions:
           - iam:PassRole
+      - name: rds_data_api
+        text: RDS Data API
+        permissions:
+          - 'rds-data:BatchExecuteStatement'
+          - 'rds-data:BeginTransaction'
+          - 'rds-data:CommitTransaction'
+          - 'rds-data:ExecuteStatement'
+          - 'rds-data:RollbackTransaction'
   ec2:
     text: EC2
     description: ""

@@ -62,7 +62,7 @@ const DataTableComponent = ({ config, mock }) => {
     )
   }
 
-  // TODO, if redirection is happening within ConsoleMe namespace then use useHistory
+  // TODO, if redirection is happening within NOQ namespace then use useHistory
   if (redirect) {
     return (
       <BrowserRouter forceRefresh>
@@ -82,7 +82,7 @@ const DataTableComponent = ({ config, mock }) => {
 
       <DataTableActionsComponent filters={filters} tableConfig={tableConfig} />
 
-      <Table sortable celled compact selectable striped>
+      <Table sortable basic='very' celled compact selectable>
         <DataTableColumnsComponent
           column={column}
           data={data}

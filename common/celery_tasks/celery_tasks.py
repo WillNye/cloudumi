@@ -20,6 +20,7 @@ import celery
 import sentry_sdk
 from asgiref.sync import async_to_sync
 from billiard.exceptions import SoftTimeLimitExceeded
+from botocore.exceptions import ClientError
 from celery import group
 from celery.app.task import Context
 from celery.concurrency import asynpool
@@ -44,6 +45,12 @@ from sentry_sdk.integrations.tornado import TornadoIntegration
 
 from common.aws.iam.policy.utils import get_all_managed_policies
 from common.aws.iam.role.models import IAMRole
+from common.aws.organizations.utils import (
+    autodiscover_aws_org_accounts,
+    cache_org_structure,
+    onboard_new_accounts_from_orgs,
+    sync_account_names_from_orgs,
+)
 from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config.models import ModelAdapter
@@ -64,7 +71,6 @@ from common.lib.aws.typeahead_cache import cache_aws_resource_details
 from common.lib.aws.utils import (
     allowed_to_sync_role,
     cache_all_scps,
-    cache_org_structure,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
     remove_expired_requests_for_tenants,
@@ -917,125 +923,140 @@ def cache_iam_resources_for_account(
         "account_id": account_id,
         "tenant": tenant,
     }
-    # Get the DynamoDB handler:
-    iam_user_cache_key = f"{tenant}_IAM_USER_CACHE"
-    # Only query IAM and put data in Dynamo if we're in the active region
-    if config.region == config.get_tenant_specific_key(
-        "celery.active_region", tenant, config.region
-    ) or config.get("_global_.environment") in [
-        "dev",
-        "test",
-    ]:
-        spoke_role_name = (
-            ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", tenant)
-            .with_query({"account_id": account_id})
-            .first.name
-        )
-        if not spoke_role_name:
-            log.error({**log_data, "message": "No spoke role name found"})
-            return
-        client = boto3_cached_conn(
-            "iam",
-            tenant,
-            None,
-            account_number=account_id,
-            assume_role=spoke_role_name,
-            region=config.region,
-            sts_client_kwargs=dict(
-                region_name=config.region,
-                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-            ),
-            client_kwargs=config.get_tenant_specific_key(
-                "boto3.client_kwargs", tenant, {}
-            ),
-            session_name=sanitize_session_name("noq_cache_iam_resources_for_account"),
-            read_only=True,
-        )
-        paginator = client.get_paginator("get_account_authorization_details")
-        response_iterator = paginator.paginate()
-        all_iam_resources = defaultdict(list)
-        for response in response_iterator:
-            if not all_iam_resources:
-                all_iam_resources = response
-            else:
-                all_iam_resources["UserDetailList"].extend(response["UserDetailList"])
-                all_iam_resources["GroupDetailList"].extend(response["GroupDetailList"])
-                all_iam_resources["RoleDetailList"].extend(response["RoleDetailList"])
-                all_iam_resources["Policies"].extend(response["Policies"])
-            for k in response.keys():
-                if k not in [
-                    "UserDetailList",
-                    "GroupDetailList",
-                    "RoleDetailList",
-                    "Policies",
-                    "ResponseMetadata",
-                    "Marker",
-                    "IsTruncated",
-                ]:
-                    # Fail hard if we find something unexpected
-                    raise RuntimeError("Unexpected key {0} in response".format(k))
+    log.debug({**log_data, "message": "Request received."})
 
-        # Store entire response in S3
-        async_to_sync(store_json_results_in_redis_and_s3)(
-            all_iam_resources,
-            s3_bucket=config.get_tenant_specific_key(
-                "cache_iam_resources_for_account.s3.bucket", tenant
-            ),
-            s3_key=config.get_tenant_specific_key(
-                "cache_iam_resources_for_account.s3.file",
+    try:
+        # Get the DynamoDB handler:
+        iam_user_cache_key = f"{tenant}_IAM_USER_CACHE"
+        # Only query IAM and put data in Dynamo if we're in the active region
+        if config.region == config.get_tenant_specific_key(
+            "celery.active_region", tenant, config.region
+        ) or config.get("_global_.environment") in [
+            "dev",
+            "test",
+        ]:
+            spoke_role_name = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", tenant)
+                .with_query({"account_id": account_id})
+                .first.name
+            )
+            if not spoke_role_name:
+                log.error({**log_data, "message": "No spoke role name found"})
+                return
+            client = boto3_cached_conn(
+                "iam",
                 tenant,
-                "get_account_authorization_details/get_account_authorization_details_{account_id}_v1.json.gz",
-            ).format(account_id=account_id),
-            tenant=tenant,
-        )
+                None,
+                account_number=account_id,
+                assume_role=spoke_role_name,
+                region=config.region,
+                sts_client_kwargs=dict(
+                    region_name=config.region,
+                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                ),
+                client_kwargs=config.get_tenant_specific_key(
+                    "boto3.client_kwargs", tenant, {}
+                ),
+                session_name=sanitize_session_name(
+                    "noq_cache_iam_resources_for_account"
+                ),
+                read_only=True,
+            )
+            paginator = client.get_paginator("get_account_authorization_details")
+            response_iterator = paginator.paginate()
+            all_iam_resources = defaultdict(list)
+            for response in response_iterator:
+                if not all_iam_resources:
+                    all_iam_resources = response
+                else:
+                    all_iam_resources["UserDetailList"].extend(
+                        response["UserDetailList"]
+                    )
+                    all_iam_resources["GroupDetailList"].extend(
+                        response["GroupDetailList"]
+                    )
+                    all_iam_resources["RoleDetailList"].extend(
+                        response["RoleDetailList"]
+                    )
+                    all_iam_resources["Policies"].extend(response["Policies"])
+                for k in response.keys():
+                    if k not in [
+                        "UserDetailList",
+                        "GroupDetailList",
+                        "RoleDetailList",
+                        "Policies",
+                        "ResponseMetadata",
+                        "Marker",
+                        "IsTruncated",
+                    ]:
+                        # Fail hard if we find something unexpected
+                        raise RuntimeError("Unexpected key {0} in response".format(k))
 
-        iam_users = all_iam_resources["UserDetailList"]
-        iam_roles = all_iam_resources["RoleDetailList"]
-        iam_policies = all_iam_resources["Policies"]
-
-        log_data["cache_refresh_required"] = async_to_sync(IAMRole.sync_account_roles)(
-            tenant, account_id, iam_roles
-        )
-
-        last_updated: int = int((datetime.utcnow()).timestamp())
-        ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
-        for user in iam_users:
-            user_entry = {
-                "arn": user.get("Arn"),
-                "tenant": tenant,
-                "name": user.get("UserName"),
-                "resourceId": user.get("UserId"),
-                "accountId": account_id,
-                "ttl": ttl,
-                "last_updated": last_updated,
-                "owner": get_aws_principal_owner(user, tenant),
-                "policy": NoqModel().dump_json_attr(user),
-                "templated": False,  # Templates not supported for IAM users at this time
-            }
-            # Redis:
-            _add_role_to_redis(iam_user_cache_key, user_entry, tenant)
-
-        # Maybe store all resources in git
-        if config.get_tenant_specific_key(
-            "cache_iam_resources_for_account.store_in_git.enabled",
-            tenant,
-        ):
-            store_iam_resources_in_git(all_iam_resources, account_id, tenant)
-
-        if iam_policies:
-            async_to_sync(store_iam_managed_policies_for_tenant)(
-                tenant, iam_policies, account_id
+            # Store entire response in S3
+            async_to_sync(store_json_results_in_redis_and_s3)(
+                all_iam_resources,
+                s3_bucket=config.get_tenant_specific_key(
+                    "cache_iam_resources_for_account.s3.bucket", tenant
+                ),
+                s3_key=config.get_tenant_specific_key(
+                    "cache_iam_resources_for_account.s3.file",
+                    tenant,
+                    "get_account_authorization_details/get_account_authorization_details_{account_id}_v1.json.gz",
+                ).format(account_id=account_id),
+                tenant=tenant,
             )
 
-    stats.count(
-        "cache_iam_resources_for_account.success",
-        tags={
-            "account_id": account_id,
-            "tenant": tenant,
-        },
-    )
-    log.debug({**log_data, "message": "Finished caching IAM resources for account"})
+            iam_users = all_iam_resources["UserDetailList"]
+            iam_roles = all_iam_resources["RoleDetailList"]
+            iam_policies = all_iam_resources["Policies"]
+
+            log_data["cache_refresh_required"] = async_to_sync(
+                IAMRole.sync_account_roles
+            )(tenant, account_id, iam_roles)
+
+            last_updated: int = int((datetime.utcnow()).timestamp())
+            ttl: int = int((datetime.utcnow() + timedelta(hours=6)).timestamp())
+            for user in iam_users:
+                user_entry = {
+                    "arn": user.get("Arn"),
+                    "tenant": tenant,
+                    "name": user.get("UserName"),
+                    "resourceId": user.get("UserId"),
+                    "accountId": account_id,
+                    "ttl": ttl,
+                    "last_updated": last_updated,
+                    "owner": get_aws_principal_owner(user, tenant),
+                    "policy": NoqModel().dump_json_attr(user),
+                    "templated": False,  # Templates not supported for IAM users at this time
+                }
+                # Redis:
+                _add_role_to_redis(iam_user_cache_key, user_entry, tenant)
+
+            # Maybe store all resources in git
+            if config.get_tenant_specific_key(
+                "cache_iam_resources_for_account.store_in_git.enabled",
+                tenant,
+            ):
+                store_iam_resources_in_git(all_iam_resources, account_id, tenant)
+
+            if iam_policies:
+                async_to_sync(store_iam_managed_policies_for_tenant)(
+                    tenant, iam_policies, account_id
+                )
+
+        stats.count(
+            "cache_iam_resources_for_account.success",
+            tags={
+                "account_id": account_id,
+                "tenant": tenant,
+            },
+        )
+        log.debug({**log_data, "message": "Finished caching IAM resources for account"})
+    except Exception as err:
+        log_data["error"] = str(err)
+        log.exception(log_data)
+
     return log_data
 
 
@@ -1082,13 +1103,13 @@ def cache_access_advisor_across_accounts(tenant: str) -> Dict:
     log_data["num_accounts"] = len(accounts_d.keys())
 
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment") == "prod":
-            cache_access_advisor_for_account.delay(tenant, account_id)
-        else:
+        if config.get("_global_.environment") == "test":
             if account_id in config.get_tenant_specific_key(
                 "celery.test_account_ids", tenant, []
             ):
                 cache_access_advisor_for_account.delay(tenant, account_id)
+        else:
+            cache_access_advisor_for_account.delay(tenant, account_id)
 
     stats.count(f"{function}.success")
     log.debug(log_data)
@@ -1096,7 +1117,7 @@ def cache_access_advisor_across_accounts(tenant: str) -> Dict:
 
 
 @app.task(soft_time_limit=3600)
-def cache_access_advior_across_accounts_for_all_tenants() -> Dict:
+def cache_access_advisor_across_accounts_for_all_tenants() -> Dict:
     """Triggers `cache_access_advisor_across_accounts` task for each tenant.
 
     :return: Number of tenants that had tasks triggered.
@@ -1339,13 +1360,13 @@ def cache_managed_policies_across_accounts(tenant=None) -> bool:
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all accounts
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment") == "prod":
-            cache_managed_policies_for_account.delay(account_id, tenant=tenant)
-        else:
+        if config.get("_global_.environment") == "test":
             if account_id in config.get_tenant_specific_key(
                 "celery.test_account_ids", tenant, []
             ):
                 cache_managed_policies_for_account.delay(account_id, tenant=tenant)
+        else:
+            cache_managed_policies_for_account.delay(account_id, tenant=tenant)
 
     stats.count(f"{function}.success")
     return True
@@ -1401,13 +1422,14 @@ def cache_s3_buckets_across_accounts(
     ) or config.get("_global_.environment") in ["dev"]:
         # Call tasks to enumerate all S3 buckets across all accounts
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_s3_buckets_for_account.s(account_id, tenant))
+
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1496,13 +1518,13 @@ def cache_sqs_queues_across_accounts(
         "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_sqs_queues_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1587,13 +1609,13 @@ def cache_sns_topics_across_accounts(
         "celery.active_region", tenant, config.region
     ) or config.get("_global_.environment") in ["dev"]:
         for account_id in accounts_d.keys():
-            if config.get("_global_.environment") in ["prod", "dev"]:
-                tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
-            else:
+            if config.get("_global_.environment") == "test":
                 if account_id in config.get_tenant_specific_key(
                     "celery.test_account_ids", tenant, []
                 ):
                     tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
+            else:
+                tasks.append(cache_sns_topics_for_account.s(account_id, tenant))
     log_data["num_tasks"] = len(tasks)
     if tasks and run_subtasks:
         results = group(*tasks).apply_async()
@@ -1764,20 +1786,25 @@ def cache_sns_topics_for_account(
             if not spoke_role_name:
                 log.error({**log_data, "message": "No spoke role name found"})
                 return
-            topics = list_topics(
-                tenant=tenant,
-                account_number=account_id,
-                assume_role=spoke_role_name,
-                region=region,
-                read_only=True,
-                sts_client_kwargs=dict(
-                    region_name=config.region,
-                    endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-                ),
-                client_kwargs=config.get_tenant_specific_key(
-                    "boto3.client_kwargs", tenant, {}
-                ),
-            )
+            topics = []
+            try:
+                topics = list_topics(
+                    tenant=tenant,
+                    account_number=account_id,
+                    assume_role=spoke_role_name,
+                    region=region,
+                    read_only=True,
+                    sts_client_kwargs=dict(
+                        region_name=config.region,
+                        endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+                    ),
+                    client_kwargs=config.get_tenant_specific_key(
+                        "boto3.client_kwargs", tenant, {}
+                    ),
+                )
+            except ClientError as e:
+                if "AuthorizationError" not in str(e):
+                    raise
             for topic in topics:
                 all_topics.add(topic["TopicArn"])
         except Exception as e:
@@ -1979,7 +2006,15 @@ def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict
         for result in results:
             result["ttl"] = ttl
             result["tenant"] = tenant
-            result["entity_id"] = result["arn"]
+            alternative_entity_id = "|||".join(
+                [
+                    result.get("accountId"),
+                    result.get("awsRegion"),
+                    result.get("resourceId"),
+                    result.get("resourceType"),
+                ]
+            )
+            result["entity_id"] = result.get("arn", alternative_entity_id)
             if result.get("arn"):
                 if redis_result_set.get(result["arn"]):
                     continue
@@ -2074,25 +2109,16 @@ def cache_resources_from_aws_config_across_accounts(
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
     # Second, call tasks to enumerate all the roles across all tenant accounts
     for account_id in accounts_d.keys():
-        if config.get("_global_.environment", None) in [
-            "prod",
-            "dev",
-        ]:
-            tasks.append(
-                cache_resources_from_aws_config_for_account.s(account_id, tenant)
-            )
-        elif account_id in config.get_tenant_specific_key(
-            "celery.test_account_ids", tenant, []
-        ):
-            tasks.append(
-                cache_resources_from_aws_config_for_account.s(account_id, tenant)
-            )
+        if config.get("_global_.environment", None) == "test":
+            if account_id in config.get_tenant_specific_key(
+                "celery.test_account_ids", tenant, []
+            ):
+                tasks.append(
+                    cache_resources_from_aws_config_for_account.s(account_id, tenant)
+                )
         else:
-            log.debug(
-                {
-                    **log_data,
-                    "message": "Not running task because we're not in prod|dev, and we don't have any test account IDs",
-                }
+            tasks.append(
+                cache_resources_from_aws_config_for_account.s(account_id, tenant)
             )
     if tasks:
         if run_subtasks:
@@ -2288,8 +2314,27 @@ def cache_organization_structure(tenant=None) -> Dict:
         "tenant": tenant,
     }
 
+    # Loop through all accounts and add organizations if enabled
+    orgs_accounts_added = async_to_sync(autodiscover_aws_org_accounts)(tenant)
+    log_data["orgs_accounts_added"] = list(orgs_accounts_added)
+    # Onboard spoke accounts if enabled for org
+    log_data["accounts_onboarded"] = async_to_sync(onboard_new_accounts_from_orgs)(
+        tenant
+    )
+    # Sync account names if enabled in org
+    log_data["account_names_synced"] = async_to_sync(sync_account_names_from_orgs)(
+        tenant
+    )
+
     try:
         org_structure = async_to_sync(cache_org_structure)(tenant)
+        log.debug(
+            {
+                **log_data,
+                "message": "Successfully cached organization structure",
+                "num_organizations": len(org_structure),
+            }
+        )
     except MissingConfigurationValue as e:
         log.debug(
             {
@@ -2298,14 +2343,17 @@ def cache_organization_structure(tenant=None) -> Dict:
                 "error": str(e),
             }
         )
-        return log_data
-    log.debug(
-        {
-            **log_data,
-            "message": "Successfully cached organization structure",
-            "num_organizations": len(org_structure),
-        }
-    )
+    except Exception as err:
+        log.exception(
+            {
+                **log_data,
+                "error": str(err),
+            },
+            exc_info=True,
+        )
+        sentry_sdk.capture_exception()
+        raise
+
     return log_data
 
 
@@ -2805,8 +2853,8 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
-    "cache_access_advior_across_accounts_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.cache_access_advior_across_accounts_for_all_tenants",
+    "cache_access_advisor_across_accounts_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },

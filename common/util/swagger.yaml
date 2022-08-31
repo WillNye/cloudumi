@@ -1,14 +1,13 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
-# consoleme/models.py:
+# noq/models.py:
 # `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' ; black ../models.py`
-
 # To exclude a property from being returned when calling model.dict() by default add the property is_secret: true
 
 openapi: 3.0.0
 info:
-  description: ConsoleMe API definition
+  description: NOQ API definition
   version: "2.0.0"
-  title: ConsoleMe v2 API
+  title: NOQ v2 API
   contact:
     email: consoleme-owners@netflix.com
   license:
@@ -18,7 +17,7 @@ servers:
   - url: "{server}/api/v2"
     variables:
       server:
-        default: https://consoleme.example.com
+        default: https://noq.example.com
 tags:
   - name: roles
     description: IAM Role endpoints
@@ -120,6 +119,7 @@ paths:
             application/json:
               schema:
                 oneOf:
+                  - $ref: "#/components/schemas/PolicyCondenserChangeModel"
                   - $ref: "#/components/schemas/InlinePolicyChangeModel"
                   - $ref: "#/components/schemas/ManagedPolicyChangeModel"
                   - $ref: "#/components/schemas/ResourcePolicyChangeModel"
@@ -695,7 +695,7 @@ components:
           type: string
           readOnly: true
         policy_sha256:
-          description: hash of the most recent resource policy seen by ConsoleMe
+          description: hash of the most recent resource policy seen by NOQ
           type: string
           readOnly: true
         policy:
@@ -1276,6 +1276,26 @@ components:
                 - json
                 - hcl
                 - text
+    PolicyCondenserChangeModel:
+      allOf:
+        - $ref: "#/components/schemas/ChangeModel"
+        - type: object
+          properties:
+            policy_name:
+              type: string
+            change_type:
+              type: string
+              pattern: "policy_condenser"
+            detach_managed_policies:
+              type: boolean
+              default: true
+            remove_unused_permissions:
+              type: boolean
+              default: false
+            policy:
+              $ref: "#/components/schemas/PolicyModel"
+            old_policy:
+              $ref: "#/components/schemas/PolicyModel"
     InlinePolicyChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1458,6 +1478,7 @@ components:
           type: array
           items:
             anyOf:
+              - $ref: "#/components/schemas/PolicyCondenserChangeModel"
               - $ref: "#/components/schemas/InlinePolicyChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyChangeModel"
               - $ref: "#/components/schemas/PermissionsBoundaryChangeModel"
@@ -2437,6 +2458,112 @@ components:
           description: |-
             Optional value (defaults to false) to indicate whether Noq has the ability to modify resources on the hub account.
           default: false
+
+    MfaDetails:
+      type: object
+      required:
+        - provider
+        - url
+        - api_token
+      properties:
+        provider:
+          type: string
+          enum:
+            - okta
+        url:
+          type: string
+        api_token:
+          type: string
+
+    MfaSupport:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: |-
+            Indicate if MFA should be used to submit the request
+          default: true
+
+    IncludeIgnoreAccountList:
+      type: object
+      properties:
+        include:
+          type: array
+          items:
+            type: string
+          default: []
+        ignore:
+          type: array
+          items:
+            type: string
+          default: []
+
+    TearApprovalRule:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        requires_approval:
+          type: boolean
+          description: |-
+            Optional value (defaults to true) to indicate whether Temporary Elevated Access requests require approval.
+          default: true
+        enabled:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
+          default: true
+        mfa:
+          $ref: "#/components/schemas/MfaSupport"
+        groups:
+          type: array
+          items:
+            type: string
+          default: []
+        roles:
+          type: array
+          items:
+            type: string
+          default: []
+        accounts:
+          $ref: "#/components/schemas/IncludeIgnoreAccountList"
+
+    TearConfig:
+      type: object
+      properties:
+        active_users_tag:
+          type: string
+          description: Customer-specified or default tag used on roles to denote users that currently have TEAR access
+        supported_groups_tag:
+          type: string
+          description: Customer-specified or default tag used on roles to denote groups that can request TEAR access
+        requires_approval:
+          type: boolean
+          description: |-
+            Optional value (defaults to true) to indicate whether Temporary Elevated Access requests require approval.
+          default: true
+        enabled:
+          type: boolean
+          description: |-
+            Optional value (defaults to false) to indicate whether Temporary Elevated Access requests are supported for.
+          default: false
+        mfa:
+          $ref: "#/components/schemas/MfaSupport"
+        approval_rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/TearApprovalRule"
+          default: []
+
+    Secrets:
+      type: object
+      properties:
+        mfa:
+          $ref: "#/components/schemas/MfaDetails"
+          is_secret: true
+
     SpokeAccount:
       type: object
       required:
@@ -2462,9 +2589,13 @@ components:
         hub_account_arn:
           type: string
           description: Links to the designated hub role ARN
-        master_for_account:
+        org_management_account:
           type: boolean
-          description: Optional value (defaults to false) to indicate whether this spoke role has master access rights on the account
+          description: Optional value (defaults to false) to indicate whether this spoke role has access to the org
+          default: false
+        org_access_checked:
+          type: boolean
+          description: Indicates where this spoke role has been checked for org access already.
           default: false
         owners:
           type: array
@@ -2500,6 +2631,10 @@ components:
       required:
         - org_id
       properties:
+        uuid:
+          type: string
+          format: uuid
+          description: NOQ needs a unique internal identifier to make this work correctly with the frontend
         org_id:
           type: string
           description: A unique identifier designating the identity of the organization
@@ -2513,6 +2648,34 @@ components:
         owner:
           type: string
           description: AWS account owner
+        automatically_onboard_accounts:
+          type: boolean
+          description: Automatically Onboard accounts from this org.
+          default: false
+        automatically_onboard_accounts_options:
+          type: array
+          description: |-
+            Options for automatically onboarded accounts. If "read_only" is configured,
+            automatically onboarded accounts will be configured in a read-only state.
+          items:
+            type: string
+          default: []
+        accounts_excluded_from_automatic_onboard:
+          type: array
+          description: Accounts that can not or should not be automatically onboarded
+          items:
+            type: string
+          default: []
+        sync_account_names:
+          type: boolean
+          description: Automatically Sync Account Names from this Org
+          default: true
+        role_names:
+          type: array
+          description: "A list of the role names to attempt to assume on accounts in the org"
+          items:
+            type: string
+          default: ["OrganizationAccountAccessRole", "AWSControlTowerExecution"]
     GoogleOIDCSSOIDPProvider:
       type: object
       required:

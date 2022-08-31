@@ -4,10 +4,6 @@ from typing import List, Optional, Union
 from policy_sentry.util.arns import parse_arn
 
 import common.lib.noq_json as json
-from common.aws.iam.role.config import (
-    get_active_tear_users_tag,
-    get_tear_support_groups_tag,
-)
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.user.utils import fetch_iam_user
 from common.aws.utils import get_resource_tag
@@ -32,6 +28,10 @@ from common.models import (
     S3Error,
     S3ErrorArray,
     SpokeAccount,
+)
+from common.user_request.utils import (
+    get_active_tear_users_tag,
+    get_tear_supported_groups_tag,
 )
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -308,21 +308,18 @@ async def get_role_details(
         role_access_config = None
         template = await get_role_template(arn, tenant)
         tags = role["policy"]["Tags"]
-        if config.get_tenant_specific_key(
-            "temporary_elevated_access_requests.enabled", tenant, False
-        ):
-            tear_support_tag = get_tear_support_groups_tag(tenant)
-            tear_users_tag = get_active_tear_users_tag(tenant)
-            if is_admin_request:
-                active_users = get_resource_tag(role, tear_users_tag, True, set())
-                supported_groups = get_resource_tag(role, tear_support_tag, True, set())
-
-                elevated_access_config = PrincipalModelTearConfig(
-                    active_users=list(active_users),
-                    supported_groups=list(supported_groups),
-                )
-
         if is_admin_request:
+            # Set elevated_access_config
+            tear_support_tag = get_tear_supported_groups_tag(tenant)
+            tear_users_tag = get_active_tear_users_tag(tenant)
+            active_users = get_resource_tag(role, tear_users_tag, True, set())
+            supported_groups = get_resource_tag(role, tear_support_tag, True, set())
+            elevated_access_config = PrincipalModelTearConfig(
+                active_users=list(active_users),
+                supported_groups=list(supported_groups),
+            )
+
+            # Set role_access_config
             role_access_data = await get_noq_authorization_tag_groups(role, tenant)
             role_access_config = PrincipalModelRoleAccessConfig(
                 noq_authorized_tag=role_access_data["default_noq_authorized_tag"],
@@ -334,7 +331,7 @@ async def get_role_details(
                 is_valid_config=role_access_data["is_valid_config"],
             )
 
-        principal = ExtendedAwsPrincipalModel(
+        return ExtendedAwsPrincipalModel(
             name=role_name,
             account_id=account_id,
             account_name=account_ids_to_name.get(account_id, None),
@@ -367,7 +364,6 @@ async def get_role_details(
             terraform=role.get("terraform"),
             read_only=account_info.read_only,
         )
-        return principal
     else:
         return AwsPrincipalModel(
             name=role_name,

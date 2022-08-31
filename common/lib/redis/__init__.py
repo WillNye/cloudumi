@@ -40,8 +40,12 @@ s3_bucket = config.get("_global_.redis.automatically_backup_to_s3.bucket")
 s3_folder = config.get("_global_.redis.automatically_backup_to_s3.folder")
 
 
-def raise_if_key_doesnt_start_with_prefix(key, prefix):
-    if not key.startswith(prefix):
+def raise_if_key_doesnt_start_with_prefix(key: str, prefix: str):
+    if (
+        not isinstance(key, str)
+        or not isinstance(prefix, str)
+        or not key.startswith(prefix)
+    ):
         raise Exception("Redis Key Name doesn't start with the required prefix.")
 
 

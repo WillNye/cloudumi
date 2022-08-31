@@ -11,6 +11,7 @@ import InlinePolicy from './InlinePolicy'
 import Issues from './Issues'
 import Tags from './Tags'
 import ConfigureAccess from './ConfigureAccess'
+import HistoricalView from './HistoricalView'
 
 const IAMRolePolicy = () => {
   const all = usePolicyContext()
@@ -30,7 +31,7 @@ const IAMRolePolicy = () => {
         key: 'inline_policy',
         content: (
           <>
-            Inline Policy
+            Inline Policies
             <Label>{inline_policies.length}</Label>
           </>
         ),
@@ -164,6 +165,22 @@ const IAMRolePolicy = () => {
         )
       },
     },
+
+    {
+      menuItem: {
+        key: 'resource_history',
+        content: (() => {
+          return 'Resource History'
+        })(),
+      },
+      render: () => {
+        return (
+          <Tab.Pane>
+            <HistoricalView />
+          </Tab.Pane>
+        )
+      },
+    },
   ])
 
   if (all?.resource?.terraform) {
@@ -205,7 +222,7 @@ const IAMRolePolicy = () => {
     tabs.push({
       menuItem: {
         key: 'effective_permissions',
-        content: <>Effective Policy and Unused Permissions</>,
+        content: <>Simplified Permissions</>,
       },
       render: () => {
         return (
@@ -219,7 +236,15 @@ const IAMRolePolicy = () => {
 
   return (
     <Tab
-      menu={{ fluid: true, vertical: true, tabular: true }}
+      menu={{
+        fluid: true,
+        vertical: false,
+        tabular: true,
+        borderless: true,
+        secondary: true,
+        pointing: true,
+        className: 'wrapped',
+      }}
       panes={tabs}
       className='vertical-tab-override'
     />

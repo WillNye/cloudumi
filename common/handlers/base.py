@@ -426,7 +426,9 @@ class BaseHandler(TornadoRequestHandler):
             res = await validate_and_return_jwt_token(auth_cookie, tenant)
             if isinstance(res, dict):
                 self.user = res.get("user")
-                self.groups = res.get("groups")
+                # Add groups_pending_eula so authorization_flow works as expected
+                # If EULA isn't signed groups will be cleared at the end of the auth flow
+                self.groups = res.get("groups", []) + res.get("groups_pending_eula", [])
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)
@@ -633,7 +635,7 @@ class BaseHandler(TornadoRequestHandler):
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
 
         self.eligible_roles += await get_user_active_tear_roles_by_tag(
-            self.user, tenant
+            tenant, self.user
         )
         self.eligible_roles = await group_mapping.get_eligible_roles(
             self.eligible_roles,
@@ -915,7 +917,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
                 self.eligible_roles += await get_user_active_tear_roles_by_tag(
-                    self.user, tenant
+                    tenant, self.user
                 )
                 self.eligible_roles = list(set(self.eligible_roles))
                 self.requester = {"type": "user", "email": self.user}

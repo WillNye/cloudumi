@@ -1,13 +1,61 @@
-import React, { useState } from 'react'
-import { Header, Segment, Icon, Message, Tab } from 'semantic-ui-react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Header,
+  Segment,
+  Icon,
+  Message,
+  Tab,
+  Button,
+  Divider,
+  Grid,
+} from 'semantic-ui-react'
 import MonacoDiffComponent from '../blocks/MonacoDiffComponent'
 import useEffectivePermissions from './hooks/useEffectivePermissions'
-import { ReadOnlyPolicyMonacoEditor } from './PolicyMonacoEditor'
+import { JustificationModal } from './PolicyModals'
+import { BasePolicyMonacoEditor } from './PolicyMonacoEditor'
 
 const EffectivePermissions = () => {
   const [error, setError] = useState(null)
   const [messages, setMessages] = useState([])
-  const { resourceEffectivePermissions } = useEffectivePermissions()
+
+  // Existing value which is the modified Unused Policy value. This only applies on the
+  // Simplified Permissions excluding Unused Permissions pane
+  const [value, setValue] = useState(null)
+
+  // The value of the Simplified Permissions, only applies to the pane that only views the Simplifed Permissions
+  // and not the Simplifed Permissions that exclude unused permissions.
+  const [simplifiedPolicyValue, setSimplifedPolicyValue] = useState(null)
+  const [activePaneText, setActivePaneText] = useState('Simplified Permissions')
+
+  const setActivePane = (e, data) => {
+    const menuItem = data.panes[data.activeIndex]
+    setActivePaneText(menuItem.menuItem)
+  }
+
+  const {
+    resourceEffectivePermissions,
+    handleEffectivePolicySubmit,
+    setModalWithAdminAutoApprove,
+    setNewStatement,
+    setRemoveUnusedPermissions,
+  } = useEffectivePermissions()
+
+  const unUsedPermissions = useMemo(() => {
+    return (
+      resourceEffectivePermissions?.effective_policy_unused_permissions_removed ||
+      null
+    )
+  }, [resourceEffectivePermissions])
+
+  useEffect(
+    function onUnUsedPermissionsUpdate() {
+      if (unUsedPermissions) {
+        setNewStatement(unUsedPermissions)
+        setValue(JSON.stringify(unUsedPermissions, null, 2))
+      }
+    },
+    [unUsedPermissions, setNewStatement]
+  )
 
   const onLintError = (lintErrors) => {
     if (lintErrors.length > 0) {
@@ -19,23 +67,79 @@ const EffectivePermissions = () => {
     }
   }
 
+  const onValueChange = (newValue) => {
+    setValue(newValue)
+  }
+
+  const onEffectivePolicySubmit = useCallback(() => {
+    setNewStatement(JSON.parse(value))
+    setRemoveUnusedPermissions(true)
+    setModalWithAdminAutoApprove(false)
+  }, [
+    value,
+    setNewStatement,
+    setModalWithAdminAutoApprove,
+    setRemoveUnusedPermissions,
+  ])
+
+  const onSimplifedPolicySubmit = useCallback(() => {
+    setNewStatement(
+      JSON.parse(simplifiedPolicyValue) ||
+        resourceEffectivePermissions?.effective_policy
+    )
+    setRemoveUnusedPermissions(false)
+    setModalWithAdminAutoApprove(false)
+  }, [
+    simplifiedPolicyValue,
+    setNewStatement,
+    resourceEffectivePermissions,
+    setModalWithAdminAutoApprove,
+    setRemoveUnusedPermissions,
+  ])
+
+  const onSimplifedPolicyChange = (newValue) => {
+    setSimplifedPolicyValue(newValue)
+  }
+
   const panes = [
     {
-      menuItem: 'Effective and Unused Permissions',
+      menuItem: 'Simplified Permissions',
       render: () => (
         <Tab.Pane attached={false}>
           <>
-            <Header as='h2'>
-              Effective Permissions
-              <Header.Subheader>
-                The effective permissions of a role are a combination of the
-                permissions contained in a role's inline policies and managed
-                policies. The effective permissions are de-duplicated,
-                minimized, and alphabetically sorted. This policy shows all
-                permissions removed if they have not been used in the last 90
-                days.
-              </Header.Subheader>
-            </Header>
+            <Segment
+              attached
+              style={{
+                border: 0,
+                padding: 0,
+              }}
+            >
+              {resourceEffectivePermissions ? (
+                <>
+                  {error ? (
+                    <Message warning attached='top'>
+                      <Icon name='warning' />
+                      {messages}
+                    </Message>
+                  ) : null}
+
+                  <BasePolicyMonacoEditor
+                    policy={resourceEffectivePermissions.effective_policy}
+                    readOnly={false}
+                    onChange={onSimplifedPolicyChange}
+                  />
+                </>
+              ) : null}
+            </Segment>
+          </>
+        </Tab.Pane>
+      ),
+    },
+    {
+      menuItem: 'Simplified Permissions, excluding Unused Permissions',
+      render: () => (
+        <Tab.Pane attached={false}>
+          <>
             <Segment
               attached
               style={{
@@ -54,75 +158,129 @@ const EffectivePermissions = () => {
                   {resourceEffectivePermissions.effective_policy !==
                   resourceEffectivePermissions.effective_policy_unused_permissions_removed ? (
                     <MonacoDiffComponent
-                      renderSideBySide={false}
+                      renderSideBySide={true}
                       onLintError={onLintError}
+                      onValueChange={onValueChange}
                       oldValue={JSON.stringify(
                         resourceEffectivePermissions.effective_policy,
                         null,
                         2
                       )}
-                      newValue={JSON.stringify(
-                        resourceEffectivePermissions.effective_policy_unused_permissions_removed,
-                        null,
-                        2
-                      )}
+                      newValue={JSON.stringify(unUsedPermissions, null, 2)}
                       enableJSON={true}
                       enableTerraform={false}
                       enableCloudFormation={false}
+                      readOnly={false}
                     />
                   ) : (
-                    <ReadOnlyPolicyMonacoEditor
+                    <BasePolicyMonacoEditor
                       onLintError={onLintError}
-                      policy={JSON.stringify(
-                        resourceEffectivePermissions.effective_policy,
-                        null,
-                        2
-                      )}
+                      policy={resourceEffectivePermissions.effective_policy}
                     />
                   )}
                 </>
               ) : null}
             </Segment>
-            {/* <JustificationModal handleSubmit={handleAssumeRolePolicySubmit} /> */}
           </>
-        </Tab.Pane>
-      ),
-    },
-    {
-      menuItem: 'Remove Unused Permissions With AWS CLI',
-      render: () => (
-        <Tab.Pane attached={false}>
-          <ReadOnlyPolicyMonacoEditor
-            policy={resourceEffectivePermissions?.permission_removal_commands?.aws_cli_script.replace(
-              '\n',
-              '\r\n'
-            )}
-            json={false}
-            defaultLanguage={'shell'}
-          />
-        </Tab.Pane>
-      ),
-    },
-    {
-      menuItem: 'Remove Unused Permissions With Python',
-      render: () => (
-        <Tab.Pane attached={false}>
-          <ReadOnlyPolicyMonacoEditor
-            policy={
-              resourceEffectivePermissions?.permission_removal_commands
-                ?.python_boto3_script
-            }
-            json={false}
-            defaultLanguage={'python'}
-          />
         </Tab.Pane>
       ),
     },
   ]
 
-  // TODO: Make it possible to request a change that removes all unused permissions
   // TODO: Give the user commands to do this manually
-  return <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
+  return (
+    <>
+      <Header as='h2'>
+        Simplified Permissions
+        <Header.Subheader>
+          <br />
+          This feature shows a simplified version of your identity's
+          permissions. A policy is simplified by combining all of the identity's
+          inline and managed policies into a single policy. Permissions are then
+          de-duplicated and alphabetically sorted.
+          <br />
+          <br />
+          This view also utilizes data from Access Advisor to show permissions
+          that have not been used in the last 90 days.
+          <br />
+          <br />
+          The button on the bottom allows you to request that the policies of
+          this identity be replaced with the simplified permissions, optionally
+          with unused permissions removed. You will be prompted before a
+          justification before the request is created. An administrator, or a
+          delegated administrator for the account will need to approve the
+          request before it is applied.
+          <br />
+          <br />
+          After the request is approved, Noq will proceed to add the simplified
+          permissions to the identity, and then remove all existing inline
+          policies and detach managed policies. The removal of managed policies
+          is optional.
+          <br />
+          <br />
+          Information on this page may be up to 8 hours out of date. Please note
+          this is a beta feature. We would appreciate your feedback and ideas
+          for improvement.
+        </Header.Subheader>
+      </Header>
+      <Tab
+        menu={{ secondary: true, pointing: true }}
+        panes={panes}
+        onTabChange={setActivePane}
+      />
+      <Divider horizontal />
+      {activePaneText ===
+      'Simplified Permissions, excluding Unused Permissions' ? (
+        <>
+          <Grid columns={1} centered>
+            <Grid.Row>
+              <Grid.Column textAlign='right'>
+                <Button
+                  primary
+                  icon='send'
+                  content={
+                    'Request Simplified Policy with Unused Permissions Removed'
+                  }
+                  onClick={onEffectivePolicySubmit}
+                  disabled={
+                    !resourceEffectivePermissions?.effective_policy_unused_permissions_removed ||
+                    !!error
+                  }
+                />
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+          <JustificationModal
+            handleSubmit={handleEffectivePolicySubmit}
+            showDetachManagedPolicy={true}
+          />
+        </>
+      ) : null}
+      {activePaneText === 'Simplified Permissions' ? (
+        <>
+          <Grid columns={1} centered>
+            <Grid.Row>
+              <Grid.Column textAlign='right'>
+                <Button
+                  primary
+                  icon='send'
+                  content={'Request Simplified Permissions'}
+                  onClick={onSimplifedPolicySubmit}
+                  disabled={
+                    !resourceEffectivePermissions?.effective_policy || !!error
+                  }
+                />
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+          <JustificationModal
+            handleSubmit={handleEffectivePolicySubmit}
+            showDetachManagedPolicy={true}
+          />
+        </>
+      ) : null}
+    </>
+  )
 }
 
 export default EffectivePermissions

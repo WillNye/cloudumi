@@ -34,6 +34,7 @@ py_library(
         "//api/handlers/v3/tenant_registration:src",
     ],
     deps = [
+        "//common:lib",
         "//common/config:lib",
         requirement("email_validator"),
         requirement("uvloop"),

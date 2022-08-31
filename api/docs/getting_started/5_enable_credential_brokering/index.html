@@ -1052,6 +1052,8 @@
 
 
 
+
+
         <label class="md-nav__link" for="__nav_8_2">
           Permissions Management and Request Framework
           <span class="md-nav__icon md-icon"></span>
@@ -1168,8 +1170,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../features/permissions_management_and_request_framework/typeaheads_across_known_resources/" class="md-nav__link">
-        Typeaheads across all known resources
+      <a href="../../features/permissions_management_and_request_framework/temporary_policy_requests/" class="md-nav__link">
+        Temporary Policy Requests
       </a>
     </li>
 
@@ -1182,8 +1184,22 @@
 
 
     <li class="md-nav__item">
-      <a href="../../features/permissions_management_and_request_framework/temporary_policy_requests/" class="md-nav__link">
-        Temporary Policy Requests
+      <a href="../../features/permissions_management_and_request_framework/temporary_role_access/" class="md-nav__link">
+        Temporary Role Access
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../../features/permissions_management_and_request_framework/typeaheads_across_known_resources/" class="md-nav__link">
+        Typeaheads across all known resources
       </a>
     </li>
 
@@ -1341,8 +1357,6 @@
 
 
 
-
-
         <label class="md-nav__link" for="__nav_8_5">
           Planned
           <span class="md-nav__icon md-icon"></span>
@@ -1377,20 +1391,6 @@
     <li class="md-nav__item">
       <a href="../../features/planned/unused_permissions_removal/" class="md-nav__link">
         Unused Permissions Removal
-      </a>
-    </li>
-
-
-
-
-
-
-
-
-
-    <li class="md-nav__item">
-      <a href="../../features/planned/breakglass_role_access/" class="md-nav__link">
-        Breakglass Role Access
       </a>
     </li>
 
@@ -1724,6 +1724,38 @@ To enable this feature, follow the procedure below.</p>
 <p>Select <em>Advanced</em> &gt; <em>Settings</em> from the main Noq menu.</p>
 <p><img alt="settings menu item" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_01_settings_menu_item.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 <h2 id="2-enable-credential-brokering">2. Enable credential brokering<a class="headerlink" href="#2-enable-credential-brokering" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>By default, credential brokering relies on role tags to determine which users are authorized to access which roles. You should utilize a service control policy to prevent unauthorized users from modifying these tags. Here is an example service control policy that prevents anyone except NoqSpokeRole from modifying tags with the "noq-" prefix:</p>
+</div>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iam&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Deny&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;iam:*&quot;</span><span class="w"></span>
+<span class="w">      </span><span class="p">],</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="s2">&quot;*&quot;</span><span class="w"></span>
+<span class="w">      </span><span class="p">],</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;Condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;ForAnyValue:StringLike&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;aws:TagKeys&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">            </span><span class="s2">&quot;noq-*&quot;</span><span class="w"></span>
+<span class="w">          </span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;StringNotLike&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;aws:PrincipalArn&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">            </span><span class="s2">&quot;arn:aws:iam::*:role/NoqSpokeRole&quot;</span><span class="w"></span>
+<span class="w">          </span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div>
 <p>On the <em>Settings</em> page, scroll down to the  <em>Role Access Authorization</em> section
 and enable credential brokering using the toggle switch.</p>
 <p><img alt="enable credential brokering" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_credential_brokering_enable.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
@@ -1743,6 +1775,8 @@ to retrieve credentials for that role.</p>
 credentials via Weep, but will not see the role
 listed on the Noq <em>Role Access</em> page.</p>
 <p><img alt="enable credential brokering" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/getting_started_credential_brokering_tags.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
+<h2 id="4-ensure-that-you-add-a-service-control-policy-to-restrict-unauthorized-tag-modification">4. Ensure that you add a service control policy to restrict unauthorized tag modification<a class="headerlink" href="#4-ensure-that-you-add-a-service-control-policy-to-restrict-unauthorized-tag-modification" title="Permanent link">&para;</a></h2>
+<p>Heed the warning in Step 2, and add a Service Control Policy to restrict unauthorized modification of role tags, if you haven't done so already.</p>
 <h1 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h1>
 <p>See <a href="../enable_users_to_assume_roles/">Authorize Users to Assume Roles</a>
 to enable credential brokering for specific users and groups in your

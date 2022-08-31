@@ -9,17 +9,20 @@ import {
   convertToCloudFormation,
   convertToTerraform,
 } from '../../helpers/utils'
-import { Menu } from 'semantic-ui-react'
+import { Menu, Button, Icon } from 'semantic-ui-react'
 import { ReadOnlyPolicyMonacoEditor } from '../policy/PolicyMonacoEditor'
 
 const MonacoDiffComponent = (props) => {
   const monaco = useMonaco()
+
   const onLintError = props.onLintError
   const onValueChange = props.onValueChange
-  const renderSideBySide =
+  const [renderSideBySide, setRenderSideBySide] = useState(
     typeof props.renderSideBySide !== 'undefined'
       ? props.renderSideBySide
       : true
+  )
+
   const modifiedEditorRef = useRef()
   const [language, setLanguage] = useState('json')
   const [languageDetected, setLanguageDetected] = useState(false)
@@ -200,18 +203,38 @@ const MonacoDiffComponent = (props) => {
     )
   } else {
     return (
-      <DiffEditor
-        language={language}
-        width='100%'
-        height='500px'
-        original={oldValue}
-        modified={newValue}
-        onMount={editorDidMount}
-        options={options}
-        onChange={onChange}
-        theme={editorTheme}
-        alwaysConsumeMouseWheel={false}
-      />
+      <>
+        <div className='editor-block__render_style'>
+          <Button.Group>
+            <Button
+              icon
+              color={'grey'}
+              onClick={() => setRenderSideBySide(true)}
+            >
+              <Icon size='large' name='columns' />
+            </Button>
+            <Button
+              icon
+              color={'grey'}
+              onClick={() => setRenderSideBySide(false)}
+            >
+              <Icon size='large' name='square outline' />
+            </Button>
+          </Button.Group>
+        </div>
+        <DiffEditor
+          language={language}
+          width='100%'
+          height='500px'
+          original={oldValue}
+          modified={newValue}
+          onMount={editorDidMount}
+          options={options}
+          onChange={onChange}
+          theme={editorTheme}
+          alwaysConsumeMouseWheel={false}
+        />
+      </>
     )
   }
 }

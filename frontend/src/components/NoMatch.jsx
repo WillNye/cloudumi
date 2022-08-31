@@ -1,4 +1,4 @@
-import { Button, Header, Image, Segment } from 'semantic-ui-react'
+import { Button, Divider, Header, Segment } from 'semantic-ui-react'
 import { Link } from 'react-router-dom'
 
 const NoMatch = () => {
@@ -22,13 +22,8 @@ const NoMatch = () => {
         404
         <Header.Subheader>Page not found!</Header.Subheader>
       </Header>
-      <Image
-        centered
-        disabled
-        size='medium'
-        src='/images/logos/quarantine/1.png'
-      />
-      <br />
+      <Divider horizontal />
+      <Divider horizontal />
       <Link to='/'>
         <Button content='Return to Home' primary size='large' />
       </Link>

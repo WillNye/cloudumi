@@ -435,16 +435,17 @@ class Configuration(metaclass=Singleton):
         # fall back to Redis cache, and lastly fall back to Dynamo
         current_time = int(time.time())
         last_updated = self.tenant_configs[tenant].get("last_updated", 0)
-        if current_time - last_updated > 5:
-            tenant_config = self.load_tenant_config_from_redis(tenant)
-            last_updated = int(tenant_config.get("last_updated", 0))
-            # If Redis config cache for tenant is newer than 60 seconds, update in-memory variables
-            if current_time - last_updated < 60:
-                self.tenant_configs[tenant]["config"] = tenant_config["config"]
-                self.tenant_configs[tenant]["last_updated"] = last_updated
+        # # If doesn't exist, or not updated for 60s, reload from DynamoDB and cache in Redis
+        # if current_time - last_updated > 5:
+        #     tenant_config = self.load_tenant_config_from_redis(tenant)
+        #     last_updated = int(tenant_config.get("last_updated", 0))
+        #     # If Redis config cache for tenant is newer than 60 seconds, update in-memory variables
+        #     if current_time - last_updated < 60:
+        #         self.tenant_configs[tenant]["config"] = tenant_config["config"]
+        #         self.tenant_configs[tenant]["last_updated"] = last_updated
         # If local variables and Redis config cache for the tenant are still older than 60 seconds,
         # pull from Dynamo, update local cache, redis cache, and in-memory variables
-        if current_time - last_updated > 60:
+        if current_time - last_updated > 10:
             self.copy_tenant_config_dynamo_to_redis(tenant)
 
         # Convert commented map to dictionary

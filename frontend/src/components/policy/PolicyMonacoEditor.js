@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { Button, Form, Icon, Message, Segment } from 'semantic-ui-react'
 import Editor, { useMonaco } from '@monaco-editor/react'
 import {
@@ -8,7 +8,7 @@ import {
 } from '../../helpers/utils'
 import { usePolicyContext } from './hooks/PolicyProvider'
 import { useAuth } from '../../auth/AuthProviderDefault'
-import './PolicyMonacoEditor.css'
+import './PolicyMonacoEditor.scss'
 
 const editorOptions = {
   selectOnLineNumbers: true,
@@ -509,10 +509,12 @@ export const ReadOnlyPolicyMonacoEditor = ({
     defaultLanguage: defaultLanguage,
   }
   const editorTheme = getLocalStorageSettings('editorTheme')
-  let policyValue = policy
-  if (json) {
-    policyValue = JSON.stringify(policy, null, '\t')
-  }
+  const policyValue = useMemo(() => {
+    if (json) {
+      return JSON.stringify(policy, null, '\t')
+    }
+    return policy
+  }, [policy, json])
   return (
     <>
       <Segment
@@ -529,6 +531,52 @@ export const ReadOnlyPolicyMonacoEditor = ({
           value={policyValue}
           options={readOnlyEditorOptions}
           onMount={editorDidMount}
+          textAlign='center'
+        />
+      </Segment>
+    </>
+  )
+}
+
+export const BasePolicyMonacoEditor = ({
+  policy,
+  defaultLanguage = 'json',
+  onChange = () => {},
+  json = true,
+  readOnly = false,
+}) => {
+  const EditorOptions = {
+    ...editorOptions,
+    readOnly: readOnly,
+    json: json,
+    defaultLanguage: defaultLanguage,
+  }
+  const editorTheme = getLocalStorageSettings('editorTheme')
+
+  const policyValue = useMemo(() => {
+    if (json) {
+      return JSON.stringify(policy, null, '\t')
+    }
+    return policy
+  }, [policy, json])
+
+  return (
+    <>
+      <Segment
+        attached
+        style={{
+          border: 0,
+          padding: 0,
+        }}
+      >
+        <Editor
+          height='540px'
+          defaultLanguage='json'
+          theme={editorTheme}
+          value={policyValue}
+          options={EditorOptions}
+          onMount={editorDidMount}
+          onChange={onChange}
           textAlign='center'
         />
       </Segment>

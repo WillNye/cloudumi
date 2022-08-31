@@ -13,14 +13,15 @@ from policy_sentry.util.arns import parse_arn
 
 import common.lib.noq_json as json
 from common.aws.iam.policy.utils import (
+    aio_get_managed_policy_document,
+    aio_list_managed_policies_for_resource,
     create_or_update_managed_policy,
     generate_updated_resource_policy,
     get_managed_policy_document,
     get_resource_policy,
 )
-from common.aws.iam.role.config import get_active_tear_users_tag
 from common.aws.iam.role.models import IAMRole
-from common.aws.iam.utils import get_supported_resource_permissions
+from common.aws.iam.utils import get_supported_resource_permissions, get_tenant_iam_conn
 from common.aws.utils import (
     ResourceAccountCache,
     ResourceSummary,
@@ -38,7 +39,7 @@ from common.exceptions.exceptions import (
 )
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import boto3_cached_conn
-from common.lib.asyncio import aio_wrapper
+from common.lib.asyncio import NoqSemaphore, aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.utils import fetch_resource_details
@@ -79,6 +80,7 @@ from common.models import (
     ManagedPolicyChangeModel,
     ManagedPolicyResourceChangeModel,
     PermissionsBoundaryChangeModel,
+    PolicyCondenserChangeModel,
     PolicyModel,
     PolicyRequestModificationRequestModel,
     PolicyRequestModificationResponseModel,
@@ -97,7 +99,9 @@ from common.models import (
 )
 from common.user_request.models import IAMRequest
 from common.user_request.utils import (
+    get_active_tear_users_tag,
     get_change_arn,
+    get_tear_config_for_request,
     update_extended_request_expiration_date,
     validate_custom_credentials,
 )
@@ -154,6 +158,7 @@ async def generate_request_from_change_model_array(
         raise InvalidRequestParameter(log_data["message"])
 
     inline_policy_changes = []
+    policy_condenser_changes = []
     managed_policy_changes = []
     resource_policy_changes = []
     assume_role_policy_changes = []
@@ -192,6 +197,10 @@ async def generate_request_from_change_model_array(
         if change.change_type == "inline_policy":
             inline_policy_changes.append(
                 InlinePolicyChangeModel.parse_obj(change.__dict__)
+            )
+        elif change.change_type == "policy_condenser":
+            policy_condenser_changes.append(
+                PolicyCondenserChangeModel.parse_obj(change.__dict__)
             )
         elif change.change_type == "managed_policy":
             managed_policy_changes.append(
@@ -277,6 +286,7 @@ async def generate_request_from_change_model_array(
 
             if (
                 len(inline_policy_changes) > 0
+                or len(policy_condenser_changes) > 0
                 or len(managed_policy_changes) > 0
                 or len(assume_role_policy_changes) > 0
                 or len(permissions_boundary_changes) > 0
@@ -330,6 +340,7 @@ async def generate_request_from_change_model_array(
 
         elif (
             len(inline_policy_changes) > 0
+            or len(policy_condenser_changes) > 0
             or len(managed_policy_changes) > 0
             or len(assume_role_policy_changes) > 0
             or len(permissions_boundary_changes) > 0
@@ -373,6 +384,16 @@ async def generate_request_from_change_model_array(
                 await validate_inline_policy_change(
                     inline_policy_change, user, principal_details
                 )
+            for policy_condenser_change in policy_condenser_changes:
+                policy_condenser_change.policy_name = await generate_policy_name(
+                    policy_condenser_change.policy_name,
+                    user,
+                    tenant,
+                    request_creation.expiration_date,
+                )
+                await validate_inline_policy_change(
+                    policy_condenser_change, user, principal_details
+                )
             for managed_policy_change in managed_policy_changes:
                 await validate_managed_policy_change(
                     managed_policy_change, user, principal_details
@@ -399,6 +420,7 @@ async def generate_request_from_change_model_array(
         # If here, request is valid and can successfully be generated
         request_changes = ChangeModelArray(
             changes=inline_policy_changes
+            + policy_condenser_changes
             + managed_policy_changes
             + resource_policy_changes
             + assume_role_policy_changes
@@ -466,14 +488,19 @@ async def get_request_url(extended_request: ExtendedRequestModel) -> str:
 
 
 async def is_request_eligible_for_auto_approval(
-    extended_request: ExtendedRequestModel, user: str
+    tenant: str,
+    extended_request: ExtendedRequestModel,
+    user: str,
+    user_groups: list[str],
 ) -> bool:
     """
     Checks whether a request is eligible for auto-approval rules or not. Currently, only requests with inline_policies
     are eligible for auto-approval rules.
 
+    :param tenant:
     :param extended_request: ExtendedRequestModel
     :param user: username
+    :param user_groups: The groups the user belongs to
     :return bool:
     """
 
@@ -486,16 +513,17 @@ async def is_request_eligible_for_auto_approval(
     }
     log.info(log_data)
     is_eligible = False
+    ineligible_change_types = ["policy_condenser"]
 
     if any(
-        change.change_type == "tear_can_assume_role"
+        change.change_type in ineligible_change_types
         for change in extended_request.changes.changes
     ):
-        return False
+        return is_eligible
 
     # We won't auto-approve any requests for Read-Only accounts
     if any(change.read_only is True for change in extended_request.changes.changes):
-        return False
+        return is_eligible
 
     # Currently the only allowances are: Inline policies
     for change in extended_request.changes.changes:
@@ -505,16 +533,17 @@ async def is_request_eligible_for_auto_approval(
             or change.change_type == "sts_resource_policy"
         ) and change.autogenerated:
             continue
-        if change.change_type != "inline_policy":
-            log_data[
-                "message"
-            ] = "Finished checking whether request is eligible for auto-approval rules"
-            log_data["eligible_for_auto_approval"] = is_eligible
-            log.info(log_data)
-            return is_eligible
+        elif change.change_type == "tear_can_assume_role":
+            if len(extended_request.changes.changes) == 1:
+                tear_config = await get_tear_config_for_request(
+                    tenant, extended_request.principal.principal_arn, user_groups
+                )
+                is_eligible = (
+                    not tear_config.requires_approval
+                )  # Does not require approval so can auto approve
+        elif change.change_type != "inline_policy":
+            break
 
-    # If above check passes, then it's eligible for auto-approval rule check
-    is_eligible = True
     log_data[
         "message"
     ] = "Finished checking whether request is eligible for auto-approval rules"
@@ -540,6 +569,7 @@ async def update_autogenerated_policy_change_model(
     principal_arn: str,
     change: Union[
         InlinePolicyChangeModel,
+        PolicyCondenserChangeModel,
         ResourcePolicyChangeModel,
     ],
     source_policy: dict,
@@ -778,7 +808,9 @@ async def generate_resource_policies(
 
 
 async def validate_inline_policy_change(
-    change: InlinePolicyChangeModel, user: str, role: ExtendedAwsPrincipalModel
+    change: Union[InlinePolicyChangeModel, PolicyCondenserChangeModel],
+    user: str,
+    role: ExtendedAwsPrincipalModel,
 ):
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -797,6 +829,9 @@ async def validate_inline_policy_change(
         log_data["message"] = "Invalid characters were detected in the policy."
         log.error(log_data)
         raise InvalidRequestParameter(log_data["message"])
+
+    if isinstance(change, PolicyCondenserChangeModel):
+        return
 
     # Can't detach a new policy
     if change.new and change.action == Action.detach:
@@ -1019,6 +1054,90 @@ async def validate_assume_role_policy_change(
         raise InvalidRequestParameter(log_data["message"])
 
 
+async def apply_policy_condenser_change(
+    resource_summary: ResourceSummary,
+    change: PolicyCondenserChangeModel,
+    response: PolicyRequestModificationResponseModel,
+    iam_client,
+    log_data: dict = None,
+) -> PolicyRequestModificationResponseModel:
+    name = resource_summary.name
+    resource_type = resource_summary.resource_type
+    assert resource_type in ["user", "role"]
+    log_data = log_data or {}
+    try:
+        boto_params = {f"{resource_type.title()}Name": name}
+        list_policies_call = getattr(iam_client, f"list_{resource_type}_policies")
+        put_policy_call = getattr(iam_client, f"put_{resource_type}_policy")
+        delete_policy_call = getattr(iam_client, f"delete_{resource_type}_policy")
+
+        existing_policies = await aio_wrapper(list_policies_call, **boto_params)
+        log_data[
+            "message"
+        ] = f"Creating new policy for {name} as part of policy_condenser change {change.id}"
+        log.debug(log_data)
+        await aio_wrapper(
+            put_policy_call,
+            PolicyName=change.policy_name,
+            PolicyDocument=json.dumps(
+                change.policy.policy_document,
+            ),
+            **boto_params,
+        )
+        for policy in existing_policies.get("PolicyNames", []):
+            log_data[
+                "message"
+            ] = f"Removing policy {policy} from {name} as part of policy_condenser"
+            log.debug(log_data)
+            await aio_wrapper(delete_policy_call, PolicyName=policy, **boto_params)
+
+        if change.detach_managed_policies:
+            detach_managed_policy_call = getattr(
+                iam_client, f"detach_{resource_type}_policy"
+            )
+            managed_policies = await aio_list_managed_policies_for_resource(
+                resource_type, name, iam_client
+            )
+            for managed_policy in managed_policies:
+                policy = managed_policy["PolicyArn"]
+                log_data[
+                    "message"
+                ] = f"Detaching managed policy {policy} from {name} as part of policy_condenser"
+                log.debug(log_data)
+                await aio_wrapper(
+                    detach_managed_policy_call,
+                    PolicyArn=policy,
+                    **boto_params,
+                )
+
+        response.action_results.append(
+            ActionResult(
+                status="success",
+                message=(
+                    f"Successfully condensed inline policies from principal: " f"{name}"
+                ),
+            )
+        )
+        change.status = Status.applied
+    except Exception as e:
+        log_data["message"] = "Exception occurred condensing inline policies"
+        log_data["error"] = str(e)
+        log.error(log_data, exc_info=True)
+        sentry_sdk.capture_exception()
+        response.errors += 1
+        response.action_results.append(
+            ActionResult(
+                status="error",
+                message=(
+                    f"Error occurred condensing inline policies from principal: "
+                    f"{resource_summary.name} {str(e)}"
+                ),
+            )
+        )
+    finally:
+        return response
+
+
 async def apply_changes_to_role(
     extended_request: ExtendedRequestModel,
     response: Union[RequestCreationResponse, PolicyRequestModificationResponseModel],
@@ -1052,6 +1171,11 @@ async def apply_changes_to_role(
     resource_summary = await ResourceSummary.set(
         tenant, extended_request.principal.principal_arn
     )
+    log_data["resource"] = {
+        "resource_type": resource_summary.resource_type,
+        "service": resource_summary.service,
+        "name": resource_summary.name,
+    }
 
     # Principal ARN must be a role for this function
     if resource_summary.service != "iam" or resource_summary.resource_type not in [
@@ -1190,6 +1314,10 @@ async def apply_changes_to_role(
                             ),
                         )
                     )
+        elif change.change_type == "policy_condenser":
+            response = await apply_policy_condenser_change(
+                resource_summary, change, response, iam_client, log_data
+            )
         elif change.change_type == "permissions_boundary":
             if change.action == Action.attach:
                 try:
@@ -1503,6 +1631,7 @@ async def populate_old_policies(
     tenant: str,
     principal: Optional[ExtendedAwsPrincipalModel] = None,
     force_refresh=False,
+    update=False,
 ) -> ExtendedRequestModel:
     """
     Populates the old policies for each inline policy.
@@ -1582,6 +1711,45 @@ async def populate_old_policies(
                         policy_document=existing_policy.get("PolicyDocument"),
                     )
                     break
+        elif change.change_type == "policy_condenser":
+            combined_policies_document = dict(Statement=[])
+            combined_policies = principal.inline_policies
+            if change.remove_unused_permissions:
+                if change.detach_managed_policies:
+                    iam_client = get_tenant_iam_conn(
+                        tenant, role_account_id, "noq_get_managed_policy_docs"
+                    )
+                    sem = NoqSemaphore(aio_get_managed_policy_document, batch_size=20)
+                    combined_policies.extend(
+                        await sem.process(
+                            [
+                                {
+                                    "policy_arn": policy["PolicyArn"],
+                                    "iam_client": iam_client,
+                                }
+                                for policy in principal.managed_policies
+                            ]
+                        )
+                    )
+
+                for existing_policy in combined_policies:
+                    existing_policy = existing_policy.get("PolicyDocument", {})
+                    if version := existing_policy.get("Version"):
+                        combined_policies_document.setdefault("Version", version)
+                    combined_policies_document["Statement"].extend(
+                        existing_policy.get("Statement", [])
+                    )
+
+                change.old_policy = PolicyModel(
+                    policy_sha256=sha256(
+                        json.dumps(
+                            combined_policies_document,
+                        ).encode()
+                    ).hexdigest(),
+                    policy_document=combined_policies_document,
+                )
+            elif not change.old_policy:
+                change.old_policy = change.policy
 
     log_data["message"] = "Done populating old policies"
     log_data["request"] = extended_request.dict()
@@ -2664,6 +2832,7 @@ async def maybe_approve_reject_request(
     response: PolicyRequestModificationResponseModel,
     tenant: str,
     force_refresh: bool = False,
+    auto_approved: bool = False,
 ) -> PolicyRequestModificationResponseModel:
     any_changes_applied = False
     any_changes_pending = False
@@ -2708,7 +2877,9 @@ async def maybe_approve_reject_request(
             "Error updating request in dynamo",
             visible=False,
         )
-        await send_communications_policy_change_request_v2(extended_request, tenant)
+        await send_communications_policy_change_request_v2(
+            extended_request, tenant, auto_approved
+        )
         await update_resource_in_dynamo(
             tenant, extended_request.principal.principal_arn, force_refresh
         )
@@ -2725,6 +2896,7 @@ async def parse_and_apply_policy_request_modification(
     approval_rule_approved=False,
     force_refresh=False,
     cloud_credentials: CloudCredentials = None,
+    auto_approved: bool = False,
 ) -> PolicyRequestModificationResponseModel:
     """
     Parses the policy request modification changes
@@ -2748,6 +2920,7 @@ async def parse_and_apply_policy_request_modification(
         "request_changes": policy_request_model.dict(),
         "message": "Parsing request modification changes",
         "tenant": tenant,
+        "auto_approved": auto_approved,
     }
 
     log.debug(log_data)
@@ -2936,6 +3109,7 @@ async def parse_and_apply_policy_request_modification(
             and specific_change.change_type
             in [
                 "inline_policy",
+                "policy_condenser",
                 "resource_policy",
                 "sts_resource_policy",
                 "assume_role_policy",
@@ -2983,6 +3157,7 @@ async def parse_and_apply_policy_request_modification(
             # Update the policy doc locally for supported changes, if it needs to be updated
             if apply_change_model.policy_document and specific_change.change_type in [
                 "inline_policy",
+                "policy_condenser",
                 "resource_policy",
                 "sts_resource_policy",
                 "assume_role_policy",
@@ -3266,13 +3441,15 @@ async def parse_and_apply_policy_request_modification(
             error_message,
             visible=False,
         )
-        await send_communications_policy_change_request_v2(extended_request, tenant)
+        # maybe_approve_reject_request already sends approved requests so no need to send it twice
+        if not auto_approved:
+            await send_communications_policy_change_request_v2(extended_request, tenant)
         await update_resource_in_dynamo(
             tenant, extended_request.principal.principal_arn, force_refresh
         )
 
     response = await maybe_approve_reject_request(
-        extended_request, user, log_data, response, tenant
+        extended_request, user, log_data, response, tenant, auto_approved=auto_approved
     )
 
     log_data["message"] = "Done parsing/applying request modification changes"

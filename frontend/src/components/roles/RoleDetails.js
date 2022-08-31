@@ -1,5 +1,13 @@
 import React from 'react'
-import { Grid, Header, Icon, Label, Segment, Table } from 'semantic-ui-react'
+import {
+  Divider,
+  Grid,
+  Header,
+  Icon,
+  Label,
+  Segment,
+  Table,
+} from 'semantic-ui-react'
 import { zip } from 'lodash'
 
 function RoleDetails(props) {
@@ -44,6 +52,7 @@ function RoleDetails(props) {
             Templated Role
           </Label>
         </Segment>
+        <Divider horizontal />
         <div style={{ display: 'flex' }}>
           <Icon
             name='users'
@@ -172,6 +181,7 @@ function RoleDetails(props) {
             Templated Role
           </Label>
         </Segment>
+        <Divider horizontal />
         <div style={{ display: 'flex' }}>
           <Icon
             name='user'

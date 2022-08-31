@@ -27,19 +27,10 @@ async def send_email_via_ses(
     sending_app: str = "noq",
     charset: str = "UTF-8",
 ) -> None:
-    if config.is_development:  # Don't send emails on local environment to reduce noise
-        return
 
     region: str = config.get_tenant_specific_key("ses.region", tenant, config.region)
-    session = get_session_for_tenant(tenant)
-    client = session.client(
-        "ses",
-        region_name=region,
-        **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-    )
     sender = config.get(f"_global_.ses.{sending_app}.sender")
     ses_arn = config.get_tenant_specific_key("ses.arn", tenant)
-
     log_data = {
         "to_user": to_addresses,
         "region": region,
@@ -67,6 +58,12 @@ async def send_email_via_ses(
         )
         return
 
+    session = get_session_for_tenant(tenant)
+    client = session.client(
+        "ses",
+        region_name=region,
+        **config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
+    )
     try:
         response = await aio_wrapper(
             client.send_email,
@@ -146,13 +143,23 @@ async def send_email(
     if not isinstance(to_addresses, list):
         to_addresses = [to_addresses]
 
-    if config.get("_global_.development") and config.get(
-        "_global_.ses.override_receivers_for_dev"
-    ):
+    if config.is_development and config.get("_global_.ses.override_receivers_for_dev"):
         to_addresses = config.get("_global_.ses.override_receivers_for_dev")
         log.debug(
             {"message": "Overriding to_address", "new_to_addresses": to_addresses}
         )
+    elif config.is_development:
+        log_data = {
+            "to_user": to_addresses,
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "subject": subject,
+            "tenant": tenant,
+            "message": "E-Mail not sent.",
+            "reason": "The development flag on global config was set with no override receivers",
+            "body": body,
+        }
+        log.warning(log_data)
+        return
 
     try:
         # Once we know under what conditions to use which provider we can update to support sending via ses
@@ -384,37 +391,55 @@ async def send_policy_request_status_update_v2(
     policy_change_uri,
     tenant,
     sending_app="noq",
+    auto_approved: bool = False,
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
+    user_email = extended_request.requester_email
     request_approvers = set()
-    request_approvers.add(extended_request.requester_email)
+    request_approvers.add(user_email)
     principal = await get_principal_friendly_name(extended_request.principal)
+    is_tear_request = any(
+        c.change_type == "tear_can_assume_role"
+        for c in extended_request.changes.changes
+    )
+    change_type = "Policy Change" if not is_tear_request else "Temporary Access"
 
     if extended_request.request_status == RequestStatus.pending:
-        subject = f"{app_name}: Policy change request for {principal} has been created"
-        message = f"A policy change request for {principal} has been created."
+        subject = f"{app_name}: {change_type} request for {principal} has been created"
+        message = f"A {change_type} request for {principal} has been created."
         # This is a new request, also send email to application admins
+        resource_admins = await get_extended_request_allowed_approvers(
+            extended_request, tenant
+        )
+        request_approvers.update(resource_admins)
+    elif extended_request.request_status == RequestStatus.approved and is_tear_request:
+        subject = f"{app_name}: {user_email} has been granted temporary access to {principal}."
+        message = subject
+        if auto_approved:
+            message += " NOQ was able auto-approve this request based on your NOQ configuration."
+
         resource_admins = await get_extended_request_allowed_approvers(
             extended_request, tenant
         )
         request_approvers.update(resource_admins)
     else:
         subject = (
-            f"{app_name}: Policy change request for {principal} has been "
+            f"{app_name}: {change_type} request for {principal} has been "
             f"updated to {extended_request.request_status.value}"
         )
         message = (
-            f"A policy change request for {principal} "
+            f"A {change_type} request for {principal} "
             f"has been updated to {extended_request.request_status.value}"
         )
 
-    if extended_request.request_status == RequestStatus.approved:
-        message += " and committed"
-        subject += " and committed"
+        if extended_request.request_status == RequestStatus.approved:
+            message += " and committed"
+            subject += " and committed"
+
     body = f"""<html>
             <head>
             <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-            <title>Policy Change Request Status Change</title>
+            <title>{change_type} Request Status Change</title>
             </head>
             <body>
             {message} <br>

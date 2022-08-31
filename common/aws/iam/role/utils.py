@@ -7,16 +7,12 @@ from botocore.exceptions import ClientError
 from joblib import Parallel, delayed
 
 import common.lib.noq_json as json
-from common.aws.iam.role.config import (
-    get_active_tear_users_tag,
-    get_tear_support_groups_tag,
-)
 from common.aws.iam.utils import get_tenant_iam_conn
 from common.config import config, models
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.assume_role import rate_limited, sts_conn
-from common.lib.asyncio import aio_wrapper
+from common.lib.asyncio import NoqSemaphore, aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
 from common.lib.cloud_credential_authorization_mapping import RoleAuthorizations
 from common.lib.plugins import get_plugin_by_name
@@ -97,6 +93,12 @@ async def _get_iam_role_async(
                 get_role_inline_policies, {"RoleName": role_name}, tenant=tenant, **conn
             ),
         ),
+        # loop.run_in_executor(
+        #     executor,
+        #     functools.partial(
+        #         list_instance_profiles_for_role, {"RoleName": role_name}, tenant=tenant, **conn
+        #     ),
+        # ),
     ]
     # completed, pending = await asyncio.wait(tasks)
     # results = [t.result() for t in completed]
@@ -112,6 +114,7 @@ async def _get_iam_role_async(
     role = results[0]["Role"]
     role["ManagedPolicies"] = results[1]
     role["InlinePolicies"] = results[2]
+    # role["InstanceProfiles"] = results[3]
 
     # role = {}
     #
@@ -639,12 +642,12 @@ async def _clone_iam_role(clone_model: CloneRoleRequestModel, username, tenant):
 
 @rate_limited()
 @sts_conn("iam", service_type="client")
-def get_role_inline_policy_names(role, client=None, **kwargs):
+def get_role_inline_policy_names(role: str, client=None, **kwargs):
     marker = {}
     inline_policies = []
 
     while True:
-        response = client.list_role_policies(RoleName=role["RoleName"], **marker)
+        response = client.list_role_policies(RoleName=role, **marker)
         inline_policies.extend(response["PolicyNames"])
 
         if response["IsTruncated"]:
@@ -655,18 +658,35 @@ def get_role_inline_policy_names(role, client=None, **kwargs):
 
 @sts_conn("iam", service_type="client")
 @rate_limited()
-def get_role_inline_policy_document(role, policy_name, client=None, **kwargs):
-    response = client.get_role_policy(RoleName=role["RoleName"], PolicyName=policy_name)
+def get_role_inline_policy_document(role: str, policy_name: str, client=None, **kwargs):
+    response = client.get_role_policy(RoleName=role, PolicyName=policy_name)
     return response.get("PolicyDocument")
 
 
-def get_role_inline_policies(role, **kwargs):
-    policy_names = get_role_inline_policy_names(role, **kwargs)
+@sts_conn("iam", service_type="client")
+@rate_limited()
+def list_instance_profiles_for_role(role: dict, client=None, **kwargs):
+    response = client.list_instance_profiles_for_role(RoleName=role)
+    instance_profiles = []
+    for x in response["InstanceProfiles"]:
+        instance_profiles.append(
+            {
+                "InstanceProfileName": x["InstanceProfileName"],
+                "InstanceProfileId": x["InstanceProfileId"],
+            }
+        )
+    return instance_profiles
+
+
+def get_role_inline_policies(role: dict, **kwargs):
+    policy_names = get_role_inline_policy_names(role["RoleName"], **kwargs)
 
     policies = zip(
         policy_names,
         Parallel(n_jobs=20, backend="threading")(
-            delayed(get_role_inline_policy_document)(role, policy_name, **kwargs)
+            delayed(get_role_inline_policy_document)(
+                role["RoleName"], policy_name, **kwargs
+            )
             for policy_name in policy_names
         ),
     )
@@ -719,10 +739,31 @@ def get_role_managed_policy_documents(role, client=None, **kwargs):
     return dict(zip(policy_names, policy_documents))
 
 
+async def aio_get_role_managed_policy_documents(role: str, iam_client):
+    from common.aws.iam.policy.utils import (
+        aio_get_managed_policy_document,
+        aio_list_managed_policies_for_resource,
+    )
+
+    sem = NoqSemaphore(aio_get_managed_policy_document, batch_size=20)
+    policies = await aio_list_managed_policies_for_resource("role", role, iam_client)
+
+    return await sem.process(
+        [
+            {"policy_arn": policy["PolicyArn"], "iam_client": iam_client}
+            for policy in policies
+        ]
+    )
+
+
 async def update_role_tear_config(
     tenant, user, role_name, account_id: str, tear_config: PrincipalModelTearConfig
 ) -> [bool, str]:
     from common.aws.iam.role.models import IAMRole
+    from common.user_request.utils import (
+        get_active_tear_users_tag,
+        get_tear_supported_groups_tag,
+    )
 
     client = await aio_wrapper(
         get_tenant_iam_conn,
@@ -746,7 +787,7 @@ async def update_role_tear_config(
                     "Value": ":".join(tear_config.active_users),
                 },
                 {
-                    "Key": get_tear_support_groups_tag(tenant),
+                    "Key": get_tear_supported_groups_tag(tenant),
                     "Value": ":".join(tear_config.supported_groups),
                 },
             ],
@@ -761,6 +802,14 @@ async def update_role_tear_config(
 
 
 async def update_assume_role_policy_trust_noq(tenant, user, role_name, account_id):
+    log_data = {
+        "function": "update_assume_role_policy_trust_noq",
+        "message": "Updating assume role policy",
+        "tenant": tenant,
+        "user": user,
+        "role_name": role_name,
+        "account_id": account_id,
+    }
     client = await aio_wrapper(
         get_tenant_iam_conn,
         tenant,
@@ -794,6 +843,7 @@ async def update_assume_role_policy_trust_noq(tenant, user, role_name, account_i
     client.update_assume_role_policy(
         RoleName=role_name, PolicyDocument=json.dumps(assume_role_trust_policy)
     )
+    log.debug(log_data)
     return True
 
 
@@ -871,6 +921,9 @@ async def get_roles_as_resource(
     tenant: str, viewable_accounts: set, resource_map: dict
 ):
     from common.aws.iam.role.models import IAMRole
+
+    if not viewable_accounts:
+        return resource_map
 
     account_map = await get_account_id_to_name_mapping(tenant)
 

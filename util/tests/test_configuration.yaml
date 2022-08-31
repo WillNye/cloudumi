@@ -34,21 +34,21 @@ site_configs:
         role_arn: arn:aws:iam::123456789012:role/NoqSpokeRoleLocalDev
         external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
         hub_account_arn: arn:aws:iam::123456789012:role/NoqCentralRoleLocalDev
-        master_for_account: false
+        org_management_account: false
       - name: NoqSpokeRoleLocalDev
         account_id: "123456789013"
         account_name: default_account_1
         role_arn: arn:aws:iam::123456789013:role/NoqSpokeRoleLocalDev
         external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
         hub_account_arn: arn:aws:iam::123456789013:role/NoqCentralRoleLocalDev
-        master_for_account: false
+        org_management_account: false
       - name: NoqSpokeRoleLocalDev
         account_id: "012345678901"
         account_name: default_account_0
         role_arn: arn:aws:iam::012345678901:role/NoqSpokeRoleLocalDev
         external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
         hub_account_arn: arn:aws:iam::012345678901:role/NoqCentralRoleLocalDev
-        master_for_account: false
+        org_management_account: false
     org_accounts:
       - org_id: test_org
         account_id: "123456789012"
@@ -414,7 +414,7 @@ site_configs:
           authentication_settings:
             email: consoleme_admins@example.com
           commit_settings:
-            create_pr: false # If true, ConsoleMe will show you the PR location and not allow policy review within consoleme
+            create_pr: false # If true, NOq will show you the PR location and not allow policy review within NOQ
             commit_to_branch_on_approval: master # If set, will push to this branch on approval
           resource_formats:
             - honeybee

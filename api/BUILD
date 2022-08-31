@@ -34,6 +34,7 @@ INT_DEPS = [
     "//common/celery_tasks:lib",
     "//common/config:lib",
     "//common/handlers:lib",
+    "//functional_tests:lib",
     "//identity:lib",
     "//plugins:lib",
     "//plugins/auth:lib",
