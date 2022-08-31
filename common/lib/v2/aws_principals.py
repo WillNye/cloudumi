@@ -23,15 +23,15 @@ from common.models import (
     EligibleRolesModelArray,
     ExtendedAwsPrincipalModel,
     PrincipalModelRoleAccessConfig,
-    PrincipalModelTearConfig,
+    PrincipalModelTraConfig,
     S3DetailsModel,
     S3Error,
     S3ErrorArray,
     SpokeAccount,
 )
 from common.user_request.utils import (
-    get_active_tear_users_tag,
-    get_tear_supported_groups_tag,
+    get_active_tra_users_tag,
+    get_tra_supported_groups_tag,
 )
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -310,11 +310,11 @@ async def get_role_details(
         tags = role["policy"]["Tags"]
         if is_admin_request:
             # Set elevated_access_config
-            tear_support_tag = get_tear_supported_groups_tag(tenant)
-            tear_users_tag = get_active_tear_users_tag(tenant)
-            active_users = get_resource_tag(role, tear_users_tag, True, set())
-            supported_groups = get_resource_tag(role, tear_support_tag, True, set())
-            elevated_access_config = PrincipalModelTearConfig(
+            tra_support_tag = get_tra_supported_groups_tag(tenant)
+            tra_users_tag = get_active_tra_users_tag(tenant)
+            active_users = get_resource_tag(role, tra_users_tag, True, set())
+            supported_groups = get_resource_tag(role, tra_support_tag, True, set())
+            elevated_access_config = PrincipalModelTraConfig(
                 active_users=list(active_users),
                 supported_groups=list(supported_groups),
             )

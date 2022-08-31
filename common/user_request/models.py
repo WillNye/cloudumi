@@ -321,3 +321,39 @@ class IAMRequest(NoqModel):
             ] = python_script
 
         self.extended_request = self_dict["extended_request"]
+
+    async def get_extended_request_dict(self) -> dict:
+        from common.user_request.utils import ChangeValidator
+
+        requires_update = False
+        er_dict = self.extended_request.dict()
+
+        for elem, change in enumerate(er_dict.get("changes", {}).get("changes", [])):
+            if change["change_type"] == "tear_can_assume_role":
+                requires_update = True
+                er_dict["changes"]["changes"][elem][
+                    "change_type"
+                ] = "tra_can_assume_role"
+            elif not ChangeValidator.is_valid(change["change_type"]):
+                # TODO: Update change_type possibly to some generic typing and maybe update status
+                log.warning(
+                    {
+                        "message": "Invalid change_type",
+                        "change_type": change["change_type"],
+                        "request_id": self.request_id,
+                        "tenant": self.tenant,
+                    }
+                )
+
+        if requires_update:
+            log.debug(
+                {
+                    "message": "",
+                    "request_id": self.request_id,
+                    "tenant": self.tenant,
+                }
+            )
+            self.extended_request = er_dict
+            await self.save()
+
+        return er_dict

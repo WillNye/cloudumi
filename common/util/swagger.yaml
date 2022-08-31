@@ -447,7 +447,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PrincipalModelTearConfig"
+              $ref: "#/components/schemas/PrincipalModelTraConfig"
       responses:
         "200":
           description: OK
@@ -1361,14 +1361,14 @@ components:
               type: string
               readOnly: true
               description: the change model ID of the source change, that this change was generated from
-    TearRoleChangeModel:
+    TraRoleChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
         - type: object
           properties:
             change_type:
               type: string
-              pattern: "tear_can_assume_role"
+              pattern: "tra_can_assume_role"
     TenantDetailsModel:
       type: object
       required:
@@ -1484,7 +1484,7 @@ components:
               - $ref: "#/components/schemas/PermissionsBoundaryChangeModel"
               - $ref: "#/components/schemas/ResourcePolicyChangeModel"
               - $ref: "#/components/schemas/AssumeRolePolicyChangeModel"
-              - $ref: "#/components/schemas/TearRoleChangeModel"
+              - $ref: "#/components/schemas/TraRoleChangeModel"
               - $ref: "#/components/schemas/ResourceTagChangeModel"
               - $ref: "#/components/schemas/GenericFileChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyResourceChangeModel"
@@ -1814,7 +1814,7 @@ components:
           items:
             anyOf:
               - $ref: "#/components/schemas/AppDetailsModel"
-    PrincipalModelTearConfig:
+    PrincipalModelTraConfig:
       type: object
       properties:
         active_users:
@@ -1879,7 +1879,7 @@ components:
               items:
                 type: object # TODO: make tags schema
             elevated_access_config:
-              $ref: "#/components/schemas/PrincipalModelTearConfig"
+              $ref: "#/components/schemas/PrincipalModelTraConfig"
             role_access_config:
               $ref: "#/components/schemas/PrincipalModelRoleAccessConfig"
             effective_policy:
@@ -2498,7 +2498,7 @@ components:
             type: string
           default: []
 
-    TearApprovalRule:
+    TraApprovalRule:
       type: object
       required:
         - name
@@ -2530,15 +2530,15 @@ components:
         accounts:
           $ref: "#/components/schemas/IncludeIgnoreAccountList"
 
-    TearConfig:
+    TraConfig:
       type: object
       properties:
         active_users_tag:
           type: string
-          description: Customer-specified or default tag used on roles to denote users that currently have TEAR access
+          description: Customer-specified or default tag used on roles to denote users that currently have temporary role access
         supported_groups_tag:
           type: string
-          description: Customer-specified or default tag used on roles to denote groups that can request TEAR access
+          description: Customer-specified or default tag used on roles to denote groups that can request temporary role access
         requires_approval:
           type: boolean
           description: |-
@@ -2554,7 +2554,7 @@ components:
         approval_rules:
           type: array
           items:
-            $ref: "#/components/schemas/TearApprovalRule"
+            $ref: "#/components/schemas/TraApprovalRule"
           default: []
 
     Secrets:

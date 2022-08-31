@@ -24,7 +24,7 @@ from common.lib.auth import (
     get_extended_request_account_ids,
     populate_approve_reject_policy,
 )
-from common.lib.aws.cached_resources.iam import get_tear_supported_roles_by_tag
+from common.lib.aws.cached_resources.iam import get_tra_supported_roles_by_tag
 from common.lib.generic import filter_table, write_json_error
 from common.lib.mfa import mfa_verify
 from common.lib.plugins import get_plugin_by_name
@@ -57,7 +57,7 @@ from common.models import (
 from common.models import Status2 as WebStatus
 from common.models import WebResponse
 from common.user_request.models import IAMRequest
-from common.user_request.utils import get_tear_config
+from common.user_request.utils import TRA_CONFIG_BASE_KEY, get_tra_config
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -68,24 +68,24 @@ async def validate_request_creation(
 ) -> RequestCreationModel:
     err = ""
 
-    if tear_change := next(
-        (c for c in request.changes.changes if c.change_type == "tear_can_assume_role"),
+    if tra_change := next(
+        (c for c in request.changes.changes if c.change_type == "tra_can_assume_role"),
         None,
     ):
         tenant = handler.ctx.tenant
-        role_arn = tear_change.principal.principal_arn
-        tear_supported_roles = await get_tear_supported_roles_by_tag(
+        role_arn = tra_change.principal.principal_arn
+        tra_supported_roles = await get_tra_supported_roles_by_tag(
             handler.eligible_roles, handler.groups, tenant
         )
-        tear_supported_role = [
-            role["arn"] for role in tear_supported_roles if role["arn"] == role_arn
+        tra_supported_role = [
+            role["arn"] for role in tra_supported_roles if role["arn"] == role_arn
         ]
 
-        if not tear_supported_role:
-            err += f"No TEAR support for {tear_change.principal.principal_arn} or access already exists. "
+        if not tra_supported_role:
+            err += f"No TRA support for {tra_change.principal.principal_arn} or access already exists. "
 
         if not request.expiration_date:
-            err += "expiration_date is a required field for temporary elevated access requests. "
+            err += "expiration_date is a required field for temporary role access requests. "
 
         if err:
             handler.set_status(400)
@@ -97,8 +97,8 @@ async def validate_request_creation(
             return await handler.finish()
 
         resource_summary = await ResourceSummary.set(tenant, role_arn)
-        tear_config = get_tear_config(resource_summary)
-        if tear_config.mfa.enabled:
+        tra_config = await get_tra_config(resource_summary)
+        if tra_config.mfa.enabled:
             is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
             if not is_authenticated:
                 handler.set_status(403)
@@ -434,31 +434,30 @@ class RequestHandler(BaseAPIV2Handler):
                             tenant, extended_request, self.user, self.groups
                         )
                     )
-                    is_tear_request = bool(
+                    is_tra_request = bool(
                         len(extended_request.changes.changes) == 1
                         and extended_request.changes.changes[0].change_type
-                        == "tear_can_assume_role"
+                        == "tra_can_assume_role"
                     )
-                    if is_eligible_for_auto_approve and is_tear_request:
-                        tear_base_key = "temporary_elevated_access_requests"
+                    if is_eligible_for_auto_approve and is_tra_request:
                         extended_request.request_status = RequestStatus.approved
                         stats.count(
-                            f"{log_data['function']}.tear_auto_approved",
+                            f"{log_data['function']}.tra_auto_approved",
                             tags={
                                 "user": self.user,
                                 "tenant": tenant,
                             },
                         )
-                        tear_approval_comment = CommentModel(
+                        tra_approval_comment = CommentModel(
                             id=str(uuid.uuid4()),
                             timestamp=int(time.time()),
                             user_email="NOQ",
                             last_modified=int(time.time()),
-                            text="Elevated access auto-approved based on config",
+                            text="Temporary role access auto-approved based on config",
                         )
-                        extended_request.comments.append(tear_approval_comment)
-                        extended_request.reviewer = f"Auto-Approved as determined by your {tear_base_key} config"
-                        log_data["tear_auto_approved"] = True
+                        extended_request.comments.append(tra_approval_comment)
+                        extended_request.reviewer = f"Auto-Approved as determined by your {TRA_CONFIG_BASE_KEY} config"
+                        log_data["tra_auto_approved"] = True
                         log_data["request"] = extended_request.dict()
                         log.debug(log_data)
                         auto_approved = True
@@ -728,7 +727,9 @@ class RequestsHandler(BaseAPIV2Handler):
         else:
             requests_to_write = requests[0:limit]
 
-        requests_to_write = sorted(requests_to_write, key=lambda d: d['request_time'], reverse=True)
+        requests_to_write = sorted(
+            requests_to_write, key=lambda d: d["request_time"], reverse=True
+        )
         filtered_count = len(requests_to_write)
         res = DataTableResponse(
             totalCount=total_count, filteredCount=filtered_count, data=requests_to_write
@@ -776,7 +777,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
 
         await request.set_change_metadata()
         extended_request = ExtendedRequestModel.parse_obj(
-            request.extended_request.dict()
+            await request.get_extended_request_dict()
         )
         return extended_request, request.last_updated
 
@@ -851,7 +852,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             # Refresh the commands now that the policies in the script have changed
             await updated_request.set_change_metadata()
             extended_request = ExtendedRequestModel.parse_obj(
-                updated_request.extended_request.dict()
+                await updated_request.get_extended_request_dict()
             )
 
         populate_old_managed_policies_result = concurrent_results[2]
@@ -864,7 +865,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             # Refresh the commands now that the policies in the script have changed
             await updated_request.set_change_metadata()
             extended_request = ExtendedRequestModel.parse_obj(
-                updated_request.extended_request.dict()
+                await updated_request.get_extended_request_dict()
             )
 
         accounts_ids = await get_extended_request_account_ids(extended_request, tenant)
@@ -956,13 +957,13 @@ class RequestDetailHandler(BaseAPIV2Handler):
             )
 
             if any(
-                change.change_type == "tear_can_assume_role"
+                change.change_type == "tra_can_assume_role"
                 for change in extended_request.changes.changes
             ):
                 change_info = request_changes.modification_model
                 if not getattr(change_info, "expiration_date", None):
                     raise ValueError(
-                        "An expiration date must be provided for elevated access requests."
+                        "An expiration date must be provided for temporary role access requests."
                     )
 
             if any(

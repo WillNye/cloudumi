@@ -9,8 +9,8 @@ from common.handlers.base import (
     StaticFileHandler,
 )
 from common.lib.aws.cached_resources.iam import (
-    get_tear_supported_roles_by_tag,
-    get_user_active_tear_roles_by_tag,
+    get_tra_supported_roles_by_tag,
+    get_user_active_tra_roles_by_tag,
 )
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
@@ -99,7 +99,7 @@ class EligibleRoleHandler(BaseHandler):
         tenant = self.ctx.tenant
 
         roles = []
-        active_tear_roles = await get_user_active_tear_roles_by_tag(tenant, self.user)
+        active_tra_roles = await get_user_active_tra_roles_by_tag(tenant, self.user)
 
         for arn in self.eligible_roles:
             role_name = arn.split("/")[-1]
@@ -116,17 +116,17 @@ class EligibleRoleHandler(BaseHandler):
                 "account_id": account_id,
                 "role_name": f"[{role_name}](/policies/edit/{account_id}/iamrole/{role_name})",
                 "redirect_uri": f"/role/{arn}",
-                "inactive_tear": False,
+                "inactive_tra": False,
             }
 
-            if arn in active_tear_roles:
-                row["content"] = "Sign-In (Elevated Access)"
+            if arn in active_tra_roles:
+                row["content"] = "Sign-In (Temporary Access)"
                 row["color"] = "red"
 
             roles.append(row)
 
-        for role in await get_tear_supported_roles_by_tag(
-            self.eligible_roles + active_tear_roles, self.groups, self.ctx.tenant
+        for role in await get_tra_supported_roles_by_tag(
+            self.eligible_roles + active_tra_roles, self.groups, self.ctx.tenant
         ):
             """
             Update:
@@ -147,8 +147,8 @@ class EligibleRoleHandler(BaseHandler):
                     "account_name": formatted_account_name,
                     "account_id": account_id,
                     "role_name": f"[{role_name}](/policies/edit/{account_id}/iamrole/{role_name})",
-                    "inactive_tear": True,
-                    "content": "Request Elevated Access",
+                    "inactive_tra": True,
+                    "content": "Request Temporary Access",
                     "color": "red",
                     "onClick": {
                         "action": "open_modal",
