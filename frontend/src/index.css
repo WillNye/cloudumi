@@ -34,6 +34,12 @@ code {
   min-height: 100vh;
 }
 
+.wrapped {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
 .vertical-tab-override .ui.vertical.menu.fluid {
   height: 100%;
 }

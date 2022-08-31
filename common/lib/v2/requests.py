@@ -1631,6 +1631,7 @@ async def populate_old_policies(
     tenant: str,
     principal: Optional[ExtendedAwsPrincipalModel] = None,
     force_refresh=False,
+    update=False,
 ) -> ExtendedRequestModel:
     """
     Populates the old policies for each inline policy.
@@ -1713,39 +1714,42 @@ async def populate_old_policies(
         elif change.change_type == "policy_condenser":
             combined_policies_document = dict(Statement=[])
             combined_policies = principal.inline_policies
-            if change.detach_managed_policies:
-                iam_client = get_tenant_iam_conn(
-                    tenant, role_account_id, "noq_get_managed_policy_docs"
-                )
-                sem = NoqSemaphore(aio_get_managed_policy_document, batch_size=20)
-                combined_policies.extend(
-                    await sem.process(
-                        [
-                            {
-                                "policy_arn": policy["PolicyArn"],
-                                "iam_client": iam_client,
-                            }
-                            for policy in principal.managed_policies
-                        ]
+            if change.remove_unused_permissions:
+                if change.detach_managed_policies:
+                    iam_client = get_tenant_iam_conn(
+                        tenant, role_account_id, "noq_get_managed_policy_docs"
                     )
-                )
+                    sem = NoqSemaphore(aio_get_managed_policy_document, batch_size=20)
+                    combined_policies.extend(
+                        await sem.process(
+                            [
+                                {
+                                    "policy_arn": policy["PolicyArn"],
+                                    "iam_client": iam_client,
+                                }
+                                for policy in principal.managed_policies
+                            ]
+                        )
+                    )
 
-            for existing_policy in combined_policies:
-                existing_policy = existing_policy.get("PolicyDocument", {})
-                if version := existing_policy.get("Version"):
-                    combined_policies_document.setdefault("Version", version)
-                combined_policies_document["Statement"].extend(
-                    existing_policy.get("Statement", [])
-                )
+                for existing_policy in combined_policies:
+                    existing_policy = existing_policy.get("PolicyDocument", {})
+                    if version := existing_policy.get("Version"):
+                        combined_policies_document.setdefault("Version", version)
+                    combined_policies_document["Statement"].extend(
+                        existing_policy.get("Statement", [])
+                    )
 
-            change.old_policy = PolicyModel(
-                policy_sha256=sha256(
-                    json.dumps(
-                        combined_policies_document,
-                    ).encode()
-                ).hexdigest(),
-                policy_document=combined_policies_document,
-            )
+                change.old_policy = PolicyModel(
+                    policy_sha256=sha256(
+                        json.dumps(
+                            combined_policies_document,
+                        ).encode()
+                    ).hexdigest(),
+                    policy_document=combined_policies_document,
+                )
+            elif not change.old_policy:
+                change.old_policy = change.policy
 
     log_data["message"] = "Done populating old policies"
     log_data["request"] = extended_request.dict()

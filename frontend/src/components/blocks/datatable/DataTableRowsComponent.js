@@ -129,14 +129,20 @@ const DataTableRowsComponent = ({
               style={column.style}
             >
               <Button
-                content={entry['content'] || column.content}
+                animated
                 fluid
-                labelPosition='right'
-                icon={column.icon}
+                //labelPosition='right'
                 color={entry['color'] || 'blue'}
                 onClick={(e) => handleCellClick(e, column, entry)}
                 size='mini'
-              />
+              >
+                <Button.Content visible>
+                  {entry['content'] || column.content}
+                </Button.Content>
+                <Button.Content hidden>
+                  <Icon name={column.icon || 'arrow right'}></Icon>
+                </Button.Content>
+              </Button>
             </Table.Cell>
           )
         } else if (column.type === 'abutton') {

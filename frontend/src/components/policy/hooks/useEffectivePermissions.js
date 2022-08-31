@@ -5,6 +5,7 @@ import { usePolicyContext } from './PolicyProvider'
 const useEffectivePermissions = () => {
   const [state, dispatch] = useReducer(reducer, initialState)
   const [newStatement, setNewStatement] = useState(null)
+  const [removeUnusedPermissions, setRemoveUnusedPermissions] = useState(false)
   const {
     resourceEffectivePermissions = {},
     setModalWithAdminAutoApprove,
@@ -26,7 +27,7 @@ const useEffectivePermissions = () => {
               },
               change_type: 'policy_condenser',
               detach_managed_policies: detachManagedPolicies,
-
+              remove_unused_permissions: removeUnusedPermissions,
               policy: {
                 policy_document: newStatement,
               },
@@ -35,7 +36,7 @@ const useEffectivePermissions = () => {
         },
       })
     },
-    [newStatement, sendRequestV2]
+    [newStatement, sendRequestV2, removeUnusedPermissions]
   )
 
   useEffect(() => {
@@ -52,6 +53,7 @@ const useEffectivePermissions = () => {
     setModalWithAdminAutoApprove,
     newStatement,
     setNewStatement,
+    setRemoveUnusedPermissions,
   }
 }
 
