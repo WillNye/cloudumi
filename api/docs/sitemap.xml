@@ -121,6 +121,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.noq.dev/docs/features/planned/pagerduty_integration/</loc>
+         <lastmod>2022-08-31</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.noq.dev/docs/features/planned/unused_permissions_removal/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
