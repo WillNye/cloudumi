@@ -384,6 +384,7 @@ async def create_user_pool_client(user_pool_id, dev_domain_url):
             "ALLOW_USER_PASSWORD_AUTH",
             "ALLOW_USER_SRP_AUTH",
             "ALLOW_REFRESH_TOKEN_AUTH",
+            "ALLOW_ADMIN_USER_PASSWORD_AUTH",
         ],
         CallbackURLs=[
             f"{dev_domain_url}/auth",
