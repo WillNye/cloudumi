@@ -1,9 +1,5 @@
-import base64
 import hashlib
-import hmac
-import random
 import time
-from datetime import date
 from secrets import token_urlsafe
 from urllib.parse import urlparse
 
@@ -18,397 +14,20 @@ from jinja2.sandbox import ImmutableSandboxedEnvironment
 from api.handlers.v3.tenant_registration.models import NewTenantRegistration
 from common.config import config
 from common.handlers.base import TornadoRequestHandler
+from common.lib.cognito.identity import (
+    ADMIN_GROUP_NAME,
+    CognitoUserClient,
+    create_user_pool,
+    create_user_pool_client,
+    create_user_pool_domain,
+    generate_dev_domain,
+    get_external_id,
+)
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.free_email_domains import is_email_free
 from common.lib.tenant.models import TenantDetails
 
-ADMIN_GROUP_NAME = "noq_administrators"
-
-
-async def generate_dev_domain(dev_mode):
-    suffix = "noq_localhost" if dev_mode else "noq_dev"
-
-    for i in range(0, 25):
-        tenant_id = random.randint(000000, 999999)
-        dev_domain = f"dev-{tenant_id}_{suffix}"
-
-        # check if the dev domain is available
-        if not config.get_tenant_static_config_from_dynamo(dev_domain):
-            return dev_domain
-
-
-async def create_user_pool(noq_subdomain, domain_fqdn):
-    cognito = boto3.client("cognito-idp", region_name=config.region)
-    # a = cognito.describe_user_pool(UserPoolId="us-east-1_nvTFqJY2L")
-    # print(a)
-    # b = cognito.describe_user_pool_client(UserPoolId="us-east-1_nvTFqJY2L", ClientId="1fpq9om50b4bm1225o8it875jj")
-    paginator = cognito.get_paginator("list_user_pools")
-    response_iterator = paginator.paginate(
-        PaginationConfig={"MaxItems": 60, "PageSize": 60}
-    )
-
-    user_pool_name = "cloudumi_tenant_" + noq_subdomain
-
-    user_pool_already_exists = False
-    for response in response_iterator:
-        for user_pool in response["UserPools"]:
-            if user_pool["Name"] == user_pool_name:
-                user_pool_already_exists = True
-                break
-    if user_pool_already_exists:
-        print("User pool already exists")
-        raise Exception("User Pool Already Exists")
-    # COGNITO: You need a custom domain too
-    env = ImmutableSandboxedEnvironment(
-        loader=FileSystemLoader("common/templates"),
-        extensions=["jinja2.ext.loopcontrols"],
-        autoescape=select_autoescape(),
-    )
-    todays_date = date.today()
-    cognito_invitation_message_template = env.get_template("cognito_invitation.j2")
-    cognito_invitation_message = cognito_invitation_message_template.render(
-        year=todays_date.year, domain=domain_fqdn
-    )
-    cognito_email_subject = "Your temporary password for Noq"
-    response = cognito.create_user_pool(
-        PoolName=user_pool_name,
-        Schema=[
-            {
-                "Name": "sub",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": False,
-                "Required": True,
-                "StringAttributeConstraints": {"MinLength": "1", "MaxLength": "2048"},
-            },
-            {
-                "Name": "name",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "given_name",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "family_name",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "middle_name",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "nickname",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "preferred_username",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "profile",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "picture",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "website",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "email",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": True,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "email_verified",
-                "AttributeDataType": "Boolean",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-            },
-            {
-                "Name": "gender",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "birthdate",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "10", "MaxLength": "10"},
-            },
-            {
-                "Name": "zoneinfo",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "locale",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "phone_number",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "address",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
-            },
-            {
-                "Name": "updated_at",
-                "AttributeDataType": "Number",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "NumberAttributeConstraints": {"MinValue": "0"},
-            },
-            {
-                "Name": "identities",
-                "AttributeDataType": "String",
-                "DeveloperOnlyAttribute": False,
-                "Mutable": True,
-                "Required": False,
-                "StringAttributeConstraints": {},
-            },
-        ],
-        Policies={
-            "PasswordPolicy": {
-                "MinimumLength": 8,
-                "RequireUppercase": True,
-                "RequireLowercase": True,
-                "RequireNumbers": True,
-                "RequireSymbols": True,
-            }
-        },
-        AutoVerifiedAttributes=["email"],
-        EmailConfiguration={"EmailSendingAccount": "COGNITO_DEFAULT"},
-        UsernameAttributes=["email"],
-        # AliasAttributes=[
-        #     'email',
-        #     'preferred_username'
-        # ],
-        UserPoolTags={"tenant": noq_subdomain},
-        AdminCreateUserConfig={
-            "AllowAdminCreateUserOnly": True,
-            "UnusedAccountValidityDays": 7,
-            "InviteMessageTemplate": {
-                "EmailMessage": cognito_invitation_message,
-                "EmailSubject": cognito_email_subject,
-            },
-        },
-        # TODO: Enable advanced security mode
-        # UserPoolAddOns={
-        #     'AdvancedSecurityMode': 'ENFORCED'
-        # },
-        UsernameConfiguration={"CaseSensitive": False},
-        AccountRecoverySetting={
-            "RecoveryMechanisms": [
-                {"Priority": 1, "Name": "verified_email"},
-            ]
-        },
-        VerificationMessageTemplate={
-            "DefaultEmailOption": "CONFIRM_WITH_LINK",
-        },
-    )
-    return response["UserPool"]["Id"]
-
-
-async def get_secret_hash(username, client_id, client_secret):
-    msg = username + client_id
-    dig = hmac.new(
-        str(client_secret).encode("utf-8"),
-        msg=str(msg).encode("utf-8"),
-        digestmod=hashlib.sha256,
-    ).digest()
-    return base64.b64encode(dig).decode()
-
-
-async def get_external_id(tenant, username):
-    dig = hmac.new(
-        str(tenant).encode("utf-8"),
-        msg=str(username).encode("utf-8"),
-        digestmod=hashlib.sha256,
-    ).hexdigest()
-    return dig
-
-
-async def create_user_pool_user(
-    user_pool_id, user_pool_client_id, client_secret, email, noq_subdomain
-):
-    cognito = boto3.client("cognito-idp", region_name=config.region)
-    cognito.create_group(
-        UserPoolId=user_pool_id,
-        GroupName=ADMIN_GROUP_NAME,
-        Description="Noq Administrators",
-    )
-
-    user = cognito.admin_create_user(
-        UserPoolId=user_pool_id,
-        Username=email,
-        UserAttributes=[
-            {"Name": "email", "Value": email},
-        ],
-        DesiredDeliveryMediums=[
-            "EMAIL",
-        ],
-    )
-
-    cognito.admin_add_user_to_group(
-        UserPoolId=user_pool_id,
-        Username=email,
-        GroupName=ADMIN_GROUP_NAME,
-    )
-
-    return user
-
-
-async def create_user_pool_client(user_pool_id, dev_domain_url):
-    cognito = boto3.client("cognito-idp", region_name=config.region)
-    res = cognito.create_user_pool_client(
-        UserPoolId=user_pool_id,
-        ClientName="noq_tenant",
-        GenerateSecret=True,
-        RefreshTokenValidity=1,
-        AccessTokenValidity=60,
-        IdTokenValidity=60,
-        TokenValidityUnits={
-            "AccessToken": "minutes",
-            "IdToken": "minutes",
-            "RefreshToken": "days",
-        },
-        ReadAttributes=[
-            "address",
-            "birthdate",
-            "email",
-            "email_verified",
-            "family_name",
-            "gender",
-            "given_name",
-            "locale",
-            "middle_name",
-            "name",
-            "nickname",
-            "phone_number",
-            "phone_number_verified",
-            "picture",
-            "preferred_username",
-            "profile",
-            "updated_at",
-            "website",
-            "zoneinfo",
-        ],
-        WriteAttributes=[
-            "address",
-            "birthdate",
-            "email",
-            "family_name",
-            "gender",
-            "given_name",
-            "locale",
-            "middle_name",
-            "name",
-            "nickname",
-            "phone_number",
-            "picture",
-            "preferred_username",
-            "profile",
-            "updated_at",
-            "website",
-            "zoneinfo",
-        ],
-        SupportedIdentityProviders=["COGNITO"],
-        ExplicitAuthFlows=[
-            "ALLOW_CUSTOM_AUTH",
-            "ALLOW_USER_PASSWORD_AUTH",
-            "ALLOW_USER_SRP_AUTH",
-            "ALLOW_REFRESH_TOKEN_AUTH",
-            "ALLOW_ADMIN_USER_PASSWORD_AUTH",
-        ],
-        CallbackURLs=[
-            f"{dev_domain_url}/auth",
-            f"{dev_domain_url}/oauth2/idpresponse",
-        ],
-        LogoutURLs=[f"{dev_domain_url}", f"{dev_domain_url}/"],
-        # DefaultRedirectURI=f'{dev_domain_url}/',
-        AllowedOAuthFlows=[
-            "code",
-        ],
-        AllowedOAuthScopes=["email", "openid", "profile"],
-        AllowedOAuthFlowsUserPoolClient=True,
-        PreventUserExistenceErrors="ENABLED",
-        EnableTokenRevocation=True,
-    )
-    return res["UserPoolClient"]["ClientId"], res["UserPoolClient"]["ClientSecret"]
-
-
-async def create_user_pool_domain(user_pool_id, user_pool_domain_name):
-    cognito = boto3.client("cognito-idp", region_name=config.region)
-    user_pool_domain = cognito.create_user_pool_domain(
-        UserPoolId=user_pool_id, Domain=user_pool_domain_name
-    )
-    return user_pool_domain
+log = config.get_logger()
 
 
 async def set_login_page_ui(user_pool_id):
@@ -458,9 +77,6 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
 
 
 class TenantRegistrationHandler(TornadoRequestHandler):
-    def check_xsrf_cookie(self):
-        pass
-
     def set_default_headers(self):
         valid_referrers = ["localhost", "noq.dev", "www.noq.dev", "127.0.0.1"]
         referrer = self.request.headers.get("Referer")
@@ -612,20 +228,10 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             port = ""
         dev_domain_url = uri_scheme + dev_domain.replace("_", ".") + port
         # create new tenant
-        user_pool_id = await create_user_pool(dev_domain, dev_domain_url)
-        try:
-            user_pool_domain = await create_user_pool_domain(
-                user_pool_id, cognito_url_domain
-            )
-        except Exception as e:
-            self.set_status(400)
-            self.write(
-                {
-                    "error": f"Unable to create user pool domain: {str(e)}",
-                    "error_description": "Failed to create user pool domain. Please try again.",
-                }
-            )
-            return
+        user_pool_id = await create_user_pool(dev_domain)
+        user_pool_domain = await create_user_pool_domain(
+            user_pool_id, cognito_url_domain
+        )
         if user_pool_domain["ResponseMetadata"]["HTTPStatusCode"] != 200:
             self.set_status(400)
             self.write(
@@ -640,15 +246,11 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             cognito_client_id,
             cognito_user_pool_client_secret,
         ) = await create_user_pool_client(user_pool_id, dev_domain_url)
-        await set_login_page_ui(user_pool_id)
         try:
-            await create_user_pool_user(
-                user_pool_id,
-                cognito_client_id,
-                cognito_user_pool_client_secret,
-                tenant.email,
-                dev_domain,
+            cognito_idp = CognitoUserClient(
+                user_pool_id, cognito_client_id, cognito_user_pool_client_secret
             )
+            await cognito_idp.create_init_user(tenant.email)
         except Exception as e:
             self.set_status(400)
             self.write(

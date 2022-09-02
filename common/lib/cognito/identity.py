@@ -1,7 +1,14 @@
 import asyncio
+import base64
+import hashlib
+import hmac
+import logging
+import random
+import string
 from typing import Any, Dict, List, Union
 
 import boto3
+from botocore.exceptions import ClientError
 
 from common.config import config
 from common.lib.asyncio import aio_wrapper
@@ -14,8 +21,9 @@ from common.models import (
     SSOIDPProviders,
 )
 
-LOG = config.get_logger()
+ADMIN_GROUP_NAME = "noq_administrators"
 CLIENT_SECRET_MASK = "********"
+log = config.get_logger()
 
 
 async def __get_google_provider(
@@ -135,57 +143,6 @@ async def __get_oidc_provider(
                 provider_type=identity_provider.get("ProviderType"),
             )
     return oidc_provider
-
-
-async def get_user_pool_client_id(
-    user_pool_id: str, client_name: str, client=None
-) -> str:
-    """Get the user pool client ID for a given client name.
-
-    :param user_pool_id: the user pool ID
-    :param client_name: the client name
-    :return: the user pool ID
-    """
-    if not client:
-        client = boto3.client("cognito-idp", region_name=config.region)
-    response = await aio_wrapper(client.list_user_pool_clients, UserPoolId=user_pool_id)
-    for client in response.get("UserPoolClients", []):
-        if client.get("ClientName") == client_name:
-            return client.get("ClientId")
-    next_token = response.get("NextToken")
-    while next_token:
-        response = await aio_wrapper(
-            client.list_user_pool_clients, UserPoolId=user_pool_id, NextToken=next_token
-        )
-        for client in response.get("UserPoolClients", []):
-            if client.get("ClientName") == client_name:
-                return client.get("ClientId")
-        next_token = response.get("NextToken")
-    raise Exception(f"Could not find user pool ID for client {client_name}")
-
-
-async def get_user_pool_client(user_pool_id: str, client_id: str, client=None) -> dict:
-    """Get a specific client from a user pool.
-
-    :param user_pool_id: ensure this is the user pool ID not the user pool name
-    :param client_id: the client ID to get
-    :param client: The boto3 client to use when interfacing with AWS
-    :return: the client object
-    """
-    if not client:
-        client = boto3.client("cognito-idp", region_name=config.region)
-    response = await aio_wrapper(
-        client.describe_user_pool_client, UserPoolId=user_pool_id, ClientId=client_id
-    )
-    return response.get("UserPoolClient", {})
-
-
-async def update_user_pool_client(boto_conn, user_pool: dict):
-    """Sanitizes the request(user_pool) data and updates the user pool client in boto3"""
-    user_pool.pop("ClientSecret", None)
-    user_pool.pop("CreationDate", None)
-    user_pool.pop("LastModifiedDate", None)
-    await aio_wrapper(boto_conn.update_user_pool_client, **user_pool)
 
 
 async def connect_idp_to_app_client(
@@ -341,7 +298,7 @@ async def upsert_identity_provider(
             )
 
     async def set_provider(identity_provider):
-        LOG.info(
+        log.info(
             f"Storing {identity_provider.provider_type} Identity Provider in Cognito in user pool {user_pool_id}"
         )
         provider_dict = identity_provider.dict()
@@ -351,7 +308,7 @@ async def upsert_identity_provider(
             for k in identity_provider.required_fields()
             if k not in ["provider_name", "provider_type"]
         ]
-        LOG.info(
+        log.info(
             f"Using {required} to create_identity_provider in Cognito with type {provider_type}"
         )
 
@@ -375,7 +332,7 @@ async def upsert_identity_provider(
         if provider := getattr(id_provider, provider_type):
             responses.append(await set_provider(provider))
 
-    LOG.info(f"Created {len(responses)} IDP: {responses}")
+    log.info(f"Created {len(responses)} IDP: {responses}")
     return True
 
 
@@ -434,102 +391,6 @@ async def get_identity_user_groups(
     return groups
 
 
-async def get_identity_users(user_pool_id: str, client=None) -> List[CognitoUser]:
-    """Get Cognito users and format as pydantic CognitoUser objects.
-
-    Retrieves all cognito users and returns them in a list as CognitoUser
-    objects.
-
-    :param user_pool_id: the current user pool id
-    :param client: The boto3 client to use when interfacing with AWS
-    :return: a list of CognitoUser objects
-    """
-    if not client:
-        client = boto3.client("cognito-idp", region_name=config.region)
-    users = list()
-    response = await aio_wrapper(client.list_users, UserPoolId=user_pool_id)
-    users.extend(response.get("Users", []))
-    next_token = response.get("NextToken")
-    while next_token:
-        response = await aio_wrapper(
-            client.list_users, UserPoolId=user_pool_id, NextToken=next_token
-        )
-        users.extend(response.get("Users", []))
-        next_token = response.get("NextToken")
-    cognito_users = [CognitoUser(**x) for x in users]
-    for cognito_user in cognito_users:
-        cognito_user.Groups = [
-            x.GroupName
-            for x in await get_identity_user_groups(
-                user_pool_id, cognito_user, client=client
-            )
-        ]
-    return cognito_users
-
-
-async def create_identity_user(
-    user_pool_id: str, user: CognitoUser, client=None
-) -> CognitoUser:
-    """Create a Cognito user account.
-
-    Note: this account will delete an already existing user and recreate it. This
-    uses the admin_create_user functionality, side-stepping the user sign up process.
-
-    :param user_pool_id: the id of the user pool that should have the new user
-    :param user: a CognitoUser object that is validated and describes the new use
-    :param client: The boto3 client to use when interfacing with AWSr
-    :return: an updated CognitoUser object that may contain additional info from AWS
-    """
-    if not client:
-        client = boto3.client("cognito-idp", region_name=config.region)
-    current_users = await get_identity_users(user_pool_id, client=client)
-    if user in [x for x in current_users]:
-        await delete_identity_user(user_pool_id, user, client=client)
-    delivery_mediums = list()
-    if user.MFAOptions:
-        delivery_mediums = [
-            str(x.DeliveryMedium).split(".")[-1] for x in user.MFAOptions
-        ]
-    user_attributes = list()
-    if user.Attributes:
-        user_attributes = [dict(x) for x in user.Attributes]
-    response = await aio_wrapper(
-        client.admin_create_user,
-        UserPoolId=user_pool_id,
-        Username=user.Username,
-        UserAttributes=user_attributes,
-        DesiredDeliveryMediums=delivery_mediums,
-    )
-    user_update = CognitoUser(**response.get("User", {}))
-    if user.Groups:
-        LOG.info(f"Adding groups {user.Groups} to user {user.Username}")
-        await create_identity_user_groups(
-            user_pool_id, user_update, [CognitoGroup(GroupName=x) for x in user.Groups]
-        )
-    return user_update
-
-
-async def delete_identity_user(
-    user_pool_id: str, user: CognitoUser, client=None
-) -> bool:
-    """Delete a Cognito user.
-
-    Uses the admin_delete_user functionality to delete a user from the
-    Cognito database.
-
-    :param user_pool_id: the id of the user pool from which to delete the user
-    :param user: a CognitoUser object that describes the user
-    :param client: The boto3 client to use when interfacing with AWS
-    :return: true if successful
-    """
-    if not client:
-        client = boto3.client("cognito-idp", region_name=config.region)
-    await aio_wrapper(
-        client.admin_delete_user, UserPoolId=user_pool_id, Username=user.Username
-    )
-    return True
-
-
 async def create_identity_user_groups(
     user_pool_id: str, user: CognitoUser, groups: List[CognitoGroup], client=None
 ) -> bool:
@@ -551,19 +412,19 @@ async def create_identity_user_groups(
                 GroupName=group.GroupName,
             )
         except client.exceptions.UserNotFoundException:
-            LOG.warning(f"User {group.Username} not found in user pool {user_pool_id}.")
+            log.warning(f"User {user.Username} not found in user pool {user_pool_id}.")
             return False
         except client.exceptions.ResourceNotFoundException:
-            LOG.warning(
+            log.warning(
                 f"Group {group.GroupName} not found in user pool {user_pool_id}."
             )
             return False
         except client.exceptions.ResourceConflictException:
-            LOG.warning(f"User {group.Username} already in group {group.GroupName}.")
+            log.warning(f"User {user.Username} already in group {group.GroupName}.")
             return False
         except Exception:
-            LOG.exception(
-                f"Error assigning user {group.Username} to group {group.GroupName}"
+            log.exception(
+                f"Error assigning user {user.Username} to group {group.GroupName}"
             )
             return False
     return True
@@ -591,7 +452,7 @@ async def remove_identity_user_group(
             GroupName=group.GroupName,
         )
     except client.exceptions.UserNotFoundException:
-        LOG.warning(
+        log.warning(
             {
                 "message": "User not found when attempting to remove user from group",
                 "user": user.Username,
@@ -600,7 +461,7 @@ async def remove_identity_user_group(
         )
         return False
     except client.exceptions.ResourceNotFoundException:
-        LOG.warning(
+        log.warning(
             {
                 "message": "User is not assigned to group",
                 "user": user.Username,
@@ -609,7 +470,7 @@ async def remove_identity_user_group(
         )
         return False
     except Exception as err:
-        LOG.exception(
+        log.exception(
             {
                 "message": "Error removing user from group",
                 "user": user.Username,
@@ -752,3 +613,994 @@ async def delete_identity_group(
         client.delete_group, UserPoolId=user_pool_id, GroupName=group.GroupName
     )
     return True
+
+
+async def get_external_id(tenant, username):
+    dig = hmac.new(
+        str(tenant).encode("utf-8"),
+        msg=str(username).encode("utf-8"),
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+    return dig
+
+
+async def generate_dev_domain(dev_mode):
+    suffix = "noq_localhost" if dev_mode else "noq_dev"
+
+    for i in range(0, 25):
+        tenant_id = random.randint(000000, 999999)
+        dev_domain = f"dev-{tenant_id}_{suffix}"
+
+        # check if the dev domain is available
+        if not config.get_tenant_static_config_from_dynamo(dev_domain):
+            return dev_domain
+
+
+def generate_password() -> str:
+    generated_password = [
+        random.choice(string.punctuation) for _ in range(random.randint(1, 4))
+    ]
+    generated_password.extend(
+        [random.choice(string.digits) for _ in range(random.randint(1, 4))]
+    )
+    generated_password.extend(
+        [random.choice(string.ascii_uppercase) for _ in range(random.randint(4, 5))]
+    )
+    generated_password.extend(
+        [random.choice(string.ascii_lowercase) for _ in range(random.randint(4, 5))]
+    )
+    random.shuffle(generated_password)
+    return "".join(generated_password)
+
+
+async def create_user_pool(noq_subdomain):
+    cognito = boto3.client("cognito-idp", region_name=config.region)
+    paginator = cognito.get_paginator("list_user_pools")
+    response_iterator = paginator.paginate(
+        PaginationConfig={"MaxItems": 60, "PageSize": 60}
+    )
+    user_pool_name = f"cloudumi_tenant_{noq_subdomain}"
+    user_pool_already_exists = False
+    for response in response_iterator:
+        for user_pool in response["UserPools"]:
+            if user_pool["Name"] == user_pool_name:
+                user_pool_already_exists = True
+                break
+    if user_pool_already_exists:
+        logging.warning(
+            {"message": "User pool already exists", "user_pool": user_pool_name}
+        )
+        raise Exception("User Pool Already Exists")
+    # COGNITO: You need a custom domain too
+    # env = ImmutableSandboxedEnvironment(
+    #     loader=FileSystemLoader("common/templates"),
+    #     extensions=["jinja2.ext.loopcontrols"],
+    #     autoescape=select_autoescape(),
+    # )
+    # todays_date = date.today()
+    # cognito_invitation_message_template = env.get_template("cognito_invitation.j2")
+    # cognito_invitation_message = cognito_invitation_message_template.render(
+    #     year=todays_date.year, domain=domain_fqdn
+    # )
+    # cognito_email_subject = "Your temporary password for Noq"
+    response = cognito.create_user_pool(
+        PoolName=user_pool_name,
+        Schema=[
+            {
+                "Name": "sub",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": False,
+                "Required": True,
+                "StringAttributeConstraints": {"MinLength": "1", "MaxLength": "2048"},
+            },
+            {
+                "Name": "name",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "given_name",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "family_name",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "middle_name",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "nickname",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "preferred_username",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "profile",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "picture",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "website",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "email",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": True,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "email_verified",
+                "AttributeDataType": "Boolean",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+            },
+            {
+                "Name": "gender",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "birthdate",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "10", "MaxLength": "10"},
+            },
+            {
+                "Name": "zoneinfo",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "locale",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "phone_number",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "address",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {"MinLength": "0", "MaxLength": "2048"},
+            },
+            {
+                "Name": "updated_at",
+                "AttributeDataType": "Number",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "NumberAttributeConstraints": {"MinValue": "0"},
+            },
+            {
+                "Name": "identities",
+                "AttributeDataType": "String",
+                "DeveloperOnlyAttribute": False,
+                "Mutable": True,
+                "Required": False,
+                "StringAttributeConstraints": {},
+            },
+        ],
+        Policies={
+            "PasswordPolicy": {
+                "MinimumLength": 8,
+                "RequireUppercase": True,
+                "RequireLowercase": True,
+                "RequireNumbers": True,
+                "RequireSymbols": True,
+            }
+        },
+        AutoVerifiedAttributes=["email"],
+        EmailConfiguration={"EmailSendingAccount": "COGNITO_DEFAULT"},
+        UsernameAttributes=["email"],
+        # AliasAttributes=[
+        #     'email',
+        #     'preferred_username'
+        # ],
+        UserPoolTags={"tenant": noq_subdomain},
+        AdminCreateUserConfig={
+            "AllowAdminCreateUserOnly": True,
+            "UnusedAccountValidityDays": 7,
+            # "InviteMessageTemplate": {
+            #     "EmailMessage": cognito_invitation_message,
+            #     "EmailSubject": cognito_email_subject,
+            # },
+        },
+        # TODO: Enable advanced security mode
+        # UserPoolAddOns={
+        #     'AdvancedSecurityMode': 'ENFORCED'
+        # },
+        UsernameConfiguration={"CaseSensitive": False},
+        AccountRecoverySetting={
+            "RecoveryMechanisms": [
+                {"Priority": 1, "Name": "verified_email"},
+            ]
+        },
+        VerificationMessageTemplate={
+            "DefaultEmailOption": "CONFIRM_WITH_LINK",
+        },
+    )
+    return response["UserPool"]["Id"]
+
+
+async def create_user_pool_client(user_pool_id, dev_domain_url):
+    cognito = boto3.client("cognito-idp", region_name=config.region)
+    res = cognito.create_user_pool_client(
+        UserPoolId=user_pool_id,
+        ClientName="noq_tenant",
+        GenerateSecret=True,
+        RefreshTokenValidity=1,
+        AccessTokenValidity=60,
+        IdTokenValidity=60,
+        TokenValidityUnits={
+            "AccessToken": "minutes",
+            "IdToken": "minutes",
+            "RefreshToken": "days",
+        },
+        ReadAttributes=[
+            "address",
+            "birthdate",
+            "email",
+            "email_verified",
+            "family_name",
+            "gender",
+            "given_name",
+            "locale",
+            "middle_name",
+            "name",
+            "nickname",
+            "phone_number",
+            "phone_number_verified",
+            "picture",
+            "preferred_username",
+            "profile",
+            "updated_at",
+            "website",
+            "zoneinfo",
+        ],
+        WriteAttributes=[
+            "address",
+            "birthdate",
+            "email",
+            "family_name",
+            "gender",
+            "given_name",
+            "locale",
+            "middle_name",
+            "name",
+            "nickname",
+            "phone_number",
+            "picture",
+            "preferred_username",
+            "profile",
+            "updated_at",
+            "website",
+            "zoneinfo",
+        ],
+        SupportedIdentityProviders=["COGNITO"],
+        ExplicitAuthFlows=[
+            "ALLOW_CUSTOM_AUTH",
+            "ALLOW_USER_PASSWORD_AUTH",
+            "ALLOW_USER_SRP_AUTH",
+            "ALLOW_REFRESH_TOKEN_AUTH",
+            "ALLOW_ADMIN_USER_PASSWORD_AUTH",
+        ],
+        CallbackURLs=[
+            f"{dev_domain_url}/auth",
+            f"{dev_domain_url}/oauth2/idpresponse",
+        ],
+        LogoutURLs=[f"{dev_domain_url}", f"{dev_domain_url}/"],
+        # DefaultRedirectURI=f'{dev_domain_url}/',
+        AllowedOAuthFlows=[
+            "code",
+        ],
+        AllowedOAuthScopes=["email", "openid", "profile"],
+        AllowedOAuthFlowsUserPoolClient=True,
+        PreventUserExistenceErrors="ENABLED",
+        EnableTokenRevocation=True,
+    )
+    return res["UserPoolClient"]["ClientId"], res["UserPoolClient"]["ClientSecret"]
+
+
+async def get_user_pool_client_id(
+    user_pool_id: str, client_name: str, client=None
+) -> str:
+    """Get the user pool client ID for a given client name.
+
+    :param user_pool_id: the user pool ID
+    :param client_name: the client name
+    :return: the user pool ID
+    """
+    if not client:
+        client = boto3.client("cognito-idp", region_name=config.region)
+    response = await aio_wrapper(client.list_user_pool_clients, UserPoolId=user_pool_id)
+    for client in response.get("UserPoolClients", []):
+        if client.get("ClientName") == client_name:
+            return client.get("ClientId")
+    next_token = response.get("NextToken")
+    while next_token:
+        response = await aio_wrapper(
+            client.list_user_pool_clients, UserPoolId=user_pool_id, NextToken=next_token
+        )
+        for client in response.get("UserPoolClients", []):
+            if client.get("ClientName") == client_name:
+                return client.get("ClientId")
+        next_token = response.get("NextToken")
+    raise Exception(f"Could not find user pool ID for client {client_name}")
+
+
+async def get_user_pool_client(user_pool_id: str, client_id: str, client=None) -> dict:
+    """Get a specific client from a user pool.
+
+    :param user_pool_id: ensure this is the user pool ID not the user pool name
+    :param client_id: the client ID to get
+    :param client: The boto3 client to use when interfacing with AWS
+    :return: the client object
+    """
+    if not client:
+        client = boto3.client("cognito-idp", region_name=config.region)
+    response = await aio_wrapper(
+        client.describe_user_pool_client, UserPoolId=user_pool_id, ClientId=client_id
+    )
+    return response.get("UserPoolClient", {})
+
+
+async def update_user_pool_client(boto_conn, user_pool: dict):
+    """Sanitizes the request(user_pool) data and updates the user pool client in boto3"""
+    user_pool.pop("ClientSecret", None)
+    user_pool.pop("CreationDate", None)
+    user_pool.pop("LastModifiedDate", None)
+    await aio_wrapper(boto_conn.update_user_pool_client, **user_pool)
+
+
+async def create_user_pool_domain(user_pool_id, user_pool_domain_name):
+    cognito = boto3.client("cognito-idp", region_name=config.region)
+    user_pool_domain = cognito.create_user_pool_domain(
+        UserPoolId=user_pool_id, Domain=user_pool_domain_name
+    )
+    return user_pool_domain
+
+
+class CognitoUserClient:
+    """Encapsulates Amazon Cognito actions"""
+
+    def __init__(
+        self, user_pool_id, client_id=None, client_secret=None, cognito_idp_client=None
+    ):
+        """
+        While client_id is optional, many CognitoUserClient methods require it.
+            So, it is strongly recommended the client_id be provided
+        :param user_pool_id: The ID of an existing Amazon Cognito user pool.
+        :param client_id: The ID of a client application registered with the user pool.
+        :param client_secret: The client secret, if the client has a secret.
+        :param cognito_idp_client: A Boto3 Amazon Cognito Identity Provider client.
+        """
+        self.cognito_idp_client = cognito_idp_client or boto3.client(
+            "cognito-idp", region_name=config.region
+        )
+        self.user_pool_id = user_pool_id
+        self.client_id = client_id
+        self.client_secret = client_secret
+
+        self.verify_user_pool_mfa_config()
+
+    @staticmethod
+    def get_totp_uri(username: str, secret_code: str):
+        label = "noq"
+        return f"otpauth://totp/{label}:{username}?secret={secret_code}&issuer={label}"
+
+    def _secret_hash(self, username):
+        """
+        Calculates a secret hash from a user name and a client secret.
+
+        :param username: The user name to use when calculating the hash.
+        :return: The secret hash.
+        """
+        key = self.client_secret.encode()
+        msg = bytes(username + self.client_id, "utf-8")
+        secret_hash = base64.b64encode(
+            hmac.new(key, msg, digestmod=hashlib.sha256).digest()
+        ).decode()
+        log.info("Made secret hash for %s: %s.", username, secret_hash)
+        return secret_hash
+
+    def resend_confirmation(self, username):
+        """
+        Prompts Amazon Cognito to resend an email with a new confirmation code.
+
+        :param username: The name of the user who will receive the email.
+        :return: Delivery information about where the email is sent.
+        """
+        try:
+            kwargs = {"ClientId": self.client_id, "Username": username}
+            if self.client_secret is not None:
+                kwargs["SecretHash"] = self._secret_hash(username)
+            response = self.cognito_idp_client.resend_confirmation_code(**kwargs)
+            delivery = response["CodeDeliveryDetails"]
+        except ClientError as err:
+            log.error(
+                "Couldn't resend confirmation to %s. Here's why: %s: %s",
+                username,
+                err.response["Error"]["Code"],
+                err.response["Error"]["Message"],
+            )
+            raise
+        else:
+            return delivery
+
+    def confirm_user_sign_up(self, username, confirmation_code):
+        """
+        Confirms a previously created user. A user must be confirmed before they
+        can sign in to Amazon Cognito.
+
+        :param username: The name of the user to confirm.
+        :param confirmation_code: The confirmation code sent to the user's registered
+                                  email address.
+        :return: True when the confirmation succeeds.
+        """
+        try:
+            kwargs = {
+                "ClientId": self.client_id,
+                "Username": username,
+                "ConfirmationCode": confirmation_code,
+            }
+            if self.client_secret is not None:
+                kwargs["SecretHash"] = self._secret_hash(username)
+            self.cognito_idp_client.confirm_sign_up(**kwargs)
+        except ClientError as err:
+            log.error(
+                "Couldn't confirm sign up for %s. Here's why: %s: %s",
+                username,
+                err.response["Error"]["Code"],
+                err.response["Error"]["Message"],
+            )
+            raise
+        else:
+            return True
+
+    async def start_sign_in(self, username, password):
+        """
+        Starts the sign-in process for a user by using administrator credentials.
+        This method of signing in is appropriate for code running on a secure server.
+
+        If the user pool is configured to require MFA and this is the first sign-in
+        for the user, Amazon Cognito returns a challenge response to set up an
+        MFA application. When this occurs, this function gets an MFA secret from
+        Amazon Cognito and returns it to the caller.
+
+        :param username: The name of the user to sign in.
+        :param password: The user's password.
+        :return: The result of the sign-in attempt. When sign-in is successful, this
+                 returns an access token that can be used to get AWS credentials. Otherwise,
+                 Amazon Cognito returns a challenge to set up an MFA application,
+                 or a challenge to enter an MFA code from a registered MFA application.
+        """
+        try:
+            kwargs = {
+                "UserPoolId": self.user_pool_id,
+                "ClientId": self.client_id,
+                "AuthFlow": "ADMIN_USER_PASSWORD_AUTH",
+                "AuthParameters": {"USERNAME": username, "PASSWORD": password},
+            }
+            if self.client_secret is not None:
+                kwargs["AuthParameters"]["SECRET_HASH"] = self._secret_hash(username)
+            response = await aio_wrapper(
+                self.cognito_idp_client.admin_initiate_auth, **kwargs
+            )
+            if response.get("ChallengeName") == "MFA_SETUP":
+                if (
+                    "SOFTWARE_TOKEN_MFA"
+                    in response["ChallengeParameters"]["MFAS_CAN_SETUP"]
+                ):
+                    response.update(self.get_mfa_secret(response["Session"]))
+                else:
+                    raise RuntimeError(
+                        "The user pool requires MFA setup, but the user pool is not "
+                        "configured for TOTP MFA. This example requires TOTP MFA."
+                    )
+        except ClientError as err:
+            log.error(
+                "Couldn't start sign in for %s. Here's why: %s: %s",
+                username,
+                err.response["Error"]["Code"],
+                err.response["Error"]["Message"],
+            )
+            raise
+        else:
+            response.pop("ResponseMetadata", None)
+
+        if access_token := response.get("AuthenticationResult", {}).get("AccessToken"):
+            # Detect password sign-in without MFA
+            associate_software_token = await aio_wrapper(
+                self.cognito_idp_client.associate_software_token,
+                AccessToken=access_token,
+            )
+            return {
+                "SecretCode": associate_software_token["SecretCode"],
+                "AccessToken": response["AuthenticationResult"]["AccessToken"],
+            }
+
+        return response
+
+    def get_mfa_secret(self, session):
+        """
+        Gets a token that can be used to associate an MFA application with the user.
+
+        :param session: Session information returned from a previous call to initiate
+                        authentication.
+        :return: An MFA token that can be used to set up an MFA application.
+        """
+        try:
+            response = self.cognito_idp_client.associate_software_token(Session=session)
+        except ClientError as err:
+            log.error(
+                "Couldn't get MFA secret. Here's why: %s: %s",
+                err.response["Error"]["Code"],
+                err.response["Error"]["Message"],
+            )
+            raise
+        else:
+            response.pop("ResponseMetadata", None)
+            return response
+
+    def verify_mfa(
+        self,
+        user_code: str,
+        session: str = None,
+        access_token: str = None,
+        email: str = None,
+    ):
+        """
+        Verify a new MFA application that is associated with a user.
+
+        :param user_code: A code generated by the associated MFA application.
+        :param session: Session information returned from a previous call to initiate authentication.
+        :param access_token: Access Token returned from a previous call to initiate authentication.
+        :param email: User email, required if access_token provided
+        :return: Status that indicates whether the MFA application is verified.
+        """
+        assert session or access_token
+        vst_params = {"UserCode": user_code}
+        if session:
+            vst_params["Session"] = session
+        elif access_token:
+            assert bool(email)
+            vst_params["AccessToken"] = access_token
+
+        try:
+            response = self.cognito_idp_client.verify_software_token(**vst_params)
+            if access_token:
+                # Access Token is only used when after an MFA reset has completed so re-enable MFA
+                self.update_user_mfa_status(email, True)
+        except ClientError as err:
+            log.error(
+                "Couldn't verify MFA. Here's why: %s: %s",
+                err.response["Error"]["Code"],
+                err.response["Error"]["Message"],
+            )
+            raise
+        else:
+            response.pop("ResponseMetadata", None)
+
+            return response
+
+    def respond_to_mfa_challenge(self, username, session, mfa_code):
+        """
+        Responds to a challenge for an MFA code. This completes the second step of
+        a two-factor sign-in. When sign-in is successful, it returns an access token
+        that can be used to get AWS credentials from Amazon Cognito.
+
+        :param username: The name of the user who is signing in.
+        :param session: Session information returned from a previous call to initiate
+                        authentication.
+        :param mfa_code: A code generated by the associated MFA application.
+        :return: The result of the authentication. When successful, this contains an
+                 access token for the user.
+        """
+        try:
+            kwargs = {
+                "UserPoolId": self.user_pool_id,
+                "ClientId": self.client_id,
+                "ChallengeName": "SOFTWARE_TOKEN_MFA",
+                "Session": session,
+                "ChallengeResponses": {
+                    "USERNAME": username,
+                    "SOFTWARE_TOKEN_MFA_CODE": mfa_code,
+                },
+            }
+            if self.client_secret is not None:
+                kwargs["ChallengeResponses"]["SECRET_HASH"] = self._secret_hash(
+                    username
+                )
+            response = self.cognito_idp_client.admin_respond_to_auth_challenge(**kwargs)
+            auth_result = response["AuthenticationResult"]
+        except ClientError as err:
+            if err.response["Error"]["Code"] == "ExpiredCodeException":
+                log.warning(
+                    "Your MFA code has expired or has been used already. You might have "
+                    "to wait a few seconds until your app shows you a new code."
+                )
+            else:
+                log.error(
+                    "Couldn't respond to mfa challenge for %s. Here's why: %s: %s",
+                    username,
+                    err.response["Error"]["Code"],
+                    err.response["Error"]["Message"],
+                )
+                raise
+        else:
+            return auth_result
+
+    async def reset_user_password(self, email, permanent: bool = False) -> str:
+        # Change the user's password after enabling mfa
+        generated_password = generate_password()
+        self.cognito_idp_client.admin_set_user_password(
+            UserPoolId=self.user_pool_id,
+            Username=email,
+            Password=generated_password,
+            Permanent=permanent,
+        )
+        return generated_password
+
+    async def create_init_user(self, email, username: str = None):
+        # Only to be used for creating the first user in the tenant's Noq cognito user pool
+        username = username or email
+        await aio_wrapper(
+            self.cognito_idp_client.create_group,
+            UserPoolId=self.user_pool_id,
+            GroupName=ADMIN_GROUP_NAME,
+            Description="Noq Administrators",
+        )
+
+        user = await aio_wrapper(
+            self.cognito_idp_client.admin_create_user,
+            UserPoolId=self.user_pool_id,
+            Username=username,
+            UserAttributes=[
+                {"Name": "email", "Value": email},
+            ],
+            DesiredDeliveryMediums=[
+                "EMAIL",
+            ],
+        )
+
+        temp_password = await self.reset_user_password(email, True)
+        await aio_wrapper(
+            self.cognito_idp_client.admin_add_user_to_group,
+            UserPoolId=self.user_pool_id,
+            Username=username,
+            GroupName=ADMIN_GROUP_NAME,
+        )
+
+        return {"user": user, "password": temp_password}
+
+    def confirm_mfa_device(
+        self,
+        username,
+        device_key,
+        device_group_key,
+        device_password,
+        access_token,
+        aws_srp,
+    ):
+        """
+        Confirms an MFA device to be tracked by Amazon Cognito. When a device is
+        tracked, its key and password can be used to sign in without requiring a new
+        MFA code from the MFA application.
+
+        :param username: The user that is associated with the device.
+        :param device_key: The key of the device, returned by Amazon Cognito.
+        :param device_group_key: The group key of the device, returned by Amazon Cognito.
+        :param device_password: The password that is associated with the device.
+        :param access_token: The user's access token.
+        :param aws_srp: A class that helps with Secure Remote Password (SRP)
+                        calculations. The scenario associated with this example uses
+                        the warrant package.
+        :return: True when the user must confirm the device. Otherwise, False. When
+                 False, the device is automatically confirmed and tracked.
+        """
+        srp_helper = aws_srp.AWSSRP(
+            username=username,
+            password=device_password,
+            pool_id="_",
+            client_id=self.client_id,
+            client_secret=None,
+            client=self.cognito_idp_client,
+        )
+        device_and_pw = f"{device_group_key}{device_key}:{device_password}"
+        device_and_pw_hash = aws_srp.hash_sha256(device_and_pw.encode("utf-8"))
+        salt = aws_srp.pad_hex(aws_srp.get_random(16))
+        x_value = aws_srp.hex_to_long(aws_srp.hex_hash(salt + device_and_pw_hash))
+        verifier = aws_srp.pad_hex(pow(srp_helper.g, x_value, srp_helper.big_n))
+        device_secret_verifier_config = {
+            "PasswordVerifier": base64.standard_b64encode(
+                bytearray.fromhex(verifier)
+            ).decode("utf-8"),
+            "Salt": base64.standard_b64encode(bytearray.fromhex(salt)).decode("utf-8"),
+        }
+        try:
+            response = self.cognito_idp_client.confirm_device(
+                AccessToken=access_token,
+                DeviceKey=device_key,
+                DeviceSecretVerifierConfig=device_secret_verifier_config,
+            )
+            user_confirm = response["UserConfirmationNecessary"]
+        except ClientError as err:
+            log.error(
+                "Couldn't confirm mfa device %s. Here's why: %s: %s",
+                device_key,
+                err.response["Error"]["Code"],
+                err.response["Error"]["Message"],
+            )
+            raise
+        else:
+            return user_confirm
+
+    def sign_in_with_tracked_device(
+        self, username, password, device_key, device_group_key, device_password, aws_srp
+    ):
+        """
+        Signs in to Amazon Cognito as a user who has a tracked device. Signing in
+        with a tracked device lets a user sign in without entering a new MFA code.
+
+        Signing in with a tracked device requires that the client respond to the SRP
+        protocol. The scenario associated with this example uses the warrant package
+        to help with SRP calculations.
+
+        For more information on SRP, see https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol.
+
+        :param username: The user that is associated with the device.
+        :param password: The user's password.
+        :param device_key: The key of a tracked device.
+        :param device_group_key: The group key of a tracked device.
+        :param device_password: The password that is associated with the device.
+        :param aws_srp: A class that helps with SRP calculations. The scenario
+                        associated with this example uses the warrant package.
+        :return: The result of the authentication. When successful, this contains an
+                 access token for the user.
+        """
+        try:
+            srp_helper = aws_srp.AWSSRP(
+                username=username,
+                password=device_password,
+                pool_id="_",
+                client_id=self.client_id,
+                client_secret=None,
+                client=self.cognito_idp_client,
+            )
+
+            response_init = self.cognito_idp_client.admin_initiate_auth(
+                UserPoolId=self.user_pool_id,
+                ClientId=self.client_id,
+                AuthFlow="ADMIN_USER_PASSWORD_AUTH",
+                AuthParameters={
+                    "USERNAME": username,
+                    "PASSWORD": password,
+                    "DEVICE_KEY": device_key,
+                },
+            )
+            if response_init["ChallengeName"] != "DEVICE_SRP_AUTH":
+                raise RuntimeError(
+                    f"Expected DEVICE_SRP_AUTH challenge but got {response_init['ChallengeName']}."
+                )
+
+            auth_params = srp_helper.get_auth_params()
+            auth_params["DEVICE_KEY"] = device_key
+            response_auth = self.cognito_idp_client.respond_to_auth_challenge(
+                ClientId=self.client_id,
+                ChallengeName="DEVICE_SRP_AUTH",
+                ChallengeResponses=auth_params,
+            )
+            if response_auth["ChallengeName"] != "DEVICE_PASSWORD_VERIFIER":
+                raise RuntimeError(
+                    f"Expected DEVICE_PASSWORD_VERIFIER challenge but got "
+                    f"{response_init['ChallengeName']}."
+                )
+
+            challenge_params = response_auth["ChallengeParameters"]
+            challenge_params["USER_ID_FOR_SRP"] = device_group_key + device_key
+            cr = srp_helper.process_challenge(challenge_params)
+            cr["USERNAME"] = username
+            cr["DEVICE_KEY"] = device_key
+            response_verifier = self.cognito_idp_client.respond_to_auth_challenge(
+                ClientId=self.client_id,
+                ChallengeName="DEVICE_PASSWORD_VERIFIER",
+                ChallengeResponses=cr,
+            )
+            auth_tokens = response_verifier["AuthenticationResult"]
+        except ClientError as err:
+            log.error(
+                "Couldn't start client sign in for %s. Here's why: %s: %s",
+                username,
+                err.response["Error"]["Code"],
+                err.response["Error"]["Message"],
+            )
+            raise
+        else:
+            return auth_tokens
+
+    def update_user_mfa_status(self, username: str, enabled: bool):
+        # RespondToAuthChallenge
+        return self.cognito_idp_client.admin_set_user_mfa_preference(
+            Username=username,
+            UserPoolId=self.user_pool_id,
+            SoftwareTokenMfaSettings={
+                "Enabled": enabled,
+                "PreferredMfa": enabled,
+            },
+        )
+
+    def verify_user_pool_mfa_config(self):
+        mfa_config_val = "OPTIONAL"
+        user_pool_info = self.cognito_idp_client.get_user_pool_mfa_config(
+            UserPoolId=self.user_pool_id
+        )
+
+        if user_pool_info.get("MfaConfiguration") != mfa_config_val:
+            log.debug(
+                {
+                    "message": "Updating MFA Config",
+                    "user_pool_id": self.user_pool_id,
+                    "config_val": mfa_config_val,
+                }
+            )
+            self.cognito_idp_client.set_user_pool_mfa_config(
+                UserPoolId=self.user_pool_id,
+                MfaConfiguration=mfa_config_val,
+                SoftwareTokenMfaConfiguration={"Enabled": True},
+            )
+
+    async def list_users(self):
+        """Get Cognito users and format as pydantic CognitoUser objects.
+
+        Retrieves all cognito users and returns them in a list as CognitoUser
+        objects.
+
+        :return: a list of CognitoUser objects
+        """
+        users = list()
+        response = await aio_wrapper(
+            self.cognito_idp_client.list_users, UserPoolId=self.user_pool_id
+        )
+        users.extend(response.get("Users", []))
+        next_token = response.get("NextToken")
+        while next_token:
+            response = await aio_wrapper(
+                self.cognito_idp_client.list_users,
+                UserPoolId=self.user_pool_id,
+                NextToken=next_token,
+            )
+            users.extend(response.get("Users", []))
+            next_token = response.get("NextToken")
+        cognito_users = [CognitoUser(**x) for x in users]
+        for cognito_user in cognito_users:
+            cognito_user.Groups = [
+                x.GroupName
+                for x in await get_identity_user_groups(
+                    self.user_pool_id, cognito_user, client=self.cognito_idp_client
+                )
+            ]
+        return cognito_users
+
+    async def delete_user(self, username: str) -> bool:
+        """Delete a Cognito user.
+
+        Uses the admin_delete_user functionality to delete a user from the
+        Cognito database.
+
+        :param username: The cognito user's username
+        :return: true if successful
+        """
+        await aio_wrapper(
+            self.cognito_idp_client.admin_delete_user,
+            UserPoolId=self.user_pool_id,
+            Username=username,
+        )
+        return True
+
+    async def create_user(self, user: CognitoUser) -> CognitoUser:
+        """Create a Cognito user account.
+
+        Note: this account will delete an already existing user and recreate it. This
+        uses the admin_create_user functionality, side-stepping the user sign up process.
+
+        :param user: a CognitoUser object that is validated and describes the new use
+        :return: an updated CognitoUser object that may contain additional info from AWS
+        """
+        current_users = await self.list_users()
+        if user in [x for x in current_users]:
+            await self.delete_user(user.Username)
+
+        response = await aio_wrapper(
+            self.cognito_idp_client.admin_create_user,
+            UserPoolId=self.user_pool_id,
+            Username=user.Username,
+            UserAttributes=[
+                {"Name": "email", "Value": user.Username},
+            ],
+            DesiredDeliveryMediums=["EMAIL"],
+        )
+
+        log.debug(
+            {
+                "message": "Created new user",
+                "user_name": user.Username,
+                "response": response,
+                "user_pool_id": self.user_pool_id,
+            }
+        )
+        user_update = CognitoUser(**response.get("User", {}))
+        if user.Groups:
+            log.info(f"Adding groups {user.Groups} to user {user.Username}")
+            await create_identity_user_groups(
+                self.user_pool_id,
+                user_update,
+                [CognitoGroup(GroupName=x) for x in user.Groups],
+            )
+
+        return user_update
