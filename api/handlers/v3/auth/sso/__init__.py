@@ -208,9 +208,9 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
         cognito_idp = boto3.client("cognito-idp", region_name=self.user_pool_region)
         users = list()
         try:
-            identity_users = await identity.get_identity_users(
-                self.user_pool_id, client=cognito_idp
-            )
+            identity_users = await identity.CognitoUserClient(
+                self.user_pool_id
+            ).list_users()
         except cognito_idp.exceptions.ResourceNotFoundException:
             return []
 
@@ -245,14 +245,13 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
             )
         except cognito_idp.exceptions.UserNotFoundException:
             # Resource doesn't exist, so create it
-            return await identity.create_identity_user(
-                self.user_pool_id, self._model_class(**data), client=cognito_idp
+            return await identity.CognitoUserClient(self.user_pool_id).create_user(
+                self._model_class(**data)
             )
 
     async def _delete(self, data) -> bool:
-        cognito_idp = boto3.client("cognito-idp", region_name=self.user_pool_region)
-        return await identity.delete_identity_user(
-            self.user_pool_id, self._model_class(**data), client=cognito_idp
+        return await identity.CognitoUserClient(self.user_pool_id).delete_user(
+            self._model_class(**data).Username
         )
 
 
