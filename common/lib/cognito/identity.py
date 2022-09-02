@@ -95,8 +95,7 @@ async def __get_saml_provider(
 async def __get_oidc_provider(
     user_pool_id: str,
     identity_providers: Dict[str, List[Dict[str, Any]]],
-    mask_secrets: bool,
-    client=None,
+    mask_secrets: bool
 ) -> Union[OIDCSSOIDPProvider, None]:
     client = await aio_wrapper(boto3.client, "cognito-idp", region_name=config.region)
     oidc_provider = None
@@ -242,7 +241,7 @@ async def get_identity_providers(
         ),
         saml=await __get_saml_provider(user_pool_id, identity_providers, client),
         oidc=await __get_oidc_provider(
-            user_pool_id, identity_providers, mask_secrets, client
+            user_pool_id, identity_providers, mask_secrets
         ),
     )
 

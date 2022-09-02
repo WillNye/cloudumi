@@ -60,6 +60,7 @@ class TestIdentity(IsolatedAsyncioTestCase):
             GroupName=self.groupname,
             Description="test description",
         )
+        self.user_client = identity.CognitoUserClient(self.pool_id)
 
     async def test_get_identity(self):
         providers = await identity.get_identity_providers(self.pool_id)
@@ -204,19 +205,18 @@ class TestIdentity(IsolatedAsyncioTestCase):
         assert app_clients.get("SupportedIdentityProviders", []) == ["COGNITO"]
 
     async def test_get_identity_users(self):
-        cognito_user = await identity.CognitoUserClient(self.pool_id).list_users()
+        cognito_user = await self.user_client.list_users()
         print("\n".join([cu.Username for cu in cognito_user]))
         self.assertEqual(cognito_user[0].Username, self.username)
 
     async def test_create_identity_user_sparse(self):
         user = CognitoUser(Username="new_user@gmail.com")
-        user_client = identity.CognitoUserClient(self.pool_id)
-        user_update = await user_client.create_user(user)
-        assert len(await user_client.list_users()) == 2
+        user_update = await self.user_client.create_user(user)
+        assert len(await self.user_client.list_users()) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
         )
-        assert len(await user_client.list_users()) == 1
+        assert len(await self.user_client.list_users()) == 1
 
     async def test_create_identity_user_complete(self):
         user = CognitoUser(
@@ -232,18 +232,16 @@ class TestIdentity(IsolatedAsyncioTestCase):
             MFAOptions=[{"DeliveryMedium": "SMS"}],
             UserStatus="COMPROMISED",
         )
-        user_update = await identity.CognitoUserClient(self.pool_id).create_user(user)
-        assert len(await identity.CognitoUserClient(self.pool_id).list_users()) == 2
-        self.client.admin_delete_user(
-            UserPoolId=self.pool_id, Username=user_update.Username
-        )
-        assert len(await identity.CognitoUserClient(self.pool_id).list_users()) == 1
+        user_update = await self.user_client.create_user(user)
+        assert len(await self.user_client.list_users()) == 2
+        await self.user_client.delete_user(user_update.Username)
+        assert len(await self.user_client.list_users()) == 1
 
     async def test_assigning_identity_user(self):
         user = CognitoUser(Username=self.username)
         group = CognitoGroup(GroupName=self.groupname, UserPoolId=self.pool_id)
         assert await identity.create_identity_user_groups(self.pool_id, user, [group])
-        users = await identity.CognitoUserClient(self.pool_id).list_users()
+        users = await self.user_client.list_users()
         updated_user = [x for x in users if x.Username == self.username][0]
         assert updated_user
         assert updated_user.Groups
@@ -257,15 +255,15 @@ class TestIdentity(IsolatedAsyncioTestCase):
             assert await identity.create_identity_group(
                 self.pool_id, CognitoGroup(GroupName=group)
             )
-        assert await identity.CognitoUserClient(self.pool_id).create_user(user)
+        assert await self.user_client.create_user(user)
         user_update = [
             x
-            for x in await identity.CognitoUserClient(self.pool_id).list_users()
+            for x in await self.user_client.list_users()
             if x.Username == "new_user"
         ][0]
         assert user_update.Groups
         assert len([x for x in user_update.Groups if x in groups]) == len(groups)
-        assert len(await identity.CognitoUserClient(self.pool_id).list_users()) == 2
+        assert len(await self.user_client.list_users()) == 2
         self.client.admin_delete_user(
             UserPoolId=self.pool_id, Username=user_update.Username
         )
@@ -273,14 +271,14 @@ class TestIdentity(IsolatedAsyncioTestCase):
             assert await identity.delete_identity_group(
                 self.pool_id, CognitoGroup(GroupName=group)
             )
-        assert len(await identity.CognitoUserClient(self.pool_id).list_users()) == 1
+        assert len(await self.user_client.list_users()) == 1
 
     async def test_delete_identity_user(self):
         user = CognitoUser(Username="delete_user@gmail.com")
-        _ = await identity.CognitoUserClient(self.pool_id).create_user(user)
-        assert len(await identity.CognitoUserClient(self.pool_id).list_users()) == 2
-        await identity.CognitoUserClient(self.pool_id).delete_user(user.Username)
-        assert len(await identity.CognitoUserClient(self.pool_id).list_users()) == 1
+        await self.user_client.create_user(user)
+        assert len(await self.user_client.list_users()) == 2
+        await self.user_client.delete_user(user.Username)
+        assert len(await self.user_client.list_users()) == 1
 
     async def test_get_identity_groups(self):
         get_identity_groups_call = await identity.get_identity_groups(self.pool_id)
