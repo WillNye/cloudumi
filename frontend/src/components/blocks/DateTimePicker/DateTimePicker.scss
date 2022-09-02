@@ -1,2 +1,24 @@
 .date-time-picker {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+
+  &__container {
+    width: 100%;
+    justify-content: center;
+  }
+
+  &__time {
+    display: flex;
+    flex-direction: row;
+    padding-top: 10px;
+  }
+
+  &__date {
+    width: 100%;
+
+    .field {
+      width: 100%;
+    }
+  }
 }
