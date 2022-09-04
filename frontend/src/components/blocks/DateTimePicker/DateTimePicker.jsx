@@ -2,8 +2,7 @@ import React, { useCallback, useState } from 'react'
 import DatePicker from './components/DatePicker'
 import RelativeRange from './components/RelativeRange'
 import TimePicker from './components/TimePicker'
-import { HOURS, MINUTES, TIME_STATE } from './constants'
-import { convertTime12to24 } from './utils'
+import { getDefaultTime, setNewDateTime } from './utils'
 import './DateTimePicker.scss'
 
 const DateTimePicker = ({
@@ -14,51 +13,43 @@ const DateTimePicker = ({
   onChange,
 }) => {
   const [fullDate, setFullDate] = useState(defaultDate)
-  const [time, setTime] = useState({
-    hours: HOURS[11].value,
-    minutes: MINUTES[0].value,
-    state: TIME_STATE[1].value,
-  })
+  const [time, setTime] = useState(getDefaultTime(defaultDate))
 
   const resetTime = () => {
-    setTime({
-      hours: HOURS[11].value,
-      minutes: MINUTES[0].value,
-      state: TIME_STATE[1].value,
-    })
+    setTime(getDefaultTime())
   }
 
   const handleOnDateChange = useCallback(
     (newDate) => {
-      resetTime()
       const currentDate = new Date()
       if (!newDate) {
         setFullDate(null)
         onChange(null)
+        resetTime()
         return
       }
 
       if (currentDate.getTime() >= newDate.getTime()) {
-        setFullDate(defaultDate)
-        onChange(defaultDate)
+        setFullDate(fullDate)
+        onChange(fullDate)
         return
       }
-      setFullDate(newDate)
-      onChange(newDate)
+      const dateTime = time ? time : getDefaultTime(fullDate || newDate)
+      const newJsDate = setNewDateTime(newDate, dateTime)
+      setFullDate(newJsDate)
+      setTime(dateTime)
+      onChange(newJsDate)
     },
-    [defaultDate, onChange]
+    [fullDate, time, onChange]
   )
 
   const handleOnTimeChange = useCallback(
     (newTime) => {
       if (!fullDate) return
-      const jsDate = new Date(fullDate)
-      const { hours, minutes, state } = newTime
-      const timeIn24 = convertTime12to24(`${hours}:${minutes} ${state}`)
-      jsDate.setHours(timeIn24.hours, timeIn24.minutes)
+      const newDate = setNewDateTime(fullDate, newTime)
       setTime(newTime)
-      setFullDate(jsDate)
-      onChange(jsDate)
+      setFullDate(newDate)
+      onChange(newDate)
     },
     [fullDate, onChange]
   )
@@ -77,7 +68,7 @@ const DateTimePicker = ({
           value={defaultDate}
           inLine={inLine}
         />
-        {fullDate && (
+        {fullDate && time && (
           <TimePicker
             onTimeChange={handleOnTimeChange}
             isDisabled={isDisabled}

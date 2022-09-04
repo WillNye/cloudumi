@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Button, Header, Icon, Message, Segment, Form } from 'semantic-ui-react'
 import DateTimePicker from '../DateTimePicker'
+import { parseDate } from './utils'
 import './ExpirationDateBlock.scss'
 
 const ExpirationDateBlock = ({
@@ -11,13 +12,15 @@ const ExpirationDateBlock = ({
   requestReadOnly,
   hasReadOnlyAccountPolicy,
 }) => {
-  const [expirationDate, setExpirationDate] = useState(expiration_date)
+  const [expirationDate, setExpirationDate] = useState(
+    parseDate(expiration_date)
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessages, setErrorMessages] = useState([])
 
   useEffect(
     function onDateUpdate() {
-      setExpirationDate(expiration_date)
+      setExpirationDate(parseDate(expiration_date))
     },
     [expiration_date]
   )
@@ -62,12 +65,6 @@ const ExpirationDateBlock = ({
     setIsLoading(false)
     setErrorMessages([])
   }, [expirationDate, reloadDataFromBackend, requestID, sendRequestCommon])
-
-  console.log(
-    expirationDate === expiration_date,
-    isLoading,
-    hasReadOnlyAccountPolicy
-  )
 
   const messagesToShow =
     errorMessages.length > 0 ? (
