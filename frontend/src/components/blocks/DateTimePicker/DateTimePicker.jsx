@@ -61,7 +61,13 @@ const DateTimePicker = ({
           <RelativeRange />
         </div>
       )}
-      <div className='date-time-picker__container'>
+      <div
+        className={`${
+          inLine
+            ? 'date-time-picker__container'
+            : 'date-time-picker__input-width'
+        }`}
+      >
         <DatePicker
           handleOnDateChange={handleOnDateChange}
           isDisabled={isDisabled}
