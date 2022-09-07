@@ -43,7 +43,7 @@ class ChallengeGeneratorHandler(TornadoRequestHandler):
     async def get(self, user):
         tenant = self.get_tenant_name()
         if not config.get_tenant_specific_key(
-            "auth.challenge_url.enabled", tenant, False
+            "auth.challenge_url.enabled", tenant, True
         ):
             raise MissingConfigurationValue(
                 "Challenge URL Authentication is not enabled in Noq's configuration"
@@ -110,7 +110,7 @@ class ChallengeValidatorHandler(BaseHandler):
     async def get(self, requested_challenge_token):
         tenant = self.ctx.tenant
         if not config.get_tenant_specific_key(
-            "auth.challenge_url.enabled", tenant, False
+            "auth.challenge_url.enabled", tenant, True
         ):
             raise MissingConfigurationValue(
                 "Challenge URL Authentication is not enabled in Noq's configuration"
@@ -223,7 +223,7 @@ class ChallengeValidatorHandler(BaseHandler):
     async def post(self, requested_challenge_token):
         tenant = self.ctx.tenant
         if not config.get_tenant_specific_key(
-            "auth.challenge_url.enabled", tenant, False
+            "auth.challenge_url.enabled", tenant, True
         ):
             raise MissingConfigurationValue(
                 "Challenge URL Authentication is not enabled in Noq's configuration"
@@ -330,7 +330,7 @@ class ChallengePollerHandler(TornadoRequestHandler):
     async def get(self, requested_challenge_token):
         tenant = self.get_tenant_name()
         if not config.get_tenant_specific_key(
-            "auth.challenge_url.enabled", tenant, False
+            "auth.challenge_url.enabled", tenant, True
         ):
             raise MissingConfigurationValue(
                 "Challenge URL Authentication is not enabled in Noq's configuration"
