@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from typing import IO
 
 import boto3
@@ -27,8 +26,6 @@ def initialize_config_from_user_input(
 ) -> None:
     config.cross_account_role_name = cross_account_role_name
     config.management_account_role_arn = management_account_role_arn
-    if logger.level == logging.NOTSET:
-        logger.setLevel(logging.INFO)
     config.output_file = output_file
     config.suppress_output = suppress_output
 
