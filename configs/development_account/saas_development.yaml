@@ -14,7 +14,7 @@ _global_:
     cloudwatch:
       enabled: false
     fluent-bit:
-      enabled: true
+      enabled: false
       config: configs/fluent-bit/fluent-bit.conf
       exe: /opt/fluent-bit/bin/fluent-bit
   web:
