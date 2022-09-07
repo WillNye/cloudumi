@@ -7,6 +7,14 @@ filegroup(
 )
 
 filegroup(
+    name = "fluent-bit",
+    srcs = [
+        "fluent-bit/fluent-bit.conf",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "home",
     srcs = glob([
         "home/**/*",

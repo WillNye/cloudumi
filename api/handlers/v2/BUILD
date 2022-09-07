@@ -25,7 +25,6 @@ py_library(
         requirement("uvloop"),
         requirement("marshmallow"),
         requirement("policyuniverse"),
-        requirement("newrelic"),
         requirement("tornado"),
         requirement("sentry_sdk"),
         requirement("aiohttp"),

@@ -61,7 +61,6 @@ EXT_DEPS = [
     requirement("gitpython"),
     requirement("jsonschema"),
     requirement("marshmallow"),
-    requirement("newrelic"),
     requirement("okta"),
     requirement("okta-jwt"),
     requirement("pandas"),
@@ -97,7 +96,6 @@ REQUIRES = [
     "gitpython",
     "jsonschema",
     "marshmallow",
-    "newrelic",
     "okta",
     "okta-jwt",
     "pandas",
@@ -213,21 +211,25 @@ container_image(
         "TZ": "America/Los_Angeles",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "NOQ_CONTAINER": "1",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
     },
     layers = [
         "//deploy/layers:config",
         "//deploy/layers:web_site",
         "//deploy/layers:api.sshd_config",
-        "//deploy/layers:newrelic",
         "//deploy/layers:weep",
+    ],
+    volumes = [
+        "~/.aws:/root/.aws",
+        "~/.weep:/root/.weep",
     ],
     ports = ["8092", "2222"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
-    docker_run_flags = "-v ~/.aws:/root/.aws -v /etc/weep:/etc/weep",
+    data_path = "/",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep",
 )
 
 container_image(
@@ -241,10 +243,10 @@ container_image(
         "//deploy/layers:config",
         "//deploy/layers:web_site",
         "//deploy/layers:api.sshd_config",
-        "//deploy/layers:newrelic",
         "//deploy/layers:weep",
     ],
     ports = ["8092", "2222"],
+    data_path = "/",
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
