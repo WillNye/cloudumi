@@ -40,7 +40,7 @@ from common.lib.s3_helpers import is_object_older_than_seconds
 from common.models import SpokeAccount
 
 log = config.get_logger(__name__)
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
 
 PERMISSIONS_SEPARATOR = "||"
 ALL_IAM_MANAGED_POLICIES = defaultdict(dict)

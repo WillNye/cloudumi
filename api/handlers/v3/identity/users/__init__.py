@@ -19,7 +19,7 @@ from identity.lib.users.users import (
     get_user_by_name,
 )
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
 log = config.get_logger()
 
 

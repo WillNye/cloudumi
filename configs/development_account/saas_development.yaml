@@ -17,6 +17,7 @@ _global_:
       namespace: noq-develop
       max_threads: 10
       enabled: true
+      log_file: "/var/log/saas_output.log"
   web:
     path: "frontend/dist"
   landing_page_domains:

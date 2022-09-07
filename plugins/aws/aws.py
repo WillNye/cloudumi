@@ -30,7 +30,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import send_communications_policy_change_request_v2
 from common.models import Action, ExtendedRequestModel
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
 
 log = config.get_logger(__name__)
 

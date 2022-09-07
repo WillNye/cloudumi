@@ -147,7 +147,7 @@ container_image(
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
-    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=cloudumi-redis:172.17.0.1",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=cloudumi-redis:172.18.0.1",
 )
 
 py3_image(

@@ -9,7 +9,7 @@ from common.config.config import get_logger
 from common.lib.plugins import get_plugin_by_name
 from common.lib.pynamo import GlobalNoqModel, NoqMapAttribute
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
 log = get_logger(__name__)
 
 

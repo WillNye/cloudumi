@@ -14,7 +14,7 @@ from common.lib.jwt import generate_jwt_token
 from common.lib.plugins import get_plugin_by_name
 from common.lib.saml import init_saml_auth, prepare_tornado_request_for_saml
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
 log = config.get_logger()
 
 

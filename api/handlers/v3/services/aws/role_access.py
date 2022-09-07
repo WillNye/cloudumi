@@ -8,7 +8,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
 log = config.get_logger()
 
 

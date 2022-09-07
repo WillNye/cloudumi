@@ -37,7 +37,7 @@ class FluentBitMetric(Metric):
         )
         self.fluent_bit_log_file = pathlib.Path(
             config.get(
-                "_global_.metrics.fluent-bit.log_file", "/var/log/noq/fluent-bit.log"
+                "_global_.metrics.fluent-bit.log_file", "/var/log/saas_output.log"
             )
         )
 

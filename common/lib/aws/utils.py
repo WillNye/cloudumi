@@ -55,7 +55,7 @@ from common.user_request.models import IAMRequest
 from common.user_request.utils import get_active_tra_users_tag
 
 log = config.get_logger(__name__)
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
 
 PERMISSIONS_SEPARATOR = "||"
 
