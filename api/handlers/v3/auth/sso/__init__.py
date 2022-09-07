@@ -1,13 +1,17 @@
 import asyncio
 
 import boto3
+import tornado.web
 
 from api.handlers.model_handlers import (
     ConfigurationCrudHandler,
     MultiItemConfigurationCrudHandler,
 )
 from common.config import config
+from common.handlers.base import BaseHandler
 from common.lib.cognito import identity
+from common.lib.cognito.identity import CognitoUserClient
+from common.lib.web import handle_generic_error_response
 from common.models import (
     CognitoGroup,
     CognitoUser,
@@ -297,3 +301,25 @@ class CognitoGroupCrudHandler(CognitoCrudHandler):
         return await identity.delete_identity_group(
             self.user_pool_id, self._model_class(**data), client=cognito_idp
         )
+
+
+class CognitoUserResetMFA(BaseHandler):
+
+    async def post(self, username: str = None):
+        if username and not self.is_admin:
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self, errors[0], errors, 403, "unauthorized", {}
+            )
+            raise tornado.web.Finish()
+
+        username = username or self.user
+        cognito_user_client = CognitoUserClient.tenant_client(self.ctx.tenant)
+        cognito_user_client.update_user_mfa_status(username, False)
+
+        response_json = {
+            "status": "success",
+            "message": "Successfully reset user MFA",
+            "username": username,
+        }
+        self.write(response_json)

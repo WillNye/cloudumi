@@ -1048,6 +1048,16 @@ class CognitoUserClient:
 
         self.verify_user_pool_mfa_config()
 
+    @classmethod
+    def tenant_client(cls, tenant: str, cognito_idp_client=None):
+        cognito_info = config.get_tenant_specific_key("secrets.cognito.config", tenant)
+        return cls(
+            cognito_info["user_pool_id"],
+            cognito_info["user_pool_client_id"],
+            cognito_info["user_pool_client_secret"],
+            cognito_idp_client
+        )
+
     @staticmethod
     def get_totp_uri(username: str, secret_code: str):
         label = "noq"

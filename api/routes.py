@@ -98,7 +98,7 @@ from api.handlers.v3.auth.sso import (
     GoogleOidcIdpConfigurationCrudHandler,
     OidcIdpConfigurationCrudHandler,
     SamlOidcIdpConfigurationCrudHandler,
-    SsoIdpProviderConfigurationCrudHandler,
+    SsoIdpProviderConfigurationCrudHandler, CognitoUserResetMFA,
 )
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
@@ -326,6 +326,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/auth/cognito/users/?",
             CognitoUserCrudHandler,
+        ),
+        (
+            r"/api/v3/auth/cognito/users/reset-mfa/(.*)/?",
+            CognitoUserResetMFA,
         ),
         (
             r"/api/v3/auth/cognito/groups/?",
