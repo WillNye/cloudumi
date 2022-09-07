@@ -6,7 +6,7 @@ from util.log import logger
 def add_fluent_bit_service():
     enabled = config.get("_global_.metrics.fluent-bit.enabled", True)
     config_path = config.get(
-        "_global_.metrics.fluent-bit.config", "/etc/fluent-bit.conf"
+        "_global_.metrics.fluent-bit.config", "/etc/fluent-bit/fluent-bit.conf"
     )
     exe = config.get(
         "_global_.metrics.fluent-bit.exe", "/opt/fluent-bit/bin/fluent-bit"
