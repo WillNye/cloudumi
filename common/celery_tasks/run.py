@@ -1,7 +1,10 @@
 import os
 
 from common.celery_tasks import celery_tasks
-from common.handlers.external_processes import kill_proc, launch_proc
+from common.lib.plugins.fluent_bit import (
+    add_fluent_bit_service,
+    remove_fluent_bit_service,
+)
 from util.log import logger
 
 if os.getenv("DEBUG"):
@@ -11,12 +14,7 @@ if __name__ == "__main__":
     logger.info("Starting up celery tasks")
     log_level = os.getenv("CELERY_LOG_LEVEL", "DEBUG")
     concurrency = os.getenv("CELERY_CONCURRENCY", "16") or "16"
-    try:
-        launch_proc(
-            "fluent-bit", "/opt/fluent-bit/bin/fluent-bit -c /etc/fluent-bit.conf"
-        )
-    except ValueError:
-        logger.warning("Fluent-bit already running")
+    add_fluent_bit_service()
     celery_tasks.app.worker_main(
         [
             "worker",
@@ -26,7 +24,4 @@ if __name__ == "__main__":
             f"--concurrency={concurrency}",
         ]
     )
-    try:
-        kill_proc("fluent-bit")
-    except ValueError:
-        logger.warning("Fluent-bit not running")
+    remove_fluent_bit_service()
