@@ -1,2 +1,3 @@
 build --disk_cache=~/.bazel/cache
 test --test_output errors
+build --@io_bazel_rules_docker//transitions:enable
