@@ -1573,18 +1573,22 @@ class CognitoUserClient:
         """
         current_users = await self.list_users()
         if user in [x for x in current_users]:
-            await self.delete_user(user.Username)
-
+            await self.delete_user(user)
+        delivery_mediums = list()
+        if user.MFAOptions:
+            delivery_mediums = [
+                str(x.DeliveryMedium).split(".")[-1] for x in user.MFAOptions
+            ]
+        user_attributes = list()
+        if user.Attributes:
+            user_attributes = [dict(x) for x in user.Attributes]
         response = await aio_wrapper(
             self.cognito_idp_client.admin_create_user,
             UserPoolId=self.user_pool_id,
             Username=user.Username,
-            UserAttributes=[
-                {"Name": "email", "Value": user.Username},
-            ],
-            DesiredDeliveryMediums=["EMAIL"],
+            UserAttributes=user_attributes,
+            DesiredDeliveryMediums=delivery_mediums,
         )
-
         log.debug(
             {
                 "message": "Created new user",
@@ -1597,9 +1601,6 @@ class CognitoUserClient:
         if user.Groups:
             log.info(f"Adding groups {user.Groups} to user {user.Username}")
             await create_identity_user_groups(
-                self.user_pool_id,
-                user_update,
-                [CognitoGroup(GroupName=x) for x in user.Groups],
+                self.user_pool_id, user_update, [CognitoGroup(GroupName=x) for x in user.Groups]
             )
-
         return user_update

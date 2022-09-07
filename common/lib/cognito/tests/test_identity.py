@@ -31,6 +31,10 @@ class TestIdentity(IsolatedAsyncioTestCase):
         super(TestIdentity, self).setUp()
         self.client = boto3.client("cognito-idp", region_name=config.region)
         self.pool_name = "test_pool"
+        self.username = "test_user@gmail.com"
+        self.groupname = "test_group"
+        self.user = CognitoUser(Username=self.username)
+
         self.pool_id = async_to_sync(common.lib.cognito.identity.create_user_pool)(
             self.pool_name
         )
@@ -41,8 +45,6 @@ class TestIdentity(IsolatedAsyncioTestCase):
             "test_domain",
         )
 
-        self.username = "test_user@gmail.com"
-        self.groupname = "test_group"
         self.client.create_identity_provider(
             UserPoolId=self.pool_id,
             ProviderName="SAML",
@@ -51,16 +53,14 @@ class TestIdentity(IsolatedAsyncioTestCase):
                 "MetadataURL": "http://somewhere.yo.dawgs",
             },
         )
-        self.client.admin_create_user(
-            UserPoolId=self.pool_id,
-            Username=self.username,
-        )
         self.client.create_group(
             UserPoolId=self.pool_id,
             GroupName=self.groupname,
             Description="test description",
         )
         self.user_client = identity.CognitoUserClient(self.pool_id)
+        async_to_sync(self.user_client.create_user)(self.user)
+
 
     async def test_get_identity(self):
         providers = await identity.get_identity_providers(self.pool_id)
@@ -206,8 +206,13 @@ class TestIdentity(IsolatedAsyncioTestCase):
 
     async def test_get_identity_users(self):
         cognito_user = await self.user_client.list_users()
-        print("\n".join([cu.Username for cu in cognito_user]))
-        self.assertEqual(cognito_user[0].Username, self.username)
+        user_dict: dict = cognito_user[0].dict()
+        user_dict.pop("TemporaryPassword", None)
+        for attr in user_dict.get("Attributes", []):
+            if attr["Name"] == "email":
+                user_dict["Username"] = attr["Value"]
+                break
+        self.assertEqual(user_dict["Username"], self.username)
 
     async def test_create_identity_user_sparse(self):
         user = CognitoUser(Username="new_user@gmail.com")
@@ -238,40 +243,53 @@ class TestIdentity(IsolatedAsyncioTestCase):
         assert len(await self.user_client.list_users()) == 1
 
     async def test_assigning_identity_user(self):
-        user = CognitoUser(Username=self.username)
         group = CognitoGroup(GroupName=self.groupname, UserPoolId=self.pool_id)
-        assert await identity.create_identity_user_groups(self.pool_id, user, [group])
+        assert await identity.create_identity_user_groups(self.pool_id, self.user, [group])
         users = await self.user_client.list_users()
-        updated_user = [x for x in users if x.Username == self.username][0]
-        assert updated_user
-        assert updated_user.Groups
-        assert len(updated_user.Groups) == 1
-        assert updated_user.Groups[0] == self.groupname
+        for user in users:
+            user_dict: dict = user.dict()
+            user_dict.pop("TemporaryPassword", None)
+            for attr in user_dict.get("Attributes", []):
+                if attr["Name"] == "email":
+                    user_dict["Username"] = attr["Value"]
+                    break
+
+            if user_dict["Username"] == self.username:
+                assert user
+                assert user.Groups
+                assert len(user.Groups) == 1
+                assert user.Groups[0] == self.groupname
 
     async def test_create_identity_user_with_groups(self):
         groups = ["group1", "group2"]
-        user = CognitoUser(Username="new_user@gmail.com", Groups=groups)
+        username = "new_user@gmail.com"
+        user = CognitoUser(Username=username, Groups=groups)
         for group in groups:
             assert await identity.create_identity_group(
                 self.pool_id, CognitoGroup(GroupName=group)
             )
         assert await self.user_client.create_user(user)
-        user_update = [
-            x
-            for x in await self.user_client.list_users()
-            if x.Username == "new_user"
-        ][0]
-        assert user_update.Groups
-        assert len([x for x in user_update.Groups if x in groups]) == len(groups)
-        assert len(await self.user_client.list_users()) == 2
-        self.client.admin_delete_user(
-            UserPoolId=self.pool_id, Username=user_update.Username
-        )
-        for group in groups:
-            assert await identity.delete_identity_group(
-                self.pool_id, CognitoGroup(GroupName=group)
-            )
-        assert len(await self.user_client.list_users()) == 1
+        users = await self.user_client.list_users()
+        for user in users:
+            user_dict: dict = user.dict()
+            user_dict.pop("TemporaryPassword", None)
+            for attr in user_dict.get("Attributes", []):
+                if attr["Name"] == "email":
+                    user_dict["Username"] = attr["Value"]
+                    break
+
+            if user_dict["Username"] == username:
+                assert user.Groups
+                assert len([x for x in user.Groups if x in groups]) == len(groups)
+                assert len(await self.user_client.list_users()) == 2
+                self.client.admin_delete_user(
+                    UserPoolId=self.pool_id, Username=user_dict["Username"]
+                )
+                for group in groups:
+                    assert await identity.delete_identity_group(
+                        self.pool_id, CognitoGroup(GroupName=group)
+                    )
+                assert len(await self.user_client.list_users()) == 1
 
     async def test_delete_identity_user(self):
         user = CognitoUser(Username="delete_user@gmail.com")
