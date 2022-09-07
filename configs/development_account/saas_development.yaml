@@ -13,6 +13,10 @@ _global_:
   metrics:
     cloudwatch:
       enabled: false
+    fluent-bit:
+      namespace: noq-develop
+      max_threads: 10
+      enabled: true
   web:
     path: "frontend/dist"
   landing_page_domains:

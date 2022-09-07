@@ -13,7 +13,8 @@ if __name__ == "__main__":
     concurrency = os.getenv("CELERY_CONCURRENCY", "16") or "16"
     try:
         launch_proc(
-            "fluent-bit", "/opt/fluent-bit/bin/fluent-bit -c /etc/fluent-bit.conf"
+            "fluent-bit",
+            "/opt/fluent-bit/bin/fluent-bit -c /etc/fluent-bit/fluent-bit.conf",
         )
     except ValueError:
         logger.warning("Fluent-bit already running")
