@@ -16,7 +16,7 @@ if os.getenv("DEBUG"):
 
 def run_celery_worker(log_level: str = "DEBUG", concurrency: str = "16"):
     celery_tasks.app.worker_main(
-        "worker -l DEBUG -E --concurrency=8 "
+        f"worker -l {log_level} -E --concurrency={concurrency} "
         "--max-memory-per-child=1000000 --max-tasks-per-child=50 "
         "--soft-time-limit=3600 -O fair".split(" ")
     )
