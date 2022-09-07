@@ -1,11 +1,33 @@
 import os
 
 from common.celery_tasks import celery_tasks
+from common.config import config
 from common.handlers.external_processes import kill_proc, launch_proc
-from util.log import logger
+from functional_tests import run_tests as functional_tests
+
+logger = config.get_logger()
 
 if os.getenv("DEBUG"):
     os.system("systemctl start ssh")
+
+functional_tests.run()
+
+
+def run_celery_worker(log_level: str = "DEBUG", concurrency: str = "16"):
+    celery_tasks.app.worker_main(
+        "worker -l DEBUG -E --concurrency=8 "
+        "--max-memory-per-child=1000000 --max-tasks-per-child=50 "
+        "--soft-time-limit=3600 -O fair".split(" ")
+    )
+
+
+def run_celery_scheduler(log_level: str = "DEBUG"):
+    celery_tasks.app.worker_main(f"beat -l {log_level}".split(" "))
+
+
+def run_celery_flower(log_level: str = "DEBUG", port: int = 7101):
+    celery_tasks.app.worker_main(f"flower -l {log_level} --port={port}".split(" "))
+
 
 if __name__ == "__main__":
     logger.info("Starting up celery tasks")
@@ -17,15 +39,14 @@ if __name__ == "__main__":
         )
     except ValueError:
         logger.warning("Fluent-bit already running")
-    celery_tasks.app.worker_main(
-        [
-            "worker",
-            f"--loglevel={log_level}",
-            "-B",
-            "-E",
-            f"--concurrency={concurrency}",
-        ]
-    )
+
+    match os.getenv("RUNTIME_PROFILE", "CELERY_WORKER"):
+        case "CELERY_WORKER":
+            run_celery_worker(log_level, concurrency)
+        case "CELERY_SCHEDULER":
+            run_celery_scheduler(log_level)
+        case "CELERY_FLOWER":
+            run_celery_flower(log_level, port=7101)
     try:
         kill_proc("fluent-bit")
     except ValueError:

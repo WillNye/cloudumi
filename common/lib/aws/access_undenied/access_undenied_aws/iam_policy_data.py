@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from common.config import config
 from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event_permission_data,
@@ -7,7 +8,8 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     organization_node,
     resource_policy_utils,
 )
-from util.log import logger
+
+logger = config.get_logger()
 
 
 class IamPolicyData(object):

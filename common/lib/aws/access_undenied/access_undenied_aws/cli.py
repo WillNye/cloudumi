@@ -7,34 +7,15 @@ from typing import IO
 import boto3
 import click
 import click_log
-import colorlog
 
+from common.config import config
 from common.lib.aws.access_undenied.access_undenied_aws import (
     analysis,
     common,
     organizations,
 )
-from util.log import logger
 
-
-def _initialize_logger() -> None:
-    click_log.basic_config(logger)
-    root_handler = logger.handlers[0]
-    formatter = colorlog.ColoredFormatter(
-        "%(log_color)s[%(asctime)s,%(msecs)d %(levelname)-8s"
-        " %(filename)s:%(lineno)d - %(funcName)20s()]%(reset)s"
-        " %(white)s%(message)s",
-        datefmt="%H:%M:%S",
-        reset=True,
-        log_colors={
-            "DEBUG": "blue",
-            "INFO": "green",
-            "WARNING": "yellow",
-            "ERROR": "red",
-            "CRITICAL": "red",
-        },
-    )
-    root_handler.setFormatter(formatter)
+logger = config.get_logger()
 
 
 def initialize_config_from_user_input(
@@ -52,12 +33,11 @@ def initialize_config_from_user_input(
     config.suppress_output = suppress_output
 
 
-_initialize_logger()
 pass_config = click.make_pass_decorator(common.Config, ensure=True)
 
 
 @click.group()
-@click_log.simple_verbosity_option(logger)
+@click_log.simple_verbosity_option(logger.name)
 @click.option(
     "--profile",
     help="the AWS profile to use (default is default profile)",

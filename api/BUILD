@@ -149,6 +149,7 @@ py_binary(
         "AWS_PROFILE": "noq_cluster_dev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build",
+        "RUNTIME_PROFILE": "API",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -172,6 +173,7 @@ py_binary(
         "AWS_PROFILE": "noq_cluster_dev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build",
+        "RUNTIME_PROFILE": "API",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -215,6 +217,7 @@ container_image(
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
+        "RUNTIME_PROFILE": "API",
     },
     layers = [
         "//deploy/layers:config",
@@ -240,6 +243,7 @@ container_image(
     env = {
         "NOQ_CONTAINER": "1",
         "DEBUG": "1",
+        "RUNTIME_PROFILE": "API",
     },
     layers = [
         "//deploy/layers:config",

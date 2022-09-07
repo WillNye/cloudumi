@@ -1,7 +1,9 @@
 import subprocess
 from collections import defaultdict
 
-from util.log import logger
+from common.config import config
+
+logger = config.get_logger()
 
 # SINGLETON: on purpose (we only want one)
 tracked_procs = defaultdict(dict)

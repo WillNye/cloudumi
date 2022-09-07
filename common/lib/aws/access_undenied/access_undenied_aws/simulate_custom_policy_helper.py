@@ -3,6 +3,7 @@ import json
 import re
 from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence, Set
 
+from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import (
@@ -19,7 +20,8 @@ from common.lib.aws.access_undenied.access_undenied_aws.iam_policy_data import (
     IamPolicyData,
 )
 from common.models import SpokeAccount
-from util.log import logger
+
+logger = config.get_logger()
 
 if TYPE_CHECKING:
     from mypy_boto3_iam import IAMClient
