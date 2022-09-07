@@ -113,7 +113,7 @@ def init():
                 "fluent-bit",
                 "/opt/fluent-bit/bin/fluent-bit -c /etc/fluent-bit/fluent-bit.conf",
             )
-        except ValueError:
+        except (ValueError, FileNotFoundError):
             log.warning("Could not launch fluent-bit")
         loop = asyncio.get_event_loop()
         for s in signals:
