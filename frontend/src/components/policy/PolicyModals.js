@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'react'
-import { DateTime } from 'luxon'
 import {
   Button,
   Checkbox,
@@ -12,10 +11,10 @@ import {
   Modal,
   TextArea,
 } from 'semantic-ui-react'
-import SemanticDatepicker from 'react-semantic-ui-datepickers'
 import ReactMarkdown from 'react-markdown'
 import { usePolicyContext } from './hooks/PolicyProvider'
 import { useHistory } from 'react-router-dom'
+import DateTimePicker from 'components/blocks/DateTimePicker'
 
 const StatusMessage = ({ message, isSuccess }) => {
   if (message && isSuccess) {
@@ -100,13 +99,9 @@ export const JustificationModal = ({
     resource,
   ])
 
-  const handleSetPolicyExpiration = (_event, data) => {
-    if (!data?.value) {
-      return
-    }
-    const dateObj = DateTime.fromJSDate(data.value)
-    const dateString = dateObj.toFormat('yyyyMMdd')
-    setExpirationDate(parseInt(dateString))
+  const handleSetPolicyExpiration = (value) => {
+    const dateString = value ? new Date(value).toISOString() : value
+    setExpirationDate(dateString)
   }
 
   const handleOk = () => {
@@ -165,15 +160,7 @@ export const JustificationModal = ({
                     </Header.Subheader>
                   </Header>
 
-                  <SemanticDatepicker
-                    filterDate={(date) => {
-                      const now = new Date()
-                      return date >= now
-                    }}
-                    onChange={handleSetPolicyExpiration}
-                    type='basic'
-                    compact
-                  />
+                  <DateTimePicker onChange={handleSetPolicyExpiration} />
                 </>
               )}
 

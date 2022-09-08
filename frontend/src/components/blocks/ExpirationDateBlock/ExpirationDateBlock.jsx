@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { DateTime } from 'luxon'
 import { Button, Header, Icon, Message, Segment, Form } from 'semantic-ui-react'
-import SemanticDatepicker from 'react-semantic-ui-datepickers'
+import DateTimePicker from '../DateTimePicker'
+import { parseDate } from './utils'
+import './ExpirationDateBlock.scss'
 
-const ExpirationDateBlockComponent = ({
+const ExpirationDateBlock = ({
   reloadDataFromBackend,
   requestID,
   expiration_date,
@@ -11,40 +12,25 @@ const ExpirationDateBlockComponent = ({
   requestReadOnly,
   hasReadOnlyAccountPolicy,
 }) => {
-  const [expirationDate, setExpirationDate] = useState(expiration_date)
+  const [expirationDate, setExpirationDate] = useState(
+    parseDate(expiration_date)
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessages, setErrorMessages] = useState([])
 
   useEffect(
     function onDateUpdate() {
-      setExpirationDate(expiration_date)
+      setExpirationDate(parseDate(expiration_date))
     },
     [expiration_date]
   )
 
-  const parseDate = (expDate) => {
-    let date = null
-    if (expDate) {
-      date = DateTime.fromFormat(`${expDate}`, 'yyyyMMdd').toJSDate()
-    }
-    return date
-  }
-
-  const handleSetPolicyExpiration = (event, data) => {
-    const currentDate = new Date()
-    if (!data?.value) {
+  const handleSetPolicyExpiration = (value) => {
+    if (!value) {
       setExpirationDate(null)
       return
     }
-
-    if (currentDate.getTime() >= data.value.getTime()) {
-      setExpirationDate(expiration_date)
-      return
-    }
-
-    const dateObj = DateTime.fromJSDate(data.value)
-    const dateString = dateObj.toFormat('yyyyMMdd')
-    setExpirationDate(parseInt(dateString))
+    setExpirationDate(value)
   }
 
   const handleSubmitComment = useCallback(async () => {
@@ -52,7 +38,9 @@ const ExpirationDateBlockComponent = ({
     const request = {
       modification_model: {
         command: 'update_expiration_date',
-        expiration_date: expirationDate,
+        expiration_date: expirationDate
+          ? new Date(expirationDate).toISOString()
+          : expirationDate,
       },
     }
 
@@ -101,28 +89,17 @@ const ExpirationDateBlockComponent = ({
         hasReadOnlyAccountPolicy
       }
       onClick={handleSubmitComment}
+      fluid
     />
   )
 
   const dateInput = (
     <Form>
       <Form.Field>
-        <Header as='h1'>
-          <Header.Subheader>
-            Set or update the expiration date for the requested permissions. If
-            no date is set, the permissions will not expire.
-          </Header.Subheader>
-        </Header>
-        <SemanticDatepicker
-          filterDate={(date) => {
-            const now = new Date()
-            return date >= now
-          }}
-          disabled={isLoading || requestReadOnly || hasReadOnlyAccountPolicy}
+        <DateTimePicker
           onChange={handleSetPolicyExpiration}
-          type='basic'
-          value={parseDate(expirationDate)}
-          compact
+          isDisabled={isLoading || requestReadOnly || hasReadOnlyAccountPolicy}
+          defaultDate={expirationDate}
         />
       </Form.Field>
 
@@ -135,10 +112,17 @@ const ExpirationDateBlockComponent = ({
       <Header size='medium'>
         Expiration Date <Icon name='calendar times outline' />
       </Header>
+      <Header as='h1'>
+        <Header.Subheader>
+          Set or update the expiration date for the requested permissions. If no
+          date is set, the permissions will not expire.
+        </Header.Subheader>
+      </Header>
       {messagesToShow}
-      {dateInput}
+
+      <div className='expiration-date'>{dateInput}</div>
     </Segment>
   )
 }
 
-export default ExpirationDateBlockComponent
+export default ExpirationDateBlock
