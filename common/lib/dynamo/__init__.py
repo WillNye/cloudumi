@@ -61,7 +61,7 @@ POSSIBLE_STATUSES = [
     "removed",
 ]
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 log = config.get_logger("cloudumi")
 
 

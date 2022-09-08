@@ -44,7 +44,7 @@ async def generate_auth_token(
     user, ip, challenge_uuid, request_object, expiration=None
 ):
     tenant = request_object.get_tenant_name()
-    stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+    stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
     stats.count("generate_auth_token")
     if not expiration:
         expiration = config.get_tenant_specific_key(
@@ -85,7 +85,7 @@ async def generate_auth_token(
 
 async def validate_auth_token(user, ip, token, request_object):
     tenant = request_object.get_tenant_name()
-    stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+    stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
     stats.count("validate_auth_token")
     log_data = {
         "user": user,

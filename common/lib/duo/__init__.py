@@ -8,7 +8,7 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.aws.session import get_session_for_tenant
 from common.lib.plugins import get_plugin_by_name
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 log = config.get_logger()
 
 

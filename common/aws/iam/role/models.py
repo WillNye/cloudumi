@@ -32,7 +32,7 @@ from common.lib.pynamo import NoqMapAttribute, NoqModel
 from common.lib.terraform.transformers.IAMRoleTransformer import IAMRoleTransformer
 from common.models import CloneRoleRequestModel, RoleCreationRequestModel, SpokeAccount
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 log = get_logger(__name__)
 
 

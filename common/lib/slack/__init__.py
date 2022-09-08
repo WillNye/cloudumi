@@ -12,7 +12,7 @@ from common.models import ExtendedRequestModel
 from identity.lib.groups.models import GroupRequest
 
 log = config.get_logger()
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 
 
 async def _send_slack_notification(tenant, log_data, payload):

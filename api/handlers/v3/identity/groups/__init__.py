@@ -11,7 +11,7 @@ from identity.lib.groups.groups import (
     get_identity_group_storage_keys,
 )
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 log = config.get_logger()
 
 

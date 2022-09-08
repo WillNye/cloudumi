@@ -19,7 +19,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.timeout import Timeout
 from common.models import DataTableResponse
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 log = config.get_logger()
 
 

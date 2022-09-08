@@ -22,6 +22,7 @@ py_library(
     ],
     deps = [
         "//plugins/metrics/cloudwatch:lib",
+        "//plugins/metrics/fluent_bit:lib",
         "//common/config:lib",
         "//common/lib",
     ],

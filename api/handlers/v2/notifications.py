@@ -19,7 +19,7 @@ from common.lib.v2.notifications import (
 )
 from common.models import Status2, WebResponse
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 log = config.get_logger()
 
 

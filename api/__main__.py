@@ -92,7 +92,7 @@ async def shutdown(signal, loop):
 
 
 def init():
-    stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+    stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
     if __name__ in ["__main__", "api.__main__"]:
         port = config.get("_global_.tornado.port", 8092)
         stats.count("tornado.start")

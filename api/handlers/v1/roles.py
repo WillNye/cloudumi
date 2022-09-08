@@ -3,7 +3,7 @@ from common.config import config
 from common.handlers.base import BaseMtlsHandler
 from common.lib.plugins import get_plugin_by_name
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 log = config.get_logger()
 
 

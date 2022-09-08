@@ -16,7 +16,7 @@ from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.aws_principals import get_user_details
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 log = config.get_logger()
 
 

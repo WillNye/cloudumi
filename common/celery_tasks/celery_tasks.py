@@ -170,7 +170,7 @@ log = config.get_logger()
 internal_celery_tasks = get_plugin_by_name(
     config.get("_global_.plugins.internal_celery_tasks", "cmsaas_celery_tasks")
 )
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 
 REDIS_IAM_COUNT = 1000
 

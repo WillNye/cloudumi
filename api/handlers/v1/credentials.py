@@ -330,7 +330,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
         """
         tenant = self.ctx.tenant
         stats = get_plugin_by_name(
-            config.get("_global_.plugins.metrics", "fluent-bit")
+            config.get("_global_.plugins.metrics", "fluent_bit")
         )()
         log_data = {
             "function": "GetCredentialsHandler.post",

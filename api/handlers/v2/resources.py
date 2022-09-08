@@ -19,7 +19,7 @@ from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 
 log = config.get_logger()
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 
 
 class ResourceDetailHandler(BaseAPIV2Handler):

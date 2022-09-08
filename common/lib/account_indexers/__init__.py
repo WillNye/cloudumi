@@ -13,7 +13,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.models import CloudAccountModelArray, SpokeAccount
 
 log = config.get_logger(__name__)
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 
 
 async def cache_cloud_accounts(tenant) -> CloudAccountModelArray:

@@ -30,7 +30,7 @@ from common.lib.dynamo import UserDynamoHandler
 from common.lib.groups import does_group_require_bg_check
 from common.lib.plugins import get_plugin_by_name
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 
 log = config.get_logger()
 auth = get_plugin_by_name(config.get("_global_.plugins.auth", "cmsaas_auth"))()

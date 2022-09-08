@@ -13,7 +13,7 @@ from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name
 
 log = config.get_logger("cloudumi")
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent-bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
 
 
 class Group(object):
