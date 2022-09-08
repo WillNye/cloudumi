@@ -13,6 +13,7 @@ INT_DEPS = [
     "//common/lib",
     "//common/lib/aws/access_undenied:lib",
     "//common/user_request:lib",
+    "//functional_tests:lib",
     "//identity:lib",
     "//plugins/auth:lib",
     "//plugins/aws:lib",
@@ -30,6 +31,7 @@ EXT_DEPS = [
     requirement("billiard"),
     requirement("celery"),
     requirement("checkov"),
+    requirement("pytest"),
     requirement("retrying"),
     requirement("sentry_sdk"),
     requirement("ujson"),
@@ -41,6 +43,7 @@ REQUIRES = [
     "billiard",
     "celery",
     "checkov",
+    "pytest",
     "retrying",
     "sentry_sdk",
     "ujson",
@@ -82,6 +85,7 @@ py_binary(
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
         "AWS_REGION": "us-west-2",
+        "RUNTIME_PROFILE": "CELERY_WORKER",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -115,6 +119,7 @@ container_image(
     base = "//docker/base:base_docker",
     env = {
         "DEBUG": "1",
+        "RUNTIME_PROFILE": "CELERY_WORKER",
     },
     layers = [
         "//deploy/layers:config",
@@ -137,6 +142,7 @@ container_image(
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
+        "RUNTIME_PROFILE": "CELERY_WORKER",
     },
     layers = [
         "//deploy/layers:config",

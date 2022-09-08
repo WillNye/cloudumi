@@ -28,6 +28,9 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 from api.routes import make_app
 from common.config import config
 from common.lib.plugins import fluent_bit, get_plugin_by_name
+from functional_tests import run_tests as functional_tests
+
+log = config.get_logger()
 
 configured_profiler = config.get("_global_.profiler")
 if configured_profiler:
@@ -48,9 +51,8 @@ if configured_profiler:
     else:
         raise ValueError(f"Profiler {configured_profiler} not supported")
 
-logging.basicConfig(level=logging.DEBUG, format=config.get("_global_.logging.format"))
-logging.getLogger("_global_.urllib3.connectionpool").setLevel(logging.CRITICAL)
-log = config.get_logger()
+# Run functional tests
+functional_tests.run()
 
 
 def main():
@@ -132,4 +134,5 @@ def init():
             logging.info("Successfully shutdown the service.")
 
 
-init()  #
+if os.getenv("RUNTIME_PROFILE", "API") == "API":
+    init()
