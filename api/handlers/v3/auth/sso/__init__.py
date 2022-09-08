@@ -11,6 +11,7 @@ from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.cognito import identity
 from common.lib.cognito.identity import CognitoUserClient
+from common.lib.jwt import validate_and_return_jwt_token
 from common.lib.web import handle_generic_error_response
 from common.models import (
     CognitoGroup,
@@ -18,6 +19,7 @@ from common.models import (
     GoogleOIDCSSOIDPProvider,
     OIDCSSOIDPProvider,
     SamlOIDCSSOIDPProvider,
+    SetupMfaRequestModel,
     SSOIDPProviders,
 )
 
@@ -304,7 +306,6 @@ class CognitoGroupCrudHandler(CognitoCrudHandler):
 
 
 class CognitoUserResetMFA(BaseHandler):
-
     async def post(self, username: str = None):
         if username and not self.is_admin:
             errors = ["User is not authorized to access this endpoint."]
@@ -323,3 +324,39 @@ class CognitoUserResetMFA(BaseHandler):
             "username": username,
         }
         self.write(response_json)
+
+
+class CognitoUserSetupMFA(BaseHandler):
+    async def post(self):
+        tenant = self.ctx.tenant
+        user_client = CognitoUserClient.tenant_client(tenant)
+        mfa_request = SetupMfaRequestModel.parse_raw(self.request.body)
+
+        try:
+            user_client.verify_mfa(
+                mfa_request.user_code,
+                access_token=mfa_request.access_token,
+                email=self.user,
+            )
+            self.mfa_setup = None
+
+            # Issue a new JWT with proper groups
+            if auth_cookie := self.get_cookie(self.get_noq_auth_cookie_key()):
+                await validate_and_return_jwt_token(auth_cookie, tenant)
+                await self.set_jwt_cookie(tenant)
+
+            self.write({"status": "success", "message": "Successfully setup user MFA"})
+        except Exception as err:
+            message = "Unable to complete the MFA setup."
+            log_data = {
+                "user": self.user,
+                "message": message,
+                "error": str(err),
+                "user-agent": self.request.headers.get("User-Agent"),
+                "request_id": self.request_uuid,
+                "tenant": tenant,
+            }
+            errors = [str(err)]
+            await handle_generic_error_response(
+                self, message, errors, 400, str(err), log_data
+            )

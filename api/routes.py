@@ -95,10 +95,12 @@ from api.handlers.v3.auth import ChallengeUrlConfigurationCrudHandler
 from api.handlers.v3.auth.sso import (
     CognitoGroupCrudHandler,
     CognitoUserCrudHandler,
+    CognitoUserResetMFA,
+    CognitoUserSetupMFA,
     GoogleOidcIdpConfigurationCrudHandler,
     OidcIdpConfigurationCrudHandler,
     SamlOidcIdpConfigurationCrudHandler,
-    SsoIdpProviderConfigurationCrudHandler, CognitoUserResetMFA,
+    SsoIdpProviderConfigurationCrudHandler,
 )
 from api.handlers.v3.downloads.weep import WeepDownloadHandler
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
@@ -328,8 +330,12 @@ def make_app(jwt_validator=None):
             CognitoUserCrudHandler,
         ),
         (
-            r"/api/v3/auth/cognito/users/reset-mfa/(.*)/?",
+            r"/api/v3/auth/cognito/reset-mfa/(.*)/?",
             CognitoUserResetMFA,
+        ),
+        (
+            r"/api/v3/auth/cognito/setup-mfa/?",
+            CognitoUserSetupMFA,
         ),
         (
             r"/api/v3/auth/cognito/groups/?",
