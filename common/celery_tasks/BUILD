@@ -143,7 +143,7 @@ container_image(
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
-        "RUNTIME_PROFILE": "CELERY_FLOWER",
+        "RUNTIME_PROFILE": "CELERY_WORKER",
     },
     layers = [
         "//deploy/layers:config",
