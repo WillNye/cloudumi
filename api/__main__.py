@@ -27,8 +27,10 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 
 from api.routes import make_app
 from common.config import config
-from common.handlers.external_processes import kill_proc, launch_proc
-from common.lib.plugins import get_plugin_by_name
+from common.lib.plugins import fluent_bit, get_plugin_by_name
+from functional_tests import run_tests as functional_tests
+
+log = config.get_logger()
 
 configured_profiler = config.get("_global_.profiler")
 if configured_profiler:
@@ -49,9 +51,8 @@ if configured_profiler:
     else:
         raise ValueError(f"Profiler {configured_profiler} not supported")
 
-logging.basicConfig(level=logging.DEBUG, format=config.get("_global_.logging.format"))
-logging.getLogger("_global_.urllib3.connectionpool").setLevel(logging.CRITICAL)
-log = config.get_logger()
+# Run functional tests
+functional_tests.run()
 
 
 def main():
@@ -106,13 +107,7 @@ def init():
 
         log.debug({"message": "Server started", "port": port})
         signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
-        try:
-            launch_proc(
-                "fluent-bit",
-                "/opt/fluent-bit/bin/fluent-bit -c /etc/fluent-bit/fluent-bit.conf",
-            )
-        except (ValueError, FileNotFoundError):
-            log.warning("Could not launch fluent-bit")
+        fluent_bit.add_fluent_bit_service()
         loop = asyncio.get_event_loop()
         for s in signals:
             loop.add_signal_handler(
@@ -122,10 +117,7 @@ def init():
             loop.run_forever()
         finally:
             loop.close()
-            try:
-                kill_proc("fluent-bit")
-            except ValueError:
-                log.warning("fluent-bit process not found")
+            fluent_bit.remove_fluent_bit_service()
             if configured_profiler:
                 if configured_profiler == "pprofile":
                     profiler.disable()
@@ -140,4 +132,5 @@ def init():
             logging.info("Successfully shutdown the service.")
 
 
-init()  #
+if os.getenv("RUNTIME_PROFILE", "API") == "API":
+    init()

@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, TextIO, Union
 
 from aws_error_utils import ClientError, errors
 
+from common.config import config
 from common.lib.aws.access_undenied.access_undenied_aws import (
     common,
     event,
@@ -14,7 +15,8 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     simulate_custom_policy_helper,
 )
 from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
-from util.log import logger
+
+logger = config.get_logger()
 
 
 def _write_to_file(output_file: TextIO, output_json: Dict[str, Any]) -> None:
