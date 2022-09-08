@@ -95,7 +95,7 @@ async def __get_saml_provider(
 async def __get_oidc_provider(
     user_pool_id: str,
     identity_providers: Dict[str, List[Dict[str, Any]]],
-    mask_secrets: bool
+    mask_secrets: bool,
 ) -> Union[OIDCSSOIDPProvider, None]:
     client = await aio_wrapper(boto3.client, "cognito-idp", region_name=config.region)
     oidc_provider = None
@@ -240,9 +240,7 @@ async def get_identity_providers(
             user_pool_id, identity_providers, mask_secrets, client
         ),
         saml=await __get_saml_provider(user_pool_id, identity_providers, client),
-        oidc=await __get_oidc_provider(
-            user_pool_id, identity_providers, mask_secrets
-        ),
+        oidc=await __get_oidc_provider(user_pool_id, identity_providers, mask_secrets),
     )
 
 
@@ -958,7 +956,12 @@ async def create_user_pool_client(user_pool_id, dev_domain_url):
         AllowedOAuthFlows=[
             "code",
         ],
-        AllowedOAuthScopes=["email", "openid", "profile"],
+        AllowedOAuthScopes=[
+            "email",
+            "openid",
+            "profile",
+            "aws.cognito.signin.user.admin",
+        ],
         AllowedOAuthFlowsUserPoolClient=True,
         PreventUserExistenceErrors="ENABLED",
         EnableTokenRevocation=True,
@@ -1055,7 +1058,7 @@ class CognitoUserClient:
             cognito_info["user_pool_id"],
             cognito_info["user_pool_client_id"],
             cognito_info["user_pool_client_secret"],
-            cognito_idp_client
+            cognito_idp_client,
         )
 
     @staticmethod
@@ -1166,7 +1169,7 @@ class CognitoUserClient:
                     "SOFTWARE_TOKEN_MFA"
                     in response["ChallengeParameters"]["MFAS_CAN_SETUP"]
                 ):
-                    response.update(self.get_mfa_secret(response["Session"]))
+                    response.update(await self.get_mfa_secret(response["Session"]))
                 else:
                     raise RuntimeError(
                         "The user pool requires MFA setup, but the user pool is not "
@@ -1183,29 +1186,34 @@ class CognitoUserClient:
         else:
             response.pop("ResponseMetadata", None)
 
-        if access_token := response.get("AuthenticationResult", {}).get("AccessToken"):
-            # Detect password sign-in without MFA
-            associate_software_token = await aio_wrapper(
-                self.cognito_idp_client.associate_software_token,
-                AccessToken=access_token,
-            )
-            return {
-                "SecretCode": associate_software_token["SecretCode"],
-                "AccessToken": response["AuthenticationResult"]["AccessToken"],
-            }
-
         return response
 
-    def get_mfa_secret(self, session):
+    async def get_mfa_secret(
+        self, username: str, session: str = None, access_token: str = None
+    ):
         """
         Gets a token that can be used to associate an MFA application with the user.
 
-        :param session: Session information returned from a previous call to initiate
-                        authentication.
+        :param session: Session info returned from a previous call to initiate auth.
+        :param access_token: access token created during the sign-in process.
         :return: An MFA token that can be used to set up an MFA application.
         """
+        assert session or access_token
         try:
-            response = self.cognito_idp_client.associate_software_token(Session=session)
+            if access_token:
+                # Detect password sign-in without MFA
+                associate_software_token = await aio_wrapper(
+                    self.cognito_idp_client.associate_software_token,
+                    AccessToken=access_token,
+                )
+                response = {
+                    "SecretCode": associate_software_token["SecretCode"],
+                    "AccessToken": access_token,
+                }
+            else:
+                response = self.cognito_idp_client.associate_software_token(
+                    Session=session
+                )
         except ClientError as err:
             log.error(
                 "Couldn't get MFA secret. Here's why: %s: %s",
@@ -1215,6 +1223,7 @@ class CognitoUserClient:
             raise
         else:
             response.pop("ResponseMetadata", None)
+            response["TotpUri"] = self.get_totp_uri(username, response["SecretCode"])
             return response
 
     def verify_mfa(
@@ -1524,6 +1533,12 @@ class CognitoUserClient:
                 SoftwareTokenMfaConfiguration={"Enabled": True},
             )
 
+    def user_mfa_enabled(self, username: str) -> bool:
+        user = self.cognito_idp_client.admin_get_user(
+            UserPoolId=self.user_pool_id, Username=username
+        )
+        return bool(user.get("PreferredMfaSetting") == "SOFTWARE_TOKEN_MFA")
+
     async def list_users(self):
         """Get Cognito users and format as pydantic CognitoUser objects.
 
@@ -1611,6 +1626,8 @@ class CognitoUserClient:
         if user.Groups:
             log.info(f"Adding groups {user.Groups} to user {user.Username}")
             await create_identity_user_groups(
-                self.user_pool_id, user_update, [CognitoGroup(GroupName=x) for x in user.Groups]
+                self.user_pool_id,
+                user_update,
+                [CognitoGroup(GroupName=x) for x in user.Groups],
             )
         return user_update

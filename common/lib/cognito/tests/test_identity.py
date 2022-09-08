@@ -61,7 +61,6 @@ class TestIdentity(IsolatedAsyncioTestCase):
         self.user_client = identity.CognitoUserClient(self.pool_id)
         async_to_sync(self.user_client.create_user)(self.user)
 
-
     async def test_get_identity(self):
         providers = await identity.get_identity_providers(self.pool_id)
         assert providers.saml
@@ -244,7 +243,9 @@ class TestIdentity(IsolatedAsyncioTestCase):
 
     async def test_assigning_identity_user(self):
         group = CognitoGroup(GroupName=self.groupname, UserPoolId=self.pool_id)
-        assert await identity.create_identity_user_groups(self.pool_id, self.user, [group])
+        assert await identity.create_identity_user_groups(
+            self.pool_id, self.user, [group]
+        )
         users = await self.user_client.list_users()
         for user in users:
             user_dict: dict = user.dict()
