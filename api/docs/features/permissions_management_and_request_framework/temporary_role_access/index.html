@@ -1046,6 +1046,8 @@
 
 
 
+
+
         <label class="md-nav__link" for="__nav_8_2">
           Permissions Management and Request Framework
           <span class="md-nav__icon md-icon"></span>
@@ -1122,6 +1124,20 @@
     <li class="md-nav__item">
       <a href="../decentralized_request_management/" class="md-nav__link">
         Decentralized Request Management
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../simplified_policy/" class="md-nav__link">
+        Simplified Policy and Removing Unused Permissions
       </a>
     </li>
 
@@ -1541,60 +1557,6 @@
 
 
 
-        <label class="md-nav__link" for="__nav_9">
-          Swagger
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-
-      <nav class="md-nav" aria-label="Swagger" data-md-level="1">
-        <label class="md-nav__title" for="__nav_9">
-          <span class="md-nav__icon md-icon"></span>
-          Swagger
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-
-
-
-
-
-
-    <li class="md-nav__item">
-      <a href="../../../swagger/swagger/" class="md-nav__link">
-        Swagger Documentation
-      </a>
-    </li>
-
-
-
-
-        </ul>
-      </nav>
-    </li>
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-
-
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_10" type="checkbox" id="__nav_10" >
-
-
-
-
-
-
-
-
 
 
 
@@ -1618,14 +1580,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../../reference/style_guide/">Documentation Style Guide</a>
 
-            <label for="__nav_10">
+            <label for="__nav_9">
               <span class="md-nav__icon md-icon"></span>
             </label>
 
         </div>
 
       <nav class="md-nav" aria-label="Documentation Style Guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_10">
+        <label class="md-nav__title" for="__nav_9">
           <span class="md-nav__icon md-icon"></span>
           Documentation Style Guide
         </label>
@@ -1868,7 +1830,7 @@ This includes:</p>
 <li>Custom approval rules (more on this below)</li>
 </ul>
 <p>Below is the default configuration which can be altered as you choose:
-<div class="highlight"><pre><span></span><code><span class="nt">temporary_elevated_access_requests</span><span class="p">:</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporary_role_access_requests</span><span class="p">:</span><span class="w"></span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
 <span class="w">  </span><span class="nt">requires_approval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
 <span class="w">  </span><span class="nt">supported_groups_tag</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;noq-tear-supported-groups&#39;</span><span class="w"></span>
@@ -1886,9 +1848,9 @@ This includes:</p>
 </ul>
 <p>An approval rule consists of the following fields. All fields are optional except for name.</p>
 <ul>
-<li><code>enabled</code>: If false, temporary assume role access requests aren't supported. Defaults to the value in the top level of temporary_elevated_access_requests</li>
-<li><code>requires_approval</code>: If false, the request is approved immediately. Defaults to the value in the top level of temporary_elevated_access_requests</li>
-<li><code>mfa.enabled</code>: boolean defaults to the value in the top level of temporary_elevated_access_requests</li>
+<li><code>enabled</code>: If false, temporary assume role access requests aren't supported. Defaults to the value in the top level of temporary_role_access_requests</li>
+<li><code>requires_approval</code>: If false, the request is approved immediately. Defaults to the value in the top level of temporary_role_access_requests</li>
+<li><code>mfa.enabled</code>: boolean defaults to the value in the top level of temporary_role_access_requests</li>
 <li><code>groups</code>: list of regex strings representing the name of a group </li>
 <li><code>roles</code>: list of regex strings representing the name of a role</li>
 <li><code>accounts.ignore</code> list of account ids as regex strings. If the account the role is on hits on this the rule won't be used.</li>
@@ -1896,7 +1858,7 @@ This includes:</p>
 </ul>
 <p>When a request for temporary assume role access is made each of the rules are checked to determine the approval flow.</p>
 <p>Here is an example configuration with each name describing how it works:
-<div class="highlight"><pre><span></span><code><span class="nt">temporary_elevated_access_requests</span><span class="p">:</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="nt">temporary_role_access_requests</span><span class="p">:</span><span class="w"></span>
 <span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
 <span class="w">  </span><span class="nt">requires_approval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
 <span class="w">  </span><span class="nt">mfa</span><span class="p">:</span><span class="w"></span>

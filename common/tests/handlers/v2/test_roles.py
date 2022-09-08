@@ -3,7 +3,7 @@ from mock import patch
 
 import common.lib.noq_json as json
 from util.tests.fixtures.globals import tenant
-from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import NOQAsyncHTTPTestCase
 
 
 @pytest.mark.usefixtures("redis")
@@ -11,7 +11,7 @@ from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 @pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("dynamodb")
-class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
+class TestRolesHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
 
@@ -108,7 +108,7 @@ class TestRolesHandler(ConsoleMeAsyncHTTPTestCase):
 @pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("dynamodb")
-class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
+class TestAccountRolesHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
 
@@ -143,7 +143,7 @@ class TestAccountRolesHandler(ConsoleMeAsyncHTTPTestCase):
 @pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("dynamodb")
-class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
+class TestRoleDetailHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 
@@ -230,7 +230,7 @@ class TestRoleDetailHandler(ConsoleMeAsyncHTTPTestCase):
 @pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("dynamodb")
-class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
+class TestRoleDetailAppHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 
@@ -252,7 +252,7 @@ class TestRoleDetailAppHandler(ConsoleMeAsyncHTTPTestCase):
 @pytest.mark.usefixtures("iam")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("dynamodb")
-class TestRoleCloneHandler(ConsoleMeAsyncHTTPTestCase):
+class TestRoleCloneHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 

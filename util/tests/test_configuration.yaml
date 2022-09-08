@@ -414,7 +414,7 @@ site_configs:
           authentication_settings:
             email: consoleme_admins@example.com
           commit_settings:
-            create_pr: false # If true, ConsoleMe will show you the PR location and not allow policy review within consoleme
+            create_pr: false # If true, NOq will show you the PR location and not allow policy review within NOQ
             commit_to_branch_on_approval: master # If set, will push to this branch on approval
           resource_formats:
             - honeybee

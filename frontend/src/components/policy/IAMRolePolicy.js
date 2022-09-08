@@ -31,7 +31,7 @@ const IAMRolePolicy = () => {
         key: 'inline_policy',
         content: (
           <>
-            Inline Policy
+            Inline Policies
             <Label>{inline_policies.length}</Label>
           </>
         ),
@@ -236,7 +236,15 @@ const IAMRolePolicy = () => {
 
   return (
     <Tab
-      menu={{ fluid: true, vertical: true, tabular: true }}
+      menu={{
+        fluid: true,
+        vertical: false,
+        tabular: true,
+        borderless: true,
+        secondary: true,
+        pointing: true,
+        className: 'wrapped',
+      }}
       panes={tabs}
       className='vertical-tab-override'
     />

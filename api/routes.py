@@ -71,7 +71,7 @@ from api.handlers.v2.roles import (
     RoleDetailAppHandler,
     RoleDetailHandler,
     RolesHandler,
-    RoleTearConfigHandler,
+    RoleTraConfigHandler,
 )
 from api.handlers.v2.self_service import (
     PermissionTemplatesHandler,
@@ -137,8 +137,6 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
 )
 from common.config import config
 from common.lib.sentry import before_send_event
-
-log = config.get_logger()
 
 
 def make_app(jwt_validator=None):
@@ -209,7 +207,7 @@ def make_app(jwt_validator=None):
         (r"/api/v2/requests/([a-zA-Z0-9_-]+)", RequestDetailHandler),
         (r"/api/v2/roles/?", RolesHandler),
         (r"/api/v2/roles/(\d{12})", AccountRolesHandler),
-        (r"/api/v2/roles/(\d{12})/(.*)/elevated-access-config", RoleTearConfigHandler),
+        (r"/api/v2/roles/(\d{12})/(.*)/elevated-access-config", RoleTraConfigHandler),
         (r"/api/v2/roles/(\d{12})/(.*)/role-access-config", RoleAccessConfigHandler),
         (r"/api/v2/roles/(\d{12})/(.*)", RoleDetailHandler),
         (r"/api/v2/users/(\d{12})/(.*)", UserDetailHandler),

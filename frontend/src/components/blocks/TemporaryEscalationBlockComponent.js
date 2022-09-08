@@ -74,7 +74,7 @@ const TemporaryEscalationComponent = (props) => {
     (!props.config.can_update_cancel && !isOwner)
 
   const headerContent = (
-    <Header size='large'>Temporary Escalation Access Request</Header>
+    <Header size='large'>Temporary Role Access Request</Header>
   )
 
   const applyChangesButton =

@@ -9,11 +9,11 @@ log = config.get_logger()
 class InternalDemoRouteHandler(BaseHandler):
     """
     This is a route with the simple purpose of showcasing how OSS users can add additional internal-only pages
-    to ConsoleMe
+    to NOQ
     """
 
     def get_template_path(self):
-        # You can define a custom template path here based on the name of your consoleme internal plugin package
+        # You can define a custom template path here based on the name of your NOQ internal plugin package
         pass
 
     async def get(self):

@@ -56,7 +56,7 @@ const TempPolicyEscalationModal = ({
               principal_type: 'AwsResource',
               principal_arn: tempEscalationModalData.data.arn,
             },
-            change_type: 'tear_can_assume_role',
+            change_type: 'tra_can_assume_role',
           },
         ],
       },
@@ -94,7 +94,7 @@ const TempPolicyEscalationModal = ({
       size='small'
       onClose={() => setTempEscalationModalData(false)}
     >
-      <Modal.Header>Temporary Escalation Access Request</Modal.Header>
+      <Modal.Header>Temporary Role Access Request</Modal.Header>
       <Modal.Content>
         <Segment basic>
           <Dimmer active={isLoading} inverted>

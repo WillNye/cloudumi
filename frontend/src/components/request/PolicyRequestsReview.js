@@ -596,7 +596,7 @@ class PolicyRequestReview extends Component {
                 />
               )
             }
-            if (change.change_type === 'tear_can_assume_role') {
+            if (change.change_type === 'tra_can_assume_role') {
               return (
                 <TemporaryEscalationComponent
                   key={index}

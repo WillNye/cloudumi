@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React, { useCallback, useState } from 'react'
-import { Form, Icon, Label, Search } from 'semantic-ui-react'
+import { Form, Header, Icon, Label, Search } from 'semantic-ui-react'
 
 export const TypeaheadBlockComponent = (props) => {
   const [isLoading, setIsLoading] = useState(false)
@@ -84,17 +84,15 @@ export const TypeaheadBlockComponent = (props) => {
     [selectedValues, shouldTransformResults, noQuery] // eslint-disable-line
   )
 
-  const selectedValueLabels = selectedValues.map((selectedValue, index) => {
-    return (
-      <Label basic color={'red'} key={index}>
-        {selectedValue}
-        <Icon
-          name='delete'
-          onClick={() => handleSelectedValueDelete(selectedValue)}
-        />
-      </Label>
-    )
-  })
+  const selectedValueLabels = selectedValues.map((selectedValue, index) => (
+    <Label basic color='blue' key={index}>
+      {selectedValue}
+      <Icon
+        name='delete'
+        onClick={() => handleSelectedValueDelete(selectedValue)}
+      />
+    </Label>
+  ))
 
   return (
     <Form.Field required={props.required || false}>
@@ -113,7 +111,12 @@ export const TypeaheadBlockComponent = (props) => {
         showNoResults={false}
       />
       <br />
-      {selectedValueLabels}
+      {selectedValues.length && (
+        <div>
+          {props.defaultTitle && <Header as='h6'>{props.defaultTitle}</Header>}
+          <Label.Group size='tiny'>{selectedValueLabels}</Label.Group>
+        </div>
+      )}
     </Form.Field>
   )
 }

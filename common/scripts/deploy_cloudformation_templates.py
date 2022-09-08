@@ -7,9 +7,15 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
 async def generate_cf_templates(upload: bool = True, suffix: str = ""):
-    from common.aws.cloud_formations.utils import CF_ACCOUNT_TYPES, get_cf_parameters, get_permissions, get_cf_tf_body, get_cf_aws_cli_cmd
-    from common.templates import TEMPLATE_DIR
+    from common.aws.cloud_formations.utils import (
+        CF_ACCOUNT_TYPES,
+        get_cf_aws_cli_cmd,
+        get_cf_parameters,
+        get_cf_tf_body,
+        get_permissions,
+    )
     from common.lib.yaml import yaml
+    from common.templates import TEMPLATE_DIR
 
     destination_dir = os.path.dirname(__file__).replace("common/scripts", "deploy")
 

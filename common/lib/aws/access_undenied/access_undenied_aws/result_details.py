@@ -1,13 +1,14 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from common.config import config
 from common.lib.aws.access_undenied.access_undenied_aws import common
 
 if TYPE_CHECKING:
     from mypy_boto3_iam.type_defs import EvaluationResultTypeDef
 else:
     EvaluationResultTypeDef = object
-from util.log import logger
+logger = config.get_logger()
 
 
 class ResultDetails(object):

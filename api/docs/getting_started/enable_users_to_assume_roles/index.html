@@ -76,7 +76,7 @@
     <div data-md-component="skip">
 
 
-        <a href="#configure-credential-brokering" class="md-skip">
+        <a href="#configure-credential-brokering-role-access" class="md-skip">
           Skip to content
         </a>
 
@@ -1054,6 +1054,8 @@
 
 
 
+
+
         <label class="md-nav__link" for="__nav_8_2">
           Permissions Management and Request Framework
           <span class="md-nav__icon md-icon"></span>
@@ -1130,6 +1132,20 @@
     <li class="md-nav__item">
       <a href="../../features/permissions_management_and_request_framework/decentralized_request_management/" class="md-nav__link">
         Decentralized Request Management
+      </a>
+    </li>
+
+
+
+
+
+
+
+
+
+    <li class="md-nav__item">
+      <a href="../../features/permissions_management_and_request_framework/simplified_policy/" class="md-nav__link">
+        Simplified Policy and Removing Unused Permissions
       </a>
     </li>
 
@@ -1474,60 +1490,6 @@
 
 
 
-        <label class="md-nav__link" for="__nav_9">
-          Swagger
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-
-      <nav class="md-nav" aria-label="Swagger" data-md-level="1">
-        <label class="md-nav__title" for="__nav_9">
-          <span class="md-nav__icon md-icon"></span>
-          Swagger
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-
-
-
-
-
-
-    <li class="md-nav__item">
-      <a href="../../swagger/swagger/" class="md-nav__link">
-        Swagger Documentation
-      </a>
-    </li>
-
-
-
-
-        </ul>
-      </nav>
-    </li>
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-
-
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_10" type="checkbox" id="__nav_10" >
-
-
-
-
-
-
-
-
 
 
 
@@ -1551,14 +1513,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../reference/style_guide/">Documentation Style Guide</a>
 
-            <label for="__nav_10">
+            <label for="__nav_9">
               <span class="md-nav__icon md-icon"></span>
             </label>
 
         </div>
 
       <nav class="md-nav" aria-label="Documentation Style Guide" data-md-level="1">
-        <label class="md-nav__title" for="__nav_10">
+        <label class="md-nav__title" for="__nav_9">
           <span class="md-nav__icon md-icon"></span>
           Documentation Style Guide
         </label>
@@ -1716,20 +1678,15 @@
 
 
 
-<h1 id="configure-credential-brokering"><strong>Configure Credential Brokering</strong><a class="headerlink" href="#configure-credential-brokering" title="Permanent link">&para;</a></h1>
-<p>You may enable users and groups to assume AWS roles using Noq self-service
-controls. To do this, follow the steps in the procedure below to tag AWS
-roles with a user or group defined in your identify provider. You will use
-the Noq user interface to update the policy for a role with one or more new
-tags.</p>
-<p>After a role tag is updated, it might take 1-2 minutes for the role to be
-available to users for whom you have enabled access.</p>
-<h1 id="prerequites"><strong>Prerequites</strong><a class="headerlink" href="#prerequites" title="Permanent link">&para;</a></h1>
-<p>Before you can authorize users and groups to assume AWS roles, you must
-follow the steps in the
-<a href="../5_enable_credential_brokering/">Configure Credential Brokering</a>
-procedure. Please ensure you have completed that procedure before
-continuing.</p>
+<h1 id="configure-credential-brokering-role-access"><strong>Configure Credential Brokering (Role Access) </strong><a class="headerlink" href="#configure-credential-brokering-role-access" title="Permanent link">&para;</a></h1>
+<p>Noq offers self-service controls that enable users and groups to assume AWS
+IAM Roles. This is configured using AWS Tags that specify users or groups defined
+by your identity provider. Noq includes a user interface specifically for updating
+these configurations by automatically creating or editing those tags. </p>
+<h1 id="prerequisites"><strong>Prerequisites</strong><a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h1>
+<p>Before authorizing users and groups to assume AWS IAM Roles, first
+follow the steps to
+<a href="../5_enable_credential_brokering/">Configure Credential Brokering</a>.</p>
 <h1 id="procedure"><strong>Procedure</strong><a class="headerlink" href="#procedure" title="Permanent link">&para;</a></h1>
 <h2 id="1-navigate-to-all-cloud-resources">1. Navigate to <em>All Cloud Resources</em><a class="headerlink" href="#1-navigate-to-all-cloud-resources" title="Permanent link">&para;</a></h2>
 <p>Select <em>Resources</em> &gt; <em>All Cloud Resources</em> from the Noq main menu.</p>
@@ -1755,7 +1712,7 @@ edit tags for the role.</p>
 up one or more keys to use in brokering roles to users and groups. Use one
 or more of those keys here to enable users to assume the role.</p>
 <ol>
-<li>Enter <code>noq_authorized</code> or another key you have configured for credential
+<li>Enter <code>noq-authorized</code> or another key you have configured for credential
 brokering as the key for the new tag.</li>
 <li>Enter the user or group name as the value for the new tag.</li>
 <li>Click the <em>Add</em> button.</li>
@@ -1771,8 +1728,7 @@ assume the role. You may also enter an expiration date for credential brokering
 if desired.</p>
 <p><img alt="enter justification" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_enter_justification.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 <h1 id="next-steps"><strong>Next Steps</strong><a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h1>
-<p>After Noq propagates the policy changes, authorized users will see the role
-in the list of roles they can assume using Noq.</p>
+<p>Authorized users will see the Role appear on the list on their “Access…” page with a “Sign-in” button. It may take up to a minute for enabling or disabling role access to be reflected on that page.</p>
 <p><img alt="user sees role" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/enable_console_role_user_sees_role.png" style="display: block; border-style: solid; border-width: 1px; margin: auto; width:90%" /></p>
 
 

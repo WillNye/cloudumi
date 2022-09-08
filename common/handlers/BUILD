@@ -7,6 +7,7 @@ filegroup(
     srcs = (
         "__init__.py",
         "base.py",
+        "external_processes.py",
     ),
     visibility = ["//visibility:public"],
 )
@@ -22,6 +23,7 @@ py_library(
         "//common/config:lib",
         "//common/exceptions:lib",
         "//common/lib",
+        "//util/log:lib",
         requirement("pytz"),
         requirement("redis"),
         requirement("tornado"),

@@ -10,13 +10,13 @@ from common.lib.self_service.models import (
 from common.models import AwsResourcePrincipalModel
 from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import tenant
-from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import NOQAsyncHTTPTestCase
 
 
 @pytest.mark.usefixtures("redis")
 @pytest.mark.usefixtures("s3")
 @pytest.mark.usefixtures("create_default_resources")
-class TestTypeAheadHandler(ConsoleMeAsyncHTTPTestCase):
+class TestTypeAheadHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 

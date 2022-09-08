@@ -16,10 +16,10 @@ def generate_jwt_token_for_testing(
     return async_to_sync(generate_jwt_token)(user, groups, formatted_tenant_name)
 
 
-class ConsoleMeAsyncHTTPTestCase(AsyncHTTPTestCase):
+class NOQAsyncHTTPTestCase(AsyncHTTPTestCase):
     def __init__(self, *args, **kwargs):
         self.maxDiff = None
-        super(ConsoleMeAsyncHTTPTestCase, self).__init__(*args, **kwargs)
+        super(NOQAsyncHTTPTestCase, self).__init__(*args, **kwargs)
 
     def fetch(self, *args, **kwargs):
         user = kwargs.pop("user", "testuser@example.com")
@@ -36,7 +36,7 @@ class ConsoleMeAsyncHTTPTestCase(AsyncHTTPTestCase):
                     )
                 )
             kwargs["headers"] = headers
-        return super(ConsoleMeAsyncHTTPTestCase, self).fetch(*args, **kwargs)
+        return super(NOQAsyncHTTPTestCase, self).fetch(*args, **kwargs)
 
     def fetch_mutual_tls(self, *args, **kwargs):
         omit_headers = kwargs.pop("omit_headers", False)
@@ -48,4 +48,4 @@ class ConsoleMeAsyncHTTPTestCase(AsyncHTTPTestCase):
                     ("noq_auth", generate_jwt_token_for_testing())
                 )
             kwargs["headers"] = headers
-        return super(ConsoleMeAsyncHTTPTestCase, self).fetch(*args, **kwargs)
+        return super(NOQAsyncHTTPTestCase, self).fetch(*args, **kwargs)

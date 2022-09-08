@@ -384,6 +384,7 @@ async def create_user_pool_client(user_pool_id, dev_domain_url):
             "ALLOW_USER_PASSWORD_AUTH",
             "ALLOW_USER_SRP_AUTH",
             "ALLOW_REFRESH_TOKEN_AUTH",
+            "ALLOW_ADMIN_USER_PASSWORD_AUTH",
         ],
         CallbackURLs=[
             f"{dev_domain_url}/auth",
@@ -457,6 +458,9 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
 
 
 class TenantRegistrationHandler(TornadoRequestHandler):
+    def check_xsrf_cookie(self):
+        pass
+
     def set_default_headers(self):
         valid_referrers = ["localhost", "noq.dev", "www.noq.dev", "127.0.0.1"]
         referrer = self.request.headers.get("Referer")
@@ -609,9 +613,19 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         dev_domain_url = uri_scheme + dev_domain.replace("_", ".") + port
         # create new tenant
         user_pool_id = await create_user_pool(dev_domain, dev_domain_url)
-        user_pool_domain = await create_user_pool_domain(
-            user_pool_id, cognito_url_domain
-        )
+        try:
+            user_pool_domain = await create_user_pool_domain(
+                user_pool_id, cognito_url_domain
+            )
+        except Exception as e:
+            self.set_status(400)
+            self.write(
+                {
+                    "error": f"Unable to create user pool domain: {str(e)}",
+                    "error_description": "Failed to create user pool domain. Please try again.",
+                }
+            )
+            return
         if user_pool_domain["ResponseMetadata"]["HTTPStatusCode"] != 200:
             self.set_status(400)
             self.write(

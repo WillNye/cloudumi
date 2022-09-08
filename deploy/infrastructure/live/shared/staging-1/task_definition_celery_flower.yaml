@@ -11,10 +11,6 @@ containerDefinitions:
       - hostPort: 7071
         protocol: tcp
         containerPort: 7071
-    entryPoint:
-      - bash
-      - "-c"
-      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; cd /app/common/celery_tasks/container.binary.runfiles/cloudumi; pip install flower; python -m celery -A common.celery_tasks.celery_tasks flower --port=7101'
     linuxParameters:
       devices: []
       initProcessEnabled: true
@@ -24,6 +20,10 @@ containerDefinitions:
         value: s3://staging-noq-dev-shared-staging-1-tenant-configuration-store/shared/staging.1.config.yaml
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
+      - name: RUNTIME_PROFILE
+        value: CELERY_FLOWER
+      - name: STAGE
+        value: staging
     dnsServers: []
     mountPoints: []
     dockerSecurityOptions: []

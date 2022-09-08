@@ -5,7 +5,7 @@ from deepdiff import DeepDiff
 
 import common.lib.noq_json as json
 from util.tests.fixtures.globals import tenant
-from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
+from util.tests.fixtures.util import NOQAsyncHTTPTestCase
 
 
 @pytest.mark.usefixtures("redis")
@@ -14,7 +14,7 @@ from util.tests.fixtures.util import ConsoleMeAsyncHTTPTestCase
 @pytest.mark.usefixtures("sts")
 @pytest.mark.usefixtures("create_default_resources")
 @pytest.mark.usefixtures("dynamodb")
-class TestRequestsHandler(ConsoleMeAsyncHTTPTestCase):
+class TestRequestsHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from common.config import config
 
@@ -814,7 +814,7 @@ Policies:
             )
 
 
-class TestRequestDetailHandler(ConsoleMeAsyncHTTPTestCase):
+class TestRequestDetailHandler(NOQAsyncHTTPTestCase):
     def get_app(self):
         from api.routes import make_app
 

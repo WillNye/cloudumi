@@ -28,7 +28,7 @@ from common.exceptions.exceptions import (
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
 from common.lib.auth import AuthenticationError, is_tenant_admin
-from common.lib.aws.cached_resources.iam import get_user_active_tear_roles_by_tag
+from common.lib.aws.cached_resources.iam import get_user_active_tra_roles_by_tag
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
 from common.lib.oidc import authenticate_user_by_oidc
@@ -634,9 +634,7 @@ class BaseHandler(TornadoRequestHandler):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
 
-        self.eligible_roles += await get_user_active_tear_roles_by_tag(
-            tenant, self.user
-        )
+        self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
         self.eligible_roles = await group_mapping.get_eligible_roles(
             self.eligible_roles,
             self.user,
@@ -916,7 +914,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
-                self.eligible_roles += await get_user_active_tear_roles_by_tag(
+                self.eligible_roles += await get_user_active_tra_roles_by_tag(
                     tenant, self.user
                 )
                 self.eligible_roles = list(set(self.eligible_roles))

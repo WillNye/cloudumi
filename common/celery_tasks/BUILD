@@ -6,12 +6,14 @@ load("@io_bazel_rules_docker//python:image.bzl", "py_layer")
 load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
 
 INT_DEPS = [
+    "//common/aws:lib",
     "//common/config:lib",
     "//common/exceptions:lib",
-    "//common/aws:lib",
+    "//common/handlers:lib",
     "//common/lib",
     "//common/lib/aws/access_undenied:lib",
     "//common/user_request:lib",
+    "//functional_tests:lib",
     "//identity:lib",
     "//plugins/auth:lib",
     "//plugins/aws:lib",
@@ -29,6 +31,7 @@ EXT_DEPS = [
     requirement("billiard"),
     requirement("celery"),
     requirement("checkov"),
+    requirement("pytest"),
     requirement("retrying"),
     requirement("sentry_sdk"),
     requirement("ujson"),
@@ -40,6 +43,7 @@ REQUIRES = [
     "billiard",
     "celery",
     "checkov",
+    "pytest",
     "retrying",
     "sentry_sdk",
     "ujson",
@@ -70,6 +74,7 @@ py_binary(
     name = "bin",
     data = [
         "//configs/development_account:configs",
+        "//configs:fluent-bit",
     ],
     srcs_version = "PY3",
     srcs = [
@@ -80,6 +85,7 @@ py_binary(
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
         "AWS_REGION": "us-west-2",
+        "RUNTIME_PROFILE": "CELERY_WORKER",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -113,19 +119,18 @@ container_image(
     base = "//docker/base:base_docker",
     env = {
         "DEBUG": "1",
+        "RUNTIME_PROFILE": "CELERY_WORKER",
     },
     layers = [
         "//deploy/layers:config",
         "//deploy/layers:web_site",
         "//deploy/layers:celery_tasks.sshd_config",
-        "//deploy/layers:newrelic",
         "//deploy/layers:weep",
     ],
     ports = ["2223"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
-    docker_run_flags = "-v ~/.aws:/root/.aws",
 )
 
 container_image(
@@ -135,21 +140,21 @@ container_image(
         "TZ": "America/Los_Angeles",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "NOQ_CONTAINER": "1",
-        "AWS_PROFILE": "noq_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
+        "RUNTIME_PROFILE": "CELERY_WORKER",
     },
     layers = [
         "//deploy/layers:config",
         "//deploy/layers:web_site",
         "//deploy/layers:celery_tasks.sshd_config",
-        "//deploy/layers:newrelic",
         "//deploy/layers:weep",
     ],
     ports = ["2223"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
-    docker_run_flags = "-v ~/.aws:/root/.aws",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=cloudumi-redis:172.17.0.1",
 )
 
 py3_image(

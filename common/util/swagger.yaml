@@ -1,13 +1,13 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
-# consoleme/models.py:
+# noq/models.py:
 # `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' ; black ../models.py`
 # To exclude a property from being returned when calling model.dict() by default add the property is_secret: true
 
 openapi: 3.0.0
 info:
-  description: ConsoleMe API definition
+  description: NOQ API definition
   version: "2.0.0"
-  title: ConsoleMe v2 API
+  title: NOQ v2 API
   contact:
     email: consoleme-owners@netflix.com
   license:
@@ -17,7 +17,7 @@ servers:
   - url: "{server}/api/v2"
     variables:
       server:
-        default: https://consoleme.example.com
+        default: https://noq.example.com
 tags:
   - name: roles
     description: IAM Role endpoints
@@ -447,7 +447,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PrincipalModelTearConfig"
+              $ref: "#/components/schemas/PrincipalModelTraConfig"
       responses:
         "200":
           description: OK
@@ -695,7 +695,7 @@ components:
           type: string
           readOnly: true
         policy_sha256:
-          description: hash of the most recent resource policy seen by ConsoleMe
+          description: hash of the most recent resource policy seen by NOQ
           type: string
           readOnly: true
         policy:
@@ -1293,6 +1293,9 @@ components:
             detach_managed_policies:
               type: boolean
               default: true
+            remove_unused_permissions:
+              type: boolean
+              default: false
             policy:
               $ref: "#/components/schemas/PolicyModel"
             old_policy:
@@ -1362,14 +1365,14 @@ components:
               type: string
               readOnly: true
               description: the change model ID of the source change, that this change was generated from
-    TearRoleChangeModel:
+    TraRoleChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
         - type: object
           properties:
             change_type:
               type: string
-              pattern: "tear_can_assume_role"
+              pattern: "tra_can_assume_role"
     TenantDetailsModel:
       type: object
       required:
@@ -1485,7 +1488,7 @@ components:
               - $ref: "#/components/schemas/PermissionsBoundaryChangeModel"
               - $ref: "#/components/schemas/ResourcePolicyChangeModel"
               - $ref: "#/components/schemas/AssumeRolePolicyChangeModel"
-              - $ref: "#/components/schemas/TearRoleChangeModel"
+              - $ref: "#/components/schemas/TraRoleChangeModel"
               - $ref: "#/components/schemas/ResourceTagChangeModel"
               - $ref: "#/components/schemas/GenericFileChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyResourceChangeModel"
@@ -1815,7 +1818,7 @@ components:
           items:
             anyOf:
               - $ref: "#/components/schemas/AppDetailsModel"
-    PrincipalModelTearConfig:
+    PrincipalModelTraConfig:
       type: object
       properties:
         active_users:
@@ -1880,7 +1883,7 @@ components:
               items:
                 type: object # TODO: make tags schema
             elevated_access_config:
-              $ref: "#/components/schemas/PrincipalModelTearConfig"
+              $ref: "#/components/schemas/PrincipalModelTraConfig"
             role_access_config:
               $ref: "#/components/schemas/PrincipalModelRoleAccessConfig"
             effective_policy:
@@ -2518,7 +2521,7 @@ components:
             type: string
           default: []
 
-    TearApprovalRule:
+    TraApprovalRule:
       type: object
       required:
         - name
@@ -2550,15 +2553,15 @@ components:
         accounts:
           $ref: "#/components/schemas/IncludeIgnoreAccountList"
 
-    TearConfig:
+    TraConfig:
       type: object
       properties:
         active_users_tag:
           type: string
-          description: Customer-specified or default tag used on roles to denote users that currently have TEAR access
+          description: Customer-specified or default tag used on roles to denote users that currently have temporary role access
         supported_groups_tag:
           type: string
-          description: Customer-specified or default tag used on roles to denote groups that can request TEAR access
+          description: Customer-specified or default tag used on roles to denote groups that can request temporary role access
         requires_approval:
           type: boolean
           description: |-
@@ -2574,7 +2577,7 @@ components:
         approval_rules:
           type: array
           items:
-            $ref: "#/components/schemas/TearApprovalRule"
+            $ref: "#/components/schemas/TraApprovalRule"
           default: []
 
     Secrets:
