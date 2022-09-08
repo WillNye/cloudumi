@@ -15,7 +15,7 @@ if os.getenv("DEBUG"):
 
 
 def run_celery_worker(log_level: str = "DEBUG", concurrency: str = "16"):
-    celery_tasks.app.worker_main(
+    celery_tasks.app.start(
         f"worker -l {log_level} -E --concurrency={concurrency} "
         "--max-memory-per-child=1000000 --max-tasks-per-child=50 "
         "--soft-time-limit=3600 -O fair".split(" ")
@@ -23,11 +23,11 @@ def run_celery_worker(log_level: str = "DEBUG", concurrency: str = "16"):
 
 
 def run_celery_scheduler(log_level: str = "DEBUG"):
-    celery_tasks.app.worker_main(f"beat -l {log_level}".split(" "))
+    celery_tasks.app.start(f"beat -l {log_level}".split(" "))
 
 
 def run_celery_flower(log_level: str = "DEBUG", port: int = 7101):
-    celery_tasks.app.worker_main(f"flower -l {log_level} --port={port}".split(" "))
+    celery_tasks.app.start(f"flower -l {log_level} --port={port}".split(" "))
 
 
 if __name__ == "__main__":
