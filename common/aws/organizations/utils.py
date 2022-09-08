@@ -1,4 +1,5 @@
 import sys
+import uuid
 from typing import Any, Dict, Set, Tuple
 
 import boto3
@@ -388,6 +389,7 @@ async def autodiscover_aws_org_accounts(tenant: str) -> set[str]:
                 "org_accounts", tenant
             ).from_dict(
                 {
+                    "uuid": str(uuid.uuid4()),  # This is a new org account
                     "org_id": org_details["Organization"]["Id"],
                     "account_id": account_id,
                     "account_name": org_account_name,
@@ -411,10 +413,14 @@ async def cache_org_structure(tenant: str) -> Dict[str, Any]:
     for organization in (
         ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
     ):
+        org_uuid = organization.uuid
         org_account_id = organization.account_id
-        role_to_assume = spoke_accounts.with_query(
-            {"account_id": org_account_id}
-        ).first.name
+        try:
+            role_to_assume = spoke_accounts.with_query(
+                {"account_id": org_account_id}
+            ).first.name
+        except ValueError:
+            role_to_assume = None
         if not org_account_id:
             raise MissingConfigurationValue(
                 "Your AWS Organizations Management Account ID is not specified in configuration. "
@@ -435,6 +441,7 @@ async def cache_org_structure(tenant: str) -> Dict[str, Any]:
                 region=config.region,
             )
             all_org_structure.update(org_structure)
+            all_org_structure["uuid"] = str(org_uuid)
         except Exception as e:
             sentry_sdk.capture_exception()
             log.error(
@@ -442,6 +449,7 @@ async def cache_org_structure(tenant: str) -> Dict[str, Any]:
                     **log_data,
                     "message": "Unable to retrieve roles from AWS Organizations",
                     "error": str(e),
+                    "org_uuid": org_uuid,
                     "org_account_id": org_account_id,
                     "role_to_assume": role_to_assume,
                     "region": config.region,
