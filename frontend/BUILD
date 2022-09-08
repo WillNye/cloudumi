@@ -105,7 +105,6 @@ react_scripts(
     env = {
         "BUILD_PATH": "./build",
         "DISABLE_ESLINT_PLUGIN": "true",
-        "PUBLIC_URL": "$(PUBLIC_URL)"
     },
     output_dir = True,
     visibility = ["//visibility:public"],
