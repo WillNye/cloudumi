@@ -4,6 +4,7 @@ load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 INT_DEPS = [
     "//plugins:lib",
+    "//util/log:lib",
 ]
 
 EXT_DEPS = [

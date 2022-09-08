@@ -71,6 +71,7 @@ py_binary(
     name = "bin",
     data = [
         "//configs/development_account:configs",
+        "//configs:fluent-bit",
     ],
     srcs_version = "PY3",
     srcs = [
