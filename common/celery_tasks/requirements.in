@@ -2,6 +2,7 @@ aiohttp
 asgiref
 billiard
 celery
+flower
 logmatic-python
 retrying
 sentry_sdk

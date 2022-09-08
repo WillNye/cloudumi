@@ -31,6 +31,7 @@ EXT_DEPS = [
     requirement("billiard"),
     requirement("celery"),
     requirement("checkov"),
+    requirement("flower"),
     requirement("pytest"),
     requirement("retrying"),
     requirement("sentry_sdk"),
