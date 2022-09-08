@@ -3,7 +3,6 @@ load("@build_bazel_rules_nodejs//:index.bzl", "copy_to_bin", "nodejs_test")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
-#load("@io_bazel_rules_docker//nodejs:image.bzl", "nodejs_image")
 load("@npm//react-scripts:index.bzl", "react_scripts", "react_scripts_test")
 
 
@@ -109,17 +108,6 @@ react_scripts(
     output_dir = True,
     visibility = ["//visibility:public"],
 )
-
-# genrule(
-#    name = "upload",
-#    srcs = glob(["build/**"]),
-#    outs = [
-#         "running",
-#     ],
-#    cmd = "aws s3 sync frontend/dist/ {BUCKETPATH}",
-#    exec_tools = ["//frontend:build"],
-#    visibility = ["//visibility:public"],
-# )
 
 react_scripts(
     name = "start",
