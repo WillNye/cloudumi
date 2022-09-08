@@ -81,7 +81,7 @@ const ExpirationDateBlock = ({
   const updateDateButton = (
     <Button
       type='submit'
-      content='Update Expiration Date'
+      content='Set New Date'
       primary
       disabled={
         expirationDate === expiration_date ||
