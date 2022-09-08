@@ -179,3 +179,7 @@ http_file(
     url = "https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/weep",
     sha256 = "532004cb40f48d5c8b7f37db87ea41e82619376e72761e1e9657dde63d1fae19",
 )
+
+register_toolchains(
+    "//toolchain:macos_dummy_cpp_toolchain",
+)

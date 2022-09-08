@@ -102,7 +102,7 @@ spoke_accounts:
     delegate_admin_to_owner: false
     restrict_viewers_of_account_resources: false
     read_only: true
-temporary_elevated_access_requests:
+temporary_role_access_requests:
   enabled: true
   mfa:
     enabled: false
@@ -224,7 +224,7 @@ hub_account:
 policies:
   role_name: NoqSpokeRoleLocalDev
   ip_restrictions: false
-temporary_elevated_access_requests:
+temporary_role_access_requests:
   enabled: true
   mfa:
     enabled: false

@@ -13,6 +13,10 @@ _global_:
   metrics:
     cloudwatch:
       enabled: false
+    fluent-bit:
+      enabled: false
+      config: configs/fluent-bit/fluent-bit.conf
+      exe: /opt/fluent-bit/bin/fluent-bit
   web:
     path: "frontend/dist"
   landing_page_domains:

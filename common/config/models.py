@@ -70,9 +70,11 @@ class ModelAdapter:
         segmented_key = key.split(".")
         if len(segmented_key) == 1:
             # Base Condition
+            value_dict = value.dict(exclude_secrets=False, exclude_none=False)
             if isinstance(config_item.get(key), dict):
-                config_item[key].update(value.dict())
-            config_item[key] = dict(value)
+                config_item[key].update(value_dict)
+            else:
+                config_item[key] = value_dict
             return config_item
 
         if segmented_key[0] not in config_item:

@@ -20,7 +20,7 @@ from common.models import (
     CloneRoleRequestModel,
     HubAccount,
     PrincipalModelRoleAccessConfig,
-    PrincipalModelTearConfig,
+    PrincipalModelTraConfig,
     RoleCreationRequestModel,
 )
 
@@ -756,20 +756,20 @@ async def aio_get_role_managed_policy_documents(role: str, iam_client):
     )
 
 
-async def update_role_tear_config(
-    tenant, user, role_name, account_id: str, tear_config: PrincipalModelTearConfig
+async def update_role_tra_config(
+    tenant, user, role_name, account_id: str, tra_config: PrincipalModelTraConfig
 ) -> [bool, str]:
     from common.aws.iam.role.models import IAMRole
     from common.user_request.utils import (
-        get_active_tear_users_tag,
-        get_tear_supported_groups_tag,
+        get_active_tra_users_tag,
+        get_tra_supported_groups_tag,
     )
 
     client = await aio_wrapper(
         get_tenant_iam_conn,
         tenant,
         account_id,
-        "update_role_tear_config",
+        "update_role_tra_config",
         user=user,
         sts_client_kwargs=dict(
             region_name=config.region,
@@ -783,12 +783,12 @@ async def update_role_tear_config(
             RoleName=role_name,
             Tags=[
                 {
-                    "Key": get_active_tear_users_tag(tenant),
-                    "Value": ":".join(tear_config.active_users),
+                    "Key": get_active_tra_users_tag(tenant),
+                    "Value": ":".join(tra_config.active_users),
                 },
                 {
-                    "Key": get_tear_supported_groups_tag(tenant),
-                    "Value": ":".join(tear_config.supported_groups),
+                    "Key": get_tra_supported_groups_tag(tenant),
+                    "Value": ":".join(tra_config.supported_groups),
                 },
             ],
         )

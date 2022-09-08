@@ -1,0 +1,31 @@
+.multi-factor-auth {
+  width: 80%;
+  margin: auto;
+  padding-top: 100px;
+  padding-bottom: 20px;
+  max-width: 1200px;
+
+  &__input {
+    max-width: 300px;
+  }
+
+  &__qrcode {
+    max-width: 300px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  &__qrcode_text {
+    padding-top: 10px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  &__qrcode_text_code {
+    padding-top: 10px;
+    text-align: center;
+    cursor: pointer;
+  }
+}

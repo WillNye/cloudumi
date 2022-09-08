@@ -52,6 +52,9 @@ Each target has a name that uniquely identifies a build target. The path disambi
 # Setup your dev environment
 
 - Note: you can use `ibazel` to replace all `bazel` or `bazelisk` commands to speed up development. See [iBazel Overview](#ibazel-overview) for an example.
+- Optionally install fluent-bit to run SaaS with fluent-bit running: `curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh`
+- OR: https://docs.fluentbit.io/manual/installation/getting-started-with-fluent-bit
+- Note: if you don't have a `fluent-bit` binary running on your system, the binary build jobs (`//api:bin, //common/celery_tasks:bin` will still run and provide a warning that fluent-bit cannot be found) - this will not impact our staging or prod deployments.
 
 ## Containers
 

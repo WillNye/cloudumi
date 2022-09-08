@@ -6,11 +6,13 @@ import cachetools
 from aws_error_utils import ClientError
 from cachetools import keys
 
+from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import common
 from common.models import SpokeAccount
-from util.log import logger
+
+logger = config.get_logger()
 
 if TYPE_CHECKING:
     from mypy_boto3_iam import IAMClient

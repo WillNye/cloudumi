@@ -1,5 +1,7 @@
 boto3
 botocore
+flake8
+moto
 pytest
 tornado
 ujson

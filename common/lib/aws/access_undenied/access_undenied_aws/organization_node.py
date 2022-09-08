@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
+from common.config import config
 from common.lib.aws.access_undenied.access_undenied_aws import common
-from util.log import logger
+
+logger = config.get_logger()
 
 
 class OrganizationNode(object):

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from aws_error_utils import errors
 
+from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import common, organization_node
@@ -10,7 +11,8 @@ from common.lib.aws.access_undenied.access_undenied_aws.organization_node import
     OrganizationNode,
 )
 from common.models import SpokeAccount
-from util.log import logger
+
+logger = config.get_logger()
 
 if TYPE_CHECKING:
     from mypy_boto3_organizations import OrganizationsClient
