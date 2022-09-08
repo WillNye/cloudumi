@@ -31,6 +31,7 @@ EXT_DEPS = [
     requirement("billiard"),
     requirement("celery"),
     requirement("checkov"),
+    requirement("flower"),
     requirement("pytest"),
     requirement("retrying"),
     requirement("sentry_sdk"),
@@ -142,7 +143,7 @@ container_image(
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
-        "RUNTIME_PROFILE": "CELERY_WORKER",
+        "RUNTIME_PROFILE": "CELERY_FLOWER",
     },
     layers = [
         "//deploy/layers:config",
