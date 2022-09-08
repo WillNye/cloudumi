@@ -440,8 +440,8 @@ async def cache_org_structure(tenant: str) -> Dict[str, Any]:
                 role_to_assume=role_to_assume,
                 region=config.region,
             )
+            org_structure["uuid"] = str(org_uuid)
             all_org_structure.update(org_structure)
-            all_org_structure["uuid"] = str(org_uuid)
         except Exception as e:
             sentry_sdk.capture_exception()
             log.error(
