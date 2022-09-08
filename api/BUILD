@@ -133,6 +133,7 @@ py_binary(
     name = "bin",
     data = [
         "//configs/development_account:configs",
+        "//configs:fluent-bit",
         "//frontend:build",
         ":docs_sources",
     ],

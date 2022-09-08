@@ -202,18 +202,18 @@ const NavHeader = ({ showMenuItems = true }) => {
         }}
       >
         <Menu.Item
-          as='a'
+          as={NavLink}
+          to='/'
           header
           style={{
-            // margin: "auto",
             fontSize: '20px',
             textTransform: 'uppercase',
             width: '240px',
           }}
-          href='/'
         >
           <Image size='small' src={NoqLogo} style={{ marginRight: '1.5em' }} />
         </Menu.Item>
+
         {showMenuItems && (
           <Menu.Menu position='left'>
             {generateRoleLoginDropDown()}

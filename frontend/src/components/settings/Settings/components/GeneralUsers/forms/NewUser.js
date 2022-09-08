@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { useApi } from 'hooks/useApi'
-
 import { useForm } from 'react-hook-form'
-
 import { Form, Button, Segment } from 'semantic-ui-react'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { Bar, Fill } from 'lib/Misc'
 import TypeaheadBlockComponent from 'components/blocks/TypeaheadBlockComponent'
+
+const GROUPS_TITLE =
+  'Groups this user is already a member of (added groups will also be shown in the list below)'
 
 export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
   const { register, handleSubmit, setValue, watch } = useForm({ defaultValues })
@@ -67,6 +68,7 @@ export const NewUser = ({ closeModal, onFinish, defaultValues }) => {
           typeahead={`/api/v3/auth/cognito/groups`}
           label='Groups'
           defaultValues={fields?.Groups}
+          defaultTitle={GROUPS_TITLE}
           sendRequestCommon={get.do}
           shouldTransformResults
           resultsFormatter={(results) =>
