@@ -63,6 +63,7 @@ py_binary(
     srcs = [
         "upload_cdn.py",
     ],
+    main = "upload_cdn.py",
     deps = EXT_DEPS,
     visibility = ["//visibility:public"],
 )

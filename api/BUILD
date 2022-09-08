@@ -119,7 +119,7 @@ REQUIRES = [
 
 py_library(
     name = "lib",
-    data = ["//util:upload"],
+    data = [],
     srcs_version = "PY3",
     srcs = [
         ":src",
