@@ -1105,36 +1105,6 @@ class CognitoUserClient:
         else:
             return delivery
 
-    def confirm_user_sign_up(self, username, confirmation_code):
-        """
-        Confirms a previously created user. A user must be confirmed before they
-        can sign in to Amazon Cognito.
-
-        :param username: The name of the user to confirm.
-        :param confirmation_code: The confirmation code sent to the user's registered
-                                  email address.
-        :return: True when the confirmation succeeds.
-        """
-        try:
-            kwargs = {
-                "ClientId": self.client_id,
-                "Username": username,
-                "ConfirmationCode": confirmation_code,
-            }
-            if self.client_secret is not None:
-                kwargs["SecretHash"] = self._secret_hash(username)
-            self.cognito_idp_client.confirm_sign_up(**kwargs)
-        except ClientError as err:
-            log.error(
-                "Couldn't confirm sign up for %s. Here's why: %s: %s",
-                username,
-                err.response["Error"]["Code"],
-                err.response["Error"]["Message"],
-            )
-            raise
-        else:
-            return True
-
     async def start_sign_in(self, username, password):
         """
         Starts the sign-in process for a user by using administrator credentials.
@@ -1418,89 +1388,6 @@ class CognitoUserClient:
             raise
         else:
             return user_confirm
-
-    def sign_in_with_tracked_device(
-        self, username, password, device_key, device_group_key, device_password, aws_srp
-    ):
-        """
-        Signs in to Amazon Cognito as a user who has a tracked device. Signing in
-        with a tracked device lets a user sign in without entering a new MFA code.
-
-        Signing in with a tracked device requires that the client respond to the SRP
-        protocol. The scenario associated with this example uses the warrant package
-        to help with SRP calculations.
-
-        For more information on SRP, see https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol.
-
-        :param username: The user that is associated with the device.
-        :param password: The user's password.
-        :param device_key: The key of a tracked device.
-        :param device_group_key: The group key of a tracked device.
-        :param device_password: The password that is associated with the device.
-        :param aws_srp: A class that helps with SRP calculations. The scenario
-                        associated with this example uses the warrant package.
-        :return: The result of the authentication. When successful, this contains an
-                 access token for the user.
-        """
-        try:
-            srp_helper = aws_srp.AWSSRP(
-                username=username,
-                password=device_password,
-                pool_id="_",
-                client_id=self.client_id,
-                client_secret=None,
-                client=self.cognito_idp_client,
-            )
-
-            response_init = self.cognito_idp_client.admin_initiate_auth(
-                UserPoolId=self.user_pool_id,
-                ClientId=self.client_id,
-                AuthFlow="ADMIN_USER_PASSWORD_AUTH",
-                AuthParameters={
-                    "USERNAME": username,
-                    "PASSWORD": password,
-                    "DEVICE_KEY": device_key,
-                },
-            )
-            if response_init["ChallengeName"] != "DEVICE_SRP_AUTH":
-                raise RuntimeError(
-                    f"Expected DEVICE_SRP_AUTH challenge but got {response_init['ChallengeName']}."
-                )
-
-            auth_params = srp_helper.get_auth_params()
-            auth_params["DEVICE_KEY"] = device_key
-            response_auth = self.cognito_idp_client.respond_to_auth_challenge(
-                ClientId=self.client_id,
-                ChallengeName="DEVICE_SRP_AUTH",
-                ChallengeResponses=auth_params,
-            )
-            if response_auth["ChallengeName"] != "DEVICE_PASSWORD_VERIFIER":
-                raise RuntimeError(
-                    f"Expected DEVICE_PASSWORD_VERIFIER challenge but got "
-                    f"{response_init['ChallengeName']}."
-                )
-
-            challenge_params = response_auth["ChallengeParameters"]
-            challenge_params["USER_ID_FOR_SRP"] = device_group_key + device_key
-            cr = srp_helper.process_challenge(challenge_params)
-            cr["USERNAME"] = username
-            cr["DEVICE_KEY"] = device_key
-            response_verifier = self.cognito_idp_client.respond_to_auth_challenge(
-                ClientId=self.client_id,
-                ChallengeName="DEVICE_PASSWORD_VERIFIER",
-                ChallengeResponses=cr,
-            )
-            auth_tokens = response_verifier["AuthenticationResult"]
-        except ClientError as err:
-            log.error(
-                "Couldn't start client sign in for %s. Here's why: %s: %s",
-                username,
-                err.response["Error"]["Code"],
-                err.response["Error"]["Message"],
-            )
-            raise
-        else:
-            return auth_tokens
 
     def update_user_mfa_status(self, username: str, enabled: bool):
         # RespondToAuthChallenge
