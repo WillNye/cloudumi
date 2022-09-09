@@ -3,8 +3,8 @@ load("@build_bazel_rules_nodejs//:index.bzl", "copy_to_bin", "nodejs_test")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
-#load("@io_bazel_rules_docker//nodejs:image.bzl", "nodejs_image")
 load("@npm//react-scripts:index.bzl", "react_scripts", "react_scripts_test")
+
 
 # Filename conventions described at
 # https://create-react-app.dev/docs/running-tests#filename-conventions
@@ -103,7 +103,7 @@ react_scripts(
     data = _RUNTIME_DEPS,
     env = {
         "BUILD_PATH": "./build",
-        "DISABLE_ESLINT_PLUGIN": "true"
+        "DISABLE_ESLINT_PLUGIN": "true",
     },
     output_dir = True,
     visibility = ["//visibility:public"],
