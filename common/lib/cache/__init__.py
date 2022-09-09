@@ -61,7 +61,9 @@ async def store_json_results_in_redis_and_s3(
     if not tenant:
         raise Exception("Invalid tenant")
     red = RedisHandler().redis_sync(tenant)
-    stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+    stats = get_plugin_by_name(
+        config.get("_global_.plugins.metrics", "cmsaas_metrics")
+    )()
 
     last_updated_redis_key = config.get_tenant_specific_key(
         "store_json_results_in_redis_and_s3.last_updated_redis_key",
@@ -177,7 +179,9 @@ async def retrieve_json_data_from_redis_or_s3(
     if not tenant:
         raise Exception("Invalid tenant")
     red = RedisHandler().redis_sync(tenant)
-    stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+    stats = get_plugin_by_name(
+        config.get("_global_.plugins.metrics", "cmsaas_metrics")
+    )()
     stats.count(
         f"{function}.called",
         tags={

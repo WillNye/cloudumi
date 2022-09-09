@@ -14,7 +14,7 @@ from common.lib.role_updater.schemas import RoleUpdaterRequest
 from common.models import SpokeAccount
 
 log = config.get_logger()
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
 async def update_role(event, tenant, user):

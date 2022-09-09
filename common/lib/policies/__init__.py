@@ -27,7 +27,7 @@ from common.lib.role_updater.handler import update_role
 from common.models import ExtendedRequestModel, RequestStatus
 
 log = config.get_logger()
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
 async def invalid_characters_in_policy(policy_value):

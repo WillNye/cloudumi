@@ -169,7 +169,7 @@ class BaseJSONHandler(TornadoRequestHandler):
             )
             return
         stats = get_plugin_by_name(
-            config.get("_global_.plugins.metrics", "fluent_bit")
+            config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
         stats.timer("base_handler.incoming_request")
         if self.request.method.lower() == "options":
@@ -276,7 +276,7 @@ class BaseHandler(TornadoRequestHandler):
             await self.finish()
             raise SilentException(log_data["message"])
         stats = get_plugin_by_name(
-            config.get("_global_.plugins.metrics", "fluent_bit")
+            config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
         self.tracer = None
 
@@ -388,7 +388,7 @@ class BaseHandler(TornadoRequestHandler):
             config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
         )()
         stats = get_plugin_by_name(
-            config.get("_global_.plugins.metrics", "fluent_bit")
+            config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
         refresh_cache = (
             self.request.arguments.get("refresh_cache", [False])[0] or refresh_cache
@@ -862,7 +862,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
             await self.finish()
             raise SilentException(log_data["message"])
         stats = get_plugin_by_name(
-            config.get("_global_.plugins.metrics", "fluent_bit")
+            config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
         stats.timer("base_handler.incoming_request")
         auth = get_plugin_by_name(

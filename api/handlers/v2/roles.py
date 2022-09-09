@@ -32,7 +32,7 @@ from common.models import (
     WebResponse,
 )
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
 
 

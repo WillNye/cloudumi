@@ -59,7 +59,7 @@ from common.models import WebResponse
 from common.user_request.models import IAMRequest
 from common.user_request.utils import TRA_CONFIG_BASE_KEY, get_tra_config
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
 
 

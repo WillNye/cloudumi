@@ -19,7 +19,7 @@ from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 
 log = config.get_logger()
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 
 class ResourceDetailHandler(BaseAPIV2Handler):

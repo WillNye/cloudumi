@@ -9,7 +9,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.models import Status2, WebResponse
 
 log = config.get_logger()
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 credential_mapping = CredentialAuthorizationMapping()
 
 

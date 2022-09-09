@@ -12,7 +12,7 @@ from identity.lib.groups.groups import get_group_by_name
 from identity.lib.groups.models import GroupAttributes, OktaIdentityProvider
 from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 
-stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "fluent_bit"))()
+stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
 
 
