@@ -2110,8 +2110,6 @@ components:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
         - type: object
-          required:
-            - expiration_date
           properties:
             expiration_date:
               type: string
@@ -2122,8 +2120,6 @@ components:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
         - type: object
-          required:
-            - ttl
           properties:
             ttl:
               type: ["integer", "null"]
