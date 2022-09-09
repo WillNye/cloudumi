@@ -140,8 +140,6 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
 from common.config import config
 from common.lib.sentry import before_send_event
 
-log = config.get_logger()
-
 
 def make_app(jwt_validator=None):
     """make_app."""

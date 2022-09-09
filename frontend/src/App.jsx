@@ -30,6 +30,7 @@ import { MainProvider } from './MainProvider'
 import AutomatedPermissions from 'components/AutomatedPermissions'
 import EULA from './components/EULA'
 import ErrorBoundary from 'components/ErrorBoundary'
+import MultiFactorAuth from 'components/MultiFactorAuth'
 
 function App() {
   return (
@@ -172,6 +173,12 @@ function App() {
             component={AutomatedPermissions}
           />
           <ProtectedRoute key='eula' exact path='/eula' component={EULA} />
+          <ProtectedRoute
+            key='mfa'
+            exact
+            path='/mfa'
+            component={MultiFactorAuth}
+          />
           <ProtectedDashboardRoute
             key='logout'
             exact

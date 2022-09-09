@@ -11,10 +11,6 @@ containerDefinitions:
       - hostPort: 8092
         protocol: tcp
         containerPort: 8092
-    entryPoint:
-      - bash
-      - "-c"
-      - 'for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done; python /app/api/container.binary.runfiles/cloudumi/functional_tests/run_tests.py --stage {{ stage }} --loc /app/api/container.binary.runfiles/cloudumi/functional_tests/ || exit 1; python /app/api/container.binary.runfiles/cloudumi/api/__main__.py'
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
@@ -26,6 +22,10 @@ containerDefinitions:
         value: "https://5f3b026abb7649fe8b41e903dcb5820f@sentry.noq.dev:4443/2"
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
+      - name: RUNTIME_PROFILE
+        value: API
+      - name: STAGE
+        value: {{ stage }}
     dnsServers: [ ]
     mountPoints: [ ]
     dockerSecurityOptions: [ ]

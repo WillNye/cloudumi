@@ -1,11 +1,14 @@
 # content of myinvoke.py
 import argparse
-import sys
+import os
+import pathlib
 
 import pytest
 from pytest import ExitCode
 
-from util.log import logger
+from common.config import config
+
+logger = config.get_logger()
 
 parser = argparse.ArgumentParser(description="Stage")
 parser.add_argument(
@@ -13,11 +16,15 @@ parser.add_argument(
     help="Stage of deployment. Functional tests only run in staging",
 )
 
-parser.add_argument("--loc", help="Location of functional tests", default=".")
+parser.add_argument("--loc", help="Location of functional tests")
 args = parser.parse_args()
+stage = args.stage
+loc = args.loc
 
-if args.stage != "staging":
-    sys.exit(0)
+if stage is None:
+    stage = os.getenv("STAGE")
+if loc is None:
+    loc = pathlib.Path(__file__).parent.absolute()
 
 
 class MyPlugin:
@@ -26,12 +33,14 @@ class MyPlugin:
 
 
 def run():
-    logger.info("Running functional tests")
-    if pytest.main([args.loc], plugins=[MyPlugin()]) in [
-        ExitCode.TESTS_FAILED,
-        ExitCode.USAGE_ERROR,
-    ]:
-        raise RuntimeError("Functional tests failed")
+    if stage and loc and stage == "staging":
+        logger.info("Running functional tests")
+        conftest = __import__("functional_tests.conftest")
+        if pytest.main([loc], plugins=[conftest, MyPlugin()]) in [
+            ExitCode.TESTS_FAILED,
+            ExitCode.USAGE_ERROR,
+        ]:
+            raise RuntimeError("Functional tests failed")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,8 @@ INT_DEPS = [
 EXT_DEPS = [
     requirement("boto3"),
     requirement("botocore"),
+    requirement("flake8"),
+    requirement("moto"),
     requirement("pytest"),
     requirement("tornado"),
     requirement("ujson"),
@@ -22,6 +24,8 @@ filegroup(
     name = "src",
     srcs = glob([
         "**/*py",
+    ], exclude=[
+        "__init__.py",
     ]),
 )
 

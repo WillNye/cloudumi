@@ -70,6 +70,7 @@ EXT_DEPS = [
     requirement("policyuniverse"),
     requirement("ptvsd"),
     requirement("pyjwt"),
+    requirement("pytest"),
     requirement("requests"),
     requirement("retrying"),
     requirement("sentry_sdk"),
@@ -103,8 +104,9 @@ REQUIRES = [
     "password_strength",
     "policy_sentry",
     "policyuniverse",
-    "pyjwt",
     "ptvsd",
+    "pyjwt",
+    "pytest",
     "requests",
     "retrying",
     "sentry_sdk",
@@ -131,6 +133,7 @@ py_binary(
     name = "bin",
     data = [
         "//configs/development_account:configs",
+        "//configs:fluent-bit",
         "//frontend:build",
         ":docs_sources",
     ],
@@ -147,6 +150,7 @@ py_binary(
         "AWS_PROFILE": "noq_cluster_dev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build",
+        "RUNTIME_PROFILE": "API",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -170,6 +174,7 @@ py_binary(
         "AWS_PROFILE": "noq_cluster_dev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build",
+        "RUNTIME_PROFILE": "API",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -213,6 +218,7 @@ container_image(
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
+        "RUNTIME_PROFILE": "API",
     },
     layers = [
         "//deploy/layers:config",
@@ -238,6 +244,7 @@ container_image(
     env = {
         "NOQ_CONTAINER": "1",
         "DEBUG": "1",
+        "RUNTIME_PROFILE": "API",
     },
     layers = [
         "//deploy/layers:config",

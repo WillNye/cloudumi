@@ -84,7 +84,8 @@ _RUNTIME_DEPS = [
     "@npm//eslint-plugin-react-hooks",
     "@npm//zustand",
     "@npm//use-state-if-mounted",
-    "@npm//sass"
+    "@npm//sass",
+    "@npm//qrcode.react"
 ]
 
 _DEV_DEPS = [
