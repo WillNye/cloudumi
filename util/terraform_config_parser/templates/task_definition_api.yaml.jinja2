@@ -26,6 +26,8 @@ containerDefinitions:
         value: API
       - name: STAGE
         value: {{ stage }}
+      - name: PUBLIC_URL
+        value: {{ cdn_public_url }}
     dnsServers: [ ]
     mountPoints: [ ]
     dockerSecurityOptions: [ ]
