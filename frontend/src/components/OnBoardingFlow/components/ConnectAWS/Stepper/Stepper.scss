@@ -1,0 +1,45 @@
+@import '../../../../variables.default.scss';
+
+.stepper {
+  &__step {
+    display: flex;
+    // justify-content: space-between;
+    align-items: center;
+    // flex-direction: row;
+
+    &__circle {
+      display: flex;
+      position: relative;
+      align-items: center;
+      flex-direction: column;
+      // relative flex flex-col items-center text-teal-600
+    }
+
+    &__number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid $gray-2;
+      border-radius: 50%;
+      height: $v-42;
+      width: $v-42;
+      // padding: ;
+      // rounded-full transition duration-500 ease-in-out border-2 border-gray-300 h-12 w-12
+      //  flex items-center justify-center py-3
+    }
+
+    &__text {
+      position: absolute;
+      text-align: center;
+      text-align: center;
+      top: 0;
+      margin-top: $v-42;
+      // absolute top-0  text-center mt-16 w-32 text-xs font-medium uppercase
+    }
+
+    &__line {
+      flex: auto;
+      border-top: 2px solid $gray-2;
+    }
+  }
+}
