@@ -4,3 +4,5 @@ export const parseDate = (expDate) => {
   }
   return null
 }
+
+export const convertToISOFormat = (value) => new Date(value).toISOString()

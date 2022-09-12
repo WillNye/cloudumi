@@ -1,17 +1,34 @@
+@import '../../variables.default.scss';
+
 .date-time-picker {
   display: flex;
   flex-direction: row;
   width: 100%;
+  justify-content: space-between;
+  max-width: 550px;
 
   &__container {
     width: 100%;
     justify-content: center;
   }
 
+  &__time-text {
+    width: 100%;
+    height: 38px;
+    color: $gray-2;
+    border: 1px solid $gray-4;
+    border-radius: 5px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   &__time {
     display: flex;
-    flex-direction: row;
     padding-top: 10px;
+    flex-direction: row;
+    align-items: center;
   }
 
   &__date {
@@ -22,8 +39,14 @@
     }
   }
 
+  &__relative-time {
+    width: 100%;
+    max-width: 250px;
+  }
+
   &__input-width {
-    width: 250px;
+    width: 100%;
+    max-width: 250px;
     justify-content: center;
   }
 }
