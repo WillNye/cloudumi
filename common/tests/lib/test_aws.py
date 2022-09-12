@@ -553,6 +553,32 @@ class TestAwsPolicyNormalizer(TestCase):
             ],
         )
 
+    def test_group_identical_actions(self):
+        init_policy = [
+            {
+                "Action": ["account:listregions", "organizations:describeorganization"],
+                "Effect": "Allow",
+                "Resource": ["kms:*"],
+            },
+            {
+                "Action": ["account:listregions", "organizations:describeorganization"],
+                "Effect": "Allow",
+                "Resource": ["s3:*"],
+            },
+        ]
+
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
+        self.assertEqual(len(normalized_policy), 1)
+
+        self.assertListEqual(
+            normalized_policy[0]["Resource"],
+            ["kms:*", "s3:*"],
+        )
+        self.assertListEqual(
+            normalized_policy[0]["Action"],
+            ["account:listregions", "organizations:describeorganization"],
+        )
+
     def test_remove_identical_actions_from_child_statement(self):
         init_policy = [
             {
@@ -666,3 +692,38 @@ class TestAwsPolicyNormalizer(TestCase):
                 "dynamodb:UpdateItem".lower(),
             ],
         )
+
+    def test_dont_reduce_statements_with_not_elements(self):
+        init_policy = [
+            {
+                "Action": [],
+                "Effect": "Allow",
+                "NotAction": ["organizations:*", "account:*"],
+                "Resource": ["*"],
+                "NotResource": ["kms:*"],
+            },
+            {
+                "Action": ["account:listregions", "organizations:describeorganization"],
+                "Effect": "Allow",
+                "Resource": ["*"],
+                "NotResource": ["s3:*"],
+            },
+            {
+                "Action": ["account:listregions", "organizations:describeorganization"],
+                "Effect": "Allow",
+                "Resource": ["kms:*"],
+            },
+            {
+                "Action": ["account:listregions", "organizations:describeorganization"],
+                "Effect": "Allow",
+                "Resource": ["s3:*"],
+            },
+        ]
+
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
+        self.assertEqual(len(normalized_policy), 3)
+
+        grouped_statement = self._get_statement_by_resource(
+            normalized_policy, ["kms:*", "s3:*"]
+        )
+        self.assertTrue(bool(grouped_statement))
