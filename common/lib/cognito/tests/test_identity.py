@@ -36,7 +36,7 @@ class TestIdentity(IsolatedAsyncioTestCase):
         self.user = CognitoUser(Username=self.username)
 
         self.pool_id = async_to_sync(common.lib.cognito.identity.create_user_pool)(
-            self.pool_name
+            self.pool_name, f'https://{self.pool_name.replace("_", ".")}.noq.dev'
         )
         self.client_id, self.client_secret = async_to_sync(
             common.lib.cognito.identity.create_user_pool_client

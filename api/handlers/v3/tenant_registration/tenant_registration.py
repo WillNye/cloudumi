@@ -218,21 +218,38 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 return
 
         cognito_url_domain = data.get("domain", "").replace(".", "-")
+        dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
 
-        if dev_mode:
-            uri_scheme = "https://"
-            port = ""
-            # port = ":3000"
-        else:
-            uri_scheme = "https://"
-            port = ""
-        dev_domain_url = uri_scheme + dev_domain.replace("_", ".") + port
-        # create new tenant
-        user_pool_id = await create_user_pool(dev_domain)
-        user_pool_domain = await create_user_pool_domain(
-            user_pool_id, cognito_url_domain
-        )
+        try:
+            # create new tenant
+            user_pool_id = await create_user_pool(dev_domain, dev_domain_url)
+        except Exception as e:
+            self.set_status(400)
+            self.write(
+                {
+                    "error": f"Unable to create user pool {str(e)}",
+                    "error_description": "Failed to create user pool. Please try again.",
+                }
+            )
+            return
+
+        try:
+            user_pool_domain = await create_user_pool_domain(
+                user_pool_id, cognito_url_domain
+            )
+        except Exception as e:
+            # TODO: Remove the user pool because it is now orphaned
+            self.set_status(400)
+            self.write(
+                {
+                    "error": f"Unable to create user pool domain: {str(e)}",
+                    "error_description": "Failed to create user pool domain. Please try again.",
+                }
+            )
+            return
+
         if user_pool_domain["ResponseMetadata"]["HTTPStatusCode"] != 200:
+            # TODO: Remove the user pool because it is now orphaned
             self.set_status(400)
             self.write(
                 {
@@ -252,6 +269,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             )
             await cognito_idp.create_init_user(tenant.email)
         except Exception as e:
+            # TODO: Remove the user pool and domain because it is now orphaned
             self.set_status(400)
             self.write(
                 {

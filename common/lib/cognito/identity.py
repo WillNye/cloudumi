@@ -5,10 +5,13 @@ import hmac
 import logging
 import random
 import string
+from datetime import date
 from typing import Any, Dict, List, Union
 
 import boto3
 from botocore.exceptions import ClientError
+from jinja2 import FileSystemLoader, select_autoescape
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from common.config import config
 from common.lib.asyncio import aio_wrapper
@@ -650,7 +653,7 @@ def generate_password() -> str:
     return "".join(generated_password)
 
 
-async def create_user_pool(noq_subdomain):
+async def create_user_pool(noq_subdomain, domain_fqdn):
     cognito = boto3.client("cognito-idp", region_name=config.region)
     paginator = cognito.get_paginator("list_user_pools")
     response_iterator = paginator.paginate(
@@ -668,18 +671,16 @@ async def create_user_pool(noq_subdomain):
             {"message": "User pool already exists", "user_pool": user_pool_name}
         )
         raise Exception("User Pool Already Exists")
-    # COGNITO: You need a custom domain too
-    # env = ImmutableSandboxedEnvironment(
-    #     loader=FileSystemLoader("common/templates"),
-    #     extensions=["jinja2.ext.loopcontrols"],
-    #     autoescape=select_autoescape(),
-    # )
-    # todays_date = date.today()
-    # cognito_invitation_message_template = env.get_template("cognito_invitation.j2")
-    # cognito_invitation_message = cognito_invitation_message_template.render(
-    #     year=todays_date.year, domain=domain_fqdn
-    # )
-    # cognito_email_subject = "Your temporary password for Noq"
+    env = ImmutableSandboxedEnvironment(
+        loader=FileSystemLoader("common/templates"),
+        extensions=["jinja2.ext.loopcontrols"],
+        autoescape=select_autoescape(),
+    )
+    cognito_invitation_message_template = env.get_template("cognito_invitation.j2")
+    cognito_invitation_message = cognito_invitation_message_template.render(
+        year=date.today().year, domain=domain_fqdn
+    )
+    cognito_email_subject = "Your temporary password for Noq"
     response = cognito.create_user_pool(
         PoolName=user_pool_name,
         Schema=[
@@ -855,18 +856,14 @@ async def create_user_pool(noq_subdomain):
         AutoVerifiedAttributes=["email"],
         EmailConfiguration={"EmailSendingAccount": "COGNITO_DEFAULT"},
         UsernameAttributes=["email"],
-        # AliasAttributes=[
-        #     'email',
-        #     'preferred_username'
-        # ],
         UserPoolTags={"tenant": noq_subdomain},
         AdminCreateUserConfig={
             "AllowAdminCreateUserOnly": True,
             "UnusedAccountValidityDays": 7,
-            # "InviteMessageTemplate": {
-            #     "EmailMessage": cognito_invitation_message,
-            #     "EmailSubject": cognito_email_subject,
-            # },
+            "InviteMessageTemplate": {
+                "EmailMessage": cognito_invitation_message,
+                "EmailSubject": cognito_email_subject,
+            },
         },
         # TODO: Enable advanced security mode
         # UserPoolAddOns={
