@@ -3,6 +3,9 @@ import re
 from collections import defaultdict
 from typing import Any
 
+# Combining statements with these elements may have unintended consequences
+IGNORE_STATEMENTS_WITH = ["Condition", "NotAction", "NotPrincipal", "NotResource"]
+
 
 def get_regex_resource_names(statement: dict) -> list:
     """Generates a list of resource names for a statement that can be used for regex searches
@@ -36,6 +39,17 @@ async def is_resource_match(regex_patterns, regex_strs) -> bool:
         *[_regex_check(regex_pattern) for regex_pattern in regex_patterns]
     )
     return all(r for r in results)
+
+
+async def is_action_match(
+    action_map: dict[list], comparable_action_map: dict[list]
+) -> bool:
+    for service, actions in action_map.items():
+        comp_actions = comparable_action_map.get(service)
+        if not comp_actions or not all(action in comp_actions for action in actions):
+            return False
+
+    return True
 
 
 async def reduce_statement_actions(statement: dict) -> dict:
@@ -98,16 +112,20 @@ async def normalize_statement(statement: dict) -> dict:
     }
     :return: A statement with all redundant actions removed, IE: {
         'Action': ['s3:listbucket', 's3:list*'],
-        'ActionMap': {'s3': ['listbucket', 's3:list.*']},
+        'ActionMap': {'s3': ['listbucket', 'list.*']},
         'Effect': 'Allow',
         'Resource': ['*']
         'ResourceAsRegex': ['.*']
     }
     """
+
     statement.pop("Sid", None)  # Drop the statement ID
 
-    # Ensure Resource is a sorted list
-    if not isinstance(statement["Resource"], list):
+    if "Resource" not in statement:
+        # Currently, we only support Resource
+        return statement
+    elif not isinstance(statement["Resource"], list):
+        # Ensure Resource is a list
         statement["Resource"] = [statement["Resource"]]
 
     if "*" in statement["Resource"] and len(statement["Resource"]) > 1:
@@ -159,16 +177,31 @@ async def condense_statements(
     for elem, statement in enumerate(statements.copy()):
         offset_elem = elem - pop_offset
 
-        if statement["Action"][0] == "*" or statement.get("Condition"):
-            # Don't mess with statements that allow everything or have a condition
+        if (
+            not statement.get("Action")
+            or statement["Action"][0] == "*"
+            or any(statement.get(se) for se in IGNORE_STATEMENTS_WITH)
+        ):
             continue
 
         for inner_elem, inner_statement in enumerate(statements):
+            resource_match = await is_resource_match(
+                inner_statement["ResourceAsRegex"], statement["ResourceAsRegex"]
+            )
+            action_match = await is_action_match(
+                statement["ActionMap"], inner_statement["ActionMap"]
+            )
+            identical_resource = bool(
+                statement["Resource"] == inner_statement["Resource"]
+            )
+
             if offset_elem == inner_elem:
                 continue
-            elif not await is_resource_match(
-                inner_statement["ResourceAsRegex"], statement["ResourceAsRegex"]
-            ):
+            elif statement["Effect"] != inner_statement["Effect"]:
+                continue
+            elif any(inner_statement.get(se) for se in IGNORE_STATEMENTS_WITH):
+                continue
+            elif not resource_match and not action_match:
                 continue
             elif inner_statement.get("Condition"):
                 continue
@@ -177,10 +210,8 @@ async def condense_statements(
                 and inner_statement["Action"][0] == "*"
             ):
                 continue
-            elif (
-                statement["Effect"] == inner_statement["Effect"]
-                and statement["Resource"] == inner_statement["Resource"]
-            ):
+
+            if identical_resource:
                 # The statements are identical so combine the actions
                 statements[inner_elem]["Action"] = sorted(
                     list(set(statements[inner_elem]["Action"] + statement["Action"]))
@@ -188,7 +219,15 @@ async def condense_statements(
                 for resource_type, perm_set in statement["ActionMap"].items():
                     for perm in perm_set:
                         statements[inner_elem]["ActionMap"][resource_type].add(perm)
+            if action_match:
+                # The statements are identical so combine the actions
+                statements[inner_elem]["Resource"] = sorted(
+                    list(
+                        set(statements[inner_elem]["Resource"] + statement["Resource"])
+                    )
+                )
 
+            if action_match or identical_resource:
                 del statements[offset_elem]
                 pop_offset += 1
                 break
@@ -222,8 +261,10 @@ async def condense_statements(
             reduce_statement_actions(statement)
             for statement in statements
             if len(statement["Action"]) > 0
+            or any(statement.get(se) for se in IGNORE_STATEMENTS_WITH)
         ]
     )
+
     for elem in range(len(statements)):  # Remove eval keys
         statements[elem].pop("ActionMap")
         statements[elem].pop("ResourceAsRegex")
