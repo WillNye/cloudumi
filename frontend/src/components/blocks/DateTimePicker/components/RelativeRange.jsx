@@ -34,6 +34,7 @@ const RelativeRange = ({
         required
         name='time'
         id='time'
+        min='0'
         value={relativeTime.time}
         onChange={handleOnChange}
       />
