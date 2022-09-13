@@ -1,3 +1,6 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+
 filegroup(
     name = "template_files",
     srcs = glob([
