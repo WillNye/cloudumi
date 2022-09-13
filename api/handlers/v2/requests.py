@@ -75,9 +75,6 @@ async def validate_request_creation(
     err = ""
     request = normalize_expiration_date(request)
 
-    if request.expiration_date and datetime.utcnow() > request.expiration_date:
-        err += "expiration_date must be after the current time. "
-
     if tra_change := next(
         (c for c in request.changes.changes if c.change_type == "tra_can_assume_role"),
         None,
