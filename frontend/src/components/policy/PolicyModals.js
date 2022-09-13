@@ -160,7 +160,9 @@ export const JustificationModal = ({
                     </Header.Subheader>
                   </Header>
 
-                  <DateTimePicker onChange={handleSetPolicyExpiration} />
+                  <DateTimePicker
+                    onDateSelectorChange={handleSetPolicyExpiration}
+                  />
                 </>
               )}
 

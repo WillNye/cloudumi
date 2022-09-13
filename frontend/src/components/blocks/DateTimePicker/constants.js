@@ -82,17 +82,17 @@ export const TIME_STATE = [
 export const RELATIVE_TIME_RANGE_TYPES = [
   {
     key: 'HOURS',
-    text: 'HOURS',
+    text: 'Hour(s)',
     value: 'HOURS',
   },
   {
     key: 'DAYS',
-    text: 'DAYS',
+    text: 'Day(s)',
     value: 'DAYS',
   },
   {
     key: 'WEEKS',
-    text: 'WEEKS',
+    text: 'Week(s)',
     value: 'WEEKS',
   },
 ]

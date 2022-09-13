@@ -229,7 +229,7 @@ class SelfServiceStep1 extends Component {
                         </Header.Subheader>
                       </Header>
                       <DateTimePicker
-                        onChange={this.props.handleSetPolicyExpiration.bind(
+                        onDateSelectorChange={this.props.handleSetPolicyExpiration.bind(
                           this
                         )}
                       />

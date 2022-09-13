@@ -24,7 +24,6 @@ const DatePicker = ({ handleOnDateChange, isDisabled, value, inLine }) => {
         onChange={handleOnChange}
         type='basic'
         value={value}
-        datePickerOnly
         inline={inLine}
         clearable
         showToday={false}
