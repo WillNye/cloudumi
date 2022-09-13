@@ -12,22 +12,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-copy_file(
-    name = "noq_logo_png",
-    src = "//frontend/src/assets:NoqLogo.png",
-    out = "templates/NoqLogo.png",
-    allow_symlink = True,
-)
-
-copy_file(
-    name = "noq_logo_svg",
-    src = "//frontend/src/assets:NoqLogo.svg",
-    out = "templates/NoqLogo.svg",
-    allow_symlink = True,
-)
-
-
-
 exports_files(
     ["models.py"],
 )

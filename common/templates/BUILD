@@ -3,9 +3,25 @@ filegroup(
     srcs = glob([
         "*.j2",
     ]) + [
-        "//common:noq_logo_png",
-        "//common:noq_logo_svg",
+        ":noq_logo_png",
+        ":noq_logo_svg",
     ],
+    visibility = ["//visibility:public"],
+)
+
+copy_file(
+    name = "noq_logo_png",
+    src = "//frontend/src/assets:NoqLogo.png",
+    out = "NoqLogo.png",
+    allow_symlink = True,
+    visibility = ["//visibility:public"],
+)
+
+copy_file(
+    name = "noq_logo_svg",
+    src = "//frontend/src/assets:NoqLogo.svg",
+    out = "NoqLogo.svg",
+    allow_symlink = True,
     visibility = ["//visibility:public"],
 )
 
