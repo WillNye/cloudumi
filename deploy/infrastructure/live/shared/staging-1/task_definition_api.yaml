@@ -27,7 +27,7 @@ containerDefinitions:
       - name: STAGE
         value: staging
       - name: PUBLIC_URL
-        value: https://d2mxcvfujf7a5q.cloudfront.net/1.5.308/feat.en-128-new-request-ttl-attr/
+        value: https://d2mxcvfujf7a5q.cloudfront.net/1.5.308/main/
     dnsServers: []
     mountPoints: []
     dockerSecurityOptions: []
