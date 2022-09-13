@@ -1,7 +1,5 @@
 import React, { useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import { useApi } from 'hooks/useApi'
-import { Header } from 'semantic-ui-react'
 import Datatable from 'lib/Datatable'
 import { useModal } from 'lib/hooks/useModal'
 import { DatatableWrapper } from 'lib/Datatable/ui/utils'
@@ -10,6 +8,7 @@ import { TempEscalationUserModal } from './common'
 import { usePolicyContext } from '../../hooks/PolicyProvider'
 import { tempEscalationColumns } from './columns'
 import { removeUserAccount } from './utils'
+import { Link } from 'react-router-dom'
 
 const TempEscalationAccess = ({ elevated_access_config }) => {
   const { openModal, closeModal, ModalComponent } = useModal(
@@ -65,16 +64,12 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
 
   return (
     <>
-      <Header as='h2'>
-        Temporary Escalation Access
-        <Header.Subheader>
-          Users who are members of the following groups will be able to request
-          temporary access to this role. Approvals and notifications can be
-          globally configured on the&nbsp;
-          <Link to='/settings'>settings</Link> page.
-        </Header.Subheader>
-      </Header>
-
+      <p>
+        Users who are members of the following groups will be able to request
+        temporary access to this role. Approvals and notifications can be
+        globally configured on the&nbsp;
+        <Link to='/settings'>settings</Link> page.
+      </p>
       <DatatableWrapper
         isLoading={false}
         renderAction={<TableTopBar onClick={data.length ? openModal : null} />}
