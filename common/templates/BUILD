@@ -35,7 +35,7 @@ py_library(
     ],
     srcs_version = "PY3",
     srcs = [
-        ":src_files",
+        "__init__.py",
     ],
     deps = [
         "//common/lib",
