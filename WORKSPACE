@@ -187,3 +187,10 @@ register_toolchains(
 
 load("//util:version.bzl", "get_repo_version")
 get_repo_version(name="version")
+
+
+http_archive(
+    name = "awscli",
+    url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip",
+    build_file_content = """genrule(name = "awscli", executable = True, srcs = ["awscliv2.zip"], outs = ["aws"], cmd = "unzip -p $(location awscliv2.zip) aws/install > $(location aws) && chmod +x $(location aws)", visibility = ["//visibility:public"])""",
+)

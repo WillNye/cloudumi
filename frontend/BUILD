@@ -5,6 +5,7 @@ load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load("//util:node_scripts.bzl", "react_scripts")
 load("//util:upload.bzl", "upload_cdn")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 
 # Filename conventions described at
@@ -137,7 +138,10 @@ upload_cdn(
     name = "publish_cdn",
     bucket_name = "noq-global-frontend",
     data = ":build",
-    deps = ["@version//:git_version_info"],
+    deps = [
+        "@version//:git_version_info",
+        "@awscli//:awscli",
+    ],
     visibility = ["//visibility:public"],
 )
 
