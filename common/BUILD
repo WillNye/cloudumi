@@ -18,7 +18,7 @@ exports_files(
 py_library(
     name = "lib",
     data = [
-         ":template_files",
+         "//common/templates:template_files",
     ],
     srcs_version = "PY3",
     srcs = [
