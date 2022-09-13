@@ -354,9 +354,6 @@ if __name__ == "__main__":
         terraform_config,
         config_output_path,
     )
-    write_file(
-        "upload_cdn.py.jinja2", "upload_cdn.py", terraform_config, config_output_path
-    )
     make_file_executable(config_output_path, "push_all_the_things.sh")
     make_file_executable(config_output_path, "revert_all_the_things.sh")
     # Write configuration locally for upload to S3
