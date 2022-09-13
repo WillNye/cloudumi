@@ -2,7 +2,6 @@ import asyncio
 import sys
 import time
 import uuid
-from datetime import datetime
 
 import sentry_sdk
 from policy_sentry.util.arns import parse_arn
