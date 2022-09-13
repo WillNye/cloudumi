@@ -28,6 +28,7 @@ py_binary(
     deps = [
         "//common/config:lib",
         "//common:lib",
+        "//common/templates:lib",
         "//util/debug",
         requirement("botocore"),
         requirement("tenacity"),
@@ -55,6 +56,7 @@ py_binary(
         "//common/celery_tasks:lib",
         "//common/config:lib",
         "//common:lib",
+        "//common/templates:lib",
         "//util/debug",
         requirement("botocore"),
         requirement("tenacity"),

@@ -26,16 +26,7 @@ copy_file(
     allow_symlink = True,
 )
 
-filegroup(
-    name = "template_files",
-    srcs = glob([
-        "templates/*.j2",
-    ]) + [
-        ":noq_logo_png",
-        ":noq_logo_svg",
-    ],
-    visibility = ["//visibility:public"],
-)
+
 
 exports_files(
     ["models.py"],
