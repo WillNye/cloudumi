@@ -3,7 +3,7 @@ load("@build_bazel_rules_nodejs//:index.bzl", "copy_to_bin", "nodejs_test")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
-load("@npm//react-scripts:index.bzl", "react_scripts", "react_scripts_test")
+load("//util:node_scripts.bzl", "react_scripts")
 
 
 # Filename conventions described at
@@ -100,7 +100,9 @@ react_scripts(
         "--node_options=--require=./$(execpath chdir.cjs)",
         "build",
     ],
+    base_url = "https://d2mxcvfujf7a5q.cloudfront.net",
     data = _RUNTIME_DEPS,
+    deps = ["@version//:git_version_info"],
     env = {
         "BUILD_PATH": "./build",
         "DISABLE_ESLINT_PLUGIN": "true",
@@ -115,6 +117,8 @@ react_scripts(
         "--node_options=--require=./$(rootpath chdir.cjs)",
         "start",
     ],
+    base_url = "https://d2mxcvfujf7a5q.cloudfront.net",
+    deps = ["@version//:git_version_info"],
     env = {
         "DISABLE_ESLINT_PLUGIN": "true",
         "FRONTEND_SENTRY_DSN": "https://5f3b026abb7649fe8b41e903dcb5820f@sentry.noq.dev:4443/2"

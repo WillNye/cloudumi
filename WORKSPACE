@@ -183,3 +183,6 @@ http_file(
 register_toolchains(
     "//toolchain:macos_dummy_cpp_toolchain",
 )
+
+load("//util:version.bzl", "get_repo_version")
+get_repo_version(name="version")
