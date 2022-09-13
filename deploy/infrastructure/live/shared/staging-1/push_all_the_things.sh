@@ -28,12 +28,12 @@ aws ecr get-login-password --region us-west-2 | docker login --username AWS --pa
 echo
 echo "Pushing API container - $(git describe --tags --abbrev=0)"
 echo
-bazelisk run --action-env=AWS_PROFILE=$AWS_PROFILE --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/staging-1:api-container-deploy-staging
+bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/staging-1:api-container-deploy-staging
 
 echo
 echo "Pushing Celery container - $(git describe --tags --abbrev=0)"
 echo
-bazelisk run --action-env=AWS_PROFILE=$AWS_PROFILE --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/staging-1:celery-container-deploy-staging
+bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/staging-1:celery-container-deploy-staging
 
 echo
 echo "Deploying Service - $(git describe --tags --abbrev=0)"
