@@ -429,7 +429,7 @@ class PolicyRequestReview extends Component {
     )
 
     const expirationDateContent =
-      hasReadOnlyAccountPolicy || hasCondensedPolicy ? (
+      hasReadOnlyAccountPolicy || hasCondensedPolicy || loading ? (
         <Message
           info
           header='Policy request affects a read-only account or Effective Permissions'
@@ -438,6 +438,7 @@ class PolicyRequestReview extends Component {
       ) : (
         <ExpirationDateBlock
           expiration_date={extendedRequest.expiration_date || null}
+          ttl={extendedRequest.ttl || null}
           reloadDataFromBackend={this.reloadDataFromBackend}
           requestID={requestID}
           sendRequestCommon={this.props.sendRequestCommon}

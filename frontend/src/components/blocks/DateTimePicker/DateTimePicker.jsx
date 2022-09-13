@@ -6,11 +6,14 @@ import { getDefaultTime, setNewDateTime } from './utils'
 import './DateTimePicker.scss'
 
 const DateTimePicker = ({
+  defaultTimeInSeconds = null,
   defaultDate = null,
   isDisabled = false,
   showRelativeRange = false,
+  showDateSelector = true,
   inLine = false,
-  onChange,
+  onDateSelectorChange,
+  onRelativeTimeChange,
 }) => {
   const [fullDate, setFullDate] = useState(defaultDate)
   const [time, setTime] = useState(getDefaultTime(defaultDate))
@@ -24,23 +27,23 @@ const DateTimePicker = ({
       const currentDate = new Date()
       if (!newDate) {
         setFullDate(null)
-        onChange(null)
+        onDateSelectorChange(null)
         resetTime()
         return
       }
 
       if (currentDate.getTime() >= newDate.getTime()) {
         setFullDate(fullDate)
-        onChange(fullDate)
+        onDateSelectorChange(fullDate)
         return
       }
       const dateTime = time ? time : getDefaultTime(fullDate || newDate)
       const newJsDate = setNewDateTime(newDate, dateTime)
       setFullDate(newJsDate)
       setTime(dateTime)
-      onChange(newJsDate)
+      onDateSelectorChange(newJsDate)
     },
-    [fullDate, time, onChange]
+    [fullDate, time, onDateSelectorChange]
   )
 
   const handleOnTimeChange = useCallback(
@@ -49,39 +52,38 @@ const DateTimePicker = ({
       const newDate = setNewDateTime(fullDate, newTime)
       setTime(newTime)
       setFullDate(newDate)
-      onChange(newDate)
+      onDateSelectorChange(newDate)
     },
-    [fullDate, onChange]
+    [fullDate, onDateSelectorChange]
   )
 
   return (
     <div className='date-time-picker'>
       {showRelativeRange && (
-        <div className='date-time-picker__container'>
-          <RelativeRange />
+        <div className='date-time-picker__relative-time'>
+          <RelativeRange
+            onChange={onRelativeTimeChange}
+            defaultTimeInSeconds={defaultTimeInSeconds}
+          />
         </div>
       )}
-      <div
-        className={`${
-          inLine
-            ? 'date-time-picker__container'
-            : 'date-time-picker__input-width'
-        }`}
-      >
-        <DatePicker
-          handleOnDateChange={handleOnDateChange}
-          isDisabled={isDisabled}
-          value={defaultDate}
-          inLine={inLine}
-        />
-        {fullDate && time && (
-          <TimePicker
-            onTimeChange={handleOnTimeChange}
+      {showDateSelector && (
+        <div className='date-time-picker__input-width'>
+          <DatePicker
+            handleOnDateChange={handleOnDateChange}
             isDisabled={isDisabled}
-            time={time}
+            value={defaultDate}
+            inLine={inLine}
           />
-        )}
-      </div>
+          {fullDate && time && (
+            <TimePicker
+              onTimeChange={handleOnTimeChange}
+              isDisabled={isDisabled}
+              time={time}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }
