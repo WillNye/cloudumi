@@ -13,7 +13,6 @@ _ATTRS = {
         providers = [VersionInfoProvider],
         doc = "Version info from the version repository rule",
     ),
-    "env": attr.string_dict(default = {}, doc = "Used to pass AWS_PROFILE env var")
 }
 
 def _upload_cdn_impl(ctx):
@@ -24,7 +23,6 @@ def _upload_cdn_impl(ctx):
     version_info = ctx.attr.deps[0][VersionInfoProvider]
     version = version_info.version
     branch = version_info.branch
-    env = ctx.attr.env
 
     files = ctx.attr.data.files
     output_file = ctx.actions.declare_file(ctx.label.name)
@@ -47,7 +45,6 @@ def _upload_cdn_impl(ctx):
             bucket_path = bucket_path,
             output_file = output_file.path,
         ),
-        env = env,
         use_default_shell_env = True,
     )
 

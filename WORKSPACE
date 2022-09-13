@@ -93,6 +93,7 @@ container_pull(
     architecture = "amd64",
     registry = "index.docker.io",
     repository = "library/python",
+    digest = "sha256:8d1f943ceaaf3b3ce05df5c0926e7958836b048b700176bf9c56d8f37ac13fca",
     tag = "3.10.6",
 )
 
