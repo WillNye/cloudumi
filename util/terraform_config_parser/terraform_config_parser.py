@@ -24,39 +24,6 @@ def simple_logger(msg: str):
     print(f">> {msg}")
 
 
-def add_repo_root(terraform_config: dict) -> dict:
-    terraform_config["repo_root"] = str(root_path)
-    return terraform_config
-
-
-def add_git_version(terraform_config: dict) -> dict:
-    terraform_config["git_version"] = get_current_git_version()
-    return terraform_config
-
-
-def add_branch_name(terraform_config: dict) -> dict:
-    terraform_config["branch_name"] = get_current_branch_name()
-    return terraform_config
-
-
-def add_cdn_bucket_path(terraform_config: dict) -> dict:
-    version = get_current_git_version()
-    branch_name = get_current_branch_name()
-    terraform_config[
-        "cdn_bucket_path"
-    ] = f"s3://noq-global-frontend/{version}/{branch_name}/"
-    return terraform_config
-
-
-def add_cdn_public_url(terraform_config: dict) -> dict:
-    version = get_current_git_version()
-    branch_name = get_current_branch_name()
-    terraform_config[
-        "cdn_public_url"
-    ] = f"https://d2mxcvfujf7a5q.cloudfront.net/{version}/{branch_name}/"
-    return terraform_config
-
-
 def __add_ecr_registry_aws_link(terraform_config: dict) -> dict:
     """Extract the ECR AWS link from the config output by removing the repository name from any registry URL."""
     terraform_config["registry_repository_url"] = terraform_config[
@@ -280,11 +247,6 @@ if __name__ == "__main__":
 
     terraform_config = __add_ecr_registry_aws_link(terraform_config)
     terraform_config = __set_aws_profile(terraform_config)
-    terraform_config = add_repo_root(terraform_config)
-    terraform_config = add_git_version(terraform_config)
-    terraform_config = add_branch_name(terraform_config)
-    terraform_config = add_cdn_bucket_path(terraform_config)
-    terraform_config = add_cdn_public_url(terraform_config)
     terraform_config = replace_str_in_attribute(
         terraform_config, "zone", "zone_safed", ".", "-"
     )

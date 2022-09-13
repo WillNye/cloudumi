@@ -4,6 +4,7 @@ load("@io_bazel_rules_docker//container:container.bzl", "container_image", "cont
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load("//util:node_scripts.bzl", "react_scripts")
+load("//util:upload.bzl", "upload_cdn")
 
 
 # Filename conventions described at
@@ -130,6 +131,14 @@ react_scripts(
         # So use this to prevent EOF.
         "ibazel_notify_changes",
     ],
+)
+
+upload_cdn(
+    name = "publish_cdn",
+    bucket_name = "noq-global-frontend",
+    data = ":build",
+    deps = ["@version//:git_version_info"],
+    visibility = ["//visibility:public"],
 )
 
 pkg_tar(
