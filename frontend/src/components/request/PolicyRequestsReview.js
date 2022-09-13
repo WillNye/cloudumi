@@ -656,11 +656,9 @@ class PolicyRequestReview extends Component {
         requestButtons
       ) : (
         <Message info fluid>
-          <Message.Header>
-            This request can no longer be modified
-          </Message.Header>
+          <Message.Header>This request can not be modified</Message.Header>
           <p>
-            This request can no longer be modified as the status is{' '}
+            This request can not be modified as the status is{' '}
             {extendedRequest.request_status}
           </p>
         </Message>
