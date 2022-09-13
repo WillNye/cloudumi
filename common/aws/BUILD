@@ -29,6 +29,7 @@ py_library(
     ],
     deps = [
         "//common/lib",
+        "//common/templates:lib",
         requirement("noq-dax-client"),
         requirement("pynamodax"),
     ],
