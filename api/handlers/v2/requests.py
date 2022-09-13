@@ -992,10 +992,10 @@ class RequestDetailHandler(BaseAPIV2Handler):
                     )
             if (
                 is_expiry_update
-                and extended_request.request_status == RequestStatus.approved
+                and extended_request.request_status != RequestStatus.pending
             ):
                 raise ValueError(
-                    "The TTL and expiration date cannot be updated on approved requests."
+                    "The TTL and expiration date can only be updated on pending requests."
                 )
             if (
                 any(
