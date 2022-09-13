@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from hashlib import sha1
 from typing import get_args, get_type_hints
 
+from dateutil import parser
+
 from common.aws.iam.role.models import IAMRole
 from common.aws.utils import ResourceSummary, get_resource_tag
 from common.config import config, models
@@ -56,6 +58,8 @@ class ChangeValidator:
 
 def normalize_expiration_date(request):
     if expiration_date := getattr(request, "expiration_date", None):
+        if isinstance(expiration_date, str):
+            expiration_date = parser.parse(expiration_date)
         if utc_offset := expiration_date.utcoffset():
             expiration_date -= utc_offset
         request.expiration_date = expiration_date.replace(tzinfo=timezone.utc)

@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Union
 
 import sentry_sdk
 from botocore.exceptions import ClientError
+from dateutil import parser
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
@@ -3098,6 +3099,12 @@ async def parse_and_apply_policy_request_modification(
         expiration_date_model = ExpirationDateRequestModificationModel.parse_obj(
             request_changes
         )
+        if expiration_date_model.expiration_date and isinstance(
+            expiration_date_model.expiration_date, str
+        ):
+            expiration_date_model.expiration_date = parser.parse(
+                expiration_date_model.expiration_date
+            )
         extended_request = await update_extended_request_expiration_date(
             tenant, user, extended_request, expiration_date_model.expiration_date
         )

@@ -2,6 +2,7 @@ import asyncio
 import sys
 import time
 import uuid
+from datetime import datetime
 
 import sentry_sdk
 from policy_sentry.util.arns import parse_arn
@@ -74,6 +75,9 @@ async def validate_request_creation(
     err = ""
     request = normalize_expiration_date(request)
 
+    if request.expiration_date and datetime.utcnow() > request.expiration_date:
+        err += "expiration_date must be after the current time. "
+
     if tra_change := next(
         (c for c in request.changes.changes if c.change_type == "tra_can_assume_role"),
         None,
@@ -116,6 +120,15 @@ async def validate_request_creation(
                 return await handler.finish()
 
         request.admin_auto_approve = False
+
+    if err:
+        handler.set_status(400)
+        handler.write(
+            WebResponse(staus=WebStatus.error, errors=[err]).json(
+                exclude_unset=True, exclude_none=True
+            )
+        )
+        return await handler.finish()
 
     return request
 
@@ -978,7 +991,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             ):
                 if not has_expiry_info:
                     raise ValueError(
-                        "An expiration date or ttl must be provided for temporary role access requests."
+                        "A valid expiration date or ttl must be provided for temporary role access requests."
                     )
             if (
                 is_expiry_update
