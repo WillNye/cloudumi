@@ -45,8 +45,13 @@ class TestPoliciesApi(NOQAsyncHTTPTestCase):
         # TODO (SAAS-429): there is a side-effect here, need to investigate
         # self.assertEqual(len(response_j["data"]), 21)
         first_entity = response_j["data"][0]
-        self.assertEqual(first_entity["account_id"], "123456789012")
-        self.assertEqual(first_entity["account_name"], "default_account_2")
+        self.assertIn(
+            first_entity["account_id"], ["012345678901", "123456789012", "123456789013"]
+        )
+        self.assertIn(
+            first_entity["account_name"],
+            ["default_account_0", "default_account_1", "default_account_2"],
+        )
 
     @patch("common.aws.iam.policy.utils.access_analyzer_validate_policy")
     def test_policies_check_api(self, mock_access_analyzer_validate_policy):
