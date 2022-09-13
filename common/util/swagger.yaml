@@ -792,6 +792,7 @@ components:
               description: Date to expire requested policy or role
             ttl:
               type: integer
+              minimum: 1
               example: 43200
               description: The time, in seconds, before the request expires after it has been approved.
     ChangeGeneratorModelArray:
@@ -2130,6 +2131,7 @@ components:
               default: null
               example: 43200
               description: The time, in seconds, before the request expires after it has been approved.
+              minimum: 1
     CommentRequestModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
