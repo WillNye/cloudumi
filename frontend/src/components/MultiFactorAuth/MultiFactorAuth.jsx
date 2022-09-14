@@ -11,16 +11,31 @@ import {
 import NavHeader from 'components/Header'
 import './MultiFactorAuth.scss'
 import { Link } from 'react-router-dom'
+import { useAuth } from 'auth/AuthProviderDefault'
 
 const MultiFactorAuth = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [showManualCode, setShowManualCode] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [fetchError, setFetchError] = useState(null)
+  const [mfaCode, setMfaCode] = useState(null)
+
+  const { sendRequestCommon } = useAuth()
 
   useEffect(() => {
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 200)
+    setIsLoading(true)
+    sendRequestCommon(null, '/api/v3/auth/cognito/setup-mfa', 'get')
+      .then((res) => {
+        if (res?.data) {
+          console.log('=====data-------', res)
+          // setAgreementDocument(res.data.eula)
+        } else {
+          setFetchError(JSON.stringify(res))
+        }
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, [])
 
   return (
@@ -68,8 +83,8 @@ const MultiFactorAuth = () => {
             <Form.Field className='multi-factor-auth__input'>
               <input
                 placeholder='Enter Code here'
-                maxlength='6'
-                minlength='6'
+                maxLength='6'
+                minLength='6'
                 required
                 disabled={isSuccess}
               />
