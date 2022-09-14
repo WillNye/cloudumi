@@ -73,12 +73,20 @@ async def validate_request_creation(
 ) -> RequestCreationModel:
     err = ""
     request = normalize_expiration_date(request)
+    tenant = handler.ctx.tenant
+    if any(
+        change.change_type == "assume_role_access" for change in request.changes.changes
+    ) and not config.get_tenant_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.enabled",
+        tenant,
+        True,
+    ):
+        err += "Assume role access via tagging has been disabled. Ask your admin to enable it inorder to proceed."
 
     if tra_change := next(
         (c for c in request.changes.changes if c.change_type == "tra_can_assume_role"),
         None,
     ):
-        tenant = handler.ctx.tenant
         role_arn = tra_change.principal.principal_arn
         tra_supported_roles = await get_tra_supported_roles_by_tag(
             handler.eligible_roles, handler.groups, tenant
@@ -105,7 +113,7 @@ async def validate_request_creation(
         resource_summary = await ResourceSummary.set(tenant, role_arn)
         tra_config = await get_tra_config(resource_summary)
         if tra_config.mfa.enabled:
-            is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
+            is_authenticated, err = await mfa_verify(tenant, handler.user)
             if not is_authenticated:
                 handler.set_status(403)
                 handler.write(
