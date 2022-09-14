@@ -247,7 +247,6 @@ async def authenticate_user_by_oidc(request):
                 "access_token",
             )
         )
-
         header = jwt.get_unverified_header(id_token)
         key_id = header["kid"]
         algorithm = header["alg"]
@@ -271,6 +270,7 @@ async def authenticate_user_by_oidc(request):
                 "email",
             )
         )
+        mfa_setup = None
 
         if not decoded_id_token.get("identities"):
             user_client = CognitoUserClient.tenant_client(tenant)
@@ -281,8 +281,6 @@ async def authenticate_user_by_oidc(request):
                     email, access_token=access_token
                 )
                 after_redirect_uri = f"{protocol}://{full_host}/mfa"
-            else:
-                mfa_setup = None
 
         # For google auth, the access_token does not contain JWT-parsable claims.
         if config.get_tenant_specific_key(
