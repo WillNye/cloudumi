@@ -138,9 +138,11 @@ upload_cdn(
     name = "publish_cdn",
     bucket_name = "noq-global-frontend",
     data = ":build",
+    env = {
+        "AWS_PROFILE": "noq_prod",
+    },
     deps = [
         "@version//:git_version_info",
-        "@awscli//:awscli",
     ],
     visibility = ["//visibility:public"],
 )

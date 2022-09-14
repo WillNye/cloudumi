@@ -1,5 +1,6 @@
 load("@version//:repo_version.bzl", "VersionInfoProvider")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
+load("@python3_10//:defs.bzl", "interpreter")
 
 _ATTRS = {
     "bucket_name": attr.string(
@@ -15,10 +16,40 @@ _ATTRS = {
         mandatory = True,
         doc = "Version info from the version repository rule",
     ),
+    "env": attr.string_dict(
+        doc = "Environment variables to pass to the upload script",
+    ),
+    "interpreter": attr.label(
+        default = interpreter,
+        allow_files = True,
+        cfg = "exec",
+        executable = True,
+        doc = "The Python interpreter to use to run the upload script",
+    ),
+    "aws_with_deps": attr.label_list(
+        default = [
+            requirement("awscli"),
+            requirement("botocore"),
+            requirement("colorama"),
+            requirement("docutils"),
+            requirement("jmespath"),
+            requirement("six"),
+            requirement("urllib3"),
+            requirement("pyasn1"),
+            requirement("python-dateutil"),
+            requirement("pyyaml"),
+            requirement("s3transfer"),
+            requirement("rsa"),
+        ],
+        allow_files = True,
+        cfg = "target",
+        doc = "The awscli package to use to run the upload script",
+    ),
 }
 
 def _upload_cdn_impl(ctx):
     """Implementation of the upload_cdn rule."""
+
     # Get the version info from the version repository.
     # DEBUG: /home/matt/dev/noq/cloudumi/util/upload.bzl:35:10: <target @cloudumi_python_ext_awscli//:pkg, keys:[PyInfo, InstrumentedFilesInfo, PyCcLinkParamsProvider, OutputGroupInfo]>
     if not ctx.attr.deps:
@@ -27,8 +58,6 @@ def _upload_cdn_impl(ctx):
     for dep in ctx.attr.deps:
         if VersionInfoProvider in dep:
             version_info = dep[VersionInfoProvider]
-        else:
-            awscli = dep.files.to_list()[0].path + "/dist/aws"
 
     version = version_info.version
     branch = version_info.branch
@@ -45,21 +74,25 @@ def _upload_cdn_impl(ctx):
 
     output = []
     output.append("Bucket Path: {bucket_path}".format(bucket_path = bucket_path))
+    env = {x: y for x, y in ctx.attr.env.items()}
 
-    ctx.actions.run_shell(
+    for dep in ctx.attr.aws_with_deps:
+        if "PYTHONPATH" not in env:
+            env["PYTHONPATH"] = dep.files.to_list()[0].dirname
+        else:
+            env["PYTHONPATH"] = env["PYTHONPATH"] + ":" + dep.files.to_list()[0].dirname
+
+    build_output = ctx.attr.data.files.to_list()[0].path
+    ctx.actions.run(
         inputs = files,
         outputs = [output_file],
-        command = "{aws} s3 sync {build_output} {bucket_path} >> {output_file}".format(
-            aws = awscli,
-            build_output = ctx.attr.data.files.to_list()[0].path,
-            bucket_path = bucket_path,
-            output_file = output_file.path,
-        ),
-        use_default_shell_env = True,
+        executable = ctx.attr.interpreter.files.to_list()[0],
+        arguments = ["-m", "awscli", "s3", "sync", build_output, bucket_path],
+        env = env,
+        tools = [x.files for x in ctx.attr.aws_with_deps],
     )
 
     return DefaultInfo(files = depset([output_file]))
-
 
 upload_cdn = rule(
     implementation = _upload_cdn_impl,
