@@ -1373,7 +1373,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
         - type: object
-        required:
+          required:
             - action
             - identities
           properties:
