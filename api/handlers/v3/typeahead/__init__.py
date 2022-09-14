@@ -16,7 +16,9 @@ class UserAndGroupTypeAheadHandler(BaseHandler):
         tenant = self.ctx.tenant
 
         if self.is_admin:
-            user_pool_id = config.get_tenant_specific_key("secrets.cognito.config.user_pool_id", tenant)
+            user_pool_id = config.get_tenant_specific_key(
+                "secrets.cognito.config.user_pool_id", tenant
+            )
             client = boto3.client("cognito-idp", region_name=config.region)
             users_and_groups = await asyncio.gather(
                 get_identity_users(user_pool_id, client),
