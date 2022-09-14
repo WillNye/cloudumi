@@ -1,5 +1,6 @@
 import time
 import unittest
+from datetime import datetime, timedelta
 
 import boto3
 import pytest
@@ -2275,7 +2276,10 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(0, response.errors)
         self.assertEqual(extended_request.expiration_date, None)
 
-        input_body["modification_model"]["expiration_date"] = 20220407
+        expires_at = (datetime.utcnow() + timedelta(hours=1)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+        input_body["modification_model"]["expiration_date"] = expires_at
         policy_request_model = PolicyRequestModificationRequestModel.parse_obj(
             input_body
         )
@@ -2288,7 +2292,7 @@ class TestRequestsLibV2(unittest.IsolatedAsyncioTestCase):
             tenant,
         )
         self.assertEqual(0, response.errors)
-        self.assertEqual(extended_request.expiration_date, 20220407)
+        self.assertEqual(extended_request.expiration_date, expires_at)
 
     @pytest.mark.skip(reason="EN-637")
     @pytest.mark.usefixtures("populate_caches")

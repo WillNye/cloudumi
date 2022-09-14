@@ -36,7 +36,10 @@ export const NewHubAccount = ({ closeModal, onFinish, defaultValues }) => {
   const aws = useContext(ApiContext)
 
   const handleClick = () => {
-    window.open(aws.data?.central_account_role?.cloudformation_url, '_blank')
+    window.open(
+      aws.data?.read_write?.central_account_role?.cloudformation_url,
+      '_blank'
+    )
     closeModal()
   }
 
@@ -115,7 +118,9 @@ export const NewHubAccount = ({ closeModal, onFinish, defaultValues }) => {
               Execute CloudFormation
             </Button>
             <CopyButton
-              value={aws.data?.central_account_role?.cloudformation_url}
+              value={
+                aws.data?.read_write?.central_account_role?.cloudformation_url
+              }
             />
           </Bar>
         </>

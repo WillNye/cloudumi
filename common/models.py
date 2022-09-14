@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import Field, constr
+from pydantic import Field, conint, constr
 
 from common.lib.pydantic import BaseModel
 
@@ -541,6 +541,7 @@ class Command(Enum):
     cancel_change = "cancel_change"
     move_back_to_pending = "move_back_to_pending"
     update_expiration_date = "update_expiration_date"
+    update_ttl = "update_ttl"
 
 
 class RequestModificationBaseModel(BaseModel):
@@ -549,10 +550,16 @@ class RequestModificationBaseModel(BaseModel):
 
 
 class ExpirationDateRequestModificationModel(RequestModificationBaseModel):
-    expiration_date: Optional[int] = Field(
+    expiration_date: Optional[str] = Field(
+        ..., description="Date to expire requested policy"
+    )
+
+
+class TTLRequestModificationModel(RequestModificationBaseModel):
+    ttl: Optional[conint(ge=1)] = Field(
         ...,
-        description="Date to expire requested policy, in the format of YYYYmmdd",
-        example=20210905,
+        description="The time, in seconds, before the request expires after it has been approved.",
+        example=43200,
     )
 
 
@@ -598,6 +605,7 @@ class PolicyRequestModificationRequestModel(BaseModel):
         CommentRequestModificationModel,
         UpdateChangeModificationModel,
         ExpirationDateRequestModificationModel,
+        TTLRequestModificationModel,
         ApplyChangeModificationModel,
         ApproveRequestModificationModel,
         MoveToPendingRequestModificationModel,
@@ -1368,10 +1376,13 @@ class RequestCreationModel(BaseModel):
     justification: Optional[str] = None
     dry_run: Optional[bool] = False
     admin_auto_approve: Optional[bool] = False
-    expiration_date: Optional[int] = Field(
+    expiration_date: Optional[datetime] = Field(
+        None, description="Date to expire requested policy"
+    )
+    ttl: Optional[int] = Field(
         None,
-        description="Date to expire requested policy, in the format of YYYYmmdd",
-        example=20210905,
+        description="The time, in seconds, before the request expires after it has been approved.",
+        example=43200,
     )
     credentials: Optional[CloudCredentials] = Field(None, is_secret=True)
 
@@ -1381,10 +1392,13 @@ class ExtendedRequestModel(RequestModel):
     requester_info: UserModel
     reviewer: Optional[str] = None
     comments: Optional[List[CommentModel]] = None
-    expiration_date: Optional[int] = Field(
+    expiration_date: Optional[datetime] = Field(
+        None, description="Date to expire requested policy or role"
+    )
+    ttl: Optional[int] = Field(
         None,
-        description="Date to expire requested policy or role, in the format of YYYYmmdd",
-        example=20210905,
+        description="The time, in seconds, before the request expires after it has been approved.",
+        example=43200,
     )
 
 
