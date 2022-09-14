@@ -9,9 +9,8 @@ import {
   Segment,
   Message,
 } from 'semantic-ui-react'
-import { DateTime } from 'luxon'
 import { Fill } from 'lib/Misc'
-import { timeOptions } from './utils'
+import { TIME_OPTIONS } from './utils'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../../auth/AuthProviderDefault'
 
@@ -20,7 +19,7 @@ const TempPolicyEscalationModal = ({
   setTempEscalationModalData,
 }) => {
   const [justification, setJustification] = useState('')
-  const [expirationDate, setExpirationDate] = useState(timeOptions[0].value)
+  const [timeInSeconds, setTimeInSeconds] = useState(TIME_OPTIONS[0].value)
   const [isLoading, setIsLoading] = useState(false)
   const [errorAlert, setErrorAlert] = useState(null)
   const [successAlert, setSuccessAlert] = useState(null)
@@ -33,7 +32,7 @@ const TempPolicyEscalationModal = ({
       setSuccessAlert(null)
       setIsLoading(false)
       setJustification('')
-      setExpirationDate(timeOptions[0].value)
+      setTimeInSeconds(TIME_OPTIONS[0].value)
     }
   }, [tempEscalationModalData.isOpen])
 
@@ -43,10 +42,6 @@ const TempPolicyEscalationModal = ({
     setIsLoading(true)
     setErrorAlert(null)
     setSuccessAlert(null)
-
-    const newExpirationDate = DateTime.utc()
-      .plus({ hour: expirationDate })
-      .toFormat('yyyyMMdd')
 
     const payload = {
       changes: {
@@ -61,7 +56,7 @@ const TempPolicyEscalationModal = ({
         ],
       },
       justification,
-      expiration_date: newExpirationDate,
+      ttl: timeInSeconds,
       dry_run: false,
       admin_auto_approve: false,
     }
@@ -86,7 +81,7 @@ const TempPolicyEscalationModal = ({
     }
 
     setIsLoading(false)
-  }, [tempEscalationModalData, justification, expirationDate]) // eslint-disable-line
+  }, [tempEscalationModalData, justification, timeInSeconds]) // eslint-disable-line
 
   return (
     <Modal
@@ -137,10 +132,10 @@ const TempPolicyEscalationModal = ({
                 <Form.Select
                   fluid
                   label='Expiration Time'
-                  options={timeOptions}
+                  options={TIME_OPTIONS}
                   required
-                  defaultValue={timeOptions[0].value}
-                  onChange={(e) => setExpirationDate(e.target.value)}
+                  defaultValue={TIME_OPTIONS[0].value}
+                  onChange={(_e, { value }) => setTimeInSeconds(value)}
                   disabled={!!successAlert}
                 />
                 <Fill />

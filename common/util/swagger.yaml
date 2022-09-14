@@ -787,9 +787,14 @@ components:
               items:
                 $ref: "#/components/schemas/CommentModel"
             expiration_date:
+              type: string
+              format: date-time
+              description: Date to expire requested policy or role
+            ttl:
               type: integer
-              example: 20210905
-              description: Date to expire requested policy or role, in the format of YYYYmmdd
+              minimum: 1
+              example: 43200
+              description: The time, in seconds, before the request expires after it has been approved.
     ChangeGeneratorModelArray:
       type: object
       required:
@@ -2077,9 +2082,13 @@ components:
           type: boolean
           default: False
         expiration_date:
+          type: string
+          format: date-time
+          description: Date to expire requested policy
+        ttl:
           type: integer
-          example: 20210905
-          description: Date to expire requested policy, in the format of YYYYmmdd
+          example: 43200
+          description: The time, in seconds, before the request expires after it has been approved.
         credentials:
           $ref: "#/components/schemas/CloudCredentials"
           is_secret: true
@@ -2120,6 +2129,7 @@ components:
             - cancel_change
             - move_back_to_pending
             - update_expiration_date
+            - update_ttl
     ExpirationDateRequestModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
@@ -2128,10 +2138,23 @@ components:
             - expiration_date
           properties:
             expiration_date:
+              type: ["string", "null"]
+              default: null
+              format: date-time
+              description: Date to expire requested policy
+    TTLRequestModificationModel:
+      allOf:
+        - $ref: "#/components/schemas/RequestModificationBaseModel"
+        - type: object
+          required:
+            - ttl
+          properties:
+            ttl:
               type: ["integer", "null"]
               default: null
-              example: 20210905
-              description: Date to expire requested policy, in the format of YYYYmmdd
+              example: 43200
+              description: The time, in seconds, before the request expires after it has been approved.
+              minimum: 1
     CommentRequestModificationModel:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
@@ -2211,6 +2234,7 @@ components:
             - $ref: "#/components/schemas/CommentRequestModificationModel"
             - $ref: "#/components/schemas/UpdateChangeModificationModel"
             - $ref: "#/components/schemas/ExpirationDateRequestModificationModel"
+            - $ref: "#/components/schemas/TTLRequestModificationModel"
             - $ref: "#/components/schemas/ApplyChangeModificationModel"
             - $ref: "#/components/schemas/ApproveRequestModificationModel"
             - $ref: "#/components/schemas/MoveToPendingRequestModificationModel"
@@ -2221,6 +2245,7 @@ components:
               add_comment: "#/components/schemas/CommentRequestModificationModel"
               update_change: "#/components/schemas/UpdateChangeModificationModel"
               update_expiration_date: "#/components/schemas/ExpirationDateRequestModificationModel"
+              update_ttl: "#/components/schemas/TTLRequestModificationModel"
     PolicyRequestModificationResponseModel:
       type: object
       properties:

@@ -1,10 +1,10 @@
 from subprocess import run
 
 if __name__ == "__main__":
-    version = "1.5.306"
+    version = "1.5.308"
     branch_name = "main"
-    bucket_path = "s3://noq-global-frontend/1.5.306/main/"
-    public_url = "https://d2mxcvfujf7a5q.cloudfront.net/1.5.306/main/"
+    bucket_path = "s3://noq-global-frontend/1.5.308/main/"
+    public_url = "https://d2mxcvfujf7a5q.cloudfront.net/1.5.308/main/"
     repo_dir = "/home/ccastrapel/localrepos/cloudumi"
 
     output = []

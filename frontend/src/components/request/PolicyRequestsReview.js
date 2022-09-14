@@ -18,7 +18,7 @@ import PermissionsBoundaryChangeComponent from '../blocks/PermissionsBoundaryCha
 import AssumeRolePolicyChangeComponent from '../blocks/AssumeRolePolicyChangeComponent'
 import ResourcePolicyChangeComponent from '../blocks/ResourcePolicyChangeComponent'
 import ResourceTagChangeComponent from '../blocks/ResourceTagChangeComponent'
-import ExpirationDateBlockComponent from 'components/blocks/ExpirationDateBlockComponent'
+import ExpirationDateBlock from 'components/blocks/ExpirationDateBlock'
 import TemporaryEscalationComponent from 'components/blocks/TemporaryEscalationBlockComponent'
 import {
   checkContainsReadOnlyAccount,
@@ -429,15 +429,16 @@ class PolicyRequestReview extends Component {
     )
 
     const expirationDateContent =
-      hasReadOnlyAccountPolicy || hasCondensedPolicy ? (
+      hasReadOnlyAccountPolicy || hasCondensedPolicy || loading ? (
         <Message
           info
           header='Policy request affects a read-only account or Effective Permissions'
           content='Temporary policy requests are disabled for requests affecting read-only accounts and .'
         />
       ) : (
-        <ExpirationDateBlockComponent
+        <ExpirationDateBlock
           expiration_date={extendedRequest.expiration_date || null}
+          ttl={extendedRequest.ttl || null}
           reloadDataFromBackend={this.reloadDataFromBackend}
           requestID={requestID}
           sendRequestCommon={this.props.sendRequestCommon}
