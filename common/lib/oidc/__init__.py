@@ -272,16 +272,17 @@ async def authenticate_user_by_oidc(request):
             )
         )
 
-        user_client = CognitoUserClient.tenant_client(tenant)
-        mfa_configured = user_client.user_mfa_enabled(email)
-        if not mfa_configured:
-            # If MFA isn't enabled for the user, begin the setup process
-            mfa_setup = await user_client.get_mfa_secret(
-                email, access_token=access_token
-            )
-            after_redirect_uri = f"{protocol}://{full_host}/mfa"
-        else:
-            mfa_setup = None
+        if not decoded_id_token.get("identities"):
+            user_client = CognitoUserClient.tenant_client(tenant)
+            mfa_configured = user_client.user_mfa_enabled(email)
+            if not mfa_configured:
+                # If MFA isn't enabled for the user, begin the setup process
+                mfa_setup = await user_client.get_mfa_secret(
+                    email, access_token=access_token
+                )
+                after_redirect_uri = f"{protocol}://{full_host}/mfa"
+            else:
+                mfa_setup = None
 
         # For google auth, the access_token does not contain JWT-parsable claims.
         if config.get_tenant_specific_key(
