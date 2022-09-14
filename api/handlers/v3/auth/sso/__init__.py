@@ -327,6 +327,9 @@ class CognitoUserResetMFA(BaseHandler):
 
 
 class CognitoUserSetupMFA(BaseHandler):
+    async def get(self):
+        self.write(self.mfa_setup)
+
     async def post(self):
         tenant = self.ctx.tenant
         user_client = CognitoUserClient.tenant_client(tenant)
