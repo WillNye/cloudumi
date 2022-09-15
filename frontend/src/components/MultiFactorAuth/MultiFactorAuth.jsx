@@ -18,7 +18,7 @@ const MultiFactorAuth = () => {
   const [showManualCode, setShowManualCode] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [fetchError, setFetchError] = useState(null)
-  const [submitError, setSubmitError] = useState('null')
+  const [submitError, setSubmitError] = useState(null)
   const [mfaData, setMfaData] = useState({})
   const [userCode, setUserCode] = useState('')
 
