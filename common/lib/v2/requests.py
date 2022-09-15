@@ -63,6 +63,7 @@ from common.lib.terraform.requests import (
 from common.lib.v2.aws_principals import get_role_details, get_user_details
 from common.models import (
     Action,
+    Action1,
     ActionResult,
     ApplyChangeModificationModel,
     AssumeRolePolicyChangeModel,
@@ -92,6 +93,7 @@ from common.models import (
     ResourceModel,
     ResourcePolicyChangeModel,
     ResourceTagChangeModel,
+    RoleAccessChangeModel,
     SpokeAccount,
     Status,
     TagAction,
@@ -169,6 +171,7 @@ async def generate_request_from_change_model_array(
     managed_policy_resource_changes = []
     generic_file_changes = []
     tra_role_changes = []
+    role_access_changes = []
     role = None
 
     extended_request_uuid = str(uuid.uuid4())
@@ -237,6 +240,8 @@ async def generate_request_from_change_model_array(
             )
         elif change.change_type == "tra_can_assume_role":
             tra_role_changes.append(TraRoleChangeModel.parse_obj(change.__dict__))
+        elif change.change_type == "assume_role_access":
+            role_access_changes.append(RoleAccessChangeModel.parse_obj(change.__dict__))
         else:
             raise UnsupportedChangeType(
                 f"Invalid `change_type` for change: {change.__dict__}"
@@ -347,6 +352,7 @@ async def generate_request_from_change_model_array(
             or len(assume_role_policy_changes) > 0
             or len(permissions_boundary_changes) > 0
             or len(tra_role_changes) > 0
+            or len(role_access_changes) > 0
         ):
             # for inline/managed/assume role policies, principal arn must be a role
             if (
@@ -430,6 +436,7 @@ async def generate_request_from_change_model_array(
             + permissions_boundary_changes
             + managed_policy_resource_changes
             + tra_role_changes
+            + role_access_changes
         )
         extended_request = ExtendedRequestModel(
             admin_auto_approve=request_creation.admin_auto_approve,
@@ -2454,6 +2461,129 @@ async def apply_tra_role_change(
     return response
 
 
+async def apply_role_access_change(
+    extended_request: ExtendedRequestModel,
+    change: RoleAccessChangeModel,
+    response: PolicyRequestModificationResponseModel,
+    user: str,
+    tenant: str,
+) -> PolicyRequestModificationResponseModel:
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "user": user,
+        "change": change.dict(),
+        "message": "Updating role access to one or more identity",
+        "request": extended_request.dict(),
+        "tenant": tenant,
+    }
+    log.info(log_data)
+    resource_summary = await ResourceSummary.set(
+        tenant, extended_request.principal.principal_arn
+    )
+    account_id = resource_summary.account
+    principal_name = resource_summary.name
+    role_access_tags = config.get_tenant_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.authorized_groups_tags",
+        tenant,
+        [],
+    )
+
+    try:
+        iam_client = await aio_wrapper(
+            boto3_cached_conn,
+            "iam",
+            tenant,
+            user,
+            service_type="client",
+            account_number=account_id,
+            region=config.region,
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", tenant)
+            .with_query({"account_id": account_id})
+            .first.name,
+            session_name=sanitize_session_name("noq_principal_updater_" + user),
+            retry_max_attempts=2,
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
+        )
+        role_tags = await aio_wrapper(
+            iam_client.list_role_tags, RoleName=principal_name
+        )
+
+        if change.action == Action1.add:
+            # Add to the default tag and only if the identity is not in any other role access tag
+            role_access_tag = role_access_tags[0]
+            tag_val = get_resource_tag(role_tags, role_access_tag, True, set())
+            identities_with_role_access = set(*tag_val)
+
+            if len(role_tags) > 1:
+                for x in range(1, len(role_access_tags)):
+                    identities_with_role_access.update(
+                        get_resource_tag(role_tags, role_access_tags[x], True, set())
+                    )
+
+            for identity in change.identities:
+                if identity not in identities_with_role_access:
+                    tag_val.add(identity)
+
+            await aio_wrapper(
+                iam_client.tag_role,
+                RoleName=principal_name,
+                Tags=[{"Key": role_access_tag, "Value": ":".join(tag_val)}],
+            )
+        elif change.action == Action1.remove:
+            for role_access_tag in role_access_tags:
+                requires_update = False
+                tag_val = set()
+                role_access_tag_vals = get_resource_tag(
+                    role_tags, role_access_tag, True, set()
+                )
+                for role_access_tag_val in role_access_tag_vals:
+                    if any(
+                        role_access_tag_val == identity
+                        for identity in change.identities
+                    ):
+                        requires_update = True
+                    else:
+                        tag_val.add(role_access_tag_val)
+
+                if requires_update:
+                    if tag_val:
+                        await aio_wrapper(
+                            iam_client.tag_role,
+                            RoleName=principal_name,
+                            Tags=[{"Key": role_access_tag, "Value": ":".join(tag_val)}],
+                        )
+                    else:
+                        await aio_wrapper(
+                            iam_client.untag_role,
+                            RoleName=principal_name,
+                            TagKeys=[role_access_tag],
+                        )
+
+        change.status = Status.applied
+    except Exception as e:
+        log_data["message"] = "Exception occurred creating or updating tag"
+        log_data["error"] = str(e)
+        log.error(log_data, exc_info=True)
+        sentry_sdk.capture_exception()
+        response.errors += 1
+        response.action_results.append(
+            ActionResult(
+                status="error",
+                message=f"Error occurred updating tag for principal: {principal_name}: "
+                + str(e),
+            )
+        )
+
+    return response
+
+
 async def apply_managed_policy_resource_change(
     extended_request: ExtendedRequestModel,
     change: ManagedPolicyResourceChangeModel,
@@ -3280,6 +3410,10 @@ async def parse_and_apply_policy_request_modification(
                 )
             elif specific_change.change_type == "tra_can_assume_role":
                 response = await apply_tra_role_change(
+                    extended_request, specific_change, response, user, tenant
+                )
+            elif specific_change.change_type == "assume_role_access":
+                response = await apply_role_access_change(
                     extended_request, specific_change, response, user, tenant
                 )
             else:

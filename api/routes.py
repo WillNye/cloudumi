@@ -3,6 +3,7 @@ import os
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
+from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from common.handlers.base import AuthenticatedStaticFileHandler
 
 """Web routes."""
@@ -220,6 +221,7 @@ def make_app(jwt_validator=None):
         (r"/api/v2/clone/role", RoleCloneHandler),
         (r"/api/v2/generate_changes/?", GenerateChangesHandler),
         (r"/api/v2/typeahead/resources", ResourceTypeAheadHandlerV2),
+        (r"/api/v2/typeahead/user-and-group", UserAndGroupTypeAheadHandler),
         (r"/api/v2/role_login/(.*)", RoleConsoleLoginHandler),
         # (r"/myheaders/?", HeaderHandler),
         (r"/api/v2/policies/typeahead/?", ResourceTypeAheadHandler),
