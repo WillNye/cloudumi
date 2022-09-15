@@ -28,8 +28,8 @@ const MultiFactorAuth = () => {
     setIsLoading(true)
     sendRequestCommon(null, '/api/v3/auth/cognito/setup-mfa', 'get')
       .then((res) => {
-        if (res?.data) {
-          setMfaData(res.data)
+        if (res?.TotpUri) {
+          setMfaData(res)
         } else {
           setFetchError(JSON.stringify(res))
         }
@@ -52,7 +52,7 @@ const MultiFactorAuth = () => {
       'post'
     )
       .then((res) => {
-        if (res?.data) {
+        if (res?.status === 'success') {
           setIsSuccess(true)
         } else {
           setSubmitError(JSON.stringify(res))
