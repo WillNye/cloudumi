@@ -57,17 +57,6 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
-py_binary(
-    name = "upload_to_cdn",
-    srcs_version = "PY3",
-    srcs = [
-        "upload_cdn.py",
-    ],
-    main = "upload_cdn.py",
-    deps = EXT_DEPS,
-    visibility = ["//visibility:public"],
-)
-
 genrule(
     name = "destroy",
     srcs = [

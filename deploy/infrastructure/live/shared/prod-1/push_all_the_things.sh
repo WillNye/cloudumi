@@ -36,11 +36,6 @@ echo
 bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod
 
 echo
-echo "Deploying static assets to CDN - $(git describe --tags --abbrev=0)"
-echo
-bazelisk run //deploy/infrastructure/live/shared/prod-1:upload_to_cdn
-
-echo
 echo "Deploying Service - $(git describe --tags --abbrev=0)"
 echo
 VERSION=$(git describe --tags --abbrev=0) bazelisk run //deploy/infrastructure/live/shared/prod-1:ecs_deployer
