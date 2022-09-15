@@ -12,7 +12,7 @@
   }
 
   &__qrcode {
-    max-width: 300px;
+    max-width: 350px;
     display: flex;
     justify-content: left;
     align-items: center;
@@ -30,5 +30,6 @@
     padding-top: $h-10;
     text-align: center;
     cursor: pointer;
+    word-break: break-all;
   }
 }

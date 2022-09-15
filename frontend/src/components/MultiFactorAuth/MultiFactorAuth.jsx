@@ -25,18 +25,18 @@ const MultiFactorAuth = () => {
   const { sendRequestCommon } = useAuth()
 
   useEffect(() => {
-    setIsLoading(true)
-    sendRequestCommon(null, '/api/v3/auth/cognito/setup-mfa', 'get')
-      .then((res) => {
-        if (res?.TotpUri) {
-          setMfaData(res)
-        } else {
-          setFetchError(JSON.stringify(res))
-        }
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
+    // setIsLoading(true)
+    // sendRequestCommon(null, '/api/v3/auth/cognito/setup-mfa', 'get')
+    //   .then((res) => {
+    //     if (res?.TotpUri) {
+    //       setMfaData(res)
+    //     } else {
+    //       setFetchError(JSON.stringify(res))
+    //     }
+    //   })
+    //   .finally(() => {
+    //     setIsLoading(false)
+    //   })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOnSubmit = useCallback(() => {
@@ -52,6 +52,7 @@ const MultiFactorAuth = () => {
       'post'
     )
       .then((res) => {
+        console.log('------------', res)
         if (res?.status === 'success') {
           setIsSuccess(true)
         } else {
