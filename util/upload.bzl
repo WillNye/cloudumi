@@ -26,6 +26,13 @@ _ATTRS = {
         executable = True,
         doc = "The Python interpreter to use to run the upload script",
     ),
+    "aws_bin": attr.label(
+        allow_files = True,
+        default = "@awscli//:awscli_bin",
+        cfg = "exec",
+        executable = True,
+        doc = "The AWS CLI binary to use to run the upload script",
+    ),
     "aws_with_deps": attr.label_list(
         default = [
             requirement("awscli"),
@@ -63,7 +70,7 @@ def _upload_cdn_impl(ctx):
     branch = version_info.branch
 
     files = ctx.attr.data.files
-    output_file = ctx.actions.declare_file(ctx.label.name)
+    output_file = ctx.actions.declare_file("upload_cdn_results.txt")
 
     # Get the base URL.
     bucket_path = "s3://{bucket_name}/{version}/{branch}".format(
@@ -72,24 +79,29 @@ def _upload_cdn_impl(ctx):
         branch = branch,
     )
 
-    output = []
-    output.append("Bucket Path: {bucket_path}".format(bucket_path = bucket_path))
     env = {x: y for x, y in ctx.attr.env.items()}
 
     for dep in ctx.attr.aws_with_deps:
+        if "awscli" in dep.files.to_list()[0].dirname:
+            env["AWSCLI_PATH"] = dep.files.to_list()[0].dirname
+            env["PWD"] = dep.files.to_list()[0].dirname
         if "PYTHONPATH" not in env:
             env["PYTHONPATH"] = dep.files.to_list()[0].dirname
         else:
             env["PYTHONPATH"] = env["PYTHONPATH"] + ":" + dep.files.to_list()[0].dirname
 
     build_output = ctx.attr.data.files.to_list()[0].path
-    ctx.actions.run(
+    ctx.actions.run_shell(
         inputs = files,
         outputs = [output_file],
-        executable = ctx.attr.interpreter.files.to_list()[0],
-        arguments = ["-m", "awscli", "s3", "sync", build_output, bucket_path],
+        command = "{aws_bin} s3 sync {build_output} {bucket_path} --debug > {output_file} 2>&1".format(
+           aws_bin = ctx.attr.aws_bin.files.to_list()[0].path,
+           build_output = build_output,
+           bucket_path = bucket_path,
+           output_file = output_file.path,
+        ),
         env = env,
-        tools = [x.files for x in ctx.attr.aws_with_deps],
+        tools = [x.files for x in ctx.attr.aws_with_deps] + [ctx.attr.aws_bin.files],
     )
 
     return DefaultInfo(files = depset([output_file]))
