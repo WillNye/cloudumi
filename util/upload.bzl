@@ -94,7 +94,7 @@ def _upload_cdn_impl(ctx):
     ctx.actions.run_shell(
         inputs = files,
         outputs = [output_file],
-        command = "{aws_bin} s3 sync {build_output} {bucket_path} --acl public-read --debug > {output_file} 2>&1".format(
+        command = "{aws_bin} s3 sync {build_output} {bucket_path} --debug > {output_file} 2>&1".format(
            aws_bin = ctx.attr.aws_bin.files.to_list()[0].path,
            build_output = build_output,
            bucket_path = bucket_path,
