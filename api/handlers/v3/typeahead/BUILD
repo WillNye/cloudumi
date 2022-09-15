@@ -1,5 +1,7 @@
 filegroup(
     name = "src",
-    srcs = glob(["*.py"]),
+    srcs = glob([
+        "**/*.py"
+    ]),
     visibility = ["//visibility:public"],
 )
