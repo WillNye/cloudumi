@@ -49,11 +49,7 @@ class FluentBitMetric(Metric):
             "_global_.metrics.fluent-bit.max_log_file_size", 6 * MBYTE
         )
 
-    def send_fluent_bit_metric(self, metric_name, dimensions, unit, value):
-        if not config.get("_global_.metrics.fluent-bit.enabled", True):
-            return
-        if not self.fluent_bit_log_file.parent.exists():
-            os.makedirs(self.fluent_bit_log_file.parent, exists_ok=True)
+    def __do_store_metric(self, metric_name, dimensions, unit, value):
         # Check file size and rotate file if needed
         if self.fluent_bit_log_file.exists():
             statinfo = os.stat(self.fluent_bit_log_file)
@@ -75,6 +71,17 @@ class FluentBitMetric(Metric):
                 },
                 fpx,
             )
+
+    def send_fluent_bit_metric(self, metric_name, dimensions, unit, value):
+        if not config.get("_global_.metrics.fluent-bit.enabled", True):
+            return
+        if not self.fluent_bit_log_file.parent.exists():
+            os.makedirs(self.fluent_bit_log_file.parent, exists_ok=True)
+        with self.executor as executor:
+            future = executor.submit(
+                self.__do_store_metric, metric_name, dimensions, unit, value
+            )
+            future.add_done_callback(log_metric_error)
 
     def generate_dimensions(self, tags):
         dimensions = []
