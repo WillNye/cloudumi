@@ -6,7 +6,7 @@ export const ReadOnlyNotification = ({ isReadonlyInfo }) =>
     <Grid.Column>
       <Message info>
         <Message.Header>View only</Message.Header>
-        <p>This change is view only and can no longer be modified.</p>
+        <p>This change is view only and can not be modified.</p>
       </Message>
     </Grid.Column>
   ) : (

@@ -3,11 +3,13 @@ import re
 import sys
 import time
 import uuid
+from datetime import datetime, timedelta
 from hashlib import sha256
 from typing import Dict, List, Optional, Union
 
 import sentry_sdk
 from botocore.exceptions import ClientError
+from dateutil import parser
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
@@ -94,6 +96,7 @@ from common.models import (
     Status,
     TagAction,
     TraRoleChangeModel,
+    TTLRequestModificationModel,
     UpdateChangeModificationModel,
     UserModel,
 )
@@ -138,7 +141,6 @@ async def generate_request_from_change_model_array(
     :param user: Str - requester's email address
     :return: ChangeModelArray
     """
-
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "user": user,
@@ -432,6 +434,7 @@ async def generate_request_from_change_model_array(
         extended_request = ExtendedRequestModel(
             admin_auto_approve=request_creation.admin_auto_approve,
             expiration_date=request_creation.expiration_date,
+            ttl=request_creation.ttl,
             id=extended_request_uuid,
             principal=primary_principal,
             timestamp=int(time.time()),
@@ -3077,10 +3080,31 @@ async def parse_and_apply_policy_request_modification(
                 to_addresses=[extended_request.requester_email],
             )
 
+    elif request_changes.command == Command.update_ttl:
+        request_model = TTLRequestModificationModel.parse_obj(request_changes)
+        extended_request.expiration_date = None
+        extended_request.ttl = request_model.ttl
+        response = await _update_dynamo_with_change(
+            user,
+            tenant,
+            extended_request,
+            log_data,
+            response,
+            "Successfully updated the request ttl",
+            "Error occurred updating the request ttl",
+        )
+
     elif request_changes.command == Command.update_expiration_date:
+        extended_request.ttl = None
         expiration_date_model = ExpirationDateRequestModificationModel.parse_obj(
             request_changes
         )
+        if expiration_date_model.expiration_date and isinstance(
+            expiration_date_model.expiration_date, str
+        ):
+            expiration_date_model.expiration_date = parser.parse(
+                expiration_date_model.expiration_date
+            )
         extended_request = await update_extended_request_expiration_date(
             tenant, user, extended_request, expiration_date_model.expiration_date
         )
@@ -3200,7 +3224,8 @@ async def parse_and_apply_policy_request_modification(
                 response.action_results.append(
                     ActionResult(
                         status="success",
-                        message=f"Status updated to applied for {specific_change_arn}",
+                        message=f"{extended_request.requester_email} has been give temporary access to {specific_change_arn}. "
+                        f"Please allow up to 5 minutes for access to be granted.",
                     )
                 )
             elif (
@@ -3274,9 +3299,14 @@ async def parse_and_apply_policy_request_modification(
                     tenant, extended_request.principal.principal_arn, force_refresh
                 )
             if specific_change.status == Status.applied:
+                if extended_request.ttl:
+                    extended_request.expiration_date = datetime.utcnow() + timedelta(
+                        seconds=extended_request.ttl
+                    )
+                    extended_request = await update_extended_request_expiration_date(
+                        tenant, user, extended_request, extended_request.expiration_date
+                    )
                 # Change was successful, update in dynamo
-                success_message = "Successfully updated change in dynamo"
-                error_message = "Error updating change in dynamo"
                 specific_change.updated_by = user
                 response = await _update_dynamo_with_change(
                     user,
@@ -3284,8 +3314,8 @@ async def parse_and_apply_policy_request_modification(
                     extended_request,
                     log_data,
                     response,
-                    success_message,
-                    error_message,
+                    "Successfully updated change in dynamo",
+                    "Error updating change in dynamo",
                     visible=False,
                 )
                 if specific_change_arn:

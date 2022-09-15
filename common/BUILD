@@ -1,4 +1,3 @@
-load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_python//python:packaging.bzl", "py_wheel")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
@@ -12,31 +11,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-copy_file(
-    name = "noq_logo_png",
-    src = "//frontend/src/assets:NoqLogo.png",
-    out = "templates/NoqLogo.png",
-    allow_symlink = True,
-)
-
-copy_file(
-    name = "noq_logo_svg",
-    src = "//frontend/src/assets:NoqLogo.svg",
-    out = "templates/NoqLogo.svg",
-    allow_symlink = True,
-)
-
-filegroup(
-    name = "template_files",
-    srcs = glob([
-        "templates/*.j2",
-    ]) + [
-        ":noq_logo_png",
-        ":noq_logo_svg",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 exports_files(
     ["models.py"],
 )
@@ -44,7 +18,7 @@ exports_files(
 py_library(
     name = "lib",
     data = [
-         ":template_files",
+         "//common/templates:template_files",
     ],
     srcs_version = "PY3",
     srcs = [

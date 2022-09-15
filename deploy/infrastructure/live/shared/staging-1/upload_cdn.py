@@ -1,11 +1,11 @@
 from subprocess import run
 
 if __name__ == "__main__":
-    version = "1.5.303"
-    branch_name = "task.en-1057-serve-frontend-cf-cdn"
-    bucket_path = "s3://noq-global-frontend/1.5.303/task.en-1057-serve-frontend-cf-cdn/"
-    public_url = "https://d2mxcvfujf7a5q.cloudfront.net/1.5.303/task.en-1057-serve-frontend-cf-cdn/"
-    repo_dir = "/home/matt/dev/noq/cloudumi"
+    version = "1.5.308"
+    branch_name = "main"
+    bucket_path = "s3://noq-global-frontend/1.5.308/main/"
+    public_url = "https://d2mxcvfujf7a5q.cloudfront.net/1.5.308/main/"
+    repo_dir = "/home/ccastrapel/localrepos/cloudumi"
 
     output = []
     output.append(

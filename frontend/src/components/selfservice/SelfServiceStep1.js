@@ -14,7 +14,7 @@ import {
 } from 'semantic-ui-react'
 import ReactMarkdown from 'react-markdown'
 import RoleDetails from '../roles/RoleDetails'
-import SemanticDatepicker from 'react-semantic-ui-datepickers'
+import DateTimePicker from 'components/blocks/DateTimePicker'
 import './SelfService.css'
 
 class SelfServiceStep1 extends Component {
@@ -228,16 +228,10 @@ class SelfServiceStep1 extends Component {
                           (Optional) Expiration date for requested permissions
                         </Header.Subheader>
                       </Header>
-                      <SemanticDatepicker
-                        filterDate={(date) => {
-                          const now = new Date()
-                          return date >= now
-                        }}
-                        onChange={this.props.handleSetPolicyExpiration.bind(
+                      <DateTimePicker
+                        onDateSelectorChange={this.props.handleSetPolicyExpiration.bind(
                           this
                         )}
-                        type='basic'
-                        compact
                       />
                     </Form.Field>
                   ) : null}

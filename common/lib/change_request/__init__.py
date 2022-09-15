@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from hashlib import sha256
 from typing import Dict, List, Optional
 
@@ -53,26 +54,31 @@ async def _generate_policy_statement(
     return policy_statement
 
 
-async def generate_policy_sid(user: str, expiration_date: Optional[int] = None) -> str:
+async def generate_policy_sid(
+    user: str, expiration_date: Optional[datetime] = None
+) -> str:
     """
     Generate a unique SID identifying the user and time of the change request.
 
     :param user: User's e-mail address
     :return: policy SID string
     """
+    from common.user_request.utils import get_expiry_sid_str
+
     user_stripped = user.split("@")[0]
     # Strip out any special characters from username
     user_stripped = "".join(e for e in user_stripped if e.isalnum())
     random_string = await generate_random_string()
 
     if expiration_date:
+        expiration_date = get_expiry_sid_str(expiration_date)
         return f"noqdeleteon{expiration_date}{user_stripped}{int(time.time())}"
 
     return f"noq{user_stripped}{int(time.time())}{random_string}"
 
 
 async def generate_policy_name(
-    policy_name: str, user: str, tenant: str, expiration_date: Optional[int] = None
+    policy_name: str, user: str, tenant: str, expiration_date: Optional[datetime] = None
 ) -> str:
     """
     Generate a unique policy name identifying the user and time of the change request.
@@ -81,6 +87,8 @@ async def generate_policy_name(
     :param user: User's e-mail address
     :return: policy name string
     """
+    from common.user_request.utils import get_expiry_sid_str
+
     temp_policy_prefix = config.get_tenant_specific_key(
         "policies.temp_policy_prefix", tenant, "noq_delete_on"
     )
@@ -89,6 +97,7 @@ async def generate_policy_name(
     user_stripped = user.split("@")[0]
     random_string = await generate_random_string()
     if expiration_date:
+        expiration_date = get_expiry_sid_str(expiration_date)
         return (
             f"{temp_policy_prefix}_{expiration_date}_{user_stripped}_{int(time.time())}"
         )
