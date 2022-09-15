@@ -73,7 +73,7 @@ def _upload_cdn_impl(ctx):
     output_file = ctx.actions.declare_file("upload_cdn_results.txt")
 
     # Get the base URL.
-    bucket_path = "s3://{bucket_name}/{version}/{branch}".format(
+    bucket_path = "s3://{bucket_name}/{branch}/{version}".format(
         bucket_name = ctx.attr.bucket_name,
         version = version,
         branch = branch,
@@ -94,7 +94,7 @@ def _upload_cdn_impl(ctx):
     ctx.actions.run_shell(
         inputs = files,
         outputs = [output_file],
-        command = "{aws_bin} s3 sync {build_output} {bucket_path} --debug > {output_file} 2>&1".format(
+        command = "{aws_bin} s3 sync {build_output} {bucket_path} --acl public-read --debug > {output_file} 2>&1".format(
            aws_bin = ctx.attr.aws_bin.files.to_list()[0].path,
            build_output = build_output,
            bucket_path = bucket_path,
