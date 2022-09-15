@@ -1,8 +1,10 @@
+@import '../variables.default.scss';
+
 .multi-factor-auth {
   width: 80%;
   margin: auto;
   padding-top: 100px;
-  padding-bottom: 20px;
+  padding-bottom: $h-20;
   max-width: 1200px;
 
   &__input {
@@ -18,13 +20,14 @@
   }
 
   &__qrcode_text {
-    padding-top: 10px;
+    padding-top: $h-10;
     text-align: center;
+    color: $blue-1;
     cursor: pointer;
   }
 
   &__qrcode_text_code {
-    padding-top: 10px;
+    padding-top: $h-10;
     text-align: center;
     cursor: pointer;
   }
