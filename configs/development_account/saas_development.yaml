@@ -14,7 +14,11 @@ _global_:
     cloudwatch:
       enabled: false
     fluent-bit:
-      enabled: false
+      namespace: noq-develop
+      max_threads: 10
+      enabled: true
+      log_file: "/var/log/saas_output.log"
+      max_log_file_size: 6291456 # 6 megabyte
       config: configs/fluent-bit/fluent-bit.conf
       exe: /opt/fluent-bit/bin/fluent-bit
   web:
@@ -82,6 +86,7 @@ _global_:
     group_mapping: cmsaas_group_mapping
     internal_celery_tasks: cmsaas_celery_tasks
     metrics: cmsaas_metrics
+    # metrics: fluent-bit  # enable as needed
     internal_config: cmsaas_config
     internal_routes: cmsaas_internal_routes
     internal_policies: cmsaas_policies
