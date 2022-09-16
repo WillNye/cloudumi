@@ -1,0 +1,27 @@
+digraph IAMOps {
+    label="IAMOps: User Journeys"
+    rankdir="TB"
+    
+#subgraph Journeys {
+    rankdir="LR"
+    rank="min";
+    Request     [shape=cds; label="Request"] 
+    Grant       [shape=cds; label="Grant"]
+    Develop     [shape=cds; label="Develop" ]
+    Restrict    [shape=cds; label="Restrict"]
+    Understand  [shape=cds; label="Understand"]
+    Delegate  [shape=cds; label="Delegate"]
+    Respond  [shape=cds; label="Respond"]
+    Request -> Grant
+    Restrict -> Request
+    Develop -> Request [tailport=e headport=nw]
+    Understand -> Restrict
+    Understand -> Develop [tailport=ne headport=w]
+    Request -> Delegate [tailport=se headport=w]
+    Delegate -> Grant[tailport=e headport=sw]
+    Respond -> Grant [label="Break-glass" tailport=e headport=nw]
+    Understand -> Search [tailport=se headport=w]
+    Search -> Request [tailport=e headport=sw]
+    #Respond -> Delegate [label="Self-approval"]
+    #Respond -> Request [label="Implicit"]
+}
