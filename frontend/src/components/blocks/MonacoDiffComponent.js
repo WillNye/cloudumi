@@ -10,7 +10,7 @@ import {
   convertToCloudFormation,
   convertToTerraform,
 } from '../../helpers/utils'
-import { Menu, Button, Icon, GridColumn, Grid } from 'semantic-ui-react'
+import { Menu, Button, Icon } from 'semantic-ui-react'
 import { ReadOnlyPolicyMonacoEditor } from '../policy/PolicyMonacoEditor'
 import { NullPolicyNotification } from './notificationMessages'
 
@@ -144,24 +144,12 @@ const MonacoDiffComponent = (props) => {
         </Menu>
         {activeItem === 'JSON' &&
         (newValue === '{}' || newValue.includes('deleted')) ? (
-          <div>
-            <GridColumn>
-              <Editor
-                defaultLanguage={language}
-                width='100%'
-                height='500px'
-                defaultValue={oldValue}
-                //onMount={editorDidMount}
-                //options={options}
-                //onChange={onChange}
-                theme={editorTheme}
-                alwaysConsumeMouseWheel={false}
-              />
-            </GridColumn>
-            <GridColumn>
-              <NullPolicyNotification isNullPolicy={true} />
-            </GridColumn>
-          </div>
+          <NullPolicyNotification
+            language={language}
+            oldValue={oldValue}
+            theme={editorTheme}
+            isNullPolicy={true}
+          />
         ) : activeItem === 'JSON' ? (
           <DiffEditor
             language={language}
