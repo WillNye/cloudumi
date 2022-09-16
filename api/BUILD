@@ -134,7 +134,7 @@ py_binary(
     data = [
         "//configs/development_account:configs",
         "//configs:fluent-bit",
-        "//frontend:build",
+        "//frontend:build_local",
         ":docs_sources",
     ],
     srcs_version = "PY3",
@@ -149,7 +149,7 @@ py_binary(
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
         "AWS_REGION": "us-west-2",
-        "FRONTEND_PATH": "frontend/build",
+        "FRONTEND_PATH": "frontend/build_local",
         "RUNTIME_PROFILE": "API",
     },
     deps = INT_DEPS + EXT_DEPS,
