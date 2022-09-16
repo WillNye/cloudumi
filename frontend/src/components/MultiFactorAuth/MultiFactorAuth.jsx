@@ -16,7 +16,6 @@ import './MultiFactorAuth.scss'
 const MultiFactorAuth = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [showManualCode, setShowManualCode] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
   const [fetchError, setFetchError] = useState(null)
   const [submitError, setSubmitError] = useState(null)
   const [mfaData, setMfaData] = useState({})
@@ -25,18 +24,18 @@ const MultiFactorAuth = () => {
   const { sendRequestCommon } = useAuth()
 
   useEffect(() => {
-    // setIsLoading(true)
-    // sendRequestCommon(null, '/api/v3/auth/cognito/setup-mfa', 'get')
-    //   .then((res) => {
-    //     if (res?.TotpUri) {
-    //       setMfaData(res)
-    //     } else {
-    //       setFetchError(JSON.stringify(res))
-    //     }
-    //   })
-    //   .finally(() => {
-    //     setIsLoading(false)
-    //   })
+    setIsLoading(true)
+    sendRequestCommon(null, '/api/v3/auth/cognito/setup-mfa', 'get')
+      .then((res) => {
+        if (res?.TotpUri) {
+          setMfaData(res)
+        } else {
+          setFetchError(JSON.stringify(res))
+        }
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOnSubmit = useCallback(() => {
@@ -53,8 +52,8 @@ const MultiFactorAuth = () => {
     )
       .then((res) => {
         console.log('------------', res)
-        if (res?.status === 'success') {
-          setIsSuccess(true)
+        if (res?.status_code === 200) {
+          window.location.href = '/'
         } else {
           setSubmitError(JSON.stringify(res))
         }
@@ -146,34 +145,14 @@ const MultiFactorAuth = () => {
                   required
                   value={userCode}
                   onChange={(_e, { value }) => setUserCode(value)}
-                  disabled={isSuccess}
                 />
-                {!isSuccess && (
-                  <>
-                    <Message
-                      error
-                      header='Invalid Code'
-                      content={submitError}
-                    />
-                    <Button type='submit'>Submit</Button>
-                  </>
-                )}
+                <Message
+                  error
+                  header='Invalid Code'
+                  content={submitError}
+                />
+                <Button type='submit'>Submit</Button>
               </Form>
-
-              {isSuccess && (
-                <div>
-                  <Divider horizontal />
-                  <Message
-                    success
-                    header='MFA has been successfully set'
-                    content='Please click the below to continue with your setup'
-                  />
-                  <Divider horizontal />
-                  <Link to='/'>
-                    <Button primary>Continue</Button>
-                  </Link>
-                </div>
-              )}
             </div>
           </Segment>
         )}
