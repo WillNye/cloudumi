@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { DiffEditor, useMonaco } from '@monaco-editor/react'
-import Editor from '@monaco-editor/react'
 import PropTypes from 'prop-types'
 import {
   getMonacoTriggerCharacters,
@@ -12,7 +11,7 @@ import {
 } from '../../helpers/utils'
 import { Menu, Button, Icon } from 'semantic-ui-react'
 import { ReadOnlyPolicyMonacoEditor } from '../policy/PolicyMonacoEditor'
-import { NullPolicyNotification } from './notificationMessages'
+import { RegularEditorForNullPolicyComponent } from './RegularEditorForNullPolicyComponent'
 
 const MonacoDiffComponent = (props) => {
   const monaco = useMonaco()
@@ -144,9 +143,9 @@ const MonacoDiffComponent = (props) => {
         </Menu>
         {activeItem === 'JSON' &&
         (newValue === '{}' || newValue.includes('deleted')) ? (
-          <NullPolicyNotification
+          <RegularEditorForNullPolicyComponent
             language={language}
-            oldValue={oldValue}
+            currentPolicy={oldValue}
             theme={editorTheme}
             isNullPolicy={true}
           />
@@ -235,16 +234,11 @@ const MonacoDiffComponent = (props) => {
         {newValue === '{}' ||
         newValue.includes('deleted') ||
         oldValue === '' ? (
-          <Editor
+          <RegularEditorForNullPolicyComponent
             language={language}
-            width='100%'
-            height='500px'
-            original={oldValue}
-            //onMount={editorDidMount}
-            options={options}
-            onChange={onChange}
+            currentPolicy={oldValue}
             theme={editorTheme}
-            alwaysConsumeMouseWheel={false}
+            isNullPolicy={true}
           />
         ) : (
           <DiffEditor
