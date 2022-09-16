@@ -1,0 +1,75 @@
+digraph {
+    rankdir="LR"
+    ranksep=1
+#   splines="ortho"
+   
+    node[width=2, height=1, fontname="Roboto"];
+    #edge[headport=w]
+
+    Noq [shape="square" style="filled" fillcolor="lightblue"]
+    Privileges [label="Privileges & Policies"]
+
+subgraph cluster_Noq {
+    Ask         [label="Request Access… \n REQUEST" shape=rect]
+    Approve     [label="Review Access… \n GRANT" shape=rect]
+    Analyze     [label="Analyze Access… \n ANALYZE" shape=rect]
+    Restrict    [label="Restrict Access… \n RESTRICT" shape=rect]
+    Administer  [label="Configure Noq… \n ADMINISTER" shape=rect]
+    Noq -> Ask          [lhead="cluster_Ask"; label="\n\n\n"]
+    Noq -> Approve      [lhead="cluster_Approve"; label="\n\n\n"]
+    Noq -> Analyze      [lhead="cluster_Analyze"; label="\n\n\n"]
+    Noq -> Restrict     [lhead="cluster_Restrict"; label="\n\n\n"]
+    Noq -> Administer   [lhead="cluster_Administer"; label="\n\n\n"]
+    {rank=same Ask Approve Analyze Restrict Administer}
+
+subgraph cluster_Approve {
+    Approve -> Delegate
+    Approve -> Rollback
+}
+subgraph cluster_Ask {
+    Ask -> Cloud_Resources
+    Ask -> "Accounts & Roles" -> {standing temporary create_new}
+    Ask -> Privileges
+    Ask -> Users_and_Groups
+    Users_and_Groups -> Access_Keys
+    Users_and_Groups -> IAM_Users
+    Users_and_Groups -> IAM_Groups
+
+    Privileges -> Managed_Policies
+    Managed_Policies -> Vendor_Managed
+    Managed_Policies -> Customer_Managed
+    Privileges -> IAM_Permissions
+    Privileges -> Service_Controls
+    
+ subgraph cluster_CR {
+    Cloud_Resources -> S3
+    Cloud_Resources -> EC2
+    Cloud_Resources -> RDS
+    Cloud_Resources -> SQS
+    Cloud_Resources -> SNS
+    Cloud_Resources -> Route53 
+    Cloud_Resources -> "#Tags" 
+    Cloud_Resources -> More__
+}
+}
+
+ subgraph cluster_Analyze {
+    Analyze -> Security_Findings
+    Analyze -> Privilege_Levels -> Conditions
+    Analyze -> Usage_History
+ }
+ subgraph cluster_Restrict {
+    Restrict -> Redesign_Roles -> {Refactor Split}
+    Restrict -> Group_Membership
+    Restrict -> Access_Guardrails -> {SCPs Resources Controls}
+    Restrict -> Remove_Unused->{Identities Groups Tags Credentials}
+}
+
+subgraph cluster_Administer {
+    Administer -> Configuration
+    Administer -> Connections
+    Administer -> Delegation
+    Administer -> "#Preferences"
+} 
+}
+}

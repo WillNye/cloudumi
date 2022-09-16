@@ -1,0 +1,445 @@
+<svg width="776" height="2266" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0.00 0.00 1304 1063.67">
+<g id="graph0" class="graph" transform="translate(4.0000073242187,1059.6700439453125) scale(1)">
+<title style="">Request</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-1059.67 1300,-1059.67 1300,4 -4,4" style=""/>
+<text text-anchor="middle" x="648" y="-14.8" font-family="Times,serif" font-size="36.00" style="">[Request] :: User Journey</text>
+<g id="clust1" class="cluster">
+<title style="">cluster_a</title>
+<path fill="lightgrey" stroke="black" d="M20,-252.15C20,-252.15 698,-252.15 698,-252.15 704,-252.15 710,-258.15 710,-264.15 710,-264.15 710,-869.92 710,-869.92 710,-875.92 704,-881.92 698,-881.92 698,-881.92 20,-881.92 20,-881.92 14,-881.92 8,-875.92 8,-869.92 8,-869.92 8,-264.15 8,-264.15 8,-258.15 14,-252.15 20,-252.15" style=""/>
+<text text-anchor="middle" x="359" y="-856.32" font-family="Times,serif" font-size="24.00" style="">AWS Console</text>
+</g>
+<g id="clust3" class="cluster">
+<title style="">cluster_b</title>
+<path fill="none" stroke="green" d="M1126,-252.15C1126,-252.15 1276,-252.15 1276,-252.15 1282,-252.15 1288,-258.15 1288,-264.15 1288,-264.15 1288,-706.72 1288,-706.72 1288,-712.72 1282,-718.72 1276,-718.72 1276,-718.72 1126,-718.72 1126,-718.72 1120,-718.72 1114,-712.72 1114,-706.72 1114,-706.72 1114,-264.15 1114,-264.15 1114,-258.15 1120,-252.15 1126,-252.15" style=""/>
+<text text-anchor="middle" x="1201" y="-693.12" font-family="Times,serif" font-size="24.00" style="">Managed Policy</text>
+</g>
+<g id="clust4" class="cluster">
+<title style="">cluster_c</title>
+<g id="a_clust4"><a xlink:title="Type ≠ Role" style="">
+<path fill="none" stroke="blue" d="M730,-366.74C730,-366.74 908,-366.74 908,-366.74 914,-366.74 920,-372.74 920,-378.74 920,-378.74 920,-892.32 920,-892.32 920,-898.32 914,-904.32 908,-904.32 908,-904.32 730,-904.32 730,-904.32 724,-904.32 718,-898.32 718,-892.32 718,-892.32 718,-378.74 718,-378.74 718,-372.74 724,-366.74 730,-366.74" style=""/>
+<text text-anchor="middle" x="819" y="-878.72" font-family="Times,serif" font-size="24.00" style="">Resource Policy</text>
+</a>
+</g>
+</g>
+<g id="clust5" class="cluster">
+<title style="">cluster_d</title>
+<g id="a_clust5"><a xlink:title="Type == Role" style="">
+<path fill="lightgrey" stroke="red" d="M940,-366.74C940,-366.74 1094,-366.74 1094,-366.74 1100,-366.74 1106,-372.74 1106,-378.74 1106,-378.74 1106,-869.92 1106,-869.92 1106,-875.92 1100,-881.92 1094,-881.92 1094,-881.92 940,-881.92 940,-881.92 934,-881.92 928,-875.92 928,-869.92 928,-869.92 928,-378.74 928,-378.74 928,-372.74 934,-366.74 940,-366.74" style=""/>
+<text text-anchor="middle" x="1017" y="-856.32" font-family="Times,serif" font-size="24.00" style="">Role</text>
+</a>
+</g>
+</g>
+<!-- startRequest -->
+<g id="node1" class="node">
+<title style="">startRequest</title>
+<polygon fill="none" stroke="black" points="887.82,-975.25 896.31,-975.47 904.7,-975.8 912.98,-976.24 921.1,-976.79 929.04,-977.44 936.75,-978.2 944.22,-979.06 951.4,-980.02 958.28,-981.07 964.84,-982.22 971.04,-983.47 976.86,-984.8 982.3,-986.21 987.33,-987.7 991.94,-989.28 996.11,-990.92 999.85,-992.63 1003.13,-994.4 1005.97,-996.23 1008.35,-998.11 1010.27,-1000.04 1011.75,-1002.02 1012.78,-1004.03 1013.37,-1006.07 1013.52,-1008.14 1013.26,-1010.22 1012.59,-1012.33 1011.53,-1014.44 1010.08,-1016.55 1008.27,-1018.66 1006.12,-1020.76 1003.63,-1022.85 1000.83,-1024.92 997.74,-1026.96 994.37,-1028.97 990.75,-1030.94 986.89,-1032.87 982.81,-1034.76 978.53,-1036.59 974.07,-1038.36 969.44,-1040.07 964.67,-1041.71 959.76,-1043.28 954.73,-1044.78 949.59,-1046.19 944.37,-1047.52 939.06,-1048.76 933.68,-1049.91 928.24,-1050.97 922.76,-1051.93 917.23,-1052.79 911.66,-1053.55 906.06,-1054.2 900.45,-1054.75 894.81,-1055.19 889.16,-1055.52 883.5,-1055.74 877.83,-1055.85 872.17,-1055.85 866.5,-1055.74 860.84,-1055.52 855.19,-1055.19 849.55,-1054.75 843.94,-1054.2 838.34,-1053.55 832.77,-1052.79 827.24,-1051.93 821.76,-1050.97 816.32,-1049.91 810.94,-1048.76 805.63,-1047.52 800.41,-1046.19 795.27,-1044.78 790.24,-1043.28 785.33,-1041.71 780.56,-1040.07 775.93,-1038.36 771.47,-1036.59 767.19,-1034.76 763.11,-1032.87 759.25,-1030.94 755.63,-1028.97 752.26,-1026.96 749.17,-1024.92 746.37,-1022.85 743.88,-1020.76 741.73,-1018.66 739.92,-1016.55 738.47,-1014.44 737.41,-1012.33 736.74,-1010.22 736.48,-1008.14 736.63,-1006.07 737.22,-1004.03 738.25,-1002.02 739.73,-1000.04 741.65,-998.11 744.03,-996.23 746.87,-994.4 750.15,-992.63 753.89,-990.92 758.06,-989.28 762.67,-987.7 767.7,-986.21 773.14,-984.8 778.96,-983.47 785.16,-982.22 791.72,-981.07 798.6,-980.02 805.78,-979.06 813.25,-978.2 820.96,-977.44 828.9,-976.79 837.02,-976.24 845.3,-975.8 853.69,-975.47 862.18,-975.25 870.72,-975.14 879.28,-975.14 887.82,-975.25" style=""/>
+<text text-anchor="middle" x="875" y="-1008.29" font-family="Roboto" font-size="24.00" style="">“Get access…”</text>
+</g>
+<!-- a0 -->
+<g id="node6" class="node">
+<title style="">a0</title>
+<ellipse fill="white" stroke="white" cx="623" cy="-801.12" rx="79" ry="36" style=""/>
+<text text-anchor="middle" x="623" y="-805.32" font-family="Roboto" font-size="14.00" style="">Account-first</text>
+<text text-anchor="middle" x="623" y="-788.52" font-family="Roboto" font-size="14.00" style="">Flow</text>
+</g>
+<!-- startRequest&#45;&gt;a0 -->
+<g id="edge27" class="edge">
+<title style="">startRequest:s-&gt;a0:n</title>
+<path fill="none" stroke="black" d="M875,-975.32C875,-957.16 853.71,-967.41 837,-960.32 757.44,-926.53 670.17,-938.18 636.91,-890.76" style=""/>
+<polygon fill="black" stroke="black" points="639.79,-888.75 631.7,-881.91 633.76,-892.3 639.79,-888.75" style=""/>
+</g>
+<!-- b0 -->
+<g id="node17" class="node">
+<title style="">b0</title>
+<polygon fill="lightgrey" stroke="black" points="1201,-673.92 1122,-637.92 1201,-601.92 1280,-637.92 1201,-673.92" style=""/>
+<text text-anchor="middle" x="1201" y="-633.72" font-family="Roboto" font-size="14.00" style="">pickPolicy</text>
+</g>
+<!-- startRequest&#45;&gt;b0 -->
+<g id="edge28" class="edge">
+<title style="">startRequest:s-&gt;b0:n</title>
+<path fill="none" stroke="black" d="M875,-975.32C875,-961.14 923.36,-964.17 937,-960.32 1014.78,-938.35 1051.04,-959.59 1110,-904.32 1175.51,-842.91 1194.75,-801.81 1199.57,-728.75" style=""/>
+<polygon fill="black" stroke="black" points="1203.07,-728.89 1200.14,-718.71 1196.08,-728.5 1203.07,-728.89" style=""/>
+</g>
+<!-- c0 -->
+<g id="node21" class="node">
+<title style="">c0</title>
+<polygon fill="lightgrey" stroke="black" points="819,-859.42 726.03,-801.12 819,-742.82 911.97,-801.12 819,-859.42" style=""/>
+<text text-anchor="middle" x="819" y="-813.72" font-family="Roboto" font-size="14.00" style="">pickResource</text>
+<text text-anchor="middle" x="819" y="-796.92" font-family="Roboto" font-size="14.00" style="">showAccount</text>
+<text text-anchor="middle" x="819" y="-780.12" font-family="Roboto" font-size="14.00" style="">showType</text>
+</g>
+<!-- startRequest&#45;&gt;c0 -->
+<g id="edge29" class="edge">
+<title style="">startRequest:s-&gt;c0:n</title>
+<path fill="none" stroke="black" d="M875,-975.32C875,-943.16 856.88,-928.93 841.26,-912.23" style=""/>
+<polygon fill="black" stroke="black" points="843.55,-909.53 834.33,-904.31 838.28,-914.14 843.55,-909.53" style=""/>
+</g>
+<!-- d0 -->
+<g id="node25" class="node">
+<title style="">d0</title>
+<polygon fill="white" stroke="white" points="1017,-837.12 936.38,-801.12 1017,-765.12 1097.62,-801.12 1017,-837.12" style=""/>
+<text text-anchor="middle" x="1017" y="-805.32" font-family="Roboto" font-size="14.00" style="">pickRole</text>
+<text text-anchor="middle" x="1017" y="-788.52" font-family="Roboto" font-size="14.00" style="">showAccount</text>
+</g>
+<!-- startRequest&#45;&gt;d0 -->
+<g id="edge30" class="edge">
+<title style="">startRequest:s-&gt;d0:n</title>
+<path fill="none" stroke="black" d="M875,-975.32C875,-947.44 932.31,-917.32 974.11,-887.81" style=""/>
+<polygon fill="black" stroke="black" points="976.2,-890.61 982.25,-881.91 972.09,-884.95 976.2,-890.61" style=""/>
+</g>
+<!-- end -->
+<g id="node2" class="node">
+<title style="">end</title>
+<polygon fill="none" stroke="black" points="994.68,-119.68 994.68,-155.67 917.54,-181.12 808.46,-181.12 731.32,-155.67 731.32,-119.68 808.46,-94.23 917.54,-94.23 994.68,-119.68" style=""/>
+<text text-anchor="middle" x="863" y="-130.47" font-family="Roboto" font-size="24.00" style="">requestCreated</text>
+</g>
+<!-- issueCredentials -->
+<g id="node3" class="node">
+<title style="">issueCredentials</title>
+<polygon fill="none" stroke="black" points="267.97,-122.76 267.97,-152.58 204.14,-173.67 113.86,-173.67 50.03,-152.58 50.03,-122.76 113.86,-101.67 204.14,-101.67 267.97,-122.76" style=""/>
+<text text-anchor="middle" x="159" y="-132.27" font-family="Roboto" font-size="18.00" style="">issueCredentials</text>
+</g>
+<!-- pickAccount -->
+<g id="node4" class="node">
+<title style="">pickAccount</title>
+<polygon fill="white" stroke="white" points="623,-673.92 544,-637.92 623,-601.92 702,-637.92 623,-673.92" style=""/>
+<text text-anchor="middle" x="623" y="-633.72" font-family="Roboto" font-size="14.00" style="">pickAccount</text>
+</g>
+<!-- pickRole -->
+<g id="node5" class="node">
+<title style="">pickRole</title>
+<polygon fill="white" stroke="white" points="429,-673.92 350,-637.92 429,-601.92 508,-637.92 429,-673.92" style=""/>
+<text text-anchor="middle" x="429" y="-633.72" font-family="Roboto" font-size="14.00" style="">pickRole</text>
+</g>
+<!-- pickAccount&#45;&gt;pickRole -->
+<g id="edge2" class="edge">
+<title style="">pickAccount:w-&gt;pickRole:e</title>
+<path fill="none" stroke="black" d="M544,-637.92C532,-637.92 526.75,-637.92 518.12,-637.92" style=""/>
+<polygon fill="black" stroke="black" points="518,-634.42 508,-637.92 518,-641.42 518,-634.42" style=""/>
+</g>
+<!-- isNotApproved -->
+<g id="node9" class="node">
+<title style="">isNotApproved</title>
+<ellipse fill="white" stroke="white" cx="447" cy="-529.62" rx="79" ry="36" style=""/>
+<text text-anchor="middle" x="447" y="-525.42" font-family="Roboto" font-size="14.00" style="">isNotApproved</text>
+</g>
+<!-- pickAccount&#45;&gt;isNotApproved -->
+<g id="edge8" class="edge">
+<title style="">pickAccount:sw-&gt;isNotApproved:ne</title>
+<path fill="none" stroke="grey" stroke-dasharray="5,2" d="M598,-611.92C560.43,-574.35 524.81,-599.99 487.49,-570.33" style=""/>
+<polygon fill="grey" stroke="grey" points="489.78,-567.68 480,-563.62 485.11,-572.9 489.78,-567.68" style=""/>
+</g>
+<!-- isNotEligible -->
+<g id="node13" class="node">
+<title style="">isNotEligible</title>
+<ellipse fill="white" stroke="white" cx="623" cy="-529.62" rx="79" ry="36" style=""/>
+<text text-anchor="middle" x="623" y="-525.42" font-family="Roboto" font-size="14.00" style="">isNotEligible</text>
+</g>
+<!-- pickAccount&#45;&gt;isNotEligible -->
+<g id="edge9" class="edge">
+<title style="">pickAccount:s-&gt;isNotEligible:n</title>
+<path fill="none" stroke="grey" stroke-dasharray="5,2" d="M623,-601.92C623,-590.27 623,-585.11 623,-576.81" style=""/>
+<polygon fill="grey" stroke="grey" points="626.5,-576.62 623,-566.62 619.5,-576.62 626.5,-576.62" style=""/>
+</g>
+<!-- pickRole&#45;&gt;pickAccount -->
+<g id="edge11" class="edge">
+<title style="">pickRole:ne-&gt;pickAccount:nw</title>
+<path fill="none" stroke="grey" stroke-dasharray="5,2" d="M453,-662.92C454.74,-664.65 452.19,-672.26 454,-673.92 470.69,-689.16 558.12,-678.19 587.96,-667.54" style=""/>
+<polygon fill="grey" stroke="grey" points="589.69,-670.58 597,-662.92 586.5,-664.35 589.69,-670.58" style=""/>
+</g>
+<!-- pickRole&#45;&gt;isNotApproved -->
+<g id="edge3" class="edge">
+<title style="">pickRole:s-&gt;isNotApproved:n</title>
+<path fill="none" stroke="black" d="M429,-601.92C429,-588.43 439.55,-585.23 444.5,-576.56" style=""/>
+<polygon fill="black" stroke="black" points="447.95,-577.17 447,-566.62 441.16,-575.46 447.95,-577.17" style=""/>
+</g>
+<!-- preApproved -->
+<g id="node10" class="node">
+<title style="">preApproved</title>
+<ellipse fill="white" stroke="white" cx="95" cy="-529.62" rx="79" ry="36" style=""/>
+<text text-anchor="middle" x="95" y="-525.42" font-family="Roboto" font-size="14.00" style="">preApproved</text>
+</g>
+<!-- pickRole&#45;&gt;preApproved -->
+<g id="edge6" class="edge">
+<title style="">pickRole:w-&gt;preApproved:n</title>
+<path fill="none" stroke="black" d="M349,-637.92C293.81,-637.92 117.43,-626.69 96.95,-576.46" style=""/>
+<polygon fill="black" stroke="black" points="100.37,-575.75 95,-566.62 93.51,-577.11 100.37,-575.75" style=""/>
+</g>
+<!-- wasApproved -->
+<g id="node11" class="node">
+<title style="">wasApproved</title>
+<g id="a_node11"><a xlink:title="Matches an&#10;Approved, Unexpired&#10; Request" style="">
+<ellipse fill="white" stroke="white" cx="271" cy="-529.62" rx="79" ry="36" style=""/>
+<text text-anchor="middle" x="271" y="-525.42" font-family="Roboto" font-size="14.00" style="">requestApproved</text>
+</a>
+</g>
+</g>
+<!-- pickRole&#45;&gt;wasApproved -->
+<g id="edge7" class="edge">
+<title style="">pickRole:sw-&gt;wasApproved:n</title>
+<path fill="none" stroke="black" d="M404,-611.92C362.52,-570.43 281.59,-622.03 271.95,-576.65" style=""/>
+<polygon fill="black" stroke="black" points="275.42,-576.25 271,-566.62 268.46,-576.91 275.42,-576.25" style=""/>
+</g>
+<!-- pickRole&#45;&gt;isNotEligible -->
+<g id="edge14" class="edge">
+<title style="">pickRole:se-&gt;isNotEligible:n</title>
+<path fill="none" stroke="black" d="M454,-611.92C478.92,-587 597.47,-601.98 619.48,-576.06" style=""/>
+<polygon fill="black" stroke="black" points="622.79,-577.21 623,-566.62 616.23,-574.77 622.79,-577.21" style=""/>
+</g>
+<!-- a0&#45;&gt;pickAccount -->
+<g id="edge1" class="edge">
+<title style="">a0:s-&gt;pickAccount:n</title>
+<path fill="none" stroke="black" d="M623,-764.12C623,-728.03 623,-716.58 623,-684.92" style=""/>
+<polygon fill="black" stroke="black" points="626.5,-684.92 623,-674.92 619.5,-684.92 626.5,-684.92" style=""/>
+</g>
+<!-- setJustification -->
+<g id="node7" class="node">
+<title style="">setJustification</title>
+<ellipse fill="white" stroke="white" cx="447" cy="-416.03" rx="79" ry="36" style=""/>
+<text text-anchor="middle" x="447" y="-420.23" font-family="Roboto" font-size="14.00" style="">setJustification</text>
+<text text-anchor="middle" x="447" y="-403.43" font-family="Roboto" font-size="14.00" style="">setExpiration</text>
+</g>
+<!-- reviewConsoleRequest -->
+<g id="node8" class="node">
+<title style="">reviewConsoleRequest</title>
+<ellipse fill="white" stroke="white" cx="447" cy="-301.44" rx="79" ry="41.09" style=""/>
+<text text-anchor="middle" x="447" y="-314.04" font-family="Roboto" font-size="14.00" style="">review</text>
+<text text-anchor="middle" x="447" y="-297.24" font-family="Roboto" font-size="14.00" style="">Console</text>
+<text text-anchor="middle" x="447" y="-280.44" font-family="Roboto" font-size="14.00" style="">Request</text>
+</g>
+<!-- setJustification&#45;&gt;reviewConsoleRequest -->
+<g id="edge5" class="edge">
+<title style="">setJustification:s-&gt;reviewConsoleRequest:n</title>
+<path fill="none" stroke="black" d="M447,-379.03C447,-366.93 447,-361.64 447,-352.94" style=""/>
+<polygon fill="black" stroke="black" points="450.5,-352.74 447,-342.74 443.5,-352.74 450.5,-352.74" style=""/>
+</g>
+<!-- reviewConsoleRequest&#45;&gt;end -->
+<g id="edge31" class="edge">
+<title style="">reviewConsoleRequest:s-&gt;end:w</title>
+<path fill="none" stroke="black" d="M447,-259.44C447,-194.05 642.69,-142.49 719.92,-137.99" style=""/>
+<polygon fill="black" stroke="black" points="720.12,-141.49 730,-137.67 719.89,-134.49 720.12,-141.49" style=""/>
+</g>
+<!-- isNotApproved&#45;&gt;setJustification -->
+<g id="edge4" class="edge">
+<title style="">isNotApproved:s-&gt;setJustification:n</title>
+<path fill="none" stroke="black" d="M447,-492.62C447,-479.01 447,-473.3 447,-463.27" style=""/>
+<polygon fill="black" stroke="black" points="450.5,-463.03 447,-453.03 443.5,-463.03 450.5,-463.03" style=""/>
+</g>
+<!-- preApproved&#45;&gt;issueCredentials -->
+<g id="edge35" class="edge">
+<title style="">preApproved:s-&gt;issueCredentials:n</title>
+<path fill="none" stroke="black" d="M95,-492.62C95,-352 155.91,-320.33 158.89,-185.03" style=""/>
+<polygon fill="black" stroke="black" points="162.39,-184.71 159,-174.67 155.39,-184.63 162.39,-184.71" style=""/>
+</g>
+<!-- wasApproved&#45;&gt;issueCredentials -->
+<g id="edge36" class="edge">
+<title style="">wasApproved:sw-&gt;issueCredentials:ne</title>
+<path fill="none" stroke="black" d="M238,-495.62C138.72,-396.34 289.08,-282.16 201.99,-182.15" style=""/>
+<polygon fill="black" stroke="black" points="204.39,-179.59 195,-174.67 199.27,-184.37 204.39,-179.59" style=""/>
+</g>
+<!-- countdown -->
+<g id="node14" class="node">
+<title style="">countdown</title>
+<ellipse fill="white" stroke="white" cx="283" cy="-416.03" rx="36" ry="36" style=""/>
+<text text-anchor="middle" x="283" y="-420.23" font-family="Roboto" font-size="14.00" fill="grey" style="">expiry</text>
+<text text-anchor="middle" x="283" y="-403.43" font-family="Roboto" font-size="14.00" fill="grey" style=""> timer</text>
+</g>
+<!-- wasApproved&#45;&gt;countdown -->
+<g id="edge12" class="edge">
+<title style="">wasApproved:s-&gt;countdown:nw</title>
+<path fill="none" stroke="black" d="M271,-492.62C271,-474.19 251.45,-463.8 252.25,-452" style=""/>
+<polygon fill="black" stroke="black" points="255.41,-453.51 257,-443.03 249.23,-450.23 255.41,-453.51" style=""/>
+</g>
+<!-- a1 -->
+<g id="node12" class="node">
+<title style="">a1</title>
+<ellipse fill="white" stroke="white" cx="429" cy="-801.12" rx="49.01" ry="29.33" style=""/>
+<text text-anchor="middle" x="429" y="-805.32" font-family="Roboto" font-size="14.00" fill="grey" style="">Role-first</text>
+<text text-anchor="middle" x="429" y="-788.52" font-family="Roboto" font-size="14.00" fill="grey" style="">Flow?</text>
+</g>
+<!-- a1&#45;&gt;pickRole -->
+<g id="edge10" class="edge">
+<title style="">a1:sw-&gt;pickRole:nw</title>
+<path fill="none" stroke="grey" stroke-dasharray="5,2" d="M404,-775.12C371.51,-742.63 369.23,-704.64 397.15,-671.38" style=""/>
+<polygon fill="grey" stroke="grey" points="399.81,-673.65 404,-663.92 394.66,-668.91 399.81,-673.65" style=""/>
+</g>
+<!-- enterJustification -->
+<g id="node16" class="node">
+<title style="">enterJustification</title>
+<ellipse fill="white" stroke="white" cx="623" cy="-416.03" rx="79" ry="36" style=""/>
+<text text-anchor="middle" x="623" y="-411.83" font-family="Roboto" font-size="14.00" style="">enterJustification</text>
+</g>
+<!-- isNotEligible&#45;&gt;enterJustification -->
+<g id="edge15" class="edge">
+<title style="">isNotEligible:s-&gt;enterJustification:W</title>
+<path fill="none" stroke="black" d="M623,-492.62C623,-482.88 623,-472.44 623,-462.51" style=""/>
+<polygon fill="black" stroke="black" points="626.5,-462.41 623,-452.41 619.5,-462.41 626.5,-462.41" style=""/>
+</g>
+<!-- countdown&#45;&gt;wasApproved -->
+<g id="edge13" class="edge">
+<title style="">countdown:ne-&gt;wasApproved:se</title>
+<path fill="none" stroke="black" d="M309,-443.03C323.14,-457.17 321.61,-473.32 310.59,-488.06" style=""/>
+<polygon fill="black" stroke="black" points="307.94,-485.78 304,-495.62 313.21,-490.39 307.94,-485.78" style=""/>
+</g>
+<!-- reviewEligibilityRequest -->
+<g id="node15" class="node">
+<title style="">reviewEligibilityRequest</title>
+<ellipse fill="white" stroke="white" cx="623" cy="-301.44" rx="79" ry="41.09" style=""/>
+<text text-anchor="middle" x="623" y="-314.04" font-family="Roboto" font-size="14.00" style="">review</text>
+<text text-anchor="middle" x="623" y="-297.24" font-family="Roboto" font-size="14.00" style="">Eligibilty</text>
+<text text-anchor="middle" x="623" y="-280.44" font-family="Roboto" font-size="14.00" style="">Request</text>
+</g>
+<!-- reviewEligibilityRequest&#45;&gt;end -->
+<g id="edge17" class="edge">
+<title style="">reviewEligibilityRequest:s-&gt;end:W</title>
+<path fill="none" stroke="black" d="M623,-259.44C623,-205.98 671.11,-176.18 724.25,-159.57" style=""/>
+<polygon fill="black" stroke="black" points="725.27,-162.92 733.87,-156.72 723.28,-156.21 725.27,-162.92" style=""/>
+</g>
+<!-- enterJustification&#45;&gt;reviewEligibilityRequest -->
+<g id="edge16" class="edge">
+<title style="">enterJustification:s-&gt;reviewEligibilityRequest:W</title>
+<path fill="none" stroke="black" d="M623,-379.03C623,-370.62 623,-361.69 623,-353.01" style=""/>
+<polygon fill="black" stroke="black" points="626.5,-352.98 623,-342.98 619.5,-352.98 626.5,-352.98" style=""/>
+</g>
+<!-- showPolicyEditor -->
+<g id="node18" class="node">
+<title style="">showPolicyEditor</title>
+<polygon fill="lightgrey" stroke="black" points="1280,-565.62 1122,-565.62 1122,-493.62 1280,-493.62 1280,-565.62" style=""/>
+<text text-anchor="middle" x="1201" y="-525.42" font-family="Roboto" font-size="14.00" style="">showPolicyEditor</text>
+</g>
+<!-- b0&#45;&gt;showPolicyEditor -->
+<g id="edge18" class="edge">
+<title style="">b0:s-&gt;showPolicyEditor:n</title>
+<path fill="none" stroke="black" d="M1201,-601.92C1201,-590.27 1201,-585.11 1201,-576.81" style=""/>
+<polygon fill="black" stroke="black" points="1204.5,-576.62 1201,-566.62 1197.5,-576.62 1204.5,-576.62" style=""/>
+</g>
+<!-- showSettingsEditor -->
+<g id="node19" class="node">
+<title style="">showSettingsEditor</title>
+<ellipse fill="lightgrey" stroke="black" cx="1201" cy="-416.03" rx="79" ry="41.09" style=""/>
+<text text-anchor="middle" x="1201" y="-428.63" font-family="Roboto" font-size="14.00" style="">setJustification</text>
+<text text-anchor="middle" x="1201" y="-411.83" font-family="Roboto" font-size="14.00" style="">editPath</text>
+<text text-anchor="middle" x="1201" y="-395.03" font-family="Roboto" font-size="14.00" style="">editTags</text>
+</g>
+<!-- showPolicyEditor&#45;&gt;showSettingsEditor -->
+<g id="edge19" class="edge">
+<title style="">showPolicyEditor:s-&gt;showSettingsEditor:n</title>
+<path fill="none" stroke="black" d="M1201,-492.62C1201,-480.98 1201,-475.82 1201,-467.52" style=""/>
+<polygon fill="black" stroke="black" points="1204.5,-467.33 1201,-457.33 1197.5,-467.33 1204.5,-467.33" style=""/>
+</g>
+<!-- reviewManagedPolicyRequest -->
+<g id="node20" class="node">
+<title style="">reviewManagedPolicyRequest</title>
+<ellipse fill="lightgrey" stroke="black" cx="1201" cy="-301.44" rx="79" ry="41.09" style=""/>
+<text text-anchor="middle" x="1201" y="-314.04" font-family="Roboto" font-size="14.00" style="">review</text>
+<text text-anchor="middle" x="1201" y="-297.24" font-family="Roboto" font-size="14.00" style="">ManagedPolicy</text>
+<text text-anchor="middle" x="1201" y="-280.44" font-family="Roboto" font-size="14.00" style="">Request</text>
+</g>
+<!-- showSettingsEditor&#45;&gt;reviewManagedPolicyRequest -->
+<g id="edge20" class="edge">
+<title style="">showSettingsEditor:s-&gt;reviewManagedPolicyRequest:n</title>
+<path fill="none" stroke="black" d="M1201,-374.03C1201,-364.25 1201,-359.63 1201,-352.91" style=""/>
+<polygon fill="black" stroke="black" points="1204.5,-352.74 1201,-342.74 1197.5,-352.74 1204.5,-352.74" style=""/>
+</g>
+<!-- reviewManagedPolicyRequest&#45;&gt;end -->
+<g id="edge32" class="edge">
+<title style="">reviewManagedPolicyRequest:s-&gt;end:ne</title>
+<path fill="none" stroke="black" d="M1201,-259.44C1201,-155.13 1076.19,-221.46 975,-196.15 948.73,-189.57 933.12,-199.77 914.97,-187.77" style=""/>
+<polygon fill="black" stroke="black" points="916.93,-184.84 907,-181.15 912.46,-190.23 916.93,-184.84" style=""/>
+</g>
+<!-- showResourcePolicyEditor -->
+<g id="node22" class="node">
+<title style="">showResourcePolicyEditor</title>
+<polygon fill="lightgrey" stroke="black" points="898,-673.92 740,-673.92 740,-601.92 898,-601.92 898,-673.92" style=""/>
+<text text-anchor="middle" x="819" y="-650.52" font-family="Roboto" font-size="14.00" style="">show</text>
+<text text-anchor="middle" x="819" y="-633.72" font-family="Roboto" font-size="14.00" style="">ResourcePolicy</text>
+<text text-anchor="middle" x="819" y="-616.92" font-family="Roboto" font-size="14.00" style="">Editor</text>
+</g>
+<!-- c0&#45;&gt;showResourcePolicyEditor -->
+<g id="edge21" class="edge">
+<title style="">c0:s-&gt;showResourcePolicyEditor:n</title>
+<path fill="none" stroke="black" d="M819,-742.72C819,-716.23 819,-707.21 819,-684.95" style=""/>
+<polygon fill="black" stroke="black" points="822.5,-684.92 819,-674.92 815.5,-684.92 822.5,-684.92" style=""/>
+</g>
+<!-- showResourcePolicySettings -->
+<g id="node23" class="node">
+<title style="">showResourcePolicySettings</title>
+<ellipse fill="lightgrey" stroke="black" cx="819" cy="-529.62" rx="79" ry="41.09" style=""/>
+<text text-anchor="middle" x="819" y="-542.22" font-family="Roboto" font-size="14.00" style="">setJustification</text>
+<text text-anchor="middle" x="819" y="-525.42" font-family="Roboto" font-size="14.00" style="">setSourceArn</text>
+<text text-anchor="middle" x="819" y="-508.62" font-family="Roboto" font-size="14.00" style="">editTags</text>
+</g>
+<!-- showResourcePolicyEditor&#45;&gt;showResourcePolicySettings -->
+<g id="edge22" class="edge">
+<title style="">showResourcePolicyEditor:s-&gt;showResourcePolicySettings:n</title>
+<path fill="none" stroke="black" d="M819,-601.92C819,-592.23 819,-587.65 819,-581" style=""/>
+<polygon fill="black" stroke="black" points="822.5,-580.92 819,-570.92 815.5,-580.92 822.5,-580.92" style=""/>
+</g>
+<!-- reviewResourcePolicyRequest -->
+<g id="node24" class="node">
+<title style="">reviewResourcePolicyRequest</title>
+<ellipse fill="lightgrey" stroke="black" cx="819" cy="-416.03" rx="79" ry="41.09" style=""/>
+<text text-anchor="middle" x="819" y="-428.63" font-family="Roboto" font-size="14.00" style="">review</text>
+<text text-anchor="middle" x="819" y="-411.83" font-family="Roboto" font-size="14.00" style="">ResourcePolicy</text>
+<text text-anchor="middle" x="819" y="-395.03" font-family="Roboto" font-size="14.00" style="">Request</text>
+</g>
+<!-- showResourcePolicySettings&#45;&gt;reviewResourcePolicyRequest -->
+<g id="edge23" class="edge">
+<title style="">showResourcePolicySettings:s-&gt;reviewResourcePolicyRequest:n</title>
+<path fill="none" stroke="black" d="M819,-488.33C819,-478.64 819,-474.06 819,-467.41" style=""/>
+<polygon fill="black" stroke="black" points="822.5,-467.33 819,-457.33 815.5,-467.33 822.5,-467.33" style=""/>
+</g>
+<!-- reviewResourcePolicyRequest&#45;&gt;end -->
+<g id="edge33" class="edge">
+<title style="">reviewResourcePolicyRequest:s-&gt;end:nw</title>
+<path fill="none" stroke="black" d="M819,-374.03C819,-291.82 763.25,-245.65 812.14,-188.54" style=""/>
+<polygon fill="black" stroke="black" points="814.76,-190.86 819,-181.15 809.63,-186.09 814.76,-190.86" style=""/>
+</g>
+<!-- showRoleEditor -->
+<g id="node26" class="node">
+<title style="">showRoleEditor</title>
+<polygon fill="white" stroke="white" points="1095,-673.92 937,-673.92 937,-601.92 1095,-601.92 1095,-673.92" style=""/>
+<text text-anchor="middle" x="1016" y="-633.72" font-family="Roboto" font-size="14.00" style="">showRoleEditor</text>
+</g>
+<!-- d0&#45;&gt;showRoleEditor -->
+<g id="edge24" class="edge">
+<title style="">d0:s-&gt;showRoleEditor:n</title>
+<path fill="none" stroke="black" d="M1017,-764.12C1017,-728.03 1016.17,-716.58 1016.02,-684.92" style=""/>
+<polygon fill="black" stroke="black" points="1019.52,-684.91 1016,-674.92 1012.52,-684.92 1019.52,-684.91" style=""/>
+</g>
+<!-- showRequestSettings -->
+<g id="node27" class="node">
+<title style="">showRequestSettings</title>
+<ellipse fill="white" stroke="white" cx="1015" cy="-529.62" rx="79" ry="41.09" style=""/>
+<text text-anchor="middle" x="1015" y="-542.22" font-family="Roboto" font-size="14.00" style="">setJustification</text>
+<text text-anchor="middle" x="1015" y="-525.42" font-family="Roboto" font-size="14.00" style="">setExpiration</text>
+<text text-anchor="middle" x="1015" y="-508.62" font-family="Roboto" font-size="14.00" style="">editTags</text>
+</g>
+<!-- showRoleEditor&#45;&gt;showRequestSettings -->
+<g id="edge25" class="edge">
+<title style="">showRoleEditor:s-&gt;showRequestSettings:n</title>
+<path fill="none" stroke="black" d="M1016,-601.92C1016,-592.22 1015.51,-587.65 1015.21,-581" style=""/>
+<polygon fill="black" stroke="black" points="1018.71,-580.84 1015,-570.92 1011.71,-580.99 1018.71,-580.84" style=""/>
+</g>
+<!-- reviewRoleRequest -->
+<g id="node28" class="node">
+<title style="">reviewRoleRequest</title>
+<ellipse fill="white" stroke="white" cx="1015" cy="-416.03" rx="79" ry="41.09" style=""/>
+<text text-anchor="middle" x="1015" y="-428.63" font-family="Roboto" font-size="14.00" style="">review</text>
+<text text-anchor="middle" x="1015" y="-411.83" font-family="Roboto" font-size="14.00" style="">Role</text>
+<text text-anchor="middle" x="1015" y="-395.03" font-family="Roboto" font-size="14.00" style="">Request</text>
+</g>
+<!-- showRequestSettings&#45;&gt;reviewRoleRequest -->
+<g id="edge26" class="edge">
+<title style="">showRequestSettings:s-&gt;reviewRoleRequest:n</title>
+<path fill="none" stroke="black" d="M1015,-488.33C1015,-478.64 1015,-474.06 1015,-467.41" style=""/>
+<polygon fill="black" stroke="black" points="1018.5,-467.33 1015,-457.33 1011.5,-467.33 1018.5,-467.33" style=""/>
+</g>
+<!-- reviewRoleRequest&#45;&gt;end -->
+<g id="edge34" class="edge">
+<title style="">reviewRoleRequest:s-&gt;end:ne</title>
+<path fill="none" stroke="black" d="M1015,-374.03C1015,-279.23 979.13,-252.48 914.21,-188.31" style=""/>
+<polygon fill="black" stroke="black" points="916.56,-185.71 907,-181.15 911.63,-190.68 916.56,-185.71" style=""/>
+</g>
+</g>
+</svg>

@@ -1,0 +1,103 @@
+digraph Request {
+    label="\n[Request] :: User Journey"; fontsize=36;
+    rankdir="TB"
+    ranksep=0.4;
+    node[width=2.2, height=1, fontname="Roboto"];
+    edge[headport="n", tailport="s"]
+	startRequest [shape=egg; label="“Get access…”"; margin=.2; fontsize=24];
+	end [shape=octagon; label="requestCreated"; margin=.2; fontsize=24];
+	issueCredentials [shape=octagon; label="issueCredentials";margin=.2; fontsize=18];
+#    clusterrank=local
+    compound=true
+
+	subgraph cluster_a {
+		style="filled, rounded"
+		color=lightgrey;
+		node [style=filled,color=white];
+		label = "AWS Console"; fontsize=24
+        color=black; fillcolor=lightgrey
+		
+        pickAccount [shape="diamond"]
+		pickRole [shape="diamond"]
+        {rank=same pickAccount pickRole}
+
+        a0 -> pickAccount 
+        pickAccount -> pickRole [headport=e, tailport=w]
+        setJustification [label="setJustification\nsetExpiration"]
+        reviewConsoleRequest [label="review\nConsole\nRequest"]
+        pickRole -> isNotApproved -> setJustification 
+        setJustification -> reviewConsoleRequest
+        pickRole -> preApproved [tailport=w];
+        wasApproved [label="requestApproved"; tooltip="Matches an\nApproved, Unexpired\n Request"]
+        pickRole -> wasApproved [tailport=sw];
+        a1 [label="Role-first\nFlow?"; fontcolor=grey, height=0.5, width=1]
+ 		a0 [label="Account-first\nFlow"]
+        pickAccount -> isNotApproved [style="dashed"; color=grey; tailport=sw; headport=ne]
+        pickAccount -> isNotEligible [style="dashed"; color=grey; tailport=s; headport=n]
+		a1 -> pickRole [style="dashed"; color=grey; headport=nw, tailport=sw]
+		pickRole -> pickAccount  [style="dashed",  color=grey; tailport=ne, headport=nw]
+		countdown [shape="circle"; width=1; height=1; fontcolor=grey; label="expiry\n timer"]
+		wasApproved -> countdown [tailport=s; headport=nw] 
+		countdown-> wasApproved [tailport=ne, headport=se]
+		reviewEligibilityRequest [label="review\nEligibilty\nRequest"]
+		pickRole -> isNotEligible [tailport=se] 
+		isNotEligible-> enterJustification -> reviewEligibilityRequest -> end [headport=W]
+	}
+
+	subgraph cluster_b {
+        style=rounded
+		label = "Managed Policy";
+		fontsize=24
+		color=green
+		node [style=filled];
+		b0 [shape=diamond; label="pickPolicy"]
+		showPolicyEditor [shape=box]
+		showSettingsEditor [label="setJustification\neditPath\neditTags"]
+		reviewManagedPolicyRequest [label="review\nManagedPolicy\nRequest"]
+		b0 -> showPolicyEditor -> showSettingsEditor -> reviewManagedPolicyRequest;
+	}
+
+	subgraph cluster_c {
+		fillcolor=white;
+		style="rounded"
+		node [style=filled,fillcolor=lightgrey];
+		label = "Resource Policy"; tooltip="Type ≠ Role"
+        fontsize=24
+		color=blue
+		fillcolor=lightgrey;
+		c0 [shape=diamond; label="pickResource\nshowAccount\nshowType"]
+		showResourcePolicyEditor [shape=box; label="show\nResourcePolicy\nEditor"]
+		showResourcePolicySettings [label="setJustification\nsetSourceArn\neditTags"]
+		reviewResourcePolicyRequest [label="review\nResourcePolicy\nRequest"]
+		c0 -> showResourcePolicyEditor -> showResourcePolicySettings -> reviewResourcePolicyRequest;
+	}
+
+	subgraph cluster_d {
+		node [style=filled];
+#		label = "Principal / Group"; #@@ INLINE?
+		style="filled, rounded"
+		fillcolor=lightgrey;
+		node [style=filled,color=white];
+        label="Role"; tooltip="Type == Role"
+        fontsize=24
+        color=red
+        d0 [shape=diamond; label="pickRole\nshowAccount"] # @@ SHOULD THIS BE MULTI-ACCOUNT?
+		showRoleEditor [shape=box]
+		showRequestSettings [label="setJustification\nsetExpiration\neditTags"]
+		reviewRoleRequest [label="review\nRole\nRequest"]
+		d0 -> showRoleEditor -> showRequestSettings;
+        showRequestSettings -> reviewRoleRequest
+	}
+
+	startRequest -> a0 [lhead="cluster_a"; label="\n\n\n"]
+	startRequest -> b0 [lhead="cluster_b"; label="\n\n\n"]
+	startRequest -> c0 [lhead="cluster_c"; label="\n\n\n"]
+	startRequest -> d0 [lhead="cluster_d"; label="\n\n\n"]
+	reviewConsoleRequest -> end [label="\n\n\n", headport=w];
+    reviewManagedPolicyRequest -> end  [label="\n\n\n", headport=ne];
+    reviewResourcePolicyRequest -> end  [label="\n\n\n", headport=nw];
+    reviewRoleRequest -> end  [label="\n\n\n", headport=ne];
+    preApproved -> issueCredentials [tailport=s, headport=n]
+	wasApproved -> issueCredentials [tailport=sw, headport=ne]
+    {rank=same end issueCredentials}
+}
