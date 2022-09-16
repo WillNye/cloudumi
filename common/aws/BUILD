@@ -12,7 +12,8 @@ filegroup(
 filegroup(
     name = "data_files",
     srcs = glob([
-        "**/*.json"
+        "**/*.json",
+        "**/*.yaml"
     ]),
     visibility = ["//visibility:public"],
 )
