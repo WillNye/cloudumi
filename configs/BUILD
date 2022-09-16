@@ -10,6 +10,7 @@ filegroup(
     name = "fluent-bit",
     srcs = [
         "fluent-bit/fluent-bit.conf",
+        "fluent-bit/parsers.conf",
     ],
     visibility = ["//visibility:public"],
 )

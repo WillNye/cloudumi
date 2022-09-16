@@ -6,9 +6,6 @@ filegroup(
     name = "src_files",
     srcs = (
         "__init__.py",
-        "base_metric.py",
-        "default_metrics.py",
-        "metrics.py",
     ),
     visibility = ["//visibility:public"],
 )
@@ -21,19 +18,7 @@ py_library(
         ":src_files",
     ],
     deps = [
-        "//plugins/metrics/cloudwatch:lib",
-        "//plugins/metrics/fluent_bit:lib",
-        "//common/config:lib",
-        "//common/lib",
+        requirement("sentry_sdk"),
     ],
     visibility = ["//visibility:public"],
-)
-
-py_wheel(
-    name = "py_wheel",
-    distribution = "common_plugin_metrics",
-    python_tag = "py3",
-    version = "$(VERSION)",
-    deps = [":lib"],
-    tags = ["manual"],
 )

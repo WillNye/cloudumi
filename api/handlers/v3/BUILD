@@ -32,6 +32,7 @@ py_library(
         "//api/handlers/v3/tasks:src",
         "//api/handlers/v3/tenant_details:src",
         "//api/handlers/v3/tenant_registration:src",
+        "//api/handlers/v3/typeahead:src",
     ],
     deps = [
         "//common:lib",
