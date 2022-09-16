@@ -83,3 +83,15 @@ export const ExpiredNotification = ({ isExpired }) =>
   ) : (
     <></>
   )
+
+export const NullPolicyNotification = ({ isNullPolicy }) =>
+  isNullPolicy ? (
+    <Grid.Column>
+      <Message negative>
+        <Message.Header>Null Policy</Message.Header>
+        <p>This change will remove all permissions from this role.</p>
+      </Message>
+    </Grid.Column>
+  ) : (
+    <></>
+  )

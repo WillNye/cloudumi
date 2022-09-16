@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { DiffEditor, useMonaco } from '@monaco-editor/react'
+import Editor from '@monaco-editor/react'
 import PropTypes from 'prop-types'
 import {
   getMonacoTriggerCharacters,
@@ -9,8 +10,9 @@ import {
   convertToCloudFormation,
   convertToTerraform,
 } from '../../helpers/utils'
-import { Menu, Button, Icon } from 'semantic-ui-react'
+import { Menu, Button, Icon, GridColumn, Grid } from 'semantic-ui-react'
 import { ReadOnlyPolicyMonacoEditor } from '../policy/PolicyMonacoEditor'
+import { NullPolicyNotification } from './notificationMessages'
 
 const MonacoDiffComponent = (props) => {
   const monaco = useMonaco()
@@ -140,13 +142,33 @@ const MonacoDiffComponent = (props) => {
             ></Menu.Item>
           ) : null}
         </Menu>
-        {activeItem === 'JSON' ? (
+        {activeItem === 'JSON' &&
+        (newValue === '{}' || newValue.includes('deleted')) ? (
+          <div>
+            <GridColumn>
+              <Editor
+                defaultLanguage={language}
+                width='100%'
+                height='500px'
+                defaultValue={oldValue}
+                //onMount={editorDidMount}
+                //options={options}
+                //onChange={onChange}
+                theme={editorTheme}
+                alwaysConsumeMouseWheel={false}
+              />
+            </GridColumn>
+            <GridColumn>
+              <NullPolicyNotification isNullPolicy={true} />
+            </GridColumn>
+          </div>
+        ) : activeItem === 'JSON' ? (
           <DiffEditor
             language={language}
             width='100%'
             height='500px'
             original={oldValue}
-            modified={newValue}
+            modified={newValue === '{}' ? 'Empty Policy' : newValue}
             onMount={editorDidMount}
             options={options}
             onChange={onChange}
@@ -222,18 +244,34 @@ const MonacoDiffComponent = (props) => {
             </Button>
           </Button.Group>
         </div>
-        <DiffEditor
-          language={language}
-          width='100%'
-          height='500px'
-          original={oldValue}
-          modified={newValue}
-          onMount={editorDidMount}
-          options={options}
-          onChange={onChange}
-          theme={editorTheme}
-          alwaysConsumeMouseWheel={false}
-        />
+        {newValue === '{}' ||
+        newValue.includes('deleted') ||
+        oldValue === '' ? (
+          <Editor
+            language={language}
+            width='100%'
+            height='500px'
+            original={oldValue}
+            //onMount={editorDidMount}
+            options={options}
+            onChange={onChange}
+            theme={editorTheme}
+            alwaysConsumeMouseWheel={false}
+          />
+        ) : (
+          <DiffEditor
+            language={language}
+            width='100%'
+            height='500px'
+            original={oldValue}
+            modified={newValue}
+            onMount={editorDidMount}
+            options={options}
+            onChange={onChange}
+            theme={editorTheme}
+            alwaysConsumeMouseWheel={false}
+          />
+        )}
       </>
     )
   }
