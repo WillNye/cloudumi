@@ -16,7 +16,7 @@ _global_:
     fluent-bit:
       namespace: noq-develop
       max_threads: 10
-      enabled: true
+      enabled: false
       log_file: "/var/log/saas_output.log"
       max_log_file_size: 6291456 # 6 megabyte
       config: configs/fluent-bit/fluent-bit.conf

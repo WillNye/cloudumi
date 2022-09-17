@@ -1,0 +1,14 @@
+.connecting-account {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  //   min-height: 600px;
+  height: 100%;
+  width: 100%;
+
+  &__center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
