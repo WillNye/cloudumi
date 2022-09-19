@@ -6,7 +6,7 @@ const CheckAccountConnection = ({ setIsConnected }) => {
   useEffect(() => {
     setTimeout(() => {
       setIsConnected(true)
-    }, 5000)
+    }, 10000)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
