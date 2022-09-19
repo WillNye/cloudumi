@@ -43,12 +43,25 @@
   width: var(--circle-size);
   height: var(--circle-size);
   border-radius: 50%;
-  background-color: $gray-1;
-  color: $white;
+  border: 2px solid $gray-2;
+  background-color: white;
+  color: $gray-1;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
+}
+
+.c-stepper-active .c-stepper__label {
+  background-color: $green-1;
+  border: 2px solid $green-1;
+  color: $white;
+}
+
+.c-stepper-complete .c-stepper__label {
+  background-color: $gray-1;
+  border: 2px solid $gray-1;
+  color: $white;
 }
 
 .c-stepper__desc {

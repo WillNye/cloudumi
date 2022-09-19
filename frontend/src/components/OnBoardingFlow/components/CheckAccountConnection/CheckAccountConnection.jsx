@@ -1,8 +1,14 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Divider, Header, Icon } from 'semantic-ui-react'
 import './CheckAccountConnection.scss'
 
-const CheckAccountConnection = () => {
+const CheckAccountConnection = ({ setIsConnected }) => {
+  useEffect(() => {
+    setTimeout(() => {
+      setIsConnected(true)
+    }, 5000)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className='connecting-account'>
       <div>

@@ -6,21 +6,12 @@
   padding-top: 100px;
   padding-bottom: 20px;
   max-width: 1200px;
+  min-height: 100vh;
 
   &__container {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-  }
-
-  &__instructions {
-    // width: 38%;
-  }
-
-  &__stepper {
-    // width: 60%;
-    // border: 1px solid $gray-3;
-    // border-radius: 5px;
   }
 
   &__configure-account {
@@ -38,5 +29,12 @@
     display: flex;
     justify-content: center;
     flex-direction: row;
+  }
+
+  &__actions {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 }

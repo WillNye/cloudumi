@@ -1,31 +1,37 @@
 import React from 'react'
+import { useMemo } from 'react'
+import { Divider } from 'semantic-ui-react'
 import './HorizontalStepper.scss'
 
-const HorizontalStepper = (props) => {
+const Step = ({ id, header, subHeader, activeId }) => {
+  const classes = useMemo(() => {
+    if (activeId === id) {
+      return 'c-stepper-active'
+    }
+    if (activeId > id) {
+      return 'c-stepper-complete'
+    }
+    return ''
+  }, [activeId, id])
+
+  return (
+    <li className={`c-stepper__item ${classes}`}>
+      <span className='c-stepper__label'>{id}</span>
+      <h3 className='c-stepper__title'>{header}</h3>
+      <p className='c-stepper__desc'>{subHeader}</p>
+    </li>
+  )
+}
+
+const HorizontalStepper = ({ steps, activeId }) => {
   return (
     <div className='wrapper option-1 option-1-1'>
       <ol className='c-stepper'>
-        <li className='c-stepper__item'>
-          <span className='c-stepper__label'>1</span>
-          <h3 className='c-stepper__title'>Connection Method</h3>
-          <p className='c-stepper__desc'>Some desc text</p>
-        </li>
-        <li className='c-stepper__item'>
-          <span className='c-stepper__label'>2</span>
-          <h3 className='c-stepper__title'>Configure</h3>
-          <p className='c-stepper__desc'>Some desc text</p>
-        </li>
-        <li className='c-stepper__item'>
-          <span className='c-stepper__label'>3</span>
-          <h3 className='c-stepper__title'>Login AWS & Create Stack</h3>
-          <p className='c-stepper__desc'>Some desc text</p>
-        </li>
-        <li className='c-stepper__item'>
-          <span className='c-stepper__label'>4</span>
-          <h3 className='c-stepper__title'>Status</h3>
-          <p className='c-stepper__desc'>Some desc text</p>
-        </li>
+        {steps.map((step) => (
+          <Step {...step} activeId={activeId} />
+        ))}
       </ol>
+      <Divider horizontal />
     </div>
   )
 }
