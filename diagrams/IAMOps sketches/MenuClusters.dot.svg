@@ -1,0 +1,656 @@
+<svg width="776" height="2266" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0.00 0.00 1062.11 3212.00">
+<g id="graph0" class="graph" transform="translate(4.0000073242187,3208) scale(1)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-3208 1058.11,-3208 1058.11,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_Noq</title>
+<polygon fill="none" stroke="black" points="8,-8 8,-3196 1046.11,-3196 1046.11,-8 8,-8"/>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_Approve</title>
+<polygon fill="none" stroke="black" points="442.55,-1552 442.55,-1730 602.55,-1730 602.55,-1552 442.55,-1552"/>
+</g>
+<g id="clust4" class="cluster">
+<title>cluster_Ask</title>
+<polygon fill="none" stroke="black" points="434.55,-16 434.55,-1544 1038.11,-1544 1038.11,-16 434.55,-16"/>
+</g>
+<g id="clust6" class="cluster">
+<title>cluster_CR</title>
+<polygon fill="none" stroke="black" points="442.55,-286 442.55,-1004 821.11,-1004 821.11,-286 442.55,-286"/>
+</g>
+<g id="clust7" class="cluster">
+<title>cluster_Analyze</title>
+<polygon fill="none" stroke="black" points="442.55,-1738 442.55,-2006 821.11,-2006 821.11,-1738 442.55,-1738"/>
+</g>
+<g id="clust8" class="cluster">
+<title>cluster_Restrict</title>
+<polygon fill="none" stroke="black" points="442.55,-2014 442.55,-2822 821.11,-2822 821.11,-2014 442.55,-2014"/>
+</g>
+<g id="clust12" class="cluster">
+<title>cluster_Administer</title>
+<polygon fill="none" stroke="black" points="442.55,-2830 442.55,-3188 602.55,-3188 602.55,-2830 442.55,-2830"/>
+</g>
+<!-- Noq -->
+<g id="node1" class="node">
+<title>Noq</title>
+<polygon fill="lightblue" stroke="black" points="160,-1944 16,-1944 16,-1800 160,-1800 160,-1944"/>
+<text text-anchor="middle" x="88" y="-1867.8" font-family="Roboto" font-size="14.00">Noq</text>
+</g>
+<!-- Ask -->
+<g id="node3" class="node">
+<title>Ask</title>
+<polygon fill="none" stroke="black" points="376,-1176 232,-1176 232,-1104 376,-1104 376,-1176"/>
+<text text-anchor="middle" x="304" y="-1144.2" font-family="Roboto" font-size="14.00">Request Access… </text>
+<text text-anchor="middle" x="304" y="-1127.4" font-family="Roboto" font-size="14.00"> REQUEST</text>
+</g>
+<!-- Noq&#45;&gt;Ask -->
+<g id="edge1" class="edge">
+<title>Noq-&gt;Ask</title>
+<path fill="none" stroke="black" d="M110.1,-1799.81C153.85,-1650.18 253.34,-1309.87 289.52,-1186.1"/>
+<polygon fill="black" stroke="black" points="292.97,-1186.76 292.42,-1176.18 286.26,-1184.8 292.97,-1186.76"/>
+</g>
+<!-- Approve -->
+<g id="node4" class="node">
+<title>Approve</title>
+<polygon fill="none" stroke="black" points="376,-1722 232,-1722 232,-1650 376,-1650 376,-1722"/>
+<text text-anchor="middle" x="304" y="-1690.2" font-family="Roboto" font-size="14.00">Review Access… </text>
+<text text-anchor="middle" x="304" y="-1673.4" font-family="Roboto" font-size="14.00"> GRANT</text>
+</g>
+<!-- Noq&#45;&gt;Approve -->
+<g id="edge2" class="edge">
+<title>Noq-&gt;Approve</title>
+<path fill="none" stroke="black" d="M160.26,-1810.06C190.93,-1783.4 226.03,-1752.9 253.75,-1728.8"/>
+<polygon fill="black" stroke="black" points="256.11,-1731.39 261.37,-1722.19 251.52,-1726.11 256.11,-1731.39"/>
+</g>
+<!-- Analyze -->
+<g id="node5" class="node">
+<title>Analyze</title>
+<polygon fill="none" stroke="black" points="376,-1908 232,-1908 232,-1836 376,-1836 376,-1908"/>
+<text text-anchor="middle" x="304" y="-1876.2" font-family="Roboto" font-size="14.00">Analyze Access… </text>
+<text text-anchor="middle" x="304" y="-1859.4" font-family="Roboto" font-size="14.00"> ANALYZE</text>
+</g>
+<!-- Noq&#45;&gt;Analyze -->
+<g id="edge3" class="edge">
+<title>Noq-&gt;Analyze</title>
+<path fill="none" stroke="black" d="M160.26,-1872C179.92,-1872 201.39,-1872 221.58,-1872"/>
+<polygon fill="black" stroke="black" points="221.69,-1875.5 231.69,-1872 221.69,-1868.5 221.69,-1875.5"/>
+</g>
+<!-- Restrict -->
+<g id="node6" class="node">
+<title>Restrict</title>
+<polygon fill="none" stroke="black" points="376,-2274 232,-2274 232,-2202 376,-2202 376,-2274"/>
+<text text-anchor="middle" x="304" y="-2242.2" font-family="Roboto" font-size="14.00">Restrict Access… </text>
+<text text-anchor="middle" x="304" y="-2225.4" font-family="Roboto" font-size="14.00"> RESTRICT</text>
+</g>
+<!-- Noq&#45;&gt;Restrict -->
+<g id="edge4" class="edge">
+<title>Noq-&gt;Restrict</title>
+<path fill="none" stroke="black" d="M131.28,-1944.31C174.58,-2018.37 240.54,-2131.18 276.82,-2193.22"/>
+<polygon fill="black" stroke="black" points="273.88,-2195.13 281.95,-2202 279.92,-2191.6 273.88,-2195.13"/>
+</g>
+<!-- Administer -->
+<g id="node7" class="node">
+<title>Administer</title>
+<polygon fill="none" stroke="black" points="376,-3000 232,-3000 232,-2928 376,-2928 376,-3000"/>
+<text text-anchor="middle" x="304" y="-2968.2" font-family="Roboto" font-size="14.00">Configure Noq… </text>
+<text text-anchor="middle" x="304" y="-2951.4" font-family="Roboto" font-size="14.00"> ADMINISTER</text>
+</g>
+<!-- Noq&#45;&gt;Administer -->
+<g id="edge5" class="edge">
+<title>Noq-&gt;Administer</title>
+<path fill="none" stroke="black" d="M103.12,-1944.07C143.82,-2151.75 260.57,-2747.47 293.97,-2917.93"/>
+<polygon fill="black" stroke="black" points="290.55,-2918.69 295.91,-2927.83 297.42,-2917.35 290.55,-2918.69"/>
+</g>
+<!-- Privileges -->
+<g id="node2" class="node">
+<title>Privileges</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-195" rx="73.61" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-190.8" font-family="Roboto" font-size="14.00">Privileges &amp; Poliicies</text>
+</g>
+<!-- Managed_Policies -->
+<g id="node19" class="node">
+<title>Managed_Policies</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-240" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-235.8" font-family="Roboto" font-size="14.00">Managed_Policies</text>
+</g>
+<!-- Privileges&#45;&gt;Managed_Policies -->
+<g id="edge18" class="edge">
+<title>Privileges-&gt;Managed_Policies</title>
+<path fill="none" stroke="black" d="M590.59,-208.93C613.85,-213.76 640.09,-219.22 664.03,-224.19"/>
+<polygon fill="black" stroke="black" points="663.63,-227.68 674.13,-226.29 665.05,-220.83 663.63,-227.68"/>
+</g>
+<!-- IAM_Permissions -->
+<g id="node22" class="node">
+<title>IAM_Permissions</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-60" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-55.8" font-family="Roboto" font-size="14.00">IAM_Permissions</text>
+</g>
+<!-- Privileges&#45;&gt;IAM_Permissions -->
+<g id="edge21" class="edge">
+<title>Privileges-&gt;IAM_Permissions</title>
+<path fill="none" stroke="black" d="M568.69,-166.86C603.11,-145.4 650.63,-115.78 686.91,-93.16"/>
+<polygon fill="black" stroke="black" points="688.77,-96.13 695.4,-87.87 685.06,-90.19 688.77,-96.13"/>
+</g>
+<!-- Service_Controls -->
+<g id="node23" class="node">
+<title>Service_Controls</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-150" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-145.8" font-family="Roboto" font-size="14.00">Service_Controls</text>
+</g>
+<!-- Privileges&#45;&gt;Service_Controls -->
+<g id="edge22" class="edge">
+<title>Privileges-&gt;Service_Controls</title>
+<path fill="none" stroke="black" d="M590.59,-181.07C613.85,-176.24 640.09,-170.78 664.03,-165.81"/>
+<polygon fill="black" stroke="black" points="665.05,-169.17 674.13,-163.71 663.63,-162.32 665.05,-169.17"/>
+</g>
+<!-- Ask&#45;&gt;Privileges -->
+<g id="edge13" class="edge">
+<title>Ask-&gt;Privileges</title>
+<path fill="none" stroke="black" d="M307.46,-1103.63C317.68,-959.66 359.68,-430.26 434.55,-282 443.98,-263.33 458.93,-246.21 473.79,-232.19"/>
+<polygon fill="black" stroke="black" points="476.49,-234.47 481.53,-225.15 471.77,-229.29 476.49,-234.47"/>
+</g>
+<!-- Cloud_Resources -->
+<g id="node10" class="node">
+<title>Cloud_Resources</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-690" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-685.8" font-family="Roboto" font-size="14.00">Cloud_Resources</text>
+</g>
+<!-- Ask&#45;&gt;Cloud_Resources -->
+<g id="edge8" class="edge">
+<title>Ask-&gt;Cloud_Resources</title>
+<path fill="none" stroke="black" d="M306.86,-1103.76C312.68,-1025.95 336.64,-840.97 434.55,-730 439.73,-724.13 445.95,-719.06 452.66,-714.7"/>
+<polygon fill="black" stroke="black" points="454.53,-717.66 461.36,-709.56 450.97,-711.63 454.53,-717.66"/>
+</g>
+<!-- Accounts &amp; Roles -->
+<g id="node11" class="node">
+<title>Accounts &amp; Roles</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-1140" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-1135.8" font-family="Roboto" font-size="14.00">Accounts &amp; Roles</text>
+</g>
+<!-- Ask&#45;&gt;Accounts &amp; Roles -->
+<g id="edge9" class="edge">
+<title>Ask-&gt;Accounts &amp; Roles</title>
+<path fill="none" stroke="black" d="M376.21,-1140C396.65,-1140 419.11,-1140 440.12,-1140"/>
+<polygon fill="black" stroke="black" points="440.3,-1143.5 450.3,-1140 440.3,-1136.5 440.3,-1143.5"/>
+</g>
+<!-- Users_and_Groups -->
+<g id="node15" class="node">
+<title>Users_and_Groups</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-1365" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-1360.8" font-family="Roboto" font-size="14.00">Users_and_Groups</text>
+</g>
+<!-- Ask&#45;&gt;Users_and_Groups -->
+<g id="edge14" class="edge">
+<title>Ask-&gt;Users_and_Groups</title>
+<path fill="none" stroke="black" d="M339.79,-1176.15C379.04,-1216.93 442.69,-1283.06 483.3,-1325.26"/>
+<polygon fill="black" stroke="black" points="480.9,-1327.81 490.36,-1332.59 485.95,-1322.96 480.9,-1327.81"/>
+</g>
+<!-- Delegate -->
+<g id="node8" class="node">
+<title>Delegate</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-1596" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-1591.8" font-family="Roboto" font-size="14.00">Delegate</text>
+</g>
+<!-- Approve&#45;&gt;Delegate -->
+<g id="edge6" class="edge">
+<title>Approve-&gt;Delegate</title>
+<path fill="none" stroke="black" d="M376.21,-1656.41C402.22,-1645.59 431.49,-1633.43 456.9,-1622.87"/>
+<polygon fill="black" stroke="black" points="458.54,-1625.98 466.44,-1618.91 455.86,-1619.51 458.54,-1625.98"/>
+</g>
+<!-- Rollback -->
+<g id="node9" class="node">
+<title>Rollback</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-1686" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-1681.8" font-family="Roboto" font-size="14.00">Rollback</text>
+</g>
+<!-- Approve&#45;&gt;Rollback -->
+<g id="edge7" class="edge">
+<title>Approve-&gt;Rollback</title>
+<path fill="none" stroke="black" d="M376.21,-1686C396.65,-1686 419.11,-1686 440.12,-1686"/>
+<polygon fill="black" stroke="black" points="440.3,-1689.5 450.3,-1686 440.3,-1682.5 440.3,-1689.5"/>
+</g>
+<!-- Security_Findings -->
+<g id="node32" class="node">
+<title>Security_Findings</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-1782" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-1777.8" font-family="Roboto" font-size="14.00">Security_Findings</text>
+</g>
+<!-- Analyze&#45;&gt;Security_Findings -->
+<g id="edge31" class="edge">
+<title>Analyze-&gt;Security_Findings</title>
+<path fill="none" stroke="black" d="M376.21,-1842.41C402.22,-1831.59 431.49,-1819.43 456.9,-1808.87"/>
+<polygon fill="black" stroke="black" points="458.54,-1811.98 466.44,-1804.91 455.86,-1805.51 458.54,-1811.98"/>
+</g>
+<!-- Privilege_Levels -->
+<g id="node33" class="node">
+<title>Privilege_Levels</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-1872" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-1867.8" font-family="Roboto" font-size="14.00">Privilege_Levels</text>
+</g>
+<!-- Analyze&#45;&gt;Privilege_Levels -->
+<g id="edge32" class="edge">
+<title>Analyze-&gt;Privilege_Levels</title>
+<path fill="none" stroke="black" d="M376.21,-1872C396.65,-1872 419.11,-1872 440.12,-1872"/>
+<polygon fill="black" stroke="black" points="440.3,-1875.5 450.3,-1872 440.3,-1868.5 440.3,-1875.5"/>
+</g>
+<!-- Usage_History -->
+<g id="node35" class="node">
+<title>Usage_History</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-1962" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-1957.8" font-family="Roboto" font-size="14.00">Usage_History</text>
+</g>
+<!-- Analyze&#45;&gt;Usage_History -->
+<g id="edge34" class="edge">
+<title>Analyze-&gt;Usage_History</title>
+<path fill="none" stroke="black" d="M376.21,-1901.59C402.22,-1912.41 431.49,-1924.57 456.9,-1935.13"/>
+<polygon fill="black" stroke="black" points="455.86,-1938.49 466.44,-1939.09 458.54,-1932.02 455.86,-1938.49"/>
+</g>
+<!-- Redesign_Roles -->
+<g id="node36" class="node">
+<title>Redesign_Roles</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-2148" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-2143.8" font-family="Roboto" font-size="14.00">Redesign_Roles</text>
+</g>
+<!-- Restrict&#45;&gt;Redesign_Roles -->
+<g id="edge35" class="edge">
+<title>Restrict-&gt;Redesign_Roles</title>
+<path fill="none" stroke="black" d="M376.21,-2208.41C402.22,-2197.59 431.49,-2185.43 456.9,-2174.87"/>
+<polygon fill="black" stroke="black" points="458.54,-2177.98 466.44,-2170.91 455.86,-2171.51 458.54,-2177.98"/>
+</g>
+<!-- Group_Membership -->
+<g id="node39" class="node">
+<title>Group_Membership</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-2238" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-2233.8" font-family="Roboto" font-size="14.00">Group_Membership</text>
+</g>
+<!-- Restrict&#45;&gt;Group_Membership -->
+<g id="edge38" class="edge">
+<title>Restrict-&gt;Group_Membership</title>
+<path fill="none" stroke="black" d="M376.21,-2238C396.65,-2238 419.11,-2238 440.12,-2238"/>
+<polygon fill="black" stroke="black" points="440.3,-2241.5 450.3,-2238 440.3,-2234.5 440.3,-2241.5"/>
+</g>
+<!-- Access_Guardrails -->
+<g id="node40" class="node">
+<title>Access_Guardrails</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-2328" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-2323.8" font-family="Roboto" font-size="14.00">Access_Guardrails</text>
+</g>
+<!-- Restrict&#45;&gt;Access_Guardrails -->
+<g id="edge39" class="edge">
+<title>Restrict-&gt;Access_Guardrails</title>
+<path fill="none" stroke="black" d="M376.21,-2267.59C402.22,-2278.41 431.49,-2290.57 456.9,-2301.13"/>
+<polygon fill="black" stroke="black" points="455.86,-2304.49 466.44,-2305.09 458.54,-2298.02 455.86,-2304.49"/>
+</g>
+<!-- Remove_Unused -->
+<g id="node44" class="node">
+<title>Remove_Unused</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-2598" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-2593.8" font-family="Roboto" font-size="14.00">Remove_Unused</text>
+</g>
+<!-- Restrict&#45;&gt;Remove_Unused -->
+<g id="edge43" class="edge">
+<title>Restrict-&gt;Remove_Unused</title>
+<path fill="none" stroke="black" d="M326.76,-2274.17C366.87,-2340.85 452.32,-2482.91 495.47,-2554.64"/>
+<polygon fill="black" stroke="black" points="492.61,-2556.68 500.77,-2563.45 498.61,-2553.07 492.61,-2556.68"/>
+</g>
+<!-- Configuration -->
+<g id="node49" class="node">
+<title>Configuration</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-2874" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-2869.8" font-family="Roboto" font-size="14.00">Configuration</text>
+</g>
+<!-- Administer&#45;&gt;Configuration -->
+<g id="edge48" class="edge">
+<title>Administer-&gt;Configuration</title>
+<path fill="none" stroke="black" d="M376.21,-2934.41C402.22,-2923.59 431.49,-2911.43 456.9,-2900.87"/>
+<polygon fill="black" stroke="black" points="458.54,-2903.98 466.44,-2896.91 455.86,-2897.51 458.54,-2903.98"/>
+</g>
+<!-- Connections -->
+<g id="node50" class="node">
+<title>Connections</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-2964" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-2959.8" font-family="Roboto" font-size="14.00">Connections</text>
+</g>
+<!-- Administer&#45;&gt;Connections -->
+<g id="edge49" class="edge">
+<title>Administer-&gt;Connections</title>
+<path fill="none" stroke="black" d="M376.21,-2964C396.65,-2964 419.11,-2964 440.12,-2964"/>
+<polygon fill="black" stroke="black" points="440.3,-2967.5 450.3,-2964 440.3,-2960.5 440.3,-2967.5"/>
+</g>
+<!-- Delegation -->
+<g id="node51" class="node">
+<title>Delegation</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-3054" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-3049.8" font-family="Roboto" font-size="14.00">Delegation</text>
+</g>
+<!-- Administer&#45;&gt;Delegation -->
+<g id="edge50" class="edge">
+<title>Administer-&gt;Delegation</title>
+<path fill="none" stroke="black" d="M376.21,-2993.59C402.22,-3004.41 431.49,-3016.57 456.9,-3027.13"/>
+<polygon fill="black" stroke="black" points="455.86,-3030.49 466.44,-3031.09 458.54,-3024.02 455.86,-3030.49"/>
+</g>
+<!-- #Preferences -->
+<g id="node52" class="node">
+<title>#Preferences</title>
+<ellipse fill="none" stroke="black" cx="522.55" cy="-3144" rx="72" ry="36"/>
+<text text-anchor="middle" x="522.55" y="-3139.8" font-family="Roboto" font-size="14.00">#Preferences</text>
+</g>
+<!-- Administer&#45;&gt;#Preferences -->
+<g id="edge51" class="edge">
+<title>Administer-&gt;#Preferences</title>
+<path fill="none" stroke="black" d="M333.91,-3000.15C358.5,-3029.33 395.91,-3070.13 434.55,-3099 442.24,-3104.74 450.76,-3110.14 459.38,-3115.06"/>
+<polygon fill="black" stroke="black" points="457.91,-3118.25 468.36,-3120.02 461.29,-3112.12 457.91,-3118.25"/>
+</g>
+<!-- S3 -->
+<g id="node24" class="node">
+<title>S3</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-330" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-325.8" font-family="Roboto" font-size="14.00">S3</text>
+</g>
+<!-- Cloud_Resources&#45;&gt;S3 -->
+<g id="edge23" class="edge">
+<title>Cloud_Resources-&gt;S3</title>
+<path fill="none" stroke="black" d="M581.1,-668.53C589.2,-663.47 596.73,-657.35 602.55,-650 641.59,-600.71 632.49,-426.11 669.11,-375 672.59,-370.14 676.78,-365.68 681.36,-361.61"/>
+<polygon fill="black" stroke="black" points="683.79,-364.15 689.38,-355.16 679.39,-358.7 683.79,-364.15"/>
+</g>
+<!-- EC2 -->
+<g id="node25" class="node">
+<title>EC2</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-420" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-415.8" font-family="Roboto" font-size="14.00">EC2</text>
+</g>
+<!-- Cloud_Resources&#45;&gt;EC2 -->
+<g id="edge24" class="edge">
+<title>Cloud_Resources-&gt;EC2</title>
+<path fill="none" stroke="black" d="M580.02,-668.21C588.35,-663.17 596.24,-657.14 602.55,-650 660.41,-584.52 614.46,-533.19 669.11,-465 672.85,-460.33 677.21,-456 681.9,-452.03"/>
+<polygon fill="black" stroke="black" points="684.32,-454.58 690.06,-445.67 680.02,-449.06 684.32,-454.58"/>
+</g>
+<!-- RDS -->
+<g id="node26" class="node">
+<title>RDS</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-510" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-505.8" font-family="Roboto" font-size="14.00">RDS</text>
+</g>
+<!-- Cloud_Resources&#45;&gt;RDS -->
+<g id="edge25" class="edge">
+<title>Cloud_Resources-&gt;RDS</title>
+<path fill="none" stroke="black" d="M578.08,-666.89C586.73,-661.99 595.23,-656.34 602.55,-650 641.51,-616.23 631.82,-590.6 669.11,-555 673.68,-550.63 678.73,-546.46 683.98,-542.53"/>
+<polygon fill="black" stroke="black" points="686.23,-545.23 692.34,-536.58 682.17,-539.53 686.23,-545.23"/>
+</g>
+<!-- SQS -->
+<g id="node27" class="node">
+<title>SQS</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-600" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-595.8" font-family="Roboto" font-size="14.00">SQS</text>
+</g>
+<!-- Cloud_Resources&#45;&gt;SQS -->
+<g id="edge26" class="edge">
+<title>Cloud_Resources-&gt;SQS</title>
+<path fill="none" stroke="black" d="M578.48,-667.17C608.12,-654.86 644.87,-639.58 675.83,-626.71"/>
+<polygon fill="black" stroke="black" points="677.35,-629.87 685.24,-622.8 674.66,-623.41 677.35,-629.87"/>
+</g>
+<!-- SNS -->
+<g id="node28" class="node">
+<title>SNS</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-690" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-685.8" font-family="Roboto" font-size="14.00">SNS</text>
+</g>
+<!-- Cloud_Resources&#45;&gt;SNS -->
+<g id="edge27" class="edge">
+<title>Cloud_Resources-&gt;SNS</title>
+<path fill="none" stroke="black" d="M594.76,-690C615.21,-690 637.66,-690 658.67,-690"/>
+<polygon fill="black" stroke="black" points="658.86,-693.5 668.86,-690 658.86,-686.5 658.86,-693.5"/>
+</g>
+<!-- Route53 -->
+<g id="node29" class="node">
+<title>Route53</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-780" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-775.8" font-family="Roboto" font-size="14.00">Route53</text>
+</g>
+<!-- Cloud_Resources&#45;&gt;Route53 -->
+<g id="edge28" class="edge">
+<title>Cloud_Resources-&gt;Route53</title>
+<path fill="none" stroke="black" d="M578.48,-712.83C608.12,-725.14 644.87,-740.42 675.83,-753.29"/>
+<polygon fill="black" stroke="black" points="674.66,-756.59 685.24,-757.2 677.35,-750.13 674.66,-756.59"/>
+</g>
+<!-- #Tags -->
+<g id="node30" class="node">
+<title>#Tags</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-870" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-865.8" font-family="Roboto" font-size="14.00">#Tags</text>
+</g>
+<!-- Cloud_Resources&#45;&gt;#Tags -->
+<g id="edge29" class="edge">
+<title>Cloud_Resources-&gt;#Tags</title>
+<path fill="none" stroke="black" d="M578.08,-713.11C586.73,-718.01 595.23,-723.66 602.55,-730 641.51,-763.77 631.82,-789.4 669.11,-825 673.68,-829.37 678.73,-833.54 683.98,-837.47"/>
+<polygon fill="black" stroke="black" points="682.17,-840.47 692.34,-843.42 686.23,-834.77 682.17,-840.47"/>
+</g>
+<!-- More__ -->
+<g id="node31" class="node">
+<title>More__</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-960" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-955.8" font-family="Roboto" font-size="14.00">More__</text>
+</g>
+<!-- Cloud_Resources&#45;&gt;More__ -->
+<g id="edge30" class="edge">
+<title>Cloud_Resources-&gt;More__</title>
+<path fill="none" stroke="black" d="M580.02,-711.79C588.35,-716.83 596.24,-722.86 602.55,-730 660.41,-795.48 614.46,-846.81 669.11,-915 672.85,-919.67 677.21,-924 681.9,-927.97"/>
+<polygon fill="black" stroke="black" points="680.02,-930.94 690.06,-934.33 684.32,-925.42 680.02,-930.94"/>
+</g>
+<!-- standing -->
+<g id="node12" class="node">
+<title>standing</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-1230" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-1225.8" font-family="Roboto" font-size="14.00">standing</text>
+</g>
+<!-- Accounts &amp; Roles&#45;&gt;standing -->
+<g id="edge10" class="edge">
+<title>Accounts &amp; Roles-&gt;standing</title>
+<path fill="none" stroke="black" d="M578.48,-1162.83C608.12,-1175.14 644.87,-1190.42 675.83,-1203.29"/>
+<polygon fill="black" stroke="black" points="674.66,-1206.59 685.24,-1207.2 677.35,-1200.13 674.66,-1206.59"/>
+</g>
+<!-- temporary -->
+<g id="node13" class="node">
+<title>temporary</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-1050" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-1045.8" font-family="Roboto" font-size="14.00">temporary</text>
+</g>
+<!-- Accounts &amp; Roles&#45;&gt;temporary -->
+<g id="edge11" class="edge">
+<title>Accounts &amp; Roles-&gt;temporary</title>
+<path fill="none" stroke="black" d="M578.48,-1117.17C608.12,-1104.86 644.87,-1089.58 675.83,-1076.71"/>
+<polygon fill="black" stroke="black" points="677.35,-1079.87 685.24,-1072.8 674.66,-1073.41 677.35,-1079.87"/>
+</g>
+<!-- create_new -->
+<g id="node14" class="node">
+<title>create_new</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-1140" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-1135.8" font-family="Roboto" font-size="14.00">create_new</text>
+</g>
+<!-- Accounts &amp; Roles&#45;&gt;create_new -->
+<g id="edge12" class="edge">
+<title>Accounts &amp; Roles-&gt;create_new</title>
+<path fill="none" stroke="black" d="M594.76,-1140C615.21,-1140 637.66,-1140 658.67,-1140"/>
+<polygon fill="black" stroke="black" points="658.86,-1143.5 668.86,-1140 658.86,-1136.5 658.86,-1143.5"/>
+</g>
+<!-- Access_Keys -->
+<g id="node16" class="node">
+<title>Access_Keys</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-1500" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-1495.8" font-family="Roboto" font-size="14.00">Access_Keys</text>
+</g>
+<!-- Users_and_Groups&#45;&gt;Access_Keys -->
+<g id="edge15" class="edge">
+<title>Users_and_Groups-&gt;Access_Keys</title>
+<path fill="none" stroke="black" d="M568.42,-1392.97C602.83,-1414.42 650.43,-1444.09 686.78,-1466.76"/>
+<polygon fill="black" stroke="black" points="684.96,-1469.74 695.29,-1472.06 688.66,-1463.8 684.96,-1469.74"/>
+</g>
+<!-- IAM_Users -->
+<g id="node17" class="node">
+<title>IAM_Users</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-1320" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-1315.8" font-family="Roboto" font-size="14.00">IAM_Users</text>
+</g>
+<!-- Users_and_Groups&#45;&gt;IAM_Users -->
+<g id="edge16" class="edge">
+<title>Users_and_Groups-&gt;IAM_Users</title>
+<path fill="none" stroke="black" d="M589.41,-1351.32C613.03,-1346.41 639.85,-1340.83 664.26,-1335.76"/>
+<polygon fill="black" stroke="black" points="665.11,-1339.16 674.19,-1333.7 663.69,-1332.31 665.11,-1339.16"/>
+</g>
+<!-- IAM_Groups -->
+<g id="node18" class="node">
+<title>IAM_Groups</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-1410" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-1405.8" font-family="Roboto" font-size="14.00">IAM_Groups</text>
+</g>
+<!-- Users_and_Groups&#45;&gt;IAM_Groups -->
+<g id="edge17" class="edge">
+<title>Users_and_Groups-&gt;IAM_Groups</title>
+<path fill="none" stroke="black" d="M589.41,-1378.68C613.03,-1383.59 639.85,-1389.17 664.26,-1394.24"/>
+<polygon fill="black" stroke="black" points="663.69,-1397.69 674.19,-1396.3 665.11,-1390.84 663.69,-1397.69"/>
+</g>
+<!-- Vendor_Managed -->
+<g id="node20" class="node">
+<title>Vendor_Managed</title>
+<ellipse fill="none" stroke="black" cx="958.11" cy="-195" rx="72" ry="36"/>
+<text text-anchor="middle" x="958.11" y="-190.8" font-family="Roboto" font-size="14.00">Vendor_Managed</text>
+</g>
+<!-- Managed_Policies&#45;&gt;Vendor_Managed -->
+<g id="edge19" class="edge">
+<title>Managed_Policies-&gt;Vendor_Managed</title>
+<path fill="none" stroke="black" d="M807.78,-226.25C831.12,-221.37 857.57,-215.83 881.65,-210.79"/>
+<polygon fill="black" stroke="black" points="882.39,-214.21 891.46,-208.74 880.96,-207.36 882.39,-214.21"/>
+</g>
+<!-- Customer_Managed -->
+<g id="node21" class="node">
+<title>Customer_Managed</title>
+<ellipse fill="none" stroke="black" cx="958.11" cy="-285" rx="72" ry="36"/>
+<text text-anchor="middle" x="958.11" y="-280.8" font-family="Roboto" font-size="14.00">Customer_Managed</text>
+</g>
+<!-- Managed_Policies&#45;&gt;Customer_Managed -->
+<g id="edge20" class="edge">
+<title>Managed_Policies-&gt;Customer_Managed</title>
+<path fill="none" stroke="black" d="M807.78,-253.75C831.12,-258.63 857.57,-264.17 881.65,-269.21"/>
+<polygon fill="black" stroke="black" points="880.96,-272.64 891.46,-271.26 882.39,-265.79 880.96,-272.64"/>
+</g>
+<!-- Conditions -->
+<g id="node34" class="node">
+<title>Conditions</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-1872" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-1867.8" font-family="Roboto" font-size="14.00">Conditions</text>
+</g>
+<!-- Privilege_Levels&#45;&gt;Conditions -->
+<g id="edge33" class="edge">
+<title>Privilege_Levels-&gt;Conditions</title>
+<path fill="none" stroke="black" d="M594.76,-1872C615.21,-1872 637.66,-1872 658.67,-1872"/>
+<polygon fill="black" stroke="black" points="658.86,-1875.5 668.86,-1872 658.86,-1868.5 658.86,-1875.5"/>
+</g>
+<!-- Refactor -->
+<g id="node37" class="node">
+<title>Refactor</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2058" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2053.8" font-family="Roboto" font-size="14.00">Refactor</text>
+</g>
+<!-- Redesign_Roles&#45;&gt;Refactor -->
+<g id="edge36" class="edge">
+<title>Redesign_Roles-&gt;Refactor</title>
+<path fill="none" stroke="black" d="M578.48,-2125.17C608.12,-2112.86 644.87,-2097.58 675.83,-2084.71"/>
+<polygon fill="black" stroke="black" points="677.35,-2087.87 685.24,-2080.8 674.66,-2081.41 677.35,-2087.87"/>
+</g>
+<!-- Split -->
+<g id="node38" class="node">
+<title>Split</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2148" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2143.8" font-family="Roboto" font-size="14.00">Split</text>
+</g>
+<!-- Redesign_Roles&#45;&gt;Split -->
+<g id="edge37" class="edge">
+<title>Redesign_Roles-&gt;Split</title>
+<path fill="none" stroke="black" d="M594.76,-2148C615.21,-2148 637.66,-2148 658.67,-2148"/>
+<polygon fill="black" stroke="black" points="658.86,-2151.5 668.86,-2148 658.86,-2144.5 658.86,-2151.5"/>
+</g>
+<!-- SCPs -->
+<g id="node41" class="node">
+<title>SCPs</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2328" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2323.8" font-family="Roboto" font-size="14.00">SCPs</text>
+</g>
+<!-- Access_Guardrails&#45;&gt;SCPs -->
+<g id="edge40" class="edge">
+<title>Access_Guardrails-&gt;SCPs</title>
+<path fill="none" stroke="black" d="M594.76,-2328C615.21,-2328 637.66,-2328 658.67,-2328"/>
+<polygon fill="black" stroke="black" points="658.86,-2331.5 668.86,-2328 658.86,-2324.5 658.86,-2331.5"/>
+</g>
+<!-- Resources -->
+<g id="node42" class="node">
+<title>Resources</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2418" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2413.8" font-family="Roboto" font-size="14.00">Resources</text>
+</g>
+<!-- Access_Guardrails&#45;&gt;Resources -->
+<g id="edge41" class="edge">
+<title>Access_Guardrails-&gt;Resources</title>
+<path fill="none" stroke="black" d="M578.48,-2350.83C608.12,-2363.14 644.87,-2378.42 675.83,-2391.29"/>
+<polygon fill="black" stroke="black" points="674.66,-2394.59 685.24,-2395.2 677.35,-2388.13 674.66,-2394.59"/>
+</g>
+<!-- Controls -->
+<g id="node43" class="node">
+<title>Controls</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2238" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2233.8" font-family="Roboto" font-size="14.00">Controls</text>
+</g>
+<!-- Access_Guardrails&#45;&gt;Controls -->
+<g id="edge42" class="edge">
+<title>Access_Guardrails-&gt;Controls</title>
+<path fill="none" stroke="black" d="M578.48,-2305.17C608.12,-2292.86 644.87,-2277.58 675.83,-2264.71"/>
+<polygon fill="black" stroke="black" points="677.35,-2267.87 685.24,-2260.8 674.66,-2261.41 677.35,-2267.87"/>
+</g>
+<!-- Identities -->
+<g id="node45" class="node">
+<title>Identities</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2778" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2773.8" font-family="Roboto" font-size="14.00">Identities</text>
+</g>
+<!-- Remove_Unused&#45;&gt;Identities -->
+<g id="edge44" class="edge">
+<title>Remove_Unused-&gt;Identities</title>
+<path fill="none" stroke="black" d="M554.99,-2630.35C583.5,-2658.89 627.33,-2700.82 669.11,-2733 674.39,-2737.07 680.05,-2741.12 685.78,-2745.03"/>
+<polygon fill="black" stroke="black" points="683.93,-2748 694.19,-2750.64 687.81,-2742.18 683.93,-2748"/>
+</g>
+<!-- Groups -->
+<g id="node46" class="node">
+<title>Groups</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2508" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2503.8" font-family="Roboto" font-size="14.00">Groups</text>
+</g>
+<!-- Remove_Unused&#45;&gt;Groups -->
+<g id="edge45" class="edge">
+<title>Remove_Unused-&gt;Groups</title>
+<path fill="none" stroke="black" d="M578.48,-2575.17C608.12,-2562.86 644.87,-2547.58 675.83,-2534.71"/>
+<polygon fill="black" stroke="black" points="677.35,-2537.87 685.24,-2530.8 674.66,-2531.41 677.35,-2537.87"/>
+</g>
+<!-- Tags -->
+<g id="node47" class="node">
+<title>Tags</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2598" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2593.8" font-family="Roboto" font-size="14.00">Tags</text>
+</g>
+<!-- Remove_Unused&#45;&gt;Tags -->
+<g id="edge46" class="edge">
+<title>Remove_Unused-&gt;Tags</title>
+<path fill="none" stroke="black" d="M594.76,-2598C615.21,-2598 637.66,-2598 658.67,-2598"/>
+<polygon fill="black" stroke="black" points="658.86,-2601.5 668.86,-2598 658.86,-2594.5 658.86,-2601.5"/>
+</g>
+<!-- Credentials -->
+<g id="node48" class="node">
+<title>Credentials</title>
+<ellipse fill="none" stroke="black" cx="741.11" cy="-2688" rx="72" ry="36"/>
+<text text-anchor="middle" x="741.11" y="-2683.8" font-family="Roboto" font-size="14.00">Credentials</text>
+</g>
+<!-- Remove_Unused&#45;&gt;Credentials -->
+<g id="edge47" class="edge">
+<title>Remove_Unused-&gt;Credentials</title>
+<path fill="none" stroke="black" d="M578.48,-2620.83C608.12,-2633.14 644.87,-2648.42 675.83,-2661.29"/>
+<polygon fill="black" stroke="black" points="674.66,-2664.59 685.24,-2665.2 677.35,-2658.13 674.66,-2664.59"/>
+</g>
+</g>
+</svg>
