@@ -214,7 +214,7 @@ container_image(
     base = "//docker/base:base_docker",
     env = {
         "TZ": "America/Los_Angeles",
-        "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
+        "CONFIG_LOCATION": "/configs/development_account/saas_development_container.yaml",
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
