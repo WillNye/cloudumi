@@ -77,8 +77,7 @@ class FluentBitMetric(Metric):
             return
         if not self.fluent_bit_log_file.parent.exists():
             os.makedirs(self.fluent_bit_log_file.parent, exists_ok=True)
-        with self.executor as executor:
-            future = executor.submit(
+            future = self.executor.submit(
                 self.__do_store_metric, metric_name, dimensions, unit, value
             )
             future.add_done_callback(log_metric_error)
