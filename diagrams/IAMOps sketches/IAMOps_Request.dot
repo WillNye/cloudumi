@@ -16,16 +16,16 @@ digraph Request {
 		node [style=filled,color=white];
 		label = "AWS Console"; fontsize=24
         color=black; fillcolor=lightgrey
-		
+
         pickAccount [shape="diamond"]
 		pickRole [shape="diamond"]
         {rank=same pickAccount pickRole}
 
-        a0 -> pickAccount 
+        a0 -> pickAccount
         pickAccount -> pickRole [headport=e, tailport=w]
         setJustification [label="setJustification\nsetExpiration"]
         reviewConsoleRequest [label="review\nConsole\nRequest"]
-        pickRole -> isNotApproved -> setJustification 
+        pickRole -> isNotApproved -> setJustification
         setJustification -> reviewConsoleRequest
         pickRole -> preApproved [tailport=w];
         wasApproved [label="requestApproved"; tooltip="Matches an\nApproved, Unexpired\n Request"]
@@ -37,10 +37,10 @@ digraph Request {
 		a1 -> pickRole [style="dashed"; color=grey; headport=nw, tailport=sw]
 		pickRole -> pickAccount  [style="dashed",  color=grey; tailport=ne, headport=nw]
 		countdown [shape="circle"; width=1; height=1; fontcolor=grey; label="expiry\n timer"]
-		wasApproved -> countdown [tailport=s; headport=nw] 
+		wasApproved -> countdown [tailport=s; headport=nw]
 		countdown-> wasApproved [tailport=ne, headport=se]
 		reviewEligibilityRequest [label="review\nEligibilty\nRequest"]
-		pickRole -> isNotEligible [tailport=se] 
+		pickRole -> isNotEligible [tailport=se]
 		isNotEligible-> enterJustification -> reviewEligibilityRequest -> end [headport=W]
 	}
 

@@ -1,11 +1,11 @@
 digraph IAMOps {
     label="IAMOps: User Journeys"
     rankdir="TB"
-    
+
 #subgraph Journeys {
     rankdir="LR"
     rank="min";
-    Request     [shape=cds; label="Request"] 
+    Request     [shape=cds; label="Request"]
     Grant       [shape=cds; label="Grant"]
     Develop     [shape=cds; label="Develop" ]
     Restrict    [shape=cds; label="Restrict"]
