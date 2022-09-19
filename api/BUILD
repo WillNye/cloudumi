@@ -235,7 +235,7 @@ container_image(
         "/usr/bin/python": "/usr/local/bin/python",
     },
     data_path = "/",
-    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
 )
 
 container_image(

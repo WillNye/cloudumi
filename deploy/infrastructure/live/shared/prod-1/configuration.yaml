@@ -12,7 +12,7 @@ _global_:
       enabled: true
       log_file: "/var/log/saas_output.log"
       max_log_file_size: 6291456 # 6 megabyte
-      config: configs/fluent-bit/fluent-bit.conf
+      config: /etc/fluent-bit/fluent-bit.conf
       exe: /opt/fluent-bit/bin/fluent-bit
   auth:
     challenge_url:
