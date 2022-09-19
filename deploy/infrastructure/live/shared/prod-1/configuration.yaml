@@ -71,7 +71,7 @@ _global_:
     aws: cmsaas_aws
     group_mapping: cmsaas_group_mapping
     internal_celery_tasks: cmsaas_celery_tasks
-    metrics: fluent-bit
+    metrics: fluent_bit
     internal_config: cmsaas_config
     internal_routes: cmsaas_internal_routes
     internal_policies: cmsaas_policies
