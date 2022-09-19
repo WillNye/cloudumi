@@ -34,4 +34,5 @@ repo_version = rule(
 get_repo_version = repository_rule(
     implementation = _get_repo_version_impl,
     attrs = {},
+    configure = True,
 )
