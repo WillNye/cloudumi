@@ -5,7 +5,7 @@ import boto3
 
 from common.config import config
 from common.handlers.base import BaseHandler
-from common.lib.cognito.identity import get_identity_groups, get_identity_users
+from common.lib.cognito.identity import get_identity_groups, CognitoUserClient
 from common.models import CognitoGroup, CognitoUser, WebResponse
 
 
@@ -19,9 +19,13 @@ class UserAndGroupTypeAheadHandler(BaseHandler):
             user_pool_id = config.get_tenant_specific_key(
                 "secrets.cognito.config.user_pool_id", tenant
             )
-            client = boto3.client("cognito-idp", region_name=config.region)
+            region = config.get_tenant_specific_key(
+                "secrets.cognito.config.user_pool_region", tenant, config.region
+            )
+            client = boto3.client("cognito-idp", region_name=region)
+            user_client = CognitoUserClient.tenant_client(tenant, client)
             users_and_groups = await asyncio.gather(
-                get_identity_users(user_pool_id, client),
+                user_client.list_users(),
                 get_identity_groups(user_pool_id, client),
             )
 

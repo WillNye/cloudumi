@@ -147,6 +147,12 @@ async def __get_oidc_provider(
     return oidc_provider
 
 
+def get_tenant_user_pool_region(tenant):
+    return config.get_tenant_specific_key(
+        "secrets.cognito.config.user_pool_region", tenant, config.region
+    )
+
+
 async def connect_idp_to_app_client(
     user_pool_id: str,
     client_id: str,
@@ -1051,11 +1057,12 @@ class CognitoUserClient:
     @classmethod
     def tenant_client(cls, tenant: str, cognito_idp_client=None):
         cognito_info = config.get_tenant_specific_key("secrets.cognito.config", tenant)
+        region = get_tenant_user_pool_region(tenant)
         return cls(
             cognito_info["user_pool_id"],
             cognito_info["user_pool_client_id"],
             cognito_info["user_pool_client_secret"],
-            cognito_idp_client,
+            cognito_idp_client or boto3.client("cognito-idp", region_name=region)
         )
 
     @staticmethod
