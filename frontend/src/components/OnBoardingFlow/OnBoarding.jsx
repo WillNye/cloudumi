@@ -6,7 +6,11 @@ import ConfigureAccount from './components/ConfigureAccount'
 import HorizontalStepper from './components/HorizontalStepper'
 import CreateAWSStack from './components/CreateAWSStack/CreateAWSStack'
 import CheckAccountConnection from './components/CheckAccountConnection'
-import { ONBOARDING_SECTIONS, ONBOARDING_STEPS } from './constants'
+import {
+  ACCOUNT_NAME_REGEX,
+  ONBOARDING_SECTIONS,
+  ONBOARDING_STEPS,
+} from './constants'
 import { Link } from 'react-router-dom'
 import './OnBoarding.scss'
 
@@ -16,16 +20,34 @@ const OnBoarding = () => {
 
   const [isConnected, setIsConnected] = useState(false)
   const [activeId, setActiveId] = useState(CONNECTION_METHOD.id)
+  const [accountName, setAccountName] = useState('')
+
+  const handleAccNameChange = (e) => {
+    e.preventDefault()
+    const { value } = e.target
+    if (ACCOUNT_NAME_REGEX.test(value)) {
+      setAccountName(value)
+    }
+  }
 
   const activeSection = useMemo(() => {
     const sections = {
       [CONNECTION_METHOD.id]: <ConnectionMethod />,
-      [CONFIGURE.id]: <ConfigureAccount />,
+      [CONFIGURE.id]: (
+        <ConfigureAccount
+          handleAccNameChange={handleAccNameChange}
+          accountName={accountName}
+        />
+      ),
       [CREATE_STACK.id]: <CreateAWSStack />,
       [STATUS.id]: <CheckAccountConnection setIsConnected={setIsConnected} />,
     }
     return sections[activeId]
-  }, [activeId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeId, accountName]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isNextDisabled = useMemo(() => {
+    return activeId === CONFIGURE.id && !accountName
+  }, [accountName, activeId])
 
   const connectedComponet = (
     <div className='connecting-account'>
@@ -66,6 +88,12 @@ const OnBoarding = () => {
         connectedComponet
       ) : (
         <Segment basic loading={false}>
+          <div className='on-boarding__documentation'>
+            <Link to='/docs' target='_blank' rel='noopener noreferrer'>
+              <Icon name='file outline' /> Documentation
+            </Link>
+          </div>
+
           <Header textAlign='center' as='h2'>
             Connect Noq to AWS
           </Header>
@@ -80,7 +108,11 @@ const OnBoarding = () => {
               <Button onClick={() => setActiveId(activeId - 1)}>Back</Button>
             )}
             {activeId !== STATUS.id && (
-              <Button primary onClick={() => setActiveId(activeId + 1)}>
+              <Button
+                primary
+                onClick={() => setActiveId(activeId + 1)}
+                disabled={isNextDisabled}
+              >
                 Next
               </Button>
             )}

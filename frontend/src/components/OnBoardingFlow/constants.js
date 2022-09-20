@@ -1,3 +1,5 @@
+export const ACCOUNT_NAME_REGEX = new RegExp(/[\s\S]*/)
+
 export const ONBOARDING_SECTIONS = {
   CONNECTION_METHOD: {
     value: 'Connection Method',

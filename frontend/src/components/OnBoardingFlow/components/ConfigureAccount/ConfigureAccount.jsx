@@ -1,15 +1,30 @@
 import React, { Fragment, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Divider, Form, Icon, Label, Radio, Table } from 'semantic-ui-react'
 
-const ConfigureAccount = () => {
+const MODES = {
+  READ_ONLY: 'read-only',
+  READ_WRTE: 'read-write',
+}
+
+const ConfigureAccount = ({ handleAccNameChange, accountName }) => {
   const [showComparison, setShowComparison] = useState(false)
+  const [selectedMode, setSelectedMode] = useState(MODES.READ_WRTE)
+
+  const handleChange = (_e, { value }) => setSelectedMode(value)
 
   return (
     <div className='on-boarding__configure-account'>
       <Form>
         <Form.Field>
           <label>1. AWS Account Name</label>
-          <input placeholder='Enter AWS Account Name' />
+          <input
+            placeholder='Enter AWS Account Name'
+            onChange={handleAccNameChange}
+            maxLength='50'
+            minLength='1'
+            value={accountName}
+          />
         </Form.Field>
         <Divider horizontal />
 
@@ -19,7 +34,12 @@ const ConfigureAccount = () => {
         <div className='on-boarding__container'>
           <div>
             <Form.Field>
-              <Radio label='Read-only' />
+              <Radio
+                label='Read-only'
+                value={MODES.READ_ONLY}
+                checked={selectedMode === MODES.READ_ONLY}
+                onChange={handleChange}
+              />
             </Form.Field>
             <p>
               Lorem ipsum copy placeholder which is a short description of the
@@ -28,7 +48,12 @@ const ConfigureAccount = () => {
           </div>
           <div>
             <Form.Field>
-              <Radio label='Read-write' checked />
+              <Radio
+                label='Read-write'
+                value={MODES.READ_WRTE}
+                checked={selectedMode === MODES.READ_WRTE}
+                onChange={handleChange}
+              />
               &nbsp;
               <Label color='green' horizontal>
                 <Icon name='star outline' />
@@ -65,7 +90,15 @@ const ConfigureAccount = () => {
         {showComparison ? (
           <Table.Body>
             <Table.Row>
-              <Table.Cell>Credential Brokering</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/getting_started/enable_users_to_assume_roles/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Credential Brokering
+                </Link>
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
@@ -74,7 +107,15 @@ const ConfigureAccount = () => {
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Self-service</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/self_service_permissions/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Self-service
+                </Link>
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <div className='on-boarding__configure-account-cell'>
                   <Icon name='checkmark' color='green' />
@@ -88,7 +129,15 @@ const ConfigureAccount = () => {
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Unused Permissions Removal</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/planned/unused_permissions_removal/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Unused Permissions Removal
+                </Link>
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <div className='on-boarding__configure-account-cell'>
                   <Icon name='checkmark' color='green' />
@@ -116,7 +165,15 @@ const ConfigureAccount = () => {
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Delegated Resource Viewership</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/restrict_viewers_of_account_resources/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Delegated Resource Viewership
+                </Link>
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
@@ -125,35 +182,75 @@ const ConfigureAccount = () => {
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Temporary Permissions</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/temporary_policy_requests/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Temporary Permissions
+                </Link>
+              </Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Temporary Escalation</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/temporary_role_access/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Temporary Escalation
+                </Link>
+              </Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Low-Risk Auto-Approval</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/automatically_approve_low_risk_requests/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Low-Risk Auto-Approval
+                </Link>
+              </Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Delegated Adminstration</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/decentralized_request_management/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Delegated Adminstration
+                </Link>
+              </Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Role Creation/Cloning</Table.Cell>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/resource_management/create_role/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Role Creation/Cloning
+                </Link>
+              </Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />

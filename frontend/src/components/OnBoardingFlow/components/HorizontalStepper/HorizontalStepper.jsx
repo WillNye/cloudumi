@@ -27,8 +27,8 @@ const HorizontalStepper = ({ steps, activeId }) => {
   return (
     <div className='wrapper option-1 option-1-1'>
       <ol className='c-stepper'>
-        {steps.map((step) => (
-          <Step {...step} activeId={activeId} />
+        {steps.map((step, index) => (
+          <Step {...step} activeId={activeId} key={index} />
         ))}
       </ol>
       <Divider horizontal />
