@@ -348,7 +348,13 @@ class CognitoUserSetupMFA(BaseHandler):
                 await validate_and_return_jwt_token(auth_cookie, tenant)
                 await self.set_jwt_cookie(tenant)
 
-            self.write({"status": "success", "message": "Successfully setup user MFA", "status_code": 200})
+            self.write(
+                {
+                    "status": "success",
+                    "message": "Successfully setup user MFA",
+                    "status_code": 200,
+                }
+            )
         except Exception as err:
             message = "Unable to complete the MFA setup."
             log_data = {

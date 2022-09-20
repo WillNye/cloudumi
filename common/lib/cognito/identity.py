@@ -1062,7 +1062,7 @@ class CognitoUserClient:
             cognito_info["user_pool_id"],
             cognito_info["user_pool_client_id"],
             cognito_info["user_pool_client_secret"],
-            cognito_idp_client or boto3.client("cognito-idp", region_name=region)
+            cognito_idp_client or boto3.client("cognito-idp", region_name=region),
         )
 
     @staticmethod

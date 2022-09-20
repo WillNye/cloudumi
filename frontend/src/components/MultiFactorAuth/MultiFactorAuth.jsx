@@ -146,11 +146,7 @@ const MultiFactorAuth = () => {
                   value={userCode}
                   onChange={(_e, { value }) => setUserCode(value)}
                 />
-                <Message
-                  error
-                  header='Invalid Code'
-                  content={submitError}
-                />
+                <Message error header='Invalid Code' content={submitError} />
                 <Button type='submit'>Submit</Button>
               </Form>
             </div>

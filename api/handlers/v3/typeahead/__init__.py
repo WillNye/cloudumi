@@ -5,7 +5,7 @@ import boto3
 
 from common.config import config
 from common.handlers.base import BaseHandler
-from common.lib.cognito.identity import get_identity_groups, CognitoUserClient
+from common.lib.cognito.identity import CognitoUserClient, get_identity_groups
 from common.models import CognitoGroup, CognitoUser, WebResponse
 
 

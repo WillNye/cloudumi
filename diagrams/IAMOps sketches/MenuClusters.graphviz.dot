@@ -2,7 +2,7 @@ digraph {
     rankdir="LR"
     ranksep=1
 #   splines="ortho"
-   
+
     node[width=2, height=1, fontname="Roboto"];
     #edge[headport=w]
 
@@ -40,15 +40,15 @@ subgraph cluster_Ask {
     Managed_Policies -> Customer_Managed
     Privileges -> IAM_Permissions
     Privileges -> Service_Controls
-    
+
  subgraph cluster_CR {
     Cloud_Resources -> S3
     Cloud_Resources -> EC2
     Cloud_Resources -> RDS
     Cloud_Resources -> SQS
     Cloud_Resources -> SNS
-    Cloud_Resources -> Route53 
-    Cloud_Resources -> "#Tags" 
+    Cloud_Resources -> Route53
+    Cloud_Resources -> "#Tags"
     Cloud_Resources -> More__
 }
 }
@@ -70,6 +70,6 @@ subgraph cluster_Administer {
     Administer -> Connections
     Administer -> Delegation
     Administer -> "#Preferences"
-} 
+}
 }
 }
