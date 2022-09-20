@@ -22,6 +22,7 @@ _ATTRS = {
     "env": attr.string_dict(default = {}),
     "exit_code_out": attr.output(),
     "link_workspace_root": attr.bool(),
+    "local": attr.bool(),
     "output_dir": attr.bool(),
     "outs": attr.output_list(),
     "silent_on_success": attr.bool(),
@@ -68,7 +69,8 @@ def _node_scripts_impl(ctx):
     for k, v in ctx.attr.env.items():
         envs[k] = " ".join([expand_variables(ctx, e, outs = ctx.outputs.outs, output_dir = ctx.attr.output_dir, attribute_name = "env") for e in _expand_locations(ctx, v)])
 
-    envs["PUBLIC_URL"] = "%s/%s/%s" % (ctx.attr.base_url, branch, version)
+    if not ctx.attr.local:
+        envs["PUBLIC_URL"] = "%s/%s/%s" % (ctx.attr.base_url, branch, version)
 
     if ctx.attr.output_dir and ctx.outputs.outs:
         fail("Only one of output_dir and outs may be specified")
