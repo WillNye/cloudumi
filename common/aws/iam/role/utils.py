@@ -21,7 +21,6 @@ from common.models import (
     HubAccount,
     PrincipalModelRoleAccessConfig,
     PrincipalModelTraConfig,
-    RoleCreationRequestModel,
 )
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -128,25 +127,21 @@ async def _get_iam_role_async(
 
 
 async def _create_iam_role(
-    create_model: RoleCreationRequestModel, username: str, tenant: str
+    tenant: str,
+    account_id: str,
+    username: str,
+    role_name: str,
+    create_instance_profile: bool,
+    justification: str,
 ):
     """
     Creates IAM role.
-    :param create_model: RoleCreationRequestModel, which has the following attributes:
-        account_id: destination account's ID
-        role_name: destination role name
-        description: optional string - description of the role
-                     default: Role created by {username} through Noq
-        instance_profile: optional boolean - whether to create an instance profile and attach it to the role or not
-                     default: True
-    :param username: username of user requesting action
-    :return: results: - indicating the results of each action
     """
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "message": "Attempting to create role",
-        "account_id": create_model.account_id,
-        "role_name": create_model.role_name,
+        "account_id": account_id,
+        "role_name": role_name,
         "user": username,
         "tenant": tenant,
     }
@@ -175,20 +170,17 @@ async def _create_iam_role(
         "user_role_creator.default_max_session_duration", tenant, 3600
     )
 
-    if create_model.description:
-        description = create_model.description
-    else:
-        description = f"Role created by {username} through Noq"
+    description = justification or f"Role created by {username} through Noq"
 
     iam_client = await aio_wrapper(
-        get_tenant_iam_conn, tenant, create_model.account_id, f"create_role_{username}"
+        get_tenant_iam_conn, tenant, account_id, f"create_role_{username}"
     )
 
     results = {"errors": 0, "role_created": "false", "action_results": []}
     try:
         await aio_wrapper(
             iam_client.create_role,
-            RoleName=create_model.role_name,
+            RoleName=role_name,
             AssumeRolePolicyDocument=json.dumps(default_trust_policy),
             MaxSessionDuration=default_max_session_duration,
             Description=description,
@@ -197,7 +189,7 @@ async def _create_iam_role(
         results["action_results"].append(
             {
                 "status": "success",
-                "message": f"Role arn:aws:iam::{create_model.account_id}:role/{create_model.role_name} "
+                "message": f"Role arn:aws:iam::{account_id}:role/{role_name} "
                 f"successfully created",
             }
         )
@@ -209,7 +201,7 @@ async def _create_iam_role(
         results["action_results"].append(
             {
                 "status": "error",
-                "message": f"Error creating role {create_model.role_name} in account {create_model.account_id}:"
+                "message": f"Error creating role {role_name} in account {account_id}:"
                 + str(e),
             }
         )
@@ -233,22 +225,21 @@ async def _create_iam_role(
     )
 
     # Create instance profile and attach if specified
-    if create_model.instance_profile:
+    if create_instance_profile:
         try:
             await aio_wrapper(
                 iam_client.create_instance_profile,
-                InstanceProfileName=create_model.role_name,
+                InstanceProfileName=role_name,
             )
             await aio_wrapper(
                 iam_client.add_role_to_instance_profile,
-                InstanceProfileName=create_model.role_name,
-                RoleName=create_model.role_name,
+                InstanceProfileName=role_name,
+                RoleName=role_name,
             )
             results["action_results"].append(
                 {
                     "status": "success",
-                    "message": f"Successfully added instance profile {create_model.role_name} to role "
-                    f"{create_model.role_name}",
+                    "message": f"Successfully added instance profile {role_name} to role {role_name}",
                 }
             )
         except Exception as e:
@@ -261,7 +252,7 @@ async def _create_iam_role(
             results["action_results"].append(
                 {
                     "status": "error",
-                    "message": f"Error creating/attaching instance profile {create_model.role_name} to role: "
+                    "message": f"Error creating/attaching instance profile {role_name} to role: "
                     + str(e),
                 }
             )
@@ -270,7 +261,7 @@ async def _create_iam_role(
     stats.count(
         f"{log_data['function']}.success",
         tags={
-            "role_name": create_model.role_name,
+            "role_name": role_name,
             "tenant": tenant,
         },
     )

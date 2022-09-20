@@ -30,7 +30,8 @@ from common.config.models import ModelAdapter
 from common.lib.plugins import get_plugin_by_name
 from common.lib.pynamo import NoqMapAttribute, NoqModel
 from common.lib.terraform.transformers.IAMRoleTransformer import IAMRoleTransformer
-from common.models import CloneRoleRequestModel, RoleCreationRequestModel, SpokeAccount
+from common.models import CloneRoleRequestModel, CreateResourceChangeModel, SpokeAccount
+from common.user_request.models import IAMRequest
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = get_logger(__name__)
@@ -217,14 +218,23 @@ class IAMRole(NoqModel):
 
     @classmethod
     async def create(
-        cls, tenant: str, username: str, create_model: RoleCreationRequestModel
-    ):
-        results = await _create_iam_role(create_model, username, tenant)
+        cls, iam_request: IAMRequest, change_model: CreateResourceChangeModel
+    ) -> tuple["IAMRole", dict]:
+        account_id = change_model.principal.account_id
+        role_name = change_model.principal.name
+        results = await _create_iam_role(
+            tenant=iam_request.tenant,
+            account_id=account_id,
+            username=iam_request.username,
+            role_name=role_name,
+            create_instance_profile=change_model.instance_profile,
+            justification=iam_request.justification,
+        )
         if results["role_created"] == "false":
             return None, results
 
-        arn = f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
-        iam_role = await cls.get(tenant, create_model.account_id, arn, True)
+        arn = f"arn:aws:iam::{account_id}:role/{role_name}"
+        iam_role = await cls.get(iam_request.tenant, account_id, arn, True)
         return iam_role, results
 
     @classmethod
