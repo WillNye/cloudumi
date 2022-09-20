@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container, Grid, Header, Message } from 'semantic-ui-react'
+import { Grid, Header, Message, Segment } from 'semantic-ui-react'
 
 export const ReadOnlyNotification = ({ isReadonlyInfo }) =>
   isReadonlyInfo ? (
@@ -86,10 +86,10 @@ export const ExpiredNotification = ({ isExpired }) =>
 
 export const NullPolicyNotification = ({ isNullPolicy }) =>
   isNullPolicy ? (
-    <Container text>
+    <Segment basic>
       <Header as='h1'>Null Policy</Header>
       <p>This change will remove all permissions from this role.</p>
-    </Container>
+    </Segment>
   ) : (
     <></>
   )
