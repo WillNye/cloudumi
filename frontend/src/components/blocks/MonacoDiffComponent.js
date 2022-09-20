@@ -142,7 +142,9 @@ const MonacoDiffComponent = (props) => {
           ) : null}
         </Menu>
         {activeItem === 'JSON' &&
-        (newValue === '{}' || newValue.includes('deleted')) ? (
+        (newValue === '{}' ||
+          newValue.includes('deleted') ||
+          newValue.includes('"Statement": []')) ? (
           <RegularEditorForNullPolicyComponent
             language={language}
             currentPolicy={oldValue}
@@ -233,6 +235,7 @@ const MonacoDiffComponent = (props) => {
         </div>
         {newValue === '{}' ||
         newValue.includes('deleted') ||
+        newValue.includes('"Statement": []') ||
         oldValue === '' ? (
           <RegularEditorForNullPolicyComponent
             language={language}

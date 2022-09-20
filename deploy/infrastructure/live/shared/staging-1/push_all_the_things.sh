@@ -25,17 +25,24 @@ echo "Logging in to AWS ECR for 259868150464.dkr.ecr.us-west-2.amazonaws.com"
 echo
 aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com
 
-echo
-echo "Pushing API container - $(git describe --tags --abbrev=0)"
-echo
-bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/staging-1:api-container-deploy-staging
+export VERSION=$(git describe --tags --abbrev=0)
 
 echo
-echo "Pushing Celery container - $(git describe --tags --abbrev=0)"
+echo "Updating version stamping to $VERSION"
 echo
-bazelisk run --stamp --workspace_status_command="echo VERSION $(git describe --tags --abbrev=0)" //deploy/infrastructure/live/shared/staging-1:celery-container-deploy-staging
+bazel sync --configure
 
 echo
-echo "Deploying Service - $(git describe --tags --abbrev=0)"
+echo "Pushing API container - $VERSION"
 echo
-VERSION=$(git describe --tags --abbrev=0) bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_deployer
+bazelisk run --stamp --workspace_status_command="echo VERSION $VERSION" //deploy/infrastructure/live/shared/staging-1:api-container-deploy-staging
+
+echo
+echo "Pushing Celery container - $VERSION"
+echo
+bazelisk run --action_env=AWS_PROFILE="$AWS_PROFILE" --stamp --workspace_status_command="echo VERSION $VERSION" //deploy/infrastructure/live/shared/staging-1:celery-container-deploy-staging
+
+echo
+echo "Deploying Service - $VERSION"
+echo
+VERSION=$VERSION bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_deployer
