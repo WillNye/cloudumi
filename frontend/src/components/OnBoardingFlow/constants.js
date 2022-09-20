@@ -8,7 +8,7 @@ export const ONBOARDING_SECTIONS = {
     id: 2,
   },
   CREATE_STACK: {
-    value: 'Login AWS & Create Stack',
+    value: 'Login to AWS & Create Stack',
     id: 3,
   },
   STATUS: {
