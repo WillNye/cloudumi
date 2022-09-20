@@ -1,14 +1,14 @@
 import React from 'react'
-import { Grid, GridColumn, GridRow } from 'semantic-ui-react'
+import { Grid } from 'semantic-ui-react'
 import Editor from '@monaco-editor/react'
 import { NullPolicyNotification } from './notificationMessages'
 
 export const RegularEditorForNullPolicyComponent = (props) => {
   const { isNullPolicy, language, currentPolicy, editorTheme } = props
   return (
-    <Grid columns={2}>
-      <GridRow>
-        <GridColumn>
+    <Grid relaxed columns={2} divided>
+      <Grid.Row>
+        <Grid.Column>
           <Editor
             key='regular-editor-for-null-policy'
             defaultLanguage={language}
@@ -18,11 +18,11 @@ export const RegularEditorForNullPolicyComponent = (props) => {
             theme={editorTheme}
             alwaysConsumeMouseWheel={false}
           />
-        </GridColumn>
-        <GridColumn>
+        </Grid.Column>
+        <Grid.Column>
           <NullPolicyNotification isNullPolicy={isNullPolicy} />
-        </GridColumn>
-      </GridRow>
+        </Grid.Column>
+      </Grid.Row>
     </Grid>
   )
 }
