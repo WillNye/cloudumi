@@ -39,7 +39,7 @@ const OnBoarding = () => {
           accountName={accountName}
         />
       ),
-      [CREATE_STACK.id]: <CreateAWSStack />,
+      [CREATE_STACK.id]: <CreateAWSStack accountName={accountName} />,
       [STATUS.id]: <CheckAccountConnection setIsConnected={setIsConnected} />,
     }
     return sections[activeId]
@@ -47,7 +47,7 @@ const OnBoarding = () => {
 
   const isNextDisabled = useMemo(() => {
     return activeId === CONFIGURE.id && !accountName
-  }, [accountName, activeId])
+  }, [accountName, activeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const connectedComponet = (
     <div className='connecting-account'>
