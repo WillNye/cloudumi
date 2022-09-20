@@ -26,8 +26,6 @@ containerDefinitions:
         value: API
       - name: STAGE
         value: prod
-      - name: PUBLIC_URL
-        value: https://d2mxcvfujf7a5q.cloudfront.net/1.5.303/task.en-1057-serve-frontend-cf-cdn/
     dnsServers: []
     mountPoints: []
     dockerSecurityOptions: []

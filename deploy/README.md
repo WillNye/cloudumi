@@ -79,11 +79,23 @@ Publishing to staging is a build target that utilizes a genrule syntax to deploy
 
 - `bazelisk run //deploy/infrastructure/live/shared/staging-1:staging-1`
 
+Note: there is a script that is templated in the terraform config parser package, called `push_all_the_things.sh`, which has an anti-dote called `revert_all_the_things.sh`.
+
+To deploy to staging, simply run this script:
+
+- `deploy/infrastructure/live/shared/staging-1/push_all_the_things.sh`
+
 # Publish to Prod
 
 > Do you really want this? Do you have access?
 
 - `bazelisk run //deploy/infrastructure/live/shared/prod-1:prod-1`
+
+Note: there is a script that is templated in the terraform config parser package, called `push_all_the_things.sh`, which has an anti-dote called `revert_all_the_things.sh`.
+
+To deploy to production, simply run this script:
+
+- `deploy/infrastructure/live/shared/prod-1/push_all_the_things.sh`
 
 # Revert Staging
 

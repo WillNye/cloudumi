@@ -1,0 +1,143 @@
+# When running this locally, ensure your /etc/hosts file has the following configuration:
+# 127.0.0.1 localhost redis-cluster cloudumi-dynamodb cloudumi-redis localstack1 localstack2 localstack3
+# TODO: Extends must NOT modify _global_. It must ONLY exist in the site_config specific namespace
+
+# AWS_PROFILE=noq_dev aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
+extends:
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
+
+_global_:
+  # profiler: yappi | pprofile | memray
+  #  tracing:
+  #    enabled: true
+  metrics:
+    cloudwatch:
+      enabled: false
+    fluent-bit:
+      namespace: noq-develop
+      max_threads: 10
+      enabled: true
+      log_file: "/var/log/saas_output.log"
+      max_log_file_size: 6291456 # 6 megabyte
+      config: /etc/fluent-bit/fluent-bit.conf
+      exe: /opt/fluent-bit/bin/fluent-bit
+  web:
+    path: "frontend/dist"
+  landing_page_domains:
+    - localhost
+    - www.noq.localhost
+    - noq.localhost
+    - noq.dev
+    - www.noq.dev
+    - 127.0.0.1
+    - registration.noq.dev
+  deployment:
+    domain_name: shared.noq.dev
+    namespace: shared
+    zone: noq.dev
+    cluster_id: dev
+  dynamodb_server: http://cloudumi-dynamodb:8005
+  sentry:
+    dsn: "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
+    traces_sample_rate: 1.0
+  accounts:
+    tenant_data:
+      account_id: "350876197038"
+      account_name: "development_2"
+      role_arn: arn:aws:iam::350876197038:role/NoqServiceConnRole
+      external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+      region: us-west-2
+    zelkova:
+      name: ZelkovaAnalysisRole
+      account_id: "894599878328"
+      account_name: "zelkova"
+      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
+      region: us-west-2
+  s3_buckets:
+    legal_docs: noq-development-2-test-bucket
+  integrations:
+    aws:
+      account_id: "759357822767"
+      central_role_name: NoqCentralRoleLocalDev
+      spoke_role_name: NoqSpokeRoleLocalDev
+      node_role: arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev
+      stage: prod
+      region: us-west-2
+      attributes: 1
+      registration_topic_arn: arn:aws:sns:us-west-2:759357822767:local-dev-registration-topic
+      registration_queue_arn: arn:aws:sqs:us-west-2:759357822767:local-dev-registration-queue
+  logging:
+    file: ./cloudumi_tornado.log
+  # sentry:
+  #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
+  s3_cache_bucket: noq-local-dev-cache
+  s3_cache_bucket_region: us-west-2
+  environment: dev
+  development: true
+  tornado:
+    debug: false
+    port: 8092
+    xsrf: false
+    xsrf_cookie_kwargs:
+      samesite: strict
+  plugins:
+    auth: cmsaas_auth
+    aws: cmsaas_aws
+    group_mapping: cmsaas_group_mapping
+    internal_celery_tasks: cmsaas_celery_tasks
+    #metrics: cmsaas_metrics
+    metrics: fluent_bit # enable as needed
+    internal_config: cmsaas_config
+    internal_routes: cmsaas_internal_routes
+    internal_policies: cmsaas_policies
+  celery:
+    clear_tasks_for_development: false
+    purge: true
+    broker:
+      us-east-1: redis://cloudumi-redis:6379/1
+      us-west-2: redis://cloudumi-redis:6379/1
+      global: redis://cloudumi-redis:6379/1
+    backend:
+      us-east-1: redis://cloudumi-redis:6379/2
+      us-west-2: redis://cloudumi-redis:6379/2
+      global: redis://cloudumi-redis:6379/2
+    debug: true
+  # Saas Configuration
+  redis:
+    cluster_mode:
+      enabled: false
+      nodes:
+        global:
+          - host: redis-cluster
+            port: "9000"
+          - host: redis-cluster
+            port: "9001"
+          - host: redis-cluster
+            port: "9002"
+          - host: redis-cluster
+            port: "9003"
+          - host: redis-cluster
+            port: "9004"
+          - host: redis-cluster
+            port: "9005"
+  tenant_registration:
+    set_login_page_ui:
+      logo_location: frontend/src/assets/NoqLogo.png
+# Localhost configuration
+#  redis:
+#    cluster_mode:
+#      enabled: true
+#      nodes:
+#        - host: 127.0.0.1
+#          port: "7000"
+#        - host: 127.0.0.1
+#          port: "7001"
+#        - host: 127.0.0.1
+#          port: "7002"
+#        - host: 127.0.0.1
+#          port: "7003"
+#        - host: 127.0.0.1
+#          port: "7004"
+#        - host: 127.0.0.1
+#          port: "7005"
+# TBD: Celery Redis configuration

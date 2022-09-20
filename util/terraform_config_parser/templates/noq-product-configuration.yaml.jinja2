@@ -6,6 +6,14 @@ _global_:
   metrics:
     cloudwatch:
       namespace: {{ cluster_id_safed }}
+    fluent-bit:
+      namespace: {{ cluster_id_safed }}
+      max_threads: 10
+      enabled: true
+      log_file: "/var/log/saas_output.log"
+      max_log_file_size: 6291456 # 6 megabyte
+      config: /etc/fluent-bit/fluent-bit.conf
+      exe: /opt/fluent-bit/bin/fluent-bit
   auth:
     challenge_url:
       request_ip_must_match_challenge_creation_ip: false
@@ -66,7 +74,7 @@ _global_:
     aws: cmsaas_aws
     group_mapping: cmsaas_group_mapping
     internal_celery_tasks: cmsaas_celery_tasks
-    metrics: cmsaas_metrics
+    metrics: fluent_bit
     internal_config: cmsaas_config
     internal_routes: cmsaas_internal_routes
     internal_policies: cmsaas_policies

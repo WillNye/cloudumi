@@ -46,6 +46,7 @@ from common.lib.v2.requests import (
     update_changes_meta_data,
 )
 from common.models import (
+    Command,
     CommentModel,
     DataTableResponse,
     ExtendedRequestModel,
@@ -57,7 +58,11 @@ from common.models import (
 from common.models import Status2 as WebStatus
 from common.models import WebResponse
 from common.user_request.models import IAMRequest
-from common.user_request.utils import TRA_CONFIG_BASE_KEY, get_tra_config
+from common.user_request.utils import (
+    TRA_CONFIG_BASE_KEY,
+    get_tra_config,
+    normalize_expiration_date,
+)
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -67,12 +72,21 @@ async def validate_request_creation(
     handler, request: RequestCreationModel
 ) -> RequestCreationModel:
     err = ""
+    request = normalize_expiration_date(request)
+    tenant = handler.ctx.tenant
+    if any(
+        change.change_type == "assume_role_access" for change in request.changes.changes
+    ) and not config.get_tenant_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.enabled",
+        tenant,
+        True,
+    ):
+        err += "Assume role access via tagging has been disabled. Ask your admin to enable it inorder to proceed."
 
     if tra_change := next(
         (c for c in request.changes.changes if c.change_type == "tra_can_assume_role"),
         None,
     ):
-        tenant = handler.ctx.tenant
         role_arn = tra_change.principal.principal_arn
         tra_supported_roles = await get_tra_supported_roles_by_tag(
             handler.eligible_roles, handler.groups, tenant
@@ -84,8 +98,8 @@ async def validate_request_creation(
         if not tra_supported_role:
             err += f"No TRA support for {tra_change.principal.principal_arn} or access already exists. "
 
-        if not request.expiration_date:
-            err += "expiration_date is a required field for temporary role access requests. "
+        if not request.expiration_date and not request.ttl:
+            err += "expiration_date or ttl is a required field for temporary role access requests. "
 
         if err:
             handler.set_status(400)
@@ -99,7 +113,7 @@ async def validate_request_creation(
         resource_summary = await ResourceSummary.set(tenant, role_arn)
         tra_config = await get_tra_config(resource_summary)
         if tra_config.mfa.enabled:
-            is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
+            is_authenticated, err = await mfa_verify(tenant, handler.user)
             if not is_authenticated:
                 handler.set_status(403)
                 handler.write(
@@ -110,6 +124,15 @@ async def validate_request_creation(
                 return await handler.finish()
 
         request.admin_auto_approve = False
+
+    if err:
+        handler.set_status(400)
+        handler.write(
+            WebResponse(staus=WebStatus.error, errors=[err]).json(
+                exclude_unset=True, exclude_none=True
+            )
+        )
+        return await handler.finish()
 
     return request
 
@@ -955,26 +978,42 @@ class RequestDetailHandler(BaseAPIV2Handler):
             extended_request, last_updated = await self._get_extended_request(
                 request_id, log_data, tenant
             )
+            change_info = request_changes.modification_model
+            is_expiry_update = bool(
+                change_info.command
+                in [Command.update_expiration_date, Command.update_ttl]
+            )
+            has_expiry_info = bool(
+                getattr(
+                    change_info, "expiration_date", getattr(change_info, "ttl", None)
+                )
+            )
 
-            if any(
+            if is_expiry_update and any(
                 change.change_type == "tra_can_assume_role"
                 for change in extended_request.changes.changes
             ):
-                change_info = request_changes.modification_model
-                if not getattr(change_info, "expiration_date", None):
+                if not has_expiry_info:
                     raise ValueError(
-                        "An expiration date must be provided for temporary role access requests."
+                        "A valid expiration date or ttl must be provided for temporary role access requests."
                     )
-
-            if any(
-                change.change_type == "policy_condenser"
-                for change in extended_request.changes.changes
+            if (
+                is_expiry_update
+                and extended_request.request_status != RequestStatus.pending
             ):
-                change_info = request_changes.modification_model
-                if getattr(change_info, "expiration_date", None):
-                    raise ValueError(
-                        "Expiration date is not supported for policy condenser requests."
-                    )
+                raise ValueError(
+                    "The TTL and expiration date can only be updated on pending requests."
+                )
+            if (
+                any(
+                    change.change_type == "policy_condenser"
+                    for change in extended_request.changes.changes
+                )
+                and has_expiry_info
+            ):
+                raise ValueError(
+                    "Expiration dates and TTLs are not supported for policy condenser requests."
+                )
 
             response = await parse_and_apply_policy_request_modification(
                 extended_request,
