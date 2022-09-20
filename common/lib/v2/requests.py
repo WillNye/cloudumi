@@ -266,6 +266,7 @@ async def generate_request_from_change_model_array(
         and change_models.changes[0].change_type == "create_resource"
     ):
         request_changes = ChangeModelArray(changes=create_resource_changes)
+        arn_url = ""
     elif primary_principal.principal_type == "AwsResource":
         # TODO: Separate this out into another function
         resource_summary = await ResourceSummary.set(
@@ -483,7 +484,9 @@ async def generate_request_from_change_model_array(
         ),
         comments=[],
         cross_account=False,
+        arn_url=arn_url,
     )
+
     if primary_principal.principal_arn:
         extended_request = await populate_old_policies(
             extended_request, user, tenant, role
