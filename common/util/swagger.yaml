@@ -1369,14 +1369,17 @@ components:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
         - type: object
+          required:
+            - description
           properties:
             change_type:
               type: string
               pattern: "create_resource"
-              default: "create_resource"
             instance_profile:
               type: boolean
               default: True
+            description:
+              type: string
     RoleAccessChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -2053,6 +2056,23 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ActionResult"
+    RoleCreationRequestModel:
+      type: object
+      required:
+        - role_name
+        - account_id
+      properties:
+        account_id:
+          type: string
+          minLength: 12
+          maxLength: 12
+        role_name:
+          type: string
+        description:
+          type: string
+        instance_profile:
+          type: boolean
+          default: True
     RequestCreationModel:
       type: object
       required:

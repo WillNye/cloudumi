@@ -1,4 +1,5 @@
 import asyncio
+import re
 import sys
 from typing import Any, Dict, Optional
 
@@ -25,6 +26,10 @@ from common.models import (
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger(__name__)
+
+
+def is_valid_role_name(role_name: str) -> bool:
+    return bool(re.fullmatch(r"[A-Za-z0-9_+=,.@-]{1,64}", role_name))
 
 
 def _get_iam_role_sync(
@@ -132,7 +137,7 @@ async def _create_iam_role(
     username: str,
     role_name: str,
     create_instance_profile: bool,
-    justification: str,
+    description: str,
 ):
     """
     Creates IAM role.
@@ -169,8 +174,6 @@ async def _create_iam_role(
     default_max_session_duration = config.get_tenant_specific_key(
         "user_role_creator.default_max_session_duration", tenant, 3600
     )
-
-    description = justification or f"Role created by {username} through Noq"
 
     iam_client = await aio_wrapper(
         get_tenant_iam_conn, tenant, account_id, f"create_role_{username}"

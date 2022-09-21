@@ -30,7 +30,12 @@ from common.config.models import ModelAdapter
 from common.lib.plugins import get_plugin_by_name
 from common.lib.pynamo import NoqMapAttribute, NoqModel
 from common.lib.terraform.transformers.IAMRoleTransformer import IAMRoleTransformer
-from common.models import CloneRoleRequestModel, CreateResourceChangeModel, SpokeAccount
+from common.models import (
+    CloneRoleRequestModel,
+    CreateResourceChangeModel,
+    RoleCreationRequestModel,
+    SpokeAccount,
+)
 from common.user_request.models import IAMRequest
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -228,13 +233,32 @@ class IAMRole(NoqModel):
             username=iam_request.username,
             role_name=role_name,
             create_instance_profile=change_model.instance_profile,
-            justification=iam_request.justification,
+            description=change_model.description,
         )
         if results["role_created"] == "false":
             return None, results
 
         arn = f"arn:aws:iam::{account_id}:role/{role_name}"
         iam_role = await cls.get(iam_request.tenant, account_id, arn, True)
+        return iam_role, results
+
+    @classmethod
+    async def legacy_create(
+        cls, tenant: str, username: str, create_model: RoleCreationRequestModel
+    ):
+        results = await _create_iam_role(
+            tenant=tenant,
+            account_id=create_model.account_id,
+            username=username,
+            role_name=create_model.role_name,
+            create_instance_profile=create_model.instance_profile,
+            description=create_model.description,
+        )
+        if results["role_created"] == "false":
+            return None, results
+
+        arn = f"arn:aws:iam::{create_model.account_id}:role/{create_model.role_name}"
+        iam_role = await cls.get(tenant, create_model.account_id, arn, True)
         return iam_role, results
 
     @classmethod

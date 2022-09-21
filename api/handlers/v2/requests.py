@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
+from common.aws.iam.role.utils import is_valid_role_name
 from common.aws.utils import ResourceAccountCache, ResourceSummary, get_url_for_resource
 from common.config import config
 from common.exceptions.exceptions import (
@@ -20,6 +21,7 @@ from common.exceptions.exceptions import (
     Unauthorized,
 )
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
+from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.auth import (
     can_admin_policies,
     get_extended_request_account_ids,
@@ -50,12 +52,14 @@ from common.lib.web import handle_generic_error_response
 from common.models import (
     Command,
     CommentModel,
+    CreateResourceChangeModel,
     DataTableResponse,
     ExtendedRequestModel,
     PolicyRequestModificationRequestModel,
     RequestCreationModel,
     RequestCreationResponse,
     RequestStatus,
+    ResourceType,
 )
 from common.models import Status2 as WebStatus
 from common.models import WebResponse
@@ -70,6 +74,46 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger()
 
 
+async def validate_create_resource_change(
+    handler, request: RequestCreationModel, change: CreateResourceChangeModel
+) -> set:
+    err = set()
+    resource_types = list(ResourceType.__dict__.values())
+    account_ids = list(
+        (await get_account_id_to_name_mapping(handler.ctx.tenant)).keys()
+    )
+    name = change.principal.name
+
+    if change.principal.resource_type not in resource_types:
+        err.add(
+            f"The principal resource type must be one of: {', '.join(resource_types)}"
+        )
+    elif (
+        change.principal.resource_type.value == ResourceType.role.value
+        and not is_valid_role_name(name)
+    ):
+        err.add(
+            "The principal name must be between 1-64 characters consisting of letters, numbers, and _+=,.@-"
+        )
+
+    if change.principal.account_id not in account_ids:
+        err.add(f"The principal account_id must be one of: {', '.join(account_ids)}")
+
+    if request.expiration_date or request.ttl:
+        err.add("Expiration dates and TTLs are not supported for this request.")
+
+    if not (
+        change.principal.account_id
+        and change.principal.name
+        and change.principal.resource_type
+    ):
+        err.add(
+            "The account_id, name, and resource_type is required in the principal for this requests."
+        )
+
+    return err
+
+
 async def validate_request_creation(
     handler, request: RequestCreationModel
 ) -> RequestCreationModel:
@@ -78,7 +122,9 @@ async def validate_request_creation(
     tenant = handler.ctx.tenant
 
     for change in request.changes.changes:
-        if change.change_type in ["policy_condenser", "create_resource"] and (
+        if change.change_type == "create_resource":
+            err.update(await validate_create_resource_change(handler, request, change))
+        elif change.change_type == "policy_condenser" and (
             request.expiration_date or request.ttl
         ):
             err.add("Expiration dates and TTLs are not supported for this request.")
@@ -94,20 +140,11 @@ async def validate_request_creation(
                 "Assume role access via tagging has been disabled. Ask your admin to enable it inorder to proceed."
             )
 
-        if not (
-            change.principal.principal_arn
-            or (
-                change.principal.account_id
-                and change.principal.name
-                and change.principal.resource_type
-            )
+        if (
+            not change.principal.principal_arn
+            and change.change_type != "create_resource"
         ):
-            if change.change_type == "create_resource":
-                err.add(
-                    "The account_id, name, and resource_type is required in the principal for this requests."
-                )
-            else:
-                err.add("The principal_arn is required for this request.")
+            err.add("The principal_arn is required for this request.")
 
     if tra_change := next(
         (c for c in request.changes.changes if c.change_type == "tra_can_assume_role"),

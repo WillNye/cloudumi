@@ -27,6 +27,7 @@ from common.models import (
     CloneRoleRequestModel,
     PrincipalModelRoleAccessConfig,
     PrincipalModelTraConfig,
+    RoleCreationRequestModel,
     Status2,
     WebResponse,
 )
@@ -244,6 +245,81 @@ class RolesHandler(BaseAPIV2Handler):
         self.set_header("Content-Type", "application/json")
         self.write(json.dumps(payload))
         await self.finish()
+
+    async def post(self):
+        tenant = self.ctx.tenant
+        log_data = {
+            "user": self.user,
+            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "ip": self.ip,
+            "tenant": tenant,
+        }
+        can_create_role = can_create_roles(self.user, self.groups, tenant)
+        if not can_create_role:
+            stats.count(
+                f"{log_data['function']}.unauthorized",
+                tags={
+                    "user": self.user,
+                    "authorized": can_create_role,
+                    "tenant": tenant,
+                },
+            )
+            log_data["message"] = "User is unauthorized to create a role"
+            log.error(log_data)
+            self.write_error(403, message="User is unauthorized to create a role")
+            return
+
+        try:
+            create_model = RoleCreationRequestModel.parse_raw(self.request.body)
+        except ValidationError as e:
+            log_data["message"] = f"Validation Exception: {str(e)}"
+            log_data["error"] = str(e)
+            log.error(log_data, exc_info=True)
+            stats.count(
+                f"{log_data['function']}.validation_exception",
+                tags={
+                    "user": self.user,
+                    "tenant": tenant,
+                },
+            )
+            sentry_sdk.capture_exception()
+            self.write_error(400, message="Error validating input: " + str(e))
+            return
+
+        try:
+            _, results = await IAMRole.legacy_create(tenant, self.user, create_model)
+        except Exception as e:
+            log_data["message"] = f"Exception creating role: {str(e)}"
+            log_data["error"] = str(e)
+            log_data["account_id"] = create_model.account_id
+            log_data["role_name"] = create_model.role_name
+            log.error(log_data, exc_info=True)
+            stats.count(
+                f"{log_data['function']}.exception",
+                tags={
+                    "user": self.user,
+                    "account_id": create_model.account_id,
+                    "role_name": create_model.role_name,
+                    "tenant": tenant,
+                },
+            )
+            sentry_sdk.capture_exception()
+            self.write_error(500, message="Exception occurred cloning role: " + str(e))
+            return
+
+        # if here, role has been successfully cloned
+        stats.count(
+            f"{log_data['function']}.success",
+            tags={
+                "user": self.user,
+                "account_id": create_model.account_id,
+                "role_name": create_model.role_name,
+                "tenant": tenant,
+            },
+        )
+        self.write(results)
 
 
 class AccountRolesHandler(BaseAPIV2Handler):
