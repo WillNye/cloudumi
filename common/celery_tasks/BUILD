@@ -86,7 +86,7 @@ py_binary(
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
         "AWS_REGION": "us-west-2",
-        "RUNTIME_PROFILE": "CELERY_WORKER",
+        "RUNTIME_PROFILE": "CELERY_WORKER_TEST",
     },
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
@@ -143,7 +143,7 @@ container_image(
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
-        "RUNTIME_PROFILE": "CELERY_WORKER",
+        "RUNTIME_PROFILE": "CELERY_WORKER_TEST",
     },
     layers = [
         "//deploy/layers:config",
@@ -155,7 +155,7 @@ container_image(
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
-    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=localhost:172.18.0.1 --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
 )
 
 py3_image(
