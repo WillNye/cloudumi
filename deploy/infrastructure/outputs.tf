@@ -58,6 +58,16 @@ output "ecs_task_role_arn" {
   value       = module.tenant_ecs_task_role.ecs_task_role
 }
 
+output "worker_count" {
+  description = "Desired number of celery workers"
+  value       = var.worker_count
+}
+
+output "api_count" {
+  description = "Desired number of api containers"
+  value       = var.api_count
+}
+
 output "elasticache_nodes" {
   description = "List of node objects including id, address, port and availability_zone"
   value       = module.tenant_elasticache_service.elasticache_nodes
