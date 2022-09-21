@@ -4,6 +4,7 @@ import { NullPolicyNotification } from './notificationMessages'
 
 export const RegularEditorForNullPolicyComponent = (props) => {
   const { isNullPolicy, language, currentPolicy, editorTheme } = props
+
   return (
     <div className='center-elements'>
       <div className='section-width'>

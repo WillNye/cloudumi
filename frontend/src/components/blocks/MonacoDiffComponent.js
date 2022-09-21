@@ -142,9 +142,7 @@ const MonacoDiffComponent = (props) => {
           ) : null}
         </Menu>
         {activeItem === 'JSON' &&
-        (newValue === '{}' ||
-          newValue.includes('deleted') ||
-          newValue.includes('"Statement": []')) ? (
+        (newValue === '{}' || newValue.includes('"Statement": []')) ? (
           <RegularEditorForNullPolicyComponent
             language={language}
             currentPolicy={oldValue}
@@ -215,26 +213,27 @@ const MonacoDiffComponent = (props) => {
   } else {
     return (
       <>
-        <div className='editor-block__render_style'>
-          <Button.Group>
-            <Button
-              icon
-              color={'grey'}
-              onClick={() => setRenderSideBySide(true)}
-            >
-              <Icon size='large' name='columns' />
-            </Button>
-            <Button
-              icon
-              color={'grey'}
-              onClick={() => setRenderSideBySide(false)}
-            >
-              <Icon size='large' name='square outline' />
-            </Button>
-          </Button.Group>
-        </div>
+        {newValue === '{}' || newValue.includes('"Statement": []') ? null : (
+          <div className='editor-block__render_style'>
+            <Button.Group>
+              <Button
+                icon
+                color={'grey'}
+                onClick={() => setRenderSideBySide(true)}
+              >
+                <Icon size='large' name='columns' />
+              </Button>
+              <Button
+                icon
+                color={'grey'}
+                onClick={() => setRenderSideBySide(false)}
+              >
+                <Icon size='large' name='square outline' />
+              </Button>
+            </Button.Group>
+          </div>
+        )}
         {newValue === '{}' ||
-        newValue.includes('deleted') ||
         newValue.includes('"Statement": []') ||
         oldValue === '' ? (
           <RegularEditorForNullPolicyComponent
