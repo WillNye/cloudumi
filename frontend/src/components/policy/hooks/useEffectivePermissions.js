@@ -39,12 +39,16 @@ const useEffectivePermissions = () => {
     [newStatement, sendRequestV2, removeUnusedPermissions]
   )
 
+  const resourceEffectivePermissionsStr = JSON.stringify(
+    resourceEffectivePermissions
+  )
+
   useEffect(() => {
     dispatch({
       type: 'SET_RESOURCE_EFFECTIVE_PERMISSIONS',
-      policies: resourceEffectivePermissions,
+      policies: JSON.parse(resourceEffectivePermissionsStr),
     })
-  }, [resourceEffectivePermissions])
+  }, [resourceEffectivePermissionsStr])
 
   return {
     ...state,

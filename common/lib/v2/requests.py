@@ -1100,14 +1100,21 @@ async def apply_policy_condenser_change(
             "message"
         ] = f"Creating new policy for {name} as part of policy_condenser change {change.id}"
         log.debug(log_data)
-        await aio_wrapper(
-            put_policy_call,
-            PolicyName=change.policy_name,
-            PolicyDocument=json.dumps(
-                change.policy.policy_document,
-            ),
-            **boto_params,
-        )
+        # Handle an empty policy document
+        if change.policy.policy_document != {"Statement": []}:
+            await aio_wrapper(
+                put_policy_call,
+                PolicyName=change.policy_name,
+                PolicyDocument=json.dumps(
+                    change.policy.policy_document,
+                ),
+                **boto_params,
+            )
+        else:
+            log_data[
+                "message"
+            ] = "Empty policy document was submitted in the change request, skipping policy creation."
+            log.debug(log_data)
         for policy in existing_policies.get("PolicyNames", []):
             log_data[
                 "message"
@@ -1255,50 +1262,53 @@ async def apply_changes_to_role(
             continue
         if change.change_type == "inline_policy":
             if change.action == Action.attach:
-                try:
-                    if resource_summary.resource_type == "role":
-                        await aio_wrapper(
-                            iam_client.put_role_policy,
-                            RoleName=principal_name,
-                            PolicyName=change.policy_name,
-                            PolicyDocument=json.dumps(
-                                change.policy.policy_document,
-                            ),
+                if change.policy.policy_document != {"Statement": []}:
+                    try:
+                        if resource_summary.resource_type == "role":
+                            await aio_wrapper(
+                                iam_client.put_role_policy,
+                                RoleName=principal_name,
+                                PolicyName=change.policy_name,
+                                PolicyDocument=json.dumps(
+                                    change.policy.policy_document,
+                                ),
+                            )
+                        elif resource_summary.resource_type == "user":
+                            await aio_wrapper(
+                                iam_client.put_user_policy,
+                                UserName=principal_name,
+                                PolicyName=change.policy_name,
+                                PolicyDocument=json.dumps(
+                                    change.policy.policy_document,
+                                ),
+                            )
+                        response.action_results.append(
+                            ActionResult(
+                                status="success",
+                                message=(
+                                    f"Successfully applied inline policy {change.policy_name} to principal: "
+                                    f"{principal_name}"
+                                ),
+                            )
                         )
-                    elif resource_summary.resource_type == "user":
-                        await aio_wrapper(
-                            iam_client.put_user_policy,
-                            UserName=principal_name,
-                            PolicyName=change.policy_name,
-                            PolicyDocument=json.dumps(
-                                change.policy.policy_document,
-                            ),
+                        change.status = Status.applied
+                    except Exception as e:
+                        log_data[
+                            "message"
+                        ] = "Exception occurred applying inline policy"
+                        log_data["error"] = str(e)
+                        log.error(log_data, exc_info=True)
+                        sentry_sdk.capture_exception()
+                        response.errors += 1
+                        response.action_results.append(
+                            ActionResult(
+                                status="error",
+                                message=(
+                                    f"Error occurred applying inline policy {change.policy_name} to principal: "
+                                    f"{principal_name}: " + str(e)
+                                ),
+                            )
                         )
-                    response.action_results.append(
-                        ActionResult(
-                            status="success",
-                            message=(
-                                f"Successfully applied inline policy {change.policy_name} to principal: "
-                                f"{principal_name}"
-                            ),
-                        )
-                    )
-                    change.status = Status.applied
-                except Exception as e:
-                    log_data["message"] = "Exception occurred applying inline policy"
-                    log_data["error"] = str(e)
-                    log.error(log_data, exc_info=True)
-                    sentry_sdk.capture_exception()
-                    response.errors += 1
-                    response.action_results.append(
-                        ActionResult(
-                            status="error",
-                            message=(
-                                f"Error occurred applying inline policy {change.policy_name} to principal: "
-                                f"{principal_name}: " + str(e)
-                            ),
-                        )
-                    )
             elif change.action == Action.detach:
                 try:
                     if resource_summary.resource_type == "role":

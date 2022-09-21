@@ -46,6 +46,7 @@ from common.lib.v2.requests import (
     populate_old_policies,
     update_changes_meta_data,
 )
+from common.lib.web import handle_generic_error_response
 from common.models import (
     Command,
     CommentModel,
@@ -983,6 +984,14 @@ class RequestDetailHandler(BaseAPIV2Handler):
             "tenant": tenant,
         }
         log.debug(log_data)
+
+        iam_request = await IAMRequest.get(tenant, request_id)
+        if not self.is_admin and self.user != iam_request.username:
+            errors = ["You do not have access to update this request."]
+            await handle_generic_error_response(
+                self, errors[0], errors, 403, "unauthorized", {}
+            )
+            raise tornado.web.Finish()
 
         if (
             config.get_tenant_specific_key(
