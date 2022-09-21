@@ -126,7 +126,9 @@ class EligibleRoleHandler(BaseHandler):
             roles.append(row)
 
         for role in await get_tra_supported_roles_by_tag(
-            self.eligible_roles + active_tra_roles, self.groups, self.ctx.tenant
+            self.eligible_roles + active_tra_roles,
+            self.groups + [self.user],
+            self.ctx.tenant,
         ):
             """
             Update:
