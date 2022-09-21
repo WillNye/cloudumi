@@ -73,7 +73,6 @@ from common.lib.aws.utils import (
     cache_all_scps,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
-    remove_expired_requests_for_tenants,
     remove_expired_tenant_requests,
 )
 from common.lib.cache import (
@@ -2730,8 +2729,8 @@ def get_current_celery_tasks(tenant: str = None, status: str = None) -> List[Any
     return filtered_tasks
 
 
-@app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-def handle_expired_policies(self, tenant: str):
+@app.task(soft_time_limit=2700, **default_retry_kwargs)
+def remove_expired_requests_for_tenant(tenant: str = None):
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
 
@@ -2739,8 +2738,19 @@ def handle_expired_policies(self, tenant: str):
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def handle_expired_policies_for_all_tenants() -> Dict:
-    return async_to_sync(remove_expired_requests_for_tenants)(get_all_tenants())
+def remove_expired_requests_for_all_tenants() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    tenants = get_all_tenants()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_tenants": len(tenants),
+    }
+    log.debug(log_data)
+    for tenant in tenants:
+        remove_expired_requests_for_tenant.apply_async((tenant,))
+
+    return log_data
 
 
 schedule_30_minute = timedelta(seconds=1800)
@@ -2878,8 +2888,8 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_1_hour,
     },
-    "handle_expired_policies_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.handle_expired_policies_for_all_tenants",
+    "remove_expired_requests_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.remove_expired_requests_for_all_tenants",
         "options": {"expires": 180},
         "schedule": schedule_6_hours,
     },

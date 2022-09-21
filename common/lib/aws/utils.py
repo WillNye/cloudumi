@@ -1,4 +1,3 @@
-import asyncio
 import fnmatch
 import json
 import re
@@ -1234,21 +1233,6 @@ async def remove_expired_tenant_requests(tenant: str):
     #     remove_expired_request_changes(ExtendedRequestModel.parse_obj(request["extended_request"]), tenant, None)
     #     for request in all_policy_requests
     # ])
-
-
-async def remove_expired_requests_for_tenants(tenants: list[str]) -> dict:
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    log_data = {
-        "function": function,
-        "message": "Spawning tasks",
-        "num_tenants": len(tenants),
-    }
-    log.debug(log_data)
-    await asyncio.gather(
-        *[remove_expired_tenant_requests(tenant) for tenant in tenants]
-    )
-
-    return log_data
 
 
 def get_aws_principal_owner(role_details: Dict[str, Any], tenant: str) -> Optional[str]:
