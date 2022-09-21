@@ -30,6 +30,10 @@ def run_celery_flower(log_level: str = "DEBUG", port: int = 7101):
     celery_tasks.app.start(f"flower -l {log_level} --port={port}".split(" "))
 
 
+def run_celery_inspect():
+    celery_tasks.app.control.inspect().active()
+
+
 if __name__ == "__main__":
     logger.info("Starting up celery tasks")
     log_level = os.getenv("CELERY_LOG_LEVEL", "DEBUG")
@@ -44,5 +48,7 @@ if __name__ == "__main__":
             run_celery_scheduler(log_level)
         case "CELERY_FLOWER":
             run_celery_flower(log_level, port=7101)
+        case "CELERY_INSPECT":
+            run_celery_inspect()
 
     fluent_bit.remove_fluent_bit_service()

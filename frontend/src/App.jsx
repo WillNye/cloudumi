@@ -31,6 +31,7 @@ import AutomatedPermissions from 'components/AutomatedPermissions'
 import EULA from './components/EULA'
 import ErrorBoundary from 'components/ErrorBoundary'
 import MultiFactorAuth from 'components/MultiFactorAuth'
+import './App.scss'
 
 function App() {
   return (
