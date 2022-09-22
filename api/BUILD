@@ -224,7 +224,7 @@ container_image(
     },
     layers = [
         "//deploy/layers:config",
-        "//deploy/layers:web_site",
+        "//deploy/layers:web_site_cdn",
         "//deploy/layers:api.sshd_config",
         "//deploy/layers:weep",
     ],

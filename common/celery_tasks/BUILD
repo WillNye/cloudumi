@@ -116,25 +116,6 @@ py_layer(
 )
 
 container_image(
-    name = "base-celery-api",
-    base = "//docker/base:base_docker",
-    env = {
-        "DEBUG": "1",
-        "RUNTIME_PROFILE": "CELERY_WORKER",
-    },
-    layers = [
-        "//deploy/layers:config",
-        "//deploy/layers:web_site",
-        "//deploy/layers:celery_tasks.sshd_config",
-        "//deploy/layers:weep",
-    ],
-    ports = ["2223"],
-    symlinks = {
-        "/usr/bin/python": "/usr/local/bin/python",
-    },
-)
-
-container_image(
     name = "base-celery-dev-local",
     base = "//docker/base:base_docker",
     env = {
@@ -156,6 +137,25 @@ container_image(
         "/usr/bin/python": "/usr/local/bin/python",
     },
     docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=localhost:172.18.0.1 --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
+)
+
+container_image(
+    name = "base-celery-api",
+    base = "//docker/base:base_docker",
+    env = {
+        "DEBUG": "1",
+        "RUNTIME_PROFILE": "CELERY_WORKER",
+    },
+    layers = [
+        "//deploy/layers:config",
+        "//deploy/layers:web_site_cdn",
+        "//deploy/layers:celery_tasks.sshd_config",
+        "//deploy/layers:weep",
+    ],
+    ports = ["2223"],
+    symlinks = {
+        "/usr/bin/python": "/usr/local/bin/python",
+    },
 )
 
 py3_image(
