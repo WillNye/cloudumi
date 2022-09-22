@@ -40,8 +40,7 @@ terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars
 
 #### Prod
 
-export AWS_PROFILE=noq_prod
-export AWS_REGION=us-west-2
+export AWS_PROFILE=noq_prod AWS_REGION=us-west-2
 terraform workspace select shared-prod-1
 terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
 terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars
