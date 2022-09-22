@@ -5,6 +5,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Local Config: Functional Tests",
+      "program": "${workspaceFolder}/functional_tests/run_tests.py",
+      "type": "python",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        "AWS_REGION": "us-west-2",
+        "AWS_PROFILE": "noq_cluster_dev",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+        "STAGE": "staging",
+        "TEST_USER_DOMAIN": "localhost"
+      }
+    },
+    {
       "name": "Local Config: CloudUmi Celery",
       "program": "${workspaceFolder}/common/celery_tasks/run.py",
       "type": "python",
@@ -18,7 +34,7 @@
         "AWS_PROFILE": "noq_cluster_dev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1",
-        "RUNTIME_PROFILE": "CELERY_WORKER"
+        "RUNTIME_PROFILE": "CELERY_WORKER_TEST"
       }
     },
     {
@@ -119,7 +135,7 @@
         // Run `weep serve` in a separate terminal
         "AWS_CONTAINER_CREDENTIALS_FULL_URI": "http://localhost:9091/ecs/arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev",
         "PYTHONASYNCIODEBUG": "1",
-        "RUNTIME_PROFILE": "CELERY_WORKER"
+        "RUNTIME_PROFILE": "CELERY_WORKER_TEST"
       }
     },
     {

@@ -3,6 +3,7 @@ load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 load("//util/tests:defs.bzl", "pytest_test")
 
 INT_DEPS = [
+    "//common/config:lib",
     "//common/config/tests:test_files",
     "//common/lib/cognito/tests:test_files",
     "//common/lib",
@@ -36,6 +37,24 @@ py_library(
     srcs = [
         ":src",
     ],
+    deps = INT_DEPS + EXT_DEPS,
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "bin",
+    data = [
+        "//configs/development_account:saas_development.yaml",
+    ],
+    srcs_version = "PY3",
+    env = {
+        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
+        "AWS_PROFILE": "noq_cluster_dev",
+    },
+    srcs = [
+        ":src",
+    ],
+    main = "run_tests.py",
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
 )
