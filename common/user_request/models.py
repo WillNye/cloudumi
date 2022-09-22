@@ -60,20 +60,9 @@ class IAMRequest(NoqModel):
     arn_index = IAMRequestArnIndex()
 
     @classmethod
-    async def get(cls, tenant: str, arn=None, request_id=None):
+    async def get(cls, tenant: str, request_id: str) -> "IAMRequest":
         """Reads a policy request from the appropriate DynamoDB table"""
-        if not arn and not request_id:
-            raise Exception("Must pass in ARN or Policy Request ID")
-        elif arn and request_id:
-            raise Exception("Only ARN OR Policy Request ID can be provided")
-
-        if request_id:
-            return await super(IAMRequest, cls).get(tenant, request_id)
-
-        results = await aio_wrapper(cls.arn_index.query, tenant, cls.arn == arn)
-        results = [r for r in results]
-        if len(results) == 1:
-            return results[0]
+        return await super(IAMRequest, cls).get(tenant, request_id)
 
     @classmethod
     async def write_v2(cls, extended_request: ExtendedRequestModel, tenant: str):
