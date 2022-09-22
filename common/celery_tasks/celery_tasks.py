@@ -174,6 +174,13 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 REDIS_IAM_COUNT = 1000
 
 
+@app.task()
+def ping() -> str:
+    log_data = {"task": "pong"}
+    log.info(log_data)
+    return "pong"
+
+
 @app.task(soft_time_limit=20)
 def report_celery_last_success_metrics() -> bool:
     """
@@ -2523,7 +2530,7 @@ def cache_cloudtrail_denies_for_all_tenants() -> Dict:
 
 
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
-def cache_cloudtrail_denies(tenant=None):
+def cache_cloudtrail_denies(tenant=None, max_number_to_process=None):
     """
     This task caches access denies reported by Cloudtrail. This feature requires an
     Event Bridge rule monitoring Cloudtrail for your accounts for access deny errors.
@@ -2540,7 +2547,9 @@ def cache_cloudtrail_denies(tenant=None):
             "function": function,
             "message": "Not running Celery task in inactive region",
         }
-    events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(app, tenant)
+    events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(
+        app, tenant, max_number_to_process
+    )
     if events.get("new_events", 0) > 0:
         # Spawn off a task to cache errors by ARN for the UI
         cache_cloudtrail_errors_by_arn.delay(tenant=tenant)

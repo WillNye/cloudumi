@@ -67,6 +67,7 @@ class TestCelery(FunctionalTest):
                 executor.submit(
                     celery.cache_cloudtrail_denies,
                     TEST_USER_DOMAIN_US,
+                    1,
                 ),
                 executor.submit(
                     celery.trigger_credential_mapping_refresh_from_role_changes,
