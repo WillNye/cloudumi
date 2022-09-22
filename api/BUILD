@@ -219,7 +219,6 @@ container_image(
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
         "RUNTIME_PROFILE": "API",
-        "STAGE": "staging",
         "TEST_USER_DOMAIN": "localhost",
     },
     layers = [
