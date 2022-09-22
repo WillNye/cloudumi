@@ -3,8 +3,8 @@
 # TODO: Extends must NOT modify _global_. It must ONLY exist in the site_config specific namespace
 
 # AWS_PROFILE=noq_dev aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
-# extends:
-#   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
+ extends:
+   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
   # profiler: yappi | pprofile | memray
