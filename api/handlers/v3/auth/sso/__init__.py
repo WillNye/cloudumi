@@ -1,19 +1,25 @@
 import asyncio
 
 import boto3
+import tornado.web
 
 from api.handlers.model_handlers import (
     ConfigurationCrudHandler,
     MultiItemConfigurationCrudHandler,
 )
 from common.config import config
+from common.handlers.base import BaseHandler
 from common.lib.cognito import identity
+from common.lib.cognito.identity import CognitoUserClient
+from common.lib.jwt import validate_and_return_jwt_token
+from common.lib.web import handle_generic_error_response
 from common.models import (
     CognitoGroup,
     CognitoUser,
     GoogleOIDCSSOIDPProvider,
     OIDCSSOIDPProvider,
     SamlOIDCSSOIDPProvider,
+    SetupMfaRequestModel,
     SSOIDPProviders,
 )
 
@@ -208,9 +214,9 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
         cognito_idp = boto3.client("cognito-idp", region_name=self.user_pool_region)
         users = list()
         try:
-            identity_users = await identity.get_identity_users(
-                self.user_pool_id, client=cognito_idp
-            )
+            identity_users = await identity.CognitoUserClient(
+                self.user_pool_id
+            ).list_users()
         except cognito_idp.exceptions.ResourceNotFoundException:
             return []
 
@@ -245,14 +251,13 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
             )
         except cognito_idp.exceptions.UserNotFoundException:
             # Resource doesn't exist, so create it
-            return await identity.create_identity_user(
-                self.user_pool_id, self._model_class(**data), client=cognito_idp
+            return await identity.CognitoUserClient(self.user_pool_id).create_user(
+                self._model_class(**data)
             )
 
     async def _delete(self, data) -> bool:
-        cognito_idp = boto3.client("cognito-idp", region_name=self.user_pool_region)
-        return await identity.delete_identity_user(
-            self.user_pool_id, self._model_class(**data), client=cognito_idp
+        return await identity.CognitoUserClient(self.user_pool_id).delete_user(
+            self._model_class(**data).Username
         )
 
 
@@ -298,3 +303,69 @@ class CognitoGroupCrudHandler(CognitoCrudHandler):
         return await identity.delete_identity_group(
             self.user_pool_id, self._model_class(**data), client=cognito_idp
         )
+
+
+class CognitoUserResetMFA(BaseHandler):
+    async def post(self, username: str = None):
+        if username and not self.is_admin:
+            errors = ["User is not authorized to access this endpoint."]
+            await handle_generic_error_response(
+                self, errors[0], errors, 403, "unauthorized", {}
+            )
+            raise tornado.web.Finish()
+
+        username = username or self.user
+        cognito_user_client = CognitoUserClient.tenant_client(self.ctx.tenant)
+        cognito_user_client.update_user_mfa_status(username, False)
+
+        response_json = {
+            "status": "success",
+            "message": "Successfully reset user MFA",
+            "username": username,
+        }
+        self.write(response_json)
+
+
+class CognitoUserSetupMFA(BaseHandler):
+    async def get(self):
+        self.write(self.mfa_setup)
+
+    async def post(self):
+        tenant = self.ctx.tenant
+        user_client = CognitoUserClient.tenant_client(tenant)
+        mfa_request = SetupMfaRequestModel.parse_raw(self.request.body)
+
+        try:
+            user_client.verify_mfa(
+                mfa_request.user_code,
+                access_token=mfa_request.access_token,
+                email=self.user,
+            )
+            self.mfa_setup = None
+
+            # Issue a new JWT with proper groups
+            if auth_cookie := self.get_cookie(self.get_noq_auth_cookie_key()):
+                await validate_and_return_jwt_token(auth_cookie, tenant)
+                await self.set_jwt_cookie(tenant)
+
+            self.write(
+                {
+                    "status": "success",
+                    "message": "Successfully setup user MFA",
+                    "status_code": 200,
+                }
+            )
+        except Exception as err:
+            message = "Unable to complete the MFA setup."
+            log_data = {
+                "user": self.user,
+                "message": message,
+                "error": str(err),
+                "user-agent": self.request.headers.get("User-Agent"),
+                "request_id": self.request_uuid,
+                "tenant": tenant,
+            }
+            errors = [str(err)]
+            await handle_generic_error_response(
+                self, message, errors, 400, str(err), log_data
+            )
