@@ -75,6 +75,7 @@ from common.models import (
     Command,
     CommentModel,
     CommentRequestModificationModel,
+    CreateResourceChangeModel,
     ExpirationDateRequestModificationModel,
     ExtendedAwsPrincipalModel,
     ExtendedRequestModel,
@@ -93,6 +94,7 @@ from common.models import (
     ResourceModel,
     ResourcePolicyChangeModel,
     ResourceTagChangeModel,
+    ResourceType,
     RoleAccessChangeModel,
     SpokeAccount,
     Status,
@@ -172,6 +174,7 @@ async def generate_request_from_change_model_array(
     generic_file_changes = []
     tra_role_changes = []
     role_access_changes = []
+    create_resource_changes = []
     role = None
 
     extended_request_uuid = str(uuid.uuid4())
@@ -242,6 +245,10 @@ async def generate_request_from_change_model_array(
             tra_role_changes.append(TraRoleChangeModel.parse_obj(change.__dict__))
         elif change.change_type == "assume_role_access":
             role_access_changes.append(RoleAccessChangeModel.parse_obj(change.__dict__))
+        elif change.change_type == "create_resource":
+            create_resource_changes.append(
+                CreateResourceChangeModel.parse_obj(change.__dict__)
+            )
         else:
             raise UnsupportedChangeType(
                 f"Invalid `change_type` for change: {change.__dict__}"
@@ -254,7 +261,13 @@ async def generate_request_from_change_model_array(
             split_items[0][: (64 - (len(split_items[-1]) + 1))] + "@" + split_items[-1]
         )
 
-    if primary_principal.principal_type == "AwsResource":
+    if (
+        len(change_models.changes) == 1
+        and change_models.changes[0].change_type == "create_resource"
+    ):
+        request_changes = ChangeModelArray(changes=create_resource_changes)
+        arn_url = ""
+    elif primary_principal.principal_type == "AwsResource":
         # TODO: Separate this out into another function
         resource_summary = await ResourceSummary.set(
             tenant, primary_principal.principal_arn
@@ -438,28 +451,43 @@ async def generate_request_from_change_model_array(
             + tra_role_changes
             + role_access_changes
         )
-        extended_request = ExtendedRequestModel(
-            admin_auto_approve=request_creation.admin_auto_approve,
-            expiration_date=request_creation.expiration_date,
-            ttl=request_creation.ttl,
-            id=extended_request_uuid,
-            principal=primary_principal,
-            timestamp=int(time.time()),
-            justification=request_creation.justification,
-            requester_email=user,
-            approvers=[],  # TODO: approvers logic (future feature)
-            request_status=RequestStatus.pending,
-            changes=request_changes,
-            requester_info=UserModel(
-                email=user,
-                extended_info=await auth.get_user_info(user, tenant),
-                details_url=config.get_employee_info_url(user, tenant),
-                photo_url=config.get_employee_photo_url(user, tenant),
-            ),
-            comments=[],
-            cross_account=False,
-            arn_url=arn_url,
+    elif primary_principal.principal_type == "HoneybeeAwsResourceTemplate":
+        # TODO: Generate extended request from HB template
+        return await generate_honeybee_request_from_change_model_array(
+            request_creation, user, extended_request_uuid, tenant
         )
+    elif primary_principal.principal_type == "TerraformAwsResource":
+        # TODO: Support Terraform!!
+        return await generate_terraform_request_from_change_model_array(
+            request_creation, user, extended_request_uuid, tenant
+        )
+    else:
+        raise Exception("Unknown principal type")
+
+    extended_request = ExtendedRequestModel(
+        admin_auto_approve=request_creation.admin_auto_approve,
+        expiration_date=request_creation.expiration_date,
+        ttl=request_creation.ttl,
+        id=extended_request_uuid,
+        principal=primary_principal,
+        timestamp=int(time.time()),
+        justification=request_creation.justification,
+        requester_email=user,
+        approvers=[],  # TODO: approvers logic (future feature)
+        request_status=RequestStatus.pending,
+        changes=request_changes,
+        requester_info=UserModel(
+            email=user,
+            extended_info=await auth.get_user_info(user, tenant),
+            details_url=config.get_employee_info_url(user, tenant),
+            photo_url=config.get_employee_photo_url(user, tenant),
+        ),
+        comments=[],
+        cross_account=False,
+        arn_url=arn_url,
+    )
+
+    if primary_principal.principal_arn:
         extended_request = await populate_old_policies(
             extended_request, user, tenant, role
         )
@@ -468,20 +496,6 @@ async def generate_request_from_change_model_array(
         )
         if len(managed_policy_resource_changes) > 0:
             await populate_old_managed_policies(extended_request, user, tenant)
-
-    elif primary_principal.principal_type == "HoneybeeAwsResourceTemplate":
-        # TODO: Generate extended request from HB template
-        extended_request = await generate_honeybee_request_from_change_model_array(
-            request_creation, user, extended_request_uuid, tenant
-        )
-    elif primary_principal.principal_type == "TerraformAwsResource":
-        extended_request = await generate_terraform_request_from_change_model_array(
-            request_creation, user, extended_request_uuid, tenant
-        )
-    # TODO: Support Terraform!!
-    else:
-        raise Exception("Unknown principal type")
-
     return extended_request
 
 
@@ -2200,7 +2214,7 @@ async def apply_non_iam_resource_tag_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     tenant: str,
-    resource_summary: ResourceSummary,
+    arn: str,
     custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
@@ -2223,6 +2237,7 @@ async def apply_non_iam_resource_tag_change(
         "request": extended_request.dict(),
     }
 
+    resource_summary = await ResourceSummary.set(tenant, arn)
     account = resource_summary.account
     service = resource_summary.service
     supported_services = config.get_tenant_specific_key(
@@ -2590,6 +2605,45 @@ async def apply_role_access_change(
                 + str(e),
             )
         )
+
+    return response
+
+
+async def apply_create_role_change(
+    extended_request: ExtendedRequestModel,
+    change: CreateResourceChangeModel,
+    response: PolicyRequestModificationResponseModel,
+    user: str,
+    tenant: str,
+) -> PolicyRequestModificationResponseModel:
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "user": user,
+        "change": change.dict(),
+        "message": "Creating role",
+        "request": extended_request.dict(),
+        "tenant": tenant,
+    }
+    log.info(log_data)
+    iam_request = await IAMRequest.get(tenant, extended_request.id)
+    iam_role, results = await IAMRole.create(iam_request, change)
+    if iam_role:
+        change.status = Status.applied
+
+        # Now that the resource exists we can assign an arn where applicable throughout the request
+        change.principal.principal_arn = iam_role.arn
+        extended_request.principal = change.principal
+        for elem in range(len(extended_request.changes.changes)):
+            extended_request.changes.changes[elem].principal = change.principal
+
+        iam_request.arn = iam_role.arn
+        iam_request.principal = json.loads(change.principal.json())
+        iam_request.extended_request = json.loads(extended_request.json())
+        iam_request.last_updated = int(time.time())
+        await iam_request.save()
+    else:
+        response.errors += results.get("errors", 1)
+        response.action_results.extend(results.get("action_results", []))
 
     return response
 
@@ -3023,9 +3077,10 @@ async def maybe_approve_reject_request(
         await send_communications_policy_change_request_v2(
             extended_request, tenant, auto_approved
         )
-        await update_resource_in_dynamo(
-            tenant, extended_request.principal.principal_arn, force_refresh
-        )
+        if any_changes_applied:
+            await update_resource_in_dynamo(
+                tenant, extended_request.principal.principal_arn, force_refresh
+            )
     return response
 
 
@@ -3141,10 +3196,12 @@ async def parse_and_apply_policy_request_modification(
             ]:
                 specific_change_arn = specific_change.arn
 
-            account_ids = [await ResourceAccountCache.get(tenant, specific_change_arn)]
+            account_id = specific_change.principal.account_id or (
+                await ResourceAccountCache.get(tenant, specific_change_arn)
+            )
 
         can_manage_policy_request = await can_admin_policies(
-            user, user_groups, tenant, account_ids
+            user, user_groups, tenant, [account_id]
         )
         # Authorization required if the policy wasn't approved by an auto-approval rule.
         should_apply_because_auto_approved = (
@@ -3333,13 +3390,10 @@ async def parse_and_apply_policy_request_modification(
             managed_policy_arn_regex = re.compile(r"^arn:aws:iam::\d{12}:policy/.+")
 
             try:
-                resource_summary = await ResourceSummary.set(
-                    tenant, specific_change_arn
-                )
                 account_info: SpokeAccount = (
                     ModelAdapter(SpokeAccount)
                     .load_config("spoke_accounts", tenant)
-                    .with_query({"account_id": resource_summary.account})
+                    .with_query({"account_id": account_id})
                     .first
                 )
             except ValueError:
@@ -3368,6 +3422,11 @@ async def parse_and_apply_policy_request_modification(
                         f"Please allow up to 5 minutes for access to be granted.",
                     )
                 )
+            elif specific_change.change_type == "create_resource":
+                if specific_change.principal.resource_type == ResourceType.role:
+                    response = await apply_create_role_change(
+                        extended_request, specific_change, response, user, tenant
+                    )
             elif (
                 specific_change.change_type == "resource_policy"
                 or specific_change.change_type == "sts_resource_policy"
@@ -3392,14 +3451,12 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     tenant,
-                    resource_summary,
+                    specific_change_arn,
                     custom_aws_credentials=custom_aws_credentials,
                 )
             elif (
                 specific_change.change_type == "resource_tag"
-                and managed_policy_arn_regex.search(
-                    specific_change.principal.principal_arn
-                )
+                and managed_policy_arn_regex.search(specific_change_arn)
             ):
                 response = await apply_managed_policy_resource_tag_change(
                     extended_request,
@@ -3426,7 +3483,7 @@ async def parse_and_apply_policy_request_modification(
                 response = await apply_role_access_change(
                     extended_request, specific_change, response, user, tenant
                 )
-            else:
+            elif extended_request.principal.principal_arn:
                 # Save current policy by populating "old" policies at the time of application for historical record
                 extended_request = await populate_old_policies(
                     extended_request, user, tenant

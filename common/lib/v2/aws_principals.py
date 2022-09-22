@@ -291,7 +291,10 @@ async def get_role_details(
     role: IAMRole = await IAMRole.get(
         tenant, account_id, arn, force_refresh=force_refresh
     )
+    if not role:  # requested role doesn't exist
+        return None
 
+    role: dict = role.dict()
     account_info: SpokeAccount = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", tenant)
@@ -299,10 +302,6 @@ async def get_role_details(
         .first
     )
 
-    role: dict = role.dict()
-    # requested role doesn't exist
-    if not role:
-        return None
     if extended:
         elevated_access_config = None
         role_access_config = None
