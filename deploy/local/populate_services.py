@@ -301,6 +301,9 @@ secrets:
 account_ids_to_name:
   "759357822767": "development"
 auth:
+  extra_auth_cookies:
+    - AWSELBAuthSessionCookie
+  logout_redirect_url: https://cloudumidev-com.auth.us-west-2.amazoncognito.com/logout?client_id=3vqhl3rfcfoqhl88g47norqick&logout_uri=https://cloudumidev.com
   challenge_url:
     enabled: true
   get_user_by_oidc: true
