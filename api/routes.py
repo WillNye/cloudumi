@@ -96,6 +96,8 @@ from api.handlers.v3.auth import ChallengeUrlConfigurationCrudHandler
 from api.handlers.v3.auth.sso import (
     CognitoGroupCrudHandler,
     CognitoUserCrudHandler,
+    CognitoUserResetMFA,
+    CognitoUserSetupMFA,
     GoogleOidcIdpConfigurationCrudHandler,
     OidcIdpConfigurationCrudHandler,
     SamlOidcIdpConfigurationCrudHandler,
@@ -326,6 +328,14 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/auth/cognito/users/?",
             CognitoUserCrudHandler,
+        ),
+        (
+            r"/api/v3/auth/cognito/reset-mfa/(.*)/?",
+            CognitoUserResetMFA,
+        ),
+        (
+            r"/api/v3/auth/cognito/setup-mfa/?",
+            CognitoUserSetupMFA,
         ),
         (
             r"/api/v3/auth/cognito/groups/?",
