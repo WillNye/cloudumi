@@ -1,16 +1,19 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from 'react'
-import { Checkbox, Icon, Message } from 'semantic-ui-react'
+import { Checkbox, Icon, Message, Segment } from 'semantic-ui-react'
 import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 import { useHelpModal } from 'lib/hooks/useHelpModal'
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 
-export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
-  const { get, post } = useApi(
-    'services/aws/role-access/credential-brokering',
-    { shouldPersist: true }
-  )
+export const EnablingTraAccessAuth = () => {
+  const [checked, setChecked] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const { get, post } = useApi('services/aws/tra-access/credential-brokering', {
+    shouldPersist: true,
+  })
 
   const { error, toast, success } = useToast()
 
@@ -18,33 +21,39 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
 
   useEffect(() => {
     if (get.timestamp.compare().minutes >= 1 || get.empty) {
-      get.do().then((data) => {
-        onChange(data?.state)
-      })
+      setIsLoading(true)
+      get
+        .do()
+        .then((data) => {
+          setChecked(data?.tra_access)
+        })
+        .finally(setIsLoading(false))
     } else {
-      onChange(get?.data?.state)
+      setChecked(get?.data?.tra_access)
     }
   }, [])
 
   const handleChange = (event, { checked }) => {
     const action = checked ? 'enable' : 'disable'
     toast(`Please wait, we are working to ${action} Role Access Authorization`)
+    setIsLoading(true)
     post
       .do(null, action)
       .then(() => {
-        onChange(checked)
-        success(`Role Access Authorization is ${action}d`)
+        setChecked(checked)
+        success(`Tra Access Authorization is ${action}d`)
         get.do()
       })
       .catch(({ errorsMap, message }) => {
         error(errorsMap || message)
       })
+      .finally(setIsLoading(false))
   }
 
   const isWorking = get?.status !== 'done' || post?.status === 'working'
 
   return (
-    <>
+    <Segment basic loading={isLoading}>
       <Message warning>
         <Message.Header>
           <Checkbox
@@ -90,6 +99,6 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
         </Link>
         .
       </Message>
-    </>
+    </Segment>
   )
 }

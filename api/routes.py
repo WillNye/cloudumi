@@ -255,11 +255,11 @@ def make_app(jwt_validator=None):
             OrgAccountConfigurationCrudHandler,
         ),
         (
-            r"/api/v3/services/aws/role-access/credential-brokering",
+            r"/api/v3/services/aws/(?P<_access_type>role-access|tra-access)/credential-brokering",
             CredentialBrokeringCurrentStateHandler,
         ),
         (
-            r"/api/v3/services/aws/role-access/credential-brokering/(?P<_enabled>enable|disable)/?",
+            r"/api/v3/services/aws/(?P<_access_type>role-access|tra-access)/credential-brokering/(?P<_enabled>enable|disable)/?",
             CredentialBrokeringHandler,
         ),
         (

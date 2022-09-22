@@ -132,6 +132,21 @@ async def toggle_role_access_credential_brokering(tenant: str, enabled: bool) ->
     await ddb.update_static_config_for_tenant(
         yaml.dump(tenant_config), updated_by_name, tenant  # type: ignore
     )
+
+    if not enabled:
+        await toggle_tra_access_credential_brokering(tenant, enabled)
+    return True
+
+
+async def toggle_tra_access_credential_brokering(tenant: str, enabled: bool) -> bool:
+    ddb = RestrictedDynamoHandler()
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    if "cloud_credential_authorization_mapping" not in tenant_config:
+        tenant_config = __setup_subkeys_if_missing(tenant_config)
+    tenant_config["temporary_role_access_requests"]["enabled"] = enabled
+    await ddb.update_static_config_for_tenant(
+        yaml.dump(tenant_config), updated_by_name, tenant  # type: ignore
+    )
     return True
 
 
@@ -140,6 +155,13 @@ async def get_role_access_credential_brokering(tenant: str) -> bool:
         "cloud_credential_authorization_mapping", tenant, {}
     )
     return tenant_config.get("role_tags", {}).get("enabled", False)
+
+
+async def get_tra_access_credential_brokering(tenant: str) -> bool:
+    tenant_config = config.get_tenant_specific_key(
+        "temporary_role_access_requests", tenant, {}
+    )
+    return tenant_config.get("enabled", False)
 
 
 async def get_role_access_automatic_policy_update(tenant: str) -> bool:
