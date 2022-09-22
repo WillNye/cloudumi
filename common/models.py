@@ -354,6 +354,11 @@ class ConfigurationEventModel(BaseModel):
     resource_url: Optional[str] = None
 
 
+class SetupMfaRequestModel(BaseModel):
+    user_code: Optional[str] = None
+    access_token: Optional[str] = None
+
+
 class AwsPrincipalModel(BaseModel):
     name: str = Field(..., example="super_awesome_admin")
     account_id: constr(min_length=12, max_length=12) = Field(

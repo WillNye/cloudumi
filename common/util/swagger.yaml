@@ -349,6 +349,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/TenantDetailsModel"
 
+  /api/v3/auth/cognito/setup-mfa/:
+    post:
+      summary: Complete the MFA setup process for a user.
+      tags:
+        - tenant_details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SetupMfaRequestModel"
+
   /api/v3/resource/history/{resource_arn}:
     get:
       summary: Retrieves all changes made to a resource and the resources it inherits from over the last 90 days.
@@ -1690,6 +1705,13 @@ components:
         rollback_supported:
           type: boolean
         resource_url:
+          type: string
+    SetupMfaRequestModel:
+      type: object
+      properties:
+        user_code:
+          type: string
+        access_token:
           type: string
     CommentModel:
       type: object
