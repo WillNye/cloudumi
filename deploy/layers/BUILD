@@ -74,9 +74,10 @@ container_layer(
 )
 
 container_layer(
-    name = "web_site",
+    name = "web_site_local",
     files = [
-        "//frontend:build",
+        "//frontend:build_local",
+        "//api:docs_sources",
     ],
     data_path = ".",
     directory = "/",

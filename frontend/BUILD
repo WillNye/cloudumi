@@ -107,6 +107,7 @@ react_scripts(
     deps = ["@version//:git_version_info"],
     env = {
         "BUILD_PATH": "./build_local",
+        "FRONTEND_PATH": "/frontend/build_local",
         "DISABLE_ESLINT_PLUGIN": "true",
     },
     local = True,
