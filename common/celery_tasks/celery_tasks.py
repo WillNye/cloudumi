@@ -2771,6 +2771,7 @@ schedule_24_hours = timedelta(hours=24)
 schedule_1_hour = timedelta(hours=1)
 schedule_15_seconds = timedelta(seconds=15)
 
+
 if config.get("_global_.development", False) and config.get(
     "_global_._development_run_celery_tasks_1_min", False
 ):
