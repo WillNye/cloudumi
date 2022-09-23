@@ -14,7 +14,7 @@ if os.getenv("DEBUG"):
 # functional_tests.run()  ## functional tests are only for API :( - TODO: make functional tests for both API and Celery
 
 
-def run_celery_worker(log_level: str = "DEBUG", concurrency: str = "16"):
+def run_celery_worker(log_level: str = "DEBUG", concurrency: str = os.cpu_count()):
     celery_tasks.app.start(
         f"worker -l {log_level} -E --concurrency={concurrency} "
         "--max-memory-per-child=1000000 --max-tasks-per-child=50 "
@@ -22,7 +22,7 @@ def run_celery_worker(log_level: str = "DEBUG", concurrency: str = "16"):
     )
 
 
-def run_celery_test_worker(log_level: str = "DEBUG", concurrency: str = "16"):
+def run_celery_test_worker(log_level: str = "DEBUG", concurrency: str = os.cpu_count()):
     """Like the run_celery_worker but with beat scheduler integrated for testing."""
     celery_tasks.app.start(
         f"worker -l {log_level} -E --concurrency={concurrency} "
@@ -46,7 +46,7 @@ def run_celery_inspect():
 if __name__ == "__main__":
     logger.info("Starting up celery tasks")
     log_level = os.getenv("CELERY_LOG_LEVEL", "DEBUG")
-    concurrency = os.getenv("CELERY_CONCURRENCY", "16") or "16"
+    concurrency = os.getenv("CELERY_CONCURRENCY", os.cpu_count())
 
     fluent_bit.add_fluent_bit_service()
 
