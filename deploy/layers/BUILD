@@ -77,6 +77,16 @@ container_layer(
     name = "web_site",
     files = [
         "//frontend:build",
+    ],
+    data_path = ".",
+    directory = "/",
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
+    name = "web_site_cdn",
+    files = [
+        "//frontend:build",
         "//frontend:publish_cdn",
         "//api:docs_sources",
     ],

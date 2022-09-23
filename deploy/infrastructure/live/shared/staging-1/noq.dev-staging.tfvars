@@ -54,3 +54,7 @@ google_analytics_tracking_id = "G-P5K1SQF3P6"
 # Global info
 global_tenant_data_account_id = "615395543222"
 legal_docs_bucket_name        = "noq-global-staging-legal-docs"
+
+# Task counts
+api_count    = 1
+worker_count = 1

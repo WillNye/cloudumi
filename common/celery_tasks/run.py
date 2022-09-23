@@ -22,12 +22,25 @@ def run_celery_worker(log_level: str = "DEBUG", concurrency: str = "16"):
     )
 
 
+def run_celery_test_worker(log_level: str = "DEBUG", concurrency: str = "16"):
+    """Like the run_celery_worker but with beat scheduler integrated for testing."""
+    celery_tasks.app.start(
+        f"worker -l {log_level} -E --concurrency={concurrency} "
+        "--max-memory-per-child=1000000 --max-tasks-per-child=50 "
+        "--soft-time-limit=3600 -O fair -B".split(" ")
+    )
+
+
 def run_celery_scheduler(log_level: str = "DEBUG"):
     celery_tasks.app.start(f"beat -l {log_level}".split(" "))
 
 
 def run_celery_flower(log_level: str = "DEBUG", port: int = 7101):
     celery_tasks.app.start(f"flower -l {log_level} --port={port}".split(" "))
+
+
+def run_celery_inspect():
+    celery_tasks.app.control.inspect().active()
 
 
 if __name__ == "__main__":
@@ -40,9 +53,13 @@ if __name__ == "__main__":
     match os.getenv("RUNTIME_PROFILE", "CELERY_WORKER"):
         case "CELERY_WORKER":
             run_celery_worker(log_level, concurrency)
+        case "CELERY_WORKER_TEST":
+            run_celery_test_worker(log_level, concurrency)
         case "CELERY_SCHEDULER":
             run_celery_scheduler(log_level)
         case "CELERY_FLOWER":
             run_celery_flower(log_level, port=7101)
+        case "CELERY_INSPECT":
+            run_celery_inspect()
 
     fluent_bit.remove_fluent_bit_service()
