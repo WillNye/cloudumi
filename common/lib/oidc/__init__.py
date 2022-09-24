@@ -169,7 +169,10 @@ async def authenticate_user_by_oidc(request):
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
         )
-        client_scope.append("aws.cognito.signin.user.admin")
+        if config.get_tenant_specific_key(
+            "get_user_by_oidc_settings.include_admin_scope", tenant, False
+        ):
+            client_scope.append("aws.cognito.signin.user.admin")
         if request.request.uri is not None:
             args["redirect_uri"] = oidc_redirect_uri
         args["client_id"] = oidc_config["client_id"]
@@ -214,7 +217,10 @@ async def authenticate_user_by_oidc(request):
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
         )
-        client_scope.append("aws.cognito.signin.user.admin")
+        if config.get_tenant_specific_key(
+            "get_user_by_oidc_settings.include_admin_scope", tenant, False
+        ):
+            client_scope.append("aws.cognito.signin.user.admin")
         if client_scope:
             client_scope = " ".join(client_scope)
         try:
