@@ -1425,9 +1425,13 @@ class CognitoUserClient:
             )
 
     def user_mfa_enabled(self, username: str) -> bool:
-        user = self.cognito_idp_client.admin_get_user(
-            UserPoolId=self.user_pool_id, Username=username
-        )
+        try:
+            user = self.cognito_idp_client.admin_get_user(
+                UserPoolId=self.user_pool_id, Username=username
+            )
+        except Exception as exc:
+            log.exception(exc)
+            return False
         return bool(user.get("PreferredMfaSetting") == "SOFTWARE_TOKEN_MFA")
 
     async def list_users(self):
