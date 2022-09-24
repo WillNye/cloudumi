@@ -169,8 +169,11 @@ async def authenticate_user_by_oidc(request):
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
         )
-        if config.get_tenant_specific_key(
-            "get_user_by_oidc_settings.include_admin_scope", tenant, False
+        if (
+            config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.include_admin_scope", tenant, True
+            )
+            and "aws.cognito.signin.user.admin" not in client_scope
         ):
             client_scope.append("aws.cognito.signin.user.admin")
         if request.request.uri is not None:
@@ -217,8 +220,11 @@ async def authenticate_user_by_oidc(request):
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
         )
-        if config.get_tenant_specific_key(
-            "get_user_by_oidc_settings.include_admin_scope", tenant, False
+        if (
+            config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.include_admin_scope", tenant, True
+            )
+            and "aws.cognito.signin.user.admin" not in client_scope
         ):
             client_scope.append("aws.cognito.signin.user.admin")
         if client_scope:
@@ -282,7 +288,7 @@ async def authenticate_user_by_oidc(request):
             user_client = CognitoUserClient.tenant_client(tenant)
             mfa_configured = user_client.user_mfa_enabled(email)
             if not mfa_configured and config.get_tenant_specific_key(
-                "get_user_by_oidc_settings.enable_mfa", tenant, False
+                "get_user_by_oidc_settings.enable_mfa", tenant, True
             ):
                 # If MFA isn't enabled for the user, begin the setup process
                 mfa_setup = await user_client.get_mfa_secret(
