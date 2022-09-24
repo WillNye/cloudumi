@@ -281,7 +281,9 @@ async def authenticate_user_by_oidc(request):
         if not decoded_id_token.get("identities"):
             user_client = CognitoUserClient.tenant_client(tenant)
             mfa_configured = user_client.user_mfa_enabled(email)
-            if not mfa_configured:
+            if not mfa_configured and config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.enable_mfa", tenant, False
+            ):
                 # If MFA isn't enabled for the user, begin the setup process
                 mfa_setup = await user_client.get_mfa_secret(
                     email, access_token=access_token
