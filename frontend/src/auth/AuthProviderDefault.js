@@ -178,7 +178,6 @@ export const AuthProvider = ({ children }) => {
         } else if (INTERNAL_SERVER_ERROR_CODES.includes(response?.status)) {
           setIsInternalServerError(true)
         }
-
         try {
           return response.json()
         } catch {

@@ -1,4 +1,5 @@
 import asyncio
+import os
 import urllib
 
 import ujson as json
@@ -12,7 +13,7 @@ TEST_ROLE = "NullRole"
 TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
 TEST_USER_NAME = "testing@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
-TEST_USER_DOMAIN = "corp.staging.noq.dev"
+TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.staging.noq.dev")
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
 
 

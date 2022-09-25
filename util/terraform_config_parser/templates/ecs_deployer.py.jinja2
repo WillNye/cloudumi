@@ -11,7 +11,7 @@ service_task_definition_map = [
     {
         "service": "api",
         "task_definition": f"{current_path}/task_definition_api.yaml",
-        "desiredCount": 1,
+        "desiredCount": {{ api_count }},
         "loadBalancers": [
             {
                 'containerName': "{{ ecs_cluster_name }}-api",
@@ -28,7 +28,7 @@ service_task_definition_map = [
     {
         "service": "celery_worker",
         "task_definition": f"{current_path}/task_definition_celery_worker.yaml",
-        "desiredCount": 1
+        "desiredCount": {{ worker_count }}
     },
     {
         "service": "celery_flower",

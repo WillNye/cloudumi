@@ -183,3 +183,13 @@ variable "legal_docs_bucket_name" {
   description = "The S3 bucket containing templates for our legal documentation"
   type        = string
 }
+
+variable "worker_count" {
+  description = "Desired number of celery workers"
+  type        = number
+}
+
+variable "api_count" {
+  description = "Desired number of api containers"
+  type        = number
+}

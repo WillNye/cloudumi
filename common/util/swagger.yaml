@@ -9,7 +9,7 @@ info:
   version: "2.0.0"
   title: NOQ v2 API
   contact:
-    email: consoleme-owners@netflix.com
+    email: hello@noq.dev
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.txt
@@ -219,26 +219,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AwsPrincipalModel"
-    post:
-      summary: create a role
-      tags:
-        - roles
-        - privileged
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RoleCreationRequestModel"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CreateCloneRequestResponse"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
 
   /roles/{account_id}:
     get:
@@ -368,6 +348,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TenantDetailsModel"
+
+  /api/v3/auth/cognito/setup-mfa/:
+    post:
+      summary: Complete the MFA setup process for a user.
+      tags:
+        - tenant_details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SetupMfaRequestModel"
 
   /api/v3/resource/history/{resource_arn}:
     get:
@@ -1142,12 +1137,12 @@ components:
         - $ref: "#/components/schemas/PrincipalModel"
         - type: object
           required:
-            - principal_arn
             - principal_type
           properties:
             principal_type:
               type: string
               pattern: "AwsResource"
+              default: "AwsResource"
             principal_arn:
               description: |-
                 The principal (Source ARN) associated with the Change. This is most commomly an IAM role ARN.
@@ -1156,6 +1151,17 @@ components:
               example: arn:aws:iam::123456789012:role/exampleRole
               type: string
               pattern: '(^arn:([^:]*):([^:]*):([^:]*):(|\*|[\d]{12}|cloudfront|aws):(.+)$)|^\*$'
+            account_id:
+              type: string
+              minLength: 12
+              maxLength: 12
+              example: "123456789012"
+            name:
+              type: string
+            resource_type:
+              type: string
+              enum:
+                - role
 
     TerraformAwsResourcePrincipalModel:
       allOf:
@@ -1374,6 +1380,21 @@ components:
             change_type:
               type: string
               pattern: "tra_can_assume_role"
+    CreateResourceChangeModel:
+      allOf:
+        - $ref: "#/components/schemas/ChangeModel"
+        - type: object
+          required:
+            - description
+          properties:
+            change_type:
+              type: string
+              pattern: "create_resource"
+            instance_profile:
+              type: boolean
+              default: True
+            description:
+              type: string
     RoleAccessChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1516,6 +1537,7 @@ components:
               - $ref: "#/components/schemas/ResourceTagChangeModel"
               - $ref: "#/components/schemas/GenericFileChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyResourceChangeModel"
+              - $ref: "#/components/schemas/CreateResourceChangeModel"
     ArnArray:
       type: array
       items:
@@ -1683,6 +1705,13 @@ components:
         rollback_supported:
           type: boolean
         resource_url:
+          type: string
+    SetupMfaRequestModel:
+      type: object
+      properties:
+        user_code:
+          type: string
+        access_token:
           type: string
     CommentModel:
       type: object

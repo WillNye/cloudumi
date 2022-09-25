@@ -10,6 +10,7 @@ _global_:
   # profiler: yappi | pprofile | memray
   #  tracing:
   #    enabled: true
+  #_development_run_celery_tasks_1_min: true
   metrics:
     cloudwatch:
       enabled: false

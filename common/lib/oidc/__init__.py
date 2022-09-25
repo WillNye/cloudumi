@@ -18,6 +18,7 @@ from tornado import httputil
 import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
+from common.lib.cognito.identity import CognitoUserClient
 from common.lib.generic import should_force_redirect
 from common.lib.jwt import generate_jwt_token
 
@@ -168,6 +169,13 @@ async def authenticate_user_by_oidc(request):
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
         )
+        if (
+            config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.include_admin_scope", tenant, True
+            )
+            and "aws.cognito.signin.user.admin" not in client_scope
+        ):
+            client_scope.append("aws.cognito.signin.user.admin")
         if request.request.uri is not None:
             args["redirect_uri"] = oidc_redirect_uri
         args["client_id"] = oidc_config["client_id"]
@@ -212,6 +220,13 @@ async def authenticate_user_by_oidc(request):
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
         )
+        if (
+            config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.include_admin_scope", tenant, True
+            )
+            and "aws.cognito.signin.user.admin" not in client_scope
+        ):
+            client_scope.append("aws.cognito.signin.user.admin")
         if client_scope:
             client_scope = " ".join(client_scope)
         try:
@@ -244,7 +259,6 @@ async def authenticate_user_by_oidc(request):
                 "access_token",
             )
         )
-
         header = jwt.get_unverified_header(id_token)
         key_id = header["kid"]
         algorithm = header["alg"]
@@ -268,6 +282,19 @@ async def authenticate_user_by_oidc(request):
                 "email",
             )
         )
+        mfa_setup = None
+
+        if not decoded_id_token.get("identities"):
+            user_client = CognitoUserClient.tenant_client(tenant)
+            mfa_configured = user_client.user_mfa_enabled(email)
+            if not mfa_configured and config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.enable_mfa", tenant, True
+            ):
+                # If MFA isn't enabled for the user, begin the setup process
+                mfa_setup = await user_client.get_mfa_secret(
+                    email, access_token=access_token
+                )
+                after_redirect_uri = f"{protocol}://{full_host}/mfa"
 
         # For google auth, the access_token does not contain JWT-parsable claims.
         if config.get_tenant_specific_key(
@@ -381,7 +408,12 @@ async def authenticate_user_by_oidc(request):
                 )
             )
             encoded_cookie = await generate_jwt_token(
-                email, groups, tenant, roles=list(role_allowances), exp=expiration
+                email,
+                groups,
+                tenant,
+                roles=list(role_allowances),
+                exp=expiration,
+                mfa_setup=mfa_setup,
             )
             request.set_cookie(
                 config.get("_global_.auth.cookie.name", "noq_auth"),

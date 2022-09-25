@@ -289,7 +289,7 @@ class RolesHandler(BaseAPIV2Handler):
             return
 
         try:
-            _, results = await IAMRole.create(tenant, self.user, create_model)
+            _, results = await IAMRole.legacy_create(tenant, self.user, create_model)
         except Exception as e:
             log_data["message"] = f"Exception creating role: {str(e)}"
             log_data["error"] = str(e)

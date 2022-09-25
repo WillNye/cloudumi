@@ -219,10 +219,11 @@ container_image(
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
         "RUNTIME_PROFILE": "API",
+        "TEST_USER_DOMAIN": "localhost",
     },
     layers = [
         "//deploy/layers:config",
-        "//deploy/layers:web_site",
+        "//deploy/layers:web_site_local",
         "//deploy/layers:api.sshd_config",
         "//deploy/layers:weep",
     ],
@@ -235,7 +236,7 @@ container_image(
         "/usr/bin/python": "/usr/local/bin/python",
     },
     data_path = "/",
-    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep -p 8092:8092/tcp --add-host=localhost:172.18.0.1 --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
 )
 
 container_image(
@@ -248,7 +249,7 @@ container_image(
     },
     layers = [
         "//deploy/layers:config",
-        "//deploy/layers:web_site",
+        "//deploy/layers:web_site_cdn",
         "//deploy/layers:api.sshd_config",
         "//deploy/layers:weep",
     ],
