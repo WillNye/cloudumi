@@ -24,7 +24,9 @@ class AwsIntegrationHandler(BaseAdminHandler):
         tenant = self.ctx.tenant
         account_name = self.request.arguments.get("account-name", "")
         try:
-            central_role_parameters = await validate_params(tenant, "central", account_name=account_name)
+            central_role_parameters = await validate_params(
+                tenant, "central", account_name=account_name
+            )
         except AssertionError as err:
             self.set_status(400)
             res = WebResponse(status_code=400, message=str(err))
@@ -118,7 +120,10 @@ class AwsIntegrationHandler(BaseAdminHandler):
                         "template_url": central_role_template_url,
                         "stack_name": stack_name,
                         "parameters": await validate_params(
-                            tenant, "central", read_only_mode=True, account_name=account_name
+                            tenant,
+                            "central",
+                            read_only_mode=True,
+                            account_name=account_name,
                         ),
                         "external_id": external_id,
                         "node_role": config.get("_global_.integrations.aws.node_role"),

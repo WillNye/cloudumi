@@ -559,7 +559,9 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         customer_spoke_role_iam_client = await aio_wrapper(
             boto3.client,
             "iam",
-            aws_access_key_id=customer_spoke_role_credentials["Credentials"]["AccessKeyId"],
+            aws_access_key_id=customer_spoke_role_credentials["Credentials"][
+                "AccessKeyId"
+            ],
             aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
                 "SecretAccessKey"
             ],
