@@ -169,7 +169,13 @@ async def authenticate_user_by_oidc(request):
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
         )
-        client_scope.append("aws.cognito.signin.user.admin")
+        if (
+            config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.include_admin_scope", tenant, True
+            )
+            and "aws.cognito.signin.user.admin" not in client_scope
+        ):
+            client_scope.append("aws.cognito.signin.user.admin")
         if request.request.uri is not None:
             args["redirect_uri"] = oidc_redirect_uri
         args["client_id"] = oidc_config["client_id"]
@@ -214,7 +220,13 @@ async def authenticate_user_by_oidc(request):
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
         )
-        client_scope.append("aws.cognito.signin.user.admin")
+        if (
+            config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.include_admin_scope", tenant, True
+            )
+            and "aws.cognito.signin.user.admin" not in client_scope
+        ):
+            client_scope.append("aws.cognito.signin.user.admin")
         if client_scope:
             client_scope = " ".join(client_scope)
         try:
@@ -275,7 +287,9 @@ async def authenticate_user_by_oidc(request):
         if not decoded_id_token.get("identities"):
             user_client = CognitoUserClient.tenant_client(tenant)
             mfa_configured = user_client.user_mfa_enabled(email)
-            if not mfa_configured:
+            if not mfa_configured and config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.enable_mfa", tenant, True
+            ):
                 # If MFA isn't enabled for the user, begin the setup process
                 mfa_setup = await user_client.get_mfa_secret(
                     email, access_token=access_token
