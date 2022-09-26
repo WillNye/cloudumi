@@ -36,7 +36,7 @@ export const EnablingRoleAccessAuth = ({ accessData, setAccessData }) => {
       .do(null, action)
       .then(() => {
         setAccessData({
-          tra_access: !checked ? checked : accessData?.tra_access,
+          tra_access: checked ? accessData?.tra_access : checked,
           role_access: checked,
         })
         success(`Role Access Authorization is ${action}d`)

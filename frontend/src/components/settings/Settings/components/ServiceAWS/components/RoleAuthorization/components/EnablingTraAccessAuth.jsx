@@ -42,7 +42,7 @@ export const EnablingTraAccessAuth = ({ setAccessData, accessData }) => {
     post
       .do(null, action)
       .then(() => {
-        setAccessData({ accessData, tra_access: checked })
+        setAccessData({ ...accessData, tra_access: checked })
         success(`Tra Access Authorization is ${action}d`)
         get.do()
       })
