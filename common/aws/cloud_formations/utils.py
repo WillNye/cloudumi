@@ -51,7 +51,7 @@ async def get_cf_parameters(account_type: str):
 
 
 async def validate_params(
-    tenant: str, account_type: str, read_only_mode: bool = False
+    tenant: str, account_type: str, read_only_mode: bool = False, account_name: str = ""
 ) -> dict:
     """Validates user provided values while setting params that are resolved internally like external id"""
 
@@ -60,6 +60,7 @@ async def validate_params(
     # Ultimately resolve this when tenants are sharded out
     response_params = {
         "HostParameter": tenant,
+        "AccountNameParameter": account_name,
         "ReadOnlyModeParameter": read_only_mode,
         "ExternalIDParameter": config.get_tenant_specific_key(
             "tenant_details.external_id", tenant

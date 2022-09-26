@@ -86,6 +86,7 @@ async def handle_spoke_account_registration(body):
     }
 
     spoke_role_name = body["ResourceProperties"].get("SpokeRoleName")
+    account_name = body["ResourceProperties"].get("AccountName")
     account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
     tenant = body["ResourceProperties"].get("Host")
     external_id = body["ResourceProperties"].get("ExternalId")
@@ -310,10 +311,12 @@ async def handle_spoke_account_registration(body):
     account_aliases = account_aliases_co["AccountAliases"]
     master_account = True
     if account_aliases:
-        account_name = account_aliases[0]
+        if not account_name:
+            account_name = account_aliases[0]
         master_account = False
     else:
-        account_name = account_id_for_role
+        if not account_name:
+            account_name = account_id_for_role
         # Try Organizations
         customer_spoke_role_org_client = await aio_wrapper(
             boto3.client,
@@ -334,7 +337,7 @@ async def handle_spoke_account_registration(body):
                 AccountId=account_id_for_role,
             )
             account_details = account_details_call.get("Account")
-            if account_details and account_details.get("Name"):
+            if not account_name and account_details and account_details.get("Name"):
                 account_name = account_details["Name"]
         except ClientError:
             # Most likely this isn't an organizations master account and we can ignore
@@ -369,6 +372,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
     log.info(f"ResourceProperties: {body['ResourceProperties']}")
 
     spoke_role_name = body["ResourceProperties"].get("SpokeRole")
+    account_name = body["ResourceProperties"].get("AccountName")
     account_id_for_role = body["ResourceProperties"].get("AWSAccountId")
     role_arn = body["ResourceProperties"].get("CentralRoleArn")
     external_id = body["ResourceProperties"].get("ExternalId")
@@ -551,33 +555,11 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
             "message": error_message,
         }
 
-    customer_spoke_role_iam_client = await aio_wrapper(
-        boto3.client,
-        "iam",
-        aws_access_key_id=customer_spoke_role_credentials["Credentials"]["AccessKeyId"],
-        aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
-            "SecretAccessKey"
-        ],
-        aws_session_token=customer_spoke_role_credentials["Credentials"][
-            "SessionToken"
-        ],
-    )
-
-    account_aliases_co = await aio_wrapper(
-        customer_spoke_role_iam_client.list_account_aliases
-    )
-    account_aliases = account_aliases_co["AccountAliases"]
-    if account_aliases:
-        account_name = account_aliases[0]
-    else:
-        account_name = account_id_for_role
-        # Try Organizations
-        customer_spoke_role_org_client = await aio_wrapper(
+    if not account_name:
+        customer_spoke_role_iam_client = await aio_wrapper(
             boto3.client,
-            "organizations",
-            aws_access_key_id=customer_spoke_role_credentials["Credentials"][
-                "AccessKeyId"
-            ],
+            "iam",
+            aws_access_key_id=customer_spoke_role_credentials["Credentials"]["AccessKeyId"],
             aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
                 "SecretAccessKey"
             ],
@@ -585,17 +567,40 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
                 "SessionToken"
             ],
         )
-        try:
-            account_details_call = await aio_wrapper(
-                customer_spoke_role_org_client.describe_account,
-                AccountId=account_id_for_role,
+
+        account_aliases_co = await aio_wrapper(
+            customer_spoke_role_iam_client.list_account_aliases
+        )
+        account_aliases = account_aliases_co["AccountAliases"]
+        if account_aliases:
+            account_name = account_aliases[0]
+        else:
+            account_name = account_id_for_role
+            # Try Organizations
+            customer_spoke_role_org_client = await aio_wrapper(
+                boto3.client,
+                "organizations",
+                aws_access_key_id=customer_spoke_role_credentials["Credentials"][
+                    "AccessKeyId"
+                ],
+                aws_secret_access_key=customer_spoke_role_credentials["Credentials"][
+                    "SecretAccessKey"
+                ],
+                aws_session_token=customer_spoke_role_credentials["Credentials"][
+                    "SessionToken"
+                ],
             )
-            account_details = account_details_call.get("Account")
-            if account_details and account_details.get("Name"):
-                account_name = account_details["Name"]
-        except ClientError:
-            # Most likely this isn't an organizations master account and we can ignore
-            pass
+            try:
+                account_details_call = await aio_wrapper(
+                    customer_spoke_role_org_client.describe_account,
+                    AccountId=account_id_for_role,
+                )
+                account_details = account_details_call.get("Account")
+                if account_details and account_details.get("Name"):
+                    account_name = account_details["Name"]
+            except ClientError:
+                # Most likely this isn't an organizations master account and we can ignore
+                pass
 
     hub_account = HubAccount(
         name=role_arn.split("/")[-1],
