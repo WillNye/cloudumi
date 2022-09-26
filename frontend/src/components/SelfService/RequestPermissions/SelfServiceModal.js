@@ -1,8 +1,8 @@
-import './SelfService.css'
 import { Button, Divider, Header, Message, Modal } from 'semantic-ui-react'
 import React, { Component } from 'react'
 import Editor from '@monaco-editor/react'
-import { getLocalStorageSettings } from '../../helpers/utils'
+import { getLocalStorageSettings } from '../../../helpers/utils'
+import './SelfService.scss'
 
 const editor_options = {
   selectOnLineNumbers: true,

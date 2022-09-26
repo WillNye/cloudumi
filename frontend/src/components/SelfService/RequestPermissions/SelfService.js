@@ -7,7 +7,7 @@ import SelfServiceStep1 from './SelfServiceStep1'
 import SelfServiceStep2 from './SelfServiceStep2'
 import SelfServiceStep3 from './SelfServiceStep3'
 import { SelfServiceStepEnum } from './SelfServiceEnums'
-import { arnRegex } from '../../helpers/utils'
+import { arnRegex } from '../../../helpers/utils'
 
 class SelfService extends Component {
   constructor(props) {

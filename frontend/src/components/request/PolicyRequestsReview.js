@@ -23,7 +23,7 @@ import TemporaryEscalationComponent from 'components/blocks/TemporaryEscalationB
 import {
   checkContainsReadOnlyAccount,
   containsCondensedPolicyChange,
-} from '../selfservice/utils'
+} from '../SelfService/RequestPermissions/utils'
 
 class PolicyRequestReview extends Component {
   constructor(props) {
