@@ -317,6 +317,7 @@ get_user_by_oidc_settings:
     - email
     - openid
     - profile
+    - aws.cognito.signin.user.admin
   resource: noq_tenant
   metadata_url: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_EQ5XHIluC/.well-known/openid-configuration
   jwt_verify: true
