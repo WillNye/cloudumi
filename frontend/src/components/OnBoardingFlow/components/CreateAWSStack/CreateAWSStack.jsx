@@ -2,13 +2,15 @@ import React from 'react'
 import { Button, Divider, Header, List } from 'semantic-ui-react'
 import './CreateAWSStack.scss'
 
-const CreateAWSStack = ({ accountName }) => {
+const CreateAWSStack = ({ accountName, generateAWSLoginLink }) => {
   return (
     <div className='connect-stack'>
       <Divider horizontal />
 
       <Header as='h4'>1. Login to your chosen AWS Account</Header>
-      <Button primary>Login to {accountName} </Button>
+      <Button primary onClick={generateAWSLoginLink}>
+        Login to {accountName}
+      </Button>
 
       <Divider horizontal />
 

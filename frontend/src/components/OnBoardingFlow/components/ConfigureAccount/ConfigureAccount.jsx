@@ -1,17 +1,15 @@
+import { MODES } from 'components/OnBoardingFlow/constants'
 import React, { Fragment, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Divider, Form, Icon, Label, Radio, Table } from 'semantic-ui-react'
 
-const MODES = {
-  READ_ONLY: 'read-only',
-  READ_WRTE: 'read-write',
-}
-
-const ConfigureAccount = ({ handleAccNameChange, accountName }) => {
+const ConfigureAccount = ({
+  handleAccNameChange,
+  accountName,
+  selectedMode,
+  handleModeChange,
+}) => {
   const [showComparison, setShowComparison] = useState(false)
-  const [selectedMode, setSelectedMode] = useState(MODES.READ_WRTE)
-
-  const handleChange = (_e, { value }) => setSelectedMode(value)
 
   return (
     <div className='on-boarding__configure-account'>
@@ -38,7 +36,7 @@ const ConfigureAccount = ({ handleAccNameChange, accountName }) => {
                 label='Read-only'
                 value={MODES.READ_ONLY}
                 checked={selectedMode === MODES.READ_ONLY}
-                onChange={handleChange}
+                onChange={handleModeChange}
               />
             </Form.Field>
             <p>
@@ -52,7 +50,7 @@ const ConfigureAccount = ({ handleAccNameChange, accountName }) => {
                 label='Read-write'
                 value={MODES.READ_WRTE}
                 checked={selectedMode === MODES.READ_WRTE}
-                onChange={handleChange}
+                onChange={handleModeChange}
               />
               &nbsp;
               <Label color='green' horizontal>

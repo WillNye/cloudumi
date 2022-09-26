@@ -1,5 +1,10 @@
 export const ACCOUNT_NAME_REGEX = new RegExp(/[\s\S]*/)
 
+export const MODES = {
+  READ_ONLY: 'read-only',
+  READ_WRTE: 'read-write',
+}
+
 export const ONBOARDING_SECTIONS = {
   CONNECTION_METHOD: {
     value: 'Connection Method',

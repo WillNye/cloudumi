@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { Button, Divider, Header, Icon, Segment } from 'semantic-ui-react'
 import NavHeader from 'components/Header'
 import ConnectionMethod from './components/ConnectionMethod'
@@ -8,19 +8,26 @@ import CreateAWSStack from './components/CreateAWSStack/CreateAWSStack'
 import CheckAccountConnection from './components/CheckAccountConnection'
 import {
   ACCOUNT_NAME_REGEX,
+  MODES,
   ONBOARDING_SECTIONS,
   ONBOARDING_STEPS,
 } from './constants'
 import { Link } from 'react-router-dom'
 import './OnBoarding.scss'
+import { useAuth } from 'auth/AuthProviderDefault'
 
 const OnBoarding = () => {
   const { CONNECTION_METHOD, CONFIGURE, CREATE_STACK, STATUS } =
     ONBOARDING_SECTIONS
 
+  const { sendRequestCommon } = useAuth()
+
   const [isConnected, setIsConnected] = useState(false)
   const [activeId, setActiveId] = useState(CONNECTION_METHOD.id)
   const [accountName, setAccountName] = useState('')
+  const [selectedMode, setSelectedMode] = useState(MODES.READ_WRTE)
+
+  const handleModeChange = (_e, { value }) => setSelectedMode(value)
 
   const handleAccNameChange = (e) => {
     e.preventDefault()
@@ -30,20 +37,37 @@ const OnBoarding = () => {
     }
   }
 
+  const generateAWSLoginLink = useCallback(async () => {
+    const res = await sendRequestCommon(
+      null,
+      `/api/v3/integrations/aws?account-name=${accountName}`,
+      'get'
+    )
+
+    console.log('-------------------', res)
+  }, [accountName, selectedMode])
+
   const activeSection = useMemo(() => {
     const sections = {
       [CONNECTION_METHOD.id]: <ConnectionMethod />,
       [CONFIGURE.id]: (
         <ConfigureAccount
           handleAccNameChange={handleAccNameChange}
+          handleModeChange={handleModeChange}
           accountName={accountName}
+          selectedMode={selectedMode}
         />
       ),
-      [CREATE_STACK.id]: <CreateAWSStack accountName={accountName} />,
+      [CREATE_STACK.id]: (
+        <CreateAWSStack
+          accountName={accountName}
+          generateAWSLoginLink={generateAWSLoginLink}
+        />
+      ),
       [STATUS.id]: <CheckAccountConnection setIsConnected={setIsConnected} />,
     }
     return sections[activeId]
-  }, [activeId, accountName]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeId, accountName, selectedMode, generateAWSLoginLink]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isNextDisabled = useMemo(() => {
     return activeId === CONFIGURE.id && !accountName
