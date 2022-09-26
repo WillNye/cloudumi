@@ -1,10 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Section } from 'lib/Section'
 import { RoleAccessAuth } from './components/RoleAccessAuth'
 import { EnablingTraAccessAuth } from './components/EnablingTraAccessAuth'
 import { SectionTitle } from '../../../utils'
 
 export const RoleAccessAuthorization = () => {
+  const [accessData, setAccessData] = useState({
+    tra_access: false,
+    role_access: false,
+  })
+
   return (
     <>
       <Section
@@ -15,7 +20,7 @@ export const RoleAccessAuthorization = () => {
           />
         }
       >
-        <RoleAccessAuth />
+        <RoleAccessAuth setAccessData={setAccessData} accessData={accessData} />
       </Section>
 
       <Section
@@ -26,10 +31,13 @@ export const RoleAccessAuthorization = () => {
           />
         }
       >
-        <EnablingTraAccessAuth />
+        <EnablingTraAccessAuth
+          setAccessData={setAccessData}
+          accessData={accessData}
+        />
       </Section>
     </>
   )
 }
 
-export default RoleAccessAuthorization;
+export default RoleAccessAuthorization

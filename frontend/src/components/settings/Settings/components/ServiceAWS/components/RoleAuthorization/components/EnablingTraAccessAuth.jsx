@@ -7,8 +7,7 @@ import { useHelpModal } from 'lib/hooks/useHelpModal'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 
-export const EnablingTraAccessAuth = () => {
-  const [checked, setChecked] = useState(false)
+export const EnablingTraAccessAuth = ({ setAccessData, accessData }) => {
   const [isLoading, setIsLoading] = useState(false)
 
   const { get, post } = useApi('services/aws/tra-access/credential-brokering', {
@@ -25,11 +24,14 @@ export const EnablingTraAccessAuth = () => {
       get
         .do()
         .then((data) => {
-          setChecked(data?.tra_access)
+          setAccessData(data)
         })
         .finally(setIsLoading(false))
     } else {
-      setChecked(get?.data?.tra_access)
+      setAccessData({
+        ...accessData,
+        tra_access: get?.data?.tra_access,
+      })
     }
   }, [])
 
@@ -40,7 +42,7 @@ export const EnablingTraAccessAuth = () => {
     post
       .do(null, action)
       .then(() => {
-        setChecked(checked)
+        setAccessData({ accessData, tra_access: checked })
         success(`Tra Access Authorization is ${action}d`)
         get.do()
       })
@@ -59,8 +61,8 @@ export const EnablingTraAccessAuth = () => {
           <Checkbox
             size='mini'
             toggle
-            checked={checked}
-            disabled={isWorking}
+            checked={accessData?.tra_access}
+            disabled={isWorking || !accessData?.role_access}
             onChange={handleChange}
             label={{
               children: 'Enabling the table below will enable the following:',
