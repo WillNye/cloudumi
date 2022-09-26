@@ -10,10 +10,10 @@ import {
   Header,
   Message,
 } from 'semantic-ui-react'
-import DropDownBlockComponent from '../blocks/DropDownBlockComponent'
-import TextInputBlockComponent from '../blocks/TextInputBlockComponent'
-import TypeaheadBlockComponent from '../blocks/TypeaheadBlockComponent'
-import SingleTypeaheadBlockComponent from '../blocks/SingleTypeaheadBlockComponent'
+import DropDownBlockComponent from '../../blocks/DropDownBlockComponent'
+import TextInputBlockComponent from '../../blocks/TextInputBlockComponent'
+import TypeaheadBlockComponent from '../../blocks/TypeaheadBlockComponent'
+import SingleTypeaheadBlockComponent from '../../blocks/SingleTypeaheadBlockComponent'
 
 class SelfServiceComponent extends Component {
   constructor(props) {

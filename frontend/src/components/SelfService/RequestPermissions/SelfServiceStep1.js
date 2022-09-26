@@ -13,9 +13,9 @@ import {
   Segment,
 } from 'semantic-ui-react'
 import ReactMarkdown from 'react-markdown'
-import RoleDetails from '../roles/RoleDetails'
+import RoleDetails from '../../roles/RoleDetails'
 import DateTimePicker from 'components/blocks/DateTimePicker'
-import './SelfService.css'
+import './SelfService.scss'
 
 class SelfServiceStep1 extends Component {
   constructor(props) {
