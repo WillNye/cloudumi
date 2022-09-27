@@ -32,6 +32,7 @@ from common.lib.generic import filter_table, write_json_error
 from common.lib.mfa import mfa_verify
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
+    automatic_request,
     can_move_back_to_pending_v2,
     can_update_cancel_requests_v2,
     should_auto_approve_policy_v2,
@@ -62,7 +63,7 @@ from common.models import (
     ResourceType,
 )
 from common.models import Status2 as WebStatus
-from common.models import WebResponse
+from common.models import Status3, WebResponse
 from common.user_request.models import IAMRequest
 from common.user_request.utils import (
     TRA_CONFIG_BASE_KEY,
@@ -420,6 +421,18 @@ class RequestHandler(BaseAPIV2Handler):
         try:
             # Validate the model
             changes = RequestCreationModel.parse_raw(self.request.body)
+            if changes.auto_merge:
+                non_allowed_statuses = [
+                    Status3.applied_and_failure.value,
+                    Status3.applied_and_success.value,
+                    Status3.approved.value,
+                ]
+                for policy_request in changes.changes:
+                    if policy_request.status not in non_allowed_statuses:
+                        await automatic_request.update_policy_request(
+                            self.ctx.tenant, policy_request
+                        )
+
             if not changes.dry_run:
                 changes = await validate_request_creation(self, changes)
 

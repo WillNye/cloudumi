@@ -2121,6 +2121,10 @@ components:
         credentials:
           $ref: "#/components/schemas/CloudCredentials"
           is_secret: true
+        auto_merge:
+          type: boolean
+          default: False
+          description: attempt to automatically merge two policies
     RequestCreationResponse:
       type: object
       properties:
