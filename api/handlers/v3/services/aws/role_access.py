@@ -109,7 +109,7 @@ class CredentialBrokeringCurrentStateHandler(BaseHandler):
             "role_access": await role_access.get_role_access_credential_brokering(
                 tenant
             ),
-            "tra_access": (await get_tra_config(tenant=tenant)).dict(),
+            "tra_access": (await get_tra_config(tenant=tenant)).enabled,
         }
         res = WebResponse(
             status="success",

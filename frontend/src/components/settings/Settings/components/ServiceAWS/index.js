@@ -36,7 +36,7 @@ export const ServiceAWS = () => {
         <AWSOrganization />
       </Section>
 
-        <RoleAuthorization />
+      <RoleAuthorization />
 
       <Section title={<SectionTitle title='General' />}>
         <General />
