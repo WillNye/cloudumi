@@ -98,7 +98,10 @@ const RoleAccess = ({ role_access_config }) => {
     [role_access_config] // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  const columns = roleAccessColumns({ handleRemove })
+  const columns = roleAccessColumns({
+    handleRemove,
+    disabled: !role_access_config.can_edit,
+  })
 
   return (
     <>
@@ -108,13 +111,21 @@ const RoleAccess = ({ role_access_config }) => {
             Use the following IAM role tag values to identify users and groups
             authorized to retrieve role credentials.
           </p>
-          <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
+          <DatatableWrapper
+            renderAction={
+              <TableTopBar
+                onClick={openModal}
+                disabled={!role_access_config.can_edit}
+              />
+            }
+          >
             <Datatable
               data={[...authorized_groups, ...cli_authorized_groups]}
               columns={columns}
               emptyState={{
                 label: 'Add User Group',
                 onClick: openModal,
+                disabled: !role_access_config.can_edit,
               }}
               isLoading={false}
               loadingState={{ label: '' }}

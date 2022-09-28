@@ -60,7 +60,10 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
     [elevated_access_config] // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  const columns = tempEscalationColumns({ handleRemove })
+  const columns = tempEscalationColumns({
+    handleRemove,
+    disabled: !elevated_access_config.can_edit,
+  })
 
   return (
     <>
@@ -72,7 +75,12 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
       </p>
       <DatatableWrapper
         isLoading={false}
-        renderAction={<TableTopBar onClick={data.length ? openModal : null} />}
+        renderAction={
+          <TableTopBar
+            onClick={data.length ? openModal : null}
+            disabled={!elevated_access_config.can_edit}
+          />
+        }
       >
         <Datatable
           data={data}
@@ -80,6 +88,7 @@ const TempEscalationAccess = ({ elevated_access_config }) => {
           emptyState={{
             label: 'Add User Group',
             onClick: openModal,
+            disabled: !elevated_access_config.can_edit,
           }}
           loadingState={{ label: '' }}
         />
