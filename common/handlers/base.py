@@ -374,6 +374,7 @@ class BaseHandler(TornadoRequestHandler):
 
         tenant = self.get_tenant_name()
         self.eula_signed = None
+        self.mfa_setup = None
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
@@ -432,6 +433,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)
+                self.mfa_setup = res.get("mfa_setup", None)
 
         if self.eula_signed is None:
             try:
@@ -651,7 +653,7 @@ class BaseHandler(TornadoRequestHandler):
             log.warning(log_data)
         log_data["eligible_roles"] = len(self.eligible_roles)
 
-        if not self.eligible_accounts and self.eula_signed:
+        if not self.eligible_accounts and self.eula_signed and not self.mfa_setup:
             try:
                 self.eligible_accounts = await group_mapping.get_eligible_accounts(self)
                 log_data["eligible_accounts"] = len(self.eligible_accounts)
@@ -707,7 +709,26 @@ class BaseHandler(TornadoRequestHandler):
             },
         )
 
-        if not self.eula_signed:
+        if self.mfa_setup:
+            # If the EULA hasn't been signed the user cannot access any AWS information.
+            self.groups = []
+            self.eligible_roles = []
+            self.eligible_accounts = []
+
+            if not self.request.uri.endswith(
+                "auth/cognito/setup-mfa"
+            ) and not isinstance(self, AuthenticatedStaticFileHandler):
+                self.write(
+                    {
+                        "type": "redirect",
+                        "redirect_url": "/mfa",
+                        "reason": "unauthenticated",
+                        "message": "User MFA has not been configured",
+                    }
+                )
+                self.set_status(403)
+                raise tornado.web.Finish()
+        elif not self.eula_signed:
             # If the EULA hasn't been signed the user cannot access any AWS information.
             self.groups = []
             self.eligible_roles = []
@@ -759,6 +780,7 @@ class BaseHandler(TornadoRequestHandler):
             roles,
             exp=expiration,
             eula_signed=self.eula_signed,
+            mfa_setup=self.mfa_setup,
         )
         self.set_cookie(
             self.get_noq_auth_cookie_key(),

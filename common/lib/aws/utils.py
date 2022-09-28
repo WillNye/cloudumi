@@ -1,13 +1,13 @@
-import asyncio
 import fnmatch
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 
 import sentry_sdk
 from botocore.exceptions import ClientError
+from pydantic import ValidationError
 
 from common.aws.iam.policy.utils import (
     fetch_managed_policy_details,
@@ -52,7 +52,7 @@ from common.models import (
     Status,
 )
 from common.user_request.models import IAMRequest
-from common.user_request.utils import get_active_tra_users_tag
+from common.user_request.utils import get_active_tra_users_tag, get_expiry_sid_str
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -833,7 +833,7 @@ def allowed_to_sync_role(
 async def remove_expired_request_changes(
     extended_request: ExtendedRequestModel,
     tenant: str,
-    user: Optional[str],
+    user: Optional[str] = None,
     force_refresh: bool = False,
 ) -> None:
     """
@@ -843,12 +843,15 @@ async def remove_expired_request_changes(
     """
     from common.aws.iam.role.models import IAMRole
     from common.lib.v2.aws_principals import get_role_details
+    from common.user_request.utils import normalize_expiration_date
 
     should_update_policy_request = False
-    current_dateint = datetime.today().strftime("%Y%m%d")
+    extended_request = normalize_expiration_date(extended_request)
+
     if (
         not extended_request.expiration_date
-        or str(extended_request.expiration_date) > current_dateint
+        or extended_request.expiration_date
+        > datetime.utcnow().replace(tzinfo=timezone.utc)
     ):
         return
 
@@ -1124,9 +1127,9 @@ async def remove_expired_request_changes(
                     existing_policy = role.assume_role_policy_document
 
                 for statement in existing_policy.get("Statement", []):
-                    if str(extended_request.expiration_date) in statement.get(
-                        "Sid", ""
-                    ):
+                    if get_expiry_sid_str(
+                        extended_request.expiration_date
+                    ) in statement.get("Sid", ""):
                         continue
                     new_policy_statement.append(statement)
 
@@ -1224,32 +1227,19 @@ async def remove_expired_tenant_requests(tenant: str):
     )
 
     for request in all_requests:
+        try:
+            extended_request = ExtendedRequestModel.parse_obj(
+                await request.get_extended_request_dict()
+            )
+        except ValidationError as err:
+            log.warning({"message": "Bad request structure", "error": str(err)})
+            continue
+
         await remove_expired_request_changes(
-            ExtendedRequestModel.parse_obj(await request.get_extended_request_dict()),
+            extended_request,
             tenant,
             None,
         )
-
-    # Can swap back to this once it's thread safe
-    # await asyncio.gather(*[
-    #     remove_expired_request_changes(ExtendedRequestModel.parse_obj(request["extended_request"]), tenant, None)
-    #     for request in all_policy_requests
-    # ])
-
-
-async def remove_expired_requests_for_tenants(tenants: list[str]) -> dict:
-    function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    log_data = {
-        "function": function,
-        "message": "Spawning tasks",
-        "num_tenants": len(tenants),
-    }
-    log.debug(log_data)
-    await asyncio.gather(
-        *[remove_expired_tenant_requests(tenant) for tenant in tenants]
-    )
-
-    return log_data
 
 
 def get_aws_principal_owner(role_details: Dict[str, Any], tenant: str) -> Optional[str]:

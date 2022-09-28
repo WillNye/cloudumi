@@ -14,6 +14,7 @@ import sys
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
+from random import randint
 from typing import Any, Dict, List, Tuple, Union
 
 import celery
@@ -73,7 +74,6 @@ from common.lib.aws.utils import (
     cache_all_scps,
     get_aws_principal_owner,
     get_enabled_regions_for_account,
-    remove_expired_requests_for_tenants,
     remove_expired_tenant_requests,
 )
 from common.lib.cache import (
@@ -173,6 +173,13 @@ internal_celery_tasks = get_plugin_by_name(
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 REDIS_IAM_COUNT = 1000
+
+
+@app.task()
+def ping() -> str:
+    log_data = {"task": "pong"}
+    log.info(log_data)
+    return "pong"
 
 
 @app.task(soft_time_limit=20)
@@ -2524,7 +2531,7 @@ def cache_cloudtrail_denies_for_all_tenants() -> Dict:
 
 
 @app.task(soft_time_limit=3600, **default_retry_kwargs)
-def cache_cloudtrail_denies(tenant=None):
+def cache_cloudtrail_denies(tenant=None, max_number_to_process=None):
     """
     This task caches access denies reported by Cloudtrail. This feature requires an
     Event Bridge rule monitoring Cloudtrail for your accounts for access deny errors.
@@ -2541,7 +2548,9 @@ def cache_cloudtrail_denies(tenant=None):
             "function": function,
             "message": "Not running Celery task in inactive region",
         }
-    events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(app, tenant)
+    events = async_to_sync(detect_cloudtrail_denies_and_update_cache)(
+        app, tenant, max_number_to_process
+    )
     if events.get("new_events", 0) > 0:
         # Spawn off a task to cache errors by ARN for the UI
         cache_cloudtrail_errors_by_arn.delay(tenant=tenant)
@@ -2730,8 +2739,8 @@ def get_current_celery_tasks(tenant: str = None, status: str = None) -> List[Any
     return filtered_tasks
 
 
-@app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
-def handle_expired_policies(self, tenant: str):
+@app.task(soft_time_limit=2700, **default_retry_kwargs)
+def remove_expired_requests_for_tenant(tenant: str = None):
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
 
@@ -2739,42 +2748,64 @@ def handle_expired_policies(self, tenant: str):
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def handle_expired_policies_for_all_tenants() -> Dict:
-    return async_to_sync(remove_expired_requests_for_tenants)(get_all_tenants())
+def remove_expired_requests_for_all_tenants() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    tenants = get_all_tenants()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_tenants": len(tenants),
+    }
+    log.debug(log_data)
+    for tenant in tenants:
+        remove_expired_requests_for_tenant.apply_async((tenant,))
+
+    return log_data
 
 
-schedule_30_minute = timedelta(seconds=1800)
-schedule_45_minute = timedelta(seconds=2700)
-schedule_6_hours = timedelta(hours=6)
+run_tasks_normally = not bool(
+    config.get("_global_.development", False)
+    and config.get("_global_._development_run_celery_tasks_1_min", False)
+)
+# If debug mode, we will set up the schedule to run the next minute after the job starts
+time_to_start = datetime.utcnow() + timedelta(minutes=1)
+dev_schedule = crontab(hour=time_to_start.hour, minute=time_to_start.minute)
 schedule_minute = timedelta(minutes=1)
-schedule_5_minutes = timedelta(minutes=5)
-schedule_24_hours = timedelta(hours=24)
-schedule_1_hour = timedelta(hours=1)
-schedule_15_seconds = timedelta(seconds=15)
+schedule_5_minutes = timedelta(minutes=5) if run_tasks_normally else dev_schedule
+schedule_15_seconds = timedelta(seconds=15) if run_tasks_normally else dev_schedule
 
-if config.get("_global_.development", False) and config.get(
-    "_global_._development_run_celery_tasks_1_min", False
-):
-    # If debug mode, we will set up the schedule to run the next minute after the job starts
-    time_to_start = datetime.utcnow() + timedelta(minutes=1)
-    dev_schedule = crontab(hour=time_to_start.hour, minute=time_to_start.minute)
-    schedule_30_minute = dev_schedule
-    schedule_45_minute = dev_schedule
-    schedule_1_hour = dev_schedule
-    schedule_6_hours = dev_schedule
-    schedule_5_minutes = dev_schedule
-    schedule_15_seconds = dev_schedule
+
+def get_schedule(min_schedule: int) -> Union[timedelta | crontab]:
+    """
+    Will return a timedelta within 10% of the provided number.
+    The goal of this is to stagger schedules.
+    Tasks that are scheduled less often will have a wider range with the hope this will reduce the burst rate.
+
+    Example:
+         min_schedule = 30 - The timedelta will be 27-33
+         min_schedule = 360 - The timedelta will be 324-396
+
+    :param min_schedule: The base interval, in minutes to run the task
+    :return timedelta | crontab:
+    """
+    if not run_tasks_normally:
+        return dev_schedule
+
+    threshold = min_schedule // 10
+    run_every = randint(min_schedule - threshold, min_schedule + threshold)
+    return timedelta(minutes=run_every)
+
 
 schedule = {
     "cache_iam_resources_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_iam_resources_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_45_minute,
+        "schedule": get_schedule(45),
     },
     "cache_policies_table_details_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_policies_table_details_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_30_minute,
+        "schedule": get_schedule(30),
     },
     # TODO: Get this task for a similar task working so we can alert on failing tasks or tasks that do not run as
     #  planned
@@ -2786,37 +2817,37 @@ schedule = {
     "cache_managed_policies_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_managed_policies_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_45_minute,
+        "schedule": get_schedule(45),
     },
     "cache_s3_buckets_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_s3_buckets_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_45_minute,
+        "schedule": get_schedule(45),
     },
     "cache_sqs_queues_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_sqs_queues_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_45_minute,
+        "schedule": get_schedule(45),
     },
     "cache_sns_topics_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_sns_topics_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_45_minute,
+        "schedule": get_schedule(45),
     },
     "cache_cloudtrail_errors_by_arn_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_errors_by_arn_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_1_hour,
+        "schedule": get_schedule(60),
     },
     "cache_resources_from_aws_config_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_1_hour,
+        "schedule": get_schedule(60),
     },
     "cache_cloud_account_mapping_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_cloud_account_mapping_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_1_hour,
+        "schedule": get_schedule(60),
     },
     "cache_credential_authorization_mapping_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_credential_authorization_mapping_for_all_tenants",
@@ -2826,22 +2857,22 @@ schedule = {
     "cache_scps_across_organizations_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_scps_across_organizations_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_1_hour,
+        "schedule": get_schedule(60),
     },
     "cache_organization_structure_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_organization_structure_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_1_hour,
+        "schedule": get_schedule(60),
     },
     "cache_resource_templates_task_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_resource_templates_task_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_30_minute,
+        "schedule": get_schedule(30),
     },
     "cache_self_service_typeahead_task_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_30_minute,
+        "schedule": get_schedule(30),
     },
     "trigger_credential_mapping_refresh_from_role_changes_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_tenants",
@@ -2856,7 +2887,7 @@ schedule = {
     "cache_access_advisor_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_6_hours,
+        "schedule": get_schedule(60 * 6),
     },
     # "cache_identities_for_all_tenants": {
     #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_tenants",
@@ -2876,12 +2907,12 @@ schedule = {
     "cache_terraform_resources_task_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_1_hour,
+        "schedule": get_schedule(60),
     },
-    "handle_expired_policies_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.handle_expired_policies_for_all_tenants",
+    "remove_expired_requests_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.remove_expired_requests_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": schedule_6_hours,
+        "schedule": get_schedule(60 * 6),
     },
 }
 

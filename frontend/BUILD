@@ -3,7 +3,9 @@ load("@build_bazel_rules_nodejs//:index.bzl", "copy_to_bin", "nodejs_test")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_layer", "container_push")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
-load("@npm//react-scripts:index.bzl", "react_scripts", "react_scripts_test")
+load("//util:node_scripts.bzl", "react_scripts")
+load("//util:upload.bzl", "upload_cdn")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 
 # Filename conventions described at
@@ -95,12 +97,35 @@ _DEV_DEPS = [
 react_scripts(
     # Note: If you want to change the name make sure you update BUILD_PATH below accordingly
     # https://create-react-app.dev/docs/advanced-configuration/
+    name = "build_local",
+    args = [
+        "--node_options=--require=./$(execpath chdir.cjs)",
+        "build",
+    ],
+    base_url = "/",
+    data = _RUNTIME_DEPS,
+    deps = ["@version//:git_version_info"],
+    env = {
+        "BUILD_PATH": "./build_local",
+        "FRONTEND_PATH": "/frontend/build_local",
+        "DISABLE_ESLINT_PLUGIN": "true",
+    },
+    local = True,
+    output_dir = True,
+    visibility = ["//visibility:public"],
+)
+
+react_scripts(
+    # Note: If you want to change the name make sure you update BUILD_PATH below accordingly
+    # https://create-react-app.dev/docs/advanced-configuration/
     name = "build",
     args = [
         "--node_options=--require=./$(execpath chdir.cjs)",
         "build",
     ],
+    base_url = "https://d2mxcvfujf7a5q.cloudfront.net",
     data = _RUNTIME_DEPS,
+    deps = ["@version//:git_version_info"],
     env = {
         "BUILD_PATH": "./build",
         "DISABLE_ESLINT_PLUGIN": "true",
@@ -115,17 +140,33 @@ react_scripts(
         "--node_options=--require=./$(rootpath chdir.cjs)",
         "start",
     ],
+    base_url = "/",
+    deps = ["@version//:git_version_info"],
     env = {
         "DISABLE_ESLINT_PLUGIN": "true",
         "FRONTEND_SENTRY_DSN": "https://5f3b026abb7649fe8b41e903dcb5820f@sentry.noq.dev:4443/2"
     },
     data = _RUNTIME_DEPS,
+    local = True,
     tags = [
         # This tag instructs ibazel to pipe into stdin a event describing actions.
         # ibazel send EOF to stdin by default and `react-scripts start` will stop when getting EOF in stdin.
         # So use this to prevent EOF.
         "ibazel_notify_changes",
     ],
+)
+
+upload_cdn(
+    name = "publish_cdn",
+    bucket_name = "noq-global-frontend",
+    data = ":build",
+    env = {
+        "AWS_PROFILE": "noq_prod",
+    },
+    deps = [
+        "@version//:git_version_info",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 pkg_tar(

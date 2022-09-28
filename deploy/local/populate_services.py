@@ -120,7 +120,7 @@ headers:
     enabled: false
   role_login:
     enabled: true
-url: https://localhost
+url: http://localhost:8092
 application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
@@ -301,6 +301,9 @@ secrets:
 account_ids_to_name:
   "759357822767": "development"
 auth:
+  extra_auth_cookies:
+    - AWSELBAuthSessionCookie
+  logout_redirect_url: https://cloudumidev-com.auth.us-west-2.amazoncognito.com/logout?client_id=3vqhl3rfcfoqhl88g47norqick&logout_uri=https://cloudumidev.com
   challenge_url:
     enabled: true
   get_user_by_oidc: true
@@ -314,6 +317,7 @@ get_user_by_oidc_settings:
     - email
     - openid
     - profile
+    - aws.cognito.signin.user.admin
   resource: noq_tenant
   metadata_url: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_EQ5XHIluC/.well-known/openid-configuration
   jwt_verify: true

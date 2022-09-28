@@ -104,6 +104,7 @@ def get_resource_from_cloudtrail_deny(
 async def detect_cloudtrail_denies_and_update_cache(
     celery_app: object,
     tenant: str,
+    max_number_to_process: int | None = None,
 ) -> Dict[str, Any]:
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -121,7 +122,9 @@ async def detect_cloudtrail_denies_and_update_cache(
     if not enabled:
         log_data["message"] = "Cloudtrail detection is disabled for this account."
     event_ttl = configuration.event_ttl
-    max_num_messages_to_process = configuration.max_messages_to_process
+    max_num_messages_to_process = (
+        max_number_to_process or configuration.max_messages_to_process
+    )
     dynamo = UserDynamoHandler(tenant=tenant)
     queue_arn = (
         ModelAdapter(CloudtrailDetectionConfiguration)

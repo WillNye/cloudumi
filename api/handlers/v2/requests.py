@@ -4,11 +4,13 @@ import time
 import uuid
 
 import sentry_sdk
+import tornado.web
 from policy_sentry.util.arns import parse_arn
 from pydantic import ValidationError
 
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
+from common.aws.iam.role.utils import is_valid_role_name
 from common.aws.utils import ResourceAccountCache, ResourceSummary, get_url_for_resource
 from common.config import config
 from common.exceptions.exceptions import (
@@ -19,6 +21,7 @@ from common.exceptions.exceptions import (
     Unauthorized,
 )
 from common.handlers.base import BaseAPIV2Handler, BaseHandler
+from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.auth import (
     can_admin_policies,
     get_extended_request_account_ids,
@@ -45,34 +48,108 @@ from common.lib.v2.requests import (
     populate_old_policies,
     update_changes_meta_data,
 )
+from common.lib.web import handle_generic_error_response
 from common.models import (
+    Command,
     CommentModel,
+    CreateResourceChangeModel,
     DataTableResponse,
     ExtendedRequestModel,
     PolicyRequestModificationRequestModel,
     RequestCreationModel,
     RequestCreationResponse,
     RequestStatus,
+    ResourceType,
 )
 from common.models import Status2 as WebStatus
 from common.models import WebResponse
 from common.user_request.models import IAMRequest
-from common.user_request.utils import TRA_CONFIG_BASE_KEY, get_tra_config
+from common.user_request.utils import (
+    TRA_CONFIG_BASE_KEY,
+    get_tra_config,
+    normalize_expiration_date,
+)
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
 
 
+async def validate_create_resource_change(
+    handler, request: RequestCreationModel, change: CreateResourceChangeModel
+) -> set:
+    err = set()
+    resource_types = list(ResourceType.__dict__.values())
+    account_ids = list(
+        (await get_account_id_to_name_mapping(handler.ctx.tenant)).keys()
+    )
+    name = change.principal.name
+
+    if change.principal.resource_type not in resource_types:
+        err.add(
+            f"The principal resource type must be one of: {', '.join(resource_types)}"
+        )
+    elif (
+        change.principal.resource_type.value == ResourceType.role.value
+        and not is_valid_role_name(name)
+    ):
+        err.add(
+            "The principal name must be between 1-64 characters consisting of letters, numbers, and _+=,.@-"
+        )
+
+    if change.principal.account_id not in account_ids:
+        err.add(f"The principal account_id must be one of: {', '.join(account_ids)}")
+
+    if request.expiration_date or request.ttl:
+        err.add("Expiration dates and TTLs are not supported for this request.")
+
+    if not (
+        change.principal.account_id
+        and change.principal.name
+        and change.principal.resource_type
+    ):
+        err.add(
+            "The account_id, name, and resource_type is required in the principal for this requests."
+        )
+
+    return err
+
+
 async def validate_request_creation(
     handler, request: RequestCreationModel
 ) -> RequestCreationModel:
-    err = ""
+    err = set()
+    request = normalize_expiration_date(request)
+    tenant = handler.ctx.tenant
+
+    for change in request.changes.changes:
+        if change.change_type == "create_resource":
+            err.update(await validate_create_resource_change(handler, request, change))
+        elif change.change_type == "policy_condenser" and (
+            request.expiration_date or request.ttl
+        ):
+            err.add("Expiration dates and TTLs are not supported for this request.")
+        elif (
+            change.change_type == "assume_role_access"
+            and not config.get_tenant_specific_key(
+                "cloud_credential_authorization_mapping.role_tags.enabled",
+                tenant,
+                True,
+            )
+        ):
+            err.add(
+                "Assume role access via tagging has been disabled. Ask your admin to enable it inorder to proceed."
+            )
+
+        if (
+            not change.principal.principal_arn
+            and change.change_type != "create_resource"
+        ):
+            err.add("The principal_arn is required for this request.")
 
     if tra_change := next(
         (c for c in request.changes.changes if c.change_type == "tra_can_assume_role"),
         None,
     ):
-        tenant = handler.ctx.tenant
         role_arn = tra_change.principal.principal_arn
         tra_supported_roles = await get_tra_supported_roles_by_tag(
             handler.eligible_roles, handler.groups, tenant
@@ -82,24 +159,28 @@ async def validate_request_creation(
         ]
 
         if not tra_supported_role:
-            err += f"No TRA support for {tra_change.principal.principal_arn} or access already exists. "
+            err.add(
+                f"No TRA support for {tra_change.principal.principal_arn} or access already exists."
+            )
 
-        if not request.expiration_date:
-            err += "expiration_date is a required field for temporary role access requests. "
+        if not request.expiration_date and not request.ttl:
+            err.add(
+                "expiration_date or ttl is a required field for temporary role access requests."
+            )
 
         if err:
             handler.set_status(400)
             handler.write(
-                WebResponse(staus=WebStatus.error, errors=[err]).json(
+                WebResponse(staus=WebStatus.error, errors=list(err)).json(
                     exclude_unset=True, exclude_none=True
                 )
             )
-            return await handler.finish()
+            raise tornado.web.Finish()
 
         resource_summary = await ResourceSummary.set(tenant, role_arn)
         tra_config = await get_tra_config(resource_summary)
         if tra_config.mfa.enabled:
-            is_authenticated, err = await mfa_verify(handler.ctx.tenant, handler.user)
+            is_authenticated, err = await mfa_verify(tenant, handler.user)
             if not is_authenticated:
                 handler.set_status(403)
                 handler.write(
@@ -107,9 +188,18 @@ async def validate_request_creation(
                         exclude_unset=True, exclude_none=True
                     )
                 )
-                return await handler.finish()
+                raise tornado.web.Finish()
 
         request.admin_auto_approve = False
+
+    if err:
+        handler.set_status(400)
+        handler.write(
+            WebResponse(staus=WebStatus.error, errors=list(err)).json(
+                exclude_unset=True, exclude_none=True
+            )
+        )
+        raise tornado.web.Finish()
 
     return request
 
@@ -336,6 +426,8 @@ class RequestHandler(BaseAPIV2Handler):
             extended_request = await generate_request_from_change_model_array(
                 changes, self.user, tenant
             )
+        except tornado.web.Finish:
+            raise
         except Exception as err:
             extended_request = None
             log_data["error"] = str(err)
@@ -930,6 +1022,14 @@ class RequestDetailHandler(BaseAPIV2Handler):
         }
         log.debug(log_data)
 
+        iam_request = await IAMRequest.get(tenant, request_id)
+        if not self.is_admin and self.user != iam_request.username:
+            errors = ["You do not have access to update this request."]
+            await handle_generic_error_response(
+                self, errors[0], errors, 403, "unauthorized", {}
+            )
+            raise tornado.web.Finish()
+
         if (
             config.get_tenant_specific_key(
                 "policy_editor.disallow_contractors", tenant, True
@@ -955,26 +1055,42 @@ class RequestDetailHandler(BaseAPIV2Handler):
             extended_request, last_updated = await self._get_extended_request(
                 request_id, log_data, tenant
             )
+            change_info = request_changes.modification_model
+            is_expiry_update = bool(
+                change_info.command
+                in [Command.update_expiration_date, Command.update_ttl]
+            )
+            has_expiry_info = bool(
+                getattr(
+                    change_info, "expiration_date", getattr(change_info, "ttl", None)
+                )
+            )
 
-            if any(
+            if is_expiry_update and any(
                 change.change_type == "tra_can_assume_role"
                 for change in extended_request.changes.changes
             ):
-                change_info = request_changes.modification_model
-                if not getattr(change_info, "expiration_date", None):
+                if not has_expiry_info:
                     raise ValueError(
-                        "An expiration date must be provided for temporary role access requests."
+                        "A valid expiration date or ttl must be provided for temporary role access requests."
                     )
-
-            if any(
-                change.change_type == "policy_condenser"
-                for change in extended_request.changes.changes
+            if (
+                is_expiry_update
+                and extended_request.request_status != RequestStatus.pending
             ):
-                change_info = request_changes.modification_model
-                if getattr(change_info, "expiration_date", None):
-                    raise ValueError(
-                        "Expiration date is not supported for policy condenser requests."
-                    )
+                raise ValueError(
+                    "The TTL and expiration date can only be updated on pending requests."
+                )
+            if (
+                any(
+                    change.change_type in ["policy_condenser", "create_resource"]
+                    for change in extended_request.changes.changes
+                )
+                and has_expiry_info
+            ):
+                raise ValueError(
+                    "Expiration dates and TTLs are not supported for this request."
+                )
 
             response = await parse_and_apply_policy_request_modification(
                 extended_request,

@@ -12,7 +12,7 @@ import {
   Segment,
   TextArea,
 } from 'semantic-ui-react'
-import MonacoDiffComponent from '../blocks/MonacoDiffComponent'
+import MonacoDiffComponent from '../../blocks/MonacoDiffComponent'
 import { checkContainsReadOnlyAccount } from './utils'
 
 class SelfServiceStep3 extends Component {

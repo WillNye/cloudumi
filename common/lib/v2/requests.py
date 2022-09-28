@@ -3,11 +3,13 @@ import re
 import sys
 import time
 import uuid
+from datetime import datetime, timedelta
 from hashlib import sha256
 from typing import Dict, List, Optional, Union
 
 import sentry_sdk
 from botocore.exceptions import ClientError
+from dateutil import parser
 from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
@@ -61,6 +63,7 @@ from common.lib.terraform.requests import (
 from common.lib.v2.aws_principals import get_role_details, get_user_details
 from common.models import (
     Action,
+    Action1,
     ActionResult,
     ApplyChangeModificationModel,
     AssumeRolePolicyChangeModel,
@@ -72,6 +75,7 @@ from common.models import (
     Command,
     CommentModel,
     CommentRequestModificationModel,
+    CreateResourceChangeModel,
     ExpirationDateRequestModificationModel,
     ExtendedAwsPrincipalModel,
     ExtendedRequestModel,
@@ -90,10 +94,13 @@ from common.models import (
     ResourceModel,
     ResourcePolicyChangeModel,
     ResourceTagChangeModel,
+    ResourceType,
+    RoleAccessChangeModel,
     SpokeAccount,
     Status,
     TagAction,
     TraRoleChangeModel,
+    TTLRequestModificationModel,
     UpdateChangeModificationModel,
     UserModel,
 )
@@ -138,7 +145,6 @@ async def generate_request_from_change_model_array(
     :param user: Str - requester's email address
     :return: ChangeModelArray
     """
-
     log_data: dict = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
         "user": user,
@@ -167,6 +173,8 @@ async def generate_request_from_change_model_array(
     managed_policy_resource_changes = []
     generic_file_changes = []
     tra_role_changes = []
+    role_access_changes = []
+    create_resource_changes = []
     role = None
 
     extended_request_uuid = str(uuid.uuid4())
@@ -235,6 +243,12 @@ async def generate_request_from_change_model_array(
             )
         elif change.change_type == "tra_can_assume_role":
             tra_role_changes.append(TraRoleChangeModel.parse_obj(change.__dict__))
+        elif change.change_type == "assume_role_access":
+            role_access_changes.append(RoleAccessChangeModel.parse_obj(change.__dict__))
+        elif change.change_type == "create_resource":
+            create_resource_changes.append(
+                CreateResourceChangeModel.parse_obj(change.__dict__)
+            )
         else:
             raise UnsupportedChangeType(
                 f"Invalid `change_type` for change: {change.__dict__}"
@@ -247,7 +261,13 @@ async def generate_request_from_change_model_array(
             split_items[0][: (64 - (len(split_items[-1]) + 1))] + "@" + split_items[-1]
         )
 
-    if primary_principal.principal_type == "AwsResource":
+    if (
+        len(change_models.changes) == 1
+        and change_models.changes[0].change_type == "create_resource"
+    ):
+        request_changes = ChangeModelArray(changes=create_resource_changes)
+        arn_url = ""
+    elif primary_principal.principal_type == "AwsResource":
         # TODO: Separate this out into another function
         resource_summary = await ResourceSummary.set(
             tenant, primary_principal.principal_arn
@@ -345,6 +365,7 @@ async def generate_request_from_change_model_array(
             or len(assume_role_policy_changes) > 0
             or len(permissions_boundary_changes) > 0
             or len(tra_role_changes) > 0
+            or len(role_access_changes) > 0
         ):
             # for inline/managed/assume role policies, principal arn must be a role
             if (
@@ -428,28 +449,45 @@ async def generate_request_from_change_model_array(
             + permissions_boundary_changes
             + managed_policy_resource_changes
             + tra_role_changes
+            + role_access_changes
         )
-        extended_request = ExtendedRequestModel(
-            admin_auto_approve=request_creation.admin_auto_approve,
-            expiration_date=request_creation.expiration_date,
-            id=extended_request_uuid,
-            principal=primary_principal,
-            timestamp=int(time.time()),
-            justification=request_creation.justification,
-            requester_email=user,
-            approvers=[],  # TODO: approvers logic (future feature)
-            request_status=RequestStatus.pending,
-            changes=request_changes,
-            requester_info=UserModel(
-                email=user,
-                extended_info=await auth.get_user_info(user, tenant),
-                details_url=config.get_employee_info_url(user, tenant),
-                photo_url=config.get_employee_photo_url(user, tenant),
-            ),
-            comments=[],
-            cross_account=False,
-            arn_url=arn_url,
+    elif primary_principal.principal_type == "HoneybeeAwsResourceTemplate":
+        # TODO: Generate extended request from HB template
+        return await generate_honeybee_request_from_change_model_array(
+            request_creation, user, extended_request_uuid, tenant
         )
+    elif primary_principal.principal_type == "TerraformAwsResource":
+        # TODO: Support Terraform!!
+        return await generate_terraform_request_from_change_model_array(
+            request_creation, user, extended_request_uuid, tenant
+        )
+    else:
+        raise Exception("Unknown principal type")
+
+    extended_request = ExtendedRequestModel(
+        admin_auto_approve=request_creation.admin_auto_approve,
+        expiration_date=request_creation.expiration_date,
+        ttl=request_creation.ttl,
+        id=extended_request_uuid,
+        principal=primary_principal,
+        timestamp=int(time.time()),
+        justification=request_creation.justification,
+        requester_email=user,
+        approvers=[],  # TODO: approvers logic (future feature)
+        request_status=RequestStatus.pending,
+        changes=request_changes,
+        requester_info=UserModel(
+            email=user,
+            extended_info=await auth.get_user_info(user, tenant),
+            details_url=config.get_employee_info_url(user, tenant),
+            photo_url=config.get_employee_photo_url(user, tenant),
+        ),
+        comments=[],
+        cross_account=False,
+        arn_url=arn_url,
+    )
+
+    if primary_principal.principal_arn:
         extended_request = await populate_old_policies(
             extended_request, user, tenant, role
         )
@@ -458,20 +496,6 @@ async def generate_request_from_change_model_array(
         )
         if len(managed_policy_resource_changes) > 0:
             await populate_old_managed_policies(extended_request, user, tenant)
-
-    elif primary_principal.principal_type == "HoneybeeAwsResourceTemplate":
-        # TODO: Generate extended request from HB template
-        extended_request = await generate_honeybee_request_from_change_model_array(
-            request_creation, user, extended_request_uuid, tenant
-        )
-    elif primary_principal.principal_type == "TerraformAwsResource":
-        extended_request = await generate_terraform_request_from_change_model_array(
-            request_creation, user, extended_request_uuid, tenant
-        )
-    # TODO: Support Terraform!!
-    else:
-        raise Exception("Unknown principal type")
-
     return extended_request
 
 
@@ -513,36 +537,36 @@ async def is_request_eligible_for_auto_approval(
     }
     log.info(log_data)
     is_eligible = False
-    ineligible_change_types = ["policy_condenser"]
-
-    if any(
-        change.change_type in ineligible_change_types
-        for change in extended_request.changes.changes
-    ):
-        return is_eligible
 
     # We won't auto-approve any requests for Read-Only accounts
     if any(change.read_only is True for change in extended_request.changes.changes):
         return is_eligible
 
-    # Currently the only allowances are: Inline policies
+    potentially_eligible_change_types = [
+        "resource_policy",
+        "sts_resource_policy",
+        "inline_policy",
+        "tra_can_assume_role",
+    ]
+
+    if any(
+        change.change_type not in potentially_eligible_change_types
+        for change in extended_request.changes.changes
+    ):
+        return is_eligible
+
+    # The only change types which can be eligible are: Inline policies and TRA (if requires_approval == False)
     for change in extended_request.changes.changes:
-        # Exclude auto-generated resource policies from eligibility check
-        if (
-            change.change_type == "resource_policy"
-            or change.change_type == "sts_resource_policy"
-        ) and change.autogenerated:
-            continue
-        elif change.change_type == "tra_can_assume_role":
-            if len(extended_request.changes.changes) == 1:
-                tra_config = await get_tra_config_for_request(
-                    tenant, extended_request.principal.principal_arn, user_groups
-                )
-                is_eligible = (
-                    not tra_config.requires_approval
-                )  # Does not require approval so can auto approve
-        elif change.change_type != "inline_policy":
-            break
+        if change.change_type == "tra_can_assume_role":
+            tra_config = await get_tra_config_for_request(
+                tenant, extended_request.principal.principal_arn, user_groups
+            )
+            # Does not require approval so can auto approve
+            is_eligible = not tra_config.requires_approval
+            if not is_eligible:
+                return is_eligible
+        elif change.change_type == "inline_policy":
+            is_eligible = True
 
     log_data[
         "message"
@@ -1076,14 +1100,21 @@ async def apply_policy_condenser_change(
             "message"
         ] = f"Creating new policy for {name} as part of policy_condenser change {change.id}"
         log.debug(log_data)
-        await aio_wrapper(
-            put_policy_call,
-            PolicyName=change.policy_name,
-            PolicyDocument=json.dumps(
-                change.policy.policy_document,
-            ),
-            **boto_params,
-        )
+        # Handle an empty policy document
+        if change.policy.policy_document != {"Statement": []}:
+            await aio_wrapper(
+                put_policy_call,
+                PolicyName=change.policy_name,
+                PolicyDocument=json.dumps(
+                    change.policy.policy_document,
+                ),
+                **boto_params,
+            )
+        else:
+            log_data[
+                "message"
+            ] = "Empty policy document was submitted in the change request, skipping policy creation."
+            log.debug(log_data)
         for policy in existing_policies.get("PolicyNames", []):
             log_data[
                 "message"
@@ -1231,50 +1262,53 @@ async def apply_changes_to_role(
             continue
         if change.change_type == "inline_policy":
             if change.action == Action.attach:
-                try:
-                    if resource_summary.resource_type == "role":
-                        await aio_wrapper(
-                            iam_client.put_role_policy,
-                            RoleName=principal_name,
-                            PolicyName=change.policy_name,
-                            PolicyDocument=json.dumps(
-                                change.policy.policy_document,
-                            ),
+                if change.policy.policy_document != {"Statement": []}:
+                    try:
+                        if resource_summary.resource_type == "role":
+                            await aio_wrapper(
+                                iam_client.put_role_policy,
+                                RoleName=principal_name,
+                                PolicyName=change.policy_name,
+                                PolicyDocument=json.dumps(
+                                    change.policy.policy_document,
+                                ),
+                            )
+                        elif resource_summary.resource_type == "user":
+                            await aio_wrapper(
+                                iam_client.put_user_policy,
+                                UserName=principal_name,
+                                PolicyName=change.policy_name,
+                                PolicyDocument=json.dumps(
+                                    change.policy.policy_document,
+                                ),
+                            )
+                        response.action_results.append(
+                            ActionResult(
+                                status="success",
+                                message=(
+                                    f"Successfully applied inline policy {change.policy_name} to principal: "
+                                    f"{principal_name}"
+                                ),
+                            )
                         )
-                    elif resource_summary.resource_type == "user":
-                        await aio_wrapper(
-                            iam_client.put_user_policy,
-                            UserName=principal_name,
-                            PolicyName=change.policy_name,
-                            PolicyDocument=json.dumps(
-                                change.policy.policy_document,
-                            ),
+                        change.status = Status.applied
+                    except Exception as e:
+                        log_data[
+                            "message"
+                        ] = "Exception occurred applying inline policy"
+                        log_data["error"] = str(e)
+                        log.error(log_data, exc_info=True)
+                        sentry_sdk.capture_exception()
+                        response.errors += 1
+                        response.action_results.append(
+                            ActionResult(
+                                status="error",
+                                message=(
+                                    f"Error occurred applying inline policy {change.policy_name} to principal: "
+                                    f"{principal_name}: " + str(e)
+                                ),
+                            )
                         )
-                    response.action_results.append(
-                        ActionResult(
-                            status="success",
-                            message=(
-                                f"Successfully applied inline policy {change.policy_name} to principal: "
-                                f"{principal_name}"
-                            ),
-                        )
-                    )
-                    change.status = Status.applied
-                except Exception as e:
-                    log_data["message"] = "Exception occurred applying inline policy"
-                    log_data["error"] = str(e)
-                    log.error(log_data, exc_info=True)
-                    sentry_sdk.capture_exception()
-                    response.errors += 1
-                    response.action_results.append(
-                        ActionResult(
-                            status="error",
-                            message=(
-                                f"Error occurred applying inline policy {change.policy_name} to principal: "
-                                f"{principal_name}: " + str(e)
-                            ),
-                        )
-                    )
             elif change.action == Action.detach:
                 try:
                     if resource_summary.resource_type == "role":
@@ -2180,7 +2214,7 @@ async def apply_non_iam_resource_tag_change(
     response: PolicyRequestModificationResponseModel,
     user: str,
     tenant: str,
-    resource_summary: ResourceSummary,
+    arn: str,
     custom_aws_credentials: AWSCredentials = None,
 ) -> PolicyRequestModificationResponseModel:
     """
@@ -2203,6 +2237,7 @@ async def apply_non_iam_resource_tag_change(
         "request": extended_request.dict(),
     }
 
+    resource_summary = await ResourceSummary.set(tenant, arn)
     account = resource_summary.account
     service = resource_summary.service
     supported_services = config.get_tenant_specific_key(
@@ -2447,6 +2482,168 @@ async def apply_tra_role_change(
                 + str(e),
             )
         )
+
+    return response
+
+
+async def apply_role_access_change(
+    extended_request: ExtendedRequestModel,
+    change: RoleAccessChangeModel,
+    response: PolicyRequestModificationResponseModel,
+    user: str,
+    tenant: str,
+) -> PolicyRequestModificationResponseModel:
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "user": user,
+        "change": change.dict(),
+        "message": "Updating role access to one or more identity",
+        "request": extended_request.dict(),
+        "tenant": tenant,
+    }
+    log.info(log_data)
+    resource_summary = await ResourceSummary.set(
+        tenant, extended_request.principal.principal_arn
+    )
+    account_id = resource_summary.account
+    principal_name = resource_summary.name
+    role_access_tags = config.get_tenant_specific_key(
+        "cloud_credential_authorization_mapping.role_tags.authorized_groups_tags",
+        tenant,
+        [],
+    )
+
+    try:
+        iam_client = await aio_wrapper(
+            boto3_cached_conn,
+            "iam",
+            tenant,
+            user,
+            service_type="client",
+            account_number=account_id,
+            region=config.region,
+            assume_role=ModelAdapter(SpokeAccount)
+            .load_config("spoke_accounts", tenant)
+            .with_query({"account_id": account_id})
+            .first.name,
+            session_name=sanitize_session_name("noq_principal_updater_" + user),
+            retry_max_attempts=2,
+            sts_client_kwargs=dict(
+                region_name=config.region,
+                endpoint_url=f"https://sts.{config.region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
+        )
+        role_tags = await aio_wrapper(
+            iam_client.list_role_tags, RoleName=principal_name
+        )
+
+        if change.action == Action1.add:
+            # Add to the default tag and only if the identity is not in any other role access tag
+            role_access_tag = role_access_tags[0]
+            tag_val = get_resource_tag(role_tags, role_access_tag, True, set())
+            identities_with_role_access = set(*tag_val)
+
+            if len(role_tags) > 1:
+                for x in range(1, len(role_access_tags)):
+                    identities_with_role_access.update(
+                        get_resource_tag(role_tags, role_access_tags[x], True, set())
+                    )
+
+            for identity in change.identities:
+                if identity not in identities_with_role_access:
+                    tag_val.add(identity)
+
+            await aio_wrapper(
+                iam_client.tag_role,
+                RoleName=principal_name,
+                Tags=[{"Key": role_access_tag, "Value": ":".join(tag_val)}],
+            )
+        elif change.action == Action1.remove:
+            for role_access_tag in role_access_tags:
+                requires_update = False
+                tag_val = set()
+                role_access_tag_vals = get_resource_tag(
+                    role_tags, role_access_tag, True, set()
+                )
+                for role_access_tag_val in role_access_tag_vals:
+                    if any(
+                        role_access_tag_val == identity
+                        for identity in change.identities
+                    ):
+                        requires_update = True
+                    else:
+                        tag_val.add(role_access_tag_val)
+
+                if requires_update:
+                    if tag_val:
+                        await aio_wrapper(
+                            iam_client.tag_role,
+                            RoleName=principal_name,
+                            Tags=[{"Key": role_access_tag, "Value": ":".join(tag_val)}],
+                        )
+                    else:
+                        await aio_wrapper(
+                            iam_client.untag_role,
+                            RoleName=principal_name,
+                            TagKeys=[role_access_tag],
+                        )
+
+        change.status = Status.applied
+    except Exception as e:
+        log_data["message"] = "Exception occurred creating or updating tag"
+        log_data["error"] = str(e)
+        log.error(log_data, exc_info=True)
+        sentry_sdk.capture_exception()
+        response.errors += 1
+        response.action_results.append(
+            ActionResult(
+                status="error",
+                message=f"Error occurred updating tag for principal: {principal_name}: "
+                + str(e),
+            )
+        )
+
+    return response
+
+
+async def apply_create_role_change(
+    extended_request: ExtendedRequestModel,
+    change: CreateResourceChangeModel,
+    response: PolicyRequestModificationResponseModel,
+    user: str,
+    tenant: str,
+) -> PolicyRequestModificationResponseModel:
+    log_data: dict = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+        "user": user,
+        "change": change.dict(),
+        "message": "Creating role",
+        "request": extended_request.dict(),
+        "tenant": tenant,
+    }
+    log.info(log_data)
+    iam_request = await IAMRequest.get(tenant, extended_request.id)
+    iam_role, results = await IAMRole.create(iam_request, change)
+    if iam_role:
+        change.status = Status.applied
+
+        # Now that the resource exists we can assign an arn where applicable throughout the request
+        change.principal.principal_arn = iam_role.arn
+        extended_request.principal = change.principal
+        for elem in range(len(extended_request.changes.changes)):
+            extended_request.changes.changes[elem].principal = change.principal
+
+        iam_request.arn = iam_role.arn
+        iam_request.principal = json.loads(change.principal.json())
+        iam_request.extended_request = json.loads(extended_request.json())
+        iam_request.last_updated = int(time.time())
+        await iam_request.save()
+    else:
+        response.errors += results.get("errors", 1)
+        response.action_results.extend(results.get("action_results", []))
 
     return response
 
@@ -2880,9 +3077,10 @@ async def maybe_approve_reject_request(
         await send_communications_policy_change_request_v2(
             extended_request, tenant, auto_approved
         )
-        await update_resource_in_dynamo(
-            tenant, extended_request.principal.principal_arn, force_refresh
-        )
+        if any_changes_applied:
+            await update_resource_in_dynamo(
+                tenant, extended_request.principal.principal_arn, force_refresh
+            )
     return response
 
 
@@ -2998,10 +3196,12 @@ async def parse_and_apply_policy_request_modification(
             ]:
                 specific_change_arn = specific_change.arn
 
-            account_ids = [await ResourceAccountCache.get(tenant, specific_change_arn)]
+            account_id = specific_change.principal.account_id or (
+                await ResourceAccountCache.get(tenant, specific_change_arn)
+            )
 
         can_manage_policy_request = await can_admin_policies(
-            user, user_groups, tenant, account_ids
+            user, user_groups, tenant, [account_id]
         )
         # Authorization required if the policy wasn't approved by an auto-approval rule.
         should_apply_because_auto_approved = (
@@ -3077,10 +3277,31 @@ async def parse_and_apply_policy_request_modification(
                 to_addresses=[extended_request.requester_email],
             )
 
+    elif request_changes.command == Command.update_ttl:
+        request_model = TTLRequestModificationModel.parse_obj(request_changes)
+        extended_request.expiration_date = None
+        extended_request.ttl = request_model.ttl
+        response = await _update_dynamo_with_change(
+            user,
+            tenant,
+            extended_request,
+            log_data,
+            response,
+            "Successfully updated the request ttl",
+            "Error occurred updating the request ttl",
+        )
+
     elif request_changes.command == Command.update_expiration_date:
+        extended_request.ttl = None
         expiration_date_model = ExpirationDateRequestModificationModel.parse_obj(
             request_changes
         )
+        if expiration_date_model.expiration_date and isinstance(
+            expiration_date_model.expiration_date, str
+        ):
+            expiration_date_model.expiration_date = parser.parse(
+                expiration_date_model.expiration_date
+            )
         extended_request = await update_extended_request_expiration_date(
             tenant, user, extended_request, expiration_date_model.expiration_date
         )
@@ -3169,13 +3390,10 @@ async def parse_and_apply_policy_request_modification(
             managed_policy_arn_regex = re.compile(r"^arn:aws:iam::\d{12}:policy/.+")
 
             try:
-                resource_summary = await ResourceSummary.set(
-                    tenant, specific_change_arn
-                )
                 account_info: SpokeAccount = (
                     ModelAdapter(SpokeAccount)
                     .load_config("spoke_accounts", tenant)
-                    .with_query({"account_id": resource_summary.account})
+                    .with_query({"account_id": account_id})
                     .first
                 )
             except ValueError:
@@ -3200,9 +3418,15 @@ async def parse_and_apply_policy_request_modification(
                 response.action_results.append(
                     ActionResult(
                         status="success",
-                        message=f"Status updated to applied for {specific_change_arn}",
+                        message=f"{extended_request.requester_email} has been give temporary access to {specific_change_arn}. "
+                        f"Please allow up to 5 minutes for access to be granted.",
                     )
                 )
+            elif specific_change.change_type == "create_resource":
+                if specific_change.principal.resource_type == ResourceType.role:
+                    response = await apply_create_role_change(
+                        extended_request, specific_change, response, user, tenant
+                    )
             elif (
                 specific_change.change_type == "resource_policy"
                 or specific_change.change_type == "sts_resource_policy"
@@ -3227,14 +3451,12 @@ async def parse_and_apply_policy_request_modification(
                     response,
                     user,
                     tenant,
-                    resource_summary,
+                    specific_change_arn,
                     custom_aws_credentials=custom_aws_credentials,
                 )
             elif (
                 specific_change.change_type == "resource_tag"
-                and managed_policy_arn_regex.search(
-                    specific_change.principal.principal_arn
-                )
+                and managed_policy_arn_regex.search(specific_change_arn)
             ):
                 response = await apply_managed_policy_resource_tag_change(
                     extended_request,
@@ -3257,7 +3479,11 @@ async def parse_and_apply_policy_request_modification(
                 response = await apply_tra_role_change(
                     extended_request, specific_change, response, user, tenant
                 )
-            else:
+            elif specific_change.change_type == "assume_role_access":
+                response = await apply_role_access_change(
+                    extended_request, specific_change, response, user, tenant
+                )
+            elif extended_request.principal.principal_arn:
                 # Save current policy by populating "old" policies at the time of application for historical record
                 extended_request = await populate_old_policies(
                     extended_request, user, tenant
@@ -3274,9 +3500,14 @@ async def parse_and_apply_policy_request_modification(
                     tenant, extended_request.principal.principal_arn, force_refresh
                 )
             if specific_change.status == Status.applied:
+                if extended_request.ttl:
+                    extended_request.expiration_date = datetime.utcnow() + timedelta(
+                        seconds=extended_request.ttl
+                    )
+                    extended_request = await update_extended_request_expiration_date(
+                        tenant, user, extended_request, extended_request.expiration_date
+                    )
                 # Change was successful, update in dynamo
-                success_message = "Successfully updated change in dynamo"
-                error_message = "Error updating change in dynamo"
                 specific_change.updated_by = user
                 response = await _update_dynamo_with_change(
                     user,
@@ -3284,8 +3515,8 @@ async def parse_and_apply_policy_request_modification(
                     extended_request,
                     log_data,
                     response,
-                    success_message,
-                    error_message,
+                    "Successfully updated change in dynamo",
+                    "Error updating change in dynamo",
                     visible=False,
                 )
                 if specific_change_arn:

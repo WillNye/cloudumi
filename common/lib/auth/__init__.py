@@ -302,7 +302,9 @@ async def get_extended_request_allowed_approvers(
         ]:
             arn = change.arn
 
-        account_id = await ResourceAccountCache.get(tenant, arn)
+        account_id = change.principal.account_id or (
+            await ResourceAccountCache.get(tenant, arn)
+        )
         admins = await get_account_delegated_admins(account_id, tenant)
         allowed_admins.update(admins)
     return list(allowed_admins)

@@ -25,6 +25,7 @@ log = get_logger("cloudumi")
 
 
 class IAMRequestArnIndex(GlobalSecondaryIndex):
+    # TODO: Remove this. This index won't even work because a resource can have more than 1 request
     class Meta:
         index_name = "arn-tenant-index"
         read_capacity_units = 1
@@ -60,20 +61,9 @@ class IAMRequest(NoqModel):
     arn_index = IAMRequestArnIndex()
 
     @classmethod
-    async def get(cls, tenant: str, arn=None, request_id=None):
+    async def get(cls, tenant: str, request_id: str) -> "IAMRequest":
         """Reads a policy request from the appropriate DynamoDB table"""
-        if not arn and not request_id:
-            raise Exception("Must pass in ARN or Policy Request ID")
-        elif arn and request_id:
-            raise Exception("Only ARN OR Policy Request ID can be provided")
-
-        if request_id:
-            return await super(IAMRequest, cls).get(tenant, request_id)
-
-        results = await aio_wrapper(cls.arn_index.query, tenant, cls.arn == arn)
-        results = [r for r in results]
-        if len(results) == 1:
-            return results[0]
+        return await super(IAMRequest, cls).get(tenant, request_id)
 
     @classmethod
     async def write_v2(cls, extended_request: ExtendedRequestModel, tenant: str):
@@ -82,7 +72,7 @@ class IAMRequest(NoqModel):
         """
         new_request = {
             "request_id": extended_request.id,
-            "principal": extended_request.principal.dict(),
+            "principal": json.loads(extended_request.principal.json()),
             "status": extended_request.request_status.value,
             "justification": extended_request.justification,
             "request_time": int(extended_request.timestamp.timestamp()),
@@ -94,7 +84,7 @@ class IAMRequest(NoqModel):
         }
 
         if extended_request.principal.principal_type == "AwsResource":
-            new_request["arn"] = extended_request.principal.principal_arn
+            new_request["arn"] = extended_request.principal.principal_arn or "N/A"
         elif extended_request.principal.principal_type == "HoneybeeAwsResourceTemplate":
             repository_name = extended_request.principal.repository_name
             resource_identifier = extended_request.principal.resource_identifier

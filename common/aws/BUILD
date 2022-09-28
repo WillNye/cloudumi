@@ -12,7 +12,8 @@ filegroup(
 filegroup(
     name = "data_files",
     srcs = glob([
-        "**/*.json"
+        "**/*.json",
+        "**/*.yaml"
     ]),
     visibility = ["//visibility:public"],
 )
@@ -29,6 +30,7 @@ py_library(
     ],
     deps = [
         "//common/lib",
+        "//common/templates:lib",
         requirement("noq-dax-client"),
         requirement("pynamodax"),
     ],

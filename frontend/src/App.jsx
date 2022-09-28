@@ -8,7 +8,7 @@ import PolicyTable from './components/policy/PolicyTable'
 // import IdentityGroupEdit from './components/identity/Group'
 import ConsoleMeRequestTable from './components/request/RequestTable'
 import Downloads from './components/Downloads'
-import ConsoleMeSelfService from './components/selfservice/SelfService'
+import { RequestPermissions, SelfServiceWizard } from './components/SelfService'
 import ConsoleMeDynamicConfig from './components/DynamicConfig'
 import PolicyRequestReview from './components/request/PolicyRequestsReview'
 import PolicyEditor from './components/policy/PolicyEditor'
@@ -31,6 +31,7 @@ import AutomatedPermissions from 'components/AutomatedPermissions'
 import EULA from './components/EULA'
 import ErrorBoundary from 'components/ErrorBoundary'
 import MultiFactorAuth from 'components/MultiFactorAuth'
+import './App.scss'
 
 function App() {
   return (
@@ -47,7 +48,13 @@ function App() {
             key='selfservice'
             exact
             path='/selfservice'
-            component={ConsoleMeSelfService}
+            component={SelfServiceWizard}
+          />
+          <ProtectedDashboardRoute
+            key='selfservice'
+            exact
+            path='/permissions-selfservice'
+            component={RequestPermissions}
           />
           <ProtectedDashboardRoute
             key='policies'

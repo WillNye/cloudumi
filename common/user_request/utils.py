@@ -2,8 +2,11 @@ import asyncio
 import json
 import re
 import time
+from datetime import datetime, timezone
 from hashlib import sha1
 from typing import get_args, get_type_hints
+
+from dateutil import parser
 
 from common.aws.iam.role.models import IAMRole
 from common.aws.utils import ResourceSummary, get_resource_tag
@@ -53,6 +56,21 @@ class ChangeValidator:
         )
 
 
+def normalize_expiration_date(request):
+    if expiration_date := getattr(request, "expiration_date", None):
+        if isinstance(expiration_date, str):
+            expiration_date = parser.parse(expiration_date)
+        if utc_offset := expiration_date.utcoffset():
+            expiration_date -= utc_offset
+        request.expiration_date = expiration_date.replace(tzinfo=timezone.utc)
+
+    return request
+
+
+def get_expiry_sid_str(dt_obj: datetime) -> str:
+    return dt_obj.strftime("%Y%m%d_%H%M%S")
+
+
 def re_match_any_pattern(str_obj: str, regex_patterns: list[str]) -> bool:
     if str_obj == "*" or any(regex == "*" for regex in regex_patterns):
         return True
@@ -79,11 +97,15 @@ async def generate_dict_hash(dict_obj: dict) -> str:
 
 
 async def update_extended_request_expiration_date(
-    tenant: str, user: str, extended_request: ExtendedRequestModel, expiration_date: int
+    tenant: str,
+    user: str,
+    extended_request: ExtendedRequestModel,
+    expiration_date: datetime,
 ) -> ExtendedRequestModel:
     from common.lib.change_request import generate_policy_name, generate_policy_sid
 
     extended_request.expiration_date = expiration_date
+    extended_request = normalize_expiration_date(extended_request)
 
     for change in extended_request.changes.changes:
         if change.change_type == "inline_policy":
@@ -196,7 +218,10 @@ def mfa_enabled_for_config(tra_config):
 
 
 async def get_tra_config(
-    resource_summary: ResourceSummary, user_groups: list[str] = None
+    resource_summary: ResourceSummary = None,
+    tenant: str = None,
+    user_groups: list[str] = None,
+    tra_config: TraConfig = None,
 ) -> TraConfig:
     """Retrieve the proper TRA config based on provided account, role, and user groups with temp access to the role.
     Config priority:
@@ -208,17 +233,20 @@ async def get_tra_config(
         2: role
         3: account
     """
-    tenant = resource_summary.tenant
-    role = resource_summary.name
-    account = resource_summary.account
+    assert resource_summary or tenant
+    if not tenant:
+        tenant = resource_summary.tenant
     update_config = False
 
-    tra_config: TraConfig = (
-        models.ModelAdapter(TraConfig).load_config(TRA_CONFIG_BASE_KEY, tenant).model
-    )
     if not tra_config:
-        update_config = True
-        tra_config = TraConfig()  # Default config
+        tra_config: TraConfig = (
+            models.ModelAdapter(TraConfig)
+            .load_config(TRA_CONFIG_BASE_KEY, tenant)
+            .model
+        )
+        if not tra_config:
+            update_config = True
+            tra_config = TraConfig()  # Default config
 
     # Set defaults
     if not tra_config.mfa:
@@ -239,9 +267,11 @@ async def get_tra_config(
             TRA_CONFIG_BASE_KEY, tenant
         ).from_model(tra_config).store_item()
 
-    if not tra_config.approval_rules:
+    if not tra_config.approval_rules or not resource_summary:
         return tra_config
 
+    role = resource_summary.name
+    account = resource_summary.account
     config_attrs = [
         "requires_approval",
         "enabled",
@@ -252,7 +282,7 @@ async def get_tra_config(
         rule_hit = False
 
         if ignore_accounts := approval_rule.accounts.ignore:
-            if any(re.match(account_re, account) for account_re in ignore_accounts):
+            if re_match_any_pattern(account, ignore_accounts):
                 continue
 
         if include_accounts := approval_rule.accounts.include:
@@ -289,7 +319,7 @@ async def get_tra_config_for_request(
     resource_summary = await ResourceSummary.set(tenant, arn)
     iam_role = await IAMRole.get(tenant, resource_summary.account, resource_summary.arn)
     tra_groups = get_user_tra_groups_for_role(tenant, iam_role, user_groups)
-    return await get_tra_config(resource_summary, tra_groups)
+    return await get_tra_config(resource_summary, user_groups=tra_groups)
 
 
 def get_active_tra_users_tag(tenant: str) -> str:

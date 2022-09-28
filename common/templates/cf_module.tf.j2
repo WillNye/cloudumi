@@ -1,0 +1,9 @@
+resource "aws_cloudformation_stack" "noq_stack" {
+  name = {{ stack_name }}
+  capabilities = {{ capabilities }}
+  template_url = {{ template_url }}
+
+  parameters = { {% for key, value in parameters.items() %}
+    {{ key }} = "{{ value }}"{% endfor %}
+  }
+}

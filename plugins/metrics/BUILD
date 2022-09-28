@@ -1,6 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_python//python:packaging.bzl", "py_wheel")
-load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 filegroup(
     name = "src_files",
@@ -22,6 +21,7 @@ py_library(
     ],
     deps = [
         "//plugins/metrics/cloudwatch:lib",
+        "//plugins/metrics/fluent_bit:lib",
         "//common/config:lib",
         "//common/lib",
     ],

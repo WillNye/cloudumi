@@ -93,6 +93,7 @@ container_pull(
     architecture = "amd64",
     registry = "index.docker.io",
     repository = "library/python",
+    digest = "sha256:8d1f943ceaaf3b3ce05df5c0926e7958836b048b700176bf9c56d8f37ac13fca",
     tag = "3.10.6",
 )
 
@@ -182,4 +183,15 @@ http_file(
 
 register_toolchains(
     "//toolchain:macos_dummy_cpp_toolchain",
+)
+
+load("//util:version.bzl", "get_repo_version")
+get_repo_version(name="version")
+
+
+http_archive(
+    name = "awscli",
+    url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip",
+    sha256 = "0a98e11f9e52dfd7dc090c1f3d5878bf17d9f7bf584e5a0cda8e7883187588fd",
+    build_file = "@//util:awscli.BUILD",
 )

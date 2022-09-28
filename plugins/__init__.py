@@ -34,6 +34,7 @@ cloudumi_plugins = [
         "plugins.internal_routes.internal_routes",
         "InternalRoutes",
     ),
+    Plugin("fluent_bit", "plugins.metrics.fluent_bit", "FluentBitMetric"),
 ]
 
 plugin_dist = Distribution("plugins")
