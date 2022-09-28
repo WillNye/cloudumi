@@ -22,7 +22,7 @@ class AwsIntegrationHandler(BaseAdminHandler):
         Get AWS Integration
         """
         tenant = self.ctx.tenant
-        account_name = self.request.arguments.get("account-name", "")
+        account_name = self.request.arguments.get("account-name", [b''])[0].decode('utf-8')
         try:
             central_role_parameters = await validate_params(
                 tenant, "central", account_name=account_name
