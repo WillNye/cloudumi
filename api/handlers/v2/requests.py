@@ -427,7 +427,7 @@ class RequestHandler(BaseAPIV2Handler):
                     Status3.applied_and_success.value,
                     Status3.approved.value,
                 ]
-                for policy_request in changes.changes:
+                for policy_request in changes.changes.changes:
                     if policy_request.status not in non_allowed_statuses:
                         await automatic_request.update_policy_request(
                             self.ctx.tenant, policy_request
