@@ -7,6 +7,7 @@ from common.lib.auth import is_tenant_admin
 from common.lib.plugins import get_plugin_by_name
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
+from common.user_request.utils import get_tra_config
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -108,7 +109,7 @@ class CredentialBrokeringCurrentStateHandler(BaseHandler):
             "role_access": await role_access.get_role_access_credential_brokering(
                 tenant
             ),
-            "tra_access": await role_access.get_tra_access_credential_brokering(tenant),
+            "tra_access": (await get_tra_config(tenant=tenant)).dict(),
         }
         res = WebResponse(
             status="success",

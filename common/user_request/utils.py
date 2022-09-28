@@ -217,6 +217,12 @@ def mfa_enabled_for_config(tra_config):
     return bool(tra_config.mfa and tra_config.mfa.enabled)
 
 
+async def save_tra_config(tenant: str, tra_config: TraConfig):
+    await models.ModelAdapter(TraConfig).load_config(
+        TRA_CONFIG_BASE_KEY, tenant
+    ).from_model(tra_config).store_item()
+
+
 async def get_tra_config(
     resource_summary: ResourceSummary = None,
     tenant: str = None,
@@ -263,9 +269,7 @@ async def get_tra_config(
         tra_config.active_users_tag = get_active_tra_users_tag(tenant)
 
     if update_config:
-        await models.ModelAdapter(TraConfig).load_config(
-            TRA_CONFIG_BASE_KEY, tenant
-        ).from_model(tra_config).store_item()
+        await save_tra_config(tenant, tra_config)
 
     if not tra_config.approval_rules or not resource_summary:
         return tra_config

@@ -3,6 +3,7 @@ from typing import List
 from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
+from common.user_request.utils import get_tra_config, save_tra_config
 
 updated_by_name = "noq_automated_account_management"
 
@@ -139,14 +140,9 @@ async def toggle_role_access_credential_brokering(tenant: str, enabled: bool) ->
 
 
 async def toggle_tra_access_credential_brokering(tenant: str, enabled: bool) -> bool:
-    ddb = RestrictedDynamoHandler()
-    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
-    if "cloud_credential_authorization_mapping" not in tenant_config:
-        tenant_config = __setup_subkeys_if_missing(tenant_config)
-    tenant_config["temporary_role_access_requests"]["enabled"] = enabled
-    await ddb.update_static_config_for_tenant(
-        yaml.dump(tenant_config), updated_by_name, tenant  # type: ignore
-    )
+    tra_config = await get_tra_config(tenant=tenant)
+    tra_config.enabled = enabled
+    await save_tra_config(tenant, tra_config)
     return True
 
 
@@ -155,13 +151,6 @@ async def get_role_access_credential_brokering(tenant: str) -> bool:
         "cloud_credential_authorization_mapping", tenant, {}
     )
     return tenant_config.get("role_tags", {}).get("enabled", False)
-
-
-async def get_tra_access_credential_brokering(tenant: str) -> bool:
-    tenant_config = config.get_tenant_specific_key(
-        "temporary_role_access_requests", tenant, {}
-    )
-    return tenant_config.get("enabled", False)
 
 
 async def get_role_access_automatic_policy_update(tenant: str) -> bool:
