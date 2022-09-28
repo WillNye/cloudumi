@@ -1,3 +1,5 @@
+export const TIME_PER_INTERVAL = 1000 * 10
+
 export const ACCOUNT_NAME_REGEX = new RegExp(/[\s\S]*/)
 
 export const MODES = {

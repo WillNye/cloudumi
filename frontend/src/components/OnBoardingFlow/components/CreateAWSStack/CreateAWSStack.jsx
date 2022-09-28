@@ -1,8 +1,49 @@
-import React from 'react'
-import { Button, Divider, Header, List } from 'semantic-ui-react'
+import React, { useCallback, useState, useEffect } from 'react'
+import { Button, Divider, Header, List, Message } from 'semantic-ui-react'
+import { useAuth } from 'auth/AuthProviderDefault'
+import { getCloudFormationUrl } from 'components/OnBoardingFlow/utils'
 import './CreateAWSStack.scss'
 
-const CreateAWSStack = ({ accountName, generateAWSLoginLink }) => {
+const CreateAWSStack = ({
+  accountName,
+  setIsLoading,
+  isHubAccount,
+  selectedMode,
+}) => {
+  const [generateLinkError, setGenerateLinkError] = useState(null)
+
+  const { sendRequestCommon } = useAuth()
+
+  useEffect(() => {
+    setGenerateLinkError(null)
+
+    return () => {
+      setGenerateLinkError(null)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const generateAWSLoginLink = useCallback(async () => {
+    setIsLoading(true)
+    const res = await sendRequestCommon(
+      null,
+      `/api/v3/integrations/aws?account-name=${accountName}`,
+      'get'
+    )
+
+    if (res?.status_code === 200) {
+      const url = getCloudFormationUrl(res.data, selectedMode, isHubAccount)
+      window.open(url)
+      setIsLoading(false)
+      return
+    }
+
+    if (res?.status_code === 400) {
+      setGenerateLinkError(res?.message)
+      setIsLoading(false)
+      return
+    }
+  }, [accountName, selectedMode, isHubAccount]) // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className='connect-stack'>
       <Divider horizontal />
@@ -12,8 +53,14 @@ const CreateAWSStack = ({ accountName, generateAWSLoginLink }) => {
         Login to {accountName}
       </Button>
 
-      <Divider horizontal />
+      {generateLinkError && (
+        <Message negative>
+          <Message.Header>Unable to generate AWs login link</Message.Header>
+          <p>{generateLinkError}</p>
+        </Message>
+      )}
 
+      <Divider horizontal />
       <Header as='h4'>2. ‘CREATE STACK’ in that account</Header>
 
       <div className='connect-stack__warning-alert__header'>

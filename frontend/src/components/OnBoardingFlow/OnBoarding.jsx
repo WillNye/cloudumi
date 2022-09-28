@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Button, Divider, Header, Icon, Segment } from 'semantic-ui-react'
 import NavHeader from 'components/Header'
 import ConnectionMethod from './components/ConnectionMethod'
@@ -12,9 +13,8 @@ import {
   ONBOARDING_SECTIONS,
   ONBOARDING_STEPS,
 } from './constants'
-import { Link } from 'react-router-dom'
-import './OnBoarding.scss'
 import { useAuth } from 'auth/AuthProviderDefault'
+import './OnBoarding.scss'
 
 const OnBoarding = () => {
   const { CONNECTION_METHOD, CONFIGURE, CREATE_STACK, STATUS } =
@@ -26,6 +26,12 @@ const OnBoarding = () => {
   const [activeId, setActiveId] = useState(CONNECTION_METHOD.id)
   const [accountName, setAccountName] = useState('')
   const [selectedMode, setSelectedMode] = useState(MODES.READ_WRTE)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isHubAccount, setIsHubAccount] = useState(true)
+
+  useEffect(() => {
+    getAccountDetails()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleModeChange = (_e, { value }) => setSelectedMode(value)
 
@@ -37,15 +43,19 @@ const OnBoarding = () => {
     }
   }
 
-  const generateAWSLoginLink = useCallback(async () => {
-    const res = await sendRequestCommon(
+  const getAccountDetails = async () => {
+    setIsLoading(true)
+    const resJson = await sendRequestCommon(
       null,
-      `/api/v3/integrations/aws?account-name=${accountName}`,
+      `/api/v3/services/aws/account/hub`,
       'get'
     )
+    if (resJson && resJson.count) {
+      setIsHubAccount(false)
+    }
 
-    console.log('-------------------', res)
-  }, [accountName, selectedMode])
+    setIsLoading(false)
+  }
 
   const activeSection = useMemo(() => {
     const sections = {
@@ -61,13 +71,21 @@ const OnBoarding = () => {
       [CREATE_STACK.id]: (
         <CreateAWSStack
           accountName={accountName}
-          generateAWSLoginLink={generateAWSLoginLink}
+          setIsLoading={setIsLoading}
+          selectedMode={selectedMode}
+          isHubAccount={isHubAccount}
         />
       ),
-      [STATUS.id]: <CheckAccountConnection setIsConnected={setIsConnected} />,
+      [STATUS.id]: (
+        <CheckAccountConnection
+          setIsConnected={setIsConnected}
+          isHubAccount={isHubAccount}
+          accountName={accountName}
+        />
+      ),
     }
     return sections[activeId]
-  }, [activeId, accountName, selectedMode, generateAWSLoginLink]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeId, accountName, selectedMode, isHubAccount]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isNextDisabled = useMemo(() => {
     return activeId === CONFIGURE.id && !accountName
@@ -111,7 +129,7 @@ const OnBoarding = () => {
       {isConnected ? (
         connectedComponet
       ) : (
-        <Segment basic loading={false}>
+        <Segment basic loading={isLoading}>
           <div className='on-boarding__documentation'>
             <Link to='/docs' target='_blank' rel='noopener noreferrer'>
               <Icon name='file outline' /> Documentation
