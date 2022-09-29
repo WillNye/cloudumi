@@ -273,13 +273,13 @@ async def send_group_modification_notification(
 
     Example of `groups` dict:
     {
-        "awesome_group_1@netflix.com": [
-            {"name": "tswift@netflix.com", "type": "USER"},
-            {"name": "agrande@netflix.com", "type": "USER"},
+        "awesome_group_1@example.com": [
+            {"name": "tswift@example.com", "type": "USER"},
+            {"name": "agrande@example.com", "type": "USER"},
         ],
-        "awesome_group_2@netflix.com": [
-            {"name": "lizzo@netflix.com", "type": "USER"},
-            {"name": "beilish@netflix.com", "type": "USER"},
+        "awesome_group_2@example.com": [
+            {"name": "lizzo@example.com", "type": "USER"},
+            {"name": "beilish@example.com", "type": "USER"},
         ],
     }
 

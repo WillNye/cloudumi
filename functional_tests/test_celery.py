@@ -64,11 +64,11 @@ class TestCelery(FunctionalTest):
                     TEST_USER_DOMAIN_US,
                     TEST_ACCOUNT_ID,
                 ),
-                executor.submit(
-                    celery.cache_cloudtrail_denies,
-                    TEST_USER_DOMAIN_US,
-                    1,
-                ),
+                # executor.submit(
+                #     celery.cache_cloudtrail_denies,
+                #     TEST_USER_DOMAIN_US,
+                #     1,
+                # ),
                 executor.submit(
                     celery.trigger_credential_mapping_refresh_from_role_changes,
                     TEST_USER_DOMAIN_US,

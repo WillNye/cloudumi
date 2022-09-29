@@ -128,7 +128,6 @@ container_image(
     },
     layers = [
         "//deploy/layers:config",
-        "//deploy/layers:web_site",
         "//deploy/layers:celery_tasks.sshd_config",
         "//deploy/layers:weep",
     ],
@@ -140,7 +139,7 @@ container_image(
 )
 
 container_image(
-    name = "base-celery-api",
+    name = "base-celery",
     base = "//docker/base:base_docker",
     env = {
         "DEBUG": "1",
@@ -148,7 +147,6 @@ container_image(
     },
     layers = [
         "//deploy/layers:config",
-        "//deploy/layers:web_site_cdn",
         "//deploy/layers:celery_tasks.sshd_config",
         "//deploy/layers:weep",
     ],
@@ -160,7 +158,7 @@ container_image(
 
 py3_image(
     name = "container",
-    base = ":base-celery-api",
+    base = ":base-celery",
     srcs = [
         ":lib",
     ],

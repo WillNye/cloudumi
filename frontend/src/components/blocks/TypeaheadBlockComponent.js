@@ -111,11 +111,13 @@ export const TypeaheadBlockComponent = (props) => {
         showNoResults={false}
       />
       <br />
-      {selectedValues.length && (
+      {selectedValues.length ? (
         <div>
           {props.defaultTitle && <Header as='h6'>{props.defaultTitle}</Header>}
           <Label.Group size='tiny'>{selectedValueLabels}</Label.Group>
         </div>
+      ) : (
+        <></>
       )}
     </Form.Field>
   )

@@ -9,7 +9,7 @@ info:
   version: "2.0.0"
   title: NOQ v2 API
   contact:
-    email: consoleme-owners@netflix.com
+    email: hello@noq.dev
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.txt
