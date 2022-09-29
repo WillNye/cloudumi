@@ -1,8 +1,10 @@
 import asyncio
+import datetime
 import sys
 import time
 import uuid
 
+import pytz
 import sentry_sdk
 import tornado.web
 from policy_sentry.util.arns import parse_arn
@@ -55,6 +57,7 @@ from common.models import (
     CommentModel,
     CreateResourceChangeModel,
     DataTableResponse,
+    ExtendedAutomaticPolicyRequest,
     ExtendedRequestModel,
     PolicyRequestModificationRequestModel,
     RequestCreationModel,
@@ -427,10 +430,23 @@ class RequestHandler(BaseAPIV2Handler):
                     Status3.applied_and_success.value,
                     Status3.approved.value,
                 ]
-                for policy_request in changes.changes.changes:
-                    if policy_request.status not in non_allowed_statuses:
+                for change_request in changes.changes.changes:
+                    # Get requestor arn and assume role arn in request, use that to derive account info
+                    arn = change_request.principal.principal_arn
+                    account = arn.split(":")[4]
+                    print(account)
+                    extended_policy_request = ExtendedAutomaticPolicyRequest(
+                        id="generated_policy",
+                        account=change_request.principal.principal_arn,
+                        role=arn.split("role/")[1],
+                        tenant=self.ctx.tenant,
+                        event_time=datetime.utcnow().replace(tzinfo=pytz.utc),
+                        last_updated=datetime.utcnow().replace(tzinfo=pytz.utc),
+                        user="weep",
+                    )
+                    if change_request.status not in non_allowed_statuses:
                         await automatic_request.update_policy_request(
-                            self.ctx.tenant, policy_request
+                            self.ctx.tenant, extended_policy_request
                         )
 
             if not changes.dry_run:
