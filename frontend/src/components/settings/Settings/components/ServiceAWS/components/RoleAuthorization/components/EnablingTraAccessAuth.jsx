@@ -85,7 +85,7 @@ export const EnablingTraAccessAuth = ({ setAccessData, accessData }) => {
           <Icon name='warning sign'></Icon>Protect your role tags
         </Message.Header>
         <br />
-        By default, Noq uses Role Tags to determine which users/groups are able
+        By default, Noq uses AWS Tags on roles to determine which users/groups are able
         to retrieve credentials for your various roles We strongly recommend you
         protect your role tags by restricting which roles are able to modify
         them. You can do this by adding a Service Control Policy (SCP) in your
