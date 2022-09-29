@@ -18,9 +18,12 @@ const Logout = () => {
 
     if (signOutResponse.redirect_url) {
       window.location.assign(signOutResponse.redirect_url)
+      return
     }
 
-    setErrorMessage(signOutResponse.message)
+    if (signOutResponse.status_code !== 200) {
+      setErrorMessage(signOutResponse.message)
+    }
   }, [sendRequestCommon])
 
   useEffect(() => {

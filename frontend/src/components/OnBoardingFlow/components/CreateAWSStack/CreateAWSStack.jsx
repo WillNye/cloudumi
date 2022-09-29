@@ -2,7 +2,9 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { Button, Divider, Header, List, Message } from 'semantic-ui-react'
 import { useAuth } from 'auth/AuthProviderDefault'
 import { getCloudFormationUrl } from 'components/OnBoardingFlow/utils'
+import { useCopyToClipboard } from 'hooks/useCopyToClipboard'
 import './CreateAWSStack.scss'
+import { Bar } from 'lib/Misc'
 
 const CreateAWSStack = ({
   accountName,
@@ -11,18 +13,21 @@ const CreateAWSStack = ({
   selectedMode,
 }) => {
   const [generateLinkError, setGenerateLinkError] = useState(null)
+  const [cloudFormationUrl, setCloudFormationUrl] = useState('')
 
   const { sendRequestCommon } = useAuth()
 
+  const { CopyButton } = useCopyToClipboard()
+
   useEffect(() => {
     setGenerateLinkError(null)
-
+    generateAWSLoginLink()
     return () => {
       setGenerateLinkError(null)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const generateAWSLoginLink = useCallback(async () => {
+  const generateAWSLoginLink = async () => {
     setIsLoading(true)
     const res = await sendRequestCommon(
       null,
@@ -32,7 +37,7 @@ const CreateAWSStack = ({
 
     if (res?.status_code === 200) {
       const url = getCloudFormationUrl(res.data, selectedMode, isHubAccount)
-      window.open(url)
+      setCloudFormationUrl(url)
       setIsLoading(false)
       return
     }
@@ -42,16 +47,24 @@ const CreateAWSStack = ({
       setIsLoading(false)
       return
     }
-  }, [accountName, selectedMode, isHubAccount]) // eslint-disable-line react-hooks/exhaustive-deps
+  }
+
+  const handleClick = () => {
+    window.open(cloudFormationUrl, '_blank')
+  }
 
   return (
     <div className='connect-stack'>
       <Divider horizontal />
 
       <Header as='h4'>1. Login to your chosen AWS Account</Header>
-      <Button primary onClick={generateAWSLoginLink}>
-        Login to {accountName}
-      </Button>
+
+      <div>
+        <Button primary onClick={handleClick}>
+          Login to {accountName}
+        </Button>
+        <CopyButton value={cloudFormationUrl} />
+      </div>
 
       {generateLinkError && (
         <Message negative>

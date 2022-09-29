@@ -9,6 +9,7 @@ from datetime import date
 from typing import Any, Dict, List, Union
 
 import boto3
+import sentry_sdk
 from botocore.exceptions import ClientError
 from jinja2 import FileSystemLoader, select_autoescape
 from jinja2.sandbox import ImmutableSandboxedEnvironment
@@ -410,6 +411,11 @@ async def create_identity_user_groups(
     if not client:
         client = boto3.client("cognito-idp", region_name=config.region)
     for group in groups:
+        log_data = {
+            "user_pool_id": user_pool_id,
+            "user": user.Username,
+            "group": group.GroupName,
+        }
         try:
             await aio_wrapper(
                 client.admin_add_user_to_group,
@@ -418,20 +424,19 @@ async def create_identity_user_groups(
                 GroupName=group.GroupName,
             )
         except client.exceptions.UserNotFoundException:
-            log.warning(f"User {user.Username} not found in user pool {user_pool_id}.")
+            log.warning({**log_data, "message": "User not found in user pool."})
             return False
         except client.exceptions.ResourceNotFoundException:
-            log.warning(
-                f"Group {group.GroupName} not found in user pool {user_pool_id}."
-            )
+            log.warning({**log_data, "message": "Group not found in user pool."})
             return False
         except client.exceptions.ResourceConflictException:
-            log.warning(f"User {user.Username} already in group {group.GroupName}.")
+            log.warning({**log_data, "message": "User already in group"})
             return False
         except Exception:
-            log.exception(
-                f"Error assigning user {user.Username} to group {group.GroupName}"
+            log.error(
+                {**log_data, "message": "Error assigning user to group"}, exc_info=True
             )
+            sentry_sdk.capture_exception()
             return False
     return True
 
@@ -1425,9 +1430,13 @@ class CognitoUserClient:
             )
 
     def user_mfa_enabled(self, username: str) -> bool:
-        user = self.cognito_idp_client.admin_get_user(
-            UserPoolId=self.user_pool_id, Username=username
-        )
+        try:
+            user = self.cognito_idp_client.admin_get_user(
+                UserPoolId=self.user_pool_id, Username=username
+            )
+        except Exception as exc:
+            log.exception(exc)
+            return False
         return bool(user.get("PreferredMfaSetting") == "SOFTWARE_TOKEN_MFA")
 
     async def list_users(self):

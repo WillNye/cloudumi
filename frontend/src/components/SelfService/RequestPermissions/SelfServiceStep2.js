@@ -15,7 +15,7 @@ import {
 } from 'semantic-ui-react'
 import SelfServiceComponent from './SelfServiceComponent'
 import SelfServiceModal from './SelfServiceModal.js'
-import { arnRegex } from '../../helpers/utils'
+import { arnRegex } from '../../../helpers/utils'
 
 // TODO, move this to config file.
 const DEFAULT_AWS_SERVICE = 's3'
