@@ -1,10 +1,9 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button, Divider, Header, List, Message } from 'semantic-ui-react'
 import { useAuth } from 'auth/AuthProviderDefault'
 import { getCloudFormationUrl } from 'components/OnBoardingFlow/utils'
 import { useCopyToClipboard } from 'hooks/useCopyToClipboard'
 import './CreateAWSStack.scss'
-import { Bar } from 'lib/Misc'
 
 const CreateAWSStack = ({
   accountName,
