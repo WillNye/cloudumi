@@ -9,6 +9,7 @@ import PolicyTable from './components/policy/PolicyTable'
 import ConsoleMeRequestTable from './components/request/RequestTable'
 import Downloads from './components/Downloads'
 import { RequestPermissions, SelfServiceWizard } from './components/SelfService'
+import RequestRoleAccess from 'components/SelfService/RequestRoleAccess'
 import ConsoleMeDynamicConfig from './components/DynamicConfig'
 import PolicyRequestReview from './components/request/PolicyRequestsReview'
 import PolicyEditor from './components/policy/PolicyEditor'
@@ -51,10 +52,16 @@ function App() {
             component={SelfServiceWizard}
           />
           <ProtectedDashboardRoute
-            key='selfservice'
+            key='permissions-selfservice'
             exact
             path='/permissions-selfservice'
             component={RequestPermissions}
+          />
+          <ProtectedDashboardRoute
+            key='role-selfservice'
+            exact
+            path='/role-selfservice'
+            component={RequestRoleAccess}
           />
           <ProtectedDashboardRoute
             key='policies'

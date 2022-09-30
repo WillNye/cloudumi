@@ -1,10 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from 'react'
-import { Checkbox, Icon, Message, Segment } from 'semantic-ui-react'
+import { Checkbox, Message, Segment } from 'semantic-ui-react'
 import { useApi } from 'hooks/useApi'
 import { useToast } from 'lib/Toast'
 import { useHelpModal } from 'lib/hooks/useHelpModal'
-import { Link } from 'react-router-dom'
 import { useState } from 'react'
 
 export const EnablingTraAccessAuth = ({ setAccessData, accessData }) => {
