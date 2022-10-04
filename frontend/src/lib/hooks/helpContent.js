@@ -19,6 +19,10 @@ export const contents = [
     handler: 'role-access-authorization',
     Content: () => <>role-access-authorization</>,
   },
+  {
+    handler: 'temporary-role-access',
+    Content: () => <>temporary-role-access</>,
+  },
 ]
 
 export const helpContent = (handler) => {
