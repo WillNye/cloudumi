@@ -259,6 +259,12 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             )
             return
 
+        try:
+            await set_login_page_ui(user_pool_id)
+        except Exception as e:
+            # it's not fatal not able to set logo...let's capture in log and continue
+            sentry_sdk.capture_exception(e)
+
         (
             cognito_client_id,
             cognito_user_pool_client_secret,
