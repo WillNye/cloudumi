@@ -1326,7 +1326,6 @@ class CognitoUserClient:
             ],
         )
 
-        temp_password = await self.reset_user_password(email, True)
         await aio_wrapper(
             self.cognito_idp_client.admin_add_user_to_group,
             UserPoolId=self.user_pool_id,
@@ -1334,7 +1333,7 @@ class CognitoUserClient:
             GroupName=ADMIN_GROUP_NAME,
         )
 
-        return {"user": user, "password": temp_password}
+        return {"user": user}
 
     def confirm_mfa_device(
         self,
