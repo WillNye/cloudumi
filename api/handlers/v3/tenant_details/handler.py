@@ -41,10 +41,21 @@ class TenantEulaHandler(BaseAdminHandler):
         # Issue a new JWT with proper groups
         if auth_cookie := self.get_cookie(self.get_noq_auth_cookie_key()):
             res = await validate_and_return_jwt_token(auth_cookie, tenant)
-            self.groups = res.get("groups_pending_eula", [])
-            await self.set_jwt_cookie(
-                tenant, res.get("additional_roles_pending_eula", [])
+
+            # Set groups
+            await self.set_groups()
+            self.groups = list(set(self.groups + res.get("groups_pending_eula", [])))
+
+            # Set roles
+            await self.set_eligible_roles(False)
+            self.eligible_roles = list(
+                set(self.eligible_roles + res.get("additional_roles_pending_eula", []))
             )
+        else:
+            await self.set_groups()
+            await self.set_eligible_roles(False)
+
+        await self.set_jwt_cookie(tenant, self.eligible_roles)
 
         self.write(
             WebResponse(
