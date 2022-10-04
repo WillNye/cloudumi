@@ -1,8 +1,8 @@
 import asyncio
-import datetime
 import sys
 import time
 import uuid
+from datetime import datetime
 
 import pytz
 import sentry_sdk
@@ -15,6 +15,7 @@ from common.aws.iam.role.models import IAMRole
 from common.aws.iam.role.utils import is_valid_role_name
 from common.aws.utils import ResourceAccountCache, ResourceSummary, get_url_for_resource
 from common.config import config
+from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
     MustBeFte,
@@ -64,6 +65,7 @@ from common.models import (
     RequestCreationResponse,
     RequestStatus,
     ResourceType,
+    SpokeAccount,
 )
 from common.models import Status2 as WebStatus
 from common.models import Status3, WebResponse
@@ -434,15 +436,24 @@ class RequestHandler(BaseAPIV2Handler):
                     # Get requestor arn and assume role arn in request, use that to derive account info
                     arn = change_request.principal.principal_arn
                     account = arn.split(":")[4]
-                    print(account)
                     extended_policy_request = ExtendedAutomaticPolicyRequest(
                         id="generated_policy",
-                        account=change_request.principal.principal_arn,
+                        account=(
+                            ModelAdapter(SpokeAccount)
+                            .load_config("spoke_accounts", self.ctx.tenant)
+                            .with_query({"account_id": account})
+                            .first
+                        ),
                         role=arn.split("role/")[1],
-                        tenant=self.ctx.tenant,
                         event_time=datetime.utcnow().replace(tzinfo=pytz.utc),
                         last_updated=datetime.utcnow().replace(tzinfo=pytz.utc),
                         user="weep",
+                        role_owner=arn,
+                        error="",
+                        system="",
+                        policy={},
+                        process="",
+                        status=Status3.pending,
                     )
                     if change_request.status not in non_allowed_statuses:
                         await automatic_request.update_policy_request(
