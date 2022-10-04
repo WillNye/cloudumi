@@ -49,7 +49,7 @@ export const TrustPoliciesToggle = () => {
           name='IpRanges'
           onChange={handleChange}
           label={{
-            children: `Automatic update role trust policies when an authorized user request
+            children: `Automatically update role trust policies when an authorized user requests
             credentials, but Noq isn't authorized to perform the role assumption.`,
           }}
         />
