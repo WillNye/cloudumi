@@ -307,28 +307,28 @@ async def get_role_details(
         role_access_config = None
         template = await get_role_template(arn, tenant)
         tags = role["policy"]["Tags"]
-        if is_admin_request:
-            # Set elevated_access_config
-            tra_support_tag = get_tra_supported_groups_tag(tenant)
-            tra_users_tag = get_active_tra_users_tag(tenant)
-            active_users = get_resource_tag(role, tra_users_tag, True, set())
-            supported_groups = get_resource_tag(role, tra_support_tag, True, set())
-            elevated_access_config = PrincipalModelTraConfig(
-                active_users=list(active_users),
-                supported_groups=list(supported_groups),
-            )
 
-            # Set role_access_config
-            role_access_data = await get_noq_authorization_tag_groups(role, tenant)
-            role_access_config = PrincipalModelRoleAccessConfig(
-                noq_authorized_tag=role_access_data["default_noq_authorized_tag"],
-                noq_authorized_cli_tag=role_access_data[
-                    "default_noq_authorized_cli_tag"
-                ],
-                noq_authorized_cli_groups=role_access_data["cli_authourized_groups"],
-                noq_authorized_groups=role_access_data["authourized_groups"],
-                is_valid_config=role_access_data["is_valid_config"],
-            )
+        # Set elevated_access_config
+        tra_support_tag = get_tra_supported_groups_tag(tenant)
+        tra_users_tag = get_active_tra_users_tag(tenant)
+        active_users = get_resource_tag(role, tra_users_tag, True, set())
+        supported_groups = get_resource_tag(role, tra_support_tag, True, set())
+        elevated_access_config = PrincipalModelTraConfig(
+            active_users=list(active_users),
+            supported_groups=list(supported_groups),
+            can_edit=is_admin_request,
+        )
+
+        # Set role_access_config
+        role_access_data = await get_noq_authorization_tag_groups(role, tenant)
+        role_access_config = PrincipalModelRoleAccessConfig(
+            noq_authorized_tag=role_access_data["default_noq_authorized_tag"],
+            noq_authorized_cli_tag=role_access_data["default_noq_authorized_cli_tag"],
+            noq_authorized_cli_groups=role_access_data["cli_authourized_groups"],
+            noq_authorized_groups=role_access_data["authourized_groups"],
+            is_valid_config=role_access_data["is_valid_config"],
+            can_edit=is_admin_request,
+        )
 
         return ExtendedAwsPrincipalModel(
             name=role_name,

@@ -181,25 +181,7 @@ const IAMRolePolicy = () => {
         )
       },
     },
-  ])
 
-  if (all?.resource?.terraform) {
-    tabs.push({
-      menuItem: {
-        key: 'terraform',
-        content: <>Terraform</>,
-      },
-      render: () => {
-        return (
-          <Tab.Pane>
-            <Terraform terraform={all?.resource?.terraform} />
-          </Tab.Pane>
-        )
-      },
-    })
-  }
-
-  if (resource.elevated_access_config || resource.role_access_config) {
     tabs.push({
       menuItem: {
         key: 'config_access',
@@ -212,6 +194,22 @@ const IAMRolePolicy = () => {
               elevated_access_config={resource.elevated_access_config}
               role_access_config={resource.role_access_config}
             />
+          </Tab.Pane>
+        )
+      },
+    }),
+  ])
+
+  if (all?.resource?.terraform) {
+    tabs.push({
+      menuItem: {
+        key: 'terraform',
+        content: <>Terraform</>,
+      },
+      render: () => {
+        return (
+          <Tab.Pane>
+            <Terraform terraform={all?.resource?.terraform} />
           </Tab.Pane>
         )
       },
