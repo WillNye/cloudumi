@@ -1,23 +1,51 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Divider, Header, Icon, Segment, Step } from 'semantic-ui-react'
 import ReviewRequest from './components/ReviewRequest'
 import SelectIdentity from './components/SelectIdentity'
 import SelectUserGroups from './components/SelectUserGroups'
-import { STEPS } from './constants'
+import { ACCESS_SCOPE, STEPS } from './constants'
 import './RequestRoleAccess.scss'
 
 const RequestRoleAccess = () => {
   const [currentStep, setCurrentStep] = useState(STEPS.STEP_ONE)
+  const [role, setRole] = useState(null)
+  const [accessScope, setAccessScope] = useState(ACCESS_SCOPE.OTHERS)
+  const [expirationDate, setExpirationDate] = useState(null)
+  const [userGroups, setUserGroups] = useState([])
 
   const currentSection = useMemo(() => {
     const sections = {
-      [STEPS.STEP_ONE]: <SelectIdentity setCurrentStep={setCurrentStep} />,
-      [STEPS.STEP_TWO]: <SelectUserGroups setCurrentStep={setCurrentStep} />,
-      [STEPS.STEP_THREE]: <ReviewRequest setCurrentStep={setCurrentStep} />,
+      [STEPS.STEP_ONE]: (
+        <SelectIdentity
+          setCurrentStep={setCurrentStep}
+          role={role}
+          setRole={setRole}
+          setExpirationDate={setExpirationDate}
+          expirationDate={expirationDate}
+        />
+      ),
+      [STEPS.STEP_TWO]: (
+        <SelectUserGroups
+          setCurrentStep={setCurrentStep}
+          userGroups={userGroups}
+          accessScope={accessScope}
+          setAccessScope={setAccessScope}
+          setUserGroups={setUserGroups}
+        />
+      ),
+      [STEPS.STEP_THREE]: (
+        <ReviewRequest
+          setCurrentStep={setCurrentStep}
+          role={role}
+          accessScope={accessScope}
+          expirationDate={expirationDate}
+          userGroups={userGroups}
+        />
+      ),
     }
 
     return sections[currentStep]
-  }, [currentStep])
+  }, [currentStep, role, accessScope, expirationDate, userGroups])
 
   return (
     <div>

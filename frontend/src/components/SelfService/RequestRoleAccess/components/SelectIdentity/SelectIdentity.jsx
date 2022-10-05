@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
   Button,
   Divider,
@@ -16,7 +16,13 @@ import { useAuth } from 'auth/AuthProviderDefault'
 import DateTimePicker from 'components/blocks/DateTimePicker'
 import { STEPS } from '../../constants'
 
-const SelectIdentity = ({ handleRoleUpdate = () => {}, setCurrentStep }) => {
+const SelectIdentity = ({
+  setRole,
+  setCurrentStep,
+  role,
+  expirationDate,
+  setExpirationDate,
+}) => {
   const { sendRequestCommon } = useAuth()
 
   const [results, setResults] = useState([])
@@ -24,23 +30,21 @@ const SelectIdentity = ({ handleRoleUpdate = () => {}, setCurrentStep }) => {
   const [isRoleLoading, setIsRoleLoading] = useState(false)
   const [messages, setMessages] = useState([])
   const [searchValue, setSearchValue] = useState('')
-  const [principal, setPrincipal] = useState(null)
 
-  const getRoleDetail = (endpoint) => {
-    // const { principal } = this.state
+  const getRoleDetail = (endpoint, principal) => {
     sendRequestCommon(null, endpoint, 'get').then((response) => {
       if (!response) {
         return
       }
       // if the given role doesn't exist.
       if (response.status === 404) {
-        handleRoleUpdate(null)
+        setRole(null)
         setIsLoading(false)
         setIsRoleLoading(false)
         setMessages([response.message])
       } else {
-        // response.principal = principal
-        handleRoleUpdate(response)
+        response.principal = principal
+        setRole(response)
         setIsLoading(false)
         setIsRoleLoading(false)
         setMessages([])
@@ -51,7 +55,7 @@ const SelectIdentity = ({ handleRoleUpdate = () => {}, setCurrentStep }) => {
   const handleSearchChange = (_e, { value }) => {
     setSearchValue(value)
     setIsLoading(true)
-    handleRoleUpdate(null)
+    setRole(null)
 
     setTimeout(() => {
       if (value.length < 1) {
@@ -81,11 +85,10 @@ const SelectIdentity = ({ handleRoleUpdate = () => {}, setCurrentStep }) => {
   const handleResultSelect = (e, { result }) => {
     const value = isString(result.title) ? result.title.trim() : result.title
 
-    setPrincipal(result.principal)
     setIsRoleLoading(true)
     setSearchValue(value)
 
-    getRoleDetail(result.details_endpoint)
+    getRoleDetail(result.details_endpoint, result.principal)
   }
 
   const resultRenderer = (result) => (
@@ -163,7 +166,10 @@ const SelectIdentity = ({ handleRoleUpdate = () => {}, setCurrentStep }) => {
       <Divider horizontal />
       <Header as='h5'>Access Expiration</Header>
 
-      <DateTimePicker onDateSelectorChange={() => {}} />
+      <DateTimePicker
+        defaultDate={expirationDate}
+        onDateSelectorChange={(value) => setExpirationDate(value)}
+      />
 
       <Divider horizontal />
 
@@ -171,7 +177,7 @@ const SelectIdentity = ({ handleRoleUpdate = () => {}, setCurrentStep }) => {
         <Button
           primary
           onClick={() => setCurrentStep(STEPS.STEP_TWO)}
-          disabled={!Boolean(principal)}
+          disabled={!Boolean(role)}
         >
           Next
         </Button>
