@@ -93,6 +93,9 @@ class TenantRegistrationHandler(TornadoRequestHandler):
     async def options(self, *args):
         pass
 
+    def check_xsrf_cookie(self) -> None:
+        pass
+
     async def post(self):
         # Get the data from the request
         data = tornado.escape.json_decode(self.request.body)
@@ -258,6 +261,12 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 }
             )
             return
+
+        try:
+            await set_login_page_ui(user_pool_id)
+        except Exception as e:
+            # it's not fatal not able to set logo...let's capture in log and continue
+            sentry_sdk.capture_exception(e)
 
         (
             cognito_client_id,

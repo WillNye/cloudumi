@@ -24,10 +24,12 @@ export const DatatableWrapper = ({ renderAction, children, isLoading }) => {
   )
 }
 
-export const EmptyState = ({ label, onClick }) => {
+export const EmptyState = ({ label, onClick, disabled = false }) => {
   return (
     <Segment basic inverted color='grey' textAlign='center'>
-      <Button onClick={onClick}>{label}</Button>
+      <Button onClick={onClick} disabled={disabled}>
+        {label}
+      </Button>
     </Segment>
   )
 }

@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from 'react'
-import { Header } from 'semantic-ui-react'
 import Datatable from 'lib/Datatable'
 import { useModal } from 'lib/hooks/useModal'
 import { useApi } from 'hooks/useApi'
@@ -99,27 +98,34 @@ const RoleAccess = ({ role_access_config }) => {
     [role_access_config] // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  const columns = roleAccessColumns({ handleRemove })
+  const columns = roleAccessColumns({
+    handleRemove,
+    disabled: !role_access_config.can_edit,
+  })
 
   return (
     <>
-      <Header as='h2'>
-        Role Access
-        <Header.Subheader>
-          Use the following IAM role tag values to identify users and groups
-          authorized to retrieve role credentials.
-        </Header.Subheader>
-      </Header>
-
       {role_access_config.is_valid_config ? (
         <>
-          <DatatableWrapper renderAction={<TableTopBar onClick={openModal} />}>
+          <p>
+            Use the following IAM role tag values to identify users and groups
+            authorized to retrieve role credentials.
+          </p>
+          <DatatableWrapper
+            renderAction={
+              <TableTopBar
+                onClick={openModal}
+                disabled={!role_access_config.can_edit}
+              />
+            }
+          >
             <Datatable
               data={[...authorized_groups, ...cli_authorized_groups]}
               columns={columns}
               emptyState={{
                 label: 'Add User Group',
                 onClick: openModal,
+                disabled: !role_access_config.can_edit,
               }}
               isLoading={false}
               loadingState={{ label: '' }}

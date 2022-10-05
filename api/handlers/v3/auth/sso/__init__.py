@@ -11,7 +11,6 @@ from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.cognito import identity
 from common.lib.cognito.identity import CognitoUserClient
-from common.lib.jwt import validate_and_return_jwt_token
 from common.lib.web import handle_generic_error_response
 from common.models import (
     CognitoGroup,
@@ -343,10 +342,9 @@ class CognitoUserSetupMFA(BaseHandler):
             )
             self.mfa_setup = None
 
-            # Issue a new JWT with proper groups
-            if auth_cookie := self.get_cookie(self.get_noq_auth_cookie_key()):
-                await validate_and_return_jwt_token(auth_cookie, tenant)
-                await self.set_jwt_cookie(tenant)
+            await self.set_groups()
+            await self.set_eligible_roles(False)
+            await self.set_jwt_cookie(tenant, self.eligible_roles)
 
             self.write(
                 {

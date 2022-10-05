@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, Checkbox } from 'semantic-ui-react'
 
-export const tempEscalationColumns = ({ handleRemove }) => [
+export const tempEscalationColumns = ({ handleRemove, disabled }) => [
   {
     Header: 'Group',
     accessor: 'group_name',
@@ -11,14 +11,18 @@ export const tempEscalationColumns = ({ handleRemove }) => [
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleRemove(row?.original)}>
+      <Button
+        size='mini'
+        onClick={() => handleRemove(row?.original)}
+        disabled={disabled}
+      >
         Remove
       </Button>
     ),
   },
 ]
 
-export const roleAccessColumns = ({ handleRemove }) => [
+export const roleAccessColumns = ({ handleRemove, disabled }) => [
   {
     Header: 'Group',
     accessor: 'group_name',
@@ -36,7 +40,11 @@ export const roleAccessColumns = ({ handleRemove }) => [
     width: 80,
     align: 'right',
     Cell: ({ row }) => (
-      <Button size='mini' onClick={() => handleRemove(row?.original)}>
+      <Button
+        size='mini'
+        onClick={() => handleRemove(row?.original)}
+        disabled={disabled}
+      >
         Remove
       </Button>
     ),

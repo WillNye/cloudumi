@@ -452,12 +452,6 @@ class BaseHandler(TornadoRequestHandler):
             self.user = config.get_tenant_specific_key(
                 "_development_user_override", tenant
             )
-        if config.get("_global_.development") and config.get_tenant_specific_key(
-            "_development_groups_override", tenant
-        ):
-            self.groups = config.get_tenant_specific_key(
-                "_development_groups_override", tenant
-            )
 
         if not self.user:
             # Authenticate user by API Key
@@ -600,32 +594,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.user_role_name = cache.get("user_role_name")
                 refreshed_user_roles_from_cache = True
 
-        try:
-            try:
-                self.groups = await auth.get_groups(
-                    self.groups, self.user, self, headers=self.request.headers
-                )
-            except Exception as e:
-                log.error(
-                    {
-                        **log_data,
-                        "error": str(e),
-                        "message": "Unable to get groups",
-                    },
-                    exc_info=True,
-                )
-                sentry_sdk.capture_exception()
-            if not self.groups:
-                raise NoGroupsException(
-                    f"Groups not detected. Headers: {self.request.headers}"
-                )
-
-        except NoGroupsException:
-            stats.count("Basehandler.authorization_flow.no_groups_detected")
-            log_data[
-                "message"
-            ] = "No groups detected for user. Check configuration. Letting user continue."
-            log.warning(log_data)
+        await self.set_groups()
 
         # Set Per-User Role Name (This logic is not used in OSS deployment)
         if (
@@ -636,15 +605,7 @@ class BaseHandler(TornadoRequestHandler):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
 
-        self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
-        self.eligible_roles = await group_mapping.get_eligible_roles(
-            self.eligible_roles,
-            self.user,
-            self.groups,
-            self.user_role_name,
-            self.get_tenant_name(),
-            console_only=console_only,
-        )
+        await self.set_eligible_roles(console_only)
 
         if not self.eligible_roles:
             log_data[
@@ -764,6 +725,76 @@ class BaseHandler(TornadoRequestHandler):
             groups=self.groups,
             request_uuid=self.request_uuid,
             uri=self.request.uri,
+        )
+
+    async def set_groups(self):
+        tenant = self.get_tenant_name()
+
+        if config.get("_global_.development") and config.get_tenant_specific_key(
+            "_development_groups_override", tenant
+        ):
+            self.groups = config.get_tenant_specific_key(
+                "_development_groups_override", tenant
+            )
+            return
+
+        stats = get_plugin_by_name(
+            config.get("_global_.plugins.metrics", "cmsaas_metrics")
+        )()
+        auth = get_plugin_by_name(
+            config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
+        )()
+
+        log_data = {
+            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+            "message": "Invalid tenant specified. Redirecting to main page",
+            "tenant": tenant,
+        }
+        try:
+            try:
+                self.groups = await auth.get_groups(
+                    self.groups, self.user, self, headers=self.request.headers
+                )
+            except Exception as e:
+                log.error(
+                    {
+                        **log_data,
+                        "error": str(e),
+                        "message": "Unable to get groups",
+                    },
+                    exc_info=True,
+                )
+                sentry_sdk.capture_exception()
+            if not self.groups:
+                raise NoGroupsException(
+                    f"Groups not detected. Headers: {self.request.headers}"
+                )
+
+        except NoGroupsException:
+            stats.count("Basehandler.authorization_flow.no_groups_detected")
+            log_data[
+                "message"
+            ] = "No groups detected for user. Check configuration. Letting user continue."
+            log.warning(log_data)
+
+    async def set_eligible_roles(self, console_only: bool):
+        tenant = self.get_tenant_name()
+        group_mapping = get_plugin_by_name(
+            config.get_tenant_specific_key(
+                "plugins.group_mapping",
+                tenant,
+                "cmsaas_group_mapping",
+            )
+        )()
+
+        self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
+        self.eligible_roles = await group_mapping.get_eligible_roles(
+            self.eligible_roles,
+            self.user,
+            self.groups,
+            self.user_role_name,
+            self.get_tenant_name(),
+            console_only=console_only,
         )
 
     async def set_jwt_cookie(self, tenant, roles: list = None):

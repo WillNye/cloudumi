@@ -138,7 +138,7 @@ for service in service_task_definition_map:
                 cluster=cluster_name,
                 service=service_name,
                 taskDefinition=task_definition_name,
-                desiredCount=1,
+                desiredCount=service["desiredCount"],
                 loadBalancers=service.get("loadBalancers", []),
                 enableExecuteCommand=True,
                 networkConfiguration={
