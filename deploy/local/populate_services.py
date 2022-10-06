@@ -111,7 +111,7 @@ tenant_details:
   creator: {override_email}
   creation_time: {int(time.time())}
 notifications:
-  enabled: true
+  enabled: false
 site_config:
   landing_url: /
   request_interval: 1
@@ -275,7 +275,7 @@ tenant_details:
   creator: {override_email}
   creation_time: {int(time.time())}
 notifications:
-  enabled: true
+  enabled: false
 site_config:
   landing_url: /
   request_interval: 1
