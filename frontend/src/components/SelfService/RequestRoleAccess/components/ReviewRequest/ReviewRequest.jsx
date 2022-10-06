@@ -1,4 +1,5 @@
 import { useAuth } from 'auth/AuthProviderDefault'
+import { useMemo } from 'react'
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -26,7 +27,13 @@ const ReviewRequest = ({
   const [errorAlert, setErrorAlert] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { sendRequestCommon } = useAuth()
+  const { sendRequestCommon, user } = useAuth()
+
+  const addedUserGroups = useMemo(() => {
+    return accessScope === ACCESS_SCOPE.SELF
+      ? [{ name: user.user }]
+      : userGroups
+  }, [userGroups, accessScope, user])
 
   const handleSubmit = useCallback(async () => {
     const payload = {
@@ -36,7 +43,7 @@ const ReviewRequest = ({
             principal: role.principal,
             change_type: 'assume_role_access',
             action: 'add',
-            identities: userGroups.map((group) => group.name),
+            identities: addedUserGroups.map((group) => group.name),
           },
         ],
       },
@@ -70,7 +77,7 @@ const ReviewRequest = ({
     }
 
     setIsLoading(false)
-  }, [role, accessScope, expirationDate, userGroups, justification]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [role, addedUserGroups, expirationDate, justification]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Segment loading={isLoading} basic>
@@ -100,7 +107,7 @@ const ReviewRequest = ({
             <div className='review-request__item'>User Groups</div>
             <div className='review-request__item'>
               <Label.Group>
-                {userGroups.map((group, index) => (
+                {addedUserGroups.map((group, index) => (
                   <Label key={index}>{group.name}</Label>
                 ))}
               </Label.Group>
@@ -157,7 +164,7 @@ const ReviewRequest = ({
             primary
             onClick={handleSubmit}
             disabled={
-              !userGroups.length ||
+              !addedUserGroups.length ||
               !(justification || '').trim() ||
               !!successAlert
             }

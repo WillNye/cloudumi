@@ -130,31 +130,37 @@ const SelectUserGroups = ({
           />
         </Form.Field>
 
-        <Header as='h5'>Groups for Access</Header>
+        {accessScope === ACCESS_SCOPE.OTHERS ? (
+          <>
+            <Header as='h5'>Groups for Access</Header>
 
-        <Form.Field required>
-          <Search
-            fluid
-            loading={isLoading}
-            onResultSelect={handleResultSelect}
-            onSearchChange={debounce(handleSearchChange, 500, {
-              leading: true,
-            })}
-            results={results}
-            resultRenderer={resultRenderer}
-            value={searchValue}
-            placeholder='Enter role here'
-          />
-          <Divider />
+            <Form.Field required>
+              <Search
+                fluid
+                loading={isLoading}
+                onResultSelect={handleResultSelect}
+                onSearchChange={debounce(handleSearchChange, 500, {
+                  leading: true,
+                })}
+                results={results}
+                resultRenderer={resultRenderer}
+                value={searchValue}
+                placeholder='Enter role here'
+              />
+              <Divider />
 
-          <Label.Group>
-            {userGroups.map((group, index) => (
-              <Label key={index}>{group.name}</Label>
-            ))}
-          </Label.Group>
+              <Label.Group>
+                {userGroups.map((group, index) => (
+                  <Label key={index}>{group.name}</Label>
+                ))}
+              </Label.Group>
 
-          <Divider horizontal />
-        </Form.Field>
+              <Divider horizontal />
+            </Form.Field>
+          </>
+        ) : (
+          <></>
+        )}
       </Form>
       {messages.length > 0 ? (
         <Message negative>
@@ -178,7 +184,7 @@ const SelectUserGroups = ({
         <Button
           primary
           onClick={() => setCurrentStep(STEPS.STEP_THREE)}
-          disabled={!userGroups.length}
+          disabled={accessScope !== ACCESS_SCOPE.SELF && !userGroups.length}
         >
           Next
         </Button>
