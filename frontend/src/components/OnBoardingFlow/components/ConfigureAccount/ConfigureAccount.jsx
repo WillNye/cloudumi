@@ -48,7 +48,7 @@ const ConfigureAccount = ({
               only grant privileges necessary to read and inventory IAM-related settings.
             </p>
             <p><em>Note:</em> Read-Only installation disables Credential Brokering,
-            which is required for assuming roles to sign-in to AWS.
+            which is required to assume a role and sign-in to AWS.
             </p>
           </div>
           <div>
@@ -94,8 +94,7 @@ const ConfigureAccount = ({
             </Table.HeaderCell>
             <Table.HeaderCell>
               <span>
-                Read-Write 
-                <Icon name='star outline' color='green' />
+                Read-Write <Icon name='star outline' color='green' />
               </span>
             </Table.HeaderCell>
           </Table.Row>
@@ -109,17 +108,18 @@ const ConfigureAccount = ({
                   target='_blank'
                   rel='noopener noreferrer'
                 >
-                  Credential Brokering
+                  Broker Credentials
                 </Link>
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='red' />
               </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
-              <Table.Cell textAlign='center'>
-              </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Role Access</Table.Cell>
+              <Table.Cell>Access Roles</Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
@@ -132,7 +132,7 @@ const ConfigureAccount = ({
                   target='_blank'
                   rel='noopener noreferrer'
                 >
-                  Temporary Role Access
+                  Access Roles Temporarily
                 </Link>
               </Table.Cell>
               <Table.Cell></Table.Cell>
@@ -147,7 +147,7 @@ const ConfigureAccount = ({
                   target='_blank'
                   rel='noopener noreferrer'
                 >
-                  Temporary Permission Access
+                  Grant Permissions Temporarily
                 </Link>
               </Table.Cell>
               <Table.Cell></Table.Cell>
@@ -195,38 +195,6 @@ const ConfigureAccount = ({
             <Table.Row>
               <Table.Cell>
                 <Link
-                  to='/docs/features/permissions_management_and_request_framework/decentralized_request_management/'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                >
-                  Delegate Adminstration
-                </Link>
-              </Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
-              </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>
-                <Link
-                  to='/docs/features/permissions_management_and_request_framework/restrict_viewers_of_account_resources/'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                >
-                  Delegate Resource Viewing
-                </Link>
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
-              </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>
-                <Link
                   to='/docs/features/planned/unused_permissions_removal/'
                   target='_blank'
                   rel='noopener noreferrer'
@@ -242,6 +210,38 @@ const ConfigureAccount = ({
                   </div>
                 </div>
               </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='green' />
+              </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/restrict_viewers_of_account_resources/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Delegate Viewers
+                </Link>
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='green' />
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='green' />
+              </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/decentralized_request_management/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Delegate Adminstrators
+                </Link>
+              </Table.Cell>
+              <Table.Cell></Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
