@@ -15,7 +15,7 @@ const ConfigureAccount = ({
     <div className='on-boarding__configure-account'>
       <Form>
         <Form.Field>
-          <label>1. AWS Account Name</label>
+          <label>1. Select AWS Account</label>
           <input
             placeholder='Enter AWS Account Name'
             onChange={handleAccNameChange}
@@ -27,27 +27,34 @@ const ConfigureAccount = ({
         <Divider horizontal />
 
         <Form.Field>
-          <label>2. Select mode:</label>
+          <label>2. Select Installation Mode:</label>
         </Form.Field>
         <div className='on-boarding__container'>
           <div>
             <Form.Field>
               <Radio
-                label='Read-only'
+                label='Read-Only'
                 value={MODES.READ_ONLY}
                 checked={selectedMode === MODES.READ_ONLY}
                 onChange={handleModeChange}
               />
             </Form.Field>
             <p>
-              Lorem ipsum copy placeholder which is a short description of the
-              functionality summarized.
+              Read-Only support for IAMOps will <em>not</em> change AWS IAM configuration. 
+            </p>
+            <p>
+              For example, Administrators will have to apply changes after approval, 
+              or remove changes after expiration. Installing Noq in this mode will 
+              only grant privileges necessary to read and inventory IAM-related settings.
+            </p>
+            <p><em>Note:</em> Read-Only installation disables Credential Brokering,
+            which is required for assuming roles to sign-in to AWS.
             </p>
           </div>
           <div>
             <Form.Field>
               <Radio
-                label='Read-write'
+                label='Read-Write'
                 value={MODES.READ_WRTE}
                 checked={selectedMode === MODES.READ_WRTE}
                 onChange={handleModeChange}
@@ -59,14 +66,19 @@ const ConfigureAccount = ({
               </Label>
             </Form.Field>
             <p>
-              Lorem ipsum copy placeholder which is a short description of the
-              functionality summarized.
+              Read-write support for IAMOps will automate AWS IAM configuraton. 
+            </p>
+            <p>
+              For example, approved changes will be deployed automatically, 
+              and removed automatically after it expires. Installing Noq in this 
+              mode will grant privileges necessary to read and inventory 
+              IAM-related settings <em>and apply changes</em>.
             </p>
           </div>
         </div>
-
-        <Divider horizontal />
       </Form>
+ 
+      <Divider horizontal />
 
       <Table celled>
         <Table.Header>
@@ -75,12 +87,15 @@ const ConfigureAccount = ({
               onClick={() => setShowComparison(!showComparison)}
             >
               <Icon name={`${showComparison ? 'angle down' : 'angle right'}`} />
-              Feature Comparison
+              Compare Installation Modes
             </Table.HeaderCell>
-            <Table.HeaderCell>Read-only</Table.HeaderCell>
+            <Table.HeaderCell>
+                Read-only
+            </Table.HeaderCell>
             <Table.HeaderCell>
               <span>
-                Read-write <Icon name='star outline' color='green' />
+                Read-Write 
+                <Icon name='star outline' color='green' />
               </span>
             </Table.HeaderCell>
           </Table.Row>
@@ -101,94 +116,10 @@ const ConfigureAccount = ({
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
               <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>
-                <Link
-                  to='/docs/features/permissions_management_and_request_framework/self_service_permissions/'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                >
-                  Self-service
-                </Link>
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <div className='on-boarding__configure-account-cell'>
-                  <Icon name='checkmark' color='green' />
-                  <div className='on-boarding__configure-account-cell-text'>
-                    Limited
-                  </div>
-                </div>
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
-              </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>
-                <Link
-                  to='/docs/features/planned/unused_permissions_removal/'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                >
-                  Unused Permissions Removal
-                </Link>
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <div className='on-boarding__configure-account-cell'>
-                  <Icon name='checkmark' color='green' />
-                  <div className='on-boarding__configure-account-cell-text'>
-                    Limited
-                  </div>
-                </div>
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
-              </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>Resource History</Table.Cell>
-              <Table.Cell textAlign='center'>
-                <div className='on-boarding__configure-account-cell'>
-                  <Icon name='checkmark' color='green' />
-                  <div className='on-boarding__configure-account-cell-text'>
-                    Limited
-                  </div>
-                </div>
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
-              </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>
-                <Link
-                  to='/docs/features/permissions_management_and_request_framework/restrict_viewers_of_account_resources/'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                >
-                  Delegated Resource Viewership
-                </Link>
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
-              </Table.Cell>
-              <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='green' />
-              </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>
-                <Link
-                  to='/docs/features/permissions_management_and_request_framework/temporary_policy_requests/'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                >
-                  Temporary Permissions
-                </Link>
-              </Table.Cell>
+              <Table.Cell>Role Access</Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
@@ -201,7 +132,7 @@ const ConfigureAccount = ({
                   target='_blank'
                   rel='noopener noreferrer'
                 >
-                  Temporary Escalation
+                  Temporary Role Access
                 </Link>
               </Table.Cell>
               <Table.Cell></Table.Cell>
@@ -212,11 +143,48 @@ const ConfigureAccount = ({
             <Table.Row>
               <Table.Cell>
                 <Link
-                  to='/docs/features/permissions_management_and_request_framework/automatically_approve_low_risk_requests/'
+                  to='/docs/features/permissions_management_and_request_framework/temporary_policy_requests/'
                   target='_blank'
                   rel='noopener noreferrer'
                 >
-                  Low-Risk Auto-Approval
+                  Temporary Permission Access
+                </Link>
+              </Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='green' />
+              </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/self_service_permissions/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Self-Service Requests
+                </Link>
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <div className='on-boarding__configure-account-cell'>
+                  <Icon name='checkmark' color='green' />
+                  <div className='on-boarding__configure-account-cell-text'>
+                   Manual
+                  </div>
+                </div>
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='green' />
+              </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/resource_management/create_role/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Create Roles
                 </Link>
               </Table.Cell>
               <Table.Cell></Table.Cell>
@@ -231,7 +199,7 @@ const ConfigureAccount = ({
                   target='_blank'
                   rel='noopener noreferrer'
                 >
-                  Delegated Adminstration
+                  Delegate Adminstration
                 </Link>
               </Table.Cell>
               <Table.Cell></Table.Cell>
@@ -242,11 +210,50 @@ const ConfigureAccount = ({
             <Table.Row>
               <Table.Cell>
                 <Link
-                  to='/docs/features/resource_management/create_role/'
+                  to='/docs/features/permissions_management_and_request_framework/restrict_viewers_of_account_resources/'
                   target='_blank'
                   rel='noopener noreferrer'
                 >
-                  Role Creation/Cloning
+                  Delegate Resource Viewing
+                </Link>
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='green' />
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='green' />
+              </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/planned/unused_permissions_removal/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Remove Unused Permissions
+                </Link>
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <div className='on-boarding__configure-account-cell'>
+                  <Icon name='checkmark' color='green' />
+                  <div className='on-boarding__configure-account-cell-text'>
+                    Manual
+                  </div>
+                </div>
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='checkmark' color='green' />
+              </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>
+                <Link
+                  to='/docs/features/permissions_management_and_request_framework/automatically_approve_low_risk_requests/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Automate Low-Risk Approval
                 </Link>
               </Table.Cell>
               <Table.Cell></Table.Cell>
@@ -255,8 +262,17 @@ const ConfigureAccount = ({
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>Request Access to a Role</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>
+                Review Resource History
+              </Table.Cell>
+              <Table.Cell textAlign='center'>
+                <div className='on-boarding__configure-account-cell'>
+                  <Icon name='checkmark' color='green' />
+                  <div className='on-boarding__configure-account-cell-text'>
+                    Limited
+                  </div>
+                </div>
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
