@@ -13,6 +13,7 @@ from pydantic import ValidationError
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.role.utils import is_valid_role_name
+from common.aws.iam.statement.utils import condense_statements
 from common.aws.utils import ResourceAccountCache, ResourceSummary, get_url_for_resource
 from common.config import config
 from common.config.models import ModelAdapter
@@ -38,6 +39,7 @@ from common.lib.policies import (
     automatic_request,
     can_move_back_to_pending_v2,
     can_update_cancel_requests_v2,
+    merge_policy_statement,
     should_auto_approve_policy_v2,
 )
 from common.lib.slack import send_slack_notification_new_request
@@ -426,39 +428,9 @@ class RequestHandler(BaseAPIV2Handler):
         try:
             # Validate the model
             changes = RequestCreationModel.parse_raw(self.request.body)
-            if changes.auto_merge:
-                non_allowed_statuses = [
-                    Status3.applied_and_failure.value,
-                    Status3.applied_and_success.value,
-                    Status3.approved.value,
-                ]
-                for change_request in changes.changes.changes:
-                    # Get requestor arn and assume role arn in request, use that to derive account info
-                    arn = change_request.principal.principal_arn
-                    account = arn.split(":")[4]
-                    extended_policy_request = ExtendedAutomaticPolicyRequest(
-                        id="generated_policy",
-                        account=(
-                            ModelAdapter(SpokeAccount)
-                            .load_config("spoke_accounts", self.ctx.tenant)
-                            .with_query({"account_id": account})
-                            .first
-                        ),
-                        role=arn.split("role/")[1],
-                        event_time=datetime.utcnow().replace(tzinfo=pytz.utc),
-                        last_updated=datetime.utcnow().replace(tzinfo=pytz.utc),
-                        user="weep",
-                        role_owner=arn,
-                        error="",
-                        system="",
-                        policy={},
-                        process="",
-                        status=Status3.pending,
-                    )
-                    if change_request.status not in non_allowed_statuses:
-                        await automatic_request.update_policy_request(
-                            self.ctx.tenant, extended_policy_request
-                        )
+            for change_request in changes.changes.changes:
+                if change_request.auto_merge:
+                    await merge_policy_statement(change_request, self.ctx.tenant)
 
             if not changes.dry_run:
                 changes = await validate_request_creation(self, changes)

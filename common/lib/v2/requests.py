@@ -873,9 +873,10 @@ async def validate_inline_policy_change(
             ] = f"Inline Policy with the name {change.policy_name} already exists."
             log.error(log_data)
             raise InvalidRequestParameter(log_data["message"])
-        # Check if policy being updated is the same as existing policy.
+        # Check if policy being updated is the same as existing policy but only if auto_merge is not enabled
         if (
-            not change.new
+            not change.auto_merge
+            and not change.new
             and change.policy.policy_document == existing_policy.get("PolicyDocument")
             and change.policy_name == existing_policy.get("PolicyName")
             and change.action == Action.attach

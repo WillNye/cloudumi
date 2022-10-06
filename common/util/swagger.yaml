@@ -1261,6 +1261,10 @@ components:
           type: boolean
           readOnly: true
           default: false
+        auto_merge:
+          type: boolean
+          default: false
+          description: if set, automatically merges a policy that is not `new`
     GenericFileChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
