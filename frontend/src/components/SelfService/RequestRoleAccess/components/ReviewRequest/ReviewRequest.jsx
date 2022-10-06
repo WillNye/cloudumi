@@ -70,7 +70,7 @@ const ReviewRequest = ({
     }
 
     setIsLoading(false)
-  }, [role, accessScope, expirationDate, userGroups, justification])
+  }, [role, accessScope, expirationDate, userGroups, justification]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Segment loading={isLoading} basic>
@@ -120,7 +120,6 @@ const ReviewRequest = ({
           <TextArea
             placeholder='Tell us why you need this change'
             onChange={(e) => setJustification(e.target.value)}
-            style={{ width: 'fluid' }}
             defaultValue={justification}
           />
         </Form>

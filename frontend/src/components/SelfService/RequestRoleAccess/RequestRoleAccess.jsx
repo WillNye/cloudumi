@@ -48,57 +48,59 @@ const RequestRoleAccess = () => {
   }, [currentStep, role, accessScope, expirationDate, userGroups])
 
   return (
-    <div>
+    <div className='role-access-request'>
       <Segment basic>
         <Header as='h2'>Request Access</Header>
-
-        <Divider horizontal />
-        <Step.Group fluid>
-          <Step
-            active={currentStep === STEPS.STEP_ONE}
-            onClick={() => {
-              if ([STEPS.STEP_TWO, STEPS.STEP_THREE].includes(currentStep)) {
-                setCurrentStep(STEPS.STEP_ONE)
-              }
-            }}
-            className={`${
-              currentStep !== STEPS.STEP_ONE ? 'complete' : ''
-            } step1`}
-          >
-            <Icon name='handshake' />
-            <Step.Content>
-              <Step.Title>Select Role</Step.Title>
-              <Step.Description>Search and Select Role</Step.Description>
-            </Step.Content>
-          </Step>
-          <Step
-            active={currentStep === STEPS.STEP_TWO}
-            onClick={() => {
-              if ([STEPS.STEP_THREE].includes(currentStep)) {
-                setCurrentStep(STEPS.STEP_TWO)
-              }
-            }}
-            className={`${
-              currentStep === STEPS.STEP_THREE ? 'complete' : ''
-            } step2`}
-          >
-            <Icon name='search plus' />
-            <Step.Content>
-              <Step.Title>Select User Groups</Step.Title>
-              <Step.Description>Search and Select User Groups</Step.Description>
-            </Step.Content>
-          </Step>
-          <Step active={currentStep === STEPS.STEP_THREE} className={'step3'}>
-            <Icon name='handshake' />
-            <Step.Content>
-              <Step.Title>Review and Submit</Step.Title>
-              <Step.Description>Review and Submit Request</Step.Description>
-            </Step.Content>
-          </Step>
-        </Step.Group>
-        <Divider horizontal />
-
-        {currentSection}
+        <div className='role-access-request__section'>
+          <Divider horizontal />
+          <Step.Group fluid>
+            <Step
+              active={currentStep === STEPS.STEP_ONE}
+              onClick={() => {
+                if ([STEPS.STEP_TWO, STEPS.STEP_THREE].includes(currentStep)) {
+                  setCurrentStep(STEPS.STEP_ONE)
+                }
+              }}
+              className={`${
+                currentStep !== STEPS.STEP_ONE ? 'complete' : ''
+              } step1`}
+            >
+              <Icon name='handshake' />
+              <Step.Content>
+                <Step.Title>Select Role</Step.Title>
+                <Step.Description>Search and Select Role</Step.Description>
+              </Step.Content>
+            </Step>
+            <Step
+              active={currentStep === STEPS.STEP_TWO}
+              onClick={() => {
+                if ([STEPS.STEP_THREE].includes(currentStep)) {
+                  setCurrentStep(STEPS.STEP_TWO)
+                }
+              }}
+              className={`${
+                currentStep === STEPS.STEP_THREE ? 'complete' : ''
+              } step2`}
+            >
+              <Icon name='search plus' />
+              <Step.Content>
+                <Step.Title>Select User Groups</Step.Title>
+                <Step.Description>
+                  Search and Select User Groups
+                </Step.Description>
+              </Step.Content>
+            </Step>
+            <Step active={currentStep === STEPS.STEP_THREE} className={'step3'}>
+              <Icon name='handshake' />
+              <Step.Content>
+                <Step.Title>Review and Submit</Step.Title>
+                <Step.Description>Review and Submit Request</Step.Description>
+              </Step.Content>
+            </Step>
+          </Step.Group>
+          <Divider horizontal />
+          {currentSection}
+        </div>
       </Segment>
     </div>
   )

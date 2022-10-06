@@ -8,6 +8,7 @@ import {
   Header,
   Icon,
   Label,
+  Message,
   Search,
 } from 'semantic-ui-react'
 import { useAuth } from 'auth/AuthProviderDefault'
@@ -155,6 +156,20 @@ const SelectUserGroups = ({
           <Divider horizontal />
         </Form.Field>
       </Form>
+      {messages.length > 0 ? (
+        <Message negative>
+          <Message.Header>
+            We found some problems for this request.
+          </Message.Header>
+          <Message.List>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
+            ))}
+          </Message.List>
+        </Message>
+      ) : (
+        <></>
+      )}
       <Divider horizontal />
       <div className='step-actions'>
         <Button primary onClick={() => setCurrentStep(STEPS.STEP_ONE)}>

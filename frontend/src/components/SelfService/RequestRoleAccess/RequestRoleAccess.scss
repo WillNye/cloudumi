@@ -157,3 +157,14 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.role-access-request {
+  width: 100%;
+  // display: flex;
+
+  &__section {
+    // display: flex;
+    max-width: 1200px;
+    margin: auto;
+  }
+}
