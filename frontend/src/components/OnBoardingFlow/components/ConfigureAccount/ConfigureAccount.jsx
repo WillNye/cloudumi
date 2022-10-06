@@ -15,7 +15,7 @@ const ConfigureAccount = ({
     <div className='on-boarding__configure-account'>
       <Form>
         <Form.Field>
-          <label>1. Select AWS Account</label>
+          <label>1. Specify AWS Account</label>
           <input
             placeholder='Enter AWS Account Name'
             onChange={handleAccNameChange}
@@ -40,15 +40,17 @@ const ConfigureAccount = ({
               />
             </Form.Field>
             <p>
-              Read-Only support for IAMOps will <em>not</em> change AWS IAM configuration. 
+              Read-Only installation can <em>not</em> change Cloud identities or
+              alter IAM policies.
             </p>
             <p>
-              For example, Administrators will have to apply changes after approval, 
-              or remove changes after expiration. Installing Noq in this mode will 
-              only grant privileges necessary to read and inventory IAM-related settings.
+              This mode only grants Noq privileges to inventory Cloud identities
+              and IAM policies. Approved requests will require manual changes to
+              apply and remove after expiration.
             </p>
-            <p><em>Note:</em> Read-Only installation disables Credential Brokering,
-            which is required to assume a role and sign-in to AWS.
+            <p>
+              <em>Note:</em> This mode disables Credential Brokering, which is
+              used to assume roles and sign-in to Cloud identities.
             </p>
           </div>
           <div>
@@ -66,18 +68,24 @@ const ConfigureAccount = ({
               </Label>
             </Form.Field>
             <p>
-              Read-write support for IAMOps will automate AWS IAM configuraton. 
+              Read-write installation <em>can</em> change Cloud identities or
+              alter IAM policies to automate request approval or expiration.
             </p>
             <p>
-              For example, approved changes will be deployed automatically, 
-              and removed automatically after it expires. Installing Noq in this 
-              mode will grant privileges necessary to read and inventory 
-              IAM-related settings <em>and apply changes</em>.
+              This mode grants Noq privileges to inventory and change Cloud
+              identities and IAM policies. Changes can only occur when users
+              make requests using Noq that are approved by administrators using
+              Noq. Changes will be applied automatically after approval and
+              removed automatically after expiration.
+            </p>
+            <p>
+              Credential brokering to sign-in to Cloud identities can be enabled
+              according to group membership or attributes from an SSO provider.
             </p>
           </div>
         </div>
       </Form>
- 
+
       <Divider horizontal />
 
       <Table celled>
@@ -89,9 +97,7 @@ const ConfigureAccount = ({
               <Icon name={`${showComparison ? 'angle down' : 'angle right'}`} />
               Compare Installation Modes
             </Table.HeaderCell>
-            <Table.HeaderCell>
-                Read-only
-            </Table.HeaderCell>
+            <Table.HeaderCell>Read-Only</Table.HeaderCell>
             <Table.HeaderCell>
               <span>
                 Read-Write <Icon name='star outline' color='green' />
@@ -169,7 +175,7 @@ const ConfigureAccount = ({
                 <div className='on-boarding__configure-account-cell'>
                   <Icon name='checkmark' color='green' />
                   <div className='on-boarding__configure-account-cell-text'>
-                   Manual
+                    Manual
                   </div>
                 </div>
               </Table.Cell>
@@ -262,9 +268,7 @@ const ConfigureAccount = ({
               </Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>
-                Review Resource History
-              </Table.Cell>
+              <Table.Cell>Review Resource History</Table.Cell>
               <Table.Cell textAlign='center'>
                 <div className='on-boarding__configure-account-cell'>
                   <Icon name='checkmark' color='green' />
