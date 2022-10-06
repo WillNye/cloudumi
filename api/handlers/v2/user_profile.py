@@ -12,6 +12,7 @@ from common.lib.auth import (
     can_create_roles,
     can_delete_iam_principals,
     can_edit_dynamic_config,
+    is_tenant_admin,
 )
 from common.lib.generic import get_random_security_logo, is_in_group
 from common.lib.plugins import get_plugin_by_name
@@ -45,6 +46,12 @@ class UserProfileHandler(BaseAPIV1Handler):
                 favicon = None
                 sentry_sdk.capture_exception()
 
+        landing_url = config.get_tenant_specific_key("landing_url", tenant)
+        if (
+            config.get_tenant_specific_key("hub_account", tenant) is None
+        ) and is_tenant_admin(self.user, self.groups, tenant):
+            landing_url = "/onboarding"
+
         site_config = {
             "consoleme_logo": await get_random_security_logo(tenant),
             "google_analytics": {
@@ -69,7 +76,7 @@ class UserProfileHandler(BaseAPIV1Handler):
             "security_url": None,
             # If site_config.landing_url is set, users will be redirected to the landing URL after authenticating
             # on the frontend.
-            "landing_url": config.get_tenant_specific_key("landing_url", tenant),
+            "landing_url": landing_url,
             "notifications": {
                 "enabled": config.get_tenant_specific_key(
                     "notifications.enabled", tenant
