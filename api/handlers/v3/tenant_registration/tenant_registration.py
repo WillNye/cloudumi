@@ -93,6 +93,9 @@ class TenantRegistrationHandler(TornadoRequestHandler):
     async def options(self, *args):
         pass
 
+    def check_xsrf_cookie(self) -> None:
+        pass
+
     async def post(self):
         # Get the data from the request
         data = tornado.escape.json_decode(self.request.body)
