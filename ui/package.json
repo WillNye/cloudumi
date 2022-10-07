@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
+    "test": "vitest",
+    "coverage": "vitest run --coverage",
     "prepare": "cd .. && husky install ui/.husky"
   },
   "dependencies": {
@@ -50,7 +52,8 @@
     "vite-plugin-checker": "^0.5.1",
     "vite-plugin-eslint": "^1.8.1",
     "vite-plugin-svgr": "^2.2.1",
-    "vite-tsconfig-paths": "^3.5.1"
+    "vite-tsconfig-paths": "^3.5.1",
+    "vitest": "^0.24.0"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": [

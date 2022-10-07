@@ -20,11 +20,16 @@ export default defineConfig(({ command }) => {
       port: 3000,
       open: true,
       host: '::',
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom'
     }
   };
 
   // Make CSS module names less annoying in dev mode
   if (command === 'serve') {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     config.css = {
       modules: {
