@@ -1,18 +1,18 @@
 import { FC, lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.module.css'
 
 const Login = lazy(() => import('./Login'));
 const NotFound = lazy(() => import('./NotFound'));
 
 export const App: FC = () => (
-  <Routes>
-    <Suspense fallback={<div>Loading...</div>}>
+  <Suspense fallback={<div>Loading...</div>}>
+    <Routes>
       <Route>
         <Route path="/login" element={<Login />} />
         <Route path="/404" element={<NotFound />} />
-        {/* <Route path="/" element={<Navigate replace to="/404" />} /> */}
+        <Route path="/" element={<Navigate replace to="/login" />} />
       </Route>
-    </Suspense>
-  </Routes>
+    </Routes>
+  </Suspense>
 );

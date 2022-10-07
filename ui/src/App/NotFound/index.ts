@@ -1,1 +1,1 @@
-export { Login as default } from './Login';
+export { NotFound as default } from './NotFound';
