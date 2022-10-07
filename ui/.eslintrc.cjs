@@ -22,11 +22,13 @@ module.exports = {
   ],
   "rules": {
     "curly": 2,
+    "react/react-in-jsx-scope": "off",
     "import/no-anonymous-default-export": [
       0
     ],
     "react/jsx-no-target-blank": [
       0
-    ]
+    ],
+    "@typescript-eslint/no-explicit-any": "off"
   }
 };
