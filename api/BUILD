@@ -79,7 +79,6 @@ EXT_DEPS = [
     requirement("tornado"),
     requirement("ujson"),
     requirement("uvloop"),
-    requirement("validators"),
 ]
 
 REQUIRES = [
