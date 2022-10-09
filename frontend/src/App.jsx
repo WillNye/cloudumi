@@ -31,6 +31,7 @@ import AutomatedPermissions from 'components/AutomatedPermissions'
 import EULA from './components/EULA'
 import ErrorBoundary from 'components/ErrorBoundary'
 import MultiFactorAuth from 'components/MultiFactorAuth'
+import OnBoardingFlow from 'components/OnBoardingFlow'
 import './App.scss'
 
 function App() {
@@ -185,6 +186,12 @@ function App() {
             exact
             path='/mfa'
             component={MultiFactorAuth}
+          />
+          <ProtectedRoute
+            key='onboarding'
+            exact
+            path='/onboarding'
+            component={OnBoardingFlow}
           />
           <ProtectedDashboardRoute
             key='logout'

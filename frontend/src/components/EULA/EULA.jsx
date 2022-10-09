@@ -11,7 +11,7 @@ import {
   Segment,
 } from 'semantic-ui-react'
 import NavHeader from '../Header'
-import './eula.css'
+import './eula.scss'
 
 const SCROLL_HEIGHT_OFFSET = 5
 

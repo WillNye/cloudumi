@@ -68,11 +68,11 @@ Resources:
                 Action:
                   Fn::If:
                     - ReadOnlyModeEnabled
-                    - - "config:BatchGet*" # Retrieve AWS Config details for your resources ; Will allow policy rollback
+                    - - "config:BatchGet*"
                       - "config:GetResourceConfigHistory"
-                      - "config:List*" # Retrieve information about AWS resources to list in a single source of truth
-                      - "config:Select*" # Query AWS Config
-                      - "ec2:describeregions" # Retrieve active regions for your AWS environment
+                      - "config:List*"
+                      - "config:Select*"
+                      - "ec2:describeregions"
                       - "iam:GenerateCredentialReport"
                       - "iam:GenerateOrganizationsAccessReport"
                       - "iam:GenerateServiceLastAccessedDetails"
@@ -133,22 +133,22 @@ Resources:
                       - "organizations:ListRoots"
                       - "organizations:ListTagsForResource"
                       - "organizations:ListTargetsForPolicy"
-                      - "s3:GetBucketPolicy" # Retrieve information about your S3 buckets ; Enable modifying buckets
+                      - "s3:GetBucketPolicy"
                       - "s3:GetBucketTagging"
                       - "s3:ListAllMyBuckets"
                       - "s3:ListBucket"
-                      - "sns:GetTopicAttributes" # Retrieve information about your SNS topics ; Enable modifying topics
+                      - "sns:GetTopicAttributes"
                       - "sns:ListTagsForResource"
                       - "sns:ListTopics"
-                      - "sqs:GetQueueAttributes" # Retrieve information about your SQS queues ; Enable modifying queues
+                      - "sqs:GetQueueAttributes"
                       - "sqs:GetQueueUrl"
-                      - "sqs:ListQueues"
                       - "sqs:ListQueueTags"
-                    - - "config:BatchGet*" # Retrieve AWS Config details for your resources ; Will allow policy rollback
+                      - "sqs:ListQueues"
+                    - - "config:BatchGet*"
                       - "config:GetResourceConfigHistory"
-                      - "config:List*" # Retrieve information about AWS resources to list in a single source of truth
-                      - "config:Select*" # Query AWS Config
-                      - "ec2:describeregions" # Retrieve active regions for your AWS environment
+                      - "config:List*"
+                      - "config:Select*"
+                      - "ec2:describeregions"
                       - "iam:AddRoleToInstanceProfile"
                       - "iam:AttachRolePolicy"
                       - "iam:AttachUserPolicy"
@@ -156,9 +156,9 @@ Resources:
                       - "iam:CreateRole"
                       - "iam:DeleteAccessKey"
                       - "iam:DeleteInstanceProfile"
-                      - "iam:DeleteRole"
                       - "iam:DeletePolicy"
                       - "iam:DeletePolicyVersion"
+                      - "iam:DeleteRole"
                       - "iam:DeleteRolePermissionsBoundary"
                       - "iam:DeleteRolePolicy"
                       - "iam:DeleteUser"
@@ -249,22 +249,22 @@ Resources:
                       - "organizations:ListTargetsForPolicy"
                       - "organizations:TagResource"
                       - "organizations:UntagResource"
-                      - "s3:GetBucketPolicy" # Retrieve information about your S3 buckets ; Enable modifying buckets
+                      - "s3:GetBucketPolicy"
                       - "s3:GetBucketTagging"
                       - "s3:ListAllMyBuckets"
                       - "s3:ListBucket"
                       - "s3:PutBucketPolicy"
                       - "s3:PutBucketTagging"
-                      - "sns:GetTopicAttributes" # Retrieve information about your SNS topics ; Enable modifying topics
+                      - "sns:GetTopicAttributes"
                       - "sns:ListTagsForResource"
                       - "sns:ListTopics"
                       - "sns:SetTopicAttributes"
                       - "sns:TagResource"
                       - "sns:UnTagResource"
-                      - "sqs:GetQueueAttributes" # Retrieve information about your SQS queues ; Enable modifying queues
+                      - "sqs:GetQueueAttributes"
                       - "sqs:GetQueueUrl"
-                      - "sqs:ListQueues"
                       - "sqs:ListQueueTags"
+                      - "sqs:ListQueues"
                       - "sqs:SetQueueAttributes"
                       - "sqs:TagQueue"
                       - "sqs:UntagQueue"
@@ -278,6 +278,7 @@ Resources:
       ServiceToken: !Ref RegistrationTopicArnParameter
       IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
+      AccountName: !Ref AccountNameParameter
       ClusterRole: !Ref ClusterRoleParameter
       CentralRoleArn: !GetAtt CentralRole.Arn
       SpokeRole: !Ref SpokeRoleNameParameter
@@ -292,67 +293,70 @@ Conditions:
   ReadOnlyModeEnabled: !Equals [true, !Ref ReadOnlyModeParameter]
 
 Parameters:
+  AccountNameParameter:
+    Description: Name to identify the account by.
+    Type: String
+    MinLength: "0"
+    MaxLength: "50"
+    AllowedPattern: '[\s\S]*'
+    ConstraintDescription: Invalid account name value.  Must match pattern [\s\S]* with a length between 1-50. Defaults to account id
   ExternalIDParameter:
-    Description: >-
-      The cross-account access role created by the stack will use this value for
-      its ExternalID. Do not change this value!
+    Description: ExternalId is used for verification. Do not change this value!
     Type: String
     MinLength: "2"
     MaxLength: "100"
     AllowedPattern: '[\w+=,.@:\/-]*'
-    ConstraintDescription: 'Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]*'
-  ClusterRoleParameter:
-    Description: >-
-      The SaaS Cluster role that will assume into the role created by this stack. Do not change this value!
-    Type: String
-    MinLength: "10"
-    MaxLength: "100"
-    AllowedPattern: '^arn:aws:iam::\d{12}:(role|user)/.+'
-    ConstraintDescription: 'Invalid ClusterRole value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+'
+    ConstraintDescription: Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]* with a length between 2-100
   HostParameter:
-    Description: >-
-      The host parameter. Do not change this value!
+    Description: The host parameter. Do not change this value!
     Type: String
     MinLength: "2"
     MaxLength: "100"
     AllowedPattern: '[\w+_-]*'
-    ConstraintDescription: 'Invalid Host value.  Must match pattern [\w+_-]*'
-  CentralRoleNameParameter:
-    Description: >-
-      The name of the Central role in the customer's environment. Do not change this value!
-    Type: String
-    MinLength: "10"
-    MaxLength: "100"
-    AllowedPattern: '[\w+_-]*'
-    ConstraintDescription: 'Invalid CentralRoleName value.  Must match pattern [\w+_-]*'
+    ConstraintDescription: Invalid Host value.  Must match pattern [\w+_-]* with a length between 2-100
   SpokeRoleNameParameter:
-    Description: >-
-      The name of the spoke role in each customer account. Do not change this value!
+    Description: The name of the spoke role in each customer account. Do not change this value!
     Type: String
     MinLength: "2"
     MaxLength: "100"
     AllowedPattern: '[\w+_-]*'
-    ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]*'
+    ConstraintDescription: Invalid SpokeRoleName value.  Must match pattern [\w+_-]* with a length between 2-100
   RegistrationTopicArnParameter:
-    Description: >-
-      The SNS queue ARN that will be used to send registration messages to the SaaS. Do not change this value!
+    Description: The SNS queue ARN that will be used to send registration messages to the SaaS. Do not change this value!
     Type: String
     MinLength: "2"
     MaxLength: "100"
-    AllowedPattern: '^arn:aws:sns:[\w-]*:\d{12}:.+'
-    ConstraintDescription: 'Invalid RegistrationTopicArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+'
+    AllowedPattern: ^arn:aws:sns:[\w-]*:\d{12}:.+
+    ConstraintDescription: Invalid RegistrationTopicArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+ with a length between 2-100
   ReadOnlyModeParameter:
-    Description: >-
-      Only give read-only permissions to the Spoke role.
+    Description: Only give read-only permissions to the Spoke role.
     Type: String
     Default: false
     AllowedValues:
       - true
       - false
+  ClusterRoleParameter:
+    Description: The SaaS Cluster role that will assume into the role created by this stack. Do not change this value!
+    Type: String
+    MinLength: "10"
+    MaxLength: "100"
+    AllowedPattern: ^arn:aws:iam::\d{12}:(role|user)/.+
+    ConstraintDescription: Invalid ClusterRole value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+ with a length between 10-100
+  CentralRoleNameParameter:
+    Description: The name of the Central role in the customer's environment. Do not change this value!
+    Type: String
+    MinLength: "10"
+    MaxLength: "100"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: Invalid CentralRoleName value.  Must match pattern [\w+_-]*
+
 Outputs:
   ExternalID:
     Description: ExternalID to share with the SaaS for assume-role deployments
     Value: !Ref ExternalIDParameter
+  AccountName:
+    Description: Name to identify the account by. Defaults to the account id.
+    Value: !Ref AccountNameParameter
   Host:
     Description: Host to share with the SaaS for deployment
     Value: !Ref HostParameter
