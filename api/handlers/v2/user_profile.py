@@ -26,6 +26,13 @@ class UserProfileHandler(BaseAPIV1Handler):
         """
         tenant = self.ctx.tenant
         is_contractor = False  # TODO: Support other option
+
+        landing_url = config.get_tenant_specific_key("landing_url", tenant)
+        if (
+            config.get_tenant_specific_key("hub_account", tenant) is None
+        ) and is_tenant_admin(self.user, self.groups, tenant):
+            landing_url = "/onboarding"
+
         site_config = {
             "consoleme_logo": await get_random_security_logo(tenant),
             "google_analytics": {

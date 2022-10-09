@@ -30,7 +30,7 @@ const ConfigureAccount = ({
           <label>2. Select Installation Mode:</label>
         </Form.Field>
         <div className='on-boarding__container'>
-          <div>
+          <div style={{ margin: '30px' }}>
             <Form.Field>
               <Radio
                 label='Read-Only'
@@ -40,20 +40,16 @@ const ConfigureAccount = ({
               />
             </Form.Field>
             <p>
-              Read-Only installation can <em>not</em> change Cloud identities or
-              alter IAM policies.
+              Cloud Identities and Resources will not be modified in Read-Only
+              mode.
             </p>
             <p>
               This mode only grants Noq privileges to inventory Cloud identities
               and IAM policies. Approved requests will require manual changes to
               apply and remove after expiration.
             </p>
-            <p>
-              <em>Note:</em> This mode disables Credential Brokering, which is
-              used to assume roles and sign-in to Cloud identities.
-            </p>
           </div>
-          <div>
+          <div style={{ margin: '30px' }}>
             <Form.Field>
               <Radio
                 label='Read-Write'
@@ -63,7 +59,7 @@ const ConfigureAccount = ({
               />
               &nbsp;
               <Label color='green' horizontal>
-                <Icon name='star outline' />
+                <Icon name='star' />
                 Recommended
               </Label>
             </Form.Field>
@@ -74,13 +70,9 @@ const ConfigureAccount = ({
             <p>
               This mode grants Noq privileges to inventory and change Cloud
               identities and IAM policies. Changes can only occur when users
-              make requests using Noq that are approved by administrators using
-              Noq. Changes will be applied automatically after approval and
-              removed automatically after expiration.
-            </p>
-            <p>
-              Credential brokering to sign-in to Cloud identities can be enabled
-              according to group membership or attributes from an SSO provider.
+              make requests using Noq, and they are approved by an
+              administrator. Changes will be applied automatically after
+              approval and removed automatically after expiration.
             </p>
           </div>
         </div>
@@ -100,7 +92,7 @@ const ConfigureAccount = ({
             <Table.HeaderCell>Read-Only</Table.HeaderCell>
             <Table.HeaderCell>
               <span>
-                Read-Write <Icon name='star outline' color='green' />
+                Read-Write <Icon name='star' color='green' />
               </span>
             </Table.HeaderCell>
           </Table.Row>
@@ -118,7 +110,7 @@ const ConfigureAccount = ({
                 </Link>
               </Table.Cell>
               <Table.Cell textAlign='center'>
-                <Icon name='checkmark' color='red' />
+                <Icon name='x' color='red' />
               </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
@@ -126,7 +118,9 @@ const ConfigureAccount = ({
             </Table.Row>
             <Table.Row>
               <Table.Cell>Access Roles</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='x' color='red' />
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
@@ -141,7 +135,9 @@ const ConfigureAccount = ({
                   Access Roles Temporarily
                 </Link>
               </Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='x' color='red' />
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
@@ -156,7 +152,9 @@ const ConfigureAccount = ({
                   Grant Permissions Temporarily
                 </Link>
               </Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='x' color='red' />
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
@@ -193,7 +191,9 @@ const ConfigureAccount = ({
                   Create Roles
                 </Link>
               </Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='x' color='red' />
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
@@ -247,7 +247,9 @@ const ConfigureAccount = ({
                   Delegate Adminstrators
                 </Link>
               </Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='x' color='red' />
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
@@ -262,7 +264,9 @@ const ConfigureAccount = ({
                   Automate Low-Risk Approval
                 </Link>
               </Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell textAlign='center'>
+                <Icon name='x' color='red' />
+              </Table.Cell>
               <Table.Cell textAlign='center'>
                 <Icon name='checkmark' color='green' />
               </Table.Cell>
