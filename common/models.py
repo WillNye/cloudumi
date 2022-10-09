@@ -451,6 +451,7 @@ class AppDetailsArray(BaseModel):
 class PrincipalModelTraConfig(BaseModel):
     active_users: Optional[List[str]] = None
     supported_groups: Optional[List[str]] = None
+    can_edit: Optional[bool] = False
 
 
 class PrincipalModelRoleAccessConfig(BaseModel):
@@ -459,6 +460,7 @@ class PrincipalModelRoleAccessConfig(BaseModel):
     is_valid_config: Optional[bool] = False
     noq_authorized_groups: Optional[List[Dict[str, Any]]] = None
     noq_authorized_cli_groups: Optional[List[Dict[str, Any]]] = None
+    can_edit: Optional[bool] = False
 
 
 class ExtendedAwsPrincipalModel(AwsPrincipalModel):

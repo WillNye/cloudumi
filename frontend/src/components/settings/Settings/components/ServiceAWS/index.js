@@ -4,7 +4,7 @@ import { AWSOrganization } from './components/AWSOrganization'
 import { General } from './components/General'
 import { HubAccount } from './components/HubAccount'
 import { SpokeAccounts } from './components/SpokeAccounts'
-import { RoleAccessAuth } from './components/RoleAccessAuth'
+import RoleAuthorization from './components/RoleAuthorization'
 import { SectionTitle } from '../utils'
 import { ApiGetProvider } from 'hooks/useApi'
 
@@ -36,16 +36,7 @@ export const ServiceAWS = () => {
         <AWSOrganization />
       </Section>
 
-      <Section
-        title={
-          <SectionTitle
-            title='Role Access Authorization'
-            helpHandler='role-access-authorization'
-          />
-        }
-      >
-        <RoleAccessAuth />
-      </Section>
+      <RoleAuthorization />
 
       <Section title={<SectionTitle title='General' />}>
         <General />

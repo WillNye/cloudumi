@@ -7,6 +7,7 @@ from common.lib.auth import is_tenant_admin
 from common.lib.plugins import get_plugin_by_name
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
+from common.user_request.utils import get_tra_config
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger()
@@ -17,7 +18,7 @@ class CredentialBrokeringHandler(BaseHandler):
     Provides CRUD capabilities to enable or disable role access
     """
 
-    async def post(self, _enabled: str):
+    async def post(self, _access_type: str, _enabled: str):
         tenant = self.ctx.tenant
         enabled = True if _enabled == "enable" else False
 
@@ -46,14 +47,21 @@ class CredentialBrokeringHandler(BaseHandler):
         verb = "enabled" if enabled else "disabled"
 
         try:
-            await role_access.toggle_role_access_credential_brokering(tenant, enabled)
+            if _access_type == "tra-access":
+                await role_access.toggle_tra_access_credential_brokering(
+                    tenant, enabled
+                )
+            else:
+                await role_access.toggle_role_access_credential_brokering(
+                    tenant, enabled
+                )
         except Exception as exc:
             sentry_sdk.capture_exception()
             log.error(exc)
             res = WebResponse(
                 success="error",
                 status_code=400,
-                message=f"Unable to {verb} role access credential brokering.",
+                message=f"Unable to {verb} {_access_type} credential brokering.",
             )
             self.write(res.json(exclude_unset=True, exclude_none=True))
             return
@@ -61,7 +69,7 @@ class CredentialBrokeringHandler(BaseHandler):
         res = WebResponse(
             status="success",
             status_code=200,
-            message=f"Successfully {verb} role access credential brokering.",
+            message=f"Successfully {verb} {_access_type} credential brokering.",
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
@@ -72,7 +80,7 @@ class CredentialBrokeringCurrentStateHandler(BaseHandler):
     Provides CRUD capabilities to enable or disable role access
     """
 
-    async def get(self):
+    async def get(self, _access_type: str):
         tenant = self.ctx.tenant
 
         log_data = {
@@ -97,12 +105,17 @@ class CredentialBrokeringCurrentStateHandler(BaseHandler):
             return
         log.debug(log_data)
 
-        current_state = await role_access.get_role_access_credential_brokering(tenant)
+        data = {
+            "role_access": await role_access.get_role_access_credential_brokering(
+                tenant
+            ),
+            "tra_access": (await get_tra_config(tenant=tenant)).enabled,
+        }
         res = WebResponse(
             status="success",
             status_code=200,
             message="Successfully retrieved role access credential brokering.",
-            data={"state": current_state},
+            data={**data},
         )
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return

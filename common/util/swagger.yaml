@@ -1886,6 +1886,10 @@ components:
           type: array
           items:
             type: string
+        can_edit:
+          type: boolean
+          readOnly: true
+          default: False
     PrincipalModelRoleAccessConfig:
       type: object
       properties:
@@ -1907,6 +1911,10 @@ components:
           type: array
           items:
             type: object
+        can_edit:
+          type: boolean
+          readOnly: true
+          default: False
     ExtendedAwsPrincipalModel:
       allOf:
         - $ref: "#/components/schemas/AwsPrincipalModel"

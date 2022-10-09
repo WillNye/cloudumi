@@ -217,8 +217,17 @@ def mfa_enabled_for_config(tra_config):
     return bool(tra_config.mfa and tra_config.mfa.enabled)
 
 
+async def save_tra_config(tenant: str, tra_config: TraConfig):
+    await models.ModelAdapter(TraConfig).load_config(
+        TRA_CONFIG_BASE_KEY, tenant
+    ).from_model(tra_config).store_item()
+
+
 async def get_tra_config(
-    resource_summary: ResourceSummary, user_groups: list[str] = None
+    resource_summary: ResourceSummary = None,
+    tenant: str = None,
+    user_groups: list[str] = None,
+    tra_config: TraConfig = None,
 ) -> TraConfig:
     """Retrieve the proper TRA config based on provided account, role, and user groups with temp access to the role.
     Config priority:
@@ -230,17 +239,20 @@ async def get_tra_config(
         2: role
         3: account
     """
-    tenant = resource_summary.tenant
-    role = resource_summary.name
-    account = resource_summary.account
+    assert resource_summary or tenant
+    if not tenant:
+        tenant = resource_summary.tenant
     update_config = False
 
-    tra_config: TraConfig = (
-        models.ModelAdapter(TraConfig).load_config(TRA_CONFIG_BASE_KEY, tenant).model
-    )
     if not tra_config:
-        update_config = True
-        tra_config = TraConfig()  # Default config
+        tra_config: TraConfig = (
+            models.ModelAdapter(TraConfig)
+            .load_config(TRA_CONFIG_BASE_KEY, tenant)
+            .model
+        )
+        if not tra_config:
+            update_config = True
+            tra_config = TraConfig()  # Default config
 
     # Set defaults
     if not tra_config.mfa:
@@ -257,13 +269,13 @@ async def get_tra_config(
         tra_config.active_users_tag = get_active_tra_users_tag(tenant)
 
     if update_config:
-        await models.ModelAdapter(TraConfig).load_config(
-            TRA_CONFIG_BASE_KEY, tenant
-        ).from_model(tra_config).store_item()
+        await save_tra_config(tenant, tra_config)
 
-    if not tra_config.approval_rules:
+    if not tra_config.approval_rules or not resource_summary:
         return tra_config
 
+    role = resource_summary.name
+    account = resource_summary.account
     config_attrs = [
         "requires_approval",
         "enabled",
@@ -311,7 +323,7 @@ async def get_tra_config_for_request(
     resource_summary = await ResourceSummary.set(tenant, arn)
     iam_role = await IAMRole.get(tenant, resource_summary.account, resource_summary.arn)
     tra_groups = get_user_tra_groups_for_role(tenant, iam_role, user_groups)
-    return await get_tra_config(resource_summary, tra_groups)
+    return await get_tra_config(resource_summary, user_groups=tra_groups)
 
 
 def get_active_tra_users_tag(tenant: str) -> str:

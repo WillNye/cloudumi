@@ -107,10 +107,11 @@ async def get_user_active_tra_roles_by_tag(tenant: str, user: str) -> list[str]:
     active_tra_roles = set()
     all_iam_roles = await IAMRole.query(tenant)
     tra_users_tag = get_active_tra_users_tag(tenant)
+    base_tra_config = await get_tra_config(tenant=tenant)
 
     for iam_role in all_iam_roles:
         resource_summary = await ResourceSummary.set(tenant, iam_role.arn)
-        tra_config = await get_tra_config(resource_summary)
+        tra_config = await get_tra_config(resource_summary, tra_config=base_tra_config)
         if not tra_config.enabled:
             continue
 
@@ -138,12 +139,13 @@ async def get_tra_supported_roles_by_tag(
 
     escalated_roles = dict()
     all_iam_roles = await IAMRole.query(tenant)
+    base_tra_config = await get_tra_config(tenant=tenant)
 
     for iam_role in all_iam_roles:
         if iam_role.arn in eligible_roles:
             continue
         resource_summary = await ResourceSummary.set(tenant, iam_role.arn)
-        tra_config = await get_tra_config(resource_summary)
+        tra_config = await get_tra_config(resource_summary, tra_config=base_tra_config)
         if not tra_config.enabled:
             continue
 

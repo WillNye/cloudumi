@@ -1,9 +1,5 @@
 from typing import Dict
 
-import sentry_sdk
-import validators
-from validators.utils import ValidationFailure
-
 from common.config import config
 from common.handlers.base import BaseAPIV1Handler
 from common.lib.account_indexers import get_account_id_to_name_mapping
@@ -30,21 +26,6 @@ class UserProfileHandler(BaseAPIV1Handler):
         tenant = self.ctx.tenant
         is_contractor = False  # TODO: Support other option
 
-        security_logo = config.get_tenant_specific_key("security_logo.image", tenant)
-        if security_logo:
-            try:
-                validators.url(security_logo)
-            except ValidationFailure:
-                security_logo = None
-                sentry_sdk.capture_exception()
-        favicon = config.get_tenant_specific_key("favicon.image", tenant)
-        if favicon:
-            try:
-                validators.url(favicon)
-            except ValidationFailure:
-                favicon = None
-                sentry_sdk.capture_exception()
-
         site_config = {
             "consoleme_logo": await get_random_security_logo(tenant),
             "google_analytics": {
@@ -64,8 +45,8 @@ class UserProfileHandler(BaseAPIV1Handler):
                 tenant,
                 "https://communityinviter.com/apps/noqcommunity/noq",
             ),
-            "security_logo": security_logo,
-            "favicon": favicon,
+            "security_logo": None,
+            "favicon": None,
             "security_url": None,
             # If site_config.landing_url is set, users will be redirected to the landing URL after authenticating
             # on the frontend.

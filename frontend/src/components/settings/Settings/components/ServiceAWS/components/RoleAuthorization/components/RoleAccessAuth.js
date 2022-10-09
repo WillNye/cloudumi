@@ -1,20 +1,18 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useApi } from 'hooks/useApi'
 import Datatable from 'lib/Datatable'
 import { DatatableWrapper, RefreshButton } from 'lib/Datatable/ui/utils'
 import { useModal } from 'lib/hooks/useModal'
 import { useToast } from 'lib/Toast'
-import { TableTopBar } from '../../utils'
+import { TableTopBar } from '../../../../utils'
 import { Segment } from 'semantic-ui-react'
-import { roleAccessAuthColumns } from './columns'
+import { roleAccessAuthColumns } from '../../columns'
 import { EnablingRoleAccessAuth } from './EnablingRoleAccessAuth'
-import { NewTag } from './forms/NewTag'
+import { NewTag } from '../../forms/NewTag'
 import { Bar, Fill } from 'lib/Misc'
 
-export const RoleAccessAuth = () => {
-  const [allowTags, setAllowTags] = useState(false)
-
+export const RoleAccessAuth = ({ setAccessData, accessData }) => {
   const { get, post, remove } = useApi(
     'services/aws/role-access/credential-brokering/auth-tags',
     { shouldPersist: true }
@@ -49,7 +47,10 @@ export const RoleAccessAuth = () => {
 
   const handleClose = post.reset
 
-  const columns = roleAccessAuthColumns({ disabled: !allowTags, handleClick })
+  const columns = roleAccessAuthColumns({
+    disabled: !accessData?.role_access,
+    handleClick,
+  })
 
   const label = `Status: ${get.status}${
     get.error ? ` / Error: ${get.error}` : ''
@@ -65,9 +66,12 @@ export const RoleAccessAuth = () => {
 
   return (
     <>
-      <EnablingRoleAccessAuth onChange={setAllowTags} checked={allowTags} />
+      <EnablingRoleAccessAuth
+        setAccessData={setAccessData}
+        accessData={accessData}
+      />
 
-      <Segment basic vertical disabled={!allowTags}>
+      <Segment basic vertical disabled={!accessData?.role_access}>
         <DatatableWrapper
           isLoading={remove.status === 'working'}
           renderAction={

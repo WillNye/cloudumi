@@ -6,7 +6,7 @@ import { useToast } from 'lib/Toast'
 import { useHelpModal } from 'lib/hooks/useHelpModal'
 import { Link } from 'react-router-dom'
 
-export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
+export const EnablingRoleAccessAuth = ({ accessData, setAccessData }) => {
   const { get, post } = useApi(
     'services/aws/role-access/credential-brokering',
     { shouldPersist: true }
@@ -19,10 +19,13 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
   useEffect(() => {
     if (get.timestamp.compare().minutes >= 1 || get.empty) {
       get.do().then((data) => {
-        onChange(data?.state)
+        setAccessData(data)
       })
     } else {
-      onChange(get?.data?.state)
+      setAccessData({
+        ...accessData,
+        role_access: get?.data?.role_access,
+      })
     }
   }, [])
 
@@ -32,7 +35,10 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
     post
       .do(null, action)
       .then(() => {
-        onChange(checked)
+        setAccessData({
+          tra_access: checked ? accessData?.tra_access : checked,
+          role_access: checked,
+        })
         success(`Role Access Authorization is ${action}d`)
         get.do()
       })
@@ -50,7 +56,7 @@ export const EnablingRoleAccessAuth = ({ onChange, checked }) => {
           <Checkbox
             size='mini'
             toggle
-            checked={checked}
+            checked={accessData?.role_access}
             disabled={isWorking}
             onChange={handleChange}
             label={{
