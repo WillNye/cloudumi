@@ -114,6 +114,7 @@ REQUIRES = [
     "tornado",
     "ujson",
     "uvloop",
+    "yappi",
 ]
 
 py_library(

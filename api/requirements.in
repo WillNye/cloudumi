@@ -44,4 +44,5 @@ ujson
 urllib3
 uvloop
 validate_email
+yappi
 vine
