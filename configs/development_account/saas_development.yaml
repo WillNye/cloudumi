@@ -107,22 +107,16 @@ _global_:
     debug: true
   # Saas Configuration
   redis:
+    ssl: true
+    ssl_keyfile: deploy/local/redis/tests/tls/redis.key
+    ssl_certfile: deploy/local/redis/tests/tls/redis.crt
+    ssl_ca_certs: deploy/local/redis/tests/tls/ca.crt
     cluster_mode:
-      enabled: false
+      enabled: true
       nodes:
         global:
           - host: redis-cluster
             port: "9000"
-          - host: redis-cluster
-            port: "9001"
-          - host: redis-cluster
-            port: "9002"
-          - host: redis-cluster
-            port: "9003"
-          - host: redis-cluster
-            port: "9004"
-          - host: redis-cluster
-            port: "9005"
   tenant_registration:
     set_login_page_ui:
       logo_location: frontend/src/assets/NoqLogo.png

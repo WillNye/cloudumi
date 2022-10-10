@@ -26,16 +26,23 @@ services:
     ports:
       - "8001:8001"
   redis-cluster:
-    image: grokzen/redis-cluster
+    image: stevenmoy/redis-cluster
     environment:
       INITIAL_PORT: 9000
       IP: 0.0.0.0
+      DEFAULT_PASSWORD: s2dKdXxjHeCQwoYZ
+      REDIS_TLS_CERT_FILE: /etc/redis/tls/redis.crt
+      REDIS_TLS_KEY_FILE: /etc/redis/tls/redis.key
+      REDIS_TLS_CA_FILE: /etc/redis/tls/ca.crt
+    volumes:
+      - ./local/redis/tests/tls/:/etc/redis/tls
     #      IP: ${REDIS_CLUSTER_IP}
     #      SENTINEL: ${REDIS_USE_SENTINEL}
     #      STANDALONE: ${REDIS_USE_STANDALONE}
     hostname: redis-cluster
     ports:
-      - "9000-9050:9000-9050"
+      - "9000-9005:9000-9005"
+
   # Portainer is only for dev
 #  portainer:
 #    image: portainer/portainer-ce:latest
