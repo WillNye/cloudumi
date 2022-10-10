@@ -173,7 +173,14 @@ async def detect_cloudtrail_denies_and_update_cache(
         if num_events >= max_num_messages_to_process:
             reached_limit_on_num_messages_to_process = True
             break
-        processed_messages = []
+        processed_messages = [
+            {
+                "Id": message["MessageId"],
+                "ReceiptHandle": message["ReceiptHandle"],
+            }
+            for message in messages
+        ]
+
         for message in messages:
             message_body = json.loads(message["Body"])
             try:
@@ -247,13 +254,6 @@ async def detect_cloudtrail_denies_and_update_cache(
             if generated_policy is None:
                 log.warning("Unable to process cloudtrail deny event")
                 num_events += 1
-                processed_messages.append(
-                    {
-                        "Id": message["MessageId"],
-                        "ReceiptHandle": message["ReceiptHandle"],
-                    }
-                )
-
             elif (
                 generated_policy.assessment_result
                 == access_undenied.common.AccessDeniedReason.ERROR
@@ -261,13 +261,6 @@ async def detect_cloudtrail_denies_and_update_cache(
                 log.warning(
                     f"Unable to process cloudtrail deny event: {generated_policy.error_message}"
                 )
-                processed_messages.append(
-                    {
-                        "Id": message["MessageId"],
-                        "ReceiptHandle": message["ReceiptHandle"],
-                    }
-                )
-
             elif (
                 generated_policy.assessment_result
                 != access_undenied.common.AccessDeniedReason.ALLOWED
@@ -279,12 +272,6 @@ async def detect_cloudtrail_denies_and_update_cache(
                 ):
                     log.warning(
                         "TODO/TECH-DEBT: deal with errors when result_details is not defined"
-                    )
-                    processed_messages.append(
-                        {
-                            "Id": message["MessageId"],
-                            "ReceiptHandle": message["ReceiptHandle"],
-                        }
                     )
                     continue
                 if "Policy" in generated_policy.result_details.policies[0]:
@@ -305,12 +292,6 @@ async def detect_cloudtrail_denies_and_update_cache(
                     all_cloudtrail_denies[event.request_id] = event.dict()
                     new_events += 1
                 num_events += 1
-                processed_messages.append(
-                    {
-                        "Id": message["MessageId"],
-                        "ReceiptHandle": message["ReceiptHandle"],
-                    }
-                )
 
             else:
                 log.info("Allowing event")
