@@ -73,6 +73,11 @@ output "elasticache_nodes" {
   value       = module.tenant_elasticache_service.elasticache_nodes
 }
 
+output "elasticache_redis_primary_endpoint" {
+  description = "Address of the replication group configuration endpoint when cluster mode is enabled"
+  value       = module.tenant_elasticache_service.elasticache_redis_primary_endpoint
+}
+
 output "namespace" {
   description = "The configured namespace (for automation)"
   value       = var.namespace
