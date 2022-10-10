@@ -190,6 +190,7 @@ class AwsIntegrationHandler(BaseAdminHandler):
                         + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                         + f"&stackName={spoke_stack_name}"
                         + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
+                        + f"&param_ReadOnlyModeParameter={str(read_only_mode).lower()}"
                     ),
                     "template_url": spoke_role_template_url,
                     "stack_name": spoke_stack_name,
