@@ -97,26 +97,24 @@ _global_:
     clear_tasks_for_development: false
     purge: true
     broker:
-      us-east-1: redis://cloudumi-redis:6379/1
-      us-west-2: redis://cloudumi-redis:6379/1
-      global: redis://cloudumi-redis:6379/1
+      us-east-1: rediss://:{password}@cloudumi-redis:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@cloudumi-redis:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@cloudumi-redis:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     backend:
-      us-east-1: redis://cloudumi-redis:6379/2
-      us-west-2: redis://cloudumi-redis:6379/2
-      global: redis://cloudumi-redis:6379/2
+      us-east-1: rediss://:{password}@cloudumi-redis:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@cloudumi-redis:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@cloudumi-redis:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
   redis:
     ssl: true
-    ssl_keyfile: deploy/local/redis/tests/tls/redis.key
-    ssl_certfile: deploy/local/redis/tests/tls/redis.crt
-    ssl_ca_certs: deploy/local/redis/tests/tls/ca.crt
+    ssl_ca_certs: ./deploy/local/redis/tests/tls/ca.crt
     cluster_mode:
-      enabled: true
+      enabled: false
       nodes:
         global:
-          - host: redis-cluster
-            port: "9000"
+          - host: cloudumi-redis
+            port: 6379
   tenant_registration:
     set_login_page_ui:
       logo_location: frontend/src/assets/NoqLogo.png
