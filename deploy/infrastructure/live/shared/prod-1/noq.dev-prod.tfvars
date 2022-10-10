@@ -41,7 +41,8 @@ dax_node_type  = "dax.t3.small"
 dax_node_count = 1
 
 # Redis
-redis_node_type = "cache.t3.small"
+redis_node_type            = "cache.t3.small"
+secret_manager_secret_name = "staging/noq"
 
 # Sentry
 sentry_dsn = "https://50b9f954977449db94bf4d1a8b9a8084@o1134078.ingest.sentry.io/6625264"
