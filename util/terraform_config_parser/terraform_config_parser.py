@@ -169,16 +169,16 @@ def flatten_attr_from_nested_attribute(
 def __set_primary_redis_address(terraform_config: dict) -> dict:
     """Extra redis address from primary endpoint from redis primary endpoint address"""
     terraform_config["elasticache_address"] = terraform_config[
-        "elasticache_redis_primary_endpoint"
-    ].split(":")[0]
+        "elasticache_redis_primary_endpoint_address"
+    ]
     return terraform_config
 
 
 def __set_primary_redis_port(terraform_config: dict) -> dict:
     """Extra redis port from primary endpoint from redis primary endpoint address"""
     terraform_config["elasticache_port"] = terraform_config[
-        "elasticache_redis_primary_endpoint"
-    ].split(":")[1]
+        "elasticache_redis_primary_endpoint_port"
+    ]
     return terraform_config
 
 

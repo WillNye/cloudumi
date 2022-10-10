@@ -73,9 +73,14 @@ output "elasticache_nodes" {
   value       = module.tenant_elasticache_service.elasticache_nodes
 }
 
-output "elasticache_redis_primary_endpoint" {
-  description = "Address of the replication group configuration endpoint when cluster mode is enabled"
-  value       = module.tenant_elasticache_service.elasticache_redis_primary_endpoint
+output "elasticache_redis_primary_endpoint_address" {
+  description = "Address of the endpoint for the primary node in the replication group, if the cluster mode is disabled."
+  value       = module.tenant_elasticache_service.elasticache_redis_primary_endpoint_address
+}
+
+output "elasticache_redis_primary_endpoint_port" {
+  description = "Port of the endpoint for the primary node in the replication group, if the cluster mode is disabled."
+  value       = module.tenant_elasticache_service.elasticache_redis_primary_endpoint_port
 }
 
 output "namespace" {

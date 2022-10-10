@@ -18,7 +18,12 @@ output "elasticache_nodes" {
   value       = aws_elasticache_cluster.redis.cache_nodes
 }
 
-output "elasticache_redis_primary_endpoint" {
-  description = "Address of the replication group configuration endpoint when cluster mode is enabled"
+output "elasticache_redis_primary_endpoint_address" {
+  description = "Address of the endpoint for the primary node in the replication group, if the cluster mode is disabled."
   value       = aws_elasticache_replication_group.redis.primary_endpoint_address
+}
+
+output "elasticache_redis_primary_endpoint_port" {
+  description = "Port of the endpoint for the primary node in the replication group, if the cluster mode is disabled."
+  value       = aws_elasticache_replication_group.redis.port
 }
