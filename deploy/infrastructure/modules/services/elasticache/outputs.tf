@@ -17,3 +17,8 @@ output "elasticache_nodes" {
   description = "List of node objects including id, address, port and availability_zone"
   value       = aws_elasticache_cluster.redis.cache_nodes
 }
+
+output "elasticache_redis_primary_endpoint" {
+  description = "Address of the replication group configuration endpoint when cluster mode is enabled"
+  value       = aws_elasticache_replication_group.redis.primary_endpoint_address
+}
