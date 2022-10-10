@@ -166,6 +166,22 @@ def flatten_attr_from_nested_attribute(
     return terraform_config
 
 
+def __set_primary_redis_address(terraform_config: dict) -> dict:
+    """Extra redis address from primary endpoint from redis primary endpoint address"""
+    terraform_config["elasticache_address"] = terraform_config[
+        "elasticache_redis_primary_endpoint"
+    ].split(":")[0]
+    return terraform_config
+
+
+def __set_primary_redis_port(terraform_config: dict) -> dict:
+    """Extra redis port from primary endpoint from redis primary endpoint address"""
+    terraform_config["elasticache_port"] = terraform_config[
+        "elasticache_redis_primary_endpoint"
+    ].split(":")[1]
+    return terraform_config
+
+
 def is_aws_profile_present() -> bool:
     return "AWS_PROFILE" in os.environ
 
@@ -283,12 +299,8 @@ if __name__ == "__main__":
         "cluster_id_safed_no_sep",
         ["zone_safed", "namespace", "stage", "attributes"],
     )
-    terraform_config = flatten_attr_from_nested_attribute(
-        terraform_config, "elasticache_nodes", "address", "elasticache_address", 0
-    )
-    terraform_config = flatten_attr_from_nested_attribute(
-        terraform_config, "elasticache_nodes", "port", "elasticache_port", 0
-    )
+    terraform_config = __set_primary_redis_address(terraform_config)
+    terraform_config = __set_primary_redis_port(terraform_config)
     write_file(
         "noq-product-configuration.yaml.jinja2",
         "configuration.yaml",
