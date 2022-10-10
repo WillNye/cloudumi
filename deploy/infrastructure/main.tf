@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.74"
+      version = "~> 4.34.0"
     }
   }
 
@@ -101,6 +101,7 @@ module "tenant_elasticache_service" {
   timeout                     = var.timeout
   vpc_id                      = module.tenant_networking.vpc_id
   elasticache_node_type       = var.elasticache_node_type
+  secret_manager_secret_name  = var.secret_manager_secret_name
 }
 
 module "tenant_ecs_task_role" {
