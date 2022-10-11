@@ -8,8 +8,11 @@ import PolicyTable from './components/policy/PolicyTable'
 // import IdentityGroupEdit from './components/identity/Group'
 import ConsoleMeRequestTable from './components/request/RequestTable'
 import Downloads from './components/Downloads'
-import { RequestPermissions, SelfServiceWizard } from './components/SelfService'
-import RequestRoleAccess from 'components/SelfService/RequestRoleAccess'
+import {
+  RequestPermissions,
+  SelfServiceWizard,
+  RequestRoleCreation,
+} from './components/SelfService'
 import ConsoleMeDynamicConfig from './components/DynamicConfig'
 import PolicyRequestReview from './components/request/PolicyRequestsReview'
 import PolicyEditor from './components/policy/PolicyEditor'
@@ -32,6 +35,7 @@ import AutomatedPermissions from 'components/AutomatedPermissions'
 import EULA from './components/EULA'
 import ErrorBoundary from 'components/ErrorBoundary'
 import MultiFactorAuth from 'components/MultiFactorAuth'
+import OnBoardingFlow from 'components/OnBoardingFlow'
 import './App.scss'
 
 function App() {
@@ -44,6 +48,12 @@ function App() {
             exact
             path='/'
             component={SelectRoles}
+          />
+          <ProtectedDashboardRoute
+            key='selfservice'
+            exact
+            path='/selfservice/role/create'
+            component={RequestRoleCreation}
           />
           <ProtectedDashboardRoute
             key='selfservice'
@@ -192,6 +202,12 @@ function App() {
             exact
             path='/mfa'
             component={MultiFactorAuth}
+          />
+          <ProtectedRoute
+            key='onboarding'
+            exact
+            path='/onboarding'
+            component={OnBoardingFlow}
           />
           <ProtectedDashboardRoute
             key='logout'

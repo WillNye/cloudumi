@@ -204,7 +204,10 @@ async def handle_resource_type_ahead_request(cls):
             account_and_id_list.append(f"{account_name} ({account_id})")
         for account in account_and_id_list:
             if search_string.lower() in account.lower():
-                results.append({"title": account})
+                role_account_id = (
+                    account.split(" ")[1].replace("(", "").replace(")", "")
+                )
+                results.append({"title": account, "account_id": role_account_id})
     elif resource_type == "app":
         results = {}
         filter_condition = None

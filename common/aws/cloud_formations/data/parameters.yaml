@@ -1,4 +1,12 @@
 shared:
+  AccountNameParameter:
+    Description: >-
+      Name to identify the account by.
+    Type: String
+    MinLength: "0"
+    MaxLength: "50"
+    AllowedPattern: '[\s\S]*'
+    ConstraintDescription: 'Invalid account name value.  Must match pattern [\s\S]* with a length between 1-50. Defaults to account id'
   ExternalIDParameter:
     Description: >-
       ExternalId is used for verification. Do not change this value!

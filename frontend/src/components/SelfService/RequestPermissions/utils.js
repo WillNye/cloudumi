@@ -9,3 +9,10 @@ export const containsCondensedPolicyChange = (changes) => {
   )
   return Boolean(effectivePermissionsChanges.length)
 }
+
+export const containsResourceCreation = (changes) => {
+  const effectivePermissionsChanges = changes.filter(
+    (change) => change.change_type === 'create_resource'
+  )
+  return Boolean(effectivePermissionsChanges.length)
+}

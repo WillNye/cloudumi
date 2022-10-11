@@ -82,6 +82,7 @@ Resources:
       ServiceToken: !Ref RegistrationTopicArnParameter
       IntegrationName: !Ref "AWS::StackName"
       ExternalId: !Ref ExternalIDParameter
+      AccountName: !Ref AccountNameParameter
       ClusterRole: !Ref ClusterRoleParameter
       CentralRoleArn: !GetAtt CentralRole.Arn
       SpokeRole: !Ref SpokeRoleNameParameter
@@ -102,6 +103,9 @@ Outputs:
   ExternalID:
     Description: ExternalID to share with the SaaS for assume-role deployments
     Value: !Ref ExternalIDParameter
+  AccountName:
+    Description: Name to identify the account by. Defaults to the account id.
+    Value: !Ref AccountNameParameter
   Host:
     Description: Host to share with the SaaS for deployment
     Value: !Ref HostParameter
