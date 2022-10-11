@@ -598,14 +598,14 @@ resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant_v2" {
     range_key       = "arn"
     projection_type = "ALL"
     read_capacity   = 1
-    write_capacity  = var.cloudumi_resource_cache_multitenant_v2_tenant-arn-index_write_capacity
+    write_capacity  = 5
   }
   global_secondary_index {
     name            = "tenant-index"
     hash_key        = "tenant"
     projection_type = "ALL"
     read_capacity   = 1
-    write_capacity  = var.cloudumi_resource_cache_multitenant_v2_tenant-index_write_capacity
+    write_capacity  = 1
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"

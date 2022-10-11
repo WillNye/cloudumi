@@ -33,9 +33,6 @@ allowed_inbound_cidr_blocks = [
   "0.0.0.0/0"
 ]
 
-# DynamoDB
-cloudumi_resource_cache_multitenant_v2_tenant-arn-index_write_capacity = 15
-cloudumi_resource_cache_multitenant_v2_tenant-index_write_capacity     = 5
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
 

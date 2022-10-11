@@ -48,18 +48,6 @@ variable "dynamo_table_replica_regions" {
   type        = list(any)
 }
 
-variable "cloudumi_resource_cache_multitenant_v2_tenant-arn-index_write_capacity" {
-  description = "Write capacity for tenant-arn-index global secondary index on cloudumi_resource_cache_multitenant_v2"
-  type        = number
-  default     = 5
-}
-
-variable "cloudumi_resource_cache_multitenant_v2_tenant-index_write_capacity" {
-  description = "Write capacity for tenant-index global secondary index on cloudumi_resource_cache_multitenant_v2"
-  type        = number
-  default     = 1
-}
-
 variable "lb_port" {
   description = "The port the load balancer will listen on."
   default     = 443
