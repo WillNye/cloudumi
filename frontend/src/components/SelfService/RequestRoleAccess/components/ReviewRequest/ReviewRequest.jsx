@@ -114,9 +114,11 @@ const ReviewRequest = ({
             </div>
           </div>
           <div className='review-request__row'>
-            <div className='review-request__item'>Access expiration</div>
+            <div className='review-request__item'>Access Expiration</div>
             <div className='review-request__item'>
-              {new Date(expirationDate).toLocaleString()}
+              {expirationDate
+                ? new Date(expirationDate).toLocaleString()
+                : '___________'}
             </div>
           </div>
         </div>

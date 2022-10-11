@@ -29,7 +29,7 @@ const SelectIdentity = ({
   const [isLoading, setIsLoading] = useState(false)
   const [isRoleLoading, setIsRoleLoading] = useState(false)
   const [messages, setMessages] = useState([])
-  const [searchValue, setSearchValue] = useState('')
+  const [searchValue, setSearchValue] = useState(role?.name || '')
 
   const getRoleDetail = (endpoint, principal) => {
     sendRequestCommon(null, endpoint, 'get').then((response) => {

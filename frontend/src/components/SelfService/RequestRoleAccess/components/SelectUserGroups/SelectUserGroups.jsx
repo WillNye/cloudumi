@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import debounce from 'lodash/debounce'
 import {
   Button,
@@ -73,6 +73,31 @@ const SelectUserGroups = ({
     }
   }
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (!e.target.value) {
+        return
+      }
+      const groupName = e.target.value
+      const result = {
+        title: groupName,
+        name: groupName,
+        description: '',
+      }
+      setUserGroups([...userGroups, result])
+      setResults([])
+      setSearchValue('')
+    }
+  }
+
+  const handleDeleteUserGroup = useCallback(
+    (value) => {
+      const values = userGroups?.filter((item) => item.name !== value)
+      setUserGroups(values)
+    },
+    [userGroups] // eslint-disable-line
+  )
+
   const resultRenderer = (result) => (
     <Grid>
       <Grid.Row verticalAlign='middle'>
@@ -94,9 +119,6 @@ const SelectUserGroups = ({
               )}
             </strong>
           </div>
-        </Grid.Column>
-        <Grid.Column width={6} textAlign='right'>
-          {result.account ? result.account : null}
         </Grid.Column>
       </Grid.Row>
     </Grid>
@@ -145,13 +167,21 @@ const SelectUserGroups = ({
                 results={results}
                 resultRenderer={resultRenderer}
                 value={searchValue}
-                placeholder='Enter role here'
+                placeholder='Enter user/group here'
+                onKeyDown={handleKeyDown}
+                showNoResults={false}
               />
               <Divider />
 
               <Label.Group>
                 {userGroups.map((group, index) => (
-                  <Label key={index}>{group.name}</Label>
+                  <Label basic color='blue' key={index}>
+                    {group.name}
+                    <Icon
+                      name='delete'
+                      onClick={() => handleDeleteUserGroup(group.name)}
+                    />
+                  </Label>
                 ))}
               </Label.Group>
 
