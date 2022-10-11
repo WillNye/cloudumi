@@ -79,26 +79,27 @@ _global_:
     clear_tasks_for_development: false
     purge: false
     broker:
-      us-east-1: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
-      us-west-2: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
-      global: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/1
+      us-east-1: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     backend:
-      us-east-1: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
-      us-west-2: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
-      global: redis://staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com:6379/2
+      us-east-1: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
   dax_endpoints:
     - staging-shared.eb1l6j.dax-clusters.us-west-2.amazonaws.com:8111
   redis:
     host:
-      global: staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com
+      global: master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com
     port: 6379
+    ssl: true
     cluster_mode:
       enabled: false
       nodes:
         global:
-          - host: staging-noq-dev-shared-staging-1-redis-service.eb1l6j.0001.usw2.cache.amazonaws.com
+          - host: master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com
             port: 6379
   sentry:
     dsn: https://7113898274d641d3923e0b163a74e6fe@o1134078.ingest.sentry.io/6625267
