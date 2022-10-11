@@ -142,12 +142,13 @@ class Celery(celery.Celery):
 
 def get_celery_app():
     use_ssl_dict = None
+    ssl_ca_certs = config.get("_global_.redis.ssl_ca_certs", certifi.where())
 
     if config.get("_global_.redis.ssl", False):
         use_ssl_dict = {
             "ssl_keyfile": config.get("_global_.redis.ssl_keyfile", None),
             "ssl_certfile": config.get("_global_.redis.ssl_certfile", None),
-            "ssl_ca_certs": config.get("_global_.redis.ssl_ca_certs", certifi.where()),
+            "ssl_ca_certs": ssl_ca_certs,
             "ssl_cert_reqs": ssl.CERT_REQUIRED,
         }
 
@@ -158,16 +159,12 @@ def get_celery_app():
         broker=config.get(
             f"_global_.celery.broker.{config.region}",
             config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/1"),
-        ).format(
-            password=redis_password, ssl_ca_certs=use_ssl_dict.get("ssl_ca_certs")
-        ),
+        ).format(password=redis_password, ssl_ca_certs=ssl_ca_certs),
         broker_use_ssl=use_ssl_dict,
         backend=config.get(
             f"_global_.celery.backend.{config.region}",
-            config.get("_global_.celery.backend.global"),
-        ).format(
-            password=redis_password, ssl_ca_certs=use_ssl_dict.get("ssl_ca_certs")
-        ),
+            config.get("_global_.celery.backend.global", "redis://127.0.0.1:6379/2"),
+        ).format(password=redis_password, ssl_ca_certs=ssl_ca_certs),
         redis_backend_use_ssl=use_ssl_dict,
     )
 
