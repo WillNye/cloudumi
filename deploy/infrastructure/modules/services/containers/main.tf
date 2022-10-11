@@ -331,14 +331,6 @@ resource "aws_security_group" "ecs-sg" {
   }
 
   ingress {
-    description     = "SSH for accessing Noq for debugging"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [var.test_access_sg_id]
-  }
-
-  ingress {
     description = "SSH access to API container"
     from_port   = 2222
     to_port     = 2222
