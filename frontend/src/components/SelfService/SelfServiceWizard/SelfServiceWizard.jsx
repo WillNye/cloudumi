@@ -16,10 +16,7 @@ const SelfServiceWizard = () => {
         <Divider />
 
         <Header as='h4'>Create an IAM Role</Header>
-        {/* <Link to='permissions-selfservice'>Continue</Link> */}
-        <Header sub color='grey' disabled as='p'>
-          Coming Soon
-        </Header>
+        <Link to='/selfservice/role/create'>Continue</Link>
 
         <Divider />
 

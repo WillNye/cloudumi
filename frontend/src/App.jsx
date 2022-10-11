@@ -8,7 +8,11 @@ import PolicyTable from './components/policy/PolicyTable'
 // import IdentityGroupEdit from './components/identity/Group'
 import ConsoleMeRequestTable from './components/request/RequestTable'
 import Downloads from './components/Downloads'
-import { RequestPermissions, SelfServiceWizard } from './components/SelfService'
+import {
+  RequestPermissions,
+  SelfServiceWizard,
+  RequestRoleCreation,
+} from './components/SelfService'
 import ConsoleMeDynamicConfig from './components/DynamicConfig'
 import PolicyRequestReview from './components/request/PolicyRequestsReview'
 import PolicyEditor from './components/policy/PolicyEditor'
@@ -44,6 +48,12 @@ function App() {
             exact
             path='/'
             component={SelectRoles}
+          />
+          <ProtectedDashboardRoute
+            key='selfservice'
+            exact
+            path='/selfservice/role/create'
+            component={RequestRoleCreation}
           />
           <ProtectedDashboardRoute
             key='selfservice'

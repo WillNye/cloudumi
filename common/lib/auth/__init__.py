@@ -279,6 +279,9 @@ async def get_extended_request_account_ids(
 ) -> set[str]:
     accounts = set()
 
+    if account_id := extended_request.principal.account_id:
+        return {account_id}
+
     for change in extended_request.changes.changes:
         arn = change.principal.principal_arn
         if change.change_type in [
@@ -349,14 +352,17 @@ async def populate_approve_reject_policy(
     request_config = {}
 
     for change in extended_request.changes.changes:
-        arn = change.principal.principal_arn
-        if change.change_type in [
-            "resource_policy",
-            "sts_resource_policy",
-        ]:
-            arn = change.arn
+        account_id = extended_request.principal.account_id
 
-        account_id = await ResourceAccountCache.get(tenant, arn)
+        if not account_id:
+            arn = change.principal.principal_arn
+            if change.change_type in [
+                "resource_policy",
+                "sts_resource_policy",
+            ]:
+                arn = change.arn
+            account_id = await ResourceAccountCache.get(tenant, arn)
+
         is_owner = await can_admin_policies(user, groups, tenant, [account_id])
         allowed_admins = await get_account_delegated_admins(account_id, tenant)
         request_config[change.id] = {

@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import { Component } from 'react'
 import {
   Button,
   Dimmer,
@@ -20,9 +20,11 @@ import ResourcePolicyChangeComponent from '../blocks/ResourcePolicyChangeCompone
 import ResourceTagChangeComponent from '../blocks/ResourceTagChangeComponent'
 import ExpirationDateBlock from 'components/blocks/ExpirationDateBlock'
 import TemporaryEscalationComponent from 'components/blocks/TemporaryEscalationBlockComponent'
+import CreateRoleComponent from 'components/blocks/CreateRoleRequestComponent'
 import {
   checkContainsReadOnlyAccount,
   containsCondensedPolicyChange,
+  containsResourceCreation,
 } from '../SelfService/RequestPermissions/utils'
 
 class PolicyRequestReview extends Component {
@@ -428,12 +430,19 @@ class PolicyRequestReview extends Component {
       extendedRequest.changes?.changes || []
     )
 
+    const isResourceCreation = containsResourceCreation(
+      extendedRequest.changes?.changes || []
+    )
+
+    const isExpirationHidden =
+      hasReadOnlyAccountPolicy || hasCondensedPolicy || isResourceCreation
+
     const expirationDateContent =
-      hasReadOnlyAccountPolicy || hasCondensedPolicy || loading ? (
+      isExpirationHidden || loading ? (
         <Message
           info
-          header='Policy request affects a read-only account or Effective Permissions'
-          content='Temporary policy requests are disabled for requests affecting read-only accounts and .'
+          header='Policy request affects a read-only account, Effective Permissions or Resource creation'
+          content='Temporary policy requests are disabled for requests affecting read-only accounts and resource creation.'
         />
       ) : (
         <ExpirationDateBlock
@@ -478,6 +487,21 @@ class PolicyRequestReview extends Component {
                   requestID={requestID}
                   sendProposedPolicy={this.sendProposedPolicy}
                   sendRequestCommon={this.props.sendRequestCommon}
+                />
+              )
+            }
+
+            if (change.change_type === 'create_resource') {
+              return (
+                <CreateRoleComponent
+                  key={index}
+                  change={change}
+                  config={requestConfig}
+                  changesConfig={changesConfig}
+                  requestReadOnly={requestReadOnly}
+                  updateTag={this.updateTag}
+                  reloadDataFromBackend={this.reloadDataFromBackend}
+                  requestID={requestID}
                 />
               )
             }
