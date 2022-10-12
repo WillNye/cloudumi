@@ -1,13 +1,21 @@
 /* eslint-disable max-len */
-import React, { useContext, useState } from 'react'
+import { useContext, useState } from 'react'
 import { ApiContext, useApi } from 'hooks/useApi'
 
-import { Button, Form, Segment, Label, Icon, Input } from 'semantic-ui-react'
+import {
+  Button,
+  Form,
+  Segment,
+  Label,
+  Icon,
+  Input,
+  Divider,
+} from 'semantic-ui-react'
 import { Bar, Fill } from 'lib/Misc'
-import { useCopyToClipboard } from 'hooks/useCopyToClipboard'
 import { useForm } from 'react-hook-form'
 import { DimmerWithStates } from 'lib/DimmerWithStates'
 import { removeUserAccount } from './utils'
+import { useHistory } from 'react-router-dom'
 
 const SpokeAccountUsers = ({ category, setValue, labels }) => (
   <div className='user-groups'>
@@ -33,6 +41,8 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
   const [accountViewer, setAccountViewer] = useState('')
   const { register, handleSubmit, watch, setValue } = useForm({ defaultValues })
 
+  const history = useHistory()
+
   const { post } = useApi('services/aws/account/spoke')
 
   const [errorMessage, setErrorMessage] = useState(
@@ -53,16 +63,10 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
 
   const fields = watch()
 
-  const { CopyButton } = useCopyToClipboard()
-
   const aws = useContext(ApiContext)
 
   const handleClick = () => {
-    window.open(
-      aws.data?.read_write?.spoke_account_role?.cloudformation_url,
-      '_blank'
-    )
-    closeModal()
+    history.push('/onboarding')
   }
 
   const isIneligible = aws.data?.spoke_account_role?.status === 'ineligible'
@@ -223,30 +227,11 @@ export const NewSpokeAccount = ({ closeModal, onFinish, defaultValues }) => {
             and then it will assume the spoke role on *account_b*. It will write
             the IAM policy from the spoke role on *account_b*.
           </p>
-          <ol>
-            <li>
-              Authenticate to the AWS account that you want to use as the Hub
-              Account.
-            </li>
-            <li>
-              Start the process by clicking the Execute CloudFormation
-              button.&nbsp; This will open up a Cloudformation stack in a new
-              tab.
-            </li>
-            <li>
-              Execute the Cloudformation, and revisit this page after it has
-              successfully executed.
-            </li>
-          </ol>
+          <Divider horizontal />
           <Bar>
-            <Button onClick={handleClick} fluid positive>
-              Execute CloudFormation
+            <Button onClick={handleClick} fluid primary>
+              Proceed
             </Button>
-            <CopyButton
-              value={
-                aws.data?.read_write?.spoke_account_role?.cloudformation_url
-              }
-            />
           </Bar>
         </>
       )}
