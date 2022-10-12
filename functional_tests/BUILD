@@ -24,6 +24,11 @@ EXT_DEPS = [
     requirement("ujson"),
 ]
 
+exports_files(
+    srcs = ["run_tests.py"],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "src",
     srcs = glob([
@@ -40,25 +45,6 @@ py_library(
     srcs = [
         ":src",
     ],
-    deps = INT_DEPS + EXT_DEPS,
-    visibility = ["//visibility:public"],
-)
-
-py_binary(
-    name = "bin",
-    data = [
-        "//configs/development_account:saas_development.yaml",
-    ],
-    srcs_version = "PY3",
-    env = {
-        "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
-        "TEST_USER_DOMAIN": "localhost",
-    },
-    srcs = [
-        ":src",
-    ],
-    main = "run_tests.py",
     deps = INT_DEPS + EXT_DEPS,
     visibility = ["//visibility:public"],
 )
