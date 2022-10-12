@@ -12,6 +12,7 @@ import {
   RequestPermissions,
   SelfServiceWizard,
   RequestRoleCreation,
+  RequestRoleAccess,
 } from './components/SelfService'
 import ConsoleMeDynamicConfig from './components/DynamicConfig'
 import PolicyRequestReview from './components/request/PolicyRequestsReview'
@@ -50,22 +51,28 @@ function App() {
             component={SelectRoles}
           />
           <ProtectedDashboardRoute
-            key='selfservice'
+            key='create-role-selfservice'
             exact
             path='/selfservice/role/create'
             component={RequestRoleCreation}
+          />
+          <ProtectedDashboardRoute
+            key='access-role-selfservice'
+            exact
+            path='/selfservice/role/access'
+            component={RequestRoleAccess}
+          />
+          <ProtectedDashboardRoute
+            key='permissions-selfservice'
+            exact
+            path='/selfservice/permissions'
+            component={RequestPermissions}
           />
           <ProtectedDashboardRoute
             key='selfservice'
             exact
             path='/selfservice'
             component={SelfServiceWizard}
-          />
-          <ProtectedDashboardRoute
-            key='selfservice'
-            exact
-            path='/permissions-selfservice'
-            component={RequestPermissions}
           />
           <ProtectedDashboardRoute
             key='policies'

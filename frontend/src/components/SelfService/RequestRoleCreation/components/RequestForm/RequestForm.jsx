@@ -87,7 +87,7 @@ const RequestForm = ({ formData, setCurrentStep, setFormData }) => {
           onChange={(_e, { value }) => {
             setRoleNameError(null)
             setRoleName(value)
-            if (!/[a-zA-Z_0-9+=,.@-_]+/.test(value)) {
+            if (!/^[a-zA-Z_0-9+=,.@-_]+$/.test(value)) {
               setRoleNameError(
                 'Role name should only contain alphanumeric characters and +=,.@_-'
               )
@@ -124,7 +124,9 @@ const RequestForm = ({ formData, setCurrentStep, setFormData }) => {
           <Button
             primary
             onClick={handleSubmit}
-            disabled={!selectedAccount || !(roleName || '').trim()}
+            disabled={
+              !selectedAccount || !(roleName || '').trim() || roleNameError
+            }
           >
             Next
           </Button>

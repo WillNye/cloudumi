@@ -11,7 +11,7 @@ const SelfServiceWizard = () => {
 
       <Segment>
         <Header as='h4'>Request Permissions</Header>
-        <Link to='permissions-selfservice'>Continue</Link>
+        <Link to='/selfservice/permissions'>Continue</Link>
 
         <Divider />
 
@@ -21,10 +21,7 @@ const SelfServiceWizard = () => {
         <Divider />
 
         <Header as='h4'>Request Access to an IAM Role</Header>
-        {/* <Link to='permissions-selfservice'>Continue</Link> */}
-        <Header sub color='grey' disabled as='p'>
-          Coming Soon
-        </Header>
+        <Link to='/selfservice/role/access'>Continue</Link>
       </Segment>
       <Divider horizontal />
     </Segment>

@@ -26,6 +26,7 @@ import {
   containsCondensedPolicyChange,
   containsResourceCreation,
 } from '../SelfService/RequestPermissions/utils'
+import AssumeRoleAccessComponent from 'components/blocks/AssumeRoleAccessComponent'
 
 class PolicyRequestReview extends Component {
   constructor(props) {
@@ -591,6 +592,20 @@ class PolicyRequestReview extends Component {
             if (change.change_type === 'resource_tag') {
               return (
                 <ResourceTagChangeComponent
+                  key={index}
+                  change={change}
+                  config={requestConfig}
+                  changesConfig={changesConfig}
+                  requestReadOnly={requestReadOnly}
+                  updateTag={this.updateTag}
+                  reloadDataFromBackend={this.reloadDataFromBackend}
+                  requestID={requestID}
+                />
+              )
+            }
+            if (change.change_type === 'assume_role_access') {
+              return (
+                <AssumeRoleAccessComponent
                   key={index}
                   change={change}
                   config={requestConfig}

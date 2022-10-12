@@ -9,25 +9,27 @@ import {
 export const convertTime12to24 = (strTime) => {
   const [time, modifier] = strTime.split(' ')
 
-  let [hours, minutes] = time.split(':')
+  const [hours, minutes] = time.split(':')
 
-  if (modifier === 'PM') {
-    hours = parseInt(hours, 10) + 12
+  let hoursIn24 = hours
+
+  if (modifier === 'PM' || hours === '12') {
+    hoursIn24 = parseInt(hours, 10) + 12
   }
 
-  if (hours === 24) {
-    hours = '00'
+  if (hoursIn24 === 24) {
+    hoursIn24 = '00'
   }
 
-  return { hours, minutes }
+  return { hours: hoursIn24, minutes }
 }
 
 export const getDefaultTime = (expDate) => {
   if (expDate) {
     const strTime = new Date(expDate).toLocaleTimeString('en-US', {
-      // en-US can be set to 'default' to use user's browser settings
-      hour: '2-digit',
-      minute: '2-digit',
+      hour12: true,
+      hour: 'numeric',
+      minute: 'numeric',
     })
 
     const [time, modifier] = strTime.split(' ')
