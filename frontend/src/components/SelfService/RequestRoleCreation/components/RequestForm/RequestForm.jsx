@@ -124,7 +124,9 @@ const RequestForm = ({ formData, setCurrentStep, setFormData }) => {
           <Button
             primary
             onClick={handleSubmit}
-            disabled={!selectedAccount || !(roleName || '').trim()}
+            disabled={
+              !selectedAccount || !(roleName || '').trim() || roleNameError
+            }
           >
             Next
           </Button>
