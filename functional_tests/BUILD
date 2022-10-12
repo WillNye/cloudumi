@@ -17,6 +17,8 @@ EXT_DEPS = [
     requirement("flake8"),
     requirement("moto"),
     requirement("pytest"),
+    requirement("pytest-mccabe"),
+    requirement("pytest-mypy"),
     requirement("tornado"),
     requirement("ujson"),
 ]

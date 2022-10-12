@@ -3,5 +3,7 @@ botocore
 flake8
 moto
 pytest
+pytest-mccabe
+pytest-mypy
 tornado
 ujson

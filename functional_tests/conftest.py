@@ -2,7 +2,10 @@ import asyncio
 import os
 import urllib
 
+import pytest
 import ujson as json
+from _pytest.config import Config
+from pytest_cov.plugin import CovPlugin
 from tornado.testing import AsyncHTTPTestCase
 
 from common.lib.jwt import generate_jwt_token
@@ -15,6 +18,40 @@ TEST_USER_NAME = "testing@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
 TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.staging.noq.dev")
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
+
+
+# @pytest.mark.tryfirst
+def pytest_configure(config: Config) -> None:
+    """Setup default pytest options."""
+    # config.option.newfirst = True
+    # config.option.failedfirst = True
+    # config.option.tbstyle = "short"
+
+    config.option.pylint = True
+    config.option.black = True
+    config.option.isort = True
+    config.option.mypy = True
+    config.option.mypy_ignore_missing_imports = True
+    config.pluginmanager.getplugin("mypy").mypy_argv.extend(
+        [
+            # "--strict",
+            "--implicit-reexport"
+        ]
+    )
+
+    config.option.mccabe = True
+    config.addinivalue_line("mccabe-complexity", "3")
+
+    # config.option.cov_source = ["simulation"]
+    # config.option.cov_fail_under = 100
+    config.option.cov_report = {
+        "term-missing": None,
+        "html": "cov_html",
+    }
+    config.option.cov_branch = True
+    config.pluginmanager.register(
+        CovPlugin(config.option, config.pluginmanager), "_cov"
+    )
 
 
 class FunctionalTest(AsyncHTTPTestCase):

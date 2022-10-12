@@ -36,7 +36,7 @@ def run():
     if stage and loc and stage == "staging":
         logger.info("Running functional tests")
         conftest = __import__("functional_tests.conftest")
-        if pytest.main([loc], plugins=[conftest, MyPlugin()]) in [
+        if pytest.main([loc, "-k", "test_docs"], plugins=[conftest, MyPlugin()]) in [
             ExitCode.TESTS_FAILED,
             ExitCode.USAGE_ERROR,
         ]:
