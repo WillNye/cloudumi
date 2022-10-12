@@ -4,7 +4,9 @@ import boto3
 from botocore.exceptions import ClientError
 from dateutil.tz import tzlocal
 
-from functional_tests.conftest import TEST_USER_DOMAIN_US, FunctionalTest
+from functional_tests.conftest import FunctionalTest
+
+# from functional_tests.conftest import TEST_USER_DOMAIN_US
 
 
 def list_all_objects_version(bucket_name, prefix_name, max_keys=1000):
@@ -33,7 +35,7 @@ class TestS3VersionHistory(FunctionalTest):
         credential_mapping_versions = list_all_objects_version(
             config.get("_global_.s3_cache_bucket"),
             "cloudumi-cache.staging-noq-dev-shared-staging-1",
-            f"{TEST_USER_DOMAIN_US}/credential_authorization_mapping/credential_authorization_mapping_v1.json.gz",
+            # f"{TEST_USER_DOMAIN_US}/credential_authorization_mapping/credential_authorization_mapping_v1.json.gz",
             max_keys=6,
         )
         # Assert that the last 5 versions are less than an hour old
