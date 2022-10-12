@@ -2,7 +2,6 @@ import asyncio
 import os
 import urllib
 
-import pytest
 import ujson as json
 from _pytest.config import Config
 from pytest_cov.plugin import CovPlugin
@@ -14,7 +13,7 @@ TEST_ACCOUNT_ID = "759357822767"
 TEST_ACCOUNT_NAME = "development"
 TEST_ROLE = "NullRole"
 TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
-TEST_USER_NAME = "testing@noq.dev"
+TEST_USER_NAME = "user@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
 TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.staging.noq.dev")
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
@@ -27,20 +26,20 @@ def pytest_configure(config: Config) -> None:
     # config.option.failedfirst = True
     # config.option.tbstyle = "short"
 
-    config.option.pylint = True
-    config.option.black = True
-    config.option.isort = True
-    config.option.mypy = True
-    config.option.mypy_ignore_missing_imports = True
-    config.pluginmanager.getplugin("mypy").mypy_argv.extend(
-        [
-            # "--strict",
-            "--implicit-reexport"
-        ]
-    )
+    # config.option.pylint = True
+    # config.option.black = True
+    # config.option.isort = True
+    # config.option.mypy = True
+    # config.option.mypy_ignore_missing_imports = True
+    # config.pluginmanager.getplugin("mypy").mypy_argv.extend(
+    #     [
+    #         # "--strict",
+    #         "--implicit-reexport"
+    #     ]
+    # )
 
-    config.option.mccabe = True
-    config.addinivalue_line("mccabe-complexity", "3")
+    # config.option.mccabe = True
+    # config.addinivalue_line("mccabe-complexity", "3")
 
     # config.option.cov_source = ["simulation"]
     # config.option.cov_fail_under = 100

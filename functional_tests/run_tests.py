@@ -3,6 +3,7 @@ import argparse
 import os
 import pathlib
 
+import boto3
 import pytest
 from pytest import ExitCode
 
@@ -36,10 +37,18 @@ def run():
     if stage and loc and stage == "staging":
         logger.info("Running functional tests")
         conftest = __import__("functional_tests.conftest")
-        if pytest.main([loc, "-k", "test_docs"], plugins=[conftest, MyPlugin()]) in [
+        if pytest.main([loc], plugins=[conftest, MyPlugin()]) in [
             ExitCode.TESTS_FAILED,
             ExitCode.USAGE_ERROR,
         ]:
+            s3 = boto3.client("s3")
+            for root, dirs, files in os.walk("cov_html"):
+                for file in files:
+                    s3.upload_file(
+                        os.path.join(root, file),
+                        "staging-functional-test-results",
+                        f"{file}",
+                    )
             raise RuntimeError("Functional tests failed")
 
 
