@@ -17,6 +17,7 @@ EXT_DEPS = [
     requirement("flake8"),
     requirement("moto"),
     requirement("pytest"),
+    requirement("pytest-cov"),
     requirement("pytest-mccabe"),
     requirement("pytest-mypy"),
     requirement("tornado"),
@@ -52,6 +53,7 @@ py_binary(
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
         "AWS_PROFILE": "noq_cluster_dev",
+        "TEST_USER_DOMAIN": "localhost",
     },
     srcs = [
         ":src",
