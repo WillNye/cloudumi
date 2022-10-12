@@ -102,7 +102,8 @@
         "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
         "STAGE": "staging",
-        "RUNTIME_PROFILE": "API"
+        "RUNTIME_PROFILE": "API",
+        "TEST_USER_DOMAIN": "localhost"
       }
     },
     {

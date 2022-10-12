@@ -33,11 +33,14 @@ yaml.width = 4096
 
 
 # @tenacity.retry(tenacity.wait_exponential(multiplier=3, min=4, max=120))
-def get_tenants_configs(client):
+def get_tenants_configs(
+    client,
+    static_configs_table_name="noq-dev-shared-prod-1_cloudumi_tenant_static_configs_v2",
+):
     paginator = client.get_paginator("scan")
     responses = []
     for resp in paginator.paginate(
-        TableName="noq-dev-shared-prod-1_cloudumi_tenant_static_configs_v2",
+        TableName=static_configs_table_name,
         ExpressionAttributeNames={
             "#id": "id",
         },
