@@ -865,7 +865,10 @@ async def create_user_pool(noq_subdomain, domain_fqdn):
             }
         },
         AutoVerifiedAttributes=["email"],
-        EmailConfiguration={"EmailSendingAccount": "COGNITO_DEFAULT"},
+        EmailConfiguration={
+            "EmailSendingAccount": "DEVELOPER",
+            "SourceArn": config.get("_global_.ses_notifications_sender_identity", None),
+        },
         UsernameAttributes=["email"],
         UserPoolTags={"tenant": noq_subdomain},
         AdminCreateUserConfig={

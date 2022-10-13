@@ -104,6 +104,10 @@ module "tenant_elasticache_service" {
   secret_manager_secret_name  = var.secret_manager_secret_name
 }
 
+module "tenant_ses_service" {
+  source = "./modules/services/ses"
+}
+
 module "tenant_ecs_task_role" {
   source = "./modules/services/ecs_task_role"
 
