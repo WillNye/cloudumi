@@ -106,6 +106,8 @@ module "tenant_elasticache_service" {
 
 module "tenant_ses_service" {
   source = "./modules/services/ses"
+
+  notifications_mail_from_domain = var.notifications_mail_from_domain
 }
 
 module "tenant_ecs_task_role" {

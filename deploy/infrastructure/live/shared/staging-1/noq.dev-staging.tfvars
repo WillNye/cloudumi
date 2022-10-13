@@ -41,6 +41,9 @@ dynamo_table_replica_regions = ["us-west-2"]
 dax_node_type  = "dax.t3.small"
 dax_node_count = 1
 
+# SES
+notifications_mail_from_domain = "ses-us-west-2.staging.noq.dev"
+
 # Redis
 redis_node_type            = "cache.t3.micro"
 secret_manager_secret_name = "shared-staging-noq_secrets"
