@@ -88,6 +88,7 @@ _global_:
       global: rediss://:{password}@master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
+  ses_notifications_sender_identity: arn:aws:ses:us-west-2:940552945933:identity/notifications@noq.dev
   dax_endpoints:
     - prod-shared.ph1bdh.dax-clusters.us-west-2.amazonaws.com:8111
   redis:
