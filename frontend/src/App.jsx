@@ -8,7 +8,12 @@ import PolicyTable from './components/policy/PolicyTable'
 // import IdentityGroupEdit from './components/identity/Group'
 import ConsoleMeRequestTable from './components/request/RequestTable'
 import Downloads from './components/Downloads'
-import { RequestPermissions, SelfServiceWizard } from './components/SelfService'
+import {
+  RequestPermissions,
+  SelfServiceWizard,
+  RequestRoleCreation,
+  RequestRoleAccess,
+} from './components/SelfService'
 import ConsoleMeDynamicConfig from './components/DynamicConfig'
 import PolicyRequestReview from './components/request/PolicyRequestsReview'
 import PolicyEditor from './components/policy/PolicyEditor'
@@ -31,6 +36,7 @@ import AutomatedPermissions from 'components/AutomatedPermissions'
 import EULA from './components/EULA'
 import ErrorBoundary from 'components/ErrorBoundary'
 import MultiFactorAuth from 'components/MultiFactorAuth'
+import OnBoardingFlow from 'components/OnBoardingFlow'
 import './App.scss'
 
 function App() {
@@ -45,16 +51,28 @@ function App() {
             component={SelectRoles}
           />
           <ProtectedDashboardRoute
-            key='selfservice'
+            key='create-role-selfservice'
             exact
-            path='/selfservice'
-            component={SelfServiceWizard}
+            path='/selfservice/role/create'
+            component={RequestRoleCreation}
+          />
+          <ProtectedDashboardRoute
+            key='access-role-selfservice'
+            exact
+            path='/selfservice/role/access'
+            component={RequestRoleAccess}
+          />
+          <ProtectedDashboardRoute
+            key='permissions-selfservice'
+            exact
+            path='/selfservice/permissions'
+            component={RequestPermissions}
           />
           <ProtectedDashboardRoute
             key='selfservice'
             exact
-            path='/permissions-selfservice'
-            component={RequestPermissions}
+            path='/selfservice'
+            component={SelfServiceWizard}
           />
           <ProtectedDashboardRoute
             key='policies'
@@ -185,6 +203,12 @@ function App() {
             exact
             path='/mfa'
             component={MultiFactorAuth}
+          />
+          <ProtectedRoute
+            key='onboarding'
+            exact
+            path='/onboarding'
+            component={OnBoardingFlow}
           />
           <ProtectedDashboardRoute
             key='logout'

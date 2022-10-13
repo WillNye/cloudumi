@@ -67,6 +67,8 @@ _global_:
       attributes: 1
       registration_topic_arn: arn:aws:sns:us-west-2:759357822767:local-dev-registration-topic
       registration_queue_arn: arn:aws:sqs:us-west-2:759357822767:local-dev-registration-queue
+      registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
+      registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
   logging:
     file: ./cloudumi_tornado.log
   # sentry:
