@@ -54,3 +54,8 @@ variable "elasticache_node_type" {
   type        = string
   default     = "cache.t3.micro"
 }
+
+variable "secret_manager_secret_name" {
+  description = "secret name for cloudumi"
+  type        = string
+}

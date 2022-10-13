@@ -6,7 +6,17 @@ services:
     container_name: cloudumi-redis
     ports:
       - "6379:6379"
-    image: "redis:alpine"
+    image: "bitnami/redis:6.2"
+    environment:
+      - REDIS_PASSWORD=s2dKdXxjHeCQwoYZ
+      - REDIS_TLS_ENABLED=yes
+      - REDIS_TLS_CERT_FILE=/etc/redis/tls/redis.crt
+      - REDIS_TLS_KEY_FILE=/etc/redis/tls/redis.key
+      - REDIS_TLS_CA_FILE=/etc/redis/tls/ca.crt
+      - REDIS_TLS_AUTH_CLIENTS=no
+      - REDIS_TLS_PORT=6379
+    volumes:
+      - ./local/redis/tests/tls/:/etc/redis/tls
 
   cloudumi-dynamodb:
     image: "amazon/dynamodb-local"
@@ -25,17 +35,24 @@ services:
       - DYNAMO_ENDPOINT=http://cloudumi-dynamodb:8005
     ports:
       - "8001:8001"
-  redis-cluster:
-    image: grokzen/redis-cluster
-    environment:
-      INITIAL_PORT: 9000
-      IP: 0.0.0.0
-    #      IP: ${REDIS_CLUSTER_IP}
-    #      SENTINEL: ${REDIS_USE_SENTINEL}
-    #      STANDALONE: ${REDIS_USE_STANDALONE}
-    hostname: redis-cluster
-    ports:
-      - "9000-9050:9000-9050"
+  # redis-cluster:
+  #   image: noqdev/redis-cluster
+  #   environment:
+  #     INITIAL_PORT: 9000
+  #     IP: 0.0.0.0
+  #     DEFAULT_PASSWORD: s2dKdXxjHeCQwoYZ
+  #     REDIS_TLS_CERT_FILE: /etc/redis/tls/redis.crt
+  #     REDIS_TLS_KEY_FILE: /etc/redis/tls/redis.key
+  #     REDIS_TLS_CA_FILE: /etc/redis/tls/ca.crt
+  #   volumes:
+  #     - ./local/redis/tests/tls/:/etc/redis/tls
+  #      IP: ${REDIS_CLUSTER_IP}
+  #      SENTINEL: ${REDIS_USE_SENTINEL}
+  #      STANDALONE: ${REDIS_USE_STANDALONE}
+  # hostname: redis-cluster
+  # ports:
+  #   - "9000-9005:9000-9005"
+
   # Portainer is only for dev
 #  portainer:
 #    image: portainer/portainer-ce:latest
