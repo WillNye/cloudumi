@@ -23,6 +23,12 @@ module.exports = {
   ],
   "rules": {
     "curly": 2,
+    "no-unused-vars": ["off", {
+      "argsIgnorePattern": "^_",
+      "ignoreRestSiblings": true,
+      "args": "none"
+    }],
+    "@typescript-eslint/no-unused-vars": ["off"],
     "react/react-in-jsx-scope": "off",
     "import/no-anonymous-default-export": [
       0
