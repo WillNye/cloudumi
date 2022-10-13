@@ -35,7 +35,7 @@ yaml.width = 4096
 # @tenacity.retry(tenacity.wait_exponential(multiplier=3, min=4, max=120))
 def get_tenants_configs(
     client,
-    static_configs_table_name="noq-dev-shared-prod-1_cloudumi_tenant_static_configs_v2",
+    static_configs_table_name="staging-noq-dev-shared-staging-1_cloudumi_tenant_static_configs_v2",
 ):
     paginator = client.get_paginator("scan")
     responses = []
@@ -53,9 +53,11 @@ def get_tenants_configs(
     return responses
 
 
-def main():
+def main(
+    static_configs_table_name="staging-noq-dev-shared-staging-1_cloudumi_tenant_static_configs_v2",
+):
     client = boto3.client("dynamodb", region_name="us-west-2")
-    configs = get_tenants_configs(client)
+    configs = get_tenants_configs(client, static_configs_table_name)
     tenants = []
     for config in configs:
         cfg_deserialized = yaml.load(config.get("config", {}).get("S", ""))
