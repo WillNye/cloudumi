@@ -42,6 +42,7 @@ genrule(
         "//api:container-dev-local",
         "//common/celery_tasks:container-dev-local",
         "//deploy:compose-files",
+        "//deploy/local/redis:gen_test_certs",
     ],
     tags = ["manual"],
 )
