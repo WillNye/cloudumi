@@ -5,7 +5,6 @@ from typing import List
 
 
 def check_tenants(tenant_urls: List[str]):
-    tenant_urls = json.loads("".join(lines))
     for tenant_url in tenant_urls:
         print(f"Testing {tenant_url}")
         res = urllib.request.urlopen(tenant_url)
