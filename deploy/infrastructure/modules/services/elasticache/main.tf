@@ -70,7 +70,7 @@ resource "aws_elasticache_replication_group" "redis" {
   engine_version             = "6.x"
   node_type                  = var.elasticache_node_type
   multi_az_enabled           = true
-  num_cache_clusters         = 3
+  num_cache_clusters         = 1
   parameter_group_name       = aws_elasticache_parameter_group.redis_parameter_group.name
   port                       = 6379
   replication_group_id       = var.cluster_id
