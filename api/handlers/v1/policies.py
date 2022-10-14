@@ -292,6 +292,7 @@ async def handle_resource_type_ahead_request(cls):
                         break
             if len(results) > limit:
                 break
+    results.append({"title": "arn:aws:s3:::*", "account_id": account_id})
     return results
 
 
