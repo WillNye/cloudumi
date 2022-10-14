@@ -214,7 +214,7 @@ class CognitoUserCrudHandler(CognitoCrudHandler):
         users = list()
         try:
             identity_users = await identity.CognitoUserClient(
-                self.user_pool_id
+                self.user_pool_id, cognito_idp_client=cognito_idp
             ).list_users()
         except cognito_idp.exceptions.ResourceNotFoundException:
             return []
