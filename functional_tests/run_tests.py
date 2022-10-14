@@ -13,7 +13,7 @@ logger = config.get_logger()
 parser = argparse.ArgumentParser(description="Stage")
 parser.add_argument(
     "--stage",
-    help="Stage of deployment. Functional tests only run in staging",
+    help="Stage of deployment. Functional tests run in staging and prod",
 )
 
 parser.add_argument("--loc", help="Location of functional tests")
