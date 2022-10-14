@@ -42,7 +42,7 @@ genrule(
         "//api:container-dev-local",
         "//common/celery_tasks:container-dev-local",
         "//deploy:compose-files",
-        "//deploy/local/redis:test_certs",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     tags = ["manual"],
 )
@@ -73,11 +73,11 @@ genrule(
         "_running-deps-only_",
     ],
     tools = [
-        "//deploy/local/redis:gen_test_certs",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     exec_tools = [
         "//deploy:compose-files",
-        "//deploy/local/redis:test_certs",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     tags = ["manual"],
 )

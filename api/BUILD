@@ -118,7 +118,9 @@ REQUIRES = [
 
 py_library(
     name = "lib",
-    data = [],
+    data = [
+        "//deploy/local/redis/tests/tls:certs",
+    ],
     srcs_version = "PY3",
     srcs = [
         ":src",
@@ -135,6 +137,7 @@ py_binary(
         "//configs:fluent-bit",
         "//frontend:build_local",
         ":docs_sources",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     srcs_version = "PY3",
     srcs = [
@@ -159,6 +162,7 @@ py_binary(
     name = "bin-no-frontend",
     data = [
         "//configs/development_account:configs",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     srcs_version = "PY3",
     srcs = [
