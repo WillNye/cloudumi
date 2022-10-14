@@ -64,12 +64,12 @@ resource "aws_elasticache_replication_group" "redis" {
   apply_immediately          = true
   at_rest_encryption_enabled = true
   auth_token                 = local.redis_creds
-  automatic_failover_enabled = true
+  automatic_failover_enabled = false
   description                = "cloudumi usage"
   engine                     = "redis"
   engine_version             = "6.x"
   node_type                  = var.elasticache_node_type
-  multi_az_enabled           = true
+  multi_az_enabled           = false
   num_cache_clusters         = 1
   parameter_group_name       = aws_elasticache_parameter_group.redis_parameter_group.name
   port                       = 6379
