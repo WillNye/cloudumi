@@ -3,3 +3,7 @@ variable "notifications_mail_from_domain" {
   type        = string
 }
 
+variable "tags" {
+  description = "map of tags"
+  type        = map(any)
+}
