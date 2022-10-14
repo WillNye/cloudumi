@@ -18,11 +18,13 @@ data "aws_iam_policy_document" "deny-external" {
       type        = "*"
     }
     condition {
-      test     = "ForAllValues:StringNotLike"
+      test     = "ForAnyValue:StringNotLike"
       variable = "ses:Recipients"
 
       values = [
         "*@noq.dev",
+        # From Cognito-to-SES, it seems it is injecting some hidden amazonses specific email address
+        "*@*.amazonses.com",
       ]
     }
   }
