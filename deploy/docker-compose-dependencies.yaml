@@ -2,6 +2,11 @@ version: "3"
 # TODO: Set up for production environment security
 # Never use this in a production environment.
 services:
+  permission-adapter:
+    image: "bitnami/minideb"
+    command: bash -c "chmod -R 755 /tls && chown -R 1001:1001 /tls"
+    volumes:
+      - ./local/redis/tests/tls/:/tls
   cloudumi-redis:
     container_name: cloudumi-redis
     ports:
@@ -10,13 +15,13 @@ services:
     environment:
       - REDIS_PASSWORD=s2dKdXxjHeCQwoYZ
       - REDIS_TLS_ENABLED=yes
-      - REDIS_TLS_CERT_FILE=/etc/redis/tls/redis.crt
-      - REDIS_TLS_KEY_FILE=/etc/redis/tls/redis.key
-      - REDIS_TLS_CA_FILE=/etc/redis/tls/ca.crt
+      - REDIS_TLS_CERT_FILE=/tls/redis.crt
+      - REDIS_TLS_KEY_FILE=/tls/redis.key
+      - REDIS_TLS_CA_FILE=/tls/ca.crt
       - REDIS_TLS_AUTH_CLIENTS=no
       - REDIS_TLS_PORT=6379
     volumes:
-      - ./local/redis/tests/tls/:/etc/redis/tls
+      - ./local/redis/tests/tls/:/tls
 
   cloudumi-dynamodb:
     image: "amazon/dynamodb-local"
