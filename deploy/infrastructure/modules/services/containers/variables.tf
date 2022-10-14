@@ -81,11 +81,6 @@ variable "tenant_configuration_bucket_name" {
   type        = string
 }
 
-variable "test_access_sg_id" {
-  description = "Test access on port 22"
-  type        = string
-}
-
 variable "timeout" {
   description = "The timeout for each resource that may get stuck"
   type        = string

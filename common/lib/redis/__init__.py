@@ -4,8 +4,10 @@ import time
 from typing import Any, Optional
 
 import boto3
+import certifi
 import redis
 from redis.client import Redis
+from redis.cluster import ClusterNode
 
 import common.lib.noq_json as json
 from common.config import config
@@ -16,6 +18,15 @@ region = config.region
 
 cluster_mode = False
 cluster_mode_nodes = []
+
+
+def convert_cluster_mode_nodes_to_support_attribute_lookup(cluster_mode_nodes):
+    output = []
+    for n in cluster_mode_nodes:
+        output.append(ClusterNode(**n))
+    return output
+
+
 if config.get("_global_.redis.cluster_mode.enabled"):
     cluster_mode = True
     cluster_mode_nodes = config.get(
@@ -24,6 +35,9 @@ if config.get("_global_.redis.cluster_mode.enabled"):
     )
     if not cluster_mode_nodes:
         raise Exception("Cluster mode enabled without specifying nodes")
+    cluster_mode_nodes = convert_cluster_mode_nodes_to_support_attribute_lookup(
+        cluster_mode_nodes
+    )
 
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -68,6 +82,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
         if not cluster_mode:
             if kwargs["host"] is None or kwargs["port"] is None or kwargs["db"] is None:
                 self.enabled = False
+
         super(ConsoleMeRedis, self).__init__(*args, **kwargs)
 
     def get(self, *args, **kwargs):
@@ -414,14 +429,24 @@ class RedisHandler:
         ),
         port: int = config.get("_global_.redis.port", 6379),
         db: int = config.get("_global_.redis.db", 0),
+        password: str = config.get("_global_.secrets.redis.password", None),
+        ssl: bool = config.get("_global_.redis.ssl", False),
+        ssl_keyfile: str = config.get("_global_.redis.ssl_keyfile", None),
+        ssl_certfile: str = config.get("_global_.redis.ssl_certfile", None),
+        ssl_ca_certs: str = config.get("_global_.redis.ssl_ca_certs", certifi.where()),
     ) -> None:
         self.red = None
         self.host = host
         self.port = port
         self.db = db
         self.enabled = True
+        self.ssl = ssl
+        self.ssl_keyfile = ssl_keyfile
+        self.ssl_certfile = ssl_certfile
+        self.ssl_ca_certs = ssl_ca_certs
         if self.host is None or self.port is None or self.db is None:
             self.enabled = False
+        self.password = password
 
     async def redis(self, tenant, db: int = 0) -> Redis:
         if cluster_mode:
@@ -431,6 +456,11 @@ class RedisHandler:
                 decode_responses=True,
                 required_key_prefix=tenant,
                 skip_full_coverage_check=True,
+                ssl=self.ssl,
+                ssl_certfile=self.ssl_certfile,
+                ssl_keyfile=self.ssl_keyfile,
+                ssl_ca_certs=self.ssl_ca_certs,
+                password=self.password,
             )
         else:
             self.red = await aio_wrapper(
@@ -441,6 +471,11 @@ class RedisHandler:
                 encoding="utf-8",
                 decode_responses=True,
                 required_key_prefix=tenant,
+                ssl=self.ssl,
+                ssl_certfile=self.ssl_certfile,
+                ssl_keyfile=self.ssl_keyfile,
+                ssl_ca_certs=self.ssl_ca_certs,
+                password=self.password,
             )
         return self.red
 
@@ -451,6 +486,11 @@ class RedisHandler:
                 decode_responses=True,
                 required_key_prefix=tenant,
                 skip_full_coverage_check=True,
+                ssl=self.ssl,
+                ssl_certfile=self.ssl_certfile,
+                ssl_keyfile=self.ssl_keyfile,
+                ssl_ca_certs=self.ssl_ca_certs,
+                password=self.password,
             )
         else:
             self.red = ConsoleMeRedis(
@@ -460,6 +500,11 @@ class RedisHandler:
                 encoding="utf-8",
                 decode_responses=True,
                 required_key_prefix=tenant,
+                ssl=self.ssl,
+                ssl_certfile=self.ssl_certfile,
+                ssl_keyfile=self.ssl_keyfile,
+                ssl_ca_certs=self.ssl_ca_certs,
+                password=self.password,
             )
         return self.red
 

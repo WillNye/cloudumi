@@ -1,10 +1,17 @@
 import json
 
-from functional_tests.conftest import TEST_ACCOUNT_ID, TEST_ACCOUNT_NAME, FunctionalTest
+from functional_tests.conftest import (
+    TEST_ACCOUNT_ID,
+    TEST_ACCOUNT_NAME,
+    TEST_USER_NAME,
+    FunctionalTest,
+)
 
 
 class TestUserProfile(FunctionalTest):
     def test_user_profile(self):
+        from common.config import config
+
         res = self.make_request("/api/v2/user_profile")
         self.assertEqual(res.code, 200)
         res_j = json.loads(res.body)
@@ -19,7 +26,12 @@ class TestUserProfile(FunctionalTest):
             {
                 "site_config": {
                     "consoleme_logo": None,
-                    "google_analytics": {"tracking_id": "G-P5K1SQF3P6", "options": {}},
+                    "google_analytics": {
+                        "tracking_id": config.get(
+                            "_global_.google_analytics.tracking_id"
+                        ),
+                        "options": {},
+                    },
                     "documentation_url": "/docs",
                     "support_contact": None,
                     "support_chat_url": "https://communityinviter.com/apps/noqcommunity/noq",
@@ -30,7 +42,7 @@ class TestUserProfile(FunctionalTest):
                     "notifications": {"enabled": True, "request_interval": 60},
                     "temp_policy_support": True,
                 },
-                "user": "testing@noq.dev",
+                "user": TEST_USER_NAME,
                 "can_logout": True,
                 "is_contractor": False,
                 "employee_photo_url": "",

@@ -49,6 +49,41 @@
 #   )
 # }
 
+data "aws_secretsmanager_secret_version" "creds" {
+  # Fill in the name you gave to your secret
+  secret_id = var.secret_manager_secret_name
+}
+
+locals {
+  redis_creds = yamldecode(
+    data.aws_secretsmanager_secret_version.creds.secret_string
+  )._global_.secrets.redis.password
+}
+
+resource "aws_elasticache_replication_group" "redis" {
+  apply_immediately          = true
+  at_rest_encryption_enabled = true
+  auth_token                 = local.redis_creds
+  automatic_failover_enabled = true
+  description                = "cloudumi usage"
+  engine                     = "redis"
+  engine_version             = "6.x"
+  node_type                  = var.elasticache_node_type
+  multi_az_enabled           = true
+  num_cache_clusters         = 3
+  parameter_group_name       = aws_elasticache_parameter_group.redis_parameter_group.name
+  port                       = 6379
+  replication_group_id       = var.cluster_id
+  security_group_ids         = [aws_security_group.redis_sg.id]
+  snapshot_retention_limit   = 5
+  subnet_group_name          = aws_elasticache_subnet_group.redis_subnet_group.name
+  transit_encryption_enabled = true
+
+  lifecycle {
+    ignore_changes = [num_cache_clusters]
+  }
+}
+
 resource "aws_elasticache_cluster" "redis" {
   cluster_id               = "${var.cluster_id}-redis-service"
   engine                   = "redis"

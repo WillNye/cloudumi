@@ -140,7 +140,9 @@ class CloudTrail:
             encoded_request = base64.b64encode(
                 json.dumps(generated_request).encode()
             ).decode("utf-8")
-            encoded_request_url = f"/selfservice?encoded_request={encoded_request}"
+            encoded_request_url = (
+                f"/selfservice/permissions?encoded_request={encoded_request}"
+            )
             notification_message = config.get_tenant_specific_key(
                 "process_cloudtrail_errors.generate_notifications.message",
                 tenant,

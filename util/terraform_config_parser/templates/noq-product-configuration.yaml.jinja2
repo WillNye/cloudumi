@@ -31,6 +31,8 @@ _global_:
       attributes: {{ attributes }}
       registration_topic_arn: {{ sns_registration_topic_arn }}
       registration_queue_arn: {{ sqs_registration_queue_arn }}
+      registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
+      registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
   accounts:
     tenant_data:
       name: NoqServiceConnRole
@@ -82,13 +84,13 @@ _global_:
     clear_tasks_for_development: false
     purge: false
     broker:
-      us-east-1: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
-      us-west-2: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
-      global: redis://{{ elasticache_address }}:{{ elasticache_port }}/1
+      us-east-1: rediss://:{password}@{{ elasticache_address }}:{{ elasticache_port }}/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@{{ elasticache_address }}:{{ elasticache_port }}/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@{{ elasticache_address }}:{{ elasticache_port }}/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     backend:
-      us-east-1: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
-      us-west-2: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
-      global: redis://{{ elasticache_address }}:{{ elasticache_port }}/2
+      us-east-1: rediss://:{password}@{{ elasticache_address }}:{{ elasticache_port }}/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@{{ elasticache_address }}:{{ elasticache_port }}/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@{{ elasticache_address }}:{{ elasticache_port }}/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
   dax_endpoints:
@@ -97,6 +99,7 @@ _global_:
     host:
       global: {{ elasticache_address }}
     port: {{ elasticache_port }}
+    ssl: true
     cluster_mode:
       enabled: false
       nodes:
