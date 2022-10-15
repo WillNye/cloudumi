@@ -44,6 +44,7 @@ class FunctionalTest(AsyncHTTPTestCase):
             eula_signed=True,
         )
     )
+    config = None
 
     def get_app(self):
         from common.config import config
@@ -51,7 +52,7 @@ class FunctionalTest(AsyncHTTPTestCase):
         config.values["_global_"]["tornado"]["debug"] = True
         config.values["_global_"]["tornado"]["xsrf"] = False
         from api.routes import make_app
-
+        self.config = config
         return make_app(jwt_validator=lambda x: {})
 
     def make_request(
