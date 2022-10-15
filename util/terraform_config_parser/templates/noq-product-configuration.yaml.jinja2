@@ -93,6 +93,7 @@ _global_:
       global: rediss://:{password}@{{ elasticache_address }}:{{ elasticache_port }}/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
+  ses_notifications_sender_identity: {{ notifications_sender_identity }}
   dax_endpoints:
     - {{ dax_configuration_endpoint }}
   redis:

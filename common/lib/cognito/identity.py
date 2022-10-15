@@ -692,6 +692,14 @@ async def create_user_pool(noq_subdomain, domain_fqdn):
         year=date.today().year, domain=domain_fqdn
     )
     cognito_email_subject = "Your temporary password for Noq"
+    ses_source_arn = config.get("_global_.ses_notifications_sender_identity", None)
+    if ses_source_arn is None:
+        email_configuration = {"EmailSendingAccount": "COGNITO_DEFAULT"}
+    else:
+        email_configuration = {
+            "EmailSendingAccount": "DEVELOPER",
+            "SourceArn": config.get("_global_.ses_notifications_sender_identity", None),
+        }
     response = cognito.create_user_pool(
         PoolName=user_pool_name,
         Schema=[
@@ -865,7 +873,7 @@ async def create_user_pool(noq_subdomain, domain_fqdn):
             }
         },
         AutoVerifiedAttributes=["email"],
-        EmailConfiguration={"EmailSendingAccount": "COGNITO_DEFAULT"},
+        EmailConfiguration=email_configuration,
         UsernameAttributes=["email"],
         UserPoolTags={"tenant": noq_subdomain},
         AdminCreateUserConfig={
