@@ -106,6 +106,7 @@ _global_:
       global: rediss://:{password}@cloudumi-redis:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
+  ses_notifications_sender_identity: arn:aws:ses:us-west-2:759357822767:identity/notifications@noq.dev
   redis:
     ssl: true
     ssl_ca_certs: ./deploy/local/redis/tests/tls/ca.crt

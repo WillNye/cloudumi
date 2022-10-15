@@ -104,6 +104,13 @@ module "tenant_elasticache_service" {
   secret_manager_secret_name  = var.secret_manager_secret_name
 }
 
+module "tenant_ses_service" {
+  source = "./modules/services/ses"
+
+  notifications_mail_from_domain = var.notifications_mail_from_domain
+  tags                           = var.tags
+}
+
 module "tenant_ecs_task_role" {
   source = "./modules/services/ecs_task_role"
 
