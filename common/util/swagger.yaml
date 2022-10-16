@@ -2224,6 +2224,9 @@ components:
               type: object
             change_id:
               type: string
+            apply_all_changes:
+              type: boolean
+              default: False
             apps:
               $ref: "#/components/schemas/AppDetailsArray"
     CancelChangeModificationModel:
