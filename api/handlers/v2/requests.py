@@ -2,9 +2,7 @@ import asyncio
 import sys
 import time
 import uuid
-from datetime import datetime
 
-import pytz
 import sentry_sdk
 import tornado.web
 from policy_sentry.util.arns import parse_arn
@@ -13,10 +11,8 @@ from pydantic import ValidationError
 import common.lib.noq_json as json
 from common.aws.iam.role.models import IAMRole
 from common.aws.iam.role.utils import is_valid_role_name
-from common.aws.iam.statement.utils import condense_statements
 from common.aws.utils import ResourceAccountCache, ResourceSummary, get_url_for_resource
 from common.config import config
-from common.config.models import ModelAdapter
 from common.exceptions.exceptions import (
     InvalidRequestParameter,
     MustBeFte,
@@ -36,7 +32,6 @@ from common.lib.generic import filter_table, write_json_error
 from common.lib.mfa import mfa_verify
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
-    automatic_request,
     can_move_back_to_pending_v2,
     can_update_cancel_requests_v2,
     merge_policy_statement,
@@ -60,17 +55,15 @@ from common.models import (
     CommentModel,
     CreateResourceChangeModel,
     DataTableResponse,
-    ExtendedAutomaticPolicyRequest,
     ExtendedRequestModel,
     PolicyRequestModificationRequestModel,
     RequestCreationModel,
     RequestCreationResponse,
     RequestStatus,
     ResourceType,
-    SpokeAccount,
 )
 from common.models import Status2 as WebStatus
-from common.models import Status3, WebResponse
+from common.models import WebResponse
 from common.user_request.models import IAMRequest
 from common.user_request.utils import (
     TRA_CONFIG_BASE_KEY,
