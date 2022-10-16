@@ -1108,6 +1108,7 @@ def redis(session_mocker):
     if folder_configuration := config.get("_global_.celery.broker_transport_options"):
         for v in folder_configuration.values():
             os.makedirs(v, exist_ok=True)
+    session_mocker.patch("celery.backends.redis.redis.Redis", return_value=fake_redis)
     session_mocker.patch("redis.Redis", return_value=fake_redis)
     session_mocker.patch("redis.StrictRedis", return_value=fake_strict_redis)
     session_mocker.patch(

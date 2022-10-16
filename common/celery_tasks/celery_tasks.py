@@ -10,6 +10,7 @@ command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DE
 from __future__ import absolute_import
 
 import json  # We use a separate SetEncoder here so we cannot use ujson
+import ssl
 import sys
 import time
 from collections import defaultdict
@@ -18,6 +19,7 @@ from random import randint
 from typing import Any, Dict, List, Tuple, Union
 
 import celery
+import certifi
 import sentry_sdk
 from asgiref.sync import async_to_sync
 from billiard.exceptions import SoftTimeLimitExceeded
@@ -138,17 +140,36 @@ class Celery(celery.Celery):
             )
 
 
-app = Celery(
-    "tasks",
-    broker=config.get(
-        f"_global_.celery.broker.{config.region}",
-        config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/1"),
-    ),
-    backend=config.get(
-        f"_global_.celery.backend.{config.region}",
-        config.get("_global_.celery.backend.global"),
-    ),
-)
+def get_celery_app():
+    use_ssl_dict = None
+    ssl_ca_certs = config.get("_global_.redis.ssl_ca_certs", certifi.where())
+
+    if config.get("_global_.redis.ssl", False):
+        use_ssl_dict = {
+            "ssl_keyfile": config.get("_global_.redis.ssl_keyfile", None),
+            "ssl_certfile": config.get("_global_.redis.ssl_certfile", None),
+            "ssl_ca_certs": ssl_ca_certs,
+            "ssl_cert_reqs": ssl.CERT_REQUIRED,
+        }
+
+    redis_password = config.get("_global_.secrets.redis.password", None)
+
+    return Celery(
+        "tasks",
+        broker=config.get(
+            f"_global_.celery.broker.{config.region}",
+            config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/1"),
+        ).format(password=redis_password, ssl_ca_certs=ssl_ca_certs),
+        broker_use_ssl=use_ssl_dict,
+        backend=config.get(
+            f"_global_.celery.backend.{config.region}",
+            config.get("_global_.celery.backend.global", "redis://127.0.0.1:6379/2"),
+        ).format(password=redis_password, ssl_ca_certs=ssl_ca_certs),
+        redis_backend_use_ssl=use_ssl_dict,
+    )
+
+
+app = get_celery_app()
 
 broker_transport_options = config.get("_global_.celery.broker_transport_options")
 if broker_transport_options:

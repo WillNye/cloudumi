@@ -1,0 +1,14 @@
+.review-request {
+  // display: flex;
+
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: row;
+    padding: 1rem;
+  }
+
+  &__item {
+    width: 100%;
+  }
+}

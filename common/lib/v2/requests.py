@@ -1687,7 +1687,10 @@ async def populate_old_policies(
     }
     log.debug(log_data)
 
-    if extended_request.principal.principal_type == "AwsResource":
+    if (
+        extended_request.principal.principal_type == "AwsResource"
+        and extended_request.principal.principal_arn
+    ):
         principal_arn = extended_request.principal.principal_arn
         resource_summary = await ResourceSummary.set(tenant, principal_arn)
         role_account_id = resource_summary.account
@@ -1815,7 +1818,10 @@ async def populate_old_managed_policies(
     log.debug(log_data)
     result = {"changed": False}
 
-    if extended_request.principal.principal_type == "AwsResource":
+    if (
+        extended_request.principal.principal_type == "AwsResource"
+        and extended_request.principal.principal_arn
+    ):
         principal_arn = extended_request.principal.principal_arn
         resource_summary = await ResourceSummary.set(tenant, principal_arn)
 
@@ -3656,7 +3662,12 @@ async def parse_and_apply_policy_request_modification(
             )
 
         # Save current policy by populating "old" policies at the time of application for historical record
-        extended_request = await populate_old_policies(extended_request, user, tenant)
+        # extended_request = await populate_old_policies(extended_request, user, tenant)
+        if extended_request.principal.principal_arn:
+            # Save current policy by populating "old" policies at the time of application for historical record
+            extended_request = await populate_old_policies(
+                extended_request, user, tenant
+            )
         extended_request.request_status = RequestStatus.approved
         extended_request.reviewer = user
 

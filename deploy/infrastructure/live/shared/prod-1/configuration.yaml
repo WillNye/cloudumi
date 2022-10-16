@@ -31,6 +31,8 @@ _global_:
       attributes: 1
       registration_topic_arn: arn:aws:sns:us-west-2:940552945933:noq-dev-shared-prod-1-registration-topic
       registration_queue_arn: arn:aws:sqs:us-west-2:940552945933:noq-dev-shared-prod-1-registration-queue
+      registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
+      registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
   accounts:
     tenant_data:
       name: NoqServiceConnRole
@@ -79,26 +81,28 @@ _global_:
     clear_tasks_for_development: false
     purge: false
     broker:
-      us-east-1: redis://noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
-      us-west-2: redis://noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
-      global: redis://noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
+      us-east-1: rediss://:{password}@master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     backend:
-      us-east-1: redis://noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
-      us-west-2: redis://noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
-      global: redis://noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
+      us-east-1: rediss://:{password}@master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
+  ses_notifications_sender_identity: arn:aws:ses:us-west-2:940552945933:identity/notifications@noq.dev
   dax_endpoints:
     - prod-shared.ph1bdh.dax-clusters.us-west-2.amazonaws.com:8111
   redis:
     host:
-      global: noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com
+      global: master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com
     port: 6379
+    ssl: true
     cluster_mode:
       enabled: false
       nodes:
         global:
-          - host: noq-dev-shared-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com
+          - host: master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com
             port: 6379
   sentry:
     dsn: https://50b9f954977449db94bf4d1a8b9a8084@o1134078.ingest.sentry.io/6625264

@@ -73,6 +73,21 @@ output "elasticache_nodes" {
   value       = module.tenant_elasticache_service.elasticache_nodes
 }
 
+output "elasticache_redis_primary_endpoint_address" {
+  description = "Address of the endpoint for the primary node in the replication group, if the cluster mode is disabled."
+  value       = module.tenant_elasticache_service.elasticache_redis_primary_endpoint_address
+}
+
+output "elasticache_redis_primary_endpoint_port" {
+  description = "Port of the endpoint for the primary node in the replication group, if the cluster mode is disabled."
+  value       = module.tenant_elasticache_service.elasticache_redis_primary_endpoint_port
+}
+
+output "notifications_sender_identity" {
+  description = "ARN of the notifications sender identity"
+  value       = module.tenant_ses_service.notifications_sender_identity
+}
+
 output "namespace" {
   description = "The configured namespace (for automation)"
   value       = var.namespace

@@ -24,6 +24,17 @@ http_archive(
 )
 load("@rules_python//python:repositories.bzl", "python_register_toolchains")
 
+http_archive(
+    name = "bazel_skylib",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+    ],
+    sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
+)
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+bazel_skylib_workspace()
+
 python_register_toolchains(
     name = "python3_10",
     # Available versions are listed in @rules_python//python:versions.bzl.
@@ -192,6 +203,7 @@ get_repo_version(name="version")
 http_archive(
     name = "awscli",
     url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip",
-    sha256 = "0a98e11f9e52dfd7dc090c1f3d5878bf17d9f7bf584e5a0cda8e7883187588fd",
+    sha256 = "ca0e766fe70b14c1f7e2817836acf03e4a3e6391b7ed6a464282c5b174580b9a",
     build_file = "@//util:awscli.BUILD",
 )
+

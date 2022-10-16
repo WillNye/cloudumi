@@ -713,8 +713,10 @@ class RequestHandler(BaseAPIV2Handler):
 
             # Update in dynamo
             await IAMRequest.write_v2(extended_request, tenant)
-            account_id = await ResourceAccountCache.get(
-                tenant, extended_request.principal.principal_arn
+            account_id = extended_request.principal.account_id or (
+                await ResourceAccountCache.get(
+                    tenant, extended_request.principal.principal_arn
+                )
             )
 
             # Force a refresh of the role in Redis/DDB
@@ -992,12 +994,13 @@ class RequestDetailHandler(BaseAPIV2Handler):
         }
 
         template = None
-        arn_parsed = parse_arn(extended_request.principal.principal_arn)
-        if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
-            iam_role = await IAMRole.get(
-                tenant, arn_parsed["account"], extended_request.principal.principal_arn
-            )
-            template = iam_role.templated
+        if principal_arn := extended_request.principal.principal_arn:
+            arn_parsed = parse_arn(principal_arn)
+            if arn_parsed["service"] == "iam" and arn_parsed["resource"] == "role":
+                iam_role = await IAMRole.get(
+                    tenant, arn_parsed["account"], principal_arn
+                )
+                template = iam_role.templated
 
         changes_config = await populate_approve_reject_policy(
             extended_request, self.groups, tenant, self.user

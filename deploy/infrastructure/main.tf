@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.74"
+      version = "~> 4.34.0"
     }
   }
 
@@ -101,6 +101,14 @@ module "tenant_elasticache_service" {
   timeout                     = var.timeout
   vpc_id                      = module.tenant_networking.vpc_id
   elasticache_node_type       = var.elasticache_node_type
+  secret_manager_secret_name  = var.secret_manager_secret_name
+}
+
+module "tenant_ses_service" {
+  source = "./modules/services/ses"
+
+  notifications_mail_from_domain = var.notifications_mail_from_domain
+  tags                           = var.tags
 }
 
 module "tenant_ecs_task_role" {
@@ -132,7 +140,6 @@ module "tenant_container_service" {
   subnet_ids                       = module.tenant_networking.vpc_subnet_private_id
   tags                             = var.tags
   tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
-  test_access_sg_id                = module.tenant_networking.test_access_security_group_id
   timeout                          = var.timeout
   vpc_cidr_range                   = module.tenant_networking.vpc_cidr_range
   vpc_id                           = module.tenant_networking.vpc_id

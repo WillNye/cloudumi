@@ -22,8 +22,13 @@ class AwsIntegrationHandler(BaseAdminHandler):
         Get AWS Integration
         """
         tenant = self.ctx.tenant
+        account_name = self.request.arguments.get("account-name", [b""])[0].decode(
+            "utf-8"
+        )
         try:
-            central_role_parameters = await validate_params(tenant, "central")
+            central_role_parameters = await validate_params(
+                tenant, "central", account_name=account_name
+            )
         except AssertionError as err:
             self.set_status(400)
             res = WebResponse(status_code=400, message=str(err))
@@ -68,7 +73,10 @@ class AwsIntegrationHandler(BaseAdminHandler):
                             f"https://console.aws.amazon.com/cloudformation/home?region={region}"
                             + "#/stacks/quickcreate?templateURL="
                             + urllib.parse.quote(central_role_template_url)
-                            + f"&param_ExternalIDParameter={external_id}&param_HostParameter={tenant}&stackName={stack_name}"
+                            + f"&param_ExternalIDParameter={external_id}"
+                            + f"&param_AccountNameParameter={account_name}"
+                            + f"&param_HostParameter={tenant}"
+                            + f"&stackName={stack_name}"
                             + f"&param_ClusterRoleParameter={cluster_role}"
                             + f"&param_CentralRoleNameParameter={central_role_name}"
                             + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
@@ -101,7 +109,10 @@ class AwsIntegrationHandler(BaseAdminHandler):
                             f"https://console.aws.amazon.com/cloudformation/home?region={region}"
                             + "#/stacks/quickcreate?templateURL="
                             + urllib.parse.quote(central_role_template_url)
-                            + f"&param_ExternalIDParameter={external_id}&param_HostParameter={tenant}&stackName={stack_name}"
+                            + f"&param_ExternalIDParameter={external_id}"
+                            + f"&param_AccountNameParameter={account_name}"
+                            + f"&param_HostParameter={tenant}"
+                            + f"&stackName={stack_name}"
                             + f"&param_ClusterRoleParameter={cluster_role}"
                             + f"&param_CentralRoleNameParameter={central_role_name}"
                             + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
@@ -111,7 +122,10 @@ class AwsIntegrationHandler(BaseAdminHandler):
                         "template_url": central_role_template_url,
                         "stack_name": stack_name,
                         "parameters": await validate_params(
-                            tenant, "central", read_only_mode=True
+                            tenant,
+                            "central",
+                            read_only_mode=True,
+                            account_name=account_name,
                         ),
                         "external_id": external_id,
                         "node_role": config.get("_global_.integrations.aws.node_role"),
@@ -155,7 +169,7 @@ class AwsIntegrationHandler(BaseAdminHandler):
                 read_only_mode = bool(account_access == "read_only")
                 try:
                     spoke_role_parameters = await validate_params(
-                        tenant, "spoke", read_only_mode
+                        tenant, "spoke", read_only_mode, account_name
                     )
                 except AssertionError as err:
                     self.set_status(400)
@@ -170,11 +184,13 @@ class AwsIntegrationHandler(BaseAdminHandler):
                         + "#/stacks/quickcreate?templateURL="
                         + urllib.parse.quote(spoke_role_template_url)
                         + f"&param_ExternalIDParameter={external_id}"
+                        + f"&param_AccountNameParameter={account_name}"
                         + f"&param_HostParameter={tenant}"
                         + f"&param_CentralRoleArnParameter={customer_central_account_role}"
                         + f"&param_SpokeRoleNameParameter={spoke_role_name}"
                         + f"&stackName={spoke_stack_name}"
                         + f"&param_RegistrationTopicArnParameter={registration_topic_arn}"
+                        + f"&param_ReadOnlyModeParameter={str(read_only_mode).lower()}"
                     ),
                     "template_url": spoke_role_template_url,
                     "stack_name": spoke_stack_name,

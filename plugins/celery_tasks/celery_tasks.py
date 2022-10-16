@@ -6,8 +6,7 @@ the external tasks
 import json
 from datetime import timedelta
 
-from celery import Celery
-
+from common.celery_tasks.celery_tasks import get_celery_app
 from common.config import config
 from common.lib.noq_json import SetEncoder
 from common.lib.redis import RedisHandler
@@ -15,17 +14,7 @@ from common.lib.timeout import Timeout
 
 region = config.region
 
-app = Celery(
-    "tasks",
-    broker=config.get(
-        f"_global_.celery.broker.{config.region}",
-        config.get("_global_.celery.broker.global", "redis://127.0.0.1:6379/1"),
-    ),
-    backend=config.get(
-        f"_global_.celery.backend.{config.region}",
-        config.get("_global_.celery.backend.global"),
-    ),
-)
+app = get_celery_app()
 
 broker_transport_options = config.get("_global_.celery.broker_transport_options")
 if broker_transport_options:
