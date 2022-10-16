@@ -797,7 +797,7 @@ class RequestsHandler(BaseAPIV2Handler):
                 principal_arn = request.get("principal", {}).get("principal_arn", "")
                 url = request.get("principal", {}).get("resource_url", "")
                 resource_name = principal_arn
-                if "/" in resource_name:
+                if resource_name and "/" in resource_name:
                     resource_name = resource_name.split("/")[-1]
                 if not resource_name:
                     resource_name = request.get("principal", {}).get(

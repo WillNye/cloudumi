@@ -3187,36 +3187,48 @@ async def parse_and_apply_policy_request_modification(
 
         if request_changes.command == Command.apply_change:
             apply_change_model = ApplyChangeModificationModel.parse_obj(request_changes)
-            specific_change = await _get_specific_change(
-                extended_request.changes, apply_change_model.change_id
-            )
-            if not specific_change:
-                raise NoMatchingRequest(
-                    "Unable to find a compatible non-applied change with "
-                    "that ID in this policy request"
+            if apply_change_model.apply_all_changes:
+                # If apply all changes, then we need to find all changes that are not applied
+                # and apply them
+                changes_to_apply = [
+                    change
+                    for change in extended_request.changes.changes
+                    if change.status == Status.not_applied
+                ]
+            else:
+                changes_to_apply = [
+                    await _get_specific_change(
+                        extended_request.changes, apply_change_model.change_id
+                    )
+                ]
+            for specific_change in changes_to_apply:
+                if not specific_change:
+                    raise NoMatchingRequest(
+                        "Unable to find a compatible non-applied change with "
+                        "that ID in this policy request"
+                    )
+
+                specific_change_arn = specific_change.principal.principal_arn
+                if specific_change.change_type in [
+                    "resource_policy",
+                    "sts_resource_policy",
+                ]:
+                    specific_change_arn = specific_change.arn
+
+                account_id = specific_change.principal.account_id or (
+                    await ResourceAccountCache.get(tenant, specific_change_arn)
                 )
 
-            specific_change_arn = specific_change.principal.principal_arn
-            if specific_change.change_type in [
-                "resource_policy",
-                "sts_resource_policy",
-            ]:
-                specific_change_arn = specific_change.arn
+                can_manage_policy_request = await can_admin_policies(
+                    user, user_groups, tenant, [account_id]
+                )
+                # Authorization required if the policy wasn't approved by an auto-approval rule.
+                should_apply_because_auto_approved = (
+                    request_changes.command == Command.apply_change and approval_rule_approved
+                )
 
-            account_id = specific_change.principal.account_id or (
-                await ResourceAccountCache.get(tenant, specific_change_arn)
-            )
-
-        can_manage_policy_request = await can_admin_policies(
-            user, user_groups, tenant, [account_id]
-        )
-        # Authorization required if the policy wasn't approved by an auto-approval rule.
-        should_apply_because_auto_approved = (
-            request_changes.command == Command.apply_change and approval_rule_approved
-        )
-
-        if not can_manage_policy_request and not should_apply_because_auto_approved:
-            raise Unauthorized("You are not authorized to manage this request")
+                if not can_manage_policy_request and not should_apply_because_auto_approved:
+                    raise Unauthorized("You are not authorized to manage this request")
 
     if request_changes.command == Command.move_back_to_pending:
         can_move_back_to_pending = await can_move_back_to_pending_v2(
@@ -3383,15 +3395,15 @@ async def parse_and_apply_policy_request_modification(
             # and apply them
             changes_to_apply = [
                 change
-                for change in extended_request.changes
+                for change in extended_request.changes.changes
                 if change.status == Status.not_applied
             ]
-        # If apply all changes
-        changes_to_apply = [
-            await _get_specific_change(
-                extended_request.changes, apply_change_model.change_id
-            )
-        ]
+        else:
+            changes_to_apply = [
+                await _get_specific_change(
+                    extended_request.changes, apply_change_model.change_id
+                )
+            ]
 
         for specific_change in changes_to_apply:
             if specific_change and specific_change.status == Status.not_applied:
