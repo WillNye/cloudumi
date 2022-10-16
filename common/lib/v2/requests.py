@@ -3224,10 +3224,14 @@ async def parse_and_apply_policy_request_modification(
                 )
                 # Authorization required if the policy wasn't approved by an auto-approval rule.
                 should_apply_because_auto_approved = (
-                    request_changes.command == Command.apply_change and approval_rule_approved
+                    request_changes.command == Command.apply_change
+                    and approval_rule_approved
                 )
 
-                if not can_manage_policy_request and not should_apply_because_auto_approved:
+                if (
+                    not can_manage_policy_request
+                    and not should_apply_because_auto_approved
+                ):
                     raise Unauthorized("You are not authorized to manage this request")
 
     if request_changes.command == Command.move_back_to_pending:
