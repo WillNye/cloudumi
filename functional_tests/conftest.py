@@ -20,8 +20,6 @@ if os.getenv("STAGE", "staging") == "prod":
     TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.noq.dev")
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
 
-DISABLE_CODE_COVERAGE = False
-
 
 # @pytest.mark.tryfirst
 def pytest_configure(config: Config) -> None:
@@ -38,10 +36,11 @@ def pytest_configure(config: Config) -> None:
 
 
 def disable_coverage_on_deployment(config):
-    if not DISABLE_CODE_COVERAGE:
+    if os.getenv("STAGE", None) not in ["staging", "prod"]:
         return
 
     cov = config.pluginmanager.get_plugin("_cov")
+    cov.options.no_cov_should_warn = False
     cov.options.no_cov = True
     if cov.cov_controller:
         cov.cov_controller.pause()
