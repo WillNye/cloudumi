@@ -36,6 +36,7 @@ def run():
     if stage and loc and stage in ["staging", "prod2"]:
         logger.info("Running functional tests")
         conftest = __import__("functional_tests.conftest")
+        conftest.DISABLE_CODE_COVERAGE = True
 
         if pytest.main([loc], plugins=[conftest, MyPlugin()]) in [
             ExitCode.TESTS_FAILED,

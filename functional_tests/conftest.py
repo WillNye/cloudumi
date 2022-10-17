@@ -20,6 +20,8 @@ if os.getenv("STAGE", "staging") == "prod":
     TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.noq.dev")
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
 
+DISABLE_CODE_COVERAGE = False
+
 
 # @pytest.mark.tryfirst
 def pytest_configure(config: Config) -> None:
@@ -32,6 +34,17 @@ def pytest_configure(config: Config) -> None:
     config.pluginmanager.register(
         CovPlugin(config.option, config.pluginmanager), "_cov"
     )
+    disable_coverage_on_deployment(config)
+
+
+def disable_coverage_on_deployment(config):
+    if not DISABLE_CODE_COVERAGE:
+        return
+
+    cov = config.pluginmanager.get_plugin("_cov")
+    cov.options.no_cov = True
+    if cov.cov_controller:
+        cov.cov_controller.pause()
 
 
 class FunctionalTest(AsyncHTTPTestCase):
@@ -52,6 +65,7 @@ class FunctionalTest(AsyncHTTPTestCase):
         config.values["_global_"]["tornado"]["debug"] = True
         config.values["_global_"]["tornado"]["xsrf"] = False
         from api.routes import make_app
+
         self.config = config
         return make_app(jwt_validator=lambda x: {})
 
