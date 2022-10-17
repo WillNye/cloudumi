@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import debounce from 'lodash/debounce'
 import {
   Button,
@@ -30,39 +30,48 @@ const SelectUserGroups = ({
   const [messages, setMessages] = useState([])
   const [searchValue, setSearchValue] = useState('')
 
+  const debouncedSearchFilter = useMemo(
+    () =>
+      debounce((value) => {
+        setIsLoading(true)
+
+        if (value.length < 1) {
+          setIsLoading(false)
+          setResults([])
+          setMessages([])
+          setSearchValue('')
+          return
+        }
+
+        const newValue = value.toLocaleLowerCase()
+
+        if (cachedResults.length) {
+          const reformattedResults = formatSearchResults(
+            cachedResults,
+            newValue
+          )
+          setIsLoading(false)
+          setResults(reformattedResults)
+          return
+        }
+
+        const TYPEAHEAD_API = `/api/v3/auth/cognito/groups`
+        sendRequestCommon(null, TYPEAHEAD_API, 'get').then((res) => {
+          const data = res?.count ? res.data : []
+
+          setCachedResults(data)
+          const reformattedResults = formatSearchResults(data, newValue)
+
+          setIsLoading(false)
+          setResults(reformattedResults)
+        })
+      }, 300),
+    [cachedResults] // eslint-disable-line react-hooks/exhaustive-deps
+  )
+
   const handleSearchChange = (_e, { value }) => {
     setSearchValue(value)
-    setIsLoading(true)
-
-    setTimeout(() => {
-      if (value.length < 1) {
-        setIsLoading(false)
-        setResults([])
-        setMessages([])
-        setSearchValue('')
-        return
-      }
-
-      const newValue = value.toLocaleLowerCase()
-
-      if (cachedResults.length) {
-        const reformattedResults = formatSearchResults(cachedResults, newValue)
-        setIsLoading(false)
-        setResults(reformattedResults)
-        return
-      }
-
-      const TYPEAHEAD_API = `/api/v3/auth/cognito/groups`
-      sendRequestCommon(null, TYPEAHEAD_API, 'get').then((res) => {
-        const data = res?.count ? res.data : []
-
-        setCachedResults(data)
-        const reformattedResults = formatSearchResults(data, newValue)
-
-        setIsLoading(false)
-        setResults(reformattedResults)
-      })
-    }, 300)
+    debouncedSearchFilter(value)
   }
 
   const handleResultSelect = (_e, { result }) => {
@@ -161,9 +170,7 @@ const SelectUserGroups = ({
                 fluid
                 loading={isLoading}
                 onResultSelect={handleResultSelect}
-                onSearchChange={debounce(handleSearchChange, 500, {
-                  leading: true,
-                })}
+                onSearchChange={handleSearchChange}
                 results={results}
                 resultRenderer={resultRenderer}
                 value={searchValue}

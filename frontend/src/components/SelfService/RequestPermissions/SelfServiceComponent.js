@@ -297,8 +297,8 @@ class SelfServiceComponent extends Component {
         <Message negative>
           <Message.Header>There are some parameters missing.</Message.Header>
           <Message.List>
-            {messages.map((message) => (
-              <Message.Item>{message}</Message.Item>
+            {messages.map((message, index) => (
+              <Message.Item key={index}>{message}</Message.Item>
             ))}
           </Message.List>
         </Message>
