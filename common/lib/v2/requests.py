@@ -3005,9 +3005,10 @@ async def _update_dynamo_with_change(
 ):
     try:
         await IAMRequest.write_v2(extended_request, tenant)
-        response.action_results.append(
-            ActionResult(status="success", message=success_message, visible=visible)
-        )
+        if visible:
+            response.action_results.append(
+                ActionResult(status="success", message=success_message)
+            )
     except Exception as e:
         log_data["message"] = error_message
         log_data["error"] = str(e)
