@@ -151,3 +151,4 @@ api/templates
 cloudumi_tornado.log.*
 
 **/.tfsec/*
+/deploy/local/redis
