@@ -3195,6 +3195,9 @@ async def parse_and_apply_policy_request_modification(
                     for change in extended_request.changes.changes
                     if change.status == Status.not_applied
                 ]
+                # Set supported to true for all changes
+                for change in changes_to_apply:
+                    change.supported = True
             else:
                 changes_to_apply = [
                     await _get_specific_change(
