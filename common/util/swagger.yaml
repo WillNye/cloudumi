@@ -1321,6 +1321,9 @@ components:
             new:
               default: true
               type: boolean
+            supported:
+              type: boolean
+              default: true
             action:
               $ref: "#/components/schemas/Action"
             change_type:
