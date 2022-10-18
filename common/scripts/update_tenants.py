@@ -35,6 +35,7 @@ def main(tenant, key, value):
     for i, part in enumerate(key_path_list):
         v = value if i == (len(key_path_list) - 1) else dict()
         pointer[part] = v
+        pointer = pointer[part]
     new_config = async_to_sync(ddb.update_static_config_for_tenant)(
         yaml.dump(tenant_config), session_name, tenant
     )
