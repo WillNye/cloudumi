@@ -69,7 +69,6 @@ py_library(
     srcs_version = "PY3",
     srcs = [
         "check_tenants.py",
-        "dump_tenants.py",
         "update_tenants.py",
     ],
     deps = [
