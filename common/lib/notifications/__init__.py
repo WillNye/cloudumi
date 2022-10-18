@@ -356,7 +356,9 @@ async def send_policy_request_status_update(
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
     principal = request["principal"]
     resource = (
-        request["arn"] or principal["resource_type"] or principal["principal_type"]
+        request.get("arn")
+        or principal.get("resource_type")
+        or principal.get("principal_type")
     )
     subject = (
         f"{app_name}: Policy change request for {resource} has been {request['status']}"
