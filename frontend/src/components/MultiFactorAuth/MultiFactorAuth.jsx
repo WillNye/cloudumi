@@ -30,7 +30,9 @@ const MultiFactorAuth = () => {
         if (res?.TotpUri) {
           setMfaData(res)
         } else {
-          setFetchError(JSON.stringify(res))
+          const error =
+            res?.reason || ' We are already informed, please try again later'
+          setFetchError(error)
         }
       })
       .finally(() => {
@@ -81,15 +83,13 @@ const MultiFactorAuth = () => {
                 as='h2'
                 color='grey'
                 style={{
-                  fontSize: '20px',
+                  fontSize: '18px',
                 }}
                 textAlign='center'
               >
                 An error occured
                 <Divider horizontal />
-                <Header.Subheader>
-                  We are already informed, please try again later
-                </Header.Subheader>
+                <Header.Subheader>{fetchError}</Header.Subheader>
               </Header>
               <br />
               <Link to='/'>
