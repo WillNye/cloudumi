@@ -292,7 +292,7 @@ async def authenticate_user_by_oidc(request):
             ):
                 # If MFA isn't enabled for the user, begin the setup process
                 mfa_setup = await user_client.get_mfa_secret(
-                    email, access_token=access_token
+                    email, access_token=access_token, tenant=tenant
                 )
                 after_redirect_uri = f"{protocol}://{full_host}/mfa"
 

@@ -327,7 +327,23 @@ class CognitoUserResetMFA(BaseHandler):
 
 class CognitoUserSetupMFA(BaseHandler):
     async def get(self):
-        self.write(self.mfa_setup)
+        if self.mfa_setup:
+            self.write(self.mfa_setup)
+            await self.finish()
+            return True
+
+        message = "MFA is not supported for this user, or it has already been setup."
+        log_data = {
+            "user": self.user,
+            "message": message,
+            "error": message,
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "tenant": self.ctx.tenant,
+        }
+        await handle_generic_error_response(
+            self, message, [message], 400, message, log_data
+        )
 
     async def post(self):
         tenant = self.ctx.tenant
