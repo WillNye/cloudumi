@@ -7,6 +7,7 @@ import random
 import string
 from datetime import date
 from typing import Any, Dict, List, Union
+import urllib.parse
 
 import boto3
 import sentry_sdk
@@ -1080,7 +1081,7 @@ class CognitoUserClient:
 
     @staticmethod
     def get_totp_uri(username: str, secret_code: str, tenant: str):
-        label = tenant.replace("_", ".")
+        label = urllib.parse.urlencode(tenant.replace("_", "."))
         return f"otpauth://totp/{label}:{username}?secret={secret_code}&issuer={label}"
 
     def _secret_hash(self, username):
