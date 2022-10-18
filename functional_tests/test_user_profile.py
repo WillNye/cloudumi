@@ -1,11 +1,6 @@
 import json
 
-from functional_tests.conftest import (
-    TEST_ACCOUNT_ID,
-    TEST_ACCOUNT_NAME,
-    TEST_USER_NAME,
-    FunctionalTest,
-)
+from functional_tests.conftest import TEST_ACCOUNT_ID, TEST_ACCOUNT_NAME, FunctionalTest
 
 
 class TestUserProfile(FunctionalTest):
