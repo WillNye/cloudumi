@@ -1,5 +1,5 @@
-import _ from 'lodash'
-import React, { useCallback, useState } from 'react'
+import _, { debounce } from 'lodash'
+import { useCallback, useState, useMemo } from 'react'
 import { Form, Header, Icon, Label, Search } from 'semantic-ui-react'
 
 export const TypeaheadBlockComponent = (props) => {
@@ -47,14 +47,11 @@ export const TypeaheadBlockComponent = (props) => {
     [selectedValues] // eslint-disable-line
   )
 
-  const handleSearchChange = useCallback(
-    (e, { value }) => {
-      setIsLoading(true)
-      setValue(value)
+  const debouncedSearchFilter = useMemo(
+    () =>
+      debounce((value) => {
+        setIsLoading(true)
 
-      props.handleInputUpdate(selectedValues)
-
-      setTimeout(() => {
         if (value.length < 1) {
           setIsLoading(false)
           setResults([])
@@ -79,9 +76,18 @@ export const TypeaheadBlockComponent = (props) => {
           setIsLoading(false)
           setResults(results)
         })
-      }, 300)
+      }, 300),
+    [noQuery, shouldTransformResults, selectedValues] // eslint-disable-line
+  )
+
+  const handleSearchChange = useCallback(
+    (e, { value }) => {
+      setValue(value)
+
+      props.handleInputUpdate(selectedValues)
+      debouncedSearchFilter(value)
     },
-    [selectedValues, shouldTransformResults, noQuery] // eslint-disable-line
+    [selectedValues, debouncedSearchFilter] // eslint-disable-line
   )
 
   const selectedValueLabels = selectedValues.map((selectedValue, index) => (
