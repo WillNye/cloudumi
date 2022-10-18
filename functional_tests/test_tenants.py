@@ -11,5 +11,4 @@ class TestTenants(FunctionalTest):
         for tenant in tenants:
             tenant_config = ddb.get_static_config_for_tenant_sync(tenant)
             tenant_urls.append(tenant_config.get("url"))
-        # tenant_urls = main()
         check_tenants(tenant_urls)
