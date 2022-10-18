@@ -22,6 +22,18 @@ def get_session_name():
     return client.get_caller_identity()["Arn"].split("/")[-1]
 
 
+def set_deep(dictionary, nested_key, value):
+    key_path_list = nested_key.split(".")
+    pointer = dictionary
+    for i, part in enumerate(key_path_list):
+        if i == (len(key_path_list) - 1):
+            pointer[part] = value
+        else:
+            if part not in pointer:
+                pointer[part] = dict()
+            pointer = pointer[part]
+
+
 @click.command()
 @click.option("--tenant", help="The tenant to receive the change")
 @click.option("--key", help="The configuration key to change, can be nested")
@@ -30,12 +42,7 @@ def main(tenant, key, value):
     session_name = get_session_name()
     ddb = RestrictedDynamoHandler()
     tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
-    key_path_list = key.split(".")
-    pointer = tenant_config
-    for i, part in enumerate(key_path_list):
-        v = value if i == (len(key_path_list) - 1) else dict()
-        pointer[part] = v
-        pointer = pointer[part]
+    set_deep(tenant_config, key, value)
     new_config = async_to_sync(ddb.update_static_config_for_tenant)(
         yaml.dump(tenant_config), session_name, tenant
     )
