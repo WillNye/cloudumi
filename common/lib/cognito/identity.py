@@ -5,9 +5,9 @@ import hmac
 import logging
 import random
 import string
+import urllib.parse
 from datetime import date
 from typing import Any, Dict, List, Union
-import urllib.parse
 
 import boto3
 import sentry_sdk
