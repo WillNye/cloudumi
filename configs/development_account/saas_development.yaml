@@ -77,6 +77,10 @@ _global_:
   s3_cache_bucket_region: us-west-2
   environment: dev
   development: true
+  site_configs:
+    localhost:
+      secrets:
+        jwt_secret: N21JlTYDJEtpy-kHb-j8sAxkdS7mb4IY1wcueWJfpZ8
   tornado:
     debug: false
     port: 8092
