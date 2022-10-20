@@ -123,9 +123,19 @@ class Aws:
         )
 
         # We are adding requester ip address to both ip_restrictions and custom_ip_restrictions
+        # AWS wants CIDR notation, so when we inject the request IP address, we have to turn it into a
+        # CIDR notation. https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
         extended_ip_restrictions = []
         extended_custom_ip_restrictions = []
-        if requester_ip:
+        is_requester_ip_restriction_enabled = config.get_tenant_specific_key(
+            "policies.ip_restrictions_on_requesters_ip", tenant, False
+        )
+        if is_requester_ip_restriction_enabled and requester_ip:
+            # Detecting loop-back address is really on for local dev
+            # Therefore, we check against the existence of the AWS_PROFILE environment
+            # variable which is really only set in local dev.
+            # In the event of loop-back address, we have to check what's remote IP is being
+            # seen by AWS endpoint.
             if (requester_ip == "::1" or "127.0.0.1") and os.getenv(
                 "AWS_PROFILE", None
             ) == "noq_cluster_dev":
@@ -133,10 +143,13 @@ class Aws:
                     requester_ip = requests_sync.get(
                         "https://checkip.amazonaws.com"
                     ).text.strip()
-                except Exception:
+                except Exception as e:
                     requester_ip = None
+                    log.debug({**log_data, "exception": "{0}".format(e)})
             if ":" in requester_ip:
-                # IPv6
+                # IPv6 - Debate whether /64 is the fine enough restriction
+                # /64 IPv6 subnet is IETF standard size and at least reachable
+                # to a network customer.
                 extended_ip_restrictions.append(f"{requester_ip}/64")
                 extended_custom_ip_restrictions.append(f"{requester_ip}/64")
             elif "." in requester_ip:
