@@ -135,7 +135,7 @@ class Aws:
                     ).text.strip()
                 except Exception:
                     requester_ip = None
-            if "::" in requester_ip:
+            if ":" in requester_ip:
                 # IPv6
                 extended_ip_restrictions.append(f"{requester_ip}/64")
                 extended_custom_ip_restrictions.append(f"{requester_ip}/64")
