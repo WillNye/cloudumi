@@ -149,7 +149,7 @@ py_binary(
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build_local",
         "RUNTIME_PROFILE": "API",
@@ -174,7 +174,7 @@ py_binary(
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build",
         "RUNTIME_PROFILE": "API",
