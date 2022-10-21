@@ -189,7 +189,7 @@ http_file(
     downloaded_file_path = "weep",
     executable = True,
     url = "https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/weep",
-    sha256 = "532004cb40f48d5c8b7f37db87ea41e82619376e72761e1e9657dde63d1fae19",
+    sha256 = "dd7385a02e1c2a779191a18c287c4a41c31be5b24e61aa7821971977e6801a8a",
 )
 
 register_toolchains(
