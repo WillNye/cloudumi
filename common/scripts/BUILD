@@ -1,5 +1,5 @@
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 
 exports_files(
     srcs = [
@@ -60,6 +60,21 @@ py_binary(
         "//util/debug",
         requirement("botocore"),
         requirement("tenacity"),
+    ],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "tenant_test_lib",
+    srcs_version = "PY3",
+    srcs = [
+        "check_tenants.py",
+        "update_tenants.py",
+    ],
+    deps = [
+        requirement("boto3"),
+        requirement("click"),
+        requirement("ruamel.yaml"),
     ],
     visibility = ["//visibility:public"],
 )
