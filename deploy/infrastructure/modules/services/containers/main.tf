@@ -310,6 +310,12 @@ resource "aws_iam_role" "ecs_task_role" {
             "logs:PutLogEvents",
           ],
           "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : "iam:CreateServiceLinkedRole",
+          "Resource" : "arn:aws:iam::*:role/aws-service-role/email.cognito-idp.amazonaws.com/AWSServiceRoleForAmazonCognitoIdp*",
+          "Condition" : { "StringLike" : { "iam:AWSServiceName" : "email.cognito-idp.amazonaws.com" } }
         }
       ],
       "Version" : "2012-10-17"
