@@ -83,6 +83,11 @@ output "elasticache_redis_primary_endpoint_port" {
   value       = module.tenant_elasticache_service.elasticache_redis_primary_endpoint_port
 }
 
+output "notifications_sender_identity" {
+  description = "ARN of the notifications sender identity"
+  value       = module.tenant_ses_service.notifications_sender_identity
+}
+
 output "namespace" {
   description = "The configured namespace (for automation)"
   value       = var.namespace

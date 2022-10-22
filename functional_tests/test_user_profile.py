@@ -14,47 +14,7 @@ class TestUserProfile(FunctionalTest):
         self.assertIn(TEST_ACCOUNT_ID, accounts.keys())
         self.assertIn(TEST_ACCOUNT_NAME, accounts.values())
 
-        self.assertEqual(
+        self.assertIn(
+            "site_config",
             res_j,
-            {
-                "site_config": {
-                    "consoleme_logo": None,
-                    "google_analytics": {"tracking_id": "G-P5K1SQF3P6", "options": {}},
-                    "documentation_url": "/docs",
-                    "support_contact": None,
-                    "support_chat_url": "https://communityinviter.com/apps/noqcommunity/noq",
-                    "security_logo": None,
-                    "favicon": None,
-                    "security_url": None,
-                    "landing_url": None,
-                    "notifications": {"enabled": True, "request_interval": 60},
-                    "temp_policy_support": True,
-                },
-                "user": "testing@noq.dev",
-                "can_logout": True,
-                "is_contractor": False,
-                "employee_photo_url": "",
-                "employee_info_url": "",
-                "authorization": {
-                    "can_edit_policies": True,
-                    "can_create_roles": True,
-                    "can_delete_iam_principals": True,
-                },
-                "pages": {
-                    "header": {
-                        "custom_header_message_title": "",
-                        "custom_header_message_text": "",
-                        "custom_header_message_route": ".*",
-                    },
-                    "role_login": {"enabled": True},
-                    "groups": {"enabled": False},
-                    "identity": {"enabled": False},
-                    "users": {"enabled": False},
-                    "policies": {"enabled": True},
-                    "self_service": {"enabled": True},
-                    "api_health": {"enabled": False},
-                    "audit": {"enabled": False},
-                    "config": {"enabled": True},
-                },
-            },
         )

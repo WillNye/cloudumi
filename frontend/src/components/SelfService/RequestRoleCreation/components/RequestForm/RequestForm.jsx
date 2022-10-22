@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import escapeRegExp from 'lodash/escapeRegExp'
 import debounce from 'lodash/debounce'
 import {
@@ -25,34 +25,40 @@ const RequestForm = ({ formData, setCurrentStep, setFormData }) => {
 
   const { sendRequestCommon } = useAuth()
 
-  const handleSearchChange = (_e, { value }) => {
-    setIsLoadingAccount(true)
-    setSearchValue(value)
-    setAccountResults([])
+  const debouncedSearchFilter = useMemo(
+    () =>
+      debounce((value) => {
+        setIsLoadingAccount(true)
+        setAccountResults([])
 
-    setTimeout(() => {
-      if (value.length < 1) {
-        setIsLoadingAccount(false)
-        setSelectedAccount(null)
-        return
-      }
-
-      const re = new RegExp(escapeRegExp(value), 'i')
-      const TYPEAHEAD_API = `/api/v2/policies/typeahead?resource=account&search=${value}`
-      sendRequestCommon(null, TYPEAHEAD_API, 'get')
-        .then((source) => {
-          if (!source) {
-            return
-          }
-          const resultsAccount = source.filter((result) =>
-            re.test(result.title)
-          )
-          setAccountResults(resultsAccount)
-        })
-        .finally(() => {
+        if (value.length < 1) {
           setIsLoadingAccount(false)
-        })
-    }, 300)
+          setSelectedAccount(null)
+          return
+        }
+
+        const re = new RegExp(escapeRegExp(value), 'i')
+        const TYPEAHEAD_API = `/api/v2/policies/typeahead?resource=account&search=${value}`
+        sendRequestCommon(null, TYPEAHEAD_API, 'get')
+          .then((source) => {
+            if (!source) {
+              return
+            }
+            const resultsAccount = source.filter((result) =>
+              re.test(result.title)
+            )
+            setAccountResults(resultsAccount)
+          })
+          .finally(() => {
+            setIsLoadingAccount(false)
+          })
+      }, 300),
+    [] // eslint-disable-line react-hooks/exhaustive-deps
+  )
+
+  const handleSearchChange = (_e, { value }) => {
+    setSearchValue(value)
+    debouncedSearchFilter(value)
   }
 
   const handleResultSelect = (_e, { result }) => {
@@ -101,9 +107,7 @@ const RequestForm = ({ formData, setCurrentStep, setFormData }) => {
             name='account_id'
             placeholder='Search for account by ID'
             onResultSelect={handleResultSelect}
-            onSearchChange={debounce(handleSearchChange, 500, {
-              leading: true,
-            })}
+            onSearchChange={handleSearchChange}
             results={accountResults}
             value={searchValue}
             fluid

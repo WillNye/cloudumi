@@ -31,6 +31,8 @@ _global_:
       attributes: {{ attributes }}
       registration_topic_arn: {{ sns_registration_topic_arn }}
       registration_queue_arn: {{ sqs_registration_queue_arn }}
+      registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
+      registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
   accounts:
     tenant_data:
       name: NoqServiceConnRole
@@ -91,6 +93,7 @@ _global_:
       global: rediss://:{password}@{{ elasticache_address }}:{{ elasticache_port }}/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
+  ses_notifications_sender_identity: {{ notifications_sender_identity }}
   dax_endpoints:
     - {{ dax_configuration_endpoint }}
   redis:

@@ -31,6 +31,8 @@ _global_:
       attributes: 1
       registration_topic_arn: arn:aws:sns:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-topic
       registration_queue_arn: arn:aws:sqs:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-queue
+      registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
+      registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
   accounts:
     tenant_data:
       name: NoqServiceConnRole
@@ -88,6 +90,7 @@ _global_:
       global: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
+  ses_notifications_sender_identity: arn:aws:ses:us-west-2:259868150464:identity/notifications@noq.dev
   dax_endpoints:
     - staging-shared.eb1l6j.dax-clusters.us-west-2.amazonaws.com:8111
   redis:

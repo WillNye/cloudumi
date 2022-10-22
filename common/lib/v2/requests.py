@@ -3005,9 +3005,10 @@ async def _update_dynamo_with_change(
 ):
     try:
         await IAMRequest.write_v2(extended_request, tenant)
-        response.action_results.append(
-            ActionResult(status="success", message=success_message, visible=visible)
-        )
+        if visible:
+            response.action_results.append(
+                ActionResult(status="success", message=success_message)
+            )
     except Exception as e:
         log_data["message"] = error_message
         log_data["error"] = str(e)
@@ -3205,9 +3206,10 @@ async def parse_and_apply_policy_request_modification(
             account_id = specific_change.principal.account_id or (
                 await ResourceAccountCache.get(tenant, specific_change_arn)
             )
+            account_ids = [account_id]
 
         can_manage_policy_request = await can_admin_policies(
-            user, user_groups, tenant, [account_id]
+            user, user_groups, tenant, account_ids
         )
         # Authorization required if the policy wasn't approved by an auto-approval rule.
         should_apply_because_auto_approved = (
