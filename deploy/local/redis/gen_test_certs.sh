@@ -21,6 +21,11 @@
 #   tests/tls/server.{crt,key}      A certificate restricted for SSL server usage.
 #   tests/tls/redis.dh              DH Params file.
 
+if [ -n "$1" ]; then
+    echo "Changing path to ${1}"
+    cd $1
+fi
+
 generate_cert() {
     local name=$1
     local cn="$2"
