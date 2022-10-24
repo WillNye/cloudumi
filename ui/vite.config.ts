@@ -4,6 +4,7 @@ import eslint from 'vite-plugin-eslint';
 import svgrPlugin from 'vite-plugin-svgr';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import checker from 'vite-plugin-checker';
+import fs from 'fs';
 
 export default defineConfig(({ command }) => {
   const config = {
@@ -20,6 +21,19 @@ export default defineConfig(({ command }) => {
       port: 3000,
       open: true,
       host: '::',
+      https: {
+        // Reference: https://stackoverflow.com/questions/69417788/vite-https-on-localhost
+        key: fs.readFileSync('./.certs/server.key.pem'),
+        cert: fs.readFileSync('./.certs/server.pem'),
+      },
+      proxy: {
+        '/api': {
+          // TODO: Put this in ENV variables
+          target: 'http://localhost:8092',
+          // changeOrigin: true,
+          // secure: false
+        }
+      }
     },
     test: {
       globals: true,
