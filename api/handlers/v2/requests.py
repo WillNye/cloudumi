@@ -1086,7 +1086,8 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 )
             if (
                 any(
-                    change.change_type in ["policy_condenser", "create_resource"]
+                    change.change_type
+                    in ["policy_condenser", "create_resource", "delete_resource"]
                     for change in extended_request.changes.changes
                 )
                 and has_expiry_info

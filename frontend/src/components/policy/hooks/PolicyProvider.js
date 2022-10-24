@@ -133,17 +133,33 @@ export const PolicyProvider = ({ children }) => {
   const setShowExpirationDate = (visible) =>
     dispatch({ type: 'SHOW_SET_EXPIRATION_DATE', visible })
 
-  const handleDeleteRole = async () => {
+  const handleDeleteRole = async (justification) => {
     const { serviceType, accountID, resourceName } = state.params
-    let api_endpoint = 'roles'
-    if (serviceType === 'iamuser') {
-      api_endpoint = 'users'
+
+    const resourceType = serviceType === 'iamrole' ? 'role' : 'user'
+    const principalArn = state?.resource?.arn
+
+    const payload = {
+      changes: {
+        changes: [
+          {
+            principal: {
+              principal_type: 'AwsResource',
+              principal_arn: principalArn,
+              account_id: accountID,
+              name: resourceName,
+              resource_type: resourceType,
+            },
+            change_type: 'delete_resource',
+          },
+        ],
+      },
+      justification,
+      dry_run: false,
+      admin_auto_approve: false,
     }
-    return await sendRequestCommon(
-      null,
-      `/api/v2/${api_endpoint}/${accountID}/${resourceName}`,
-      'delete'
-    )
+
+    return await sendRequestCommon(payload, '/api/v2/request')
   }
 
   // There are chances that same state and handler exists in other hooks

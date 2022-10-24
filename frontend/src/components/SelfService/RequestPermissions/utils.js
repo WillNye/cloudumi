@@ -12,7 +12,8 @@ export const containsCondensedPolicyChange = (changes) => {
 
 export const containsResourceCreation = (changes) => {
   const effectivePermissionsChanges = changes.filter(
-    (change) => change.change_type === 'create_resource'
+    ({ change_type }) =>
+      change_type === 'create_resource' || change_type === 'delete_resource'
   )
   return Boolean(effectivePermissionsChanges.length)
 }
