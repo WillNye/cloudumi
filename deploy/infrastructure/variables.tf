@@ -163,6 +163,11 @@ variable "elasticache_node_type" {
   default     = "cache.t3.micro"
 }
 
+variable "secret_manager_secret_name" {
+  description = "secret name for cloudumi"
+  type        = string
+}
+
 variable "dax_node_type" {
   type    = string
   default = "dax.t2.medium"
@@ -192,4 +197,9 @@ variable "worker_count" {
 variable "api_count" {
   description = "Desired number of api containers"
   type        = number
+}
+
+variable "notifications_mail_from_domain" {
+  description = "Messages sent through Amazon SES will be marked as originating from noq.dev domain"
+  type        = string
 }

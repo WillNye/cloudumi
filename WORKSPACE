@@ -24,6 +24,17 @@ http_archive(
 )
 load("@rules_python//python:repositories.bzl", "python_register_toolchains")
 
+http_archive(
+    name = "bazel_skylib",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+    ],
+    sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
+)
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+bazel_skylib_workspace()
+
 python_register_toolchains(
     name = "python3_10",
     # Available versions are listed in @rules_python//python:versions.bzl.
@@ -178,7 +189,7 @@ http_file(
     downloaded_file_path = "weep",
     executable = True,
     url = "https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/weep",
-    sha256 = "532004cb40f48d5c8b7f37db87ea41e82619376e72761e1e9657dde63d1fae19",
+    sha256 = "dd7385a02e1c2a779191a18c287c4a41c31be5b24e61aa7821971977e6801a8a",
 )
 
 register_toolchains(
@@ -192,6 +203,7 @@ get_repo_version(name="version")
 http_archive(
     name = "awscli",
     url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip",
-    sha256 = "0a98e11f9e52dfd7dc090c1f3d5878bf17d9f7bf584e5a0cda8e7883187588fd",
+    sha256 = "471a40dbcb97a061c07095576fee3f9e89ae74d8b9d4d671fa1145539542f6d2",
     build_file = "@//util:awscli.BUILD",
 )
+

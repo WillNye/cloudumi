@@ -3,6 +3,8 @@ import os
 import urllib
 
 import ujson as json
+from _pytest.config import Config
+from pytest_cov.plugin import CovPlugin
 from tornado.testing import AsyncHTTPTestCase
 
 from common.lib.jwt import generate_jwt_token
@@ -11,10 +13,37 @@ TEST_ACCOUNT_ID = "759357822767"
 TEST_ACCOUNT_NAME = "development"
 TEST_ROLE = "NullRole"
 TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
-TEST_USER_NAME = "testing@noq.dev"
+TEST_USER_NAME = "user@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
 TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.staging.noq.dev")
+if os.getenv("STAGE", "staging") == "prod":
+    TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.noq.dev")
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
+
+
+# @pytest.mark.tryfirst
+def pytest_configure(config: Config) -> None:
+    """Setup default pytest options."""
+    config.option.cov_report = {
+        "term-missing": None,
+        "html": "cov_html",
+    }
+    config.option.cov_branch = True
+    config.pluginmanager.register(
+        CovPlugin(config.option, config.pluginmanager), "_cov"
+    )
+    disable_coverage_on_deployment(config)
+
+
+def disable_coverage_on_deployment(config):
+    if os.getenv("STAGE", None) not in ["staging", "prod"]:
+        return
+
+    cov = config.pluginmanager.get_plugin("_cov")
+    cov.options.no_cov_should_warn = False
+    cov.options.no_cov = True
+    if cov.cov_controller:
+        cov.cov_controller.pause()
 
 
 class FunctionalTest(AsyncHTTPTestCase):
@@ -27,6 +56,7 @@ class FunctionalTest(AsyncHTTPTestCase):
             eula_signed=True,
         )
     )
+    config = None
 
     def get_app(self):
         from common.config import config
@@ -35,6 +65,7 @@ class FunctionalTest(AsyncHTTPTestCase):
         config.values["_global_"]["tornado"]["xsrf"] = False
         from api.routes import make_app
 
+        self.config = config
         return make_app(jwt_validator=lambda x: {})
 
     def make_request(

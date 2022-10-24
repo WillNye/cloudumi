@@ -97,32 +97,25 @@ _global_:
     clear_tasks_for_development: false
     purge: true
     broker:
-      us-east-1: redis://cloudumi-redis:6379/1
-      us-west-2: redis://cloudumi-redis:6379/1
-      global: redis://cloudumi-redis:6379/1
+      us-east-1: rediss://:{password}@cloudumi-redis:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@cloudumi-redis:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@cloudumi-redis:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     backend:
-      us-east-1: redis://cloudumi-redis:6379/2
-      us-west-2: redis://cloudumi-redis:6379/2
-      global: redis://cloudumi-redis:6379/2
+      us-east-1: rediss://:{password}@cloudumi-redis:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@cloudumi-redis:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@cloudumi-redis:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
+  ses_notifications_sender_identity: arn:aws:ses:us-west-2:759357822767:identity/notifications@noq.dev
   redis:
+    ssl: true
+    ssl_ca_certs: ./deploy/local/redis/tests/tls/ca.crt
     cluster_mode:
       enabled: false
       nodes:
         global:
-          - host: redis-cluster
-            port: "9000"
-          - host: redis-cluster
-            port: "9001"
-          - host: redis-cluster
-            port: "9002"
-          - host: redis-cluster
-            port: "9003"
-          - host: redis-cluster
-            port: "9004"
-          - host: redis-cluster
-            port: "9005"
+          - host: cloudumi-redis
+            port: 6379
   tenant_registration:
     set_login_page_ui:
       logo_location: frontend/src/assets/NoqLogo.png

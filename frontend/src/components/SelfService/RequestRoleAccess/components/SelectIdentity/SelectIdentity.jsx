@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Button,
   Divider,
@@ -52,34 +52,40 @@ const SelectIdentity = ({
     })
   }
 
+  const debouncedSearchFilter = useMemo(
+    () =>
+      debounce((value) => {
+        setIsLoading(true)
+        setRole(null)
+
+        if (value.length < 1) {
+          setIsLoading(false)
+          setResults([])
+          setMessages([])
+          setSearchValue('')
+          return
+        }
+
+        const TYPEAHEAD_API = `/api/v2/typeahead/self_service_resources?typeahead=${value}`
+        sendRequestCommon(null, TYPEAHEAD_API, 'get').then((results) => {
+          const reformattedResults = results.map((res, idx) => {
+            return {
+              id: idx,
+              title: res.display_text,
+              ...res,
+            }
+          })
+
+          setIsLoading(false)
+          setResults(reformattedResults)
+        })
+      }, 300),
+    [] // eslint-disable-line react-hooks/exhaustive-deps
+  )
+
   const handleSearchChange = (_e, { value }) => {
     setSearchValue(value)
-    setIsLoading(true)
-    setRole(null)
-
-    setTimeout(() => {
-      if (value.length < 1) {
-        setIsLoading(false)
-        setResults([])
-        setMessages([])
-        setSearchValue('')
-        return
-      }
-
-      const TYPEAHEAD_API = `/api/v2/typeahead/self_service_resources?typeahead=${value}`
-      sendRequestCommon(null, TYPEAHEAD_API, 'get').then((results) => {
-        const reformattedResults = results.map((res, idx) => {
-          return {
-            id: idx,
-            title: res.display_text,
-            ...res,
-          }
-        })
-
-        setIsLoading(false)
-        setResults(reformattedResults)
-      })
-    }, 300)
+    debouncedSearchFilter(value)
   }
 
   const handleResultSelect = (e, { result }) => {
@@ -153,9 +159,7 @@ const SelectIdentity = ({
             fluid
             loading={isLoading}
             onResultSelect={handleResultSelect}
-            onSearchChange={debounce(handleSearchChange, 500, {
-              leading: true,
-            })}
+            onSearchChange={handleSearchChange}
             results={results}
             resultRenderer={resultRenderer}
             value={searchValue}

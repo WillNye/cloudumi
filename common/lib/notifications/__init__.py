@@ -354,17 +354,21 @@ async def send_policy_request_status_update(
     request, policy_change_uri, tenant: str, sending_app="noq"
 ):
     app_name = config.get("_global_.ses.{sending_app}.name", sending_app)
-    subject = f"{app_name}: Policy change request for {request['arn']} has been {request['status']}"
-    if request["status"] == "pending":
-        subject = (
-            f"{app_name}: Policy change request for {request['arn']} has been created"
-        )
-    to_addresses = [request.get("username")]
-    message = (
-        f"A policy change request for {request['arn']} has been {request['status']}"
+    principal = request["principal"]
+    resource = (
+        request.get("arn")
+        or principal.get("resource_type")
+        or principal.get("principal_type")
+    )
+    subject = (
+        f"{app_name}: Policy change request for {resource} has been {request['status']}"
     )
     if request["status"] == "pending":
-        message = f"A policy change request for {request['arn']} has been created."
+        subject = f"{app_name}: Policy change request for {resource} has been created"
+    to_addresses = [request.get("username")]
+    message = f"A policy change request for {resource} has been {request['status']}"
+    if request["status"] == "pending":
+        message = f"A policy change request for {resource} has been created."
     if {request["status"]} == "approved":
         message += " and committed"
         subject += " and committed"

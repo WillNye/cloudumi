@@ -5,7 +5,6 @@ import {
   Grid,
   Header,
   Icon,
-  Image,
   Loader,
   Message,
   Segment,
@@ -254,16 +253,6 @@ class PolicyRequestReview extends Component {
         ? extendedInfo.name.fullName + ' - '
         : null
 
-    const requesterImage =
-      extendedRequest.requester_info &&
-      extendedRequest.requester_info.photo_url ? (
-        <Image
-          src={extendedRequest.requester_info.photo_url}
-          size='small'
-          inline
-        />
-      ) : null
-
     const requesterEmail =
       extendedRequest.requester_info &&
       extendedRequest.requester_info.details_url ? (
@@ -335,7 +324,6 @@ class PolicyRequestReview extends Component {
               <Header size='medium'>
                 {requesterName}
                 {requesterEmail}
-                {requesterImage}
               </Header>
             </Table.Cell>
           </Table.Row>

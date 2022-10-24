@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _, { debounce } from 'lodash'
 import React, { Component } from 'react'
 import {
   Button,
@@ -57,6 +57,38 @@ class SelfServiceStep1 extends Component {
     })
   }
 
+  debouncedSearchFilter = debounce(() => {
+    const { value } = this.state
+    if (value.length < 1) {
+      return this.setState({
+        isLoading: false,
+        messages: [],
+        results: [],
+        value: '',
+      })
+    }
+
+    const TYPEAHEAD_API = `/api/v2/typeahead/self_service_resources?typeahead=${value}`
+    this.props.sendRequestCommon(null, TYPEAHEAD_API, 'get').then((results) => {
+      // The Semantic UI Search component is quite opinionated
+      // as it expects search results data to be in a specific format
+      // and will throw an error when this is not the case.
+      // A way to get around the error is to add a key to each search result
+      // that is expected - `title` in our use case.
+      const reformattedResults = results.map((res, idx) => {
+        return {
+          id: idx,
+          title: res.display_text,
+          ...res,
+        }
+      })
+      this.setState({
+        isLoading: false,
+        results: reformattedResults,
+      })
+    })
+  }, 300)
+
   handleSearchChange(event, { value }) {
     this.setState(
       {
@@ -72,40 +104,7 @@ class SelfServiceStep1 extends Component {
             this.props.handleRoleUpdate(null)
           }
         )
-
-        setTimeout(() => {
-          const { value } = this.state
-          if (value.length < 1) {
-            return this.setState({
-              isLoading: false,
-              messages: [],
-              results: [],
-              value: '',
-            })
-          }
-
-          const TYPEAHEAD_API = `/api/v2/typeahead/self_service_resources?typeahead=${value}`
-          this.props
-            .sendRequestCommon(null, TYPEAHEAD_API, 'get')
-            .then((results) => {
-              // The Semantic UI Search component is quite opinionated
-              // as it expects search results data to be in a specific format
-              // and will throw an error when this is not the case.
-              // A way to get around the error is to add a key to each search result
-              // that is expected - `title` in our use case.
-              const reformattedResults = results.map((res, idx) => {
-                return {
-                  id: idx,
-                  title: res.display_text,
-                  ...res,
-                }
-              })
-              this.setState({
-                isLoading: false,
-                results: reformattedResults,
-              })
-            })
-        }, 300)
+        this.debouncedSearchFilter()
       }
     )
   }
@@ -203,13 +202,7 @@ class SelfServiceStep1 extends Component {
                       fluid
                       loading={isLoading}
                       onResultSelect={this.handleResultSelect.bind(this)}
-                      onSearchChange={_.debounce(
-                        this.handleSearchChange.bind(this),
-                        500,
-                        {
-                          leading: true,
-                        }
-                      )}
+                      onSearchChange={this.handleSearchChange.bind(this)}
                       results={results}
                       resultRenderer={this.resultRenderer}
                       value={value}

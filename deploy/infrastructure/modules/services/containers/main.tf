@@ -310,6 +310,12 @@ resource "aws_iam_role" "ecs_task_role" {
             "logs:PutLogEvents",
           ],
           "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : "iam:CreateServiceLinkedRole",
+          "Resource" : "arn:aws:iam::*:role/aws-service-role/email.cognito-idp.amazonaws.com/AWSServiceRoleForAmazonCognitoIdp*",
+          "Condition" : { "StringLike" : { "iam:AWSServiceName" : "email.cognito-idp.amazonaws.com" } }
         }
       ],
       "Version" : "2012-10-17"
@@ -328,14 +334,6 @@ resource "aws_security_group" "ecs-sg" {
     to_port         = 8092
     protocol        = "tcp"
     security_groups = var.load_balancer_sgs
-  }
-
-  ingress {
-    description     = "SSH for accessing Noq for debugging"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [var.test_access_sg_id]
   }
 
   ingress {

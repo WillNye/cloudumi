@@ -5,6 +5,7 @@ import hmac
 import logging
 import random
 import string
+import urllib.parse
 from datetime import date
 from typing import Any, Dict, List, Union
 
@@ -692,6 +693,14 @@ async def create_user_pool(noq_subdomain, domain_fqdn):
         year=date.today().year, domain=domain_fqdn
     )
     cognito_email_subject = "Your temporary password for Noq"
+    ses_source_arn = config.get("_global_.ses_notifications_sender_identity", None)
+    if ses_source_arn is None:
+        email_configuration = {"EmailSendingAccount": "COGNITO_DEFAULT"}
+    else:
+        email_configuration = {
+            "EmailSendingAccount": "DEVELOPER",
+            "SourceArn": config.get("_global_.ses_notifications_sender_identity", None),
+        }
     response = cognito.create_user_pool(
         PoolName=user_pool_name,
         Schema=[
@@ -865,7 +874,7 @@ async def create_user_pool(noq_subdomain, domain_fqdn):
             }
         },
         AutoVerifiedAttributes=["email"],
-        EmailConfiguration={"EmailSendingAccount": "COGNITO_DEFAULT"},
+        EmailConfiguration=email_configuration,
         UsernameAttributes=["email"],
         UserPoolTags={"tenant": noq_subdomain},
         AdminCreateUserConfig={
@@ -1071,8 +1080,8 @@ class CognitoUserClient:
         )
 
     @staticmethod
-    def get_totp_uri(username: str, secret_code: str):
-        label = "noq"
+    def get_totp_uri(username: str, secret_code: str, tenant: str):
+        label = urllib.parse.urlencode(tenant.replace("_", "."))
         return f"otpauth://totp/{label}:{username}?secret={secret_code}&issuer={label}"
 
     def _secret_hash(self, username):
@@ -1148,7 +1157,9 @@ class CognitoUserClient:
                     "SOFTWARE_TOKEN_MFA"
                     in response["ChallengeParameters"]["MFAS_CAN_SETUP"]
                 ):
-                    response.update(await self.get_mfa_secret(response["Session"]))
+                    response.update(
+                        await self.get_mfa_secret(response["Session"]), tenant="noq"
+                    )
                 else:
                     raise RuntimeError(
                         "The user pool requires MFA setup, but the user pool is not "
@@ -1168,7 +1179,7 @@ class CognitoUserClient:
         return response
 
     async def get_mfa_secret(
-        self, username: str, session: str = None, access_token: str = None
+        self, username: str, tenant: str, session: str = None, access_token: str = None
     ):
         """
         Gets a token that can be used to associate an MFA application with the user.
@@ -1202,7 +1213,9 @@ class CognitoUserClient:
             raise
         else:
             response.pop("ResponseMetadata", None)
-            response["TotpUri"] = self.get_totp_uri(username, response["SecretCode"])
+            response["TotpUri"] = self.get_totp_uri(
+                username, response["SecretCode"], tenant
+            )
             return response
 
     def verify_mfa(
