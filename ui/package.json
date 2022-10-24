@@ -15,9 +15,11 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.4.6",
+    "aws-amplify": "^4.3.39",
     "classnames": "^2.3.2",
     "date-fns": "^2.29.3",
-    "framer-motion": "^7.5.3",
+    "framer-motion": "^6.2.8",
+    "reablocks": "^1.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-error-boundary": "^3.1.4",
@@ -29,9 +31,9 @@
   "devDependencies": {
     "@babel/core": "^7.19.3",
     "@storybook/addon-actions": "^6.5.12",
+    "@storybook/addon-docs": "^6.5.12",
     "@storybook/addon-essentials": "^6.5.12",
     "@storybook/addon-interactions": "^6.5.12",
-    "@storybook/addon-docs": "^6.5.12",
     "@storybook/addon-links": "^6.5.12",
     "@storybook/builder-vite": "^0.2.3",
     "@storybook/react": "^6.5.12",

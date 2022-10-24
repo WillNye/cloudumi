@@ -1,7 +1,12 @@
 import { createContext, useContext } from 'react';
 
+export interface AuthLoginInputs {
+  username: string;
+  password: string;
+}
+
 export interface AuthContextProps {
-  login: () => void;
+  login: (input: AuthLoginInputs) => void;
   logout: () => void;
 }
 
