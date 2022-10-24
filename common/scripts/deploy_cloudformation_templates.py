@@ -77,7 +77,7 @@ def run(upload: bool, suffix: str):
     os.environ.setdefault(
         "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
     )
-    os.environ.setdefault("AWS_PROFILE", "noq_cluster_dev")
+    os.environ.setdefault("AWS_PROFILE", "NoqSaasRoleLocalDev")
     asyncio.run(generate_cf_templates(upload, suffix))
 
 

@@ -48,15 +48,17 @@ def disable_coverage_on_deployment(config):
 
 class FunctionalTest(AsyncHTTPTestCase):
     maxDiff = None
-    token = asyncio.run(
-        generate_jwt_token(
-            TEST_USER_NAME,
-            TEST_USER_GROUPS,
-            TEST_USER_DOMAIN_US,
-            eula_signed=True,
+    if os.getenv("STAGE") == "staging" or os.getenv("STAGE") == "prod":
+        token = asyncio.run(
+            generate_jwt_token(
+                TEST_USER_NAME,
+                TEST_USER_GROUPS,
+                TEST_USER_DOMAIN_US,
+                eula_signed=True,
+            )
         )
-    )
-    config = None
+    else:
+        token = None
 
     def get_app(self):
         from common.config import config

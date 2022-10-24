@@ -43,7 +43,7 @@ def run(environment):
             "profile": "noq_staging",
         },
         "local": {
-            "profile": "noq_cluster_dev",
+            "profile": "NoqSaasRoleLocalDev",
         },
     }
 

@@ -24,6 +24,5 @@ pytest_test(
         "test_main.py",
     ],
     deps = [
-        "//util/tests:test_dependencies_lib",
     ],
 )

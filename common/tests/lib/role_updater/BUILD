@@ -16,6 +16,5 @@ pytest_test(
         "test_handler.py",
     ],
     deps = [
-        "//util/tests:test_dependencies_lib",
     ],
 )

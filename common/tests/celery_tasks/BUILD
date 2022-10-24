@@ -15,6 +15,5 @@ pytest_test(
         "test_celery.py",
     ],
     deps = [
-        "//util/tests:test_dependencies_lib",
     ],
 )

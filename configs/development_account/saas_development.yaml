@@ -7,7 +7,7 @@ extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
-  # profiler: yappi | pprofile | memray
+  profiler: yappi
   #  tracing:
   #    enabled: true
   #_development_run_celery_tasks_1_min: true
@@ -77,6 +77,10 @@ _global_:
   s3_cache_bucket_region: us-west-2
   environment: dev
   development: true
+  site_configs:
+    localhost:
+      secrets:
+        jwt_secret: N21JlTYDJEtpy-kHb-j8sAxkdS7mb4IY1wcueWJfpZ8
   tornado:
     debug: false
     port: 8092
