@@ -106,21 +106,24 @@ class ResourceAccountCache:
                 tenant,
                 "account_resource_cache/cache_s3_combined_v1.json.gz",
             )
-            bucket_data = await retrieve_json_data_from_redis_or_s3(
-                redis_key=bucket_key,
-                redis_data_type="hash",
-                s3_bucket=s3_bucket,
-                s3_key=s3_key,
-                tenant=tenant,
-            )
-            bucket_name = parse_arn(arn)["resource"]
-            resource_accounts = [
-                account_id
-                for account_id, buckets in bucket_data.items()
-                if bucket_name in buckets
-            ]
-            if resource_accounts:
-                return resource_accounts[0]
+            try:
+                bucket_data = await retrieve_json_data_from_redis_or_s3(
+                    redis_key=bucket_key,
+                    redis_data_type="hash",
+                    s3_bucket=s3_bucket,
+                    s3_key=s3_key,
+                    tenant=tenant,
+                )
+                bucket_name = parse_arn(arn)["resource"]
+                resource_accounts = [
+                    account_id
+                    for account_id, buckets in bucket_data.items()
+                    if bucket_name in buckets
+                ]
+                if resource_accounts:
+                    return resource_accounts[0]
+            except Exception as exc:
+                log.exception(exc)
 
         if tenant_resources := cls._tenant_resources.get(tenant):
             try:

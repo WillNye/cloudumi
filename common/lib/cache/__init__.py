@@ -240,7 +240,7 @@ async def retrieve_json_data_from_redis_or_s3(
             ):
                 if default is not None:
                     return default
-            return data
+            raise
         s3_object_content = await aio_wrapper(s3_object["Body"].read)
         if not s3_object_content and default is not None:
             return default
