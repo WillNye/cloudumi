@@ -189,7 +189,7 @@ http_file(
     downloaded_file_path = "weep",
     executable = True,
     url = "https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/weep",
-    sha256 = "532004cb40f48d5c8b7f37db87ea41e82619376e72761e1e9657dde63d1fae19",
+    sha256 = "dd7385a02e1c2a779191a18c287c4a41c31be5b24e61aa7821971977e6801a8a",
 )
 
 register_toolchains(
@@ -203,7 +203,7 @@ get_repo_version(name="version")
 http_archive(
     name = "awscli",
     url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip",
-    sha256 = "ca0e766fe70b14c1f7e2817836acf03e4a3e6391b7ed6a464282c5b174580b9a",
+    sha256 = "471a40dbcb97a061c07095576fee3f9e89ae74d8b9d4d671fa1145539542f6d2",
     build_file = "@//util:awscli.BUILD",
 )
 

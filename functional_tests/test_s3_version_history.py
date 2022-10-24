@@ -27,11 +27,10 @@ def list_all_objects_version(bucket_name, prefix_name, max_keys=1000):
 
 class TestS3VersionHistory(FunctionalTest):
     def test_get_version_history(self):
-        from common.config import config
 
         now = datetime.now(tzlocal())
         credential_mapping_versions = list_all_objects_version(
-            config.get(
+            self.config.get(
                 "_global_.s3_cache_bucket",
                 "cloudumi-cache.staging-noq-dev-shared-staging-1",
             ),

@@ -7,6 +7,7 @@ INT_DEPS = [
     "//common/config/tests:test_files",
     "//common/lib/cognito/tests:test_files",
     "//common/lib",
+    "//common/scripts:tenant_test_lib",
     "//common/tests:test_files",
     "//util/log:lib",
 ]
@@ -14,6 +15,7 @@ INT_DEPS = [
 EXT_DEPS = [
     requirement("boto3"),
     requirement("botocore"),
+    requirement("click"),
     requirement("flake8"),
     requirement("moto"),
     requirement("pytest"),

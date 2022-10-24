@@ -62,6 +62,7 @@ filegroup(
 py_library(
     name = "lib",
     data = [
+        "//functional_tests:lib",
         "//deploy/local/redis/tests/tls:certs",
     ],
     srcs_version = "PY3",
@@ -125,7 +126,7 @@ container_image(
         "TZ": "America/Los_Angeles",
         "CONFIG_LOCATION": "/configs/development_account/saas_development_container.yaml",
         "NOQ_CONTAINER": "1",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "noq_cluster_dev",
         "DEBUG": "1",
         "RUNTIME_PROFILE": "CELERY_WORKER_TEST",
     },

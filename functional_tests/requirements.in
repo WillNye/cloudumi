@@ -1,5 +1,6 @@
 boto3
 botocore
+click
 flake8
 moto
 pytest
