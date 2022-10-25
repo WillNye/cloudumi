@@ -167,9 +167,6 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             aws = get_plugin_by_name(
                 config.get_tenant_specific_key("plugins.aws", tenant, "cmsaas_aws")
             )()
-            remote_ip = (
-                self.request.headers.get("X-Forwarded-For") or self.request.remote_ip
-            )
             url = await aws.generate_url(
                 self.user,
                 selected_role,
@@ -178,7 +175,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 user_role=user_role,
                 account_id=account_id,
                 read_only=read_only,
-                requester_ip=remote_ip,
+                requester_ip=self.get_request_ip(),
             )
         except Exception as e:
             log_data["message"] = f"Exception generating AWS console URL: {str(e)}"

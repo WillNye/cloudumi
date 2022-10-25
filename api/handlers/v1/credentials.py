@@ -441,10 +441,6 @@ class GetCredentialsHandler(BaseMtlsHandler):
             await self.finish()
             return
 
-        remote_ip = (
-            self.request.headers.get("X-Forwarded-For") or self.request.remote_ip
-        )
-
         credentials = await aws.get_credentials(
             app_name,
             requested_role,
@@ -454,7 +450,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             account_id=None,
             custom_ip_restrictions=request.get("custom_ip_restrictions"),
             read_only=request.get("read_only"),
-            requester_ip=remote_ip,
+            requester_ip=self.get_request_ip(),
         )
         self.set_header("Content-Type", "application/json")
         credentials.pop("ResponseMetadata", None)
@@ -545,10 +541,6 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 matching_roles
             )
 
-            remote_ip = (
-                self.request.headers.get("X-Forwarded-For") or self.request.remote_ip
-            )
-
             return await aws.get_credentials(
                 self.user,
                 matching_roles[0],
@@ -557,7 +549,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 user_role=user_role,
                 account_id=account_id,
                 read_only=request.get("read_only"),
-                requester_ip=remote_ip,
+                requester_ip=self.get_request_ip(),
             )
         except Exception as e:
             log_data["message"] = "Unable to get credentials for user"
@@ -679,11 +671,6 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     matching_roles
                 )
 
-                remote_ip = (
-                    self.request.headers.get("X-Forwarded-For")
-                    or self.request.remote_ip
-                )
-
                 credentials = await aws.get_credentials(
                     self.user,
                     matching_roles[0],
@@ -692,7 +679,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     user_role=user_role,
                     account_id=account_id,
                     read_only=request.get("read_only"),
-                    requester_ip=remote_ip,
+                    requester_ip=self.get_request_ip(),
                 )
 
         if not credentials:
