@@ -138,7 +138,7 @@ class Aws:
             # seen by AWS endpoint.
             if (requester_ip == "::1" or "127.0.0.1") and os.getenv(
                 "AWS_PROFILE", None
-            ) == "noq_cluster_dev":
+            ) == "NoqSaasRoleLocalDev":
                 try:
                     requester_ip = requests_sync.get(
                         "https://checkip.amazonaws.com"
