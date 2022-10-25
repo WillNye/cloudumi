@@ -5,14 +5,21 @@ export interface AuthLoginInputs {
   password: string;
 }
 
+export interface AuthResetPasswordInputs {
+  oldPassword: string;
+  newPassword: string;
+}
+
 export interface AuthContextProps {
   login: (input: AuthLoginInputs) => void;
+  changePassword: (input: AuthResetPasswordInputs) => void;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextProps>({
-  login: () => undefined,
-  logout: async () => undefined
+  login: async () => undefined,
+  logout: async () => undefined,
+  changePassword: async () => undefined,
 });
 
 export const { Provider: AuthProvider, Consumer: AuthConsumer } = AuthContext;

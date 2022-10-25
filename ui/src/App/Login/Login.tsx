@@ -4,10 +4,8 @@ import { Credentials } from './Credentials';
 import { ChangePassword } from './ChangePassword';
 
 export const Login: FC = () => (
-  <>
-    <Routes>
-      <Route path="/" element={<Credentials />} />
-      <Route path="/change-password" element={<ChangePassword />} />
-    </Routes>
-  </>
+  <Routes>
+    <Route path="/" element={<Credentials />} />
+    <Route path="/change-password" element={<ChangePassword />} />
+  </Routes>
 );
