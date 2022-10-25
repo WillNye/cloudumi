@@ -8,11 +8,12 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
 
   const login = useCallback(async ({ username, password }: AuthLoginInputs) => {
     try {
-      // NOTE: To get the token
-      // const data = await Auth.currentSession()
-      // return data.idToken.jwtToken
-
+      // References: https://docs.amplify.aws/lib/auth/manageusers/q/platform/js/
       const awsUser = await AmplifyAuth.signIn(username, password);
+
+      // NOTE: For making API requests later, we will need the token
+      // here is how you get that ->
+      // const { idToken: { jwtToken } } = await Auth.currentSession();
       setUser(awsUser);
     } catch (error) {
       console.error('error signing in', error);
