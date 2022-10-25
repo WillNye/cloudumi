@@ -82,6 +82,7 @@ class PrincipalModel(BaseModel):
 
 class ResourceType(Enum):
     role = "role"
+    user = "user"
 
 
 class AwsResourcePrincipalModel(PrincipalModel):

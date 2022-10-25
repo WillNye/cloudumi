@@ -44,7 +44,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import NoqSemaphore, aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.sanitize import sanitize_session_name
-from common.lib.aws.utils import fetch_resource_details
+from common.lib.aws.utils import delete_iam_user, fetch_resource_details
 from common.lib.change_request import generate_policy_name, generate_policy_sid
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
@@ -3447,6 +3447,30 @@ async def parse_and_apply_policy_request_modification(
                     response = await apply_create_role_change(
                         extended_request, specific_change, response, user, tenant
                     )
+            elif specific_change.change_type == "delete_resource":
+                try:
+                    iam_resource_type = specific_change.principal.resource_type
+                    iam_resource_name = specific_change.principal.name
+                    if iam_resource_type == ResourceType.role:
+                        response = await IAMRole.delete_role(
+                            tenant, account_id, iam_resource_name, user
+                        )
+                    elif iam_resource_type == ResourceType.user:
+                        response = await delete_iam_user(
+                            account_id, iam_resource_name, user, tenant
+                        )
+                    else:
+                        response.errors += 1
+                        response.action_results.append(
+                            "Resource deletion not supported"
+                        )
+                except Exception as e:
+                    delete_resource_err_msg = (
+                        f"Exception deleting AWS IAM {iam_resource_type}"
+                    )
+                    log_data["message"] = delete_resource_err_msg
+                    response.errors += 1
+                    response.action_results.append(delete_resource_err_msg)
             elif (
                 specific_change.change_type == "resource_policy"
                 or specific_change.change_type == "sts_resource_policy"
