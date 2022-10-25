@@ -45,7 +45,12 @@ export const Credentials: FC = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <input autoFocus type="email" {...register('username')} />
           <br />
-          <input type="password" {...register('password')} />
+          <input
+            type="password"
+            autoCapitalize="none"
+            autoCorrect="off"
+            {...register('password')}
+          />
           <br />
           <button type="submit" disabled={isSubmitting || !isValid}>
             {isSubmitting ? 'Logging in...' : 'Login'}

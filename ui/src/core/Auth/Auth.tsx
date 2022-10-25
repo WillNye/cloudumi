@@ -19,7 +19,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     } catch ({ message }) {
       throw new Error(`Error changing password: ${message}`);
     }
-  }, []);
+  }, [user, navigate]);
 
   const login = useCallback(async ({ username, password }: AuthLoginInputs) => {
     try {
@@ -30,10 +30,12 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       // here is how you get that ->
       // const { idToken: { jwtToken } } = await Auth.currentSession();
       setUser(awsUser);
+
+      navigate('/');
     } catch ({ message }) {
       throw new Error(`Error logging in: ${message}`);
     }
-  }, []);
+  }, [navigate]);
 
   const logout = useCallback(async () => {
     try {
