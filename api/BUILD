@@ -79,6 +79,7 @@ EXT_DEPS = [
     requirement("tornado"),
     requirement("ujson"),
     requirement("uvloop"),
+    requirement("yappi"),
 ]
 
 REQUIRES = [
@@ -114,11 +115,14 @@ REQUIRES = [
     "tornado",
     "ujson",
     "uvloop",
+    "yappi",
 ]
 
 py_library(
     name = "lib",
-    data = [],
+    data = [
+        "//deploy/local/redis/tests/tls:certs",
+    ],
     srcs_version = "PY3",
     srcs = [
         ":src",
@@ -135,6 +139,7 @@ py_binary(
         "//configs:fluent-bit",
         "//frontend:build_local",
         ":docs_sources",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     srcs_version = "PY3",
     srcs = [
@@ -146,7 +151,7 @@ py_binary(
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build_local",
         "RUNTIME_PROFILE": "API",
@@ -159,6 +164,7 @@ py_binary(
     name = "bin-no-frontend",
     data = [
         "//configs/development_account:configs",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     srcs_version = "PY3",
     srcs = [
@@ -170,7 +176,7 @@ py_binary(
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build",
         "RUNTIME_PROFILE": "API",

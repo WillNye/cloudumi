@@ -13,6 +13,5 @@ pytest_test(
         "test_identity.py",
     ],
     deps = [
-        "//util/tests:test_dependencies_lib",
     ],
 )

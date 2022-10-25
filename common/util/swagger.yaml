@@ -1261,6 +1261,10 @@ components:
           type: boolean
           readOnly: true
           default: false
+        auto_merge:
+          type: boolean
+          default: false
+          description: if set, automatically merges a policy that is not `new`
     GenericFileChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1317,6 +1321,9 @@ components:
             new:
               default: true
               type: boolean
+            supported:
+              type: boolean
+              default: true
             action:
               $ref: "#/components/schemas/Action"
             change_type:
@@ -2129,6 +2136,10 @@ components:
         credentials:
           $ref: "#/components/schemas/CloudCredentials"
           is_secret: true
+        auto_merge:
+          type: boolean
+          default: False
+          description: attempt to automatically merge two policies
     RequestCreationResponse:
       type: object
       properties:
@@ -2217,13 +2228,14 @@ components:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
         - type: object
-          required:
-            - change_id
           properties:
             policy_document:
               type: object
             change_id:
               type: string
+            apply_all_changes:
+              type: boolean
+              default: False
             apps:
               $ref: "#/components/schemas/AppDetailsArray"
     CancelChangeModificationModel:

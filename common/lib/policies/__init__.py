@@ -11,6 +11,8 @@ from policy_sentry.util.actions import get_service_from_action
 from policy_sentry.util.arns import parse_arn
 
 import common.lib.noq_json as json
+from common.aws.iam.role.models import IAMRole
+from common.aws.iam.statement.utils import condense_statements
 from common.aws.utils import ResourceSummary
 from common.config import config
 from common.exceptions.exceptions import (
@@ -24,7 +26,7 @@ from common.lib.notifications import (
 )
 from common.lib.plugins import get_plugin_by_name
 from common.lib.role_updater.handler import update_role
-from common.models import ExtendedRequestModel, RequestStatus
+from common.models import ExtendedRequestModel, RequestCreationModel, RequestStatus
 
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -618,3 +620,28 @@ async def get_conglomo_url_for_resource(
         "utf-8"
     )
     return f"{conglomo_url}/resource/{account_id}/{region}/{technology}/{encoded_resource_id}"
+
+
+async def merge_policy_statement(
+    change_request: RequestCreationModel, tenant: str
+) -> RequestCreationModel:
+    # Get requestor arn and assume role arn in request, use that to derive account info
+    arn = change_request.principal.principal_arn
+    arn_parsed = parse_arn(change_request.principal.principal_arn)
+    # 1. Get policy
+    target_role = await IAMRole.get(tenant, arn_parsed["account"], arn)
+    role_policy_list = target_role.policy.get("RolePolicyList", [])
+    target_role_policy = change_request.policy_name
+    matched_target_role_policy = [
+        x for x in role_policy_list if x["PolicyName"] == target_role_policy
+    ]
+    if matched_target_role_policy:
+        # 2. Merge policy
+        target_role_policy_idx = role_policy_list.index(matched_target_role_policy[0])
+        statements = role_policy_list[target_role_policy_idx]["PolicyDocument"][
+            "Statement"
+        ]
+        statements.extend(change_request.policy.policy_document["Statement"])
+        normalized_statements = await condense_statements(statements)
+        change_request.policy.policy_document["Statement"] = normalized_statements
+    return change_request

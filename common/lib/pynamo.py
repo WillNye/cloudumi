@@ -216,7 +216,7 @@ class GlobalConnection(Connection):
         else:
             session = boto3.Session()
 
-        self._client = session.client("dynamodb")
+        self._client = session.client("dynamodb", region_name=config.region)
         self.region = region if region else get_settings_value("region")
 
         if connect_timeout_seconds is not None:

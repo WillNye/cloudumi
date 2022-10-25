@@ -34,6 +34,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
     can_move_back_to_pending_v2,
     can_update_cancel_requests_v2,
+    merge_policy_statement,
     should_auto_approve_policy_v2,
 )
 from common.lib.slack import send_slack_notification_new_request
@@ -420,6 +421,10 @@ class RequestHandler(BaseAPIV2Handler):
         try:
             # Validate the model
             changes = RequestCreationModel.parse_raw(self.request.body)
+            for change_request in changes.changes.changes:
+                if change_request.auto_merge:
+                    await merge_policy_statement(change_request, self.ctx.tenant)
+
             if not changes.dry_run:
                 changes = await validate_request_creation(self, changes)
 

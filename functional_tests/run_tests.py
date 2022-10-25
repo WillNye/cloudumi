@@ -33,7 +33,7 @@ class MyPlugin:
 
 
 def run():
-    if stage and loc and stage in ["staging", "prod"]:
+    if stage and loc and stage in ["staging", "prod2"]:
         logger.info("Running functional tests")
         conftest = __import__("functional_tests.conftest")
 

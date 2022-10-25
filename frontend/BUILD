@@ -161,7 +161,7 @@ upload_cdn(
     bucket_name = "noq-global-frontend",
     data = ":build",
     env = {
-        "AWS_PROFILE": "noq_prod",
+        "AWS_PROFILE": "prod_admin",
     },
     deps = [
         "@version//:git_version_info",

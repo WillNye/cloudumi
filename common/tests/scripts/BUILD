@@ -4,16 +4,18 @@ load("//util/tests:defs.bzl", "pytest_test")
 py_library(
     name = "test_files",
     srcs = glob(["test_*.py"]),
+    visibility = ["//visibility:public"],
 )
 
 pytest_test(
-    name = "test_celery",
+    name = "test_scripts",
     data = [
-        "//configs/development_account:configs",
+        "//util/tests:configs",
     ],
     srcs = [
-        "test_celery.py",
+        "test_update_tenants.py",
     ],
     deps = [
+        "//util/tests:test_dependencies_lib",
     ],
 )

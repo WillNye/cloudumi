@@ -32,18 +32,33 @@ def pytest_configure(config: Config) -> None:
     config.pluginmanager.register(
         CovPlugin(config.option, config.pluginmanager), "_cov"
     )
+    disable_coverage_on_deployment(config)
+
+
+def disable_coverage_on_deployment(config):
+    if os.getenv("STAGE", None) not in ["staging", "prod"]:
+        return
+
+    cov = config.pluginmanager.get_plugin("_cov")
+    cov.options.no_cov_should_warn = False
+    cov.options.no_cov = True
+    if cov.cov_controller:
+        cov.cov_controller.pause()
 
 
 class FunctionalTest(AsyncHTTPTestCase):
     maxDiff = None
-    token = asyncio.run(
-        generate_jwt_token(
-            TEST_USER_NAME,
-            TEST_USER_GROUPS,
-            TEST_USER_DOMAIN_US,
-            eula_signed=True,
+    if os.getenv("STAGE") == "staging" or os.getenv("STAGE") == "prod":
+        token = asyncio.run(
+            generate_jwt_token(
+                TEST_USER_NAME,
+                TEST_USER_GROUPS,
+                TEST_USER_DOMAIN_US,
+                eula_signed=True,
+            )
         )
-    )
+    else:
+        token = None
 
     def get_app(self):
         from common.config import config
@@ -52,6 +67,7 @@ class FunctionalTest(AsyncHTTPTestCase):
         config.values["_global_"]["tornado"]["xsrf"] = False
         from api.routes import make_app
 
+        self.config = config
         return make_app(jwt_validator=lambda x: {})
 
     def make_request(
