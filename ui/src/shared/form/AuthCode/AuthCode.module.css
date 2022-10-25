@@ -1,0 +1,26 @@
+.input {
+  width: 35px;
+  padding: 8px;
+  border-radius: 5px;
+  font-size: 24px;
+  text-align: center;
+  margin-right: 12px;
+  color: white;
+  background: black;
+  text-transform: uppercase;
+  border: none;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type=number]{
+    -moz-appearance: textfield;
+  }
+
+  &:last-of-type {
+    margin-right: 0;
+  }
+}
