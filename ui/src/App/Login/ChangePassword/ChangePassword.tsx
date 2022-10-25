@@ -3,7 +3,8 @@ import { Helmet } from 'react-helmet-async';
 import css from './ChangePassword.module.css';
 
 export const ChangePassword: FC = () => {
-  // TODO: Fill in form
+  // TODO: Add form to change password
+  // NOTE: We will come back later and add password complexity/checker
 
   return (
     <>

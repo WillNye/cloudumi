@@ -14,6 +14,10 @@ export const Credentials: FC = () => {
   });
 
   const onSubmit = async data => {
+    // TODO: In this `login` method here, we should detect
+    // if the login needs 2fa, change password, etc and then
+    // navigate the user to that route. This should NOT be in
+    // this component since its a global concern.
     await login(data);
   };
 
