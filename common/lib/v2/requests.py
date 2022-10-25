@@ -3501,9 +3501,9 @@ async def parse_and_apply_policy_request_modification(
                             response.errors += 1
                             response.action_results.append(
                                 ActionResult(
-                                status="error",
-                                message="Resource deletion not supported",
-                            )
+                                    status="error",
+                                    message="Resource deletion not supported",
+                                )
                             )
                     except Exception as e:
                         delete_resource_err_msg = (
@@ -3512,11 +3512,11 @@ async def parse_and_apply_policy_request_modification(
                         log_data["message"] = f"{delete_resource_err_msg}: {str(e)}"
                         response.errors += 1
                         response.action_results.append(
-                        ActionResult(
-                            status="error",
-                            message=delete_resource_err_msg,
+                            ActionResult(
+                                status="error",
+                                message=delete_resource_err_msg,
+                            )
                         )
-                    )
                 elif (
                     specific_change.change_type == "resource_policy"
                     or specific_change.change_type == "sts_resource_policy"
