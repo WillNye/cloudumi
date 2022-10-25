@@ -8,6 +8,7 @@ import boto
 import boto3
 import botocore.exceptions
 import dateutil.tz
+from aws_error_utils import errors
 from botocore.config import Config
 from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
@@ -447,8 +448,10 @@ def boto3_cached_conn(
 
     sts = None
     session = get_session_for_tenant(tenant)
+    sts_args = {}
     if assume_role or pre_assume_roles:
-        sts = session.client("sts", **sts_client_kwargs)
+        sts_args.update(sts_client_kwargs)
+        sts = session.client("sts", **sts_args)
     session_policy_needs_to_be_applied = True if session_policy else False
     if pre_assume_roles:
         for i in range(len(pre_assume_roles)):
@@ -471,12 +474,16 @@ def boto3_cached_conn(
                 assume_role_kwargs["Policy"] = session_policy
             role = sts.assume_role(**assume_role_kwargs)
             credentials = role["Credentials"]
+            sts_args.update(
+                {
+                    "aws_access_key_id": credentials["AccessKeyId"],
+                    "aws_secret_access_key": credentials["SecretAccessKey"],
+                    "aws_session_token": credentials["SessionToken"],
+                }
+            )
             sts = boto3.client(
                 "sts",
-                aws_access_key_id=credentials["AccessKeyId"],
-                aws_secret_access_key=credentials["SecretAccessKey"],
-                aws_session_token=credentials["SessionToken"],
-                **sts_client_kwargs,
+                **sts_args,
             )
 
     if assume_role:
@@ -506,7 +513,23 @@ def boto3_cached_conn(
         if external_id:
             assume_role_kwargs["ExternalId"] = external_id
 
-        role = sts.assume_role(**assume_role_kwargs)
+        try:
+            role = sts.assume_role(**assume_role_kwargs)
+        except errors.RegionDisabledException:
+            log.debug(
+                {
+                    **log_data,
+                    "message": "region disabled, fallback to us-east-1 for sts",
+                }
+            )
+            sts_args.update(
+                {
+                    "region_name": "us-east-1",
+                    "endpoint_url": "https://sts.us-east-1.amazonaws.com",
+                }
+            )
+            sts = session.client("sts", **sts_args)
+            role = sts.assume_role(**assume_role_kwargs)
 
     if service_type == "client":
         conn = _client(

@@ -42,9 +42,10 @@ const Downloads = () => {
       </Grid.Column>
       <Grid.Column width={8}>
         <Segment>
-          Weep is a CLI tool that makes it easy to retrieve and use AWS
-          credentials securely. Download weep for your operating system below,
-          then run the following command to configure it:
+          The NOQ CLI tool makes it easy to retrieve and use AWS credentials
+          securely, when paired with the NOQ Cloud platform. Download `noq` CLI
+          for your operating system below, then run the following command to
+          configure it:
           <br />
           <br />
           {weepInstallScript ? (

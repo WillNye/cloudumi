@@ -47,7 +47,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - Type: `bazelisk query //...` to get a list of all targets
 - To build: `bazelisk build //...` - this builds everything locally
 - To run the API container: `bazelisk run //api/container` - this will install the container build in your local docker cache and run it
-- To run the API container within Docker, you can also use `docker run`: `docker run -p 8092:8092 --env CONFIG_LOCATION=/configs/development_account/saas_development.yaml --env AWS_PROFILE=noq_cluster_dev --volume ~/.aws:/root/.aws --volume ~/.weep:/root/.weep bazel/api:container`
+- To run the API container within Docker, you can also use `docker run`: `docker run -p 8092:8092 --env CONFIG_LOCATION=/configs/development_account/saas_development.yaml --env AWS_PROFILE=NoqSaasRoleLocalDev --volume ~/.aws:/root/.aws --volume ~/.weep:/root/.weep bazel/api:container`
 
 # Setup your dev environment
 

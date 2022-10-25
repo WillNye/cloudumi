@@ -13,7 +13,6 @@ INT_DEPS = [
     "//common/lib",
     "//common/lib/aws/access_undenied:lib",
     "//common/user_request:lib",
-    "//functional_tests:lib",
     "//identity:lib",
     "//plugins/auth:lib",
     "//plugins/aws:lib",
@@ -62,7 +61,10 @@ filegroup(
 
 py_library(
     name = "lib",
-    data = [],
+    data = [
+        "//functional_tests:lib",
+        "//deploy/local/redis/tests/tls:certs",
+    ],
     srcs_version = "PY3",
     srcs = [
         ":src_files",
@@ -76,6 +78,8 @@ py_binary(
     data = [
         "//configs/development_account:configs",
         "//configs:fluent-bit",
+        "//functional_tests:lib",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     srcs_version = "PY3",
     srcs = [
@@ -84,7 +88,7 @@ py_binary(
     main = "run.py",
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "RUNTIME_PROFILE": "CELERY_WORKER_TEST",
     },
@@ -122,7 +126,7 @@ container_image(
         "TZ": "America/Los_Angeles",
         "CONFIG_LOCATION": "/configs/development_account/saas_development_container.yaml",
         "NOQ_CONTAINER": "1",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "noq_cluster_dev",
         "DEBUG": "1",
         "RUNTIME_PROFILE": "CELERY_WORKER_TEST",
     },

@@ -147,6 +147,9 @@ class ChangeModel(BaseModel):
     cli_command: Optional[str] = None
     python_script: Optional[str] = None
     read_only: Optional[bool] = False
+    auto_merge: Optional[bool] = Field(
+        False, description="if set, automatically merges a policy that is not `new`"
+    )
 
 
 class Encoding(Enum):
@@ -603,7 +606,8 @@ class UpdateChangeModificationModel(RequestModificationBaseModel):
 
 class ApplyChangeModificationModel(RequestModificationBaseModel):
     policy_document: Optional[Dict[str, Any]] = None
-    change_id: str
+    change_id: Optional[str] = None
+    apply_all_changes: Optional[bool] = False
     apps: Optional[AppDetailsArray] = None
 
 
@@ -1328,6 +1332,7 @@ class PolicyCondenserChangeModel(ChangeModel):
 class InlinePolicyChangeModel(ChangeModel):
     policy_name: Optional[str] = None
     new: Optional[bool] = True
+    supported: Optional[bool] = True
     action: Optional[Action] = None
     change_type: Optional[constr(regex=r"inline_policy")] = None
     policy: Optional[PolicyModel] = None
@@ -1416,6 +1421,9 @@ class RequestCreationModel(BaseModel):
         example=43200,
     )
     credentials: Optional[CloudCredentials] = Field(None, is_secret=True)
+    auto_merge: Optional[bool] = Field(
+        False, description="attempt to automatically merge two policies"
+    )
 
 
 class ExtendedRequestModel(RequestModel):

@@ -7,7 +7,7 @@ from asgiref.sync import async_to_sync
 os.environ.setdefault(
     "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
 )
-os.environ.setdefault("AWS_PROFILE", "noq_cluster_dev")
+os.environ.setdefault("AWS_PROFILE", "NoqSaasRoleLocalDev")
 override_email = os.getenv("OVERRIDE_EMAIL", "user@noq.dev")
 
 import common.scripts.initialize_dynamodb  # noqa: F401, E402
@@ -111,7 +111,7 @@ tenant_details:
   creator: {override_email}
   creation_time: {int(time.time())}
 notifications:
-  enabled: true
+  enabled: false
 site_config:
   landing_url: /
   request_interval: 1
@@ -275,7 +275,7 @@ tenant_details:
   creator: {override_email}
   creation_time: {int(time.time())}
 notifications:
-  enabled: true
+  enabled: false
 site_config:
   landing_url: /
   request_interval: 1

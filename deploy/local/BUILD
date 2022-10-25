@@ -14,7 +14,7 @@ py_binary(
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
     },
     deps = [
         "//common:lib",
@@ -42,6 +42,7 @@ genrule(
         "//api:container-dev-local",
         "//common/celery_tasks:container-dev-local",
         "//deploy:compose-files",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     tags = ["manual"],
 )
@@ -65,22 +66,30 @@ genrule(
 
 genrule(
     name = "deps-only",
-    cmd = "echo 'docker-compose -f deploy/docker-compose-dependencies.yaml \
+    cmd = "echo 'cd deploy; docker-compose -f docker-compose-dependencies.yaml \
            up -d' &>$@",
     executable = True,
     outs = [
         "_running-deps-only_",
     ],
+    tools = [
+        "//deploy/local/redis/tests/tls:certs",
+        requirement("docker-compose"),
+    ],
     exec_tools = [
         "//deploy:compose-files",
+        "//deploy/local/redis/tests/tls:certs",
     ],
     tags = ["manual"],
 )
 
 genrule(
     name = "kill-deps-only",
-    cmd = "echo 'docker-compose -f deploy/docker-compose-dependencies.yaml \
+    cmd = "cd deploy; echo 'docker-compose -f docker-compose-dependencies.yaml \
            down -v' &>$@",
+    tools = [
+        requirement("docker-compose")
+    ],
     executable = True,
     outs = [
         "_kill-deps-only_",
