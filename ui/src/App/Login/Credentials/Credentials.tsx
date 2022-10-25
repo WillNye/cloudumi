@@ -2,11 +2,25 @@ import { useAuth } from 'core/Auth';
 import { FC } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 import css from './Credentials.module.css';
+
+const credentialsSchema = Yup.object().shape({
+  username: Yup.string().email('Invalid email').required('Required'),
+  password: Yup.string().required('Required')
+});
 
 export const Credentials: FC = () => {
   const { login } = useAuth();
-  const { register, handleSubmit, formState: { isSubmitting, isValid } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting, isValid }
+  } = useForm({
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+    resolver: yupResolver(credentialsSchema),
     defaultValues: {
       username: '',
       password: ''

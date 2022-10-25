@@ -14,6 +14,7 @@
     "prepare": "cd .. && husky install ui/.husky"
   },
   "dependencies": {
+    "@hookform/resolvers": "^2.9.10",
     "@monaco-editor/react": "^4.4.6",
     "aws-amplify": "^4.3.39",
     "classnames": "^2.3.2",
@@ -29,7 +30,8 @@
     "react-hook-form": "^7.36.1",
     "react-qr-code": "^2.0.8",
     "react-router-dom": "^6.4.2",
-    "react-use": "^17.4.0"
+    "react-use": "^17.4.0",
+    "yup": "^0.32.11"
   },
   "devDependencies": {
     "@babel/core": "^7.19.3",
