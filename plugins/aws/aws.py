@@ -130,7 +130,7 @@ class Aws:
         is_requester_ip_restriction_enabled = config.get_tenant_specific_key(
             "policies.ip_restrictions_on_requesters_ip", tenant, False
         )
-        if is_requester_ip_restriction_enabled and requester_ip:
+        if is_requester_ip_restriction_enabled:
             # Detecting loop-back address is really on for local dev
             # Therefore, we check against the existence of the AWS_PROFILE environment
             # variable which is really only set in local dev.
@@ -146,6 +146,8 @@ class Aws:
                 except Exception as e:
                     requester_ip = None
                     log.debug({**log_data, "exception": "{0}".format(e)})
+            if not requester_ip:
+                raise Exception("Not able to satisfy requester ip restriction")
             if ":" in requester_ip:
                 # IPv6 - Debate whether /64 is the fine enough restriction
                 # /64 IPv6 subnet is IETF standard size and at least reachable
