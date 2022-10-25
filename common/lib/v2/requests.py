@@ -3452,25 +3452,35 @@ async def parse_and_apply_policy_request_modification(
                     iam_resource_type = specific_change.principal.resource_type
                     iam_resource_name = specific_change.principal.name
                     if iam_resource_type == ResourceType.role:
-                        response = await IAMRole.delete_role(
+                        await IAMRole.delete_role(
                             tenant, account_id, iam_resource_name, user
                         )
+                        specific_change.status = Status.applied
                     elif iam_resource_type == ResourceType.user:
-                        response = await delete_iam_user(
+                        await delete_iam_user(
                             account_id, iam_resource_name, user, tenant
                         )
+                        specific_change.status = Status.applied
                     else:
                         response.errors += 1
                         response.action_results.append(
-                            "Resource deletion not supported"
+                            ActionResult(
+                                status="error",
+                                message="Resource deletion not supported",
+                            )
                         )
                 except Exception as e:
                     delete_resource_err_msg = (
                         f"Exception deleting AWS IAM {iam_resource_type}"
                     )
-                    log_data["message"] = delete_resource_err_msg
+                    log_data["message"] = f"{delete_resource_err_msg}: {str(e)}"
                     response.errors += 1
-                    response.action_results.append(delete_resource_err_msg)
+                    response.action_results.append(
+                        ActionResult(
+                            status="error",
+                            message=delete_resource_err_msg,
+                        )
+                    )
             elif (
                 specific_change.change_type == "resource_policy"
                 or specific_change.change_type == "sts_resource_policy"
