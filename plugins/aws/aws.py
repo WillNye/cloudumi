@@ -1,4 +1,3 @@
-import os
 import ssl
 import sys
 
@@ -136,9 +135,9 @@ class Aws:
             # variable which is really only set in local dev.
             # In the event of loop-back address, we have to check what's remote IP is being
             # seen by AWS endpoint.
-            if (requester_ip == "::1" or "127.0.0.1") and os.getenv(
-                "AWS_PROFILE", None
-            ) == "NoqSaasRoleLocalDev":
+            if (requester_ip in ["::1", "127.0.0.1"]) and config.get(
+                "global.development"
+            ):
                 try:
                     requester_ip = requests_sync.get(
                         "https://checkip.amazonaws.com"
@@ -149,11 +148,8 @@ class Aws:
             if not requester_ip:
                 raise Exception("Not able to satisfy requester ip restriction")
             if ":" in requester_ip:
-                # IPv6 - Debate whether /64 is the fine enough restriction
-                # /64 IPv6 subnet is IETF standard size and at least reachable
-                # to a network customer.
-                extended_ip_restrictions.append(f"{requester_ip}/64")
-                extended_custom_ip_restrictions.append(f"{requester_ip}/64")
+                extended_ip_restrictions.append(f"{requester_ip}/128")
+                extended_custom_ip_restrictions.append(f"{requester_ip}/128")
             elif "." in requester_ip:
                 # IPv4
                 extended_ip_restrictions.append(f"{requester_ip}/32")
