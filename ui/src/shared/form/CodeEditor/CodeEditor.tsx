@@ -102,7 +102,7 @@ export const CodeEditor: FC<CodeEditorProps> = ({
         newDisposables.push(completionProvider);
 
         const hoverProvider = instance.languages.registerHoverProvider(
-          'jsonata',
+          'mylanguage',
           {
             provideHover: (_model, _position) => {
               return {
