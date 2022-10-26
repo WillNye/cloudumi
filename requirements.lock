@@ -8,7 +8,7 @@ aenum==3.1.11
     # via okta
 aiodns==3.0.0
     # via checkov
-aiohttp==3.8.1
+aiohttp==3.8.3
     # via
     #   -r ./common/celery_tasks/requirements.in
     #   aiozipkin
@@ -42,7 +42,7 @@ async-timeout==4.0.2
     # via
     #   aiohttp
     #   redis
-atlassian-python-api==3.27.0
+atlassian-python-api==3.28.1
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
@@ -55,11 +55,13 @@ attrs==22.1.0
     #   pytest-mypy
 aws-error-utils==2.5.0
     # via -r ./common/lib/aws/access_undenied/requirements.in
-awscli==1.25.73
+awscli==1.26.2
     # via -r ./frontend/requirements.in
-bc-python-hcl2==0.3.45
+bc-detect-secrets==1.3.9
     # via checkov
-bcrypt==4.0.0
+bc-python-hcl2==0.3.47
+    # via checkov
+bcrypt==4.0.1
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
@@ -84,7 +86,7 @@ boto==2.49.0
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   cloudaux
-boto3==1.24.62
+boto3==1.25.2
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -98,7 +100,7 @@ boto3==1.24.62
     #   cloudsplaining
     #   moto
     #   parliament
-botocore==1.27.72
+botocore==1.28.2
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -127,7 +129,7 @@ celery==5.2.7
     #   -r ./common/celery_tasks/requirements.in
     #   -r ./common/util/requirements.in
     #   flower
-certifi==2022.6.15
+certifi==2022.9.24
     # via
     #   -r ./api/requirements.in
     #   elastic-apm
@@ -146,7 +148,7 @@ charset-normalizer==2.1.1
     #   aiohttp
     #   checkov
     #   requests
-checkov==2.1.170
+checkov==2.2.0
     # via -r ./common/util/requirements.in
 click==8.1.3
     # via
@@ -167,7 +169,7 @@ click-didyoumean==0.3.0
     # via celery
 click-log==0.4.0
     # via -r ./common/lib/aws/access_undenied/requirements.in
-click-option-group==0.5.3
+click-option-group==0.5.5
     # via cloudsplaining
 click-plugins==1.1.1
     # via celery
@@ -191,16 +193,16 @@ contextlib2==21.6.0
     # via schema
 coverage[toml]==6.5.0
     # via pytest-cov
-cryptography==37.0.4
+cryptography==38.0.1
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   moto
     #   paramiko
-cssselect2==0.6.0
+cssselect2==0.7.0
     # via weasyprint
-cyclonedx-python-lib==2.7.1
+cyclonedx-python-lib==3.1.0
     # via checkov
 cython==0.29.32
     # via -r ./requirements.in
@@ -210,7 +212,7 @@ decorator==5.1.1
     # via jsonpath-ng
 deep-merge==0.0.4
     # via checkov
-deepdiff==5.8.1
+deepdiff==6.2.1
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
@@ -224,8 +226,6 @@ deprecated==1.2.13
     #   atlassian-python-api
     #   pygithub
     #   redis
-detect-secrets==1.3.0
-    # via checkov
 distlib==0.3.6
     # via virtualenv
 distro==1.8.0
@@ -254,11 +254,13 @@ ed25519==1.5
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
-elastic-apm==6.11.0
+elastic-apm==6.13.0
     # via -r ./common/util/requirements.in
-email-validator==1.2.1
+email-validator==1.3.0
     # via -r ./api/util/requirements.in
-fakeredis==1.9.0
+exceptiongroup==1.0.0rc9
+    # via pytest
+fakeredis==1.10.0
     # via -r ./util/tests/requirements.in
 filelock==3.8.0
     # via
@@ -272,7 +274,7 @@ flatdict==4.0.1
     # via okta
 flower==1.2.0
     # via -r ./common/celery_tasks/requirements.in
-fonttools[woff]==4.37.1
+fonttools[woff]==4.38.0
     # via weasyprint
 frozenlist==1.3.1
     # via
@@ -286,16 +288,16 @@ ghp-import==2.1.0
     # via mkdocs
 gitdb==4.0.9
     # via gitpython
-gitpython==3.1.27
+gitpython==3.1.29
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
     #   checkov
-google-api-core==2.8.2
+google-api-core==2.10.2
     # via google-api-python-client
-google-api-python-client==2.58.0
+google-api-python-client==2.65.0
     # via -r ./api/requirements.in
-google-auth==2.11.0
+google-auth==2.13.0
     # via
     #   google-api-core
     #   google-api-python-client
@@ -304,11 +306,11 @@ google-auth-httplib2==0.1.0
     # via google-api-python-client
 googleapis-common-protos==1.56.4
     # via google-api-core
-grpcio==1.47.0
+grpcio==1.50.0
     # via
     #   -r ./common/util/requirements.in
     #   grpcio-tools
-grpcio-tools==1.47.0
+grpcio-tools==1.50.0
     # via -r ./common/util/requirements.in
 html5lib==1.1
     # via weasyprint
@@ -316,17 +318,17 @@ httplib2==0.20.4
     # via
     #   google-api-python-client
     #   google-auth-httplib2
-humanize==4.3.0
+humanize==4.4.0
     # via flower
-identify==2.5.3
+identify==2.5.7
     # via pre-commit
-idna==3.3
+idna==3.4
     # via
     #   email-validator
     #   requests
     #   yarl
-importlib-metadata==4.12.0
-    # via mkdocs
+importlib-metadata==5.0.0
+    # via checkov
 inflection==0.5.1
     # via cloudaux
 iniconfig==1.1.1
@@ -345,7 +347,7 @@ jmespath==1.0.1
     #   botocore
     #   checkov
     #   parliament
-joblib==1.1.0
+joblib==1.2.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
@@ -368,7 +370,7 @@ kombu==5.2.4
     #   celery
 kwonly-args==1.0.10
     # via json-cfg
-lark==1.1.2
+lark==1.1.3
     # via
     #   bc-python-hcl2
     #   pycep-parser
@@ -387,7 +389,8 @@ markupsafe==2.1.1
     # via
     #   jinja2
     #   moto
-marshmallow==3.17.1
+    #   werkzeug
+marshmallow==3.18.0
     # via
     #   -r ./api/requirements.in
     #   -r ./api/util/requirements.in
@@ -398,7 +401,7 @@ mccabe==0.7.0
     #   pytest-mccabe
 mergedeep==1.3.4
     # via mkdocs
-mkdocs==1.3.1
+mkdocs==1.4.1
     # via
     #   -r ./api/requirements.in
     #   -r ./docs/requirements.in
@@ -407,9 +410,9 @@ mkdocs==1.3.1
     #   mkdocs-plugin-inline-svg
     #   mkdocs-render-swagger-plugin
     #   mkdocs-video
-mkdocs-material==8.4.2
+mkdocs-material==8.5.7
     # via -r ./docs/requirements.in
-mkdocs-material-extensions==1.0.3
+mkdocs-material-extensions==1.1
     # via mkdocs-material
 mkdocs-pdf-export-plugin==0.5.10
     # via -r ./docs/requirements.in
@@ -423,7 +426,7 @@ mock==4.0.3
     # via -r ./util/tests/requirements.in
 mockredis==0.1.3.dev0
     # via -r ./util/tests/requirements.in
-moto==4.0.1
+moto==4.0.8
     # via
     #   -r ./functional_tests/requirements.in
     #   -r ./util/tests/requirements.in
@@ -435,19 +438,19 @@ mypy==0.982
     # via pytest-mypy
 mypy-extensions==0.4.3
     # via mypy
-networkx==2.8.6
+networkx==2.6.3
     # via checkov
 nodeenv==1.7.0
     # via pre-commit
 noq-dax-client==2.1.1
     # via -r ./common/requirements.in
-numpy==1.23.2
+numpy==1.23.4
     # via pandas
-oauthlib==3.2.0
+oauthlib==3.2.2
     # via
     #   atlassian-python-api
     #   requests-oauthlib
-okta==2.6.0
+okta==2.7.0
     # via
     #   -r ./api/requirements.in
     #   -r ./identity/requirements.in
@@ -461,8 +464,10 @@ ordered-set==4.1.0
     # via deepdiff
 orderedmultidict==1.0.1
     # via furl
-packageurl-python==0.10.1
-    # via cyclonedx-python-lib
+packageurl-python==0.10.4
+    # via
+    #   checkov
+    #   cyclonedx-python-lib
 packaging==21.3
     # via
     #   -r ./requirements.in
@@ -472,13 +477,13 @@ packaging==21.3
     #   mkdocs
     #   pytest
     #   redis
-pandas==1.4.3
+pandas==1.5.1
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
 paramiko==2.11.0
     # via docker
-parliament==1.5.2
+parliament==1.6.1
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
@@ -486,7 +491,7 @@ password-strength==0.0.3.post2
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
-pdpyras==4.5.0
+pdpyras==4.5.2
     # via -r ./common/util/requirements.in
 pillow==9.2.0
     # via weasyprint
@@ -496,7 +501,7 @@ pluggy==1.0.0
     # via pytest
 ply==3.11
     # via jsonpath-ng
-policy-sentry==0.12.4
+policy-sentry==0.12.5
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
@@ -507,13 +512,13 @@ policyuniverse==1.5.0.20220613
     #   checkov
 pre-commit==2.20.0
     # via -r ./docs/requirements.in
-prettytable==3.4.0
+prettytable==3.4.1
     # via checkov
-prometheus-client==0.14.1
+prometheus-client==0.15.0
     # via flower
-prompt-toolkit==3.0.30
+prompt-toolkit==3.0.31
     # via click-repl
-protobuf==3.20.1
+protobuf==4.21.9
     # via
     #   google-api-core
     #   googleapis-common-protos
@@ -522,8 +527,6 @@ ptvsd==4.3.2
     # via
     #   -r ./api/requirements.in
     #   -r ./util/debug/requirements.in
-py==1.11.0
-    # via pytest
 pyasn1==0.4.8
     # via
     #   pyasn1-modules
@@ -533,7 +536,7 @@ pyasn1-modules==0.2.8
     # via google-auth
 pycares==4.2.2
     # via aiodns
-pycep-parser==0.3.8
+pycep-parser==0.3.9
     # via checkov
 pycodestyle==2.9.1
     # via flake8
@@ -541,29 +544,29 @@ pycparser==2.21
     # via cffi
 pycryptodome==3.15.0
     # via okta
-pydantic==1.10.0
+pydantic==1.10.2
     # via
     #   -r ./api/requirements.in
     #   -r ./common/requirements.in
     #   -r ./common/templates/requirements.in
     #   -r ./common/util/requirements.in
-pydash==5.1.0
+pydash==5.1.1
     # via okta
-pydyf==0.2.0
+pydyf==0.5.0
     # via weasyprint
 pyflakes==2.5.0
     # via flake8
-pygithub==1.55
+pygithub==1.56
     # via -r ./api/requirements.in
 pygments==2.13.0
     # via mkdocs-material
-pyjwt==2.4.0
+pyjwt==2.6.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   pygithub
-pymdown-extensions==9.5
+pymdown-extensions==9.7
     # via mkdocs-material
 pynacl==1.5.0
     # via
@@ -575,11 +578,17 @@ pyparsing==3.0.9
     # via
     #   httplib2
     #   packaging
-pyphen==0.12.0
+pyphen==0.13.0
     # via weasyprint
 pyrsistent==0.18.1
     # via jsonschema
-pytest==7.1.2
+pyston==2.3.5
+    # via
+    #   checkov
+    #   pyston-autoload
+pyston-autoload==2.3.5
+    # via checkov
+pytest==7.2.0
     # via
     #   -r ./common/config/tests/requirements.in
     #   -r ./common/tests/celery_tasks/requirements.in
@@ -591,13 +600,13 @@ pytest==7.1.2
     #   pytest-mccabe
     #   pytest-mock
     #   pytest-mypy
-pytest-asyncio==0.19.0
+pytest-asyncio==0.20.1
     # via -r ./util/tests/requirements.in
 pytest-cov==4.0.0
     # via -r ./functional_tests/requirements.in
 pytest-mccabe==2.0
     # via -r ./functional_tests/requirements.in
-pytest-mock==3.8.2
+pytest-mock==3.10.0
     # via -r ./util/tests/requirements.in
 pytest-mypy==0.10.0
     # via -r ./functional_tests/requirements.in
@@ -618,7 +627,7 @@ python-json-logger==2.0.4
     # via logmatic-python
 python-terraform==0.10.1
     # via -r ./api/requirements.in
-pytz==2022.2.1
+pytz==2022.5
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -636,9 +645,9 @@ pyyaml==5.4.1
     #   -r ./util/terraform_config_parser/requirements.in
     #   -r ./util/tests/requirements.in
     #   awscli
+    #   bc-detect-secrets
     #   checkov
     #   cloudsplaining
-    #   detect-secrets
     #   docker-compose
     #   mkdocs
     #   okta
@@ -653,16 +662,17 @@ redis==4.3.4
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   fakeredis
-regex==2022.8.17
+regex==2022.9.13
     # via pycep-parser
 requests==2.28.1
     # via
     #   -r ./api/requirements.in
     #   atlassian-python-api
-    #   detect-secrets
+    #   bc-detect-secrets
     #   docker
     #   docker-compose
     #   google-api-core
+    #   mkdocs-material
     #   moto
     #   okta-jwt
     #   onelogin
@@ -677,7 +687,7 @@ requests-mock==1.10.0
     # via -r ./util/tests/requirements.in
 requests-oauthlib==1.3.1
     # via atlassian-python-api
-responses==0.21.0
+responses==0.22.0
     # via moto
 retrying==1.3.3
     # via
@@ -694,7 +704,7 @@ ruamel-yaml==0.17.21
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
-ruamel-yaml-clib==0.2.6
+ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.6.0
     # via
@@ -709,7 +719,7 @@ semantic-version==2.10.0
     # via checkov
 semver==2.13.0
     # via -r ./util/terraform_config_parser/requirements.in
-sentry-sdk==1.9.5
+sentry-sdk==1.10.1
     # via
     #   -r ./api/requirements.in
     #   -r ./common/celery_tasks/requirements.in
@@ -731,7 +741,6 @@ six==1.16.0
     #   dockerfile-parse
     #   dockerpty
     #   ecdsa
-    #   fakeredis
     #   furl
     #   google-auth
     #   google-auth-httplib2
@@ -757,17 +766,17 @@ sortedcontainers==2.4.0
     #   fakeredis
 soupsieve==2.3.2.post1
     # via beautifulsoup4
-tabulate==0.8.10
+tabulate==0.9.0
     # via checkov
-tenacity==8.0.1
+tenacity==8.1.0
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
-termcolor==1.1.0
+termcolor==2.0.1
     # via checkov
 texttable==1.6.4
     # via docker-compose
-tinycss2==1.1.1
+tinycss2==1.2.1
     # via
     #   cssselect2
     #   weasyprint
@@ -775,6 +784,7 @@ toml==0.10.2
     # via
     #   cyclonedx-python-lib
     #   pre-commit
+    #   responses
 tomli==2.0.1
     # via
     #   coverage
@@ -789,16 +799,18 @@ tornado==6.2
     #   -r ./functional_tests/requirements.in
     #   -r ./util/tests/requirements.in
     #   flower
-tqdm==4.64.0
+tqdm==4.64.1
     # via checkov
-typing-extensions==4.3.0
+types-toml==0.10.8
+    # via responses
+typing-extensions==4.4.0
     # via
     #   -r ./api/requirements.in
     #   checkov
     #   mypy
     #   pycep-parser
     #   pydantic
-ujson==5.4.0
+ujson==5.5.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/celery_tasks/requirements.in
@@ -819,7 +831,7 @@ urllib3==1.26.12
     #   requests
     #   responses
     #   sentry-sdk
-uvloop==0.16.0
+uvloop==0.17.0
     # via
     #   -r ./api/requirements.in
     #   -r ./api/util/requirements.in
@@ -832,7 +844,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.16.4
+virtualenv==20.16.6
     # via pre-commit
 watchdog==2.1.9
     # via mkdocs
@@ -840,7 +852,7 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-weasyprint==56.1
+weasyprint==57.0
     # via mkdocs-pdf-export-plugin
 webencodings==0.5.1
     # via
@@ -852,10 +864,12 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-werkzeug==2.1.2
+werkzeug==2.2.2
     # via moto
 wrapt==1.14.1
-    # via deprecated
+    # via
+    #   deprecated
+    #   elastic-apm
 xmltodict==0.13.0
     # via
     #   moto
@@ -866,13 +880,13 @@ yarl==1.8.1
     # via
     #   aiohttp
     #   okta
-zipp==3.8.1
+zipp==3.10.0
     # via importlib-metadata
 zopfli==0.2.1
     # via fonttools
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==65.3.0
+setuptools==65.5.0
     # via
     #   cyclonedx-python-lib
     #   grpcio-tools
