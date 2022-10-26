@@ -219,14 +219,16 @@ container_image(
     base = "//docker/base:base_docker",
     env = {
         "TZ": "America/Los_Angeles",
-        "CONFIG_LOCATION": "/configs/development_account/saas_development_container.yaml",
+        "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "NOQ_CONTAINER": "1",
         "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "DEBUG": "1",
         "RUNTIME_PROFILE": "API",
         "TEST_USER_DOMAIN": "localhost",
+        #"STAGE": "staging",
     },
     layers = [
+        "//deploy/layers:certificates",
         "//deploy/layers:config",
         "//deploy/layers:web_site_local",
         "//deploy/layers:api.sshd_config",
