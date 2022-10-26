@@ -136,7 +136,7 @@ class Aws:
             # In the event of loop-back address, we have to check what's remote IP is being
             # seen by AWS endpoint.
             if (requester_ip in ["::1", "127.0.0.1"]) and config.get(
-                "global.development"
+                "_global_.development"
             ):
                 try:
                     requester_ip = requests_sync.get(
