@@ -263,6 +263,8 @@ class GlobalConnection(Connection):
         self._dax_read_client = None
         self._dax_write_client = None
 
+        self._convert_to_request_dict__endpoint_url = True
+
         if dax_read_endpoints:
             self._dax_read_client = GlobalDaxClient(
                 session=session, endpoints=dax_read_endpoints, region_name=self.region
