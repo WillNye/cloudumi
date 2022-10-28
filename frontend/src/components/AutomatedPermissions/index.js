@@ -62,8 +62,8 @@ const AutomaticPermissionsList = () => {
         <p>
           If the requested permissions are within your organization's risk
           tolerance, they will be automatically approved and applied to the
-          role, and Noq will transparently retry the request without ever
-          return an access denied error.
+          role, and Noq will transparently retry the request without ever return
+          an access denied error.
         </p>
       </div>
       <Divider />
