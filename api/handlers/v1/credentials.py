@@ -450,6 +450,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             account_id=None,
             custom_ip_restrictions=request.get("custom_ip_restrictions"),
             read_only=request.get("read_only"),
+            requester_ip=self.get_request_ip(),
         )
         self.set_header("Content-Type", "application/json")
         credentials.pop("ResponseMetadata", None)
@@ -548,6 +549,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 user_role=user_role,
                 account_id=account_id,
                 read_only=request.get("read_only"),
+                requester_ip=self.get_request_ip(),
             )
         except Exception as e:
             log_data["message"] = "Unable to get credentials for user"
@@ -668,6 +670,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 user_role, account_id = await self.maybe_get_user_role_and_account_id(
                     matching_roles
                 )
+
                 credentials = await aws.get_credentials(
                     self.user,
                     matching_roles[0],
@@ -676,6 +679,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                     user_role=user_role,
                     account_id=account_id,
                     read_only=request.get("read_only"),
+                    requester_ip=self.get_request_ip(),
                 )
 
         if not credentials:
