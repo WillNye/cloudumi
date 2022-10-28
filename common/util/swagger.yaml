@@ -1402,6 +1402,14 @@ components:
               default: True
             description:
               type: string
+    DeleteResourceChangeModel:
+      allOf:
+        - $ref: "#/components/schemas/ChangeModel"
+        - type: object
+          properties:
+            change_type:
+              type: string
+              pattern: "delete_resource"
     RoleAccessChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1545,6 +1553,7 @@ components:
               - $ref: "#/components/schemas/GenericFileChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyResourceChangeModel"
               - $ref: "#/components/schemas/CreateResourceChangeModel"
+              - $ref: "#/components/schemas/DeleteResourceChangeModel"
     ArnArray:
       type: array
       items:

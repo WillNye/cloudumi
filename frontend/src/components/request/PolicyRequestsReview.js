@@ -19,7 +19,7 @@ import ResourcePolicyChangeComponent from '../blocks/ResourcePolicyChangeCompone
 import ResourceTagChangeComponent from '../blocks/ResourceTagChangeComponent'
 import ExpirationDateBlock from 'components/blocks/ExpirationDateBlock'
 import TemporaryEscalationComponent from 'components/blocks/TemporaryEscalationBlockComponent'
-import CreateRoleComponent from 'components/blocks/CreateRoleRequestComponent'
+import ResourceTypeRequestComponent from 'components/blocks/ResourceTypeRequestComponent'
 import {
   checkContainsReadOnlyAccount,
   containsCondensedPolicyChange,
@@ -480,9 +480,12 @@ class PolicyRequestReview extends Component {
               )
             }
 
-            if (change.change_type === 'create_resource') {
+            if (
+              change.change_type === 'create_resource' ||
+              change.change_type === 'delete_resource'
+            ) {
               return (
-                <CreateRoleComponent
+                <ResourceTypeRequestComponent
                   key={index}
                   change={change}
                   config={requestConfig}

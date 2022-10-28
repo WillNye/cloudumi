@@ -77,7 +77,7 @@ const RequestForm = ({ formData, setCurrentStep, setFormData }) => {
 
   return (
     <Segment basic>
-      <Header size='medium'>Role Details</Header>
+      <Header size='medium'>Enter Role Details</Header>
       <Divider horizontal />
 
       <Form>

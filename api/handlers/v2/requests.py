@@ -993,7 +993,8 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 iam_role = await IAMRole.get(
                     tenant, arn_parsed["account"], principal_arn
                 )
-                template = iam_role.templated
+                if iam_role:
+                    template = iam_role.templated
 
         changes_config = await populate_approve_reject_policy(
             extended_request, self.groups, tenant, self.user
@@ -1091,7 +1092,8 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 )
             if (
                 any(
-                    change.change_type in ["policy_condenser", "create_resource"]
+                    change.change_type
+                    in ["policy_condenser", "create_resource", "delete_resource"]
                     for change in extended_request.changes.changes
                 )
                 and has_expiry_info

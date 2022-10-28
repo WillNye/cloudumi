@@ -22,13 +22,18 @@ import {
 } from './notificationMessages'
 import ResourceChangeApprovers from './ResourceChangeApprovers'
 import ReadOnlyApprovalModal from './modals/ReadOnlyApprovalModal'
+import { useMemo } from 'react'
 
-const CreateRoleComponent = (props) => {
+const ResourceTypePolicyComponent = (props) => {
   const change = props.change
   const [isLoading, setIsLoading] = useState(false)
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false)
   const [buttonResponseMessage, setButtonResponseMessage] = useState([])
   const { sendProposedPolicyWithHooks } = useAuth()
+
+  const isCreateRequest = useMemo(() => {
+    return change.change_type === 'create_resource'
+  }, [change.change_type])
 
   const handleTaggingApprove = async (credentials = null) => {
     await sendProposedPolicyWithHooks(
@@ -69,7 +74,11 @@ const CreateRoleComponent = (props) => {
 
   const allowedAdmins = getAllowedResourceAdmins(props.changesConfig, change.id)
 
-  const headerContent = <Header size='large'>Create Resource</Header>
+  const headerContent = (
+    <Header size='large'>
+      {isCreateRequest ? 'Create Resource' : 'Delete Resource'}
+    </Header>
+  )
 
   const applyChangesButton =
     isOwner && change.status === 'not_applied' && !props.requestReadOnly ? (
@@ -113,10 +122,12 @@ const CreateRoleComponent = (props) => {
           <Table.Cell>Resource Name</Table.Cell>
           <Table.Cell>{change.principal.name}</Table.Cell>
         </Table.Row>
-        <Table.Row>
-          <Table.Cell>Description</Table.Cell>
-          <Table.Cell>{change.description}</Table.Cell>
-        </Table.Row>
+        {change?.description && (
+          <Table.Row>
+            <Table.Cell>Description</Table.Cell>
+            <Table.Cell>{change.description}</Table.Cell>
+          </Table.Row>
+        )}
       </Table.Body>
     </Table>
   ) : null
@@ -159,4 +170,4 @@ const CreateRoleComponent = (props) => {
   )
 }
 
-export default CreateRoleComponent
+export default ResourceTypePolicyComponent
