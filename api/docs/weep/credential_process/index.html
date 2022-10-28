@@ -8,7 +8,7 @@
 
 
 
-        <link rel="canonical" href="https://docs.noq.dev/docs/weep/credential_process/">
+        <link rel="canonical" href="https://docs.noq.dev/docs/noq/credential_process/">
 
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
 
 
-        <a href="#set-weep-as-the-aws-cli-credential-process" class="md-skip">
+        <a href="#set-noq-as-the-aws-cli-credential-process" class="md-skip">
           Skip to content
         </a>
 
@@ -302,8 +302,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/weep_cli_overview/" class="md-nav__link">
-        Weep CLI Utility
+      <a href="../../getting_started/noq_cli_overview/" class="md-nav__link">
+        Noq CLI Utility
       </a>
     </li>
 
@@ -388,8 +388,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/download_and_configure_weep/" class="md-nav__link">
-        Set up the Weep CLI Utility
+      <a href="../../getting_started/download_and_configure_noq/" class="md-nav__link">
+        Set up the Noq CLI Utility
       </a>
     </li>
 
@@ -530,8 +530,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/8_configure_weep/" class="md-nav__link">
-        Enable the Weep CLI Utility
+      <a href="../../getting_started/8_configure_noq/" class="md-nav__link">
+        Enable the Noq CLI Utility
       </a>
     </li>
 
@@ -669,14 +669,14 @@
 
 
         <label class="md-nav__link" for="__nav_7">
-          Weep CLI Utility
+          Noq CLI Utility
           <span class="md-nav__icon md-icon"></span>
         </label>
 
-      <nav class="md-nav" aria-label="Weep CLI Utility" data-md-level="1">
+      <nav class="md-nav" aria-label="Noq CLI Utility" data-md-level="1">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
-          Weep CLI Utility
+          Noq CLI Utility
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
 
@@ -686,7 +686,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_features/" class="md-nav__link">
+      <a href="../noq_features/" class="md-nav__link">
         Credential Serving Options
       </a>
     </li>
@@ -714,7 +714,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_emulate_ecs_credential_provider/" class="md-nav__link">
+      <a href="../noq_emulate_ecs_credential_provider/" class="md-nav__link">
         Emulate ECS Credential Provider
       </a>
     </li>
@@ -742,7 +742,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_export_credentials_to_environment_variables/" class="md-nav__link">
+      <a href="../noq_export_credentials_to_environment_variables/" class="md-nav__link">
         Export Credentials to Environment Variables
       </a>
     </li>
@@ -859,7 +859,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_list_roles/" class="md-nav__link">
+      <a href="../noq_list_roles/" class="md-nav__link">
         List Roles
       </a>
     </li>
@@ -1792,9 +1792,9 @@
 
 
 
-<h1 id="set-weep-as-the-aws-cli-credential-process"><strong>Set Weep as the AWS CLI Credential Process</strong><a class="headerlink" href="#set-weep-as-the-aws-cli-credential-process" title="Permanent link">&para;</a></h1>
+<h1 id="set-noq-as-the-aws-cli-credential-process"><strong>Set Noq as the AWS CLI Credential Process</strong><a class="headerlink" href="#set-noq-as-the-aws-cli-credential-process" title="Permanent link">&para;</a></h1>
 <p>You may configure a local AWS profile so that CLI commands and AWS SDKs source
-credentials from an external process. Use the <code>weep credential_process</code> command
+credentials from an external process. Use the <code>noq credential_process</code> command
 in your AWS configuration file to source credentials from Noq using this method.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1802,23 +1802,23 @@ in your AWS configuration file to source credentials from Noq using this method.
 <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sourcing-external.html">sourcing AWS credentials from an external process</a>.</p>
 </div>
 <h2 id="configuration"><strong>Configuration</strong><a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p>To set Weep as the AWS CLI credential process, update your <code>~/.aws/config</code> file
-to specify the profile you want to configure and role you want Weep to assume.</p>
+<p>To set Noq as the AWS CLI credential process, update your <code>~/.aws/config</code> file
+to specify the profile you want to configure and role you want Noq to assume.</p>
 <p>You may specify the role using either the role name or ARN.</p>
 <div class="highlight"><pre><span></span><code>[profile develop_1]
-credential_process = weep credential_process arn:aws:iam::012345678901:role/develop_1_test_admin
+credential_process = noq credential_process arn:aws:iam::012345678901:role/develop_1_test_admin
 
 [profile staging_1]
-credential_process = weep credential_process staging_1_test_admin
+credential_process = noq credential_process staging_1_test_admin
 
 [profile test_account_user]
-credential_process = weep credential_process test_account_user
+credential_process = noq credential_process test_account_user
 </code></pre></div>
 <p>The AWS CLI will run the command specified for <code>credential_process</code> for each
 profile. It will rerun <code>credential_process</code> commands for temporary credentials
 before they expire.</p>
 <h2 id="usage"><strong>Usage</strong><a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<p>To make use of the credentials provided by <code>weep credential_process</code>, run your
+<p>To make use of the credentials provided by <code>noq credential_process</code>, run your
 application or AWS CLI command with the appropriate profile as illustrated in
 examples below.</p>
 <h3 id="shell"><strong>Shell</strong><a class="headerlink" href="#shell" title="Permanent link">&para;</a></h3>
@@ -1835,19 +1835,19 @@ aws --profile test_account_user sts get-caller-identity
 <span class="nb">print</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">get_caller_identity</span><span class="p">())</span>
 </code></pre></div>
 <h2 id="update-aws-configuration-file-automatically"><strong>Update AWS Configuration File Automatically</strong><a class="headerlink" href="#update-aws-configuration-file-automatically" title="Permanent link">&para;</a></h2>
-<p>Weep can automatically update your AWS configuration file with profiles for
+<p>Noq can automatically update your AWS configuration file with profiles for
 each of your available roles. These profiles are named with the full ARN of
 the role.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>AWS SDKs analyze your <code>~/.aws/config</code> file on each API call. Depending on
-the number of roles you have available, using Weep to automatically create
+the number of roles you have available, using Noq to automatically create
 <code>credential_process</code> entries for all roles can drastically degrade
 performance.</p>
 </div>
 <p>If you have read and understand the warning above, you may automatically update
 your AWS configuration file by running the following command.</p>
-<div class="highlight"><pre><span></span><code>weep credential_process --generate
+<div class="highlight"><pre><span></span><code>noq credential_process --generate
 </code></pre></div>
 
 
@@ -1880,7 +1880,7 @@ your AWS configuration file by running the following command.</p>
 
 
 
-        <a href="../weep_list_roles/" class="md-footer__link md-footer__link--next" aria-label="Next: List Roles" rel="next">
+        <a href="../noq_list_roles/" class="md-footer__link md-footer__link--next" aria-label="Next: List Roles" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">

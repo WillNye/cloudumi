@@ -232,18 +232,18 @@ container_image(
         "//deploy/layers:config",
         "//deploy/layers:web_site_local",
         "//deploy/layers:api.sshd_config",
-        "//deploy/layers:weep",
+        "//deploy/layers:noq",
     ],
     volumes = [
         "~/.aws:/root/.aws",
-        "~/.weep:/root/.weep",
+        "~/.noq:/root/.noq",
     ],
     ports = ["8092", "2222"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
     data_path = "/",
-    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep -p 8092:8092/tcp --add-host=localhost:172.18.0.1 --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.noq:/root/.noq -p 8092:8092/tcp --add-host=localhost:172.18.0.1 --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
 )
 
 container_image(
@@ -258,7 +258,7 @@ container_image(
         "//deploy/layers:config",
         "//deploy/layers:web_site_cdn",
         "//deploy/layers:api.sshd_config",
-        "//deploy/layers:weep",
+        "//deploy/layers:noq",
     ],
     ports = ["8092", "2222"],
     data_path = "/",

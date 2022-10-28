@@ -5,22 +5,22 @@ import { CopyBlock, dracula } from 'react-code-blocks'
 
 const Downloads = () => {
   const { sendRequestCommon } = useAuth()
-  const [weepInstallScript, setWeepInstallScript] = React.useState('')
-  const [weepDownloadTable, setWeepDownloadTable] = React.useState([])
+  const [noqInstallScript, setNoqInstallScript] = React.useState('')
+  const [noqDownloadTable, setNoqDownloadTable] = React.useState([])
 
   useEffect(() => {
     async function fetchData() {
       const resJson = await sendRequestCommon(
         null,
-        '/api/v3/downloads/weep',
+        '/api/v3/downloads/noq',
         'get'
       )
       if (!resJson) {
         return
       }
 
-      setWeepInstallScript(resJson.install_script)
-      setWeepDownloadTable(
+      setNoqInstallScript(resJson.install_script)
+      setNoqDownloadTable(
         resJson.download_links.map((item) => {
           return (
             <Table.Row>
@@ -48,9 +48,9 @@ const Downloads = () => {
           configure it:
           <br />
           <br />
-          {weepInstallScript ? (
+          {noqInstallScript ? (
             <CopyBlock
-              text={weepInstallScript}
+              text={noqInstallScript}
               language={'shell'}
               showLineNumbers={false}
               theme={dracula}
@@ -58,7 +58,7 @@ const Downloads = () => {
           ) : null}
           <br />
           <br />
-          {weepDownloadTable ? <Table>{weepDownloadTable}</Table> : null}
+          {noqDownloadTable ? <Table>{noqDownloadTable}</Table> : null}
         </Segment>
       </Grid.Column>
     </Grid>

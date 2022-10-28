@@ -134,9 +134,9 @@ container_layer(
 )
 
 container_layer(
-    name = "weep",
+    name = "noq",
     files = [
-        "@weep//file",
+        "@noq//file",
     ],
     directory = "/usr/bin",
     visibility = ["//visibility:public"],

@@ -47,7 +47,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - Type: `bazelisk query //...` to get a list of all targets
 - To build: `bazelisk build //...` - this builds everything locally
 - To run the API container: `bazelisk run //api/container` - this will install the container build in your local docker cache and run it
-- To run the API container within Docker, you can also use `docker run`: `docker run -p 8092:8092 --env CONFIG_LOCATION=/configs/development_account/saas_development.yaml --env AWS_PROFILE=NoqSaasRoleLocalDev --volume ~/.aws:/root/.aws --volume ~/.weep:/root/.weep bazel/api:container`
+- To run the API container within Docker, you can also use `docker run`: `docker run -p 8092:8092 --env CONFIG_LOCATION=/configs/development_account/saas_development.yaml --env AWS_PROFILE=NoqSaasRoleLocalDev --volume ~/.aws:/root/.aws --volume ~/.noq:/root/.noq bazel/api:container`
 - All dependencies are stored in `requirements.lock` in the root of the mono repo
 - These dependencies are used by bazel in establishing an hermetic build system - all requirements are cached in a central repository.
 - We use `pip-compile --allow-unsafe --output-file requirements.lock $( find . -iname "requirements.in" )` to generate the set of dependencies by parsing all `requirements.in` files contained in all the sub-projects of the mono repo.
@@ -143,7 +143,7 @@ Within the UI you can perform all CRUD operations on your configs
 
 You can use the `bazel test` command to run unit tests. A few pre-requisites:
 
-- Ensure you have the ~/.weep/weep.yaml file also in /etc/weep in order for Weep to find it's configuration in the Bazel sandbox
+- Ensure you have the ~/.noq/noq.yaml file also in /etc/noq in order for Noq to find it's configuration in the Bazel sandbox
 - Then pre-auth in the browser: `AWS_PROFILE=noq_dev aws sts get-caller-identity`
 - Run unit test as usual, for instance:
   - `bazel test //...` to run all unit tests configured using the `py_test` bazel target (see example in common/lib/tests/BUILD)
@@ -153,9 +153,9 @@ You can use the `bazel test` command to run unit tests. A few pre-requisites:
 
 - We need to isolate all unit tests to stay with their components (we started on common/config)
 
-# Hermetic Weep
+# Hermetic Noq
 
-- We are also looking at running hermetic Weep by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
+- We are also looking at running hermetic Noq by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
 
 # Versioning
 

@@ -318,7 +318,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             return f"arn:aws:iam::{account_id}:role/{self.user_role_name}"
 
     async def post(self):
-        """/api/v1/get_credentials - Endpoint used to get credentials via mtls. Used by newt and weep.
+        """/api/v1/get_credentials - Endpoint used to get credentials via mtls. Used by newt and noq.
         ---
         get:
             description: Credentials endpoint. Authenticates user via MTLS and returns requested credentials.

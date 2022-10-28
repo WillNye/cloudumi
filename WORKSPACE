@@ -183,13 +183,13 @@ yarn_install(
     },
 )
 
-# Weep
+# Noq
 http_file(
-    name = "weep",
-    downloaded_file_path = "weep",
+    name = "noq",
+    downloaded_file_path = "noq",
     executable = True,
-    url = "https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/weep",
-    sha256 = "dd7385a02e1c2a779191a18c287c4a41c31be5b24e61aa7821971977e6801a8a",
+    url = "https://public-noq-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/noq",
+    sha256 = "e0ced3bb56ee2893acac552c8e2ae4a57dab8236800ce2be2902fcc9516f0b00",
 )
 
 register_toolchains(
@@ -203,7 +203,7 @@ get_repo_version(name="version")
 http_archive(
     name = "awscli",
     url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip",
-    sha256 = "471a40dbcb97a061c07095576fee3f9e89ae74d8b9d4d671fa1145539542f6d2",
+    sha256 = "7b880e72d6804f0b660014d5793549b6a5c0a0568087d7cb31d4f2e6ca034f89",
     build_file = "@//util:awscli.BUILD",
 )
 

@@ -3,7 +3,7 @@ from common.handlers.base import BaseHandler
 from common.lib.yaml import yaml
 
 
-class WeepDownloadHandler(BaseHandler):
+class NoqDownloadHandler(BaseHandler):
     async def get(self):
         tenant = self.ctx.tenant
         url = config.get_tenant_specific_key("url", tenant)

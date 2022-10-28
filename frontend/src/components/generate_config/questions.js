@@ -353,7 +353,7 @@ export const questions_json = {
       defaultValue: true,
       name: 'challenge_url.enabled_PLACEHOLDER_40',
       title:
-        'Do you want to enable Challenge URL authentication (Challenge URL authentication is used to authenticate users from CLI clients (like Weep).)?',
+        'Do you want to enable Challenge URL authentication (Challenge URL authentication is used to authenticate users from CLI clients (like Noq).)?',
       type: 'boolean',
     },
     {

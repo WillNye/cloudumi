@@ -79,33 +79,33 @@ Run on each AWS account for the updated environment. Use the `README` in `deploy
 The AWS SDK must be able to find updated credentials for the `noq_dev`, `noq_global_prod`, and `noq_global_staging` profiles.
 The AWS SDK will attempt to find credentials from a number of locations. See the [AWS Default Credential Provider Chain](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) for more details.
 
-Weep enables you to retrieve temporary 1 hour credentials from our Noq tenant (https://corp.noq.dev). Here
+Noq enables you to retrieve temporary 1 hour credentials from our Noq tenant (https://corp.noq.dev). Here
 are the recommended avenues:
 
 Option 1: Set your AWS Profile with `credential_process` to never think about credentials. This method is problematic
-if you are running services in a container and the container doesn't have access to the Weep binary.
+if you are running services in a container and the container doesn't have access to the Noq binary.
 update your `~/.aws/config` file with the following:
 
 ```
 [profile noq_global_prod]
-credential_process = weep credential_process  arn:aws:iam::306086318698:role/global_tenant_data_prod_admin
+credential_process = noq credential_process  arn:aws:iam::306086318698:role/global_tenant_data_prod_admin
 
 [profile noq_global_staging]
-credential_process = weep credential_process arn:aws:iam::615395543222:role/global_tenant_data_staging_admin
+credential_process = noq credential_process arn:aws:iam::615395543222:role/global_tenant_data_staging_admin
 ```
 
 Option 2: To retrieve temporary 1 hour credentials from Noq for each profile, run the following commands:
 
 ```
-weep file development_admin --profile noq_dev
-weep file noq_global_prod --profile global_tenant_data_prod_admin
-weep file noq_global_staging --profile global_tenant_data_staging_admin
+noq file development_admin --profile noq_dev
+noq file noq_global_prod --profile global_tenant_data_prod_admin
+noq file noq_global_staging --profile global_tenant_data_staging_admin
 ```
 
-Option 4: Weep can emulate the ECS credential provider locally. This method is much more performant than credential_process, and
+Option 4: Noq can emulate the ECS credential provider locally. This method is much more performant than credential_process, and
 it handles automatic credential refresh before your credentials expire. This method is extremely useful for long-lived operations:
 
-Run `weep serve` in a separate terminal, or as a daemon
+Run `noq serve` in a separate terminal, or as a daemon
 
 Then run the following commands (You can configure your IDE to use these settings):
 
