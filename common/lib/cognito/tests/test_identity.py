@@ -332,3 +332,19 @@ class TestIdentity(IsolatedAsyncioTestCase):
         assert len(await identity.get_identity_groups(self.pool_id)) == 2
         await identity.delete_identity_group(self.pool_id, group)
         assert len(await identity.get_identity_groups(self.pool_id)) == 1
+
+
+@pytest.mark.parametrize(
+    "username,secret_code,tenant,expected",
+    [
+        (
+            "user",
+            "381039",
+            "example.noq.dev",
+            "otpauth://totp/example.noq.dev:user?secret=381039&issuer=example.noq.dev",
+        ),
+    ],
+)
+def test_get_totp_uri(username, secret_code, tenant, expected):
+    uri = identity.CognitoUserClient.get_totp_uri(username, secret_code, tenant)
+    assert uri == expected
