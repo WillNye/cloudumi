@@ -165,12 +165,10 @@ def get_cognito_atrribute_mapping(
             "email": "email",
         }
     elif provider_type == SamlOIDCSSOIDPProvider:
-        return (
-            {
-                "username": "NameID",
-                "email": "email",
-            },
-        )
+        return {
+            "username": "NameID",
+            "email": "email",
+        }
     else:
         return None
 
