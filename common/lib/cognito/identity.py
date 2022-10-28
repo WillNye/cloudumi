@@ -1081,7 +1081,7 @@ class CognitoUserClient:
 
     @staticmethod
     def get_totp_uri(username: str, secret_code: str, tenant: str):
-        label = urllib.parse.urlencode(tenant.replace("_", "."))
+        label = urllib.parse.quote_plus(tenant.replace("_", "."))
         return f"otpauth://totp/{label}:{username}?secret={secret_code}&issuer={label}"
 
     def _secret_hash(self, username):
