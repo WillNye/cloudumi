@@ -67,7 +67,7 @@ We use Github Actions for CI/CD automation, this is configured using the .github
 
 To test Github actions locally, we use the [act tool](https://github.com/nektos/act); a few important things to consider:
 
-- Ensure you have your weep configuration in `/etc/weep/weep.yaml` just in case any bazel jobs are run. Bazel reassigns the `$HOME` variable in the sandbox, which means it will not be able to find `~/.weep/weep.yaml`.
+- Ensure you have your noq configuration in `/etc/noq/noq.yaml` just in case any bazel jobs are run. Bazel reassigns the `$HOME` variable in the sandbox, which means it will not be able to find `~/.noq/noq.yaml`.
 - Add the --secret-file argument to `act`: `--secret-file .env_github_action_secrets`
 - Specify what `runs-on` should run on locally (it's going to be configured for `self-hosted` in most if not all configurations): `-P self-hosted=nektos/act-environments-ubuntu:18.04`
 
@@ -92,7 +92,7 @@ To deploy to staging, simply run this script:
 To deploy to prod, we need to get `prod_admin` permissions to store all static frontend files in the bucket that is connected to the NOQ CDN, as such the first two commands below are needed before running `bazelisk run //deploy...`.
 
 - `export AWS-PROFILE=prod_admin`
-- `weep file -p prod_admin arn:aws:iam::940552945933:role/prod_admin `
+- `noq file -p prod_admin arn:aws:iam::940552945933:role/prod_admin `
 - `bazelisk run //deploy/infrastructure/live/shared/prod-1:prod-1`
 
 Note: there is a script that is templated in the terraform config parser package, called `push_all_the_things.sh`, which has an anti-dote called `revert_all_the_things.sh`.

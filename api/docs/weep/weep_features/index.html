@@ -8,7 +8,7 @@
 
 
 
-        <link rel="canonical" href="https://docs.noq.dev/docs/weep/weep_features/">
+        <link rel="canonical" href="https://docs.noq.dev/docs/noq/noq_features/">
 
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
@@ -302,8 +302,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/weep_cli_overview/" class="md-nav__link">
-        Weep CLI Utility
+      <a href="../../getting_started/noq_cli_overview/" class="md-nav__link">
+        Noq CLI Utility
       </a>
     </li>
 
@@ -388,8 +388,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/download_and_configure_weep/" class="md-nav__link">
-        Set up the Weep CLI Utility
+      <a href="../../getting_started/download_and_configure_noq/" class="md-nav__link">
+        Set up the Noq CLI Utility
       </a>
     </li>
 
@@ -530,8 +530,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/8_configure_weep/" class="md-nav__link">
-        Enable the Weep CLI Utility
+      <a href="../../getting_started/8_configure_noq/" class="md-nav__link">
+        Enable the Noq CLI Utility
       </a>
     </li>
 
@@ -669,14 +669,14 @@
 
 
         <label class="md-nav__link" for="__nav_7">
-          Weep CLI Utility
+          Noq CLI Utility
           <span class="md-nav__icon md-icon"></span>
         </label>
 
-      <nav class="md-nav" aria-label="Weep CLI Utility" data-md-level="1">
+      <nav class="md-nav" aria-label="Noq CLI Utility" data-md-level="1">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
-          Weep CLI Utility
+          Noq CLI Utility
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
 
@@ -734,8 +734,8 @@
 </li>
 
         <li class="md-nav__item">
-  <a href="#set-weep-as-the-aws-cli-credential_process" class="md-nav__link">
-    Set Weep as the AWS CLI credential_process
+  <a href="#set-noq-as-the-aws-cli-credential_process" class="md-nav__link">
+    Set Noq as the AWS CLI credential_process
   </a>
 
 </li>
@@ -755,8 +755,8 @@
 </li>
 
         <li class="md-nav__item">
-  <a href="#role-chaining-with-weep" class="md-nav__link">
-    Role chaining with Weep
+  <a href="#role-chaining-with-noq" class="md-nav__link">
+    Role chaining with Noq
   </a>
 
 </li>
@@ -790,7 +790,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_emulate_ecs_credential_provider/" class="md-nav__link">
+      <a href="../noq_emulate_ecs_credential_provider/" class="md-nav__link">
         Emulate ECS Credential Provider
       </a>
     </li>
@@ -818,7 +818,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_export_credentials_to_environment_variables/" class="md-nav__link">
+      <a href="../noq_export_credentials_to_environment_variables/" class="md-nav__link">
         Export Credentials to Environment Variables
       </a>
     </li>
@@ -860,7 +860,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_list_roles/" class="md-nav__link">
+      <a href="../noq_list_roles/" class="md-nav__link">
         List Roles
       </a>
     </li>
@@ -1753,8 +1753,8 @@
 </li>
 
         <li class="md-nav__item">
-  <a href="#set-weep-as-the-aws-cli-credential_process" class="md-nav__link">
-    Set Weep as the AWS CLI credential_process
+  <a href="#set-noq-as-the-aws-cli-credential_process" class="md-nav__link">
+    Set Noq as the AWS CLI credential_process
   </a>
 
 </li>
@@ -1774,8 +1774,8 @@
 </li>
 
         <li class="md-nav__item">
-  <a href="#role-chaining-with-weep" class="md-nav__link">
-    Role chaining with Weep
+  <a href="#role-chaining-with-noq" class="md-nav__link">
+    Role chaining with Noq
   </a>
 
 </li>
@@ -1795,29 +1795,29 @@
 
 
 <h1 id="credential-serving-options"><strong>Credential Serving Options</strong><a class="headerlink" href="#credential-serving-options" title="Permanent link">&para;</a></h1>
-<p>Weep is a CLI utility that makes it easy to use credentials from Noq for
-local development. Weep gets AWS credentials from Noq and serves them to
-your AWS CLI or SDKs. Weep caches credentials and, in many cases, can
+<p>Noq is a CLI utility that makes it easy to use credentials from Noq for
+local development. Noq gets AWS credentials from Noq and serves them to
+your AWS CLI or SDKs. Noq caches credentials and, in many cases, can
 refresh credentials automatically.</p>
-<p>Weep offers five methods to serve credentials. See the sections below for
+<p>Noq offers five methods to serve credentials. See the sections below for
 details on each method.</p>
 <h2 id="emulate-the-ecs-credential-provider"><strong>Emulate the ECS credential provider</strong><a class="headerlink" href="#emulate-the-ecs-credential-provider" title="Permanent link">&para;</a></h2>
 <p>This provides a convenient way to get credentials on-demand, without the
 need to set up networking rules. Using this method, each of your shells or
-IDEs can use a different role. Weep will cache these credentials and refresh
+IDEs can use a different role. Noq will cache these credentials and refresh
 them on demand. See the Amazon AWS documentation for details on the
 <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/EC2ContainerCredentialsProviderWrapper.html">ECS credentials provider</a>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Emulating the ECS credential provider is the recommended option for serving
-credentials with Weep. It provides the best development experience.</p>
+credentials with Noq. It provides the best development experience.</p>
 </div>
-<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/weep_emulate_credential_provider.svg"></p>
+<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/noq_emulate_credential_provider.svg"></p>
 <h2 id="emulate-the-ec2-instance-metadata-service"><strong>Emulate the EC2 instance metadata service</strong><a class="headerlink" href="#emulate-the-ec2-instance-metadata-service" title="Permanent link">&para;</a></h2>
 <p>See the Amazon AWS documentation for details on the
 <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html">EC2 instance metadata service</a>.</p>
-<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/weep_emulate_metadata_service.svg"></p>
-<h2 id="set-weep-as-the-aws-cli-credential_process"><strong>Set Weep as the AWS CLI <code>credential_process</code></strong><a class="headerlink" href="#set-weep-as-the-aws-cli-credential_process" title="Permanent link">&para;</a></h2>
+<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/noq_emulate_metadata_service.svg"></p>
+<h2 id="set-noq-as-the-aws-cli-credential_process"><strong>Set Noq as the AWS CLI <code>credential_process</code></strong><a class="headerlink" href="#set-noq-as-the-aws-cli-credential_process" title="Permanent link">&para;</a></h2>
 <p>See the AWS documentation for details on the
 <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sourcing-external.html">CLI credential_process config setting</a></p>
 <div class="admonition warning">
@@ -1825,21 +1825,21 @@ credentials with Weep. It provides the best development experience.</p>
 <p>If you have a large number of roles, using this method to serve credentials
 might introduce performance problems.</p>
 </div>
-<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/weep_set_weep_as_aws_cli_credential_process.svg"></p>
+<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/noq_set_noq_as_aws_cli_credential_process.svg"></p>
 <h2 id="export-credentials-to-environment-variables"><strong>Export credentials to environment variables</strong><a class="headerlink" href="#export-credentials-to-environment-variables" title="Permanent link">&para;</a></h2>
 <p>See the AWS documentation for details on
 <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html">using environment variables</a></p>
-<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/weep_export_credentials_as_environment_variables.svg"></p>
+<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/noq_export_credentials_as_environment_variables.svg"></p>
 <h2 id="write-credentials-to-your-aws-credentials-file"><strong>Write credentials to your AWS credentials file</strong><a class="headerlink" href="#write-credentials-to-your-aws-credentials-file" title="Permanent link">&para;</a></h2>
 <p>See the AWS documentation for details on
 <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html">configuration and credential file settings</a></p>
-<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/weep_write_credentials_to_your_aws_credentials_file.svg"></p>
-<h2 id="role-chaining-with-weep"><strong>Role chaining with Weep</strong><a class="headerlink" href="#role-chaining-with-weep" title="Permanent link">&para;</a></h2>
-<p>You may use Weep to perform nested assume-role calls on your behalf and serve
+<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/noq_write_credentials_to_your_aws_credentials_file.svg"></p>
+<h2 id="role-chaining-with-noq"><strong>Role chaining with Noq</strong><a class="headerlink" href="#role-chaining-with-noq" title="Permanent link">&para;</a></h2>
+<p>You may use Noq to perform nested assume-role calls on your behalf and serve
 the assumed role credentials. The example below shows this flow when using
-Weep to emulate the ECS credential provider. You may also perform role chaining
-with most of Weep's other methods of serving credentials.</p>
-<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/weep_role_chaining.svg"></p>
+Noq to emulate the ECS credential provider. You may also perform role chaining
+with most of Noq's other methods of serving credentials.</p>
+<p><img width="800" src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/noq_role_chaining.svg"></p>
 
 
             </article>

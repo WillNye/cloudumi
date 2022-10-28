@@ -15,9 +15,9 @@ filegroup(
 )
 
 filegroup(
-    name = "weep_config",
+    name = "noq_config",
     data = [
-        "weep.yaml",
+        "noq.yaml",
     ],
     visibility = ["//visibility:public"],
 )
@@ -25,7 +25,7 @@ filegroup(
 py_library(
     name = "lib",
     data = [
-        ":weep_config",
+        ":noq_config",
     ],
     srcs_version = "PY3",
     srcs = [

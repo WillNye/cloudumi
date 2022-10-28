@@ -8,7 +8,7 @@
 
 
 
-        <link rel="canonical" href="https://docs.noq.dev/docs/weep/export_credentials_to_file/">
+        <link rel="canonical" href="https://docs.noq.dev/docs/noq/export_credentials_to_file/">
 
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
@@ -302,8 +302,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/weep_cli_overview/" class="md-nav__link">
-        Weep CLI Utility
+      <a href="../../getting_started/noq_cli_overview/" class="md-nav__link">
+        Noq CLI Utility
       </a>
     </li>
 
@@ -388,8 +388,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/download_and_configure_weep/" class="md-nav__link">
-        Set up the Weep CLI Utility
+      <a href="../../getting_started/download_and_configure_noq/" class="md-nav__link">
+        Set up the Noq CLI Utility
       </a>
     </li>
 
@@ -530,8 +530,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/8_configure_weep/" class="md-nav__link">
-        Enable the Weep CLI Utility
+      <a href="../../getting_started/8_configure_noq/" class="md-nav__link">
+        Enable the Noq CLI Utility
       </a>
     </li>
 
@@ -669,14 +669,14 @@
 
 
         <label class="md-nav__link" for="__nav_7">
-          Weep CLI Utility
+          Noq CLI Utility
           <span class="md-nav__icon md-icon"></span>
         </label>
 
-      <nav class="md-nav" aria-label="Weep CLI Utility" data-md-level="1">
+      <nav class="md-nav" aria-label="Noq CLI Utility" data-md-level="1">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
-          Weep CLI Utility
+          Noq CLI Utility
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
 
@@ -686,7 +686,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_features/" class="md-nav__link">
+      <a href="../noq_features/" class="md-nav__link">
         Credential Serving Options
       </a>
     </li>
@@ -714,7 +714,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_emulate_ecs_credential_provider/" class="md-nav__link">
+      <a href="../noq_emulate_ecs_credential_provider/" class="md-nav__link">
         Emulate ECS Credential Provider
       </a>
     </li>
@@ -742,7 +742,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_export_credentials_to_environment_variables/" class="md-nav__link">
+      <a href="../noq_export_credentials_to_environment_variables/" class="md-nav__link">
         Export Credentials to Environment Variables
       </a>
     </li>
@@ -872,7 +872,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_list_roles/" class="md-nav__link">
+      <a href="../noq_list_roles/" class="md-nav__link">
         List Roles
       </a>
     </li>
@@ -1819,7 +1819,7 @@
 
 
 <h1 id="export-to-aws-shared-credentials-file"><strong>Export to AWS Shared Credentials File</strong><a class="headerlink" href="#export-to-aws-shared-credentials-file" title="Permanent link">&para;</a></h1>
-<p>Use <code>weep file</code> to write credentials to the
+<p>Use <code>noq file</code> to write credentials to the
 <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html">AWS shared credentials file</a>
 in your home directory. The AWS CLI and SDKs retrieve credentials from this
 file if there is no other means of getting credentials that have higher
@@ -1831,7 +1831,7 @@ for information about precedence of credential sources.</p>
 <h3 id="default-profile"><strong>Default Profile</strong><a class="headerlink" href="#default-profile" title="Permanent link">&para;</a></h3>
 <p>To export credentials for a role named <code>example-aws-role</code>, run the following
 command in a shell.</p>
-<div class="highlight"><pre><span></span><code>weep file example-aws-role
+<div class="highlight"><pre><span></span><code>noq file example-aws-role
 </code></pre></div>
 <p>The will write to shared credentials file for the default profile, i.e.
 <code>~/.aws/credentials</code>.</p>
@@ -1847,7 +1847,7 @@ aws_session_token = .....
 <code>--profile</code> flag. For example to export credentials for the role
 <code>example-aws-role</code> to the profile, <code>test_account_user</code>, run the following
 command.</p>
-<div class="highlight"><pre><span></span><code>weep file example-aws-role --profile test_account_user
+<div class="highlight"><pre><span></span><code>noq file example-aws-role --profile test_account_user
 </code></pre></div>
 <h2 id="use-exported-credentials"><strong>Use Exported Credentials</strong><a class="headerlink" href="#use-exported-credentials" title="Permanent link">&para;</a></h2>
 <p>You may use exported credentials from a shell or SDK.</p>
@@ -1884,7 +1884,7 @@ SDK as illustrated in the Boto3 example below</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer" >
 
 
-        <a href="../weep_export_credentials_to_environment_variables/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Export Credentials to Environment Variables" rel="prev">
+        <a href="../noq_export_credentials_to_environment_variables/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Export Credentials to Environment Variables" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
           </div>

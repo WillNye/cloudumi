@@ -767,7 +767,7 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
 
     async def get(self):
         """
-        GET /api/v2/get_roles - Endpoint used to get details of eligible roles. Used by weep.
+        GET /api/v2/get_roles - Endpoint used to get details of eligible roles. Used by noq.
         ---
         get:
             description: Returns a json-encoded list of objects of eligible roles for the user.

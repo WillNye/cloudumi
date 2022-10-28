@@ -183,12 +183,12 @@ yarn_install(
     },
 )
 
-# Weep
+# Noq
 http_file(
-    name = "weep",
-    downloaded_file_path = "weep",
+    name = "noq",
+    downloaded_file_path = "noq",
     executable = True,
-    url = "https://public-weep-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/weep",
+    url = "https://public-noq-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/noq",
     sha256 = "dd7385a02e1c2a779191a18c287c4a41c31be5b24e61aa7821971977e6801a8a",
 )
 

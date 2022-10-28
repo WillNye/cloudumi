@@ -28,7 +28,7 @@ tags:
   - name: policies
     description: Policies endpoints
   - name: apps
-    description: Endpoints used by apps (such as weep)
+    description: Endpoints used by apps (such as noq)
   - name: tenant_details
     description: Corporate level information about the tenant such as membership tier.
 

@@ -176,7 +176,7 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/getting_started/8_configure_weep/</loc>
+         <loc>https://docs.noq.dev/docs/getting_started/8_configure_noq/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -191,7 +191,7 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/getting_started/download_and_configure_weep/</loc>
+         <loc>https://docs.noq.dev/docs/getting_started/download_and_configure_noq/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -221,7 +221,7 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/getting_started/weep_cli_overview/</loc>
+         <loc>https://docs.noq.dev/docs/getting_started/noq_cli_overview/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -276,42 +276,42 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/weep/credential_process/</loc>
+         <loc>https://docs.noq.dev/docs/noq/credential_process/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/weep/emulate_imds/</loc>
+         <loc>https://docs.noq.dev/docs/noq/emulate_imds/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/weep/export_credentials_to_file/</loc>
+         <loc>https://docs.noq.dev/docs/noq/export_credentials_to_file/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/weep/precedence_of_credential_sources/</loc>
+         <loc>https://docs.noq.dev/docs/noq/precedence_of_credential_sources/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/weep/weep_emulate_ecs_credential_provider/</loc>
+         <loc>https://docs.noq.dev/docs/noq/noq_emulate_ecs_credential_provider/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/weep/weep_export_credentials_to_environment_variables/</loc>
+         <loc>https://docs.noq.dev/docs/noq/noq_export_credentials_to_environment_variables/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/weep/weep_features/</loc>
+         <loc>https://docs.noq.dev/docs/noq/noq_features/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.noq.dev/docs/weep/weep_list_roles/</loc>
+         <loc>https://docs.noq.dev/docs/noq/noq_list_roles/</loc>
          <lastmod>2022-08-31</lastmod>
          <changefreq>daily</changefreq>
     </url>

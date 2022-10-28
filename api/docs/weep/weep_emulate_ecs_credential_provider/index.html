@@ -8,7 +8,7 @@
 
 
 
-        <link rel="canonical" href="https://docs.noq.dev/docs/weep/weep_emulate_ecs_credential_provider/">
+        <link rel="canonical" href="https://docs.noq.dev/docs/noq/noq_emulate_ecs_credential_provider/">
 
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
@@ -302,8 +302,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/weep_cli_overview/" class="md-nav__link">
-        Weep CLI Utility
+      <a href="../../getting_started/noq_cli_overview/" class="md-nav__link">
+        Noq CLI Utility
       </a>
     </li>
 
@@ -388,8 +388,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/download_and_configure_weep/" class="md-nav__link">
-        Set up the Weep CLI Utility
+      <a href="../../getting_started/download_and_configure_noq/" class="md-nav__link">
+        Set up the Noq CLI Utility
       </a>
     </li>
 
@@ -530,8 +530,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../../getting_started/8_configure_weep/" class="md-nav__link">
-        Enable the Weep CLI Utility
+      <a href="../../getting_started/8_configure_noq/" class="md-nav__link">
+        Enable the Noq CLI Utility
       </a>
     </li>
 
@@ -669,14 +669,14 @@
 
 
         <label class="md-nav__link" for="__nav_7">
-          Weep CLI Utility
+          Noq CLI Utility
           <span class="md-nav__icon md-icon"></span>
         </label>
 
-      <nav class="md-nav" aria-label="Weep CLI Utility" data-md-level="1">
+      <nav class="md-nav" aria-label="Noq CLI Utility" data-md-level="1">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
-          Weep CLI Utility
+          Noq CLI Utility
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
 
@@ -686,7 +686,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_features/" class="md-nav__link">
+      <a href="../noq_features/" class="md-nav__link">
         Credential Serving Options
       </a>
     </li>
@@ -810,7 +810,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_export_credentials_to_environment_variables/" class="md-nav__link">
+      <a href="../noq_export_credentials_to_environment_variables/" class="md-nav__link">
         Export Credentials to Environment Variables
       </a>
     </li>
@@ -852,7 +852,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../weep_list_roles/" class="md-nav__link">
+      <a href="../noq_list_roles/" class="md-nav__link">
         List Roles
       </a>
     </li>
@@ -1779,14 +1779,14 @@
 
 
 <h1 id="emulate-ecs-credential-provider"><strong>Emulate ECS Credential Provider</strong><a class="headerlink" href="#emulate-ecs-credential-provider" title="Permanent link">&para;</a></h1>
-<p>Use <code>weep serve</code> to serve AWS credentials by emulating the
+<p>Use <code>noq serve</code> to serve AWS credentials by emulating the
 <a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/EC2ContainerCredentialsProviderWrapper.html">ECS credential provider</a>.
 You may use this method to serve credentials to an AWS SDK or CLI. We recommend
-this method of using Weep to provide the best development experience.</p>
+this method of using Noq to provide the best development experience.</p>
 <h2 id="configuration"><strong>Configuration</strong><a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
 <p>To configure this solution, set the <code>AWS_CONTAINER_CREDENTIALS_FULL_URI</code>
 environment variable in your shell or IDE. Each distinct shell or IDE can use
-Weep to request credentials for different roles. Weep will cache the
+Noq to request credentials for different roles. Noq will cache the
 credentials you request in-memory and refresh them when they are within 10
 minutes of expiring.</p>
 <div class="admonition note">
@@ -1798,26 +1798,26 @@ illustrated in the example below.</p>
 <div class="highlight"><pre><span></span><code><span class="nv">AWS_CONTAINER_CREDENTIALS_FULL_URI</span><span class="o">=</span>http://localhost:9091/ecs/example_role_1
                                           ▔▔▔▔▔▔▔▔▔ ▔▔▔▔     ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
                                           │         │        └─ Role name/search string
-                                          │         └─ Weep port <span class="o">(</span>probably <span class="m">9091</span><span class="o">)</span>
-                                          └─ Weep hostname <span class="o">(</span>probably localhost<span class="o">)</span>
+                                          │         └─ Noq port <span class="o">(</span>probably <span class="m">9091</span><span class="o">)</span>
+                                          └─ Noq hostname <span class="o">(</span>probably localhost<span class="o">)</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>You may specify either the full name of a role in the value for this
 environment variable or a search string against which to match roles.
-Weep will serve credentials for all matching roles and will refresh
+Noq will serve credentials for all matching roles and will refresh
 those roles as needed.</p>
 </div>
 <h2 id="usage"><strong>Usage</strong><a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<p>To use ECS credential provider emulation, in a shell, run Weep as illustrated
+<p>To use ECS credential provider emulation, in a shell, run Noq as illustrated
 in the example below.</p>
-<div class="highlight"><pre><span></span><code>weep serve
+<div class="highlight"><pre><span></span><code>noq serve
 </code></pre></div>
 <p>Then execute commands in the environment where <code>AWS_CONTAINER_CREDENTIALS_FULL_URI</code>
 is set (a shell or IDE).</p>
 <h3 id="shell">Shell<a class="headerlink" href="#shell" title="Permanent link">&para;</a></h3>
 <p>With <code>AWS_CONTAINER_CREDENTIALS_FULL_URI</code> configured in your shell, you can run
-aws commands such as the following and Weep will broker the credentials you
+aws commands such as the following and Noq will broker the credentials you
 need.</p>
 <div class="highlight"><pre><span></span><code>$ aws sts get-caller-identity
 <span class="o">{</span>
@@ -1828,7 +1828,7 @@ need.</p>
 </code></pre></div>
 <h3 id="ide">IDE<a class="headerlink" href="#ide" title="Permanent link">&para;</a></h3>
 <p>With <code>AWS_CONTAINER_CREDENTIALS_FULL_URI</code> configured in your IDE, you can
-execute statements such as the following and Weep will broker the necessary
+execute statements such as the following and Noq will broker the necessary
 credentials.</p>
 <div class="highlight"><pre><span></span><code><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_caller_identity</span><span class="p">()</span>
 
