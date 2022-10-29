@@ -213,6 +213,13 @@ class RequestHandler(BaseAPIV2Handler):
 
     allowed_methods = ["POST"]
 
+    def check_xsrf_cookie(self):
+        # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
+        if "noq-cli" in self.request.headers.get("User-Agent"):
+            return
+        else:
+            super().check_xsrf_cookie()
+
     def on_finish(self) -> None:
         if self.request.method != "POST":
             return
@@ -747,6 +754,13 @@ class RequestsHandler(BaseAPIV2Handler):
 
     allowed_methods = ["POST"]
 
+    def check_xsrf_cookie(self):
+        # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
+        if "noq-cli" in self.request.headers.get("User-Agent"):
+            return
+        else:
+            super().check_xsrf_cookie()
+
     async def post(self):
         """
         POST /api/v2/requests
@@ -844,6 +858,13 @@ class RequestDetailHandler(BaseAPIV2Handler):
     """
 
     allowed_methods = ["GET", "PUT"]
+
+    def check_xsrf_cookie(self):
+        # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
+        if "noq-cli" in self.request.headers.get("User-Agent"):
+            return
+        else:
+            super().check_xsrf_cookie()
 
     def on_finish(self) -> None:
         if self.request.method != "PUT":
