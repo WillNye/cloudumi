@@ -148,7 +148,7 @@ class ChallengeValidatorHandler(BaseHandler):
         if not valid_user_challenge:
             return
 
-        if valid_user_challenge.get("visited") and config.get_tenant_specific_key(
+        if valid_user_challenge.get("visited") and not config.get_tenant_specific_key(
             "auth.challenge_url.allow_multiple_visits_to_challenge_url", tenant, True
         ):
             message = (
