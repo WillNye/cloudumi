@@ -215,7 +215,7 @@ class RequestHandler(BaseAPIV2Handler):
 
     def check_xsrf_cookie(self):
         # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
-        if "noq-cli" in self.requests.headers.get("User-Agent"):
+        if "noq-cli" in self.request.headers.get("User-Agent"):
             return
         else:
             super().check_xsrf_cookie()
@@ -756,7 +756,7 @@ class RequestsHandler(BaseAPIV2Handler):
 
     def check_xsrf_cookie(self):
         # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
-        if "noq-cli" in self.requests.headers.get("User-Agent"):
+        if "noq-cli" in self.request.headers.get("User-Agent"):
             return
         else:
             super().check_xsrf_cookie()
@@ -861,7 +861,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
 
     def check_xsrf_cookie(self):
         # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
-        if "noq-cli" in self.requests.headers.get("User-Agent"):
+        if "noq-cli" in self.request.headers.get("User-Agent"):
             return
         else:
             super().check_xsrf_cookie()
