@@ -1,5 +1,5 @@
 import { useAuth } from 'core/Auth';
-import { FC } from 'react';
+import { FC, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -16,7 +16,7 @@ const changePasswordSchema = Yup.object().shape({
 });
 
 export const ChangePassword: FC = () => {
-  const { changePassword } = useAuth();
+  const { changePassword, user } = useAuth();
 
   const {
     register,
@@ -36,9 +36,12 @@ export const ChangePassword: FC = () => {
 
   const passwordValue = watch('newPassword');
 
-  const onSubmit = async ({ oldPassword, newPassword }) => {
-    await changePassword({ oldPassword, newPassword });
-  };
+  const onSubmit = useCallback(
+    async ({ oldPassword, newPassword }) => {
+      await changePassword({ oldPassword, newPassword });
+    },
+    [changePassword]
+  );
 
   return (
     <>
@@ -68,7 +71,7 @@ export const ChangePassword: FC = () => {
             type="password"
             autoCapitalize="none"
             autoCorrect="off"
-            {...register('oldPassword')}
+            {...register('confirmNewPassword')}
           />
           {errors?.confirmNewPassword && touchedFields.confirmNewPassword && (
             <p>{errors.confirmNewPassword.message}</p>

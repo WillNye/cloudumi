@@ -74,7 +74,11 @@ export const Json = () => {
 
   return (
     <div style={{ width: '50vw', height: '300px' }}>
-      <CodeEditor value={value} language="json" onChange={v => setValue(v as string)} />
+      <CodeEditor
+        value={value}
+        language="json"
+        onChange={v => setValue(v as string)}
+      />
     </div>
   );
 };

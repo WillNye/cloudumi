@@ -1,11 +1,24 @@
-import { FC, useState } from 'react';
+import { useAuth } from 'core/Auth';
+import { ChallengeName } from 'core/Auth/constants';
+import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Navigate } from 'react-router-dom';
 import { AuthCode } from 'shared/form/AuthCode';
 import css from './MFA.module.css';
 
 export const MFA: FC = () => {
-  // Note: Probably want to hook up the form here
-  const [code, setCode] = useState<string>('');
+  const { confirmSignIn, user } = useAuth();
+
+  const verifyTOTPCode = useCallback(
+    async (val: string) => {
+      await confirmSignIn(val);
+    },
+    [confirmSignIn]
+  );
+
+  if (user?.challengeName !== ChallengeName.SOFTWARE_TOKEN_MFA) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <>
@@ -16,10 +29,8 @@ export const MFA: FC = () => {
         <h1>MFA</h1>
         <AuthCode
           onChange={val => {
-            setCode(val);
-
             if (val?.length === 6) {
-              // onSubmit(code);
+              verifyTOTPCode(val);
             }
           }}
         />

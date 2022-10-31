@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import { User } from './types';
 
 export interface AuthLoginInputs {
   username: string;
@@ -13,13 +14,23 @@ export interface AuthResetPasswordInputs {
 export interface AuthContextProps {
   login: (input: AuthLoginInputs) => void;
   changePassword: (input: AuthResetPasswordInputs) => void;
+  completeNewPassword: (input: string) => void;
+  verifyTotpToken: (input: string) => void;
+  confirmSignIn: (input: string) => void;
   logout: () => void;
+  setupTOTP: () => Promise<string>;
+  user: User | null;
 }
 
 export const AuthContext = createContext<AuthContextProps>({
+  user: null,
   login: async () => undefined,
   logout: async () => undefined,
   changePassword: async () => undefined,
+  completeNewPassword: async () => undefined,
+  setupTOTP: async () => undefined,
+  verifyTotpToken: async () => undefined,
+  confirmSignIn: async () => undefined
 });
 
 export const { Provider: AuthProvider, Consumer: AuthConsumer } = AuthContext;

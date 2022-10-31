@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { CodeEditor } from './CodeEditor';
 
-
 export default {
   title: 'Form/Code Editor/Editor',
   component: CodeEditor
@@ -40,30 +39,32 @@ export const Disabled = () => {
 };
 
 export const SchemaValidation = () => {
-  const [value, setValue] = useState<string>(JSON.stringify(
-    {
-      p1: "v3",
-      p2: false
-    },
-    null,
-    2
-  ));
+  const [value, setValue] = useState<string>(
+    JSON.stringify(
+      {
+        p1: 'v3',
+        p2: false
+      },
+      null,
+      2
+    )
+  );
 
   return (
     <div style={{ width: '50vw', height: '300px' }}>
       <CodeEditor
         schemaUri="http://myserver/foo-schema.json"
         schema={{
-          type: "object",
+          type: 'object',
           properties: {
             p1: {
-              enum: ["v1", "v2"]
+              enum: ['v1', 'v2']
             },
             p2: {
-              type: "object",
+              type: 'object',
               properties: {
                 q1: {
-                  enum: ["x1", "x2"]
+                  enum: ['x1', 'x2']
                 }
               }
             }

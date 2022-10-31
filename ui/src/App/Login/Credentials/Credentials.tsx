@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import css from './Credentials.module.css';
+import { Navigate } from 'react-router-dom';
 
 const credentialsSchema = Yup.object().shape({
   username: Yup.string().email('Invalid email').required('Required'),
@@ -12,7 +13,8 @@ const credentialsSchema = Yup.object().shape({
 });
 
 export const Credentials: FC = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+
   const {
     register,
     handleSubmit,
@@ -34,6 +36,10 @@ export const Credentials: FC = () => {
     // this component since its a global concern.
     await login(data);
   };
+
+  if (user) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <>

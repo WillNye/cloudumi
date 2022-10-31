@@ -68,7 +68,9 @@ export const CodeEditor: FC<CodeEditorProps> = ({
 
       // Ref: https://github.com/nteract/nteract/pull/5587/files
       if (elmRef.current && contentHeightRef.current !== height) {
-        elmRef.current.style.height = `calc(${height as number} + ${BORDER_PADDING}px)`;
+        elmRef.current.style.height = `calc(${
+          height as number
+        } + ${BORDER_PADDING}px)`;
 
         editor.layout({
           width: editor.getLayoutInfo().width,
@@ -124,7 +126,7 @@ export const CodeEditor: FC<CodeEditorProps> = ({
           schemas: [
             {
               uri: schemaUri,
-              fileMatch: ["*"],
+              fileMatch: ['*'],
               schema
             }
           ]

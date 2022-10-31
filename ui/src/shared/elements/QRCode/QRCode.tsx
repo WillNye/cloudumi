@@ -14,10 +14,5 @@ export const QRCode: FC<QRCodeProps> = ({
   size = 125,
   value
 }) => (
-  <ReactQRCode
-    value={value}
-    size={size}
-    bgColor={bgColor}
-    fgColor={fgColor}
-  />
+  <ReactQRCode value={value} size={size} bgColor={bgColor} fgColor={fgColor} />
 );
