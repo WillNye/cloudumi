@@ -11,6 +11,11 @@
     "build-storybook": "build-storybook",
     "test": "vitest",
     "coverage": "vitest run --coverage",
+    "lint": "npx eslint --ext js,ts,tsx",
+    "lint:fix": "npx eslint --ext js,ts,tsx --fix",
+    "prettier": "prettier --check 'src/**/*.{js,jsx,ts,tsx,json,md,graphql,gql}'",
+    "prettier:fix": "prettier --loglevel warn --write 'src/**/*.{js,jsx,ts,tsx,json,md,graphql,gql}'",
+    "format": "npm run prettier:fix && npm run lint:fix",
     "prepare": "cd .. && husky install ui/.husky"
   },
   "dependencies": {
