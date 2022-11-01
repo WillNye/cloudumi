@@ -13,7 +13,7 @@ services:
       - redis-cluster
       - cloudumi-dynamodb
     environment:
-      AWS_PROFILE: noq_dev
+      AWS_PROFILE: development/development_admin
       CONFIG_LOCATION: /configs/development_account/saas_development.yaml
       # FAULTHANDLER_ENABLED: "true"
     ports:
@@ -37,7 +37,7 @@ services:
       - redis-cluster
       - cloudumi-dynamodb
     environment:
-      AWS_PROFILE: noq_dev
+      AWS_PROFILE: development/development_admin
       CONFIG_LOCATION: /configs/development_account/saas_development.yaml
       # FAULTHANDLER_ENABLED: "true"
     extra_hosts:

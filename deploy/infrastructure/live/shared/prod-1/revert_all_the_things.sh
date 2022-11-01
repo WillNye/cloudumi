@@ -11,9 +11,9 @@ if [[ -z "${VIRTUAL_ENV}" && -z "${VIRTUALENVWRAPPER_PYTHON}" && -z "${PYENV_ROO
 fi
 
 echo
-echo "Setting AWS_PROFILE=noq_prod"
+echo "Setting AWS_PROFILE=prod/prod_admin"
 echo
-export AWS_PROFILE=noq_prod
+export AWS_PROFILE=prod/prod_admin
 
 echo
 echo "Updating aws-cli"

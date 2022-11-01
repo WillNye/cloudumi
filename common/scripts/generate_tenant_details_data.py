@@ -80,13 +80,13 @@ if __name__ == "__main__":
     environment = "prod"
     config_map = dict(
         prod=dict(
-            primary_account="noq_prod",
+            primary_account="prod/prod_admin",
             global_account="noq_global_prod",
             eula_version="sgG6_aimGlpwyUCUHywLXG6ZUtb49kB6",
             noq_cluster="prod-1",
         ),
         staging=dict(
-            primary_account="noq_staging",
+            primary_account="staging/staging_admin",
             global_account="noq_global_staging",
             eula_version="62j7O8SPZvZXKxGsIDniJ4acZ5jEIGix",
             noq_cluster="staging-1",
