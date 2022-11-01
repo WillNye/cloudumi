@@ -1,5 +1,6 @@
 """Handle the base."""
 import asyncio
+from enum import Enum
 import sys
 import time
 import traceback
@@ -42,6 +43,10 @@ from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 
 log = config.get_logger()
+
+
+class JwtAuthType(Enum):
+    COGNITO = "cognito"
 
 
 class TornadoRequestHandler(tornado.web.RequestHandler):
@@ -253,6 +258,20 @@ class BaseHandler(TornadoRequestHandler):
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
+        await self.initialize_auth()
+        return await self.authorization_flow()
+
+    def write(self, chunk: Union[str, bytes, dict]) -> None:
+        # tenant = self.get_tenant_name()
+        # if config.get_tenant_specific_key(
+        #     "_security_risk_full_debugging.enabled", tenant
+        # ):
+        #     if not hasattr(self, "responses"):
+        #         self.responses = []
+        #     self.responses.append(chunk)
+        super(BaseHandler, self).write(chunk)
+
+    async def check_tenant(self):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
             function: str = (
@@ -275,6 +294,9 @@ class BaseHandler(TornadoRequestHandler):
             )
             await self.finish()
             raise SilentException(log_data["message"])
+
+    async def initialize_auth(self):
+        await self.check_tenant()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -291,17 +313,6 @@ class BaseHandler(TornadoRequestHandler):
             )
         self.request_uuid = str(uuid.uuid4())
         stats.timer("base_handler.incoming_request")
-        return await self.authorization_flow()
-
-    def write(self, chunk: Union[str, bytes, dict]) -> None:
-        # tenant = self.get_tenant_name()
-        # if config.get_tenant_specific_key(
-        #     "_security_risk_full_debugging.enabled", tenant
-        # ):
-        #     if not hasattr(self, "responses"):
-        #         self.responses = []
-        #     self.responses.append(chunk)
-        super(BaseHandler, self).write(chunk)
 
     async def configure_tracing(self):
         tenant = self.get_tenant_name()
@@ -366,7 +377,7 @@ class BaseHandler(TornadoRequestHandler):
         return False
 
     async def authorization_flow(
-        self, user: str = None, console_only: bool = True, refresh_cache: bool = False
+        self, user: str = None, console_only: bool = True, refresh_cache: bool = False, jwt_token: str = None, jwt_auth_type: JwtAuthType = None
     ) -> None:
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
@@ -394,6 +405,7 @@ class BaseHandler(TornadoRequestHandler):
         refresh_cache = (
             self.request.arguments.get("refresh_cache", [False])[0] or refresh_cache
         )
+        
         attempt_sso_authn = await self.attempt_sso_authn(tenant)
 
         refreshed_user_roles_from_cache = False
@@ -452,6 +464,13 @@ class BaseHandler(TornadoRequestHandler):
             self.user = config.get_tenant_specific_key(
                 "_development_user_override", tenant
             )
+
+        if not self.user and jwt_token is not None:
+            # Cognito JWT Validation / Authentication Flow
+            res = await validate_and_authenticate_jwt(jwt_token, tenant, jwt_auth_type)
+            if res:
+                self.user = res.get("user")
+                self.groups = res.get("groups", [])
 
         if not self.user:
             # Authenticate user by API Key

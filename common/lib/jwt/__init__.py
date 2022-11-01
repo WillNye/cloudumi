@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import jwt
 
 from common.config import config
+from common.handlers.base import JwtAuthType
 from common.lib.asyncio import aio_wrapper
 from common.lib.tenant.models import TenantDetails
 
@@ -118,3 +119,7 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
     except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError, jwt.DecodeError):
         # Force user to reauth.
         return False
+
+
+async def validate_and_authenticate_jwt_token(jwt_token: str, tenant: str, jwt_auth_type: JwtAuthType):
+    decoded_jwt = jwt.decode(jwt=jwt_token, algorithms="HS256")

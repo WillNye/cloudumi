@@ -4,7 +4,9 @@ import time
 from tornado.web import Finish
 
 from common.config import config
-from common.handlers.base import BaseHandler
+from common.exceptions.exceptions import SilentException
+from common.handlers.base import BaseHandler, JwtAuthType
+from common.lib.plugins import get_plugin_by_name
 
 log = config.get_logger()
 
@@ -55,3 +57,24 @@ class AuthHandler(BaseHandler):
                 "currentServerTime": int(time.time()),
             }
         )
+
+
+class CognitoAuthHandler(AuthHandler):
+    async def prepare(self, *args, **kwargs):
+        log.info("CognitoAuthHandler bypassing AuthHandler prepare to avoid regular auth flow")
+
+    async def post(self, *args, **kwargs):
+        log.info("CognitoAuthHandler attemps to authenticate via Cognito JWT")
+        if not "X-NOQ-JTW" in self.request.headers:
+            self.write(
+                {
+                    "type": "redirect",
+                    "redirect_url": "https://noq.dev",
+                    "reason": "unauthenticated",
+                    "message": "Invalid JWT token",
+                }
+            )
+        await self.initialize_auth()
+        body = self.request.body 
+        jwt_token = body.get("jwt_token")
+        return await self.authorization_flow(jwt_token, jwt_auth_type=JwtAuthType.COGNITO)
