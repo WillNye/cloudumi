@@ -1,6 +1,6 @@
 authentication_method: challenge
 challenge_settings:
-consoleme_url: https://corp.noq.dev
+noq_url: https://corp.noq.dev
 server:
   http_timeout: 20
   port: 9091
