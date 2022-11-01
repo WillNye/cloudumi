@@ -1,5 +1,3 @@
-from urllib.request import BaseHandler
-
 from tornado.web import Finish
 
 from common.config import config
