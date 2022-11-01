@@ -14,7 +14,7 @@ py_binary(
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
     },
     deps = [
         "//common:lib",
