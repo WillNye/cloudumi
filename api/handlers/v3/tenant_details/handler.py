@@ -1,5 +1,8 @@
+from urllib.request import BaseHandler
+
 from tornado.web import Finish
 
+from common.config import config
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
 from common.lib.jwt import validate_and_return_jwt_token
 from common.lib.tenant.models import TenantDetails
@@ -62,6 +65,39 @@ class TenantEulaHandler(BaseAdminHandler):
                 success="success",
                 status_code=200,
                 data=TenantDetailsModel(**tenant_details.dict()).dict(),
+            ).json(exclude_unset=True, exclude_none=True)
+        )
+
+
+class CognitoTenantPool(TornadoRequestHandler):
+    async def get(self):
+        tenant = self.get_tenant_name()
+        user_pool_region = config.get_tenant_specific_key(
+            "secrets.cognito.config.user_pool_region", tenant, config.region
+        )
+        if not user_pool_region:
+            raise Exception("User pool region is not defined")
+        user_pool_id = config.get_tenant_specific_key(
+            "secrets.cognito.config.user_pool_id", tenant
+        )
+        if not user_pool_id:
+            raise Exception("User pool is not defined")
+        client_id = config.get_tenant_specific_key(
+            "secrets.cognito.config.user_pool_client_id", tenant
+        )
+        if not client_id:
+            raise Exception("Client ID is not defined")
+
+        tenant_details = {
+            "client_id": client_id,
+            "user_pool_id": user_pool_id,
+            "user_pool_region": user_pool_region,
+        }
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data=tenant_details,
             ).json(exclude_unset=True, exclude_none=True)
         )
 
