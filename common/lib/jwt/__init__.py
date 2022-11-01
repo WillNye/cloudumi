@@ -5,6 +5,7 @@ import jwt
 from common.config import config
 from common.handlers.base import JwtAuthType
 from common.lib.asyncio import aio_wrapper
+from common.lib.cognito import jwt as cognito_jwt
 from common.lib.tenant.models import TenantDetails
 
 log = config.get_logger()
@@ -122,4 +123,13 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
 
 
 async def validate_and_authenticate_jwt_token(jwt_token: str, tenant: str, jwt_auth_type: JwtAuthType):
-    decoded_jwt = jwt.decode(jwt=jwt_token, algorithms="HS256")
+    region = config.get_tenant_specific_key("secrets.cognito.config.user_pool_region", tenant)
+    userpool_id = config.get_tenant_specific_key("secrets.cognito.config.user_pool_id", tenant)
+    app_client_id = config.get_tenant_specific_key("secrets.cognito.config.user_pool_client_id", tenant)
+
+    verified_claims: dict = cognito_jwt.decode_async(jwt_token, region, userpool_id, app_client_id)
+
+    return {
+        "user": verified_claims["email"],
+        "groups": verified_claims["cognito:groups"],
+    }

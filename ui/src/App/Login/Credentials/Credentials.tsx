@@ -1,5 +1,7 @@
 import { useAuth } from 'core/Auth';
 import { FC } from 'react';
+import axios from 'axios';
+import { Auth as AmplifyAuth } from 'aws-amplify';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -35,6 +37,15 @@ export const Credentials: FC = () => {
     // navigate the user to that route. This should NOT be in
     // this component since its a global concern.
     await login(data);
+    // Authenticate with the backend
+    const session = await AmplifyAuth.currentSession();
+    const body = {
+      jwt_token: session,
+    }
+    axios.post(`http://localhost:8092/api/v1/auth/cognito`, {body}).
+      then(( res => {
+        console.log(res);
+      }))
   };
 
   if (user) {

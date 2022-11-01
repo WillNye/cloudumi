@@ -1,3 +1,5 @@
+aiofile
+async_lru
 bcrypt
 blinker
 boto
