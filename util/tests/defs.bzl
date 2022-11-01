@@ -1,4 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_test")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 def pytest_test(name, whitelist = [], srcs = [], deps = [], data = [], **kwargs):
     """
@@ -16,6 +17,16 @@ def pytest_test(name, whitelist = [], srcs = [], deps = [], data = [], **kwargs)
             hardcoded_whitelist.append(part)
     hardcoded_whitelist.extend(whitelist)
     whitelist = ",".join(hardcoded_whitelist)
+    for dep in ["pytest", "pytest-cov", "boto3",
+                "fakeredis", "asgiref", "mock",
+                "moto", "tornado", "ujson", "pyjwt",
+                "sentry-sdk", "logmatic-python", "deepdiff", "ruamel-yaml",
+                "bcrypt", "simplejson", "tenacity", "boto", "botocore",
+                "cloudaux", "pydantic", "ed25519", "password_strength",
+                "pynamodax", "python-jose", "checkov", "cachetools",
+                "celery", "retrying", "pandas", "parliament", "blinker",
+                "marshmallow"]:
+        deps.append(requirement(dep))
     py_test(
         name = name,
         srcs = [
@@ -31,8 +42,10 @@ def pytest_test(name, whitelist = [], srcs = [], deps = [], data = [], **kwargs)
         env = {
             "AWS_REGION": "us-west-2",
             "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
-            "AWS_PROFILE": "noq_cluster_dev",
+            "AWS_PROFILE": "NoqSaasRoleLocalDev",
             "HOME": "~",
+            "TEST_USER_DOMAIN": "localhost",
+            "STAGE": "testing",
         },
         data = [
             "//util/tests:test_configuration.yaml",

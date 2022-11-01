@@ -88,7 +88,7 @@ py_binary(
     main = "run.py",
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "RUNTIME_PROFILE": "CELERY_WORKER_TEST",
     },
@@ -126,20 +126,20 @@ container_image(
         "TZ": "America/Los_Angeles",
         "CONFIG_LOCATION": "/configs/development_account/saas_development_container.yaml",
         "NOQ_CONTAINER": "1",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "DEBUG": "1",
         "RUNTIME_PROFILE": "CELERY_WORKER_TEST",
     },
     layers = [
         "//deploy/layers:config",
         "//deploy/layers:celery_tasks.sshd_config",
-        "//deploy/layers:weep",
+        "//deploy/layers:noq",
     ],
     ports = ["2223"],
     symlinks = {
         "/usr/bin/python": "/usr/local/bin/python",
     },
-    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.weep:/root/.weep --add-host=localhost:172.18.0.1 --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
+    docker_run_flags = "-v ~/.aws:/root/.aws -v ~/.noq:/root/.noq --add-host=localhost:172.18.0.1 --add-host=cloudumi-redis:172.18.0.1 --add-host=cloudumi-dynamodb:172.18.0.1",
 )
 
 container_image(
@@ -152,7 +152,7 @@ container_image(
     layers = [
         "//deploy/layers:config",
         "//deploy/layers:celery_tasks.sshd_config",
-        "//deploy/layers:weep",
+        "//deploy/layers:noq",
     ],
     ports = ["2223"],
     symlinks = {

@@ -2,12 +2,12 @@
 # 127.0.0.1 localhost redis-cluster cloudumi-dynamodb cloudumi-redis localstack1 localstack2 localstack3
 # TODO: Extends must NOT modify _global_. It must ONLY exist in the site_config specific namespace
 
-# AWS_PROFILE=noq_dev aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
+# AWS_PROFILE=development/development_admin aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
 extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
-  # profiler: yappi | pprofile | memray
+  profiler: yappi
   #  tracing:
   #    enabled: true
   #_development_run_celery_tasks_1_min: true
@@ -77,6 +77,10 @@ _global_:
   s3_cache_bucket_region: us-west-2
   environment: dev
   development: true
+  site_configs:
+    localhost:
+      secrets:
+        jwt_secret: N21JlTYDJEtpy-kHb-j8sAxkdS7mb4IY1wcueWJfpZ8
   tornado:
     debug: false
     port: 8092
@@ -110,6 +114,7 @@ _global_:
   redis:
     ssl: true
     ssl_ca_certs: ./deploy/local/redis/tests/tls/ca.crt
+    password: s2dKdXxjHeCQwoYZ
     cluster_mode:
       enabled: false
       nodes:

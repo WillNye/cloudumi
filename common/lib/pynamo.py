@@ -216,7 +216,7 @@ class GlobalConnection(Connection):
         else:
             session = boto3.Session()
 
-        self._client = session.client("dynamodb")
+        self._client = session.client("dynamodb", region_name=config.region)
         self.region = region if region else get_settings_value("region")
 
         if connect_timeout_seconds is not None:
@@ -262,6 +262,8 @@ class GlobalConnection(Connection):
         self._dax_support = bool(dax_write_endpoints or dax_read_endpoints)
         self._dax_read_client = None
         self._dax_write_client = None
+
+        self._convert_to_request_dict__endpoint_url = True
 
         if dax_read_endpoints:
             self._dax_read_client = GlobalDaxClient(

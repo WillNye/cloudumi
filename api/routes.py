@@ -103,7 +103,7 @@ from api.handlers.v3.auth.sso import (
     SamlOidcIdpConfigurationCrudHandler,
     SsoIdpProviderConfigurationCrudHandler,
 )
-from api.handlers.v3.downloads.weep import WeepDownloadHandler
+from api.handlers.v3.downloads.noq import NoqDownloadHandler
 from api.handlers.v3.integrations.aws import AwsIntegrationHandler
 from api.handlers.v3.resource_history.resource_history_handler import (
     ResourceHistoryHandler,
@@ -345,7 +345,7 @@ def make_app(jwt_validator=None):
             r"/api/v3/auth/challenge_url/?",
             ChallengeUrlConfigurationCrudHandler,
         ),
-        (r"/api/v3/downloads/weep", WeepDownloadHandler),
+        (r"/api/v3/downloads/noq", NoqDownloadHandler),
         (
             r"/docs/?(.*)",
             AuthenticatedStaticFileHandler,

@@ -1,6 +1,16 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_layer")
 
 container_layer(
+    name = "certificates",
+    files = [
+        "//deploy/local/redis/tests/tls:certs",
+    ],
+    data_path = "./deploy/local/redis/tests/tls/",
+    directory = "/",
+    visibility = ["//visibility:public"],
+)
+
+container_layer(
     name = "config",
     files = [
         "//configs/development_account:configs",
@@ -124,9 +134,9 @@ container_layer(
 )
 
 container_layer(
-    name = "weep",
+    name = "noq",
     files = [
-        "@weep//file",
+        "@noq//file",
     ],
     directory = "/usr/bin",
     visibility = ["//visibility:public"],

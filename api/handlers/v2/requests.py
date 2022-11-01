@@ -34,6 +34,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
     can_move_back_to_pending_v2,
     can_update_cancel_requests_v2,
+    merge_policy_statement,
     should_auto_approve_policy_v2,
 )
 from common.lib.slack import send_slack_notification_new_request
@@ -211,6 +212,13 @@ class RequestHandler(BaseAPIV2Handler):
     """
 
     allowed_methods = ["POST"]
+
+    def check_xsrf_cookie(self):
+        # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
+        if "noq-cli" in self.request.headers.get("User-Agent"):
+            return
+        else:
+            super().check_xsrf_cookie()
 
     def on_finish(self) -> None:
         if self.request.method != "POST":
@@ -420,6 +428,10 @@ class RequestHandler(BaseAPIV2Handler):
         try:
             # Validate the model
             changes = RequestCreationModel.parse_raw(self.request.body)
+            for change_request in changes.changes.changes:
+                if change_request.auto_merge:
+                    await merge_policy_statement(change_request, self.ctx.tenant)
+
             if not changes.dry_run:
                 changes = await validate_request_creation(self, changes)
 
@@ -742,6 +754,13 @@ class RequestsHandler(BaseAPIV2Handler):
 
     allowed_methods = ["POST"]
 
+    def check_xsrf_cookie(self):
+        # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
+        if "noq-cli" in self.request.headers.get("User-Agent"):
+            return
+        else:
+            super().check_xsrf_cookie()
+
     async def post(self):
         """
         POST /api/v2/requests
@@ -839,6 +858,13 @@ class RequestDetailHandler(BaseAPIV2Handler):
     """
 
     allowed_methods = ["GET", "PUT"]
+
+    def check_xsrf_cookie(self):
+        # CSRF token is not needed since this is protected by raw OIDC tokens; nevertheless we only allow POST without _xsrf for Noq Cli
+        if "noq-cli" in self.request.headers.get("User-Agent"):
+            return
+        else:
+            super().check_xsrf_cookie()
 
     def on_finish(self) -> None:
         if self.request.method != "PUT":
@@ -988,7 +1014,8 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 iam_role = await IAMRole.get(
                     tenant, arn_parsed["account"], principal_arn
                 )
-                template = iam_role.templated
+                if iam_role:
+                    template = iam_role.templated
 
         changes_config = await populate_approve_reject_policy(
             extended_request, self.groups, tenant, self.user
@@ -1086,7 +1113,8 @@ class RequestDetailHandler(BaseAPIV2Handler):
                 )
             if (
                 any(
-                    change.change_type in ["policy_condenser", "create_resource"]
+                    change.change_type
+                    in ["policy_condenser", "create_resource", "delete_resource"]
                     for change in extended_request.changes.changes
                 )
                 and has_expiry_info

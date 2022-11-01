@@ -7,7 +7,7 @@ py_library(
     visibility = ["//visibility:public"],
 )
 
-py_test(
+pytest_test(
     name = "test_cloud_credential_authorization_mapping",
     data = [
         "//configs/development_account:configs",
@@ -16,6 +16,5 @@ py_test(
         "test_cloud_credential_authorization_mapping.py",
     ],
     deps = [
-        "//util/tests:test_dependencies_lib",
     ],
 )

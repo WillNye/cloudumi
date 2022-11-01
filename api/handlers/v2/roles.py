@@ -175,6 +175,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
                 user_role=user_role,
                 account_id=account_id,
                 read_only=read_only,
+                requester_ip=self.get_request_ip(),
             )
         except Exception as e:
             log_data["message"] = f"Exception generating AWS console URL: {str(e)}"
@@ -766,7 +767,7 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
 
     async def get(self):
         """
-        GET /api/v2/get_roles - Endpoint used to get details of eligible roles. Used by weep.
+        GET /api/v2/get_roles - Endpoint used to get details of eligible roles. Used by noq.
         ---
         get:
             description: Returns a json-encoded list of objects of eligible roles for the user.

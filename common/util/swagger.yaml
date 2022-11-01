@@ -28,7 +28,7 @@ tags:
   - name: policies
     description: Policies endpoints
   - name: apps
-    description: Endpoints used by apps (such as weep)
+    description: Endpoints used by apps (such as noq)
   - name: tenant_details
     description: Corporate level information about the tenant such as membership tier.
 
@@ -1261,6 +1261,10 @@ components:
           type: boolean
           readOnly: true
           default: false
+        auto_merge:
+          type: boolean
+          default: false
+          description: if set, automatically merges a policy that is not `new`
     GenericFileChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1317,6 +1321,9 @@ components:
             new:
               default: true
               type: boolean
+            supported:
+              type: boolean
+              default: true
             action:
               $ref: "#/components/schemas/Action"
             change_type:
@@ -1395,6 +1402,14 @@ components:
               default: True
             description:
               type: string
+    DeleteResourceChangeModel:
+      allOf:
+        - $ref: "#/components/schemas/ChangeModel"
+        - type: object
+          properties:
+            change_type:
+              type: string
+              pattern: "delete_resource"
     RoleAccessChangeModel:
       allOf:
         - $ref: "#/components/schemas/ChangeModel"
@@ -1538,6 +1553,7 @@ components:
               - $ref: "#/components/schemas/GenericFileChangeModel"
               - $ref: "#/components/schemas/ManagedPolicyResourceChangeModel"
               - $ref: "#/components/schemas/CreateResourceChangeModel"
+              - $ref: "#/components/schemas/DeleteResourceChangeModel"
     ArnArray:
       type: array
       items:
@@ -2129,6 +2145,10 @@ components:
         credentials:
           $ref: "#/components/schemas/CloudCredentials"
           is_secret: true
+        auto_merge:
+          type: boolean
+          default: False
+          description: attempt to automatically merge two policies
     RequestCreationResponse:
       type: object
       properties:
@@ -2217,13 +2237,14 @@ components:
       allOf:
         - $ref: "#/components/schemas/RequestModificationBaseModel"
         - type: object
-          required:
-            - change_id
           properties:
             policy_document:
               type: object
             change_id:
               type: string
+            apply_all_changes:
+              type: boolean
+              default: False
             apps:
               $ref: "#/components/schemas/AppDetailsArray"
     CancelChangeModificationModel:

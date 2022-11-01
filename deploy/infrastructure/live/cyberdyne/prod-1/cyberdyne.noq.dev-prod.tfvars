@@ -38,7 +38,7 @@ dynamo_table_replica_regions = ["us-west-2"]
 # Redis
 redis_node_type = "cache.t3.small"
 
-profile = "noq_prod"
+profile = "prod/prod_admin"
 # Sentry
 sentry_dsn = "https://f446f0f25a74440db6e211ebe73c05f9@o1134078.ingest.sentry.io/6188334"
 

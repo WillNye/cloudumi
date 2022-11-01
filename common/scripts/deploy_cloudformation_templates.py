@@ -26,7 +26,7 @@ async def generate_cf_templates(upload: bool = True, suffix: str = ""):
         autoescape=select_autoescape(),
     )
     if upload:
-        boto_session = boto3.Session(profile_name="noq_staging")
+        boto_session = boto3.Session(profile_name="staging/staging_admin")
         s3_client = boto_session.client("s3")
     else:
         s3_client = None
@@ -77,7 +77,7 @@ def run(upload: bool, suffix: str):
     os.environ.setdefault(
         "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
     )
-    os.environ.setdefault("AWS_PROFILE", "noq_cluster_dev")
+    os.environ.setdefault("AWS_PROFILE", "NoqSaasRoleLocalDev")
     asyncio.run(generate_cf_templates(upload, suffix))
 
 

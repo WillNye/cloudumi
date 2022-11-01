@@ -14,7 +14,7 @@ py_binary(
     ],
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
     },
     deps = [
         "//common:lib",
@@ -74,6 +74,7 @@ genrule(
     ],
     tools = [
         "//deploy/local/redis/tests/tls:certs",
+        requirement("docker-compose"),
     ],
     exec_tools = [
         "//deploy:compose-files",
@@ -86,6 +87,9 @@ genrule(
     name = "kill-deps-only",
     cmd = "cd deploy; echo 'docker-compose -f docker-compose-dependencies.yaml \
            down -v' &>$@",
+    tools = [
+        requirement("docker-compose")
+    ],
     executable = True,
     outs = [
         "_kill-deps-only_",

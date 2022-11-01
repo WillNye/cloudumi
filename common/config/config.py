@@ -94,7 +94,7 @@ class Configuration(metaclass=Singleton):
                 "We were unable to detect valid AWS credentials. Noq needs valid AWS credentials to "
                 "run.\n\n"
                 "For local development: Provide credentials via environment variables, in your "
-                "~/.aws/credentials file, or via Weep EC2 IMDS / ECS credential provider emulation.\n\n"
+                "~/.aws/credentials file, or via Noq EC2 IMDS / ECS credential provider emulation.\n\n"
                 "For a production configuration, please attach an IAM role to your instance(s) or container(s) through"
                 "AWS.\n\n"
                 "For more information, see how the Python AWS SDK retrieves credentials here: "

@@ -12,7 +12,7 @@ zone        = "noq.dev"
 stage       = "prod"
 attributes  = 1
 domain_name = "*.noq.dev"
-profile     = "noq_prod"
+profile     = "prod/prod_admin"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]

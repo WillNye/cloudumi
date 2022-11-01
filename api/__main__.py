@@ -131,6 +131,8 @@ def init():
                     yappi.stop()
                     yappi.get_func_stats().print_all()
                     yappi.get_thread_stats().print_all()
+                    stats = yappi.get_func_stats()
+                    stats.save("/tmp/yappi.callgrind", type="callgrind")
             logging.info("Successfully shutdown the service.")
 
 

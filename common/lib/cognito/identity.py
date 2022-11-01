@@ -149,6 +149,30 @@ async def __get_oidc_provider(
     return oidc_provider
 
 
+def get_cognito_atrribute_mapping(
+    idp: Union[GoogleOIDCSSOIDPProvider, SamlOIDCSSOIDPProvider, OIDCSSOIDPProvider]
+):
+    # https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-specifying-attribute-mapping.html
+    provider_type = type(idp)
+    if provider_type == GoogleOIDCSSOIDPProvider:
+        return {
+            "username": "sub",
+            "email": "email",
+        }
+    elif provider_type == OIDCSSOIDPProvider:
+        return {
+            "username": "sub",
+            "email": "email",
+        }
+    elif provider_type == SamlOIDCSSOIDPProvider:
+        return {
+            "username": "NameID",
+            "email": "email",
+        }
+    else:
+        return None
+
+
 def get_tenant_user_pool_region(tenant):
     return config.get_tenant_specific_key(
         "secrets.cognito.config.user_pool_region", tenant, config.region
@@ -330,6 +354,7 @@ async def upsert_identity_provider(
                 for field in required
                 if provider_dict.get(field)
             },
+            AttributeMapping=get_cognito_atrribute_mapping(identity_provider),
         )
         await connect_idp_to_app_client(
             user_pool_id, user_pool_client_id, identity_provider, client=client
@@ -1081,7 +1106,7 @@ class CognitoUserClient:
 
     @staticmethod
     def get_totp_uri(username: str, secret_code: str, tenant: str):
-        label = urllib.parse.urlencode(tenant.replace("_", "."))
+        label = urllib.parse.quote_plus(tenant.replace("_", "."))
         return f"otpauth://totp/{label}:{username}?secret={secret_code}&issuer={label}"
 
     def _secret_hash(self, username):

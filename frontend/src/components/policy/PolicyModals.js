@@ -13,7 +13,7 @@ import {
 } from 'semantic-ui-react'
 import ReactMarkdown from 'react-markdown'
 import { usePolicyContext } from './hooks/PolicyProvider'
-import { useHistory } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import DateTimePicker from 'components/blocks/DateTimePicker'
 
 const StatusMessage = ({ message, isSuccess }) => {
@@ -229,24 +229,37 @@ export const DeleteResourceModal = () => {
     isPolicyEditorLoading,
     setIsPolicyEditorLoading,
   } = usePolicyContext()
-  const history = useHistory()
 
-  const [message, setMessage] = useState('')
+  const [justification, setJustification] = useState('')
+  const [successAlert, setSuccessAlert] = useState(null)
+  const [errorAlert, setErrorAlert] = useState(null)
 
-  const handleDeleteSubmit = async () => {
+  const handleDeleteSubmit = useCallback(async () => {
     setIsPolicyEditorLoading(true)
-    const response = await handleDeleteRole()
-    setMessage(response.message)
-    setIsSuccess(response.status === 'success')
-    setIsPolicyEditorLoading(false)
-  }
+    const response = await handleDeleteRole(justification)
 
-  const handleOk = () => {
-    setMessage('')
-    setIsSuccess(false)
-    setToggleDeleteRole(false)
-    history.push('/policies')
-  }
+    if (response) {
+      const { request_created, request_id, request_url } = response
+      if (request_created === true) {
+        setIsSuccess(true)
+
+        setSuccessAlert({
+          requestId: request_id,
+          requestUrl: request_url,
+        })
+      } else {
+        const errorMessage = `Server reported an error with the request: ${JSON.stringify(
+          response
+        )}`
+        setErrorAlert(errorMessage)
+        setIsSuccess(false)
+      }
+    } else {
+      setErrorAlert('Failed to submit request')
+      setIsSuccess(false)
+    }
+    setIsPolicyEditorLoading(false)
+  }, [justification, handleDeleteRole, setIsPolicyEditorLoading, setIsSuccess])
 
   return (
     <Modal
@@ -258,9 +271,41 @@ export const DeleteResourceModal = () => {
       <Modal.Content>
         <Modal.Description>
           <Dimmer.Dimmable dimmed={isPolicyEditorLoading}>
-            <StatusMessage isSuccess={isSuccess} message={message} />
-            {!isSuccess && (
-              <p>Are you sure you want to delete this principal?</p>
+            {!isSuccess ? (
+              <>
+                <p>Are you sure you want to delete this principal?</p>
+                <Form>
+                  <Form.TextArea
+                    required
+                    label='Justification'
+                    placeholder='Tell us why you need this change'
+                    onChange={(e) => setJustification(e.target.value)}
+                    defaultValue={justification}
+                  />
+                </Form>
+              </>
+            ) : (
+              <>
+                {successAlert && (
+                  <Message positive>
+                    <Message.Header>Click below to view request</Message.Header>
+                    <p>
+                      <b>
+                        <Link to={successAlert.requestUrl}>
+                          {successAlert.requestId}
+                        </Link>
+                      </b>
+                    </p>
+                  </Message>
+                )}
+
+                {errorAlert && (
+                  <Message negative>
+                    <Message.Header>An Error Occured</Message.Header>
+                    <p>{errorAlert}</p>
+                  </Message>
+                )}
+              </>
             )}
             <Dimmer active={isPolicyEditorLoading} inverted>
               <Loader />
@@ -269,27 +314,15 @@ export const DeleteResourceModal = () => {
         </Modal.Description>
       </Modal.Content>
       <Modal.Actions>
-        {isSuccess ? (
+        <>
           <Button
-            content='Done'
-            labelPosition='left'
-            icon='arrow right'
-            onClick={handleOk}
-            positive
-            disabled={isPolicyEditorLoading}
+            content='Submit'
+            onClick={handleDeleteSubmit}
+            disabled={!(justification || '').trim() || isSuccess}
+            primary
           />
-        ) : (
-          <>
-            <Button
-              content='Delete'
-              labelPosition='left'
-              icon='remove'
-              onClick={handleDeleteSubmit}
-              negative
-            />
-            <Button onClick={() => setToggleDeleteRole(false)}>Cancel</Button>
-          </>
-        )}
+          <Button onClick={() => setToggleDeleteRole(false)}>Close</Button>
+        </>
       </Modal.Actions>
     </Modal>
   )

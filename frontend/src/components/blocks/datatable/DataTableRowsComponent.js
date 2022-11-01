@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useHistory } from 'react-router-dom'
 import { Button, Icon, Label, Table } from 'semantic-ui-react'
 import ReactJson from 'react-json-view'
 import ReactMarkdown from 'react-markdown'
@@ -27,6 +27,8 @@ const DataTableRowsComponent = ({
     return data
   }
 
+  const history = useHistory()
+
   const handleCellClick = (e, column, entry) => {
     // This function should appropriately handle a Cell Click given a desired
     // action by the column configuration
@@ -34,6 +36,13 @@ const DataTableRowsComponent = ({
     const onClickhandler = entry.onClick || column.onClick
 
     if (!onClickhandler) return
+
+    if (
+      onClickhandler.action === 'redirect' &&
+      onClickhandler.type === 'temp_escalation_redirect'
+    ) {
+      history.push(entry['policy_request_uri'])
+    }
 
     if (onClickhandler.action === 'redirect') {
       // TODO, change this to useHistory

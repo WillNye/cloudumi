@@ -47,7 +47,12 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - Type: `bazelisk query //...` to get a list of all targets
 - To build: `bazelisk build //...` - this builds everything locally
 - To run the API container: `bazelisk run //api/container` - this will install the container build in your local docker cache and run it
-- To run the API container within Docker, you can also use `docker run`: `docker run -p 8092:8092 --env CONFIG_LOCATION=/configs/development_account/saas_development.yaml --env AWS_PROFILE=noq_cluster_dev --volume ~/.aws:/root/.aws --volume ~/.weep:/root/.weep bazel/api:container`
+- To run the API container within Docker, you can also use `docker run`: `docker run -p 8092:8092 --env CONFIG_LOCATION=/configs/development_account/saas_development.yaml --env AWS_PROFILE=NoqSaasRoleLocalDev --volume ~/.aws:/root/.aws --volume ~/.noq:/root/.noq bazel/api:container`
+- All dependencies are stored in `requirements.lock` in the root of the mono repo
+- These dependencies are used by bazel in establishing an hermetic build system - all requirements are cached in a central repository.
+- We use `pip-compile --allow-unsafe --output-file requirements.lock $( find . -iname "requirements.in" )` to generate the set of dependencies by parsing all `requirements.in` files contained in all the sub-projects of the mono repo.
+- Because `pip-compile` optimistically caches all depdendencies, re-running the command will not update all python dependencies, but just look for newly added or freshly removed dependencies
+- To upgrade all dependencies, remove the `requirements.lock` file and re-run the `pip-compile --allow-unsafe --output-file requirements.lock $( find . -iname "requirements.in" )` command
 
 # Setup your dev environment
 
@@ -138,8 +143,8 @@ Within the UI you can perform all CRUD operations on your configs
 
 You can use the `bazel test` command to run unit tests. A few pre-requisites:
 
-- Ensure you have the ~/.weep/weep.yaml file also in /etc/weep in order for Weep to find it's configuration in the Bazel sandbox
-- Then pre-auth in the browser: `AWS_PROFILE=noq_dev aws sts get-caller-identity`
+- Ensure you have the ~/.noq/noq.yaml file also in /etc/noq in order for Noq to find it's configuration in the Bazel sandbox
+- Then pre-auth in the browser: `AWS_PROFILE=development/development_admin aws sts get-caller-identity`
 - Run unit test as usual, for instance:
   - `bazel test //...` to run all unit tests configured using the `py_test` bazel target (see example in common/lib/tests/BUILD)
   - `bazel test //common/config/...` to run all unit tests in the config module
@@ -148,9 +153,9 @@ You can use the `bazel test` command to run unit tests. A few pre-requisites:
 
 - We need to isolate all unit tests to stay with their components (we started on common/config)
 
-# Hermetic Weep
+# Hermetic Noq
 
-- We are also looking at running hermetic Weep by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
+- We are also looking at running hermetic Noq by adding the configuration via a Bazel filegroup, this is currently WIP and may or may not work as expected
 
 # Versioning
 
@@ -188,9 +193,9 @@ sudo cp ./cmd /usr/local/bin/ecsgo
 To connect to the containers:
 
 ```bash
-AWS_PROFILE=noq_staging ecsgo
+AWS_PROFILE=staging/staging_admin ecsgo
 # For prod
-AWS_PROFILE=noq_prod ecsgo
+AWS_PROFILE=prod/prod_admin ecsgo
 ```
 
 Select the appropriate cluster, service, and tasks to connect to the container of your choice.
@@ -216,9 +221,9 @@ Celery Flower contains a web interface that details Celery task status.
 To connect to the web interface, install [ecs-tunnel](https://github.com/alastairmccormack/ecs-tunnel) and run the following command (Replace the cluster and task IDs as appropriate)
 
 ```bash
-AWS_PROFILE=noq_staging ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t b9affecc6ad64727b166d5fe89d89258 --region us-west-2
+AWS_PROFILE=staging/staging_admin ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t b9affecc6ad64727b166d5fe89d89258 --region us-west-2
 ```
 
 ```bash
-AWS_PROFILE=noq_prod ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 6a26122f6fdb4aeda3fdb3b62124b70e --region us-west-2
+AWS_PROFILE=prod/prod_admin ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 6a26122f6fdb4aeda3fdb3b62124b70e --region us-west-2
 ```

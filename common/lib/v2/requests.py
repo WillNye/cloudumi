@@ -44,7 +44,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import NoqSemaphore, aio_wrapper
 from common.lib.auth import can_admin_policies, get_extended_request_account_ids
 from common.lib.aws.sanitize import sanitize_session_name
-from common.lib.aws.utils import fetch_resource_details
+from common.lib.aws.utils import delete_iam_user, fetch_resource_details
 from common.lib.change_request import generate_policy_name, generate_policy_sid
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import (
@@ -76,6 +76,7 @@ from common.models import (
     CommentModel,
     CommentRequestModificationModel,
     CreateResourceChangeModel,
+    DeleteResourceChangeModel,
     ExpirationDateRequestModificationModel,
     ExtendedAwsPrincipalModel,
     ExtendedRequestModel,
@@ -175,6 +176,7 @@ async def generate_request_from_change_model_array(
     tra_role_changes = []
     role_access_changes = []
     create_resource_changes = []
+    delete_resource_changes = []
     role = None
 
     extended_request_uuid = str(uuid.uuid4())
@@ -249,6 +251,10 @@ async def generate_request_from_change_model_array(
             create_resource_changes.append(
                 CreateResourceChangeModel.parse_obj(change.__dict__)
             )
+        elif change.change_type == "delete_resource":
+            delete_resource_changes.append(
+                DeleteResourceChangeModel.parse_obj(change.__dict__)
+            )
         else:
             raise UnsupportedChangeType(
                 f"Invalid `change_type` for change: {change.__dict__}"
@@ -267,6 +273,12 @@ async def generate_request_from_change_model_array(
     ):
         request_changes = ChangeModelArray(changes=create_resource_changes)
         arn_url = ""
+    elif (
+        len(change_models.changes) == 1
+        and change_models.changes[0].change_type == "delete_resource"
+    ):
+        request_changes = ChangeModelArray(changes=delete_resource_changes)
+        arn_url = change_models.changes[0].principal.principal_arn
     elif primary_principal.principal_type == "AwsResource":
         # TODO: Separate this out into another function
         resource_summary = await ResourceSummary.set(
@@ -873,9 +885,10 @@ async def validate_inline_policy_change(
             ] = f"Inline Policy with the name {change.policy_name} already exists."
             log.error(log_data)
             raise InvalidRequestParameter(log_data["message"])
-        # Check if policy being updated is the same as existing policy.
+        # Check if policy being updated is the same as existing policy but only if auto_merge is not enabled
         if (
-            not change.new
+            not change.auto_merge
+            and not change.new
             and change.policy.policy_document == existing_policy.get("PolicyDocument")
             and change.policy_name == existing_policy.get("PolicyName")
             and change.action == Action.attach
@@ -3187,37 +3200,55 @@ async def parse_and_apply_policy_request_modification(
 
         if request_changes.command == Command.apply_change:
             apply_change_model = ApplyChangeModificationModel.parse_obj(request_changes)
-            specific_change = await _get_specific_change(
-                extended_request.changes, apply_change_model.change_id
-            )
-            if not specific_change:
-                raise NoMatchingRequest(
-                    "Unable to find a compatible non-applied change with "
-                    "that ID in this policy request"
+            if apply_change_model.apply_all_changes:
+                # If apply all changes, then we need to find all changes that are not applied
+                # and apply them
+                changes_to_apply = [
+                    change
+                    for change in extended_request.changes.changes
+                    if change.status == Status.not_applied
+                ]
+                # Set supported to true for all changes
+                for change in changes_to_apply:
+                    change.supported = True
+            else:
+                changes_to_apply = [
+                    await _get_specific_change(
+                        extended_request.changes, apply_change_model.change_id
+                    )
+                ]
+            for specific_change in changes_to_apply:
+                if not specific_change:
+                    raise NoMatchingRequest(
+                        "Unable to find a compatible non-applied change with "
+                        "that ID in this policy request"
+                    )
+
+                specific_change_arn = specific_change.principal.principal_arn
+                if specific_change.change_type in [
+                    "resource_policy",
+                    "sts_resource_policy",
+                ]:
+                    specific_change_arn = specific_change.arn
+
+                account_id = specific_change.principal.account_id or (
+                    await ResourceAccountCache.get(tenant, specific_change_arn)
                 )
 
-            specific_change_arn = specific_change.principal.principal_arn
-            if specific_change.change_type in [
-                "resource_policy",
-                "sts_resource_policy",
-            ]:
-                specific_change_arn = specific_change.arn
+                can_manage_policy_request = await can_admin_policies(
+                    user, user_groups, tenant, [account_id]
+                )
+                # Authorization required if the policy wasn't approved by an auto-approval rule.
+                should_apply_because_auto_approved = (
+                    request_changes.command == Command.apply_change
+                    and approval_rule_approved
+                )
 
-            account_id = specific_change.principal.account_id or (
-                await ResourceAccountCache.get(tenant, specific_change_arn)
-            )
-            account_ids = [account_id]
-
-        can_manage_policy_request = await can_admin_policies(
-            user, user_groups, tenant, account_ids
-        )
-        # Authorization required if the policy wasn't approved by an auto-approval rule.
-        should_apply_because_auto_approved = (
-            request_changes.command == Command.apply_change and approval_rule_approved
-        )
-
-        if not can_manage_policy_request and not should_apply_because_auto_approved:
-            raise Unauthorized("You are not authorized to manage this request")
+                if (
+                    not can_manage_policy_request
+                    and not should_apply_because_auto_approved
+                ):
+                    raise Unauthorized("You are not authorized to manage this request")
 
     if request_changes.command == Command.move_back_to_pending:
         can_move_back_to_pending = await can_move_back_to_pending_v2(
@@ -3379,161 +3410,219 @@ async def parse_and_apply_policy_request_modification(
         )
 
         apply_change_model = ApplyChangeModificationModel.parse_obj(request_changes)
-        specific_change = await _get_specific_change(
-            extended_request.changes, apply_change_model.change_id
-        )
-        if specific_change and specific_change.status == Status.not_applied:
-            # Update the policy doc locally for supported changes, if it needs to be updated
-            if apply_change_model.policy_document and specific_change.change_type in [
-                "inline_policy",
-                "policy_condenser",
-                "resource_policy",
-                "sts_resource_policy",
-                "assume_role_policy",
-                "managed_policy_resource",
-            ]:
-                specific_change.policy.policy_document = (
+        if apply_change_model.apply_all_changes:
+            # If apply all changes, then we need to find all changes that are not applied
+            # and apply them
+            changes_to_apply = [
+                change
+                for change in extended_request.changes.changes
+                if change.status == Status.not_applied
+            ]
+        else:
+            changes_to_apply = [
+                await _get_specific_change(
+                    extended_request.changes, apply_change_model.change_id
+                )
+            ]
+
+        for specific_change in changes_to_apply:
+            if specific_change and specific_change.status == Status.not_applied:
+                # Update the policy doc locally for supported changes, if it needs to be updated
+                if (
                     apply_change_model.policy_document
-                )
-            managed_policy_arn_regex = re.compile(r"^arn:aws:iam::\d{12}:policy/.+")
-
-            try:
-                account_info: SpokeAccount = (
-                    ModelAdapter(SpokeAccount)
-                    .load_config("spoke_accounts", tenant)
-                    .with_query({"account_id": account_id})
-                    .first
-                )
-            except ValueError:
-                # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
-                # we can't apply this change
-                log_data["message"] = "Resource account not found"
-                log.warning(log_data)
-                response.errors += 1
-                response.action_results.append(
-                    ActionResult(
-                        status="error",
-                        message=f"Cannot apply change to {specific_change.principal.json()} as cannot determine resource account",
+                    and specific_change.change_type
+                    in [
+                        "inline_policy",
+                        "policy_condenser",
+                        "resource_policy",
+                        "sts_resource_policy",
+                        "assume_role_policy",
+                        "managed_policy_resource",
+                    ]
+                ):
+                    specific_change.policy.policy_document = (
+                        apply_change_model.policy_document
                     )
-                )
-                return response
+                managed_policy_arn_regex = re.compile(r"^arn:aws:iam::\d{12}:policy/.+")
 
-            if account_info.read_only and (
-                specific_change.change_type == "tra_can_assume_role"
-                or not cloud_credentials
-            ):
-                specific_change.status = Status.applied
-                response.action_results.append(
-                    ActionResult(
-                        status="success",
-                        message=f"{extended_request.requester_email} has been give temporary access to {specific_change_arn}. "
-                        f"Please allow up to 5 minutes for access to be granted.",
+                try:
+                    account_info: SpokeAccount = (
+                        ModelAdapter(SpokeAccount)
+                        .load_config("spoke_accounts", tenant)
+                        .with_query({"account_id": account_id})
+                        .first
                     )
-                )
-            elif specific_change.change_type == "create_resource":
-                if specific_change.principal.resource_type == ResourceType.role:
-                    response = await apply_create_role_change(
+                except ValueError:
+                    # If we don't have resource_account (due to resource not being in Config or 3rd Party account),
+                    # we can't apply this change
+                    log_data["message"] = "Resource account not found"
+                    log.warning(log_data)
+                    response.errors += 1
+                    response.action_results.append(
+                        ActionResult(
+                            status="error",
+                            message=f"Cannot apply change to {specific_change.principal.json()} as cannot determine resource account",
+                        )
+                    )
+                    return response
+
+                if account_info.read_only and (
+                    specific_change.change_type == "tra_can_assume_role"
+                    or not cloud_credentials
+                ):
+                    specific_change.status = Status.applied
+                    response.action_results.append(
+                        ActionResult(
+                            status="success",
+                            message=f"{extended_request.requester_email} has been give temporary access to {specific_change_arn}. "
+                            f"Please allow up to 5 minutes for access to be granted.",
+                        )
+                    )
+                elif specific_change.change_type == "create_resource":
+                    if specific_change.principal.resource_type == ResourceType.role:
+                        response = await apply_create_role_change(
+                            extended_request, specific_change, response, user, tenant
+                        )
+                elif specific_change.change_type == "delete_resource":
+                    try:
+                        iam_resource_type = specific_change.principal.resource_type
+                        iam_resource_name = specific_change.principal.name
+                        if iam_resource_type == ResourceType.role:
+                            await IAMRole.delete_role(
+                                tenant, account_id, iam_resource_name, user
+                            )
+                            specific_change.status = Status.applied
+                        elif iam_resource_type == ResourceType.user:
+                            await delete_iam_user(
+                                account_id, iam_resource_name, user, tenant
+                            )
+                            specific_change.status = Status.applied
+                        else:
+                            response.errors += 1
+                            response.action_results.append(
+                                ActionResult(
+                                    status="error",
+                                    message="Resource deletion not supported",
+                                )
+                            )
+                    except Exception as e:
+                        delete_resource_err_msg = (
+                            f"Exception deleting AWS IAM {iam_resource_type}"
+                        )
+                        log_data["message"] = f"{delete_resource_err_msg}: {str(e)}"
+                        response.errors += 1
+                        response.action_results.append(
+                            ActionResult(
+                                status="error",
+                                message=delete_resource_err_msg,
+                            )
+                        )
+                elif (
+                    specific_change.change_type == "resource_policy"
+                    or specific_change.change_type == "sts_resource_policy"
+                ):
+                    response = await apply_resource_policy_change(
+                        extended_request,
+                        specific_change,
+                        response,
+                        user,
+                        tenant,
+                        custom_aws_credentials=custom_aws_credentials,
+                    )
+                elif (
+                    specific_change.change_type == "resource_tag"
+                    and not specific_change.principal.principal_arn.startswith(
+                        "arn:aws:iam::"
+                    )
+                ):
+                    response = await apply_non_iam_resource_tag_change(
+                        extended_request,
+                        specific_change,
+                        response,
+                        user,
+                        tenant,
+                        specific_change_arn,
+                        custom_aws_credentials=custom_aws_credentials,
+                    )
+                elif (
+                    specific_change.change_type == "resource_tag"
+                    and managed_policy_arn_regex.search(specific_change_arn)
+                ):
+                    response = await apply_managed_policy_resource_tag_change(
+                        extended_request,
+                        specific_change,
+                        response,
+                        user,
+                        tenant,
+                        custom_aws_credentials=custom_aws_credentials,
+                    )
+                elif specific_change.change_type == "managed_policy_resource":
+                    response = await apply_managed_policy_resource_change(
+                        extended_request,
+                        specific_change,
+                        response,
+                        user,
+                        tenant,
+                        custom_aws_credentials=custom_aws_credentials,
+                    )
+                elif specific_change.change_type == "tra_can_assume_role":
+                    response = await apply_tra_role_change(
                         extended_request, specific_change, response, user, tenant
                     )
-            elif (
-                specific_change.change_type == "resource_policy"
-                or specific_change.change_type == "sts_resource_policy"
-            ):
-                response = await apply_resource_policy_change(
-                    extended_request,
-                    specific_change,
-                    response,
-                    user,
-                    tenant,
-                    custom_aws_credentials=custom_aws_credentials,
-                )
-            elif (
-                specific_change.change_type == "resource_tag"
-                and not specific_change.principal.principal_arn.startswith(
-                    "arn:aws:iam::"
-                )
-            ):
-                response = await apply_non_iam_resource_tag_change(
-                    extended_request,
-                    specific_change,
-                    response,
-                    user,
-                    tenant,
-                    specific_change_arn,
-                    custom_aws_credentials=custom_aws_credentials,
-                )
-            elif (
-                specific_change.change_type == "resource_tag"
-                and managed_policy_arn_regex.search(specific_change_arn)
-            ):
-                response = await apply_managed_policy_resource_tag_change(
-                    extended_request,
-                    specific_change,
-                    response,
-                    user,
-                    tenant,
-                    custom_aws_credentials=custom_aws_credentials,
-                )
-            elif specific_change.change_type == "managed_policy_resource":
-                response = await apply_managed_policy_resource_change(
-                    extended_request,
-                    specific_change,
-                    response,
-                    user,
-                    tenant,
-                    custom_aws_credentials=custom_aws_credentials,
-                )
-            elif specific_change.change_type == "tra_can_assume_role":
-                response = await apply_tra_role_change(
-                    extended_request, specific_change, response, user, tenant
-                )
-            elif specific_change.change_type == "assume_role_access":
-                response = await apply_role_access_change(
-                    extended_request, specific_change, response, user, tenant
-                )
-            elif extended_request.principal.principal_arn:
-                # Save current policy by populating "old" policies at the time of application for historical record
-                extended_request = await populate_old_policies(
-                    extended_request, user, tenant
-                )
-                await apply_changes_to_role(
-                    extended_request,
-                    response,
-                    user,
-                    tenant,
-                    specific_change.id,
-                    custom_aws_credentials=custom_aws_credentials,
-                )
-                await update_resource_in_dynamo(
-                    tenant, extended_request.principal.principal_arn, force_refresh
-                )
-            if specific_change.status == Status.applied:
-                if extended_request.ttl:
-                    extended_request.expiration_date = datetime.utcnow() + timedelta(
-                        seconds=extended_request.ttl
+                elif specific_change.change_type == "assume_role_access":
+                    response = await apply_role_access_change(
+                        extended_request, specific_change, response, user, tenant
                     )
-                    extended_request = await update_extended_request_expiration_date(
-                        tenant, user, extended_request, extended_request.expiration_date
+                elif extended_request.principal.principal_arn:
+                    # Save current policy by populating "old" policies at the time of application for historical record
+                    extended_request = await populate_old_policies(
+                        extended_request, user, tenant
                     )
-                # Change was successful, update in dynamo
-                specific_change.updated_by = user
-                response = await _update_dynamo_with_change(
-                    user,
-                    tenant,
-                    extended_request,
-                    log_data,
-                    response,
-                    "Successfully updated change in dynamo",
-                    "Error updating change in dynamo",
-                    visible=False,
+                    await apply_changes_to_role(
+                        extended_request,
+                        response,
+                        user,
+                        tenant,
+                        specific_change.id,
+                        custom_aws_credentials=custom_aws_credentials,
+                    )
+                    await update_resource_in_dynamo(
+                        tenant, extended_request.principal.principal_arn, force_refresh
+                    )
+                if specific_change.status == Status.applied:
+                    if extended_request.ttl:
+                        extended_request.expiration_date = (
+                            datetime.utcnow() + timedelta(seconds=extended_request.ttl)
+                        )
+                        extended_request = (
+                            await update_extended_request_expiration_date(
+                                tenant,
+                                user,
+                                extended_request,
+                                extended_request.expiration_date,
+                            )
+                        )
+                    # Change was successful, update in dynamo
+                    specific_change.updated_by = user
+                    response = await _update_dynamo_with_change(
+                        user,
+                        tenant,
+                        extended_request,
+                        log_data,
+                        response,
+                        "Successfully updated change in dynamo",
+                        "Error updating change in dynamo",
+                        visible=False,
+                    )
+                    if specific_change_arn:
+                        await update_resource_in_dynamo(
+                            tenant, specific_change_arn, True
+                        )
+            else:
+                raise NoMatchingRequest(
+                    "Unable to find a compatible non-applied change with "
+                    "that ID in this policy request"
                 )
-                if specific_change_arn:
-                    await update_resource_in_dynamo(tenant, specific_change_arn, True)
-        else:
-            raise NoMatchingRequest(
-                "Unable to find a compatible non-applied change with "
-                "that ID in this policy request"
-            )
 
     elif request_changes.command == Command.cancel_change:
         cancel_change_model = CancelChangeModificationModel.parse_obj(request_changes)

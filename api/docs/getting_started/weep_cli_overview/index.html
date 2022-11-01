@@ -8,14 +8,14 @@
 
 
 
-        <link rel="canonical" href="https://docs.noq.dev/docs/getting_started/weep_cli_overview/">
+        <link rel="canonical" href="https://docs.noq.dev/docs/getting_started/noq_cli_overview/">
 
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
 
 
 
-        <title>Weep CLI Utility - Noq Docs</title>
+        <title>Noq CLI Utility - Noq Docs</title>
 
 
 
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
 
 
-        <a href="#weep-cli-overview" class="md-skip">
+        <a href="#noq-cli-overview" class="md-skip">
           Skip to content
         </a>
 
@@ -109,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
 
-              Weep CLI Utility
+              Noq CLI Utility
 
           </span>
         </div>
@@ -314,12 +314,12 @@
 
 
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Weep CLI Utility
+          Noq CLI Utility
           <span class="md-nav__icon md-icon"></span>
         </label>
 
       <a href="./" class="md-nav__link md-nav__link--active">
-        Weep CLI Utility
+        Noq CLI Utility
       </a>
 
 
@@ -438,8 +438,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../download_and_configure_weep/" class="md-nav__link">
-        Set up the Weep CLI Utility
+      <a href="../download_and_configure_noq/" class="md-nav__link">
+        Set up the Noq CLI Utility
       </a>
     </li>
 
@@ -580,8 +580,8 @@
 
 
     <li class="md-nav__item">
-      <a href="../8_configure_weep/" class="md-nav__link">
-        Enable the Weep CLI Utility
+      <a href="../8_configure_noq/" class="md-nav__link">
+        Enable the Noq CLI Utility
       </a>
     </li>
 
@@ -717,14 +717,14 @@
 
 
         <label class="md-nav__link" for="__nav_7">
-          Weep CLI Utility
+          Noq CLI Utility
           <span class="md-nav__icon md-icon"></span>
         </label>
 
-      <nav class="md-nav" aria-label="Weep CLI Utility" data-md-level="1">
+      <nav class="md-nav" aria-label="Noq CLI Utility" data-md-level="1">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
-          Weep CLI Utility
+          Noq CLI Utility
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
 
@@ -734,7 +734,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../weep/weep_features/" class="md-nav__link">
+      <a href="../../noq/noq_features/" class="md-nav__link">
         Credential Serving Options
       </a>
     </li>
@@ -748,7 +748,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../weep/precedence_of_credential_sources/" class="md-nav__link">
+      <a href="../../noq/precedence_of_credential_sources/" class="md-nav__link">
         Credential Source Precedence
       </a>
     </li>
@@ -762,7 +762,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../weep/weep_emulate_ecs_credential_provider/" class="md-nav__link">
+      <a href="../../noq/noq_emulate_ecs_credential_provider/" class="md-nav__link">
         Emulate ECS Credential Provider
       </a>
     </li>
@@ -776,7 +776,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../weep/emulate_imds/" class="md-nav__link">
+      <a href="../../noq/emulate_imds/" class="md-nav__link">
         Emulate EC2 Instance Metadata Service
       </a>
     </li>
@@ -790,7 +790,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../weep/weep_export_credentials_to_environment_variables/" class="md-nav__link">
+      <a href="../../noq/noq_export_credentials_to_environment_variables/" class="md-nav__link">
         Export Credentials to Environment Variables
       </a>
     </li>
@@ -804,7 +804,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../weep/export_credentials_to_file/" class="md-nav__link">
+      <a href="../../noq/export_credentials_to_file/" class="md-nav__link">
         Export to AWS Shared Credentials File
       </a>
     </li>
@@ -818,7 +818,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../weep/credential_process/" class="md-nav__link">
+      <a href="../../noq/credential_process/" class="md-nav__link">
         Set as Credential Process
       </a>
     </li>
@@ -832,7 +832,7 @@
 
 
     <li class="md-nav__item">
-      <a href="../../weep/weep_list_roles/" class="md-nav__link">
+      <a href="../../noq/noq_list_roles/" class="md-nav__link">
         List Roles
       </a>
     </li>
@@ -1738,29 +1738,29 @@
 
 
 
-<h1 id="weep-cli-overview"><strong>Weep CLI Overview</strong><a class="headerlink" href="#weep-cli-overview" title="Permanent link">&para;</a></h1>
-<p>Weep is a CLI utility that makes it easy to use credentials from Noq for local
-development. Weep gets AWS credentials from Noq and serves them to your AWS
-CLI or SDKs. Weep caches credentials and, in many cases, can refresh
+<h1 id="noq-cli-overview"><strong>Noq CLI Overview</strong><a class="headerlink" href="#noq-cli-overview" title="Permanent link">&para;</a></h1>
+<p>Noq is a CLI utility that makes it easy to use credentials from Noq for local
+development. Noq gets AWS credentials from Noq and serves them to your AWS
+CLI or SDKs. Noq caches credentials and, in many cases, can refresh
 credentials automatically.</p>
-<p>Weep offers five methods to serve credentials:</p>
+<p>Noq offers five methods to serve credentials:</p>
 <ol>
-<li><a href="../../weep/weep_features/#emulate-the-ecs-credential-provider">Emulate the ECS credential provider</a></li>
-<li><a href="../../weep/weep_features/#emulate-the-ec2-instance-metadata-service">Emulate the EC2 instance metadata service</a></li>
-<li><a href="../../weep/weep_features/#set-weep-as-the-aws-cli-credential_process">Set Weep as the AWS CLI credential_process</a></li>
-<li><a href="../../weep/weep_features/#export-credentials-to-environment-variables">Export credentials to environment variables</a></li>
-<li><a href="../../weep/weep_features/#write-credentials-to-your-aws-credentials-file">Write credentials to your AWS credentials file</a></li>
+<li><a href="../../noq/noq_features/#emulate-the-ecs-credential-provider">Emulate the ECS credential provider</a></li>
+<li><a href="../../noq/noq_features/#emulate-the-ec2-instance-metadata-service">Emulate the EC2 instance metadata service</a></li>
+<li><a href="../../noq/noq_features/#set-noq-as-the-aws-cli-credential_process">Set Noq as the AWS CLI credential_process</a></li>
+<li><a href="../../noq/noq_features/#export-credentials-to-environment-variables">Export credentials to environment variables</a></li>
+<li><a href="../../noq/noq_features/#write-credentials-to-your-aws-credentials-file">Write credentials to your AWS credentials file</a></li>
 </ol>
-<p>You may also perform <a href="../../weep/weep_features/#role-chaining-with-weep">role chaining with Weep</a>
+<p>You may also perform <a href="../../noq/noq_features/#role-chaining-with-noq">role chaining with Noq</a>
 using most of the above methods.</p>
 <h2 id="installation"><strong>Installation</strong><a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<p>To install and configure Weep, follow the user guide to
-<a href="../download_and_configure_weep/">Set up the Weep CLI Utility</a>.</p>
+<p>To install and configure Noq, follow the user guide to
+<a href="../download_and_configure_noq/">Set up the Noq CLI Utility</a>.</p>
 <h2 id="usage"><strong>Usage</strong><a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>Weep is a CLI tool that manages AWS access via ConsoleMe for local development.
+<div class="highlight"><pre><span></span><code>Noq is a CLI tool that manages AWS access via ConsoleMe for local development.
 
 Usage:
-  weep [command]
+  noq [command]
 
 Available Commands:
   credential_process Retrieve credentials on the fly via the AWS SDK
@@ -1775,14 +1775,14 @@ Available Commands:
 
 Flags:
   -A, --assume-role strings   one or more roles to assume after retrieving credentials
-  -c, --config string         config file (default is $HOME/.weep.yaml)
-  -h, --help                  help for weep
-      --log-file string       log file path (default &quot;tmp/weep.log&quot;)
+  -c, --config string         config file (default is $HOME/.noq.yaml)
+  -h, --help                  help for noq
+      --log-file string       log file path (default &quot;tmp/noq.log&quot;)
       --log-format string     log format (json or tty)
       --log-level string      log level (debug, info, warn)
   -n, --no-ip                 remove IP restrictions
 
-Use &quot;weep [command] --help&quot; for more information about a command.
+Use &quot;noq [command] --help&quot; for more information about a command.
 </code></pre></div>
 
 

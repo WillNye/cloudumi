@@ -53,7 +53,7 @@ py_binary(
     srcs_version = "PY3",
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_cluster_dev",
+        "AWS_PROFILE": "NoqSaasRoleLocalDev",
         "TEST_USER_DOMAIN": "localhost",
     },
     srcs = [":lib"],

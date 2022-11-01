@@ -63,6 +63,7 @@ class Aws:
         custom_ip_restrictions: list = None,
         read_only: bool = False,
         session_policies: list[str] = None,
+        requester_ip: str = None,
     ) -> dict:
         """Get Credentials will return the list of temporary credentials from AWS."""
         log_data = {
@@ -120,6 +121,44 @@ class Aws:
             },
         )
 
+        # We are adding requester ip address to both ip_restrictions and custom_ip_restrictions
+        # AWS wants CIDR notation, so when we inject the request IP address, we have to turn it into a
+        # CIDR notation. https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
+        extended_ip_restrictions = []
+        extended_custom_ip_restrictions = []
+        is_requester_ip_restriction_enabled = config.get_tenant_specific_key(
+            "policies.ip_restrictions_on_requesters_ip", tenant, False
+        )
+        if is_requester_ip_restriction_enabled:
+            # Detecting loop-back address is really on for local dev
+            # Therefore, we check against the existence of the AWS_PROFILE environment
+            # variable which is really only set in local dev.
+            # In the event of loop-back address, we have to check what's remote IP is being
+            # seen by AWS endpoint.
+            if (requester_ip in ["::1", "127.0.0.1"]) and config.get(
+                "_global_.development"
+            ):
+                try:
+                    requester_ip = requests_sync.get(
+                        "https://checkip.amazonaws.com"
+                    ).text.strip()
+                except Exception as e:
+                    requester_ip = None
+                    log.debug({**log_data, "exception": "{0}".format(e)})
+            if not requester_ip:
+                raise Exception("Not able to satisfy requester ip restriction")
+            if ":" in requester_ip:
+                extended_ip_restrictions.append(f"{requester_ip}/128")
+                extended_custom_ip_restrictions.append(f"{requester_ip}/128")
+            elif "." in requester_ip:
+                # IPv4
+                extended_ip_restrictions.append(f"{requester_ip}/32")
+                extended_custom_ip_restrictions.append(f"{requester_ip}/32")
+        if ip_restrictions:
+            extended_ip_restrictions.extend(ip_restrictions)
+        if custom_ip_restrictions:
+            extended_custom_ip_restrictions.extend(custom_ip_restrictions)
+
         # If this is a dynamic request, then we need to fetch the role details, call out to the lambda
         # wait for it to complete, assume the role, and then return the assumed credentials back.
         if user_role:
@@ -165,7 +204,7 @@ class Aws:
                 assume_role_kwargs["TransitiveTagKeys"] = transitive_tag_keys
 
         try:
-            if enforce_ip_restrictions and ip_restrictions:
+            if enforce_ip_restrictions and extended_ip_restrictions:
                 # Used to further restrict user permissions
                 # https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
                 assume_role_kwargs["Policy"] = json.dumps(
@@ -177,7 +216,9 @@ class Aws:
                                 Action="*",
                                 Resource="*",
                                 Condition=dict(
-                                    NotIpAddress={"aws:SourceIP": ip_restrictions},
+                                    NotIpAddress={
+                                        "aws:SourceIP": extended_ip_restrictions
+                                    },
                                     Null={
                                         "aws:Via": "true",
                                         "aws:PrincipalTag/AWSServiceTrust": "true",
@@ -193,7 +234,7 @@ class Aws:
                         ],
                     )
                 )
-            elif custom_ip_restrictions:
+            elif extended_custom_ip_restrictions:
                 assume_role_kwargs["Policy"] = json.dumps(
                     dict(
                         Version="2012-10-17",
@@ -204,7 +245,7 @@ class Aws:
                                 Resource="*",
                                 Condition=dict(
                                     NotIpAddress={
-                                        "aws:SourceIP": custom_ip_restrictions
+                                        "aws:SourceIP": extended_custom_ip_restrictions
                                     },
                                     Null={
                                         "aws:Via": "true",
@@ -262,6 +303,7 @@ class Aws:
         user_role: bool = False,
         account_id: str = None,
         read_only: bool = False,
+        requester_ip: str = None,
     ) -> str:
         """Generate URL will get temporary credentials and craft a URL with those credentials."""
         function = (
@@ -285,6 +327,7 @@ class Aws:
             account_id=account_id,
             enforce_ip_restrictions=ip_restrictions_enabled,
             read_only=read_only,
+            requester_ip=requester_ip,
         )
 
         credentials_d = {

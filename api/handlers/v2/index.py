@@ -1,3 +1,5 @@
+import itertools
+
 import tornado.web
 
 import common.lib.noq_json as json
@@ -14,6 +16,7 @@ from common.lib.aws.cached_resources.iam import (
 )
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
+from common.user_request.models import IAMRequest
 
 log = config.get_logger()
 
@@ -125,6 +128,27 @@ class EligibleRoleHandler(BaseHandler):
 
             roles.append(row)
 
+        # Check if the user already has a pending request
+        requests = [
+            request
+            for request in await IAMRequest.query(
+                tenant,
+                filter_condition=(IAMRequest.status == "pending")
+                & (IAMRequest.username == self.user),
+            )
+        ]
+        changes = itertools.chain(
+            *[x.extended_request.changes.get("changes", []) for x in requests]
+        )
+        pending_requests = [
+            {
+                "principal": x.get("principal", {}).get("principal_arn"),
+                "id": x.get("id", "").strip("0"),
+            }
+            for x in changes
+            if x.get("change_type") == "tra_can_assume_role"
+        ]
+
         for role in await get_tra_supported_roles_by_tag(
             self.eligible_roles + active_tra_roles,
             self.groups + [self.user],
@@ -143,6 +167,30 @@ class EligibleRoleHandler(BaseHandler):
                 tenant,
                 "{account_name}",
             ).format(account_name=account_name, account_id=account_id)
+
+            content = (
+                "Request Temporary Access (pending)"
+                if arn in [x["principal"] for x in pending_requests]
+                else "Request Temporary Access"
+            )
+            on_click = {}
+            on_click["action"] = (
+                "redirect"
+                if arn in [x["principal"] for x in pending_requests]
+                else "open_modal"
+            )
+            on_click["type"] = (
+                "temp_escalation_redirect"
+                if arn in [x["principal"] for x in pending_requests]
+                else "temp_escalation_modal"
+            )
+            policy_request_id = [
+                x.get("id") for x in pending_requests if x.get("principal") == arn
+            ]
+            if policy_request_id:
+                policy_request_uri = f"/policies/request/{policy_request_id[0]}"
+            else:
+                policy_request_uri = ""
             roles.append(
                 {
                     "arn": arn,
@@ -150,12 +198,10 @@ class EligibleRoleHandler(BaseHandler):
                     "account_id": account_id,
                     "role_name": f"[{role_name}](/policies/edit/{account_id}/iamrole/{role_name})",
                     "inactive_tra": True,
-                    "content": "Request Temporary Access",
+                    "policy_request_uri": policy_request_uri,
+                    "content": content,
                     "color": "red",
-                    "onClick": {
-                        "action": "open_modal",
-                        "type": "temp_escalation_modal",
-                    },
+                    "onClick": on_click,
                 }
             )
 

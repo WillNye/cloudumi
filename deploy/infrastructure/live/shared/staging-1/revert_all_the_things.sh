@@ -11,9 +11,9 @@ if [[ -z "${VIRTUAL_ENV}" && -z "${VIRTUALENVWRAPPER_PYTHON}" && -z "${PYENV_ROO
 fi
 
 echo
-echo "Setting AWS_PROFILE=noq_staging"
+echo "Setting AWS_PROFILE=staging/staging_admin"
 echo
-export AWS_PROFILE=noq_staging
+export AWS_PROFILE=staging/staging_admin
 
 echo
 echo "Updating aws-cli"

@@ -3,7 +3,7 @@ pytest := PYTHONDONTWRITEBYTECODE=1 \
 	PYTHONPATH=$(PWD) \
 	AWS_DEFAULT_REGION=us-east-1 \
 	CONFIG_LOCATION=util/tests/test_configuration.yaml \
-	pytest --tb short \
+	python -m pytest --tb short \
 	--cov-config .coveragerc --cov common --cov api \
 	--async-test-timeout=1600 --timeout=1600 -n auto \
 	--asyncio-mode=auto --dist loadscope \
@@ -14,7 +14,7 @@ pytest_single_process := PYTHONDONTWRITEBYTECODE=1 \
 	PYTHONPATH=$(pwd) \
 	AWS_DEFAULT_REGION=us-east-1 \
 	CONFIG_LOCATION=util/tests/test_configuration.yaml \
-	pytest --tb short \
+	python -m pytest --tb short \
 	--cov-config .coveragerc --cov common --cov api \
 	--async-test-timeout=1600 --timeout=1600 \
 	--asyncio-mode=auto \
