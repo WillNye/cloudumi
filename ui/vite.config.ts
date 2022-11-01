@@ -1,5 +1,5 @@
-import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
 import eslint from 'vite-plugin-eslint';
 import svgrPlugin from 'vite-plugin-svgr';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -31,11 +31,28 @@ export default defineConfig(({ mode, command }) => {
       https: {
         // Reference: https://stackoverflow.com/questions/69417788/vite-https-on-localhost
         key: fs.readFileSync('./.certs/server.key.pem'),
-        cert: fs.readFileSync('./.certs/server.pem'),
+        cert: fs.readFileSync('./.certs/server.pem')
       },
       proxy: {
+        '/auth': {
+          target:  env.VITE_API_URL,
+          changeOrigin: false
+        },
+        '/noauth': {
+          target:  env.VITE_API_URL,
+          changeOrigin: false
+        },
+        '/saml': {
+          target:  env.VITE_API_URL,
+          changeOrigin: false
+        },
         '/api': {
-          target: env.VITE_API_URL
+          target:  env.VITE_API_URL,
+          changeOrigin: false
+        },
+        '/docs': {
+          target:  env.VITE_API_URL,
+          changeOrigin: false
         }
       }
     },
