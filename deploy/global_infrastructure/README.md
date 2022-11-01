@@ -76,7 +76,7 @@ Run on each AWS account for the updated environment. Use the `README` in `deploy
 
 ## AWS Credentials
 
-The AWS SDK must be able to find updated credentials for the `noq_dev`, `noq_global_prod`, and `noq_global_staging` profiles.
+The AWS SDK must be able to find updated credentials for the `development/development_admin`, `global_tenant_data_prod/global_tenant_data_prod_admin`, and `global_tenant_data_staging/global_tenant_data_staging_admin` profiles.
 The AWS SDK will attempt to find credentials from a number of locations. See the [AWS Default Credential Provider Chain](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) for more details.
 
 Noq enables you to retrieve temporary 1 hour credentials from our Noq tenant (https://corp.noq.dev). Here

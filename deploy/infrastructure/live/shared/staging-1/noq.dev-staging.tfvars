@@ -13,7 +13,7 @@ zone        = "staging.noq.dev"
 stage       = "staging"
 attributes  = 1
 domain_name = "*.staging.noq.dev"
-profile     = "noq_staging"
+profile     = "staging/staging_admin"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]

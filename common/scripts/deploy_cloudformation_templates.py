@@ -26,7 +26,7 @@ async def generate_cf_templates(upload: bool = True, suffix: str = ""):
         autoescape=select_autoescape(),
     )
     if upload:
-        boto_session = boto3.Session(profile_name="noq_staging")
+        boto_session = boto3.Session(profile_name="staging/staging_admin")
         s3_client = boto_session.client("s3")
     else:
         s3_client = None

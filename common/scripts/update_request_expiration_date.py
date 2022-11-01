@@ -37,10 +37,10 @@ async def update_expiration_date():
 def run(environment):
     env_map = {
         "prod": {
-            "profile": "noq_prod",
+            "profile": "prod/prod_admin",
         },
         "staging": {
-            "profile": "noq_staging",
+            "profile": "staging/staging_admin",
         },
         "local": {
             "profile": "NoqSaasRoleLocalDev",

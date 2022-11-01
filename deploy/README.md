@@ -32,7 +32,7 @@ Covers every NOQ deployment aspect.
 ## Login to ECR
 
 ```bash
-AWS_PROFILE=noq_staging aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com
+AWS_PROFILE=staging/staging_admin aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com
 docker build -t cloudumi .
 docker tag cloudumi:latest 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:latest
 docker push 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:latest
@@ -40,12 +40,12 @@ docker push 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:latest
 
 # ECS Staging instructions
 
-AWS_PROFILE=noq_staging ecs-cli up --cluster-config noq-staging
+AWS_PROFILE=staging/staging_admin ecs-cli up --cluster-config noq-staging
 
 # Terraform instructions
 
 First, run `cd deploy/infrastructure`.
-then `export AWS_PROFILE=noq_staging`
+then `export AWS_PROFILE=staging/staging_admin`
 
 ## Initialize Terraform with backend
 

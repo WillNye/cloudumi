@@ -90,10 +90,10 @@ if __name__ == "__main__":
 
     if is_prod:
         role = "arn:aws:iam::940552945933:role/prod_admin"
-        os.environ.setdefault("AWS_PROFILE", "noq_prod")
+        os.environ.setdefault("AWS_PROFILE", "prod/prod_admin")
     else:
         role = "arn:aws:iam::759357822767:role/staging_admin"
-        os.environ.setdefault("AWS_PROFILE", "noq_staging")
+        os.environ.setdefault("AWS_PROFILE", "staging/staging_admin")
 
     os.environ.setdefault(
         "AWS_CONTAINER_CREDENTIALS_FULL_URI", f"http://localhost:9091/ecs/{role}"

@@ -14,7 +14,7 @@
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         "AWS_REGION": "us-west-2",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "STAGE": "staging",
         "TEST_USER_DOMAIN": "localhost"
@@ -31,7 +31,7 @@
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         "AWS_REGION": "us-west-2",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1",
         "RUNTIME_PROFILE": "CELERY_WORKER_TEST"
@@ -48,7 +48,7 @@
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         "AWS_REGION": "us-west-2",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1",
         "RUNTIME_PROFILE": "CELERY_FLOWER"
@@ -64,7 +64,7 @@
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "AWS_DEFALT_REGION": "us-west-2",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1"
@@ -80,7 +80,7 @@
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
@@ -97,7 +97,7 @@
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
@@ -116,7 +116,7 @@
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // Run `weep serve` in a separate terminal
         "AWS_CONTAINER_CREDENTIALS_FULL_URI": "http://localhost:9091/ecs/arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev",
-        //"AWS_PROFILE": "NoqSaasRoleLocalDev_2",
+        //"AWS_PROFILE": "development/NoqSaasRoleLocalDev_2",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "AWS_DEFAULT_REGION": "af-south-1",
         "AWS_REGION": "af-south-1",
@@ -149,7 +149,7 @@
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "AWS_DEFALT_REGION": "us-west-2",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1"
@@ -174,7 +174,7 @@
       "console": "integratedTerminal",
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "AWS_PROFILE": "development/development_admin",
         "PYTHONPATH": "${workspaceFolder}/",
         "PYTHONASYNCIODEBUG": "1"
       }

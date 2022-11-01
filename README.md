@@ -144,7 +144,7 @@ Within the UI you can perform all CRUD operations on your configs
 You can use the `bazel test` command to run unit tests. A few pre-requisites:
 
 - Ensure you have the ~/.noq/noq.yaml file also in /etc/noq in order for Noq to find it's configuration in the Bazel sandbox
-- Then pre-auth in the browser: `AWS_PROFILE=noq_dev aws sts get-caller-identity`
+- Then pre-auth in the browser: `AWS_PROFILE=development/development_admin aws sts get-caller-identity`
 - Run unit test as usual, for instance:
   - `bazel test //...` to run all unit tests configured using the `py_test` bazel target (see example in common/lib/tests/BUILD)
   - `bazel test //common/config/...` to run all unit tests in the config module
@@ -193,9 +193,9 @@ sudo cp ./cmd /usr/local/bin/ecsgo
 To connect to the containers:
 
 ```bash
-AWS_PROFILE=noq_staging ecsgo
+AWS_PROFILE=staging/staging_admin ecsgo
 # For prod
-AWS_PROFILE=noq_prod ecsgo
+AWS_PROFILE=prod/prod_admin ecsgo
 ```
 
 Select the appropriate cluster, service, and tasks to connect to the container of your choice.
@@ -221,9 +221,9 @@ Celery Flower contains a web interface that details Celery task status.
 To connect to the web interface, install [ecs-tunnel](https://github.com/alastairmccormack/ecs-tunnel) and run the following command (Replace the cluster and task IDs as appropriate)
 
 ```bash
-AWS_PROFILE=noq_staging ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t b9affecc6ad64727b166d5fe89d89258 --region us-west-2
+AWS_PROFILE=staging/staging_admin ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t b9affecc6ad64727b166d5fe89d89258 --region us-west-2
 ```
 
 ```bash
-AWS_PROFILE=noq_prod ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 6a26122f6fdb4aeda3fdb3b62124b70e --region us-west-2
+AWS_PROFILE=prod/prod_admin ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 6a26122f6fdb4aeda3fdb3b62124b70e --region us-west-2
 ```

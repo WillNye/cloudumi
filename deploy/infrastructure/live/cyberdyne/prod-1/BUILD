@@ -42,9 +42,9 @@ genrule(
     ],
     outs = ["run_deploy_prod"],
     message = "Deploying CloudUmi to prod...",
-    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have noq_prod as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\"; \
+    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have prod/prod_admin as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\"; \
            \
-           export AWS_PROFILE=noq_prod; \
+           export AWS_PROFILE=prod/prod_admin; \
            \
            aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com; \
            \

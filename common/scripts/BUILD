@@ -23,7 +23,7 @@ py_binary(
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "AWS_PROFILE": "development/development_admin",
     },
     deps = [
         "//common/config:lib",
@@ -50,7 +50,7 @@ py_binary(
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "noq_dev",
+        "AWS_PROFILE": "development/development_admin",
     },
     deps = [
         "//common/celery_tasks:lib",
