@@ -143,9 +143,9 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       await axios.post(`http://localhost:8092/api/v1/auth/cognito`, {jwtToken: session}, {  // TODO: this will have to be un-hardcoded
         headers: {
           'Content-Type': 'application/json',
-        }
+        }, withCredentials: true
       }).
-        then(( res => {
+        then(( async (res) => {
           console.log(res);
         }))
       },

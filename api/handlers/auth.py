@@ -65,14 +65,17 @@ class CognitoAuthHandler(AuthHandler):
     def set_xsrf_cookie(self):
         pass
 
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.set_header("Access-Control-Allow-Headers", "access-control-allow-origin,authorization,content-type") 
-
     async def prepare(self, *args, **kwargs):
-        log.info("CognitoAuthHandler bypassing AuthHandler prepare to avoid regular auth flow")
+        self.set_header("Access-Control-Allow-Origin", self.request.headers.get('origin'))
+        self.set_header(
+            "Access-Control-Allow-Methods", ",".join(self.allowed_methods)
+        )
+        self.set_header(
+            "Access-Control-Allow-Headers",
+            "x-requested-with,access-control-allow-origin,authorization,content-type",
+        )
+        self.set_header("Access-Control-Allow-Credentials", "true")
+        self.set_header("Content-Type", "application/json")
 
     async def post(self, *args, **kwargs):
         log.info("CognitoAuthHandler attemps to authenticate via Cognito JWT")
@@ -103,28 +106,10 @@ class CognitoAuthHandler(AuthHandler):
         jwt_tokens = body.get("jwtToken", {})
         await self.authorization_flow(jwt_tokens=jwt_tokens, jwt_auth_type=JwtAuthType.COGNITO)
 
-        if auth_cookie := self.get_cookie(self.get_noq_auth_cookie_key()):
-            res = await validate_and_return_jwt_token(auth_cookie, self.get_tenant_name())
-
-            # Set groups
-            await self.set_groups()
-            self.groups = list(set(self.groups + res.get("groups_pending_eula", [])))
-
-            # Set roles
-            await self.set_eligible_roles(False)
-            self.eligible_roles = list(
-                set(self.eligible_roles + res.get("additional_roles_pending_eula", []))
-            )
-        else:
-            await self.set_groups()
-            await self.set_eligible_roles(False)
-            res = None
-
         self.write(
             {
                 "authCookieExpiration": self.auth_cookie_expiration,
                 "currentServerTime": int(time.time()),
-                "auth_cookie": res,
             }
         )
 

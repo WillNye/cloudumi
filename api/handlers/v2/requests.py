@@ -865,7 +865,7 @@ class RequestDetailHandler(BaseAPIV2Handler):
             return
         else:
             super().check_xsrf_cookie()
-
+        
     def on_finish(self) -> None:
         if self.request.method != "PUT":
             return

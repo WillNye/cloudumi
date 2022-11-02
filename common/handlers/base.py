@@ -451,7 +451,15 @@ class BaseHandler(TornadoRequestHandler):
                 #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
                 self.eula_signed = False
 
-        # TODO: move below _global_.development line maybe...
+        # if tenant in ["localhost", "127.0.0.1"] and not self.user:
+        # Check for development mode and a configuration override that specify the user and their groups.
+        if not self.user or config.get("_global_.development") and config.get_tenant_specific_key(
+            "_development_user_override", tenant
+        ):
+            self.user = config.get_tenant_specific_key(
+                "_development_user_override", tenant
+            )
+
         if not self.user and jwt_tokens is not None:
             # Cognito JWT Validation / Authentication Flow
             tenant = self.get_tenant_name()
@@ -461,7 +469,7 @@ class BaseHandler(TornadoRequestHandler):
                 encoded_cookie = await generate_jwt_token_from_cognito(verified_claims, tenant)
 
                 self.set_cookie(
-                    config.get("_global_.auth.cookie.name", "noq_auth"),
+                    self.get_noq_auth_cookie_key(),
                     encoded_cookie,
                     expires=verified_claims.get("exp"),
                     secure=config.get_tenant_specific_key(
@@ -481,15 +489,6 @@ class BaseHandler(TornadoRequestHandler):
 
                 self.user = verified_claims.get("email")
                 self.groups = verified_claims.get("cognito:groups", [])
-
-        # if tenant in ["localhost", "127.0.0.1"] and not self.user:
-        # Check for development mode and a configuration override that specify the user and their groups.
-        if not self.user or config.get("_global_.development") and config.get_tenant_specific_key(
-            "_development_user_override", tenant
-        ):
-            self.user = config.get_tenant_specific_key(
-                "_development_user_override", tenant
-            )
 
         if not self.user:
             # Authenticate user by API Key
