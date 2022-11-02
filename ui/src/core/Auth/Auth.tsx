@@ -22,7 +22,7 @@ import '../AWS/Amplify';
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isCheckingUser, setIsCheckingUser] = useState(true);
-  const [isValidTenat, setIsValidTenant] = useState(true);
+  const [isValidTenant, setIsValidTenant] = useState(true);
   const navigate = useNavigate();
 
   useEffect(function onMount() {
@@ -176,7 +176,6 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const values = useMemo(
     () => ({
       user,
-      isValidTenat,
       login,
       changePassword,
       logout,
@@ -187,7 +186,6 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     }),
     [
       user,
-      isValidTenat,
       changePassword,
       login,
       logout,
@@ -203,12 +201,12 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     return <div>Loading...</div>;
   }
 
-  if (!isValidTenat) {
-    // Invalid component
+  if (!isValidTenant) {
+    // Invalid Tenant component
     return (
       <div>
-        Your NOQ Cloud site is currently unavailable. Please contact our support
-        team.
+        The Noq Platform for this tenant is currently unavailable. Please
+        contact support.
       </div>
     );
   }
