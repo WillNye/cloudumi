@@ -140,7 +140,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       const session = await AmplifyAuth.currentSession();
       // Note on headers below - most browsers now implement Referrer Policy: strict-origin-when-cross-origin
       // and only specific headers are allowed: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-      await axios.post(`http://localhost:8092/api/v1/auth/cognito`, {jwtToken: session}, {  // TODO: this will have to be un-hardcoded
+      await axios.post(`/api/v1/auth/cognito`, {jwtToken: session}, {  // TODO: this will have to be un-hardcoded
         headers: {
           'Content-Type': 'application/json',
         }, withCredentials: true
