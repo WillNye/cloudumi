@@ -37,15 +37,6 @@ export const Credentials: FC = () => {
     // navigate the user to that route. This should NOT be in
     // this component since its a global concern.
     await login(data);
-    // Authenticate with the backend
-    const session = await AmplifyAuth.currentSession();
-    const body = {
-      jwt_token: session,
-    }
-    axios.post(`http://localhost:8092/api/v1/auth/cognito`, {body}).
-      then(( res => {
-        console.log(res);
-      }))
   };
 
   if (user) {

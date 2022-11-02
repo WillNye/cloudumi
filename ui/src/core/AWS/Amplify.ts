@@ -13,7 +13,6 @@ import { Amplify } from 'aws-amplify';
 Amplify.configure({
   // Reference:
   Auth: {
-    // // REQUIRED only for Federated Authentication - Amazon Cognito Identity Pool ID
     // identityPoolId: 'us-east-1_CNoZribID',
 
     // REQUIRED - Amazon Cognito Region

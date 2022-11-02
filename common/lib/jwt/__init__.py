@@ -1,14 +1,27 @@
 from datetime import datetime, timedelta
+from enum import Enum
 
 import jwt
 
 from common.config import config
-from common.handlers.base import JwtAuthType
 from common.lib.asyncio import aio_wrapper
-from common.lib.cognito import jwt as cognito_jwt
+from common.lib.cognito.jwt.jwt_async import decode_async
 from common.lib.tenant.models import TenantDetails
 
 log = config.get_logger()
+
+
+class JwtAuthType(Enum):
+    COGNITO = "cognito"
+
+
+async def generate_jwt_token_from_cognito(verified_claims, tenant: str):
+    return await generate_jwt_token(
+        email=verified_claims["email"],
+        groups=verified_claims["cognito:groups"],
+        tenant=tenant,
+        exp=verified_claims["exp"],
+    )
 
 
 async def generate_jwt_token(
@@ -122,14 +135,37 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
         return False
 
 
-async def validate_and_authenticate_jwt_token(jwt_token: str, tenant: str, jwt_auth_type: JwtAuthType):
-    region = config.get_tenant_specific_key("secrets.cognito.config.user_pool_region", tenant)
-    userpool_id = config.get_tenant_specific_key("secrets.cognito.config.user_pool_id", tenant)
-    app_client_id = config.get_tenant_specific_key("secrets.cognito.config.user_pool_client_id", tenant)
+async def validate_and_authenticate_jwt_token(jwt_tokens: dict, tenant: str, jwt_auth_type: JwtAuthType) -> dict:
+    """Validate and authenticate a JWT token.
 
-    verified_claims: dict = cognito_jwt.decode_async(jwt_token, region, userpool_id, app_client_id)
+    Currently supports:
+    - Cognito
 
-    return {
-        "user": verified_claims["email"],
-        "groups": verified_claims["cognito:groups"],
-    }
+    For instance, the Cognito JWT authenticator will validate that the claims are authentic by querying Cognito.
+
+    :param jwt_tokens: dict. a valid JWT token set, ie: (idToken, accessToken, refreshToken) - at the very least idToken is required
+    :param tenant: str. the applicable tenant
+    :param jwt_auth_type: JwtAuthType. the type of JWT authenticator to use
+    :return: a new JWT token to be used for the SaaS
+    """
+    if jwt_auth_type == JwtAuthType.COGNITO:
+        region = config.get_tenant_specific_key("secrets.cognito.jwt_auth.user_pool_region", tenant)
+        userpool_id = config.get_tenant_specific_key("secrets.cognito.jwt_auth.user_pool_id", tenant)
+        app_client_id = config.get_tenant_specific_key("secrets.cognito.jwt_auth.user_pool_client_id", tenant)
+
+        id_token = jwt_tokens.get("idToken", {}).get("jwtToken")
+        
+        try:
+            verified_claims: dict = await decode_async(id_token, region, userpool_id, app_client_id)
+        except jwt.exceptions.JWTDecodeError as exc:
+            log.warning(f"Invalid JWT token: {id_token}")
+            log.exception(exc)
+            return {}
+        except Exception as exc:
+            log.exception(exc)
+            return {}
+        
+        return verified_claims
+    
+    return {}
+    

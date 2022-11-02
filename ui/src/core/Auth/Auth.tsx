@@ -6,6 +6,7 @@ import {
   useMemo,
   useState
 } from 'react';
+import axios from 'axios';
 import { Auth as AmplifyAuth } from 'aws-amplify';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -15,6 +16,7 @@ import {
 } from './AuthContext';
 import { ChallengeName } from './constants';
 import { User } from './types';
+import { CognitoUserSession } from "amazon-cognito-identity-js";
 
 import '../AWS/Amplify';
 
@@ -72,6 +74,8 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       } catch ({ message }) {
         throw new Error(`Error setting up MFA: ${message}`);
       }
+
+
     },
     [user, navigate]
   );
@@ -89,6 +93,11 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       } catch ({ message }) {
         throw new Error(`Error confirming signing in: ${message}`);
       }
+      try {
+        authBackend();
+      } catch (error) {
+        console.log(error);
+      }    
     },
     [user, navigate]
   );
@@ -125,6 +134,24 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     [user, navigate]
   );
 
+  const authBackend = useCallback(
+    async () => {
+      // Authenticate with the backend
+      const session = await AmplifyAuth.currentSession();
+      // Note on headers below - most browsers now implement Referrer Policy: strict-origin-when-cross-origin
+      // and only specific headers are allowed: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+      await axios.post(`http://localhost:8092/api/v1/auth/cognito`, {jwtToken: session}, {  // TODO: this will have to be un-hardcoded
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }).
+        then(( res => {
+          console.log(res);
+        }))
+      },
+      []
+    )
+
   const login = useCallback(
     async ({ username, password }: AuthLoginInputs) => {
       try {
@@ -138,6 +165,12 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         navigate('/');
       } catch ({ message }) {
         throw new Error(`Error logging in: ${message}`);
+      }
+
+      try {
+        authBackend();
+      } catch (error) {
+        console.log(error);
       }
     },
     [navigate]

@@ -1,12 +1,11 @@
 """Handle the base."""
 import asyncio
-from enum import Enum
 import sys
 import time
 import traceback
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Union
+from typing import Any, Dict, Union
 
 import pytz
 import redis
@@ -31,7 +30,7 @@ from common.lib.alb_auth import authenticate_user_by_alb_auth
 from common.lib.auth import AuthenticationError, is_tenant_admin
 from common.lib.aws.cached_resources.iam import get_user_active_tra_roles_by_tag
 from common.lib.dynamo import UserDynamoHandler
-from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
+from common.lib.jwt import generate_jwt_token, JwtAuthType, generate_jwt_token_from_cognito, validate_and_authenticate_jwt_token, validate_and_return_jwt_token
 from common.lib.oidc import authenticate_user_by_oidc
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
@@ -43,10 +42,6 @@ from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 
 log = config.get_logger()
-
-
-class JwtAuthType(Enum):
-    COGNITO = "cognito"
 
 
 class TornadoRequestHandler(tornado.web.RequestHandler):
@@ -103,7 +98,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
 
     def get_tenant(self):
         if config.get("_global_.development"):
-            x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
+            x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "localhost")  # Adding default of localhost for development only
             if x_forwarded_host:
                 return x_forwarded_host.split(":")[0]
 
@@ -377,7 +372,7 @@ class BaseHandler(TornadoRequestHandler):
         return False
 
     async def authorization_flow(
-        self, user: str = None, console_only: bool = True, refresh_cache: bool = False, jwt_token: str = None, jwt_auth_type: JwtAuthType = None
+        self, user: str = None, console_only: bool = True, refresh_cache: bool = False, jwt_tokens: Dict[str, str] = {}, jwt_auth_type: JwtAuthType = None
     ) -> None:
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
@@ -456,21 +451,45 @@ class BaseHandler(TornadoRequestHandler):
                 #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
                 self.eula_signed = False
 
+        # TODO: move below _global_.development line maybe...
+        if not self.user and jwt_tokens is not None:
+            # Cognito JWT Validation / Authentication Flow
+            tenant = self.get_tenant_name()
+
+            verified_claims = await validate_and_authenticate_jwt_token(jwt_tokens, tenant, JwtAuthType.COGNITO)
+            if verified_claims:
+                encoded_cookie = await generate_jwt_token_from_cognito(verified_claims, tenant)
+
+                self.set_cookie(
+                    config.get("_global_.auth.cookie.name", "noq_auth"),
+                    encoded_cookie,
+                    expires=verified_claims.get("exp"),
+                    secure=config.get_tenant_specific_key(
+                        "auth.cookie.secure",
+                        tenant,
+                        True
+                        if "https://" in config.get_tenant_specific_key("url", tenant)
+                        else False,
+                    ),
+                    httponly=config.get_tenant_specific_key(
+                        "auth.cookie.httponly", tenant, True
+                    ),
+                    samesite=config.get_tenant_specific_key(
+                        "auth.cookie.samesite", tenant, True
+                    ),
+                )
+
+                self.user = verified_claims.get("email")
+                self.groups = verified_claims.get("cognito:groups", [])
+
         # if tenant in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
-        if config.get("_global_.development") and config.get_tenant_specific_key(
+        if not self.user or config.get("_global_.development") and config.get_tenant_specific_key(
             "_development_user_override", tenant
         ):
             self.user = config.get_tenant_specific_key(
                 "_development_user_override", tenant
             )
-
-        if not self.user and jwt_token is not None:
-            # Cognito JWT Validation / Authentication Flow
-            res = await validate_and_authenticate_jwt(jwt_token, tenant, jwt_auth_type)
-            if res:
-                self.user = res.get("user")
-                self.groups = res.get("groups", [])
 
         if not self.user:
             # Authenticate user by API Key
