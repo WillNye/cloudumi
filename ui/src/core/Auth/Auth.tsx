@@ -16,18 +16,38 @@ import {
 import { ChallengeName } from './constants';
 import { User } from './types';
 
+import { getTenantUserpool } from '../API/tenant';
 import '../AWS/Amplify';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isCheckingUser, setIsCheckingUser] = useState(true);
+  const [isValidTenat, setIsValidTenant] = useState(true);
   const navigate = useNavigate();
 
   useEffect(function onMount() {
-    getAuthenticatedUser().finally(() => {
-      setIsCheckingUser(false);
-    });
+    configureTenantOnMount();
   }, []);
+
+  const configureTenantOnMount = async () => {
+    setIsCheckingUser(true);
+    getTenantUserpool()
+      .then(async res => {
+        setIsValidTenant(true);
+
+        // configure amplify based on tenant user pool details
+        // Currently disable because backend development user pool requires a secret that is not supported in Amplify
+        // updateAmplifyConfig(res.data);
+
+        await getAuthenticatedUser();
+      })
+      .catch(error => {
+        setIsValidTenant(false);
+      })
+      .finally(() => {
+        setIsCheckingUser(false);
+      });
+  };
 
   const getAuthenticatedUser = async () => {
     try {
@@ -156,6 +176,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const values = useMemo(
     () => ({
       user,
+      isValidTenat,
       login,
       changePassword,
       logout,
@@ -166,6 +187,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     }),
     [
       user,
+      isValidTenat,
       changePassword,
       login,
       logout,
@@ -179,6 +201,16 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   if (isCheckingUser) {
     // check is user data is available
     return <div>Loading...</div>;
+  }
+
+  if (!isValidTenat) {
+    // Invalid component
+    return (
+      <div>
+        Your NOQ Cloud site is currently unavailable. Please contact our support
+        team.
+      </div>
+    );
   }
 
   return <AuthProvider value={values}>{children}</AuthProvider>;
