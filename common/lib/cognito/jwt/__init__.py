@@ -1,4 +1,4 @@
-from .exceptions import CognitoJWTException
+from common.lib.cognito.jwt.exceptions import CognitoJWTException
 
 name = 'cognitojwt'
 

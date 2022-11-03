@@ -3,7 +3,7 @@ from typing import Dict, Union, Container
 
 from jose import jwt
 
-from .exceptions import CognitoJWTException
+from common.lib.cognito.jwt.exceptions import CognitoJWTException
 
 
 CLIENT_ID_KEYS: Dict[str, str] = {

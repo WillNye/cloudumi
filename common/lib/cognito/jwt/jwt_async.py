@@ -1,5 +1,4 @@
 import json
-import os
 from typing import List, Dict, Optional, Union, Container
 
 from aiofile import AIOFile
@@ -8,14 +7,15 @@ from async_lru import alru_cache
 from jose import jwk
 from jose.utils import base64url_decode
 
-from .constants import PUBLIC_KEYS_URL_TEMPLATE
-from .exceptions import CognitoJWTException
-from .token_utils import get_unverified_headers, get_unverified_claims, check_expired, check_client_id
+from common.config import config
+from common.lib.cognito.jwt.constants import PUBLIC_KEYS_URL_TEMPLATE
+from common.lib.cognito.jwt.exceptions import CognitoJWTException
+from common.lib.cognito.jwt.token_utils import get_unverified_headers, get_unverified_claims, check_expired, check_client_id
 
 
 @alru_cache(maxsize=1)
 async def get_keys_async(keys_url: str) -> List[dict]:
-    if keys_url.startswith("http"):
+    if keys_url.startswith("https"):  # Enforce https
         async with aiohttp.ClientSession() as session:
             async with session.get(keys_url) as resp:
                 response = await resp.json()
@@ -27,7 +27,7 @@ async def get_keys_async(keys_url: str) -> List[dict]:
 
 
 async def get_public_key_async(token: str, region: str, userpool_id: str):
-    keys_url: str = os.environ.get('AWS_COGNITO_JWKS_PATH') or PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id)
+    keys_url: str = config.get("_global_.auth.cognito_jwks_path", PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id))
     keys: list = await get_keys_async(keys_url)
     headers = get_unverified_headers(token)
     kid = headers['kid']
