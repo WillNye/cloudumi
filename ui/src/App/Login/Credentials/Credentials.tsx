@@ -1,7 +1,5 @@
 import { useAuth } from 'core/Auth';
 import { FC } from 'react';
-import axios from 'axios';
-import { Auth as AmplifyAuth } from 'aws-amplify';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';

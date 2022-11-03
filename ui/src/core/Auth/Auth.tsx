@@ -6,7 +6,6 @@ import {
   useMemo,
   useState
 } from 'react';
-import axios from 'axios';
 import { Auth as AmplifyAuth } from 'aws-amplify';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -16,9 +15,8 @@ import {
 } from './AuthContext';
 import { ChallengeName } from './constants';
 import { User } from './types';
-import { CognitoUserSession } from "amazon-cognito-identity-js";
 
-import { getTenantUserpool } from '../API/tenant';
+import { getTenantUserpool, setupAPIAuth } from '../API/tenant';
 import '../AWS/Amplify';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
@@ -31,7 +29,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     configureTenantOnMount();
   }, []);
 
-  const configureTenantOnMount = async () => {
+  const configureTenantOnMount = () => {
     setIsCheckingUser(true);
     getTenantUserpool()
       .then(async res => {
@@ -54,8 +52,12 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const getAuthenticatedUser = async () => {
     try {
       const user = await AmplifyAuth.currentAuthenticatedUser({
-        bypassCache: true
+        bypassCache: false
       });
+      const session = await AmplifyAuth.currentSession();
+      if (session) {
+        await setupAPIAuth(session)
+      }
       setUser(user);
     } catch ({ message }) {
       throw new Error(`Error getting Authernticated user: ${message}`);
@@ -94,8 +96,6 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       } catch ({ message }) {
         throw new Error(`Error setting up MFA: ${message}`);
       }
-
-
     },
     [user, navigate]
   );
@@ -113,11 +113,6 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       } catch ({ message }) {
         throw new Error(`Error confirming signing in: ${message}`);
       }
-      try {
-        authBackend();
-      } catch (error) {
-        console.log(error);
-      }    
     },
     [user, navigate]
   );
@@ -154,24 +149,6 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     [user, navigate]
   );
 
-  const authBackend = useCallback(
-    async () => {
-      // Authenticate with the backend
-      const session = await AmplifyAuth.currentSession();
-      // Note on headers below - most browsers now implement Referrer Policy: strict-origin-when-cross-origin
-      // and only specific headers are allowed: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-      await axios.post(`/api/v1/auth/cognito`, {jwtToken: session}, {  // TODO: this will have to be un-hardcoded
-        headers: {
-          'Content-Type': 'application/json',
-        }, withCredentials: true
-      }).
-        then(( async (res) => {
-          console.log(res);
-        }))
-      },
-      []
-    )
-
   const login = useCallback(
     async ({ username, password }: AuthLoginInputs) => {
       try {
@@ -182,15 +159,13 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         // here is how you get that ->
         // const { idToken: { jwtToken } } = await Auth.currentSession();
         setUser(awsUser);
+        const session = await AmplifyAuth.currentSession()
+        if (session) {
+          await setupAPIAuth(session)
+        }
         navigate('/');
       } catch ({ message }) {
         throw new Error(`Error logging in: ${message}`);
-      }
-
-      try {
-        authBackend();
-      } catch (error) {
-        console.log(error);
       }
     },
     [navigate]
