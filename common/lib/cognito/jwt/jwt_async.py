@@ -7,7 +7,7 @@ from jose.utils import base64url_decode
 
 from common.config import config
 from common.lib.constants import PUBLIC_KEYS_URL_TEMPLATE
-from common.exceptions import CognitoJWTException
+from common.exceptions.exceptions import CognitoJWTException
 from common.lib.cognito.jwt.token_utils import get_unverified_headers, get_unverified_claims, check_expired, check_client_id
 
 
