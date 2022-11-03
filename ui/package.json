@@ -27,6 +27,7 @@
     "apollo-link-rest": "^0.9.0-rc.2",
     "aws-amplify": "^4.3.39",
     "classnames": "^2.3.2",
+    "graphql": "^16.6.0",
     "date-fns": "^2.29.3",
     "framer-motion": "^6.2.8",
     "nanoid": "^4.0.0",
