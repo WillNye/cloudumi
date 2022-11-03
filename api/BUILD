@@ -151,7 +151,7 @@ py_binary(
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build_local",
         "RUNTIME_PROFILE": "API",
@@ -176,7 +176,7 @@ py_binary(
         # Note: `bazel info --show_make_env` will show all available predefined variables
         # "CONFIG_LOCATION": "$(GENDIR)/api/bin.runfiles/cloudumi/configs/development_account/saas_development.yaml",
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "FRONTEND_PATH": "frontend/build",
         "RUNTIME_PROFILE": "API",
@@ -221,7 +221,7 @@ container_image(
         "TZ": "America/Los_Angeles",
         "CONFIG_LOCATION": "/configs/development_account/saas_development.yaml",
         "NOQ_CONTAINER": "1",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "DEBUG": "1",
         "RUNTIME_PROFILE": "API",
         "TEST_USER_DOMAIN": "localhost",

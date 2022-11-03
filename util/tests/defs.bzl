@@ -42,7 +42,7 @@ def pytest_test(name, whitelist = [], srcs = [], deps = [], data = [], **kwargs)
         env = {
             "AWS_REGION": "us-west-2",
             "CONFIG_LOCATION": "util/tests/test_configuration.yaml",
-            "AWS_PROFILE": "NoqSaasRoleLocalDev",
+            "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
             "HOME": "~",
             "TEST_USER_DOMAIN": "localhost",
             "STAGE": "testing",
