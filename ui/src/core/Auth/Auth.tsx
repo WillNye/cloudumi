@@ -18,18 +18,38 @@ import { ChallengeName } from './constants';
 import { User } from './types';
 import { CognitoUserSession } from "amazon-cognito-identity-js";
 
+import { getTenantUserpool } from '../API/tenant';
 import '../AWS/Amplify';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isCheckingUser, setIsCheckingUser] = useState(true);
+  const [isValidTenant, setIsValidTenant] = useState(true);
   const navigate = useNavigate();
 
   useEffect(function onMount() {
-    getAuthenticatedUser().finally(() => {
-      setIsCheckingUser(false);
-    });
+    configureTenantOnMount();
   }, []);
+
+  const configureTenantOnMount = async () => {
+    setIsCheckingUser(true);
+    getTenantUserpool()
+      .then(async res => {
+        setIsValidTenant(true);
+
+        // configure amplify based on tenant user pool details
+        // Currently disable because backend development user pool requires a secret that is not supported in Amplify
+        // updateAmplifyConfig(res.data);
+
+        await getAuthenticatedUser();
+      })
+      .catch(error => {
+        setIsValidTenant(false);
+      })
+      .finally(() => {
+        setIsCheckingUser(false);
+      });
+  };
 
   const getAuthenticatedUser = async () => {
     try {
@@ -212,6 +232,16 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   if (isCheckingUser) {
     // check is user data is available
     return <div>Loading...</div>;
+  }
+
+  if (!isValidTenant) {
+    // Invalid Tenant component
+    return (
+      <div>
+        The Noq Platform for this tenant is currently unavailable. Please
+        contact support.
+      </div>
+    );
   }
 
   return <AuthProvider value={values}>{children}</AuthProvider>;
