@@ -14,6 +14,7 @@ import tornado.web
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
+from slack_bolt.adapter.tornado import SlackEventsHandler, SlackOAuthHandler
 from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
 from api.handlers.auth import AuthHandler
@@ -140,6 +141,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
 )
 from common.config import config
 from common.lib.sentry import before_send_event
+from common.lib.slack.app import slack_app
 
 
 def make_app(jwt_validator=None):
@@ -371,8 +373,17 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
     ]
+    # TODO: fix:
+        
+    if config.get("_global_.development"):
+        routes[:0] = [
+                ("/api/v3/slack/events", SlackEventsHandler, dict(app=slack_app)),
+                ("/api/v3/slack/install", SlackOAuthHandler, dict(app=slack_app)),
+                ("/api/v3/slack/oauth_redirect", SlackOAuthHandler, dict(app=slack_app)),
+                ]
 
     router = RuleRouter(routes)
+    
     for domain in config.get("_global_.landing_page_domains", []):
         router.rules.append(
             Rule(
