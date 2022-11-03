@@ -1,7 +1,9 @@
 import json
+import logging
 import sys
 import time
 
+import sentry_sdk
 from tornado.web import Finish
 
 from common.config import config
@@ -13,19 +15,31 @@ from common.lib.plugins import get_plugin_by_name
 log = config.get_logger()
 
 
+def log_dict_handler(log_level: str, handler_klass: BaseHandler, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
+    if not log_level.upper() in ["debug", "info", "warning", "error", "critical", "exception"]:
+        log_level = "info"
+    if not tenant:
+        tenant = handler_klass.get_tenant_name()
+    log_data = {
+        "function": f"{__name__}.{handler_klass.__class__.__name__}.{sys._getframe().f_code.co_name}",
+        "user-agent": handler_klass.request.headers.get("User-Agent"),
+        "request_id": handler_klass.request_uuid,
+        "account_id": account_id if account_id else "unknown",
+        "role_name": role_name if role_name else "unknown",
+        "tenant": tenant,
+    }
+    log_data.update(kwargs)  # Add any other log data
+    if log_level.upper() in ["ERROR", "CRITICAL", "EXCEPTION"]:
+        log_data["exception"] = exc
+    getattr(log, getattr(logging, log_level.upper()))(log_data)
+    sentry_sdk.capture_exception(tags={"user": handler_klass.user})
+
+
 class AuthHandler(BaseHandler):
     async def prepare(self):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
-            function: str = (
-                f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
-            )
-            log_data = {
-                "function": function,
-                "message": "Invalid tenant specified. Redirecting to main page",
-                "tenant": tenant,
-            }
-            log.debug(log_data)
+            log_dict_handler("debug", self, tenant=tenant)
             self.set_status(403)
             self.write(
                 {
@@ -78,7 +92,6 @@ class CognitoAuthHandler(AuthHandler):
         self.set_header("Content-Type", "application/json")
 
     async def post(self, *args, **kwargs):
-        log.info("CognitoAuthHandler attemps to authenticate via Cognito JWT")
         await self.initialize_auth()
         try:
             body = json.loads(self.request.body)
@@ -93,7 +106,7 @@ class CognitoAuthHandler(AuthHandler):
             )
             return self.finish()
         except Exception as exc:
-            log.exception(exc)
+            log_dict_handler("exception", self, exc=exc)
             self.write(
                 {
                     "type": "redirect",
