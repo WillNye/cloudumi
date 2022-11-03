@@ -67,8 +67,6 @@ jobs:
           pip install pre-commit
           pip install \
             -r requirements.lock
-          pip install \
-            -r requirements-test.lock \
           pip install .
           yarn --cwd frontend install
           yarn --cwd frontend build_template

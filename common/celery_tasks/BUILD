@@ -88,7 +88,7 @@ py_binary(
     main = "run.py",
     env = {
         "CONFIG_LOCATION": "configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "NoqSaasRoleLocalDev",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "AWS_REGION": "us-west-2",
         "RUNTIME_PROFILE": "CELERY_WORKER_TEST",
     },
