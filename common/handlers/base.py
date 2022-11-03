@@ -453,14 +453,14 @@ class BaseHandler(TornadoRequestHandler):
 
         # if tenant in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
-        if not self.user or config.get("_global_.development") and config.get_tenant_specific_key(
+        if config.get("_global_.development") and config.get_tenant_specific_key(
             "_development_user_override", tenant
         ):
             self.user = config.get_tenant_specific_key(
                 "_development_user_override", tenant
             )
 
-        if not self.user and jwt_tokens is not None:
+        if not self.user and jwt_tokens:
             # Cognito JWT Validation / Authentication Flow
             tenant = self.get_tenant_name()
 

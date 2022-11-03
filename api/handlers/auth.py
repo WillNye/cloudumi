@@ -15,7 +15,7 @@ from common.lib.plugins import get_plugin_by_name
 log = config.get_logger()
 
 
-def log_dict(log_level: str, handler_klass: BaseHandler, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
+def log_dict_handler(log_level: str, handler_klass: BaseHandler, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
     if not log_level.upper() in ["debug", "info", "warning", "error", "critical", "exception"]:
         log_level = "info"
     if not tenant:
@@ -39,7 +39,7 @@ class AuthHandler(BaseHandler):
     async def prepare(self):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
-            log_dict("debug", self, tenant=tenant)
+            log_dict_handler("debug", self, tenant=tenant)
             self.set_status(403)
             self.write(
                 {
@@ -106,7 +106,7 @@ class CognitoAuthHandler(AuthHandler):
             )
             return self.finish()
         except Exception as exc:
-            log_dict("exception", self, exc=exc)
+            log_dict_handler("exception", self, exc=exc)
             self.write(
                 {
                     "type": "redirect",

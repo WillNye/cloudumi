@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
 from enum import Enum
+import logging
+import sys
 
 import jwt
+import sentry_sdk
 
 from common.config import config
 from common.lib.asyncio import aio_wrapper
@@ -9,6 +12,22 @@ from common.lib.cognito.jwt.jwt_async import decode_async
 from common.lib.tenant.models import TenantDetails
 
 log = config.get_logger()
+
+
+def log_dict_func(log_level: str, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
+    if not log_level.upper() in ["debug", "info", "warning", "error", "critical", "exception"]:
+        log_level = "info"
+    log_data = {
+        "function": f"{__name__}.{sys._getframe(1).f_code.co_name}",
+        "account_id": account_id if account_id else "unknown",
+        "role_name": role_name if role_name else "unknown",
+        "tenant": tenant,
+    }
+    log_data.update(kwargs)  # Add any other log data
+    if log_level.upper() in ["ERROR", "CRITICAL", "EXCEPTION"]:
+        log_data["exception"] = exc
+    getattr(log, getattr(logging, log_level.upper()))(log_data)
+    sentry_sdk.capture_exception(tags={})
 
 
 class JwtAuthType(Enum):
@@ -157,12 +176,8 @@ async def validate_and_authenticate_jwt_token(jwt_tokens: dict, tenant: str, jwt
         
         try:
             verified_claims: dict = await decode_async(id_token, region, userpool_id, app_client_id)
-        except jwt.exceptions.JWTDecodeError as exc:
-            log.warning(f"Invalid JWT token: {id_token}")
-            log.exception(exc)
-            return {}
         except Exception as exc:
-            log.exception(exc)
+            log_dict_func("exception", tenant=tenant, exc=exc, jwt_auth_type=jwt_auth_type.name)
             return {}
         
         return verified_claims
