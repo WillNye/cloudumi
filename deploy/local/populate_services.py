@@ -7,7 +7,7 @@ from asgiref.sync import async_to_sync
 os.environ.setdefault(
     "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
 )
-os.environ.setdefault("AWS_PROFILE", "NoqSaasRoleLocalDev")
+os.environ.setdefault("AWS_PROFILE", "development/NoqSaasRoleLocalDev")
 override_email = os.getenv("OVERRIDE_EMAIL", "user@noq.dev")
 
 import common.scripts.initialize_dynamodb  # noqa: F401, E402
