@@ -164,6 +164,7 @@ class ModelAdapter:
         for item in config_items:
             if self.__objects_similar(item, query, compare_on):
                 _model_array.append(self.__validate_and_return_model(item))
+        return _model_array
 
 
     def load_config(self, key: str, tenant: str = None, default: Any = None) -> object:
