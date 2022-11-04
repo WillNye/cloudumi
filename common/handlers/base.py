@@ -462,13 +462,7 @@ class BaseHandler(TornadoRequestHandler):
                     self.get_noq_auth_cookie_key(),
                     encoded_cookie,
                     expires=verified_claims.get("exp"),
-                    secure=config.get_tenant_specific_key(
-                        "auth.cookie.secure",
-                        tenant,
-                        True
-                        if "https://" in config.get_tenant_specific_key("url", tenant)
-                        else False,
-                    ),
+                    secure=config.get_tenant_specific_key("auth.cookie.secure", tenant, True),
                     httponly=config.get_tenant_specific_key(
                         "auth.cookie.httponly", tenant, True
                     ),

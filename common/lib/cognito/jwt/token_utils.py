@@ -15,8 +15,8 @@ async def get_unverified_claims(token: str) -> dict:
     return jwt.get_unverified_claims(token)
 
 
-async def check_expired(exp: int, testmode: bool = False) -> None:
-    if time.time() > exp and not testmode:
+async def check_expired(exp: int) -> None:
+    if time.time() > exp:
         raise CognitoJWTException('Token is expired')
 
 

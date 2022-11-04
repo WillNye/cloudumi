@@ -28,7 +28,7 @@ async def get_public_key_async(token: str, region: str, userpool_id: str):
     kid = headers['kid']
 
     key = list(filter(lambda k: k['kid'] == kid, keys))
-    if not key:
+    if not key or key == "" or key == 0:
         raise CognitoJWTException('Public key not found in jwks.json')
     else:
         key = key[0]
@@ -41,7 +41,6 @@ async def decode_async(
         region: str,
         userpool_id: str,
         app_client_id: Optional[Union[str, Container[str]]] = None,
-        testmode: bool = False
 ) -> Dict:
     message, encoded_signature = str(token).rsplit('.', 1)
 
@@ -53,7 +52,7 @@ async def decode_async(
         raise CognitoJWTException('Signature verification failed')
 
     claims = await get_unverified_claims(token)
-    await check_expired(claims['exp'], testmode=testmode)
+    await check_expired(claims['exp'])
 
     if app_client_id:
         await check_client_id(claims, app_client_id)
