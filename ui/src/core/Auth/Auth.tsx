@@ -15,6 +15,8 @@ import {
 } from './AuthContext';
 import { ChallengeName } from './constants';
 import { User } from './types';
+
+import { getTenantUserpool, setupAPIAuth } from '../API/tenant';
 import { useQuery } from '@apollo/client';
 import { GetTenantUserPoolQuery, GET_TENANT_USERPOOL_QUERY } from 'core/graphql';
 import '../AWS/Amplify';
@@ -30,12 +32,36 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     // updateAmplifyConfig(tenantData);
   }, [tenantData]);
 
+  const configureTenantOnMount = () => {
+    setIsCheckingUser(true);
+    getTenantUserpool()
+      .then(async res => {
+        setIsValidTenant(true);
+
+        // configure amplify based on tenant user pool details
+        // Currently disable because backend development user pool requires a secret that is not supported in Amplify
+        // updateAmplifyConfig(res.data);
+
+        await getAuthenticatedUser();
+      })
+      .catch(error => {
+        setIsValidTenant(false);
+      })
+      .finally(() => {
+        setIsCheckingUser(false);
+      });
+  };
+
+  const getAuthenticatedUser = async () => {
   const getAuthenticatedUser = useCallback(async () => {
     try {
       const user = await AmplifyAuth.currentAuthenticatedUser({
         bypassCache: false
       });
       const session = await AmplifyAuth.currentSession();
+      if (session) {
+        await setupAPIAuth(session)
+      }
       setUser(user);
     } catch ({ message }) {
       throw new Error(`Error getting Authernticated user: ${message}`);
@@ -126,20 +152,6 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     },
     [user, getAuthenticatedUser, navigate]
   );
-
-  const authBackend = useCallback(
-    async () => {
-      // Authenticate with the backend
-      const session = await AmplifyAuth.currentSession();
-      // Note on headers below - most browsers now implement Referrer Policy: strict-origin-when-cross-origin
-      // and only specific headers are allowed: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-      const res = await axios.post(`/api/v1/auth/cognito`, {jwtToken: session}, {  // TODO: this will have to be un-hardcoded
-        headers: {
-          'Content-Type': 'application/json',
-        }, withCredentials: true
-      })
-    },[]
-  )
 
   const login = useCallback(
     async ({ username, password }: AuthLoginInputs) => {
