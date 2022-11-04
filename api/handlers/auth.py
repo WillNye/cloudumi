@@ -15,15 +15,15 @@ from common.lib.plugins import get_plugin_by_name
 log = config.get_logger()
 
 
-def log_dict_handler(log_level: str, handler_klass: BaseHandler, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
+def log_dict_handler(log_level: str, handler_class: BaseHandler, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
     if not log_level.upper() in ["debug", "info", "warning", "error", "critical", "exception"]:
         log_level = "info"
     if not tenant:
-        tenant = handler_klass.get_tenant_name()
+        tenant = handler_class.get_tenant_name()
     log_data = {
-        "function": f"{__name__}.{handler_klass.__class__.__name__}.{sys._getframe().f_code.co_name}",
-        "user-agent": handler_klass.request.headers.get("User-Agent"),
-        "request_id": handler_klass.request_uuid,
+        "function": f"{__name__}.{handler_class.__class__.__name__}.{sys._getframe().f_code.co_name}",
+        "user-agent": handler_class.request.headers.get("User-Agent"),
+        "request_id": handler_class.request_uuid,
         "account_id": account_id if account_id else "unknown",
         "role_name": role_name if role_name else "unknown",
         "tenant": tenant,
@@ -32,7 +32,7 @@ def log_dict_handler(log_level: str, handler_klass: BaseHandler, account_id: str
     if log_level.upper() in ["ERROR", "CRITICAL", "EXCEPTION"]:
         log_data["exception"] = exc
     getattr(log, getattr(logging, log_level.upper()))(log_data)
-    sentry_sdk.capture_exception(tags={"user": handler_klass.user})
+    sentry_sdk.capture_exception(tags={"user": handler_class.user})
 
 
 class AuthHandler(BaseHandler):

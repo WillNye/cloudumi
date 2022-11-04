@@ -23,7 +23,7 @@ class BaseException(Exception):
         return self.msg
 
 
-class CognitoJWTException(Exception):
+class CognitoJWTException(BaseException):
     """Raised when something went wrong in token verification proccess"""
 
 

@@ -26,7 +26,10 @@ def log_dict_func(log_level: str, account_id: str = None, role_name: str = None,
     log_data.update(kwargs)  # Add any other log data
     if log_level.upper() in ["ERROR", "CRITICAL", "EXCEPTION"]:
         log_data["exception"] = exc
-    getattr(log, getattr(logging, log_level.upper()))(log_data)
+    if log_level.upper() == "EXCEPTION":
+        getattr(log, getattr(logging, log_level))(log_data, exc_info=True)
+    else:
+        getattr(log, getattr(logging, log_level.upper()))(log_data)
     sentry_sdk.capture_exception(tags={})
 
 

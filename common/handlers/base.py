@@ -256,16 +256,6 @@ class BaseHandler(TornadoRequestHandler):
         await self.initialize_auth()
         return await self.authorization_flow()
 
-    def write(self, chunk: Union[str, bytes, dict]) -> None:
-        # tenant = self.get_tenant_name()
-        # if config.get_tenant_specific_key(
-        #     "_security_risk_full_debugging.enabled", tenant
-        # ):
-        #     if not hasattr(self, "responses"):
-        #         self.responses = []
-        #     self.responses.append(chunk)
-        super(BaseHandler, self).write(chunk)
-
     async def check_tenant(self):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
