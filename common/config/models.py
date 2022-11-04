@@ -149,23 +149,30 @@ class ModelAdapter:
         try:
             _model = self._model_class.parse_obj(config_item)
         except Exception as exc:
-            logger.log_dict_func("exception", tenant=self._tenant, exc=exc, key=self._key, model=config_item)
+            logger.log_dict_func(
+                "exception",
+                tenant=self._tenant,
+                exc=exc,
+                key=self._key,
+                model=config_item,
+            )
         finally:
             return _model
-        
+
     def __validate_and_return_models(self, config_items: List[dict]) -> List[BaseModel]:
         _model_array = []
         for config_item in config_items:
             _model_array.append(self.__validate_and_return_model(config_item))
         return _model_array
 
-    def __validate_and_return_models_if_similar(self, config_items: List[dict], query: Dict[str, Any], compare_on: List[str]) -> List[BaseModel]:
+    def __validate_and_return_models_if_similar(
+        self, config_items: List[dict], query: Dict[str, Any], compare_on: List[str]
+    ) -> List[BaseModel]:
         _model_array = []
         for item in config_items:
             if self.__objects_similar(item, query, compare_on):
                 _model_array.append(self.__validate_and_return_model(item))
         return _model_array
-
 
     def load_config(self, key: str, tenant: str = None, default: Any = None) -> object:
         """Required to be run before using any other functions."""
@@ -339,7 +346,9 @@ class ModelAdapter:
             return self.__objects_similar(config_item, query)
         elif isinstance(config_item, list):
             compare_on = list(query.keys())
-            return self.__validate_and_return_models_if_similar(config_item, query, compare_on)
+            return self.__validate_and_return_models_if_similar(
+                config_item, query, compare_on
+            )
         else:
             return None
 
