@@ -27,9 +27,6 @@ def log_dict_func(log_level: str, account_id: str = None, role_name: str = None,
 
 def log_dict_handler(log_level: str, handler_class: object, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
     if not log_level.upper() in ["debug", "info", "warning", "error", "critical", "exception"]:
-        log_level = "info"
-    if not tenant:
-        tenant = handler_class.get_tenant_name()
     log_data = {
         "function": f"{__name__}.{handler_class.__class__.__name__}.{sys._getframe().f_code.co_name}",
         "user-agent": handler_class.request.headers.get("User-Agent"),
