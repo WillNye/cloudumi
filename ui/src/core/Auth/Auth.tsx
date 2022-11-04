@@ -15,41 +15,22 @@ import {
 } from './AuthContext';
 import { ChallengeName } from './constants';
 import { User } from './types';
-
-import { getTenantUserpool } from '../API/tenant';
+import { useQuery } from '@apollo/client';
+import { GetTenantUserPoolQuery, GET_TENANT_USERPOOL_QUERY } from 'core/graphql';
 import '../AWS/Amplify';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isCheckingUser, setIsCheckingUser] = useState(true);
-  const [isValidTenant, setIsValidTenant] = useState(true);
   const navigate = useNavigate();
+  const { loading, error: tenantError, data: tenantData } = useQuery<GetTenantUserPoolQuery>(GET_TENANT_USERPOOL_QUERY);
 
-  useEffect(function onMount() {
-    configureTenantOnMount();
-  }, []);
+  useEffect(() => {
+    // Configure amplify based on tenant user pool details
+    // NOTE: Disabled due to cognito secret not supported by amplify
+    // updateAmplifyConfig(tenantData);
+  }, [tenantData]);
 
-  const configureTenantOnMount = async () => {
-    setIsCheckingUser(true);
-    getTenantUserpool()
-      .then(async res => {
-        setIsValidTenant(true);
-
-        // configure amplify based on tenant user pool details
-        // Currently disable because backend development user pool requires a secret that is not supported in Amplify
-        // updateAmplifyConfig(res.data);
-
-        await getAuthenticatedUser();
-      })
-      .catch(error => {
-        setIsValidTenant(false);
-      })
-      .finally(() => {
-        setIsCheckingUser(false);
-      });
-  };
-
-  const getAuthenticatedUser = async () => {
+  const getAuthenticatedUser = useCallback(async () => {
     try {
       const user = await AmplifyAuth.currentAuthenticatedUser({
         bypassCache: true
@@ -58,7 +39,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     } catch ({ message }) {
       throw new Error(`Error getting Authernticated user: ${message}`);
     }
-  };
+  }, []);
 
   const setupTOTP = useCallback(async () => {
     try {
@@ -93,7 +74,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         throw new Error(`Error setting up MFA: ${message}`);
       }
     },
-    [user, navigate]
+    [user, getAuthenticatedUser, navigate]
   );
 
   const confirmSignIn = useCallback(
@@ -110,7 +91,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         throw new Error(`Error confirming signing in: ${message}`);
       }
     },
-    [user, navigate]
+    [user, getAuthenticatedUser, navigate]
   );
 
   const completeNewPassword = useCallback(
@@ -126,7 +107,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         throw new Error(`Error changing password: ${message}`);
       }
     },
-    [user, navigate]
+    [user, getAuthenticatedUser, navigate]
   );
 
   const changePassword = useCallback(
@@ -142,7 +123,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         throw new Error(`Error changing password: ${message}`);
       }
     },
-    [user, navigate]
+    [user, getAuthenticatedUser, navigate]
   );
 
   const login = useCallback(
@@ -196,12 +177,13 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     ]
   );
 
-  if (isCheckingUser) {
+  // NOTE: I don't think we should put these 2 loading/invalid checks here
+  if (loading) {
     // check is user data is available
     return <div>Loading...</div>;
   }
 
-  if (!isValidTenant) {
+  if (!tenantError) {
     // Invalid Tenant component
     return (
       <div>

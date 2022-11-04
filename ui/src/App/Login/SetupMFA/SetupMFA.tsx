@@ -1,8 +1,9 @@
 import { useAuth } from 'core/Auth';
 import { AuthenticationFlowType } from 'core/Auth/constants';
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate } from 'react-router-dom';
+import { useMount } from 'react-use';
 import { QRCode } from 'shared/elements/QRCode';
 import { AuthCode } from 'shared/form/AuthCode';
 
@@ -15,15 +16,14 @@ export const SetupMFA: FC = () => {
   const { setupTOTP, verifyTotpToken, user } = useAuth();
 
   // TODO: Hookup backend
-
   const getTOTPCode = useCallback(async () => {
     const code = await setupTOTP();
     setTotpCode(code);
   }, [setupTOTP]);
 
-  useEffect(function onMount() {
+  useMount(() => {
     getTOTPCode();
-  }, []);
+  });
 
   const verifyTOTPCode = useCallback(
     async (val: string) => {
