@@ -6,6 +6,8 @@ import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import css from './Credentials.module.css';
 import { Navigate } from 'react-router-dom';
+import { MotionGroup, MotionItem } from 'reablocks';
+import { ReactComponent as Logo } from 'assets/brand/logo-bw.svg';
 
 const credentialsSchema = Yup.object().shape({
   username: Yup.string().email('Invalid email').required('Required'),
@@ -46,23 +48,27 @@ export const Credentials: FC = () => {
       <Helmet>
         <title>Login</title>
       </Helmet>
-      <div className={css.container}>
-        <h1>Login</h1>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <input autoFocus type="email" {...register('username')} />
+      <MotionGroup className={css.container}>
+        <MotionItem className={css.box}>
+          <Logo />
           <br />
-          <input
-            type="password"
-            autoCapitalize="none"
-            autoCorrect="off"
-            {...register('password')}
-          />
-          <br />
-          <button type="submit" disabled={isSubmitting || !isValid}>
-            {isSubmitting ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-      </div>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <input autoFocus type="email" {...register('username')} />
+            <br />
+            <input
+              type="password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              {...register('password')}
+            />
+            <br />
+            <br />
+            <button type="submit" disabled={isSubmitting || !isValid}>
+              {isSubmitting ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+        </MotionItem>
+      </MotionGroup>
     </>
   );
 };
