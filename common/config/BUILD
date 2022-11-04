@@ -2,12 +2,25 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_python//python:packaging.bzl", "py_wheel")
 load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
+DEPS = [
+    "//common/lib",
+    requirement("asgiref"),
+    requirement("boto3"),
+    requirement("botocore"),
+    requirement("logmatic-python"),
+    requirement("pytz"),
+    requirement("ruamel.yaml"),
+    requirement("sentry_sdk"),
+    requirement("ujson"),
+]
+
 filegroup(
     name = "src_files",
     srcs = (
         "__init__.py",
         "config.py",
         "ip_restrictions.py",
+        "logger.py",
         "models.py",
         "role_access.py",
     ),
@@ -31,17 +44,7 @@ py_library(
     srcs = [
         ":src_files",
     ],
-    deps = [
-        "//common/lib",
-        requirement("boto3"),
-        requirement("botocore"),
-        requirement("logmatic-python"),
-        requirement("sentry_sdk"),
-        requirement("ujson"),
-        requirement("asgiref"),
-        requirement("pytz"),
-        requirement("ruamel.yaml"),
-    ],
+    deps = DEPS,
     visibility = ["//visibility:public"],
 )
 

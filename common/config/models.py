@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Type, Union
 
-from common.config import config
+from common.config import config, logger
+from common.lib import pydantic
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.pydantic import BaseModel
 from common.lib.yaml import yaml
@@ -144,6 +145,28 @@ class ModelAdapter:
         )
         return config_item
 
+    def __validate_and_return_model(self, config_item: dict) -> BaseModel:
+        _model = None
+        try:
+            _model = self._model_class.parse_obj(config_item)
+        except Exception as exc:
+            logger.log_dict_func("exception", tenant=self._tenant, exc=exc, key=self._key, model=config_item)
+        finally:
+            return _model
+        
+    def __validate_and_return_models(self, config_items: List[dict]) -> List[BaseModel]:
+        _model_array = []
+        for config_item in config_items:
+            _model_array.append(self.__validate_and_return_model(config_item))
+        return _model_array
+
+    def __validate_and_return_models_if_similar(self, config_items: List[dict], query: Dict[str, Any], compare_on: List[str]) -> List[BaseModel]:
+        _model_array = []
+        for item in config_items:
+            if self.__objects_similar(item, query, compare_on):
+                _model_array.append(self.__validate_and_return_model(item))
+
+
     def load_config(self, key: str, tenant: str = None, default: Any = None) -> object:
         """Required to be run before using any other functions."""
         self._key = key
@@ -151,10 +174,10 @@ class ModelAdapter:
         self._default = default
         config_item = self.__optimistic_loader(key, tenant, default)
         if config_item and isinstance(config_item, dict):
-            self._model = self._model_class.parse_obj(config_item)
+            self._model = self.__validate_and_return_model(config_item)
             self._model_content = "one"
         elif config_item and isinstance(config_item, list):
-            self._model_array = [self._model_class.parse_obj(x) for x in config_item]
+            self._model_array = self.__validate_and_return_models(config_item)
             self._model_content = "many"
         else:
             self._model_content = "none"
@@ -170,7 +193,7 @@ class ModelAdapter:
             self._model_array.pop(
                 [x.dict() for x in self._model_array].index(model_dict)
             )
-        self._model_array.append(self._model_class.parse_obj(model_dict))
+        self._model_array.append(self.__validate_and_return_model(model_dict))
         return self
 
     def extend_list(self, model_dict_list: list) -> object:
@@ -179,9 +202,7 @@ class ModelAdapter:
         :param model_dict_list: a list of models in dictionary representation
         :return: itself
         """
-        self._model_array.extend(
-            [self._model_class.parse_obj(x) for x in model_dict_list]
-        )
+        self._model_array.extend(self.__validate_and_return_models(model_dict_list))
         return self
 
     def from_model(self, model: BaseModel) -> object:
@@ -194,11 +215,11 @@ class ModelAdapter:
         return self
 
     def from_dict(self, model_dict: dict) -> object:
-        self._model = self._model_class.parse_obj(model_dict)
+        self._model = self.__validate_and_return_model(model_dict)
         return self
 
     def from_list(self, model_dict_list: list) -> object:
-        self._model_array = [self._model_class.parse_obj(x) for x in model_dict_list]
+        self._model_array = self.__validate_and_return_models(model_dict_list)
         return self
 
     @property
@@ -318,11 +339,7 @@ class ModelAdapter:
             return self.__objects_similar(config_item, query)
         elif isinstance(config_item, list):
             compare_on = list(query.keys())
-            return [
-                self._model_class.parse_obj(x)
-                for x in config_item
-                if self.__objects_similar(x, query, compare_on=compare_on)
-            ]
+            return self.__validate_and_return_models_if_similar(config_item, query, compare_on)
         else:
             return None
 
