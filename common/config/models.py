@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Type, Union
 
 from common.config import config, logger
-from common.lib import pydantic
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.pydantic import BaseModel
 from common.lib.yaml import yaml

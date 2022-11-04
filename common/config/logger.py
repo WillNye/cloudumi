@@ -2,7 +2,6 @@ import logging
 import sys
 import sentry_sdk
 from common.config import config
-from common.handlers.base import BaseHandler
 
 log = config.get_logger()
 
@@ -26,7 +25,7 @@ def log_dict_func(log_level: str, account_id: str = None, role_name: str = None,
     sentry_sdk.capture_exception(tags={})
 
 
-def log_dict_handler(log_level: str, handler_class: BaseHandler, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
+def log_dict_handler(log_level: str, handler_class: object, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
     if not log_level.upper() in ["debug", "info", "warning", "error", "critical", "exception"]:
         log_level = "info"
     if not tenant:
