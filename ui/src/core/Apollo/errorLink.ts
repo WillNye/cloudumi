@@ -2,7 +2,7 @@ import { ServerError } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 import * as Sentry from '@sentry/browser';
 
-export const errorLink = history =>
+export const errorLink = navigate =>
   onError(({ graphQLErrors, networkError }) => {
     if (graphQLErrors) {
       graphQLErrors.forEach(({ message, locations, path }) => {
@@ -27,7 +27,7 @@ export const errorLink = history =>
 
       // If we get a 401, let's redirect to the login page
       if ((networkError as ServerError).statusCode === 401) {
-        history.push('/login');
+        navigate('/login');
       }
     }
   });

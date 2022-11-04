@@ -6,11 +6,14 @@ import { errorLink } from './errorLink';
 import { httpLink } from './httpLink';
 import { authLink } from './authLink';
 import { restLink } from './restLink';
+import { useNavigate } from 'react-router-dom';
 
 export const ApolloProvider: FC<PropsWithChildren> = ({ children }) => {
+  const navigate = useNavigate();
+
   const client = useMemo(() => {
     const link = ApolloLink.from([
-      errorLink(history),
+      errorLink(navigate),
       authLink(),
       restLink,
       httpLink
@@ -34,7 +37,7 @@ export const ApolloProvider: FC<PropsWithChildren> = ({ children }) => {
         }
       }
     });
-  }, [history]);
+  }, [navigate]);
 
   return (
     <ExternalApolloProvider client={client}>{children}</ExternalApolloProvider>
