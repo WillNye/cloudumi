@@ -16,43 +16,38 @@ import {
 import { ChallengeName } from './constants';
 import { User } from './types';
 
-import { getTenantUserpool, setupAPIAuth } from '../API/tenant';
-import { useQuery } from '@apollo/client';
-import { GetTenantUserPoolQuery, GET_TENANT_USERPOOL_QUERY } from 'core/graphql';
+import { useQuery, useMutation } from '@apollo/client';
+import {
+  AUTHENTICATE_NOQ_API_QUERY,
+  GetTenantUserPoolQuery,
+  GET_TENANT_USERPOOL_QUERY
+} from 'core/graphql';
 import '../AWS/Amplify';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
-  const { loading, error: tenantError, data: tenantData } = useQuery<GetTenantUserPoolQuery>(GET_TENANT_USERPOOL_QUERY);
+  const {
+    loading,
+    error: tenantError,
+    data: tenantData
+  } = useQuery<GetTenantUserPoolQuery>(GET_TENANT_USERPOOL_QUERY);
+  const [setupAPIAuth] = useMutation(
+    AUTHENTICATE_NOQ_API_QUERY
+  );
 
   useEffect(() => {
-    // Configure amplify based on tenant user pool details
-    // NOTE: Disabled due to cognito secret not supported by amplify
-    // updateAmplifyConfig(tenantData);
+    // if (tenantData) {
+      // Configure amplify based on tenant user pool details
+      // NOTE: Disabled due to cognito secret not supported by amplify
+      // updateAmplifyConfig(tenantData);
+
+      // Check if user is already logged in
+      getAuthenticatedUser();
+    // }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantData]);
 
-  const configureTenantOnMount = () => {
-    setIsCheckingUser(true);
-    getTenantUserpool()
-      .then(async res => {
-        setIsValidTenant(true);
-
-        // configure amplify based on tenant user pool details
-        // Currently disable because backend development user pool requires a secret that is not supported in Amplify
-        // updateAmplifyConfig(res.data);
-
-        await getAuthenticatedUser();
-      })
-      .catch(error => {
-        setIsValidTenant(false);
-      })
-      .finally(() => {
-        setIsCheckingUser(false);
-      });
-  };
-
-  const getAuthenticatedUser = async () => {
   const getAuthenticatedUser = useCallback(async () => {
     try {
       const user = await AmplifyAuth.currentAuthenticatedUser({
@@ -60,13 +55,13 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       });
       const session = await AmplifyAuth.currentSession();
       if (session) {
-        await setupAPIAuth(session)
+        await setupAPIAuth({ variables: { input: session } });
       }
       setUser(user);
     } catch ({ message }) {
       throw new Error(`Error getting Authernticated user: ${message}`);
     }
-  }, []);
+  }, [setupAPIAuth]);
 
   const setupTOTP = useCallback(async () => {
     try {
@@ -163,16 +158,16 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         // here is how you get that ->
         // const { idToken: { jwtToken } } = await Auth.currentSession();
         setUser(awsUser);
-        const session = await AmplifyAuth.currentSession()
+        const session = await AmplifyAuth.currentSession();
         if (session) {
-          await setupAPIAuth(session)
+          await setupAPIAuth({ variables: { session } });
         }
         navigate('/');
       } catch ({ message }) {
         throw new Error(`Error logging in: ${message}`);
       }
     },
-    [navigate]
+    [navigate, setupAPIAuth]
   );
 
   const logout = useCallback(async () => {
