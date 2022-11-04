@@ -1,5 +1,9 @@
 import { FC, useMemo, PropsWithChildren } from 'react';
-import { ApolloClient, ApolloProvider as ExternalApolloProvider, ApolloLink } from '@apollo/client';
+import {
+  ApolloClient,
+  ApolloProvider as ExternalApolloProvider,
+  ApolloLink
+} from '@apollo/client';
 
 import { cache } from './cache';
 import { errorLink } from './errorLink';
