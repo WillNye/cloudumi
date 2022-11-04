@@ -6,7 +6,7 @@
 
   color-scheme: dark;
   color: white;
-  background-color: #0B1846;
+  background-color: #1C1D22;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -32,6 +32,14 @@ body {
   margin: 0;
   display: flex;
   min-height: 100vh;
+}
+
+input {
+  background: black;
+  outline: none;
+  border: none;
+  border-radius: 2px;
+  padding: 5px;
 }
 
 h1 {
