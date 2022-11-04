@@ -450,9 +450,6 @@ class RedisHandler:
         self.password = password
 
     async def redis(self, tenant, db: int = 0) -> Redis:
-        print(os.path.exists(self.ssl_ca_certs))
-        print(os.path.abspath(self.ssl_ca_certs))
-        print(self.password)
         if cluster_mode:
             self.red = await aio_wrapper(
                 ConsoleMeRedis,
