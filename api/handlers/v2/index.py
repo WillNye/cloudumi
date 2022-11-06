@@ -15,6 +15,7 @@ from common.lib.aws.cached_resources.iam import (
     get_user_active_tra_roles_by_tag,
 )
 from common.lib.loader import WebpackLoader
+from common.lib.request_context.models import RequestContext
 from common.models import DataTableResponse, WebResponse
 from common.user_request.models import IAMRequest
 
@@ -306,6 +307,9 @@ class FrontendHandler(AuthenticatedStaticFileHandler):
 
 
 class UnauthenticatedFileHandler(StaticFileHandler):
+    def initialize(self, **kwargs) -> None:
+        super(StaticFileHandler, self).initialize(**kwargs)
+
     def validate_absolute_path(self, root, absolute_path):
         try:
             return super().validate_absolute_path(root, absolute_path)

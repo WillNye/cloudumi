@@ -378,8 +378,8 @@ def make_app(jwt_validator=None):
     if config.get("_global_.development"):
         routes[:0] = [
                 ("/api/v3/slack/events", SlackEventsHandler, dict(app=slack_app)),
-                ("/api/v3/slack/install", SlackOAuthHandler, dict(app=slack_app)),
-                ("/api/v3/slack/oauth_redirect", SlackOAuthHandler, dict(app=slack_app)),
+                ("/api/v3/slack/install/?(.*)", SlackOAuthHandler, dict(app=slack_app)),
+                ("/api/v3/slack/oauth_redirect/?(.*)", SlackOAuthHandler, dict(app=slack_app)),
                 ]
 
     router = RuleRouter(routes)

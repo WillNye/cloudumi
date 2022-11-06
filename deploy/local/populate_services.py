@@ -120,7 +120,7 @@ headers:
     enabled: false
   role_login:
     enabled: true
-url: http://localhost:8092
+url: https://localhost
 application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
