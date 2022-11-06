@@ -227,3 +227,19 @@ AWS_PROFILE=staging/staging_admin ecs-tunnel -L 7101:7101 -c staging-noq-dev-sha
 ```bash
 AWS_PROFILE=prod/prod_admin ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 6a26122f6fdb4aeda3fdb3b62124b70e --region us-west-2
 ```
+
+## Create a new Tenant
+
+Go to Postman, and login as engineering@noq.dev
+
+- In your CLI, generate a registratin code for the user
+
+  ```bash
+  # Substitute email below with the e-mail of the registrant
+  python -c 'import hashlib ; email="curtis@noq.dev"; print(hashlib.sha256(f"noq_tenant_{email}".encode()).hexdigest()[0:20])'
+  ```
+
+- Find the `Tenant Registration Request` Request
+- Change the appropriate parameters, including registration_code
+- Select the `Prod Tenant Registration (Shared)` Environment
+- Submit your request
