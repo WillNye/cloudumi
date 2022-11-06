@@ -357,7 +357,7 @@ class CognitoUserSetupMFA(BaseHandler):
                 email=self.user,
             )
             self.mfa_setup = None
-            
+
             await self.clear_jwt_cookie()
 
             self.write(

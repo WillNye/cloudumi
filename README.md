@@ -233,7 +233,7 @@ AWS_PROFILE=prod/prod_admin ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 
 Go to Postman, and login as engineering@noq.dev
 
 - In your CLI, generate a registratin code for the user
-  
+
   ```bash
   # Substitute email below with the e-mail of the registrant
   python -c 'import hashlib ; email="curtis@noq.dev"; print(hashlib.sha256(f"noq_tenant_{email}".encode()).hexdigest()[0:20])'
