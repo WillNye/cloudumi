@@ -374,16 +374,20 @@ def make_app(jwt_validator=None):
         (r"/api/v2/.*", V2NotFoundHandler),
     ]
     # TODO: fix:
-        
+
     if config.get("_global_.development"):
         routes[:0] = [
-                ("/api/v3/slack/events", SlackEventsHandler, dict(app=slack_app)),
-                ("/api/v3/slack/install/?(.*)", SlackOAuthHandler, dict(app=slack_app)),
-                ("/api/v3/slack/oauth_redirect/?(.*)", SlackOAuthHandler, dict(app=slack_app)),
-                ]
+            ("/api/v3/slack/events", SlackEventsHandler, dict(app=slack_app)),
+            ("/api/v3/slack/install/?(.*)", SlackOAuthHandler, dict(app=slack_app)),
+            (
+                "/api/v3/slack/oauth_redirect/?(.*)",
+                SlackOAuthHandler,
+                dict(app=slack_app),
+            ),
+        ]
 
     router = RuleRouter(routes)
-    
+
     for domain in config.get("_global_.landing_page_domains", []):
         router.rules.append(
             Rule(

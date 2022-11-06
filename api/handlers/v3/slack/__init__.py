@@ -6,6 +6,7 @@ class SlackIntegrationConfigurationCrudHandler(ConfigurationCrudHandler):
     _model_class = SlackIntegration
     _config_key = "slack"
 
+
 # import os
 # from slack_bolt.async_app import AsyncApp
 # from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
