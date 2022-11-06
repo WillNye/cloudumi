@@ -247,8 +247,12 @@ async def get_resource_history(
         related_arns = set()
         managed_arns = set()
 
-        for config_change in configuration_changes:
-            config_change = config_change["config_change"].get("configuration", {})
+        for full_config_change in configuration_changes:
+            if full_config_change.get("config_change", {}).get("configurationItemStatus") == "ResourceNotRecorded":
+                continue 
+            config_change = full_config_change["config_change"].get("configuration", {})
+            if config_change == "null" or not config_change:
+                continue
             for managed_policy in config_change.get("attachedManagedPolicies", []):
                 arn = managed_policy["policyArn"]
                 if is_tenant_policy(arn):
