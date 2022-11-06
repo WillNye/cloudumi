@@ -1,7 +1,6 @@
 from tornado.web import Finish
 
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
-from common.lib.jwt import validate_and_return_jwt_token
 from common.lib.tenant.models import TenantDetails
 from common.lib.tenant.utils import get_eula
 from common.models import EulaModel, TenantDetailsModel, WebResponse
