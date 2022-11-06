@@ -105,7 +105,7 @@ const TempPolicyEscalationModal = ({
                 </p>
                 <p>
                   Your request will be routed to the appropriate approvers,
-                  or self-approved based on the Temporary Role Access rules 
+                  or self-approved based on the Temporary Role Access rules
                   that your organization has configured. More information is
                   available in our {' '}
                   <a href='/docs/features/permissions_management_and_request_framework/temporary_role_access/'>
