@@ -248,8 +248,13 @@ async def get_resource_history(
         managed_arns = set()
 
         for full_config_change in configuration_changes:
-            if full_config_change.get("config_change", {}).get("configurationItemStatus") == "ResourceNotRecorded":
-                continue 
+            if (
+                full_config_change.get("config_change", {}).get(
+                    "configurationItemStatus"
+                )
+                == "ResourceNotRecorded"
+            ):
+                continue
             config_change = full_config_change["config_change"].get("configuration", {})
             if config_change == "null" or not config_change:
                 continue
