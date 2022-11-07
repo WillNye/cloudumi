@@ -5,7 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import css from './Dashboard.module.css';
 
 const Dashboard: FC = () => {
-  const {logout} = useAuth()
+  const { logout } = useAuth();
 
   return (
     <>
