@@ -16,15 +16,13 @@ module.exports = {
   features: {
     storyStoreV7: true
   },
-  viteFinal: config => mergeConfig(config, {
-    plugins: [
-      svgr(),
-      tsconfigPaths()
-    ],
-    css: {
-      modules: {
-        generateScopedName: '[name]-[local]'
+  viteFinal: config =>
+    mergeConfig(config, {
+      plugins: [svgr(), tsconfigPaths()],
+      css: {
+        modules: {
+          generateScopedName: '[name]-[local]'
+        }
       }
-    }
-  })
+    })
 };

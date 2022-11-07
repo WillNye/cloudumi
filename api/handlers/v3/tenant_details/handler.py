@@ -1,6 +1,5 @@
 from tornado.web import Finish
 
-from common.config import config
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
 from common.lib.tenant.models import TenantDetails
 from common.lib.tenant.utils import get_eula

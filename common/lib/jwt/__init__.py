@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta
-from enum import Enum
 import logging
 import sys
+from datetime import datetime, timedelta
+from enum import Enum
 
 import jwt
 import sentry_sdk
@@ -14,8 +14,22 @@ from common.lib.tenant.models import TenantDetails
 log = config.get_logger()
 
 
-def log_dict_func(log_level: str, account_id: str = None, role_name: str = None, tenant: str = None, exc: dict = {}, **kwargs: dict):
-    if not log_level.upper() in ["debug", "info", "warning", "error", "critical", "exception"]:
+def log_dict_func(
+    log_level: str,
+    account_id: str = None,
+    role_name: str = None,
+    tenant: str = None,
+    exc: dict = {},
+    **kwargs: dict,
+):
+    if not log_level.upper() in [
+        "debug",
+        "info",
+        "warning",
+        "error",
+        "critical",
+        "exception",
+    ]:
         log_level = "info"
     log_data = {
         "function": f"{__name__}.{sys._getframe(1).f_code.co_name}",
@@ -157,7 +171,9 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
         return False
 
 
-async def validate_and_authenticate_jwt_token(jwt_tokens: dict, tenant: str, jwt_auth_type: JwtAuthType) -> dict:
+async def validate_and_authenticate_jwt_token(
+    jwt_tokens: dict, tenant: str, jwt_auth_type: JwtAuthType
+) -> dict:
     """Validate and authenticate a JWT token.
 
     Currently supports:
@@ -171,19 +187,28 @@ async def validate_and_authenticate_jwt_token(jwt_tokens: dict, tenant: str, jwt
     :return: a new JWT token to be used for the SaaS
     """
     if jwt_auth_type == JwtAuthType.COGNITO:
-        region = config.get_tenant_specific_key("secrets.cognito.jwt_auth.user_pool_region", tenant)
-        userpool_id = config.get_tenant_specific_key("secrets.cognito.jwt_auth.user_pool_id", tenant)
-        app_client_id = config.get_tenant_specific_key("secrets.cognito.jwt_auth.user_pool_client_id", tenant)
+        region = config.get_tenant_specific_key(
+            "secrets.cognito.jwt_auth.user_pool_region", tenant
+        )
+        userpool_id = config.get_tenant_specific_key(
+            "secrets.cognito.jwt_auth.user_pool_id", tenant
+        )
+        app_client_id = config.get_tenant_specific_key(
+            "secrets.cognito.jwt_auth.user_pool_client_id", tenant
+        )
 
         id_token = jwt_tokens.get("idToken", {}).get("jwtToken")
-        
+
         try:
-            verified_claims: dict = await decode_async(id_token, region, userpool_id, app_client_id)
+            verified_claims: dict = await decode_async(
+                id_token, region, userpool_id, app_client_id
+            )
         except Exception as exc:
-            log_dict_func("exception", tenant=tenant, exc=exc, jwt_auth_type=jwt_auth_type.name)
+            log_dict_func(
+                "exception", tenant=tenant, exc=exc, jwt_auth_type=jwt_auth_type.name
+            )
             return {}
-        
+
         return verified_claims
-    
+
     return {}
-    

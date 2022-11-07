@@ -35,23 +35,23 @@ export default defineConfig(({ mode, command }) => {
       },
       proxy: {
         '/auth': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         },
         '/noauth': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         },
         '/saml': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         },
         '/api': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         },
         '/docs': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         }
       }

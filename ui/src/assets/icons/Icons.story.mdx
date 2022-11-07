@@ -6,7 +6,7 @@ import { icons, IconDemo } from './IconDemo';
 ## Icons
 
 <style>
-{`
+  {`
   .grid {
     display: grid;
     grid-gap: 15px;
@@ -17,5 +17,7 @@ import { icons, IconDemo } from './IconDemo';
 </style>
 
 <div className="grid">
-  {icons.map(key => <IconDemo key={key.title} {...key} />)}
+  {icons.map(key => (
+    <IconDemo key={key.title} {...key} />
+  ))}
 </div>

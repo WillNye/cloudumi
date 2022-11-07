@@ -7,9 +7,7 @@ import sentry_sdk
 from tornado.web import Finish
 
 from common.config import config
-from common.exceptions.exceptions import SilentException
 from common.handlers.base import BaseHandler, JwtAuthType
-from common.lib.plugins import get_plugin_by_name
 from common.models import WebResponse
 
 log = config.get_logger()
