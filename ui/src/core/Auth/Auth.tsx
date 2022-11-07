@@ -26,29 +26,30 @@ import '../AWS/Amplify';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isGettingUser, setIsGettingUser] = useState(false);
+
   const navigate = useNavigate();
   const {
-    loading,
+    loading: isGettingTenat,
     error: tenantError,
     data: tenantData
   } = useQuery<GetTenantUserPoolQuery>(GET_TENANT_USERPOOL_QUERY);
-  const [setupAPIAuth] = useMutation(
-    AUTHENTICATE_NOQ_API_QUERY
-  );
+  const [setupAPIAuth] = useMutation(AUTHENTICATE_NOQ_API_QUERY);
 
   useEffect(() => {
-    // if (tenantData) {
+    if (tenantData) {
       // Configure amplify based on tenant user pool details
       // NOTE: Disabled due to cognito secret not supported by amplify
       // updateAmplifyConfig(tenantData);
 
       // Check if user is already logged in
       getAuthenticatedUser();
-    // }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantData]);
 
   const getAuthenticatedUser = useCallback(async () => {
+    setIsGettingUser(true);
     try {
       const user = await AmplifyAuth.currentAuthenticatedUser({
         bypassCache: false
@@ -58,7 +59,9 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         await setupAPIAuth({ variables: { input: session } });
       }
       setUser(user);
+      setIsGettingUser(false);
     } catch ({ message }) {
+      setIsGettingUser(false);
       throw new Error(`Error getting Authernticated user: ${message}`);
     }
   }, [setupAPIAuth]);
@@ -204,7 +207,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   );
 
   // NOTE: I don't think we should put these 2 loading/invalid checks here
-  if (loading) {
+  if (isGettingTenat || isGettingUser) {
     // check is user data is available
     return <div>Loading...</div>;
   }
