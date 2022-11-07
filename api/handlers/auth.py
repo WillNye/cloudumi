@@ -96,7 +96,7 @@ class CognitoAuthHandler(AuthHandler):
 
     async def prepare(self, *args, **kwargs):
         self.set_header(
-            "Access-Control-Allow-Origin", self.request.headers.get("origin")
+            "Access-Control-Allow-Origin", self.request.headers.get("origin", "*")
         )
         self.set_header("Access-Control-Allow-Methods", ",".join(self.allowed_methods))
         self.set_header(
