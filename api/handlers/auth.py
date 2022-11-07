@@ -89,22 +89,11 @@ class AuthHandler(BaseHandler):
 
 
 class CognitoAuthHandler(AuthHandler):
-    def set_xsrf_cookie(self):
+    def check_xsrf_cookie(self) -> None:
         pass
 
-    async def prepare(self, *args, **kwargs):
-        self.set_header(
-            "Access-Control-Allow-Origin", self.request.headers.get("origin", "*")
-        )
-        self.set_header("Access-Control-Allow-Methods", ",".join(self.allowed_methods))
-        self.set_header(
-            "Access-Control-Allow-Headers",
-            "x-requested-with,access-control-allow-origin,authorization,content-type",
-        )
-        self.set_header("Access-Control-Allow-Credentials", "true")
-        self.set_header("Content-Type", "application/json")
-
     async def get(self, *args, **kwargs):
+        log_dict_handler("info", self)
         tenant = self.get_tenant_name()
         user_pool_region = config.get_tenant_specific_key(
             "secrets.cognito.config.user_pool_region", tenant, config.region

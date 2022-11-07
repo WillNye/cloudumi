@@ -27,7 +27,7 @@ export default defineConfig(({ mode, command }) => {
     server: {
       port: 3000,
       open: true,
-      host: '::',
+      host: 'localhost',
       https: {
         // Reference: https://stackoverflow.com/questions/69417788/vite-https-on-localhost
         key: fs.readFileSync('./.certs/server.key.pem'),
