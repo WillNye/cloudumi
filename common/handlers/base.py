@@ -818,6 +818,10 @@ class BaseHandler(TornadoRequestHandler):
             console_only=console_only,
         )
 
+    async def clear_jwt_cookie(self):
+        cookie_name = self.get_noq_auth_cookie_key()
+        self.clear_cookie(cookie_name)
+
     async def set_jwt_cookie(self, tenant, roles: list = None):
         expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
             minutes=config.get_tenant_specific_key(
