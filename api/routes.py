@@ -130,7 +130,6 @@ from api.handlers.v3.services.effective_role_policy import (
 )
 from api.handlers.v3.slack import SlackIntegrationConfigurationCrudHandler
 from api.handlers.v3.tenant_details.handler import (
-    CognitoTenantPool,
     EulaHandler,
     TenantDetailsHandler,
     TenantEulaHandler,
@@ -352,10 +351,6 @@ def make_app(jwt_validator=None):
             r"/docs/?(.*)",
             AuthenticatedStaticFileHandler,
             {"path": docs_path, "default_filename": "index.html"},
-        ),
-        (
-            r"/api/v3/tenant/userpool",
-            CognitoTenantPool,
         ),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
