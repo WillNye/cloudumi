@@ -14,7 +14,7 @@ class TestPolicies(FunctionalTest):
         self.assertEqual(res.code, 200)
         self.assertIn(f"{TEST_ROLE_ARN}".encode(), res.body)
         res_j = json.loads(res.body)
-        self.assertEqual(res_j["name"], "NullRole")
+        self.assertEqual(res_j["name"], TEST_ROLE)
         self.assertEqual(res_j["account_id"], TEST_ACCOUNT_ID)
         self.assertIn("arn", res_j.keys())
         self.assertIn("inline_policies", res_j.keys())

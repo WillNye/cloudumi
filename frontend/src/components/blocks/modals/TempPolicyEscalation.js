@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
   Button,
-  List,
   Modal,
   Form,
   Loader,
@@ -100,31 +99,19 @@ const TempPolicyEscalationModal = ({
             <>
               <Modal.Description>
                 <p>
-                  You are requesting temporary access to
-                  <b>&nbsp;{tempEscalationModalData.data.arn}&nbsp;</b>
-                  subject to the following:
+                  You are requesting temporary access to: <br />
+                  <b>&nbsp;{tempEscalationModalData.data.arn}&nbsp;</b>.
                 </p>
-
-                <List bulleted>
-                  <List.Item>
-                    2-Factor Step-Up Authentication with Duo Verify
-                  </List.Item>
-                  <List.Item>
-                    Approval required from account owner
-                    (networking_team@example.com)
-                  </List.Item>
-                  <List.Item>
-                    Approval required from IAM administrators
-                    (iam_team@example.com)
-                  </List.Item>
-                  <List.Item>
-                    Notification sent to security_team@example.com
-                  </List.Item>
-                  <List.Item>
-                    Notification sent to #security-alerts Slack channel
-                  </List.Item>
-                  <Fill />
-                </List>
+                <p>
+                  Your request will be routed to the appropriate approvers, or
+                  self-approved based on the Temporary Role Access rules that
+                  your organization has configured. More information is
+                  available in our{' '}
+                  <a href='/docs/features/permissions_management_and_request_framework/temporary_role_access/'>
+                    documentation
+                  </a>
+                  .
+                </p>
                 <Fill />
               </Modal.Description>
 

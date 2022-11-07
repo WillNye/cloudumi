@@ -358,9 +358,7 @@ class CognitoUserSetupMFA(BaseHandler):
             )
             self.mfa_setup = None
 
-            await self.set_groups()
-            await self.set_eligible_roles(False)
-            await self.set_jwt_cookie(tenant, self.eligible_roles)
+            await self.clear_jwt_cookie()
 
             self.write(
                 {

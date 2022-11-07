@@ -12,7 +12,7 @@ class NoqDownloadHandler(BaseHandler):
             "challenge_settings": {
                 "user": self.user,
             },
-            "consoleme_url": url,
+            "noq_url": url,
             "server": {
                 "http_timeout": 20,
                 "port": 9091,
