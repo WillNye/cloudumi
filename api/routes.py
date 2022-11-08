@@ -14,7 +14,10 @@ import tornado.web
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
-from slack_bolt.adapter.tornado import SlackEventsHandler, SlackOAuthHandler
+from slack_bolt.adapter.tornado.async_handler import (
+    AsyncSlackEventsHandler,
+    AsyncSlackOAuthHandler,
+)
 from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
 from api.handlers.auth import AuthHandler
@@ -377,11 +380,15 @@ def make_app(jwt_validator=None):
 
     if config.get("_global_.development"):
         routes[:0] = [
-            ("/api/v3/slack/events", SlackEventsHandler, dict(app=slack_app)),
-            ("/api/v3/slack/install/?(.*)", SlackOAuthHandler, dict(app=slack_app)),
+            ("/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
+            (
+                "/api/v3/slack/install/?(.*)",
+                AsyncSlackOAuthHandler,
+                dict(app=slack_app),
+            ),
             (
                 "/api/v3/slack/oauth_redirect/?(.*)",
-                SlackOAuthHandler,
+                AsyncSlackOAuthHandler,
                 dict(app=slack_app),
             ),
         ]

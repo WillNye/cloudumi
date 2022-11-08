@@ -755,9 +755,9 @@ six==1.16.0
     #   requests-mock
     #   retrying
     #   websocket-client
-slack-bolt==1.15.2
+slack-bolt==1.15.3
     # via -r ./common/requirements.in
-slack-sdk==3.19.2
+slack-sdk==3.19.3
     # via slack-bolt
 smmap==5.0.0
     # via gitdb

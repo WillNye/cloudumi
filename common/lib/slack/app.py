@@ -1,9 +1,10 @@
 import boto3
-from slack_bolt import App
-from slack_bolt.oauth.oauth_settings import OAuthSettings
+from slack_bolt.async_app import AsyncApp
+from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
 from slack_sdk.oauth.installation_store.amazon_s3 import AmazonS3InstallationStore
 from slack_sdk.oauth.state_store import FileOAuthStateStore
 
+from api.handlers.v2.typeahead import get_matching_identity_typahead
 from common.config import config
 from common.lib.slack.workflows import (
     remove_unused_identities_sample,
@@ -35,7 +36,7 @@ scopes = """app_mentions:read,channels:history,channels:join,channels:read,chat:
 
 # TODO: Encrypt / verify uri in state.
 
-oauth_settings = OAuthSettings(
+oauth_settings = AsyncOAuthSettings(
     client_id=config.get("_global_.secrets.slack.client_id"),
     client_secret=config.get("_global_.secrets.slack.client_secret"),
     # TODO: Fix these
@@ -52,7 +53,7 @@ oauth_settings = OAuthSettings(
     redirect_uri="https://a340-68-4-188-30.ngrok.io/api/v3/slack/oauth_redirect",
 )
 
-slack_app = App(
+slack_app = AsyncApp(
     token=config.get("_global_.secrets.slack.bot_token"),
     signing_secret=config.get("_global_.secrets.slack.signing_secret"),
     # installation_store=AmazonS3InstallationStore(
@@ -67,18 +68,18 @@ slack_app = App(
 
 
 @slack_app.command("/request_access")
-def handle_request_access_command(ack, body, logger):
+async def handle_request_access_command(ack, body, logger):
     ack()
     logger.info(body)
 
 
 @slack_app.message("hello")
-def message_hello(message, say):
+async def message_hello(message, say):
     # say() sends a message to the channel where the event was triggered
     say(f"Hey there <@{message['user']}>!")
 
 
-def message_alert():
+async def message_alert():
     channel_id = "C045MFZ2A10"
     slack_app.client.chat_postMessage(
         channel=channel_id,
@@ -94,17 +95,17 @@ def message_alert():
 
 
 @slack_app.event("message")
-def handle_message_events(body, logger):
+async def handle_message_events(body, logger):
     logger.info(body)
 
 
 @slack_app.command("/hello-noq")
-def hello(body, ack):
+async def hello(body, ack):
     ack(f"Hi <@{body['user_id']}>!")
 
 
 @slack_app.options("external_action")
-def show_options(ack, payload):
+async def show_options(ack, payload):
     options = [
         {
             "text": {"type": "plain_text", "text": "Option 1"},
@@ -122,7 +123,7 @@ def show_options(ack, payload):
 
 
 @slack_app.shortcut("request_access")
-def request_access(ack, body, client):
+async def request_access(ack, body, client):
     # Acknowledge the command request
     ack()
     # Call views_open with the built-in client
@@ -135,7 +136,7 @@ def request_access(ack, body, client):
 
 
 @slack_app.shortcut("request_permissions")
-def request_permissions(ack, body, client):
+async def request_permissions(ack, body, client):
     # Acknowledge the command request
     ack()
     # Call views_open with the built-in client
@@ -148,27 +149,29 @@ def request_permissions(ack, body, client):
 
 
 @slack_app.action("select_resources")
-def handle_select_resources_action(ack, body, client, logger):
+async def handle_select_resources_action(ack, body, client, logger):
     ack()
     logger.info(body)
 
 
 @slack_app.middleware  # or app.use(log_request)
-def log_request(logger, body, next):
+async def log_request(logger, body, next):
     logger.debug(body)
     return next()
 
 
 @slack_app.event("app_mention")
-def event_test(ack, body, say, logger):
+async def event_test(ack, body, say, logger):
     logger.info(body)
     say("What's up?")
 
 
 @slack_app.options("select_resources")
-def handle_select_resources_options(ack, body, client, logger):
+async def handle_select_resources_options(ack, body, client, logger):
     # TODO: Need to get list of resources to request access to
 
+    typeahead = await get_matching_identity_typahead(body["value"])
+    print(typeahead)
     ack(
         options=[
             {"text": {"type": "plain_text", "text": "role1"}, "value": "role1"},
@@ -179,7 +182,7 @@ def handle_select_resources_options(ack, body, client, logger):
 
 
 @slack_app.view("request_access_to_resource")
-def handle_request_access_to_resource(ack, body, client, logger):
+async def handle_request_access_to_resource(ack, body, client, logger):
     ack({"response_action": "update", "view": request_access_to_resource_success})
     logger.info(body)
     # client.views_update(
@@ -196,10 +199,10 @@ def handle_request_access_to_resource(ack, body, client, logger):
 
 
 @slack_app.event("user_change")
-def handle_user_change_events(body, logger):
+async def handle_user_change_events(body, logger):
     logger.info(body)
 
 
 @slack_app.event("user_status_changed")
-def handle_user_status_changed_events(body, logger):
+async def handle_user_status_changed_events(body, logger):
     logger.info(body)
