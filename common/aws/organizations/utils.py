@@ -278,7 +278,7 @@ async def onboard_new_accounts_from_orgs(tenant: str) -> list[str]:
                 )
 
             # Update the org account with the new accounts excluded from auto onboard
-            await ModelAdapter(OrgAccount).load_config(
+            await ModelAdapter(OrgAccount, "onboard_new_accounts_from_orgs").load_config(
                 "org_accounts", tenant
             ).from_model(org_account).with_object_key(["org_id"]).store_item_in_list()
 
@@ -290,8 +290,8 @@ async def sync_account_names_from_orgs(tenant: str) -> dict[str, str]:
     org_account_id_to_name = {}
     account_names_synced = {}
     accounts_d: Dict[str, str] = await get_account_id_to_name_mapping(tenant)
-    org_accounts = ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
-    spoke_accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant)
+    org_accounts = ModelAdapter(OrgAccount, "sync_account_names_from_orgs_org_accounts").load_config("org_accounts", tenant).models
+    spoke_accounts = ModelAdapter(SpokeAccount, "sync_account_names_from_orgs_spoke_accounts").load_config("spoke_accounts", tenant)
     for org_account in org_accounts:
         if not org_account.sync_account_names:
             continue
@@ -325,6 +325,10 @@ async def sync_account_names_from_orgs(tenant: str) -> dict[str, str]:
             spoke_account_to_replace = spoke_accounts.with_query(
                 {"account_id": account_id}
             ).first
+            if spoke_account_to_replace.account_name == org_account_id_to_name[
+                account_id
+            ]:
+                continue
             spoke_account_to_replace.account_name = org_account_id_to_name[account_id]
             await spoke_accounts.from_dict(spoke_account_to_replace).with_object_key(
                 ["account_id"]

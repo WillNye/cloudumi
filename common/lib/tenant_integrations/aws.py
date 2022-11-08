@@ -353,7 +353,7 @@ async def handle_spoke_account_registration(body):
         org_management_account=master_account,
         read_only=read_only,
     )
-    await models.ModelAdapter(SpokeAccount).load_config(
+    await models.ModelAdapter(SpokeAccount, "handle_spoke_account_registration").load_config(
         "spoke_accounts", tenant
     ).from_model(spoke_account).store_item_in_list()
     return {
@@ -612,7 +612,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         external_id=external_id,
         read_only=read_only,
     )
-    await models.ModelAdapter(HubAccount).load_config("hub_account", tenant).from_model(
+    await models.ModelAdapter(HubAccount, "hub_account_onboarding").load_config("hub_account", tenant).from_model(
         hub_account
     ).store_item()
 
@@ -625,7 +625,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
         hub_account_arn=hub_account.role_arn,
         read_only=read_only,
     )
-    await models.ModelAdapter(SpokeAccount).load_config(
+    await models.ModelAdapter(SpokeAccount, "handle_central_account_registration").load_config(
         "spoke_accounts", tenant
     ).from_model(spoke_account).store_item_in_list()
     return {"success": True}
