@@ -10,7 +10,6 @@ export const icons = Object.keys(iconPaths).map(key => ({
   })
 }));
 
-
 // eslint-disable-next-line react/prop-types
 export const IconDemo = ({ component: Component, title }) => (
   <div
@@ -30,9 +29,7 @@ export const IconDemo = ({ component: Component, title }) => (
     }}
   >
     <Suspense>
-      <Component
-        style={{ width: 25, height: 25 }}
-      />
+      <Component style={{ width: 25, height: 25 }} />
       <div>{title}</div>
     </Suspense>
   </div>
