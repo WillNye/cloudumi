@@ -129,25 +129,29 @@ class EligibleRoleHandler(BaseHandler):
             roles.append(row)
 
         # Check if the user already has a pending request
-        requests = [
-            request
-            for request in await IAMRequest.query(
-                tenant,
-                filter_condition=(IAMRequest.status == "pending")
-                & (IAMRequest.username == self.user),
-            )
-        ]
-        changes = itertools.chain(
-            *[x.extended_request.changes.get("changes", []) for x in requests]
-        )
-        pending_requests = [
-            {
-                "principal": x.get("principal", {}).get("principal_arn"),
-                "id": x.get("id", "").strip("0"),
-            }
-            for x in changes
-            if x.get("change_type") == "tra_can_assume_role"
-        ]
+        ### TODO: Temporarily disable pending status checks because they incur a rate limit with pynamodax
+        # TODO: https://noqdev.atlassian.net/browse/EN-1362, try tracking this in Redis instead
+        # requests = [
+        #     request
+        #     for request in await IAMRequest.query(
+        #         tenant,
+        #         filter_condition=(IAMRequest.status == "pending")
+        #         & (IAMRequest.username == self.user),
+        #     )
+        # ]
+        # changes = itertools.chain(
+        #     *[x.extended_request.changes.get("changes", []) for x in requests]
+        # )
+        # pending_requests = [
+        #     {
+        #         "principal": x.get("principal", {}).get("principal_arn"),
+        #         "id": x.get("id", "").strip("0"),
+        #     }
+        #     for x in changes
+        #     if x.get("change_type") == "tra_can_assume_role"
+        # ]
+        pending_requests = []
+        ### TODO
 
         for role in await get_tra_supported_roles_by_tag(
             self.eligible_roles + active_tra_roles,
