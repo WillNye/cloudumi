@@ -1,4 +1,8 @@
+import { useMutation } from '@apollo/client';
+import { GET_ELIGIBLE_ROLES_QUERY } from 'core/graphql';
 import { FC } from 'react';
+import { useMount } from 'react-use';
+import { Loader } from 'shared/elements/Loader';
 import { Access, AccessRole } from './Access';
 import demoData from './demo.json';
 
@@ -8,19 +12,33 @@ export const AccessContainer: FC = () => {
   // I tend to only put the loader and the error state here
 
   // Example:
-  // const { data, loading } = useQuery<AccessContainerQuery, AccessContainerQueryVariables>(ACCESS_QUERY, {});
-  // if (loading) {
-  //  return <Loader />;
-  // }
+  const [getAllResorces, { data: response, loading, error }] = useMutation(
+    GET_ELIGIBLE_ROLES_QUERY,
+    {
+      variables: { input: { limit: 1000 } }
+    }
+  );
 
-  const data = demoData as unknown as AccessRole[];
+  useMount(() => {
+    getAllResorces();
+  });
+
+  const allEligibleRoles = response?.roles;
+
+  if (loading) {
+    return <Loader />;
+  }
 
   return (
-    <Access
-      data={data}
-      totalCount={data.length}
-      filteredCount={0}
-    />
+    <>
+      {allEligibleRoles && (
+        <Access
+          data={allEligibleRoles.data}
+          totalCount={allEligibleRoles.totalCount}
+          filteredCount={allEligibleRoles.filteredCount}
+        />
+      )}
+      {error && <div>An error occured</div>}
+    </>
   );
 };
-

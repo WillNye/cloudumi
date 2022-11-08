@@ -4,12 +4,12 @@ import { Helmet } from 'react-helmet-async';
 import css from './Access.module.css';
 
 export interface AccessRole {
-  arn: string
-  account_name: string
-  account_id: string
-  role_name: string
-  redirect_uri: string
-  inactive_tra: boolean
+  arn: string;
+  account_name: string;
+  account_id: string;
+  role_name: string;
+  redirect_uri: string;
+  inactive_tra: boolean;
 }
 
 export interface AccessQueryResult {
@@ -27,11 +27,8 @@ export const Access: FC<AccessProps> = ({ data }) => {
         <title>Access</title>
       </Helmet>
       <div className={css.container}>
-        <pre>
-          {JSON.stringify(data, null, 2)}
-        </pre>
+        <pre>{JSON.stringify(data, null, '\t')}</pre>
       </div>
     </>
   );
 };
-

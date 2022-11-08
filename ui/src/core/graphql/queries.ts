@@ -4,7 +4,7 @@ export const GET_TENANT_USERPOOL_QUERY = gql`
   query GetTenantUserPoolQuery {
     tenantUserPool
       @rest(type: "TenantPool", path: "/api/v1/auth/cognito", method: "GET") {
-      start
+      data
     }
   }
 `;
@@ -18,7 +18,23 @@ export const AUTHENTICATE_NOQ_API_QUERY = gql`
         method: "POST"
         bodyBuilder: $encryptor
       ) {
-      start
+      data
+    }
+  }
+`;
+
+export const GET_ELIGIBLE_ROLES_QUERY = gql`
+  mutation GetEligibleRolesQuery($input: Session!, $encryptor: any) {
+    roles: role(input: $input)
+      @rest(
+        type: "Post"
+        path: "/api/v2/eligible_roles"
+        method: "POST"
+        bodyBuilder: $encryptor
+      ) {
+      data
+      filteredCount
+      totalCount
     }
   }
 `;
