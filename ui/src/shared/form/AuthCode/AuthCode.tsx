@@ -5,9 +5,10 @@ import { nanoid } from 'nanoid';
 import css from './AuthCode.module.css';
 
 export interface AuthCodeInput {
-  characters?: number;
+  length?: number;
   password?: boolean;
   inputClassName?: string;
+  autoFocus?: boolean;
   containerClassName?: string;
   allowedCharacters?: 'alphanumeric' | 'alpha' | 'numeric';
   disabled?: boolean;
@@ -17,6 +18,7 @@ export interface AuthCodeInput {
 
 export const AuthCode: FC<AuthCodeInput> = ({
   inputClassName,
+  length = 6,
   containerClassName,
   allowedCharacters = 'numeric',
   onReset,
@@ -39,6 +41,7 @@ export const AuthCode: FC<AuthCodeInput> = ({
     <Code
       key={authKey}
       allowedCharacters={allowedCharacters}
+      length={length}
       {...rest}
       inputClassName={classNames(css.input, inputClassName)}
       containerClassName={classNames(css.authCode, containerClassName)}
