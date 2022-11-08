@@ -1,4 +1,4 @@
-import itertools
+# import itertools
 
 import tornado.web
 
@@ -16,7 +16,8 @@ from common.lib.aws.cached_resources.iam import (
 )
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
-from common.user_request.models import IAMRequest
+
+# from common.user_request.models import IAMRequest
 
 log = config.get_logger()
 
@@ -129,7 +130,7 @@ class EligibleRoleHandler(BaseHandler):
             roles.append(row)
 
         # Check if the user already has a pending request
-        ### TODO: Temporarily disable pending status checks because they incur a rate limit with pynamodax
+        ### TODO: Temporarily disable pending status checks because they incur a rate limit with pynamodax  # noqa: E265,E266
         # TODO: https://noqdev.atlassian.net/browse/EN-1362, try tracking this in Redis instead
         # requests = [
         #     request
@@ -151,7 +152,7 @@ class EligibleRoleHandler(BaseHandler):
         #     if x.get("change_type") == "tra_can_assume_role"
         # ]
         pending_requests = []
-        ### TODO
+        ### TODO  # noqa: E265,E266
 
         for role in await get_tra_supported_roles_by_tag(
             self.eligible_roles + active_tra_roles,
