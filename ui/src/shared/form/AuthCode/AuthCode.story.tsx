@@ -8,7 +8,7 @@ export default {
 export const Defaults = () => <AuthCode onChange={val => console.log(val)} />;
 
 export const CharacterLimit = () => (
-  <AuthCode characters={4} onChange={val => console.log(val)} />
+  <AuthCode length={10} onChange={val => console.log(val)} />
 );
 
 export const NumbersOnly = () => (
