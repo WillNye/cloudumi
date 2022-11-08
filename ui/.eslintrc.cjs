@@ -28,6 +28,7 @@ module.exports = {
         args: 'none'
       }
     ],
+    '@typescript-eslint/ban-ts-comment': ['warn'],
     'no-debugger': ['warn'],
     '@typescript-eslint/no-unused-vars': ['off'],
     'react/react-in-jsx-scope': 'off',
