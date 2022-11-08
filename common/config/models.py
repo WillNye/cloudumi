@@ -5,7 +5,7 @@ from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.pydantic import BaseModel
 from common.lib.yaml import yaml
 
-UPDATED_BY = "NOQ_Automaton"
+UPDATED_BY = "NOQ_Automation"
 log = config.get_logger()
 
 
