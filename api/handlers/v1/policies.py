@@ -293,7 +293,7 @@ async def handle_resource_type_ahead_request(cls):
             if len(results) > limit:
                 break
 
-    if len(results) == 0:
+    if len(results) == 0 and resource_type != "account":
         results.append({"title": f"{search_string}*", "account_id": ""})
     return results
 
