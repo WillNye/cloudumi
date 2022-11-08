@@ -6,7 +6,7 @@ import './App.module.css';
 const Login = lazy(() => import('./Login'));
 const AccountSetup = lazy(() => import('./AccountSetup'));
 const NotFound = lazy(() => import('./NotFound'));
-const Dashboard = lazy(() => import('./Dashboard'));
+const Access = lazy(() => import('./Access'));
 
 export const App: FC = () => (
   <Suspense fallback={<div>Loading...</div>}>
@@ -14,12 +14,12 @@ export const App: FC = () => (
       {/** Wrap all Route under ProtectedRoutes element */}
       <Route path="/" element={<AuthRoute />}>
         <Route path="/account/*" element={<AccountSetup />} />
-        <Route path="/" element={<Dashboard />} />
         <Route path="/404" element={<NotFound />} />
       </Route>
 
       {/** Wrap all Route under PublicRoutes element */}
       <Route>
+        <Route path="/access" element={<Access />} />
         <Route path="/login/*" element={<Login />} />
       </Route>
     </Routes>
