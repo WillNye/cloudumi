@@ -1,14 +1,14 @@
 .input {
-  width: 35px;
-  padding: 8px;
-  border-radius: 5px;
-  font-size: 24px;
+  width: 25px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  font-size: 20px;
   text-align: center;
-  margin-right: 12px;
+  margin-right: 10px;
   color: white;
   background: black;
   text-transform: uppercase;
-  border: none;
+  border: solid 1px transparent;
 
   &::-webkit-outer-spin-button,
   &::-webkit-inner-spin-button {
@@ -22,5 +22,15 @@
 
   &:last-of-type {
     margin-right: 0;
+  }
+
+  &:focus {
+    outline: none;
+    border: solid 1px #4B5CFA;
+  }
+
+  &::selection {
+    color: white;
+    background: #4B5CFA;
   }
 }
