@@ -125,6 +125,8 @@ _global_:
   tenant_registration:
     set_login_page_ui:
       logo_location: frontend/src/assets/NoqLogo.png
+  git:
+    repo_base_path: ~/.noq/git_repos
 # Localhost configuration
 #  redis:
 #    cluster_mode:

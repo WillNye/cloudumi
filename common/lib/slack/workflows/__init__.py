@@ -42,6 +42,7 @@ request_access_to_resource_block = json.loads(
         },
         {
             "type": "input",
+            "block_id": "duration",
             "element": {
                 "type": "static_select",
                 "options": [
@@ -51,7 +52,7 @@ request_access_to_resource_block = json.loads(
                             "text": "1 Hour",
                             "emoji": true
                         },
-                        "value": "1h"
+                        "value": "3600"
                     },
                     {
                         "text": {
@@ -59,7 +60,7 @@ request_access_to_resource_block = json.loads(
                             "text": "2 Hours",
                             "emoji": true
                         },
-                        "value": "2h"
+                        "value": "7200"
                     },
                     {
                         "text": {
@@ -67,7 +68,7 @@ request_access_to_resource_block = json.loads(
                             "text": "4 Hours",
                             "emoji": true
                         },
-                        "value": "4h"
+                        "value": "14400"
                     },
                     {
                         "text": {
@@ -75,7 +76,7 @@ request_access_to_resource_block = json.loads(
                             "text": "8 Hours",
                             "emoji": true
                         },
-                        "value": "8h"
+                        "value": "28800"
                     },
                     {
                         "text": {
@@ -83,7 +84,7 @@ request_access_to_resource_block = json.loads(
                             "text": "24 Hours",
                             "emoji": true
                         },
-                        "value": "24h"
+                        "value": "86400"
                     },
                     {
                         "text": {
@@ -94,7 +95,7 @@ request_access_to_resource_block = json.loads(
                         "value": "no_expire"
                     }
                 ],
-                "action_id": "static_select-action"
+                "action_id": "duration"
             },
             "label": {
                 "type": "plain_text",
@@ -104,10 +105,11 @@ request_access_to_resource_block = json.loads(
         },
         {
             "type": "input",
+            "block_id": "justification",
             "element": {
                 "type": "plain_text_input",
                 "multiline": true,
-                "action_id": "plain_text_input-action",
+                "action_id": "justification",
                 "placeholder": {
                     "type": "plain_text",
                     "text": "I need access for..."

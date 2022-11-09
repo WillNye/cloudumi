@@ -6,6 +6,7 @@ from slack_sdk.oauth.state_store import FileOAuthStateStore
 
 from api.handlers.v2.typeahead import get_matching_identity_typahead
 from common.config import config
+from common.lib.iambic.git import IambicGit
 from common.lib.slack.workflows import (
     remove_unused_identities_sample,
     request_access_to_resource_block,
@@ -69,25 +70,25 @@ slack_app = AsyncApp(
 
 @slack_app.command("/request_access")
 async def handle_request_access_command(ack, body, logger):
-    ack()
+    await ack()
     logger.info(body)
 
 
 @slack_app.message("hello")
 async def message_hello(message, say):
     # say() sends a message to the channel where the event was triggered
-    say(f"Hey there <@{message['user']}>!")
+    await say(f"Hey there <@{message['user']}>!")
 
 
 async def message_alert():
     channel_id = "C045MFZ2A10"
-    slack_app.client.chat_postMessage(
+    await slack_app.client.chat_postMessage(
         channel=channel_id,
         text="Summer has come and passed",
         blocks=unauthorized_change_sample,
     )
 
-    slack_app.client.chat_postMessage(
+    await slack_app.client.chat_postMessage(
         channel=channel_id,
         text="Summer has come and passed",
         blocks=remove_unused_identities_sample,
@@ -101,7 +102,7 @@ async def handle_message_events(body, logger):
 
 @slack_app.command("/hello-noq")
 async def hello(body, ack):
-    ack(f"Hi <@{body['user_id']}>!")
+    await ack(f"Hi <@{body['user_id']}>!")
 
 
 @slack_app.options("external_action")
@@ -119,15 +120,15 @@ async def show_options(ack, payload):
     keyword = payload.get("value")
     if keyword is not None and len(keyword) > 0:
         options = [o for o in options if keyword in o["text"]["text"]]
-    ack(options=options)
+    await ack(options=options)
 
 
 @slack_app.shortcut("request_access")
 async def request_access(ack, body, client):
     # Acknowledge the command request
-    ack()
+    await ack()
     # Call views_open with the built-in client
-    client.views_open(
+    await client.views_open(
         # Pass a valid trigger_id within 3 seconds of receiving it
         trigger_id=body["trigger_id"],
         # View payload
@@ -138,9 +139,9 @@ async def request_access(ack, body, client):
 @slack_app.shortcut("request_permissions")
 async def request_permissions(ack, body, client):
     # Acknowledge the command request
-    ack()
+    await ack()
     # Call views_open with the built-in client
-    client.views_open(
+    await client.views_open(
         # Pass a valid trigger_id within 3 seconds of receiving it
         trigger_id=body["trigger_id"],
         # View payload
@@ -150,14 +151,14 @@ async def request_permissions(ack, body, client):
 
 @slack_app.action("select_resources")
 async def handle_select_resources_action(ack, body, client, logger):
-    ack()
+    await ack()
     logger.info(body)
 
 
 @slack_app.middleware  # or app.use(log_request)
 async def log_request(logger, body, next):
     logger.debug(body)
-    return next()
+    return await next()
 
 
 @slack_app.event("app_mention")
@@ -169,21 +170,47 @@ async def event_test(ack, body, say, logger):
 @slack_app.options("select_resources")
 async def handle_select_resources_options(ack, body, client, logger):
     # TODO: Need to get list of resources to request access to
-
-    typeahead = await get_matching_identity_typahead(body["value"])
-    print(typeahead)
-    ack(
-        options=[
-            {"text": {"type": "plain_text", "text": "role1"}, "value": "role1"},
-            {"text": {"type": "plain_text", "text": "role2"}, "value": "role2"},
-            {"text": {"type": "plain_text", "text": "role3"}, "value": "role3"},
-        ]
+    await ack()
+    tenant = "localhost" # TODO fix
+    user = "curtis@noq.dev"
+    groups = [] # Need SCIM integration?
+    typeahead = await get_matching_identity_typahead(tenant, body["value"], user, groups)
+    options = []
+    for typeahead_entry in typeahead:
+        if typeahead_entry['principal']['principal_type'] == "AwsResource":
+            options.append(
+                {"text": {"type": "plain_text", "text": typeahead_entry['principal']['principal_arn']}, "value": typeahead_entry['principal']['principal_arn']}
+            )
+    await ack(
+        options=options
     )
 
 
 @slack_app.view("request_access_to_resource")
 async def handle_request_access_to_resource(ack, body, client, logger):
-    ack({"response_action": "update", "view": request_access_to_resource_success})
+    # TODO: Clone known repos to shared EBS volume, logically separated by tenant
+    # If repo exists, git pull
+    await ack() # Respond immediately to ack to avoid timeout
+    tenant = "localhost" # TODO fix
+    # TODO: Need to pre-clone to EBS
+    iambic = IambicGit(tenant)
+    role_arns = [x["value"] for x in body['view']['state']['values']['request_access']['select_resources']['selected_options']]
+    duration = int(body['view']['state']['values']['duration']['duration']['selected_option']['value'])
+    justification = body['view']['state']['values']['justification']['justification']['value']
+    slack_user = body['user']['username']
+    res = await iambic.create_role_access_pr(
+        role_arns,
+        slack_user,
+        duration,
+        justification,
+    )
+    
+    # TODO: Identify the file associated with a role
+    # TODO: Link the appropriate GitHub Username to the request
+    # TODO: Submit a PR
+    # TODO: Iambic auto-approve the PR based on rules in the git repo
+    # TODO: Return PR URL
+    await ack({"response_action": "update", "view": request_access_to_resource_success})
     logger.info(body)
     # client.views_update(
     #     #token=bot_token,

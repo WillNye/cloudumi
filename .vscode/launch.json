@@ -174,9 +174,11 @@
       "console": "integratedTerminal",
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
-        "AWS_PROFILE": "development/development_admin",
-        "PYTHONPATH": "${workspaceFolder}/",
-        "PYTHONASYNCIODEBUG": "1"
+        "AWS_REGION": "us-west-2",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+        "STAGE": "staging",
+        "TEST_USER_DOMAIN": "localhost"
       }
     },
     {

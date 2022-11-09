@@ -3,6 +3,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
+import git
 import sentry_sdk
 import yaml as builtin_yaml
 from asgiref.sync import async_to_sync
@@ -15,7 +16,6 @@ from common.lib.generic import sort_dict
 
 
 def clone_repo(git_url: str, tempdir):
-    import git
 
     """Clone the honeybee-templates repo to an ephemeral directory and return the git.Repo reference."""
     git.Git(tempdir).clone(git_url)

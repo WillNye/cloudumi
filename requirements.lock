@@ -555,7 +555,9 @@ pydyf==0.5.0
 pyflakes==2.5.0
     # via flake8
 pygithub==1.56
-    # via -r ./api/requirements.in
+    # via
+    #   -r ./api/requirements.in
+    #   -r ./common/lib/requirements.in
 pygments==2.13.0
     # via mkdocs-material
 pyjwt==2.6.0
