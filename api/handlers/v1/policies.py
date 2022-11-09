@@ -198,10 +198,8 @@ async def handle_resource_type_ahead_request(cls):
     unique_roles: List[str] = []
 
     if resource_type == "account":
-        account_and_id_list = []
         account_ids_to_names = await get_account_id_to_name_mapping(tenant)
         for account_id, account_name in account_ids_to_names.items():
-            account_and_id_list.append(f"{account_name} ({account_id})")
             account_str = f"{account_name} ({account_id})"
             if search_string.lower() in account_str.lower():
                 results.append({"title": account_str, "account_id": account_id})
