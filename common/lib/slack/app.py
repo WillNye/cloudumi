@@ -74,6 +74,7 @@ async def handle_request_access_command(ack, body, logger):
     logger.info(body)
 
 
+
 @slack_app.message("hello")
 async def message_hello(message, say):
     # say() sends a message to the channel where the event was triggered
@@ -185,12 +186,8 @@ async def handle_select_resources_options(ack, body, client, logger):
         options=options
     )
 
-
-@slack_app.view("request_access_to_resource")
-async def handle_request_access_to_resource(ack, body, client, logger):
-    # TODO: Clone known repos to shared EBS volume, logically separated by tenant
-    # If repo exists, git pull
-    await ack() # Respond immediately to ack to avoid timeout
+# TODO: remove this?
+async def handle_request_access_to_resource_long_process(respond, logger, body):
     tenant = "localhost" # TODO fix
     # TODO: Need to pre-clone to EBS
     iambic = IambicGit(tenant)
@@ -210,7 +207,15 @@ async def handle_request_access_to_resource(ack, body, client, logger):
     # TODO: Submit a PR
     # TODO: Iambic auto-approve the PR based on rules in the git repo
     # TODO: Return PR URL
-    await ack({"response_action": "update", "view": request_access_to_resource_success})
+    res = await respond({"response_action": "update", "view": request_access_to_resource_success})
+    print(res)
+
+@slack_app.view("request_access_to_resource")
+async def handle_request_access_to_resource(ack, body, client, logger, respond):
+    # TODO: Clone known repos to shared EBS volume, logically separated by tenant
+    # If repo exists, git pull
+    await ack() # Respond immediately to ack to avoid timeout
+
     logger.info(body)
     # client.views_update(
     #     #token=bot_token,
@@ -218,6 +223,28 @@ async def handle_request_access_to_resource(ack, body, client, logger):
     #     hash=body['view']['hash'],
     #     view=request_access_to_resource_success,
     # )
+    tenant = "localhost" # TODO fix
+    # TODO: Need to pre-clone to EBS
+    iambic = IambicGit(tenant)
+    role_arns = [x["value"] for x in body['view']['state']['values']['request_access']['select_resources']['selected_options']]
+    duration = int(body['view']['state']['values']['duration']['duration']['selected_option']['value'])
+    justification = body['view']['state']['values']['justification']['justification']['value']
+    slack_user = body['user']['username']
+    res = await iambic.create_role_access_pr(
+        role_arns,
+        slack_user,
+        duration,
+        justification,
+    )
+    
+    # TODO: Identify the file associated with a role
+    # TODO: Link the appropriate GitHub Username to the request
+    # TODO: Submit a PR
+    # TODO: Iambic auto-approve the PR based on rules in the git repo
+    # TODO: Return PR URL
+    res = await respond({"response_action": "update", "view": request_access_to_resource_success})
+    print(res)
+
 
 
 # def main():
@@ -233,3 +260,9 @@ async def handle_user_change_events(body, logger):
 @slack_app.event("user_status_changed")
 async def handle_user_status_changed_events(body, logger):
     logger.info(body)
+
+
+# slack_app.view("request_access_to_resource")(
+#     ack=handle_request_access_to_resource,
+#     lazy=[handle_request_access_to_resource_long_process]
+# )
