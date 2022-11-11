@@ -218,7 +218,7 @@ def mfa_enabled_for_config(tra_config):
 
 
 async def save_tra_config(tenant: str, tra_config: TraConfig):
-    await models.ModelAdapter(TraConfig).load_config(
+    await models.ModelAdapter(TraConfig, "save_tra_config").load_config(
         TRA_CONFIG_BASE_KEY, tenant
     ).from_model(tra_config).store_item()
 

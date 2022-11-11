@@ -198,16 +198,11 @@ async def handle_resource_type_ahead_request(cls):
     unique_roles: List[str] = []
 
     if resource_type == "account":
-        account_and_id_list = []
         account_ids_to_names = await get_account_id_to_name_mapping(tenant)
         for account_id, account_name in account_ids_to_names.items():
-            account_and_id_list.append(f"{account_name} ({account_id})")
-        for account in account_and_id_list:
-            if search_string.lower() in account.lower():
-                role_account_id = (
-                    account.split(" ")[1].replace("(", "").replace(")", "")
-                )
-                results.append({"title": account, "account_id": role_account_id})
+            account_str = f"{account_name} ({account_id})"
+            if search_string.lower() in account_str.lower():
+                results.append({"title": account_str, "account_id": account_id})
     elif resource_type == "app":
         results = {}
         filter_condition = None
@@ -293,7 +288,7 @@ async def handle_resource_type_ahead_request(cls):
             if len(results) > limit:
                 break
 
-    if len(results) == 0:
+    if len(results) == 0 and resource_type != "account":
         results.append({"title": f"{search_string}*", "account_id": ""})
     return results
 

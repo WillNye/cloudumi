@@ -1,4 +1,4 @@
-import itertools
+# import itertools
 
 import tornado.web
 
@@ -16,7 +16,8 @@ from common.lib.aws.cached_resources.iam import (
 )
 from common.lib.loader import WebpackLoader
 from common.models import DataTableResponse, WebResponse
-from common.user_request.models import IAMRequest
+
+# from common.user_request.models import IAMRequest
 
 log = config.get_logger()
 
@@ -89,7 +90,7 @@ class EligibleRoleRefreshHandler(BaseHandler):
 
 
 class EligibleRoleHandler(BaseHandler):
-    async def post(self):
+    async def get(self):
         """
         Post to the index endpoint. This will generate a list of roles the user is eligible to access on the console
         ---
@@ -129,25 +130,29 @@ class EligibleRoleHandler(BaseHandler):
             roles.append(row)
 
         # Check if the user already has a pending request
-        requests = [
-            request
-            for request in await IAMRequest.query(
-                tenant,
-                filter_condition=(IAMRequest.status == "pending")
-                & (IAMRequest.username == self.user),
-            )
-        ]
-        changes = itertools.chain(
-            *[x.extended_request.changes.get("changes", []) for x in requests]
-        )
-        pending_requests = [
-            {
-                "principal": x.get("principal", {}).get("principal_arn"),
-                "id": x.get("id", "").strip("0"),
-            }
-            for x in changes
-            if x.get("change_type") == "tra_can_assume_role"
-        ]
+        ### TODO: Temporarily disable pending status checks because they incur a rate limit with pynamodax  # noqa: E265,E266
+        # TODO: https://noqdev.atlassian.net/browse/EN-1362, try tracking this in Redis instead
+        # requests = [
+        #     request
+        #     for request in await IAMRequest.query(
+        #         tenant,
+        #         filter_condition=(IAMRequest.status == "pending")
+        #         & (IAMRequest.username == self.user),
+        #     )
+        # ]
+        # changes = itertools.chain(
+        #     *[x.extended_request.changes.get("changes", []) for x in requests]
+        # )
+        # pending_requests = [
+        #     {
+        #         "principal": x.get("principal", {}).get("principal_arn"),
+        #         "id": x.get("id", "").strip("0"),
+        #     }
+        #     for x in changes
+        #     if x.get("change_type") == "tra_can_assume_role"
+        # ]
+        pending_requests = []
+        ### TODO  # noqa: E265,E266
 
         for role in await get_tra_supported_roles_by_tag(
             self.eligible_roles + active_tra_roles,
