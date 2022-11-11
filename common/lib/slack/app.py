@@ -74,7 +74,6 @@ async def handle_request_access_command(ack, body, logger):
     logger.info(body)
 
 
-
 @slack_app.message("hello")
 async def message_hello(message, say):
     # say() sends a message to the channel where the event was triggered
@@ -107,7 +106,8 @@ async def hello(body, ack):
 
 
 @slack_app.options("external_action")
-async def show_options(ack, payload):
+async def show_options(ack, respond, payload):
+    await ack(options=options)
     options = [
         {
             "text": {"type": "plain_text", "text": "Option 1"},
@@ -121,7 +121,7 @@ async def show_options(ack, payload):
     keyword = payload.get("value")
     if keyword is not None and len(keyword) > 0:
         options = [o for o in options if keyword in o["text"]["text"]]
-    await ack(options=options)
+    await respond(options=options)
 
 
 @slack_app.shortcut("request_access")
@@ -169,52 +169,73 @@ async def event_test(ack, body, say, logger):
 
 
 @slack_app.options("select_resources")
-async def handle_select_resources_options(ack, body, client, logger):
+async def handle_select_resources_options(ack, respond, body, client, logger):
     # TODO: Need to get list of resources to request access to
     await ack()
-    tenant = "localhost" # TODO fix
+    tenant = "localhost"  # TODO fix
     user = "curtis@noq.dev"
-    groups = [] # Need SCIM integration?
-    typeahead = await get_matching_identity_typahead(tenant, body["value"], user, groups)
+    groups = []  # Need SCIM integration?
+    typeahead = await get_matching_identity_typahead(
+        tenant, body["value"], user, groups
+    )
     options = []
     for typeahead_entry in typeahead:
-        if typeahead_entry['principal']['principal_type'] == "AwsResource":
+        if typeahead_entry["principal"]["principal_type"] == "AwsResource":
             options.append(
-                {"text": {"type": "plain_text", "text": typeahead_entry['principal']['principal_arn']}, "value": typeahead_entry['principal']['principal_arn']}
+                {
+                    "text": {
+                        "type": "plain_text",
+                        "text": typeahead_entry["principal"]["principal_arn"],
+                    },
+                    "value": typeahead_entry["principal"]["principal_arn"],
+                }
             )
-    await ack(
-        options=options
-    )
+    await respond(options=options)
+
 
 # TODO: remove this?
 async def handle_request_access_to_resource_long_process(respond, logger, body):
-    tenant = "localhost" # TODO fix
+    tenant = "localhost"  # TODO fix
     # TODO: Need to pre-clone to EBS
     iambic = IambicGit(tenant)
-    role_arns = [x["value"] for x in body['view']['state']['values']['request_access']['select_resources']['selected_options']]
-    duration = int(body['view']['state']['values']['duration']['duration']['selected_option']['value'])
-    justification = body['view']['state']['values']['justification']['justification']['value']
-    slack_user = body['user']['username']
+    role_arns = [
+        x["value"]
+        for x in body["view"]["state"]["values"]["request_access"]["select_resources"][
+            "selected_options"
+        ]
+    ]
+    duration = int(
+        body["view"]["state"]["values"]["duration"]["duration"]["selected_option"][
+            "value"
+        ]
+    )
+    justification = body["view"]["state"]["values"]["justification"]["justification"][
+        "value"
+    ]
+    slack_user = body["user"]["username"]
     res = await iambic.create_role_access_pr(
         role_arns,
         slack_user,
         duration,
         justification,
     )
-    
+
     # TODO: Identify the file associated with a role
     # TODO: Link the appropriate GitHub Username to the request
     # TODO: Submit a PR
     # TODO: Iambic auto-approve the PR based on rules in the git repo
     # TODO: Return PR URL
-    res = await respond({"response_action": "update", "view": request_access_to_resource_success})
+    res = await respond(
+        {"response_action": "update", "view": request_access_to_resource_success}
+    )
     print(res)
+
 
 @slack_app.view("request_access_to_resource")
 async def handle_request_access_to_resource(ack, body, client, logger, respond):
     # TODO: Clone known repos to shared EBS volume, logically separated by tenant
     # If repo exists, git pull
-    await ack() # Respond immediately to ack to avoid timeout
+    await ack()  # Respond immediately to ack to avoid timeout
 
     logger.info(body)
     # client.views_update(
@@ -223,28 +244,44 @@ async def handle_request_access_to_resource(ack, body, client, logger, respond):
     #     hash=body['view']['hash'],
     #     view=request_access_to_resource_success,
     # )
-    tenant = "localhost" # TODO fix
+    tenant = "localhost"  # TODO fix
     # TODO: Need to pre-clone to EBS
     iambic = IambicGit(tenant)
-    role_arns = [x["value"] for x in body['view']['state']['values']['request_access']['select_resources']['selected_options']]
-    duration = int(body['view']['state']['values']['duration']['duration']['selected_option']['value'])
-    justification = body['view']['state']['values']['justification']['justification']['value']
-    slack_user = body['user']['username']
+    role_arns = [
+        x["value"]
+        for x in body["view"]["state"]["values"]["request_access"]["select_resources"][
+            "selected_options"
+        ]
+    ]
+    duration = int(
+        body["view"]["state"]["values"]["duration"]["duration"]["selected_option"][
+            "value"
+        ]
+    )
+    justification = body["view"]["state"]["values"]["justification"]["justification"][
+        "value"
+    ]
+    slack_user = body["user"]["username"]
     res = await iambic.create_role_access_pr(
         role_arns,
         slack_user,
         duration,
         justification,
     )
-    
+
     # TODO: Identify the file associated with a role
     # TODO: Link the appropriate GitHub Username to the request
     # TODO: Submit a PR
     # TODO: Iambic auto-approve the PR based on rules in the git repo
     # TODO: Return PR URL
-    res = await respond({"response_action": "update", "view": request_access_to_resource_success})
+    # res = await respond({"response_action": "update", "view": request_access_to_resource_success})
+    # TODO: Test this new view
+    await client.views_update(
+        view_id=body["view"]["id"],
+        hash=body["view"]["hash"],
+        view=request_access_to_resource_success,
+    )
     print(res)
-
 
 
 # def main():
