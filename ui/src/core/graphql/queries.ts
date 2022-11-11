@@ -24,13 +24,12 @@ export const AUTHENTICATE_NOQ_API_QUERY = gql`
 `;
 
 export const GET_ELIGIBLE_ROLES_QUERY = gql`
-  mutation GetEligibleRolesQuery($input: Session!, $encryptor: any) {
-    roles: role(input: $input)
+  query GetEligibleRolesQuery {
+    roles
       @rest(
-        type: "Post"
+        type: "EligibleRoles"
         path: "/api/v2/eligible_roles"
-        method: "POST"
-        bodyBuilder: $encryptor
+        method: "GET"
       ) {
       data
       filteredCount
