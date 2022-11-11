@@ -41,10 +41,16 @@ const useDataTable = (config, mock) => {
 
   const filterColumnServerSide = useCallback(
     async (filters) => {
-      let filteredData = await sendRequestCommon(
-        { filters },
-        tableConfig.dataEndpoint
-      )
+      const queryParams = new URLSearchParams({
+        filters: JSON.stringify(filters),
+      }).toString()
+
+      const request = tableConfig.dataEndpoint.includes('?')
+        ? `${tableConfig.dataEndpoint}&${queryParams}`
+        : `${tableConfig.dataEndpoint}?${queryParams}`
+
+      let filteredData = await sendRequestCommon(null, request, 'get')
+
       if (!filteredData) {
         return
       }
@@ -137,15 +143,24 @@ const useDataTable = (config, mock) => {
       if (!_.isEmpty(window.location.search) && serverSideFiltering) {
         return
       }
+      const queryParams = new URLSearchParams({
+        limit: totalRows,
+      }).toString()
 
-      let data = await sendRequestCommon({ limit: totalRows }, dataEndpoint)
+      const request = dataEndpoint.includes('?')
+        ? `${dataEndpoint}&${queryParams}`
+        : `${dataEndpoint}?${queryParams}`
+
+      // const request = `${dataEndpoint}?${queryParams}`
+
+      let data = await sendRequestCommon(null, request, 'get')
 
       // This means it raised an exception from fetching data
       if (data && data.status != null) {
         data = []
       }
 
-      if (data.data?.length <= 0) data.data = mock || []
+      if (data?.data?.length <= 0) data.data = mock || []
 
       dispatch({
         type: 'SET_DATA',

@@ -1,4 +1,3 @@
-import common.lib.noq_json as json
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
@@ -93,14 +92,14 @@ class IdentityRequestsTableHandler(BaseHandler):
     3.
     """
 
-    async def post(self):
+    async def get(self):
         """
-        POST /api/v2/identity/requests
+        GET /api/v2/identity/requests
         """
         tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         config_keys = get_identity_request_storage_keys(tenant)
-        arguments = json.loads(self.request.body)
+        # arguments = json.loads(self.request.body)
         filters = arguments.get("filters")
         # TODO: Add server-side sorting
         # sort = arguments.get("sort")
