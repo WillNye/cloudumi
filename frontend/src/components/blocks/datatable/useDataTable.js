@@ -151,8 +151,6 @@ const useDataTable = (config, mock) => {
         ? `${dataEndpoint}&${queryParams}`
         : `${dataEndpoint}?${queryParams}`
 
-      // const request = `${dataEndpoint}?${queryParams}`
-
       let data = await sendRequestCommon(null, request, 'get')
 
       // This means it raised an exception from fetching data
