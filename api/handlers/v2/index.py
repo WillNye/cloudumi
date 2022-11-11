@@ -90,7 +90,7 @@ class EligibleRoleRefreshHandler(BaseHandler):
 
 
 class EligibleRoleHandler(BaseHandler):
-    async def post(self):
+    async def get(self):
         """
         Post to the index endpoint. This will generate a list of roles the user is eligible to access on the console
         ---

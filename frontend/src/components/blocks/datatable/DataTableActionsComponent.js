@@ -12,10 +12,15 @@ const DataTableActionsComponent = ({ filters, tableConfig }) => {
   const fetchAllData = async () => {
     // Remove the `limit` filter so we can fetch all records
     const filtersWithoutLimit = omit(filters, ['limit'])
-    return await sendRequestCommon(
-      { filters: filtersWithoutLimit },
-      tableConfig.dataEndpoint
-    )
+    const queryParams = new URLSearchParams({
+      filters: JSON.stringify(filtersWithoutLimit),
+    }).toString()
+
+    const request = tableConfig.dataEndpoint.includes('?')
+      ? `${tableConfig.dataEndpoint}&${queryParams}`
+      : `${tableConfig.dataEndpoint}?${queryParams}`
+
+    return await sendRequestCommon(null, request, 'get')
   }
 
   const generateFileDownload = (data, type, ext) => {
