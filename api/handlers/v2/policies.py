@@ -94,16 +94,22 @@ class PoliciesHandler(BaseAPIV2Handler):
 
     allowed_methods = ["POST"]
 
-    async def post(self):
+    async def get(self):
         """
-        POST /api/v2/policies
+        GET /api/v2/policies
         """
-        arguments = {k: self.get_argument(k) for k in self.request.arguments}
-        markdown = arguments.get("markdown")
         tenant = self.ctx.tenant
-        arguments = json.loads(self.request.body)
-        filters = arguments.get("filters")
-        limit = arguments.get("limit", 1000)
+        arguments = {k: self.get_argument(k) for k in self.request.arguments}
+
+        markdown_url_param = arguments.get("markdown", False)
+        markdown = {"false": False, "true": True}.get(markdown_url_param, False)
+
+        filters_url_param = arguments.get("filters", None)
+        filters = json.loads(filters_url_param) if filters_url_param else None
+
+        limit_url_param = arguments.get("limit", 1000)
+        limit = int(limit_url_param)
+
         tags = {
             "user": self.user,
             "tenant": tenant,

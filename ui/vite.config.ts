@@ -27,7 +27,7 @@ export default defineConfig(({ mode, command }) => {
     server: {
       port: 3000,
       open: true,
-      host: '::',
+      host: 'localhost',
       https: {
         // Reference: https://stackoverflow.com/questions/69417788/vite-https-on-localhost
         key: fs.readFileSync('./.certs/server.key.pem'),
@@ -35,23 +35,23 @@ export default defineConfig(({ mode, command }) => {
       },
       proxy: {
         '/auth': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         },
         '/noauth': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         },
         '/saml': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         },
         '/api': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         },
         '/docs': {
-          target:  env.VITE_API_URL,
+          target: env.VITE_API_URL,
           changeOrigin: false
         }
       }

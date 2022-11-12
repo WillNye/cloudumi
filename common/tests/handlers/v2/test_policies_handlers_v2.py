@@ -35,9 +35,8 @@ class TestPoliciesApi(NOQAsyncHTTPTestCase):
                 "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
-        body = json.dumps({"filters": {}})
         response = self.fetch(
-            "/api/v2/policies?markdown=true", headers=headers, method="POST", body=body
+            "/api/v2/policies?markdown=true", headers=headers, method="GET"
         )
         self.assertEqual(response.code, 200)
         response_j = json.loads(response.body)

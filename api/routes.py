@@ -16,7 +16,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
-from api.handlers.auth import AuthHandler
+from api.handlers.auth import AuthHandler, CognitoAuthHandler
 from api.handlers.v1.credentials import GetCredentialsHandler
 from api.handlers.v1.health import HealthHandler
 from api.handlers.v1.policies import (
@@ -130,7 +130,6 @@ from api.handlers.v3.services.effective_role_policy import (
 )
 from api.handlers.v3.slack import SlackIntegrationConfigurationCrudHandler
 from api.handlers.v3.tenant_details.handler import (
-    CognitoTenantPool,
     EulaHandler,
     TenantDetailsHandler,
     TenantEulaHandler,
@@ -159,6 +158,7 @@ def make_app(jwt_validator=None):
         (r"/saml/(.*)", SamlHandler),
         (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
+        (r"/api/v1/auth/cognito", CognitoAuthHandler),
         (r"/api/v1/get_credentials", GetCredentialsHandler),
         (r"/api/v3/legal/agreements/eula", EulaHandler),
         (r"/api/v3/tenant/details", TenantDetailsHandler),
@@ -351,10 +351,6 @@ def make_app(jwt_validator=None):
             r"/docs/?(.*)",
             AuthenticatedStaticFileHandler,
             {"path": docs_path, "default_filename": "index.html"},
-        ),
-        (
-            r"/api/v3/tenant/userpool",
-            CognitoTenantPool,
         ),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),

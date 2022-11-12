@@ -15,31 +15,56 @@ import {
 } from './AuthContext';
 import { ChallengeName } from './constants';
 import { User } from './types';
-import { useQuery } from '@apollo/client';
-import { GetTenantUserPoolQuery, GET_TENANT_USERPOOL_QUERY } from 'core/graphql';
+
+import { useQuery, useMutation } from '@apollo/client';
+import {
+  AUTHENTICATE_NOQ_API_QUERY,
+  GetTenantUserPoolQuery,
+  GET_TENANT_USERPOOL_QUERY
+} from 'core/graphql';
 import '../AWS/Amplify';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isGettingUser, setIsGettingUser] = useState(false);
+
   const navigate = useNavigate();
-  const { loading, error: tenantError, data: tenantData } = useQuery<GetTenantUserPoolQuery>(GET_TENANT_USERPOOL_QUERY);
+  const {
+    loading: isGettingTenat,
+    error: tenantError,
+    data: tenantData
+  } = useQuery<GetTenantUserPoolQuery>(GET_TENANT_USERPOOL_QUERY);
+  const [setupAPIAuth] = useMutation(AUTHENTICATE_NOQ_API_QUERY);
 
   useEffect(() => {
-    // Configure amplify based on tenant user pool details
-    // NOTE: Disabled due to cognito secret not supported by amplify
-    // updateAmplifyConfig(tenantData);
+    if (tenantData) {
+      // Configure amplify based on tenant user pool details
+      // NOTE: Disabled due to cognito secret not supported by amplify
+      // updateAmplifyConfig(tenantData);
+
+      // Check if user is already logged in
+      getAuthenticatedUser();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantData]);
 
   const getAuthenticatedUser = useCallback(async () => {
+    setIsGettingUser(true);
     try {
       const user = await AmplifyAuth.currentAuthenticatedUser({
-        bypassCache: true
+        bypassCache: false
       });
+      const session = await AmplifyAuth.currentSession();
+      if (session) {
+        await setupAPIAuth({ variables: { input: session } });
+      }
       setUser(user);
+      setIsGettingUser(false);
     } catch ({ message }) {
+      setIsGettingUser(false);
       throw new Error(`Error getting Authernticated user: ${message}`);
     }
-  }, []);
+  }, [setupAPIAuth]);
 
   const setupTOTP = useCallback(async () => {
     try {
@@ -136,12 +161,16 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         // here is how you get that ->
         // const { idToken: { jwtToken } } = await Auth.currentSession();
         setUser(awsUser);
+        const session = await AmplifyAuth.currentSession();
+        if (session) {
+          await setupAPIAuth({ variables: { session } });
+        }
         navigate('/');
       } catch ({ message }) {
         throw new Error(`Error logging in: ${message}`);
       }
     },
-    [navigate]
+    [navigate, setupAPIAuth]
   );
 
   const logout = useCallback(async () => {
@@ -178,12 +207,12 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   );
 
   // NOTE: I don't think we should put these 2 loading/invalid checks here
-  if (loading) {
+  if (isGettingTenat || isGettingUser) {
     // check is user data is available
     return <div>Loading...</div>;
   }
 
-  if (!tenantError) {
+  if (tenantError) {
     // Invalid Tenant component
     return (
       <div>

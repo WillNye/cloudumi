@@ -5,7 +5,7 @@ import time
 import traceback
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Union
+from typing import Any, Dict, Union
 
 import pytz
 import redis
@@ -30,7 +30,13 @@ from common.lib.alb_auth import authenticate_user_by_alb_auth
 from common.lib.auth import AuthenticationError, is_tenant_admin
 from common.lib.aws.cached_resources.iam import get_user_active_tra_roles_by_tag
 from common.lib.dynamo import UserDynamoHandler
-from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
+from common.lib.jwt import (
+    JwtAuthType,
+    generate_jwt_token,
+    generate_jwt_token_from_cognito,
+    validate_and_authenticate_jwt_token,
+    validate_and_return_jwt_token,
+)
 from common.lib.oidc import authenticate_user_by_oidc
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
@@ -98,7 +104,9 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
 
     def get_tenant(self):
         if config.get("_global_.development"):
-            x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
+            x_forwarded_host = self.request.headers.get(
+                "X-Forwarded-Host", "localhost"
+            )  # Adding default of localhost for development only
             if x_forwarded_host:
                 return x_forwarded_host.split(":")[0]
 
@@ -253,6 +261,10 @@ class BaseHandler(TornadoRequestHandler):
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
+        await self.initialize_auth()
+        return await self.authorization_flow()
+
+    async def check_tenant(self):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
             function: str = (
@@ -275,6 +287,9 @@ class BaseHandler(TornadoRequestHandler):
             )
             await self.finish()
             raise SilentException(log_data["message"])
+
+    async def initialize_auth(self):
+        await self.check_tenant()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -291,17 +306,6 @@ class BaseHandler(TornadoRequestHandler):
             )
         self.request_uuid = str(uuid.uuid4())
         stats.timer("base_handler.incoming_request")
-        return await self.authorization_flow()
-
-    def write(self, chunk: Union[str, bytes, dict]) -> None:
-        # tenant = self.get_tenant_name()
-        # if config.get_tenant_specific_key(
-        #     "_security_risk_full_debugging.enabled", tenant
-        # ):
-        #     if not hasattr(self, "responses"):
-        #         self.responses = []
-        #     self.responses.append(chunk)
-        super(BaseHandler, self).write(chunk)
 
     async def configure_tracing(self):
         tenant = self.get_tenant_name()
@@ -366,7 +370,12 @@ class BaseHandler(TornadoRequestHandler):
         return False
 
     async def authorization_flow(
-        self, user: str = None, console_only: bool = True, refresh_cache: bool = False
+        self,
+        user: str = None,
+        console_only: bool = True,
+        refresh_cache: bool = False,
+        jwt_tokens: Dict[str, str] = {},
+        jwt_auth_type: JwtAuthType = None,
     ) -> None:
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
@@ -394,6 +403,7 @@ class BaseHandler(TornadoRequestHandler):
         refresh_cache = (
             self.request.arguments.get("refresh_cache", [False])[0] or refresh_cache
         )
+
         attempt_sso_authn = await self.attempt_sso_authn(tenant)
 
         refreshed_user_roles_from_cache = False
@@ -452,6 +462,36 @@ class BaseHandler(TornadoRequestHandler):
             self.user = config.get_tenant_specific_key(
                 "_development_user_override", tenant
             )
+
+        if not self.user and jwt_tokens:
+            # Cognito JWT Validation / Authentication Flow
+            tenant = self.get_tenant_name()
+
+            verified_claims = await validate_and_authenticate_jwt_token(
+                jwt_tokens, tenant, JwtAuthType.COGNITO
+            )
+            if verified_claims:
+                encoded_cookie = await generate_jwt_token_from_cognito(
+                    verified_claims, tenant
+                )
+
+                self.set_cookie(
+                    self.get_noq_auth_cookie_key(),
+                    encoded_cookie,
+                    expires=verified_claims.get("exp"),
+                    secure=config.get_tenant_specific_key(
+                        "auth.cookie.secure", tenant, True
+                    ),
+                    httponly=config.get_tenant_specific_key(
+                        "auth.cookie.httponly", tenant, True
+                    ),
+                    samesite=config.get_tenant_specific_key(
+                        "auth.cookie.samesite", tenant, True
+                    ),
+                )
+
+                self.user = verified_claims.get("email")
+                self.groups = verified_claims.get("cognito:groups", [])
 
         if not self.user:
             # Authenticate user by API Key
