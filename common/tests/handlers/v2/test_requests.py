@@ -28,7 +28,7 @@ class TestRequestsHandler(NOQAsyncHTTPTestCase):
 
         return make_app(jwt_validator=lambda x: {})
 
-    def test_get(self):
+    def test_post(self):
         # Method not allowed
         headers = {
             self.config.get_tenant_specific_key(
@@ -38,7 +38,9 @@ class TestRequestsHandler(NOQAsyncHTTPTestCase):
                 "auth.groups_header_name", tenant
             ): "groupa,groupb,groupc",
         }
-        response = self.fetch("/api/v2/requests", method="GET", headers=headers)
+        response = self.fetch(
+            "/api/v2/requests", method="POST", headers=headers, body="{}"
+        )
         self.assertEqual(response.code, 405)
 
     @pytest.mark.skip(reason="EN-637")

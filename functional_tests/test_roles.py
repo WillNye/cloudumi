@@ -6,9 +6,8 @@ from functional_tests.conftest import TEST_ROLE_ARN, FunctionalTest
 class TestRoles(FunctionalTest):
     def test_eligible_roles(self):
         res = self.make_request(
-            "/api/v2/eligible_roles",
-            method="post",
-            body=json.dumps({"limit": 1000}),
+            "/api/v2/eligible_roles?limit=1000",
+            method="get",
         )
         self.assertEqual(res.code, 200)
         res_j = json.loads(res.body)
