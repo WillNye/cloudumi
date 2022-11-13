@@ -114,19 +114,20 @@ class IambicGit():
             git.add(template_path)
             git.commit("-m", f"Requesting role access for {user} to {role_arn} until {expires_at.isoformat()}\nJustification: {justification}")
             git.push("--set-upstream", "origin", branch_name)
-            gh = repo["gh"]
-            # TODO hardcoded
-            gh_repo = gh.get_repo(f"noqdev/noq-templates")
-            body = f"""
+        gh = repo["gh"]
+        # TODO hardcoded
+        role_arns = ", ".join(role_arns)
+        gh_repo = gh.get_repo(f"noqdev/noq-templates")
+        body = f"""
 Access Request Detail:
 
 :small_blue_diamond: **User**: {user}
-:small_blue_diamond: **Cloud Identity**: {role_arn}
+:small_blue_diamond: **Cloud Identities**: {role_arns}
 :small_blue_diamond: **Justification**: {justification}
-            """
-            # TODO: Figure out base branch
-            # gh_repo.get_branch(branch=branch_name)
-            pr = gh_repo.create_pull(title=f"Access Request - {user} - {role_arn}", body=body, head=branch_name, base="main")
+        """
+        # TODO: Figure out base branch
+        # gh_repo.get_branch(branch=branch_name)
+        pr = gh_repo.create_pull(title=f"Access Request - {user} - {role_arns}", body=body, head=branch_name, base="main")
         return {
             "errors": errors,
             "github_pr": pr.html_url

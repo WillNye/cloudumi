@@ -84,7 +84,11 @@
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
-        "RUNTIME_PROFILE": "API"
+        "RUNTIME_PROFILE": "API",
+        "HTTP_PROXY": "http://127.0.0.1:8080",
+        "HTTPS_PROXY": "http://127.0.0.1:8080",
+        "AWS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem",
+        "REQUESTS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem"
       }
     },
     {

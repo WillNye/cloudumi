@@ -345,7 +345,7 @@ request_access_to_resource_success = json.loads(
             "type": "section",
             "text": {
                 "type": "plain_text",
-                "text": "Sucess!",
+                "text": "Submitting response. We will send the status to #noq-requests",
                 "emoji": true
             }
         }

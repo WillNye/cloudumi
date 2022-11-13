@@ -2,6 +2,11 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "localtunnel",
+      "type": "shell",
+      "command": "lt --port 8092 --subdomain cool-rats-stare-68-4-188-30"
+    },
+    {
       "type": "docker-build",
       "label": "docker-build",
       "platform": "python",

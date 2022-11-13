@@ -1,3 +1,4 @@
+import asyncio
 import boto3
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
@@ -43,7 +44,7 @@ oauth_settings = AsyncOAuthSettings(
     # TODO: Fix these
     scopes=scopes,
     installation_store=AmazonS3InstallationStore(
-        s3_client=boto3.client("s3"),
+        s3_client=boto3.client("s3", region_name="us-west-2"), # TODO Configurable
         bucket_name=config.get("_global_.s3_slack_installation_store_bucket"),
         client_id=config.get("_global_.secrets.slack.client_id"),
     ),
@@ -63,10 +64,17 @@ slack_app = AsyncApp(
     #     client_id=config.get("_global_.secrets.slack.client_id"),
     # ),
     oauth_settings=oauth_settings,
+    process_before_response=True,
 )
 
 # Need a mapping of Slack Token to Tenant ID
 
+async def respond_to_ack(body, ack):
+    await ack(
+        {
+            "response_action": "clear"
+        }
+    )
 
 @slack_app.command("/request_access")
 async def handle_request_access_command(ack, body, logger):
@@ -107,7 +115,7 @@ async def hello(body, ack):
 
 @slack_app.options("external_action")
 async def show_options(ack, respond, payload):
-    await ack(options=options)
+    await ack()
     options = [
         {
             "text": {"type": "plain_text", "text": "Option 1"},
@@ -121,7 +129,8 @@ async def show_options(ack, respond, payload):
     keyword = payload.get("value")
     if keyword is not None and len(keyword) > 0:
         options = [o for o in options if keyword in o["text"]["text"]]
-    await respond(options=options)
+    await ack(options=options)
+    # await respond(options=options)
 
 
 @slack_app.shortcut("request_access")
@@ -190,7 +199,7 @@ async def handle_select_resources_options(ack, respond, body, client, logger):
                     "value": typeahead_entry["principal"]["principal_arn"],
                 }
             )
-    await respond(options=options)
+    await ack(options=options)
 
 
 # TODO: remove this?
@@ -229,14 +238,19 @@ async def handle_request_access_to_resource_long_process(respond, logger, body):
         {"response_action": "update", "view": request_access_to_resource_success}
     )
     print(res)
+    
 
-
-@slack_app.view("request_access_to_resource")
-async def handle_request_access_to_resource(ack, body, client, logger, respond):
+async def handle_request_access_to_resource_ack(ack):
+    await ack(response_action="update", view=request_access_to_resource_success)
+    
+#@slack_app.view("request_access_to_resource")
+async def handle_request_access_to_resource(body, client, logger, respond):
     # TODO: Clone known repos to shared EBS volume, logically separated by tenant
     # If repo exists, git pull
-    await ack()  # Respond immediately to ack to avoid timeout
-
+    # await ack({
+    #         "response_action": "clear"
+    #     })  # Respond immediately to ack to avoid timeout
+    # await ack(response_action="update", view=request_access_to_resource_success)
     logger.info(body)
     # client.views_update(
     #     #token=bot_token,
@@ -268,7 +282,6 @@ async def handle_request_access_to_resource(ack, body, client, logger, respond):
         duration,
         justification,
     )
-
     # TODO: Identify the file associated with a role
     # TODO: Link the appropriate GitHub Username to the request
     # TODO: Submit a PR
@@ -276,12 +289,23 @@ async def handle_request_access_to_resource(ack, body, client, logger, respond):
     # TODO: Return PR URL
     # res = await respond({"response_action": "update", "view": request_access_to_resource_success})
     # TODO: Test this new view
-    await client.views_update(
-        view_id=body["view"]["id"],
-        hash=body["view"]["hash"],
-        view=request_access_to_resource_success,
+    # await client.views_update(
+    #     view_id=body["view"]["id"],
+    #     hash=body["view"]["hash"],
+    #     view=request_access_to_resource_success,
+    # )
+    # await respond("Submitted", response_type="ephemeral")
+    # Send a message to the user
+    role_arns_text = ", ".join(role_arns)
+    pr_url = res['github_pr']
+    conversation = await client.conversations_open(users=body['user']['id'])
+    message = await client.chat_postMessage(
+        channel=conversation['channel']['id'], 
+        text=(
+            f"Your request for access to {role_arns_text} has been submitted.\n\n"
+            f"You may view it here: {pr_url}"
+        )
     )
-    print(res)
 
 
 # def main():
@@ -297,6 +321,11 @@ async def handle_user_change_events(body, logger):
 @slack_app.event("user_status_changed")
 async def handle_user_status_changed_events(body, logger):
     logger.info(body)
+    
+slack_app.view("request_access_to_resource")(
+    ack=handle_request_access_to_resource_ack,
+    lazy=[handle_request_access_to_resource]
+)
 
 
 # slack_app.view("request_access_to_resource")(
