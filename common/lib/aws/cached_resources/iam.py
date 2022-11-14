@@ -156,4 +156,4 @@ async def get_tra_supported_roles_by_tag(
             if any(group in tra_groups for group in groups):
                 escalated_roles[iam_role.arn] = role
 
-    return list(escalated_roles.values())
+    return list(set(escalated_roles.values()))

@@ -352,3 +352,324 @@ request_access_to_resource_success = json.loads(
     ]
 }"""
 )
+
+select_desired_permissions_modal = json.loads(
+    """
+{
+    "type": "modal",
+    "callback_id": "request_permissions_to_resource",
+    "title": {
+        "type": "plain_text",
+        "text": "Noq",
+        "emoji": true
+    },
+    "submit": {
+        "type": "plain_text",
+        "text": "Submit Request",
+        "emoji": true
+    },
+    "close": {
+        "type": "plain_text",
+        "text": "Cancel",
+        "emoji": true
+    },
+    "blocks": [
+        {
+            "type": "section",
+            "block_id": "select_identities",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Identities*"
+            },
+            "accessory": {
+                "action_id": "select_identities_action",
+                "type": "multi_external_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select identities"
+                },
+                "min_query_length": 3
+            }
+        },
+        {
+            "type": "section",
+            "block_id": "select_resources",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Resources*"
+            },
+            "accessory": {
+                "action_id": "select_resources_action",
+                "type": "multi_external_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select resources"
+                },
+                "min_query_length": 3
+            }
+        },
+        {
+            "type": "input",
+            "element": {
+                "type": "multi_static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select Permissions",
+                    "emoji": true
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "List",
+                            "emoji": true
+                        },
+                        "value": "list"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Read*",
+                            "emoji": true
+                        },
+                        "value": "read"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Write",
+                            "emoji": true
+                        },
+                        "value": "write"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Permissions Management",
+                            "emoji": true
+                        },
+                        "value": "permissions_management"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Tagging",
+                            "emoji": true
+                        },
+                        "value": "tagging"
+                    }
+                ],
+                "action_id": "desired_permissions"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Desired Permissions",
+                "emoji": true
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "duration",
+            "element": {
+                "type": "static_select",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1 Hour",
+                            "emoji": true
+                        },
+                        "value": "3600"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "2 Hours",
+                            "emoji": true
+                        },
+                        "value": "7200"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "4 Hours",
+                            "emoji": true
+                        },
+                        "value": "14400"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "8 Hours",
+                            "emoji": true
+                        },
+                        "value": "28800"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "24 Hours",
+                            "emoji": true
+                        },
+                        "value": "86400"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Never",
+                            "emoji": true
+                        },
+                        "value": "no_expire"
+                    }
+                ],
+                "action_id": "duration"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Expiration",
+                "emoji": true
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "justification",
+            "element": {
+                "type": "plain_text_input",
+                "multiline": true,
+                "action_id": "justification",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "I need access for..."
+                }
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Justification",
+                "emoji": true
+            }
+        }
+    ]
+}"""
+)
+
+self_service_step_1_option_selection = json.loads(
+    """{
+    "type": "modal",
+    "title": {
+        "type": "plain_text",
+        "text": "Noq",
+        "emoji": true
+    },
+    "submit": {
+        "type": "plain_text",
+        "text": "Next",
+        "emoji": true
+    },
+    "close": {
+        "type": "plain_text",
+        "text": "Cancel",
+        "emoji": true
+    },
+    "blocks": [
+        {
+            "type": "input",
+            "element": {
+                "type": "radio_buttons",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Request Access",
+                            "emoji": true
+                        },
+                        "value": "request_access_to_identity"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Request Cloud Permissions",
+                            "emoji": true
+                        },
+                        "value": "request_permissions_for_identity"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Create a cloud identity or resource",
+                            "emoji": true
+                        },
+                        "value": "create_cloud_identity_or_resource"
+                    }
+                ],
+                "action_id": "self-service-step-1-option-selection"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "What would you like to do?",
+                "emoji": true
+            }
+        }
+    ]
+}"""
+)
+
+self_service_request_permissions_step_2_option_selection = json.loads(
+    """{
+    "type": "modal",
+    "title": {
+        "type": "plain_text",
+        "text": "Noq",
+        "emoji": true
+    },
+    "submit": {
+        "type": "plain_text",
+        "text": "Next",
+        "emoji": true
+    },
+    "close": {
+        "type": "plain_text",
+        "text": "Cancel",
+        "emoji": true
+    },
+    "blocks": [
+        {
+            "type": "input",
+            "element": {
+                "type": "radio_buttons",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Inline Policy",
+                            "emoji": true
+                        },
+                        "value": "update_inline_policies"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Managed Policy",
+                            "emoji": true
+                        },
+                        "value": "update_managed_policies"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Tags",
+                            "emoji": true
+                        },
+                        "value": "update_tags"
+                    }
+                ],
+                "action_id": "self-service-step-2-option-selection"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "What type of permissions change would you like?",
+                "emoji": true
+            }
+        }
+    ]
+}"""
+)
