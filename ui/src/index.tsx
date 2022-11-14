@@ -2,10 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
+import { DesignTokensProvider } from 'reablocks';
 
 // Note: Order is important here
 import 'core/utils/tracking';
 
+import { theme } from 'shared/utils/DesignTokens';
 import { ErrorBoundary } from 'shared/utils/ErrorBoundary';
 import { Auth } from 'core/Auth';
 import { ApolloProvider } from 'core/Apollo';
@@ -19,11 +21,13 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <ApolloProvider>
         <HelmetProvider>
           <Helmet titleTemplate="%s | NOQ" defaultTitle="NOQ" />
-          <ErrorBoundary>
-            <Auth>
-              <App />
-            </Auth>
-          </ErrorBoundary>
+          <DesignTokensProvider value={theme}>
+            <ErrorBoundary>
+              <Auth>
+                <App />
+              </Auth>
+            </ErrorBoundary>
+          </DesignTokensProvider>
         </HelmetProvider>
       </ApolloProvider>
     </BrowserRouter>
