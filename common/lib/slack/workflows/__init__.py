@@ -276,6 +276,8 @@ remove_unused_identities_sample = [
     },
 ]
 
+
+
 unauthorized_change_sample = [
     {
         "type": "section",
@@ -673,3 +675,140 @@ self_service_request_permissions_step_2_option_selection = json.loads(
     ]
 }"""
 )
+
+select_desired_managed_policies_modal = json.loads("""{
+	"type": "modal",
+	"callback_id": "request_permissions_to_resource",
+	"title": {
+		"type": "plain_text",
+		"text": "Noq",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit Request",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "section",
+			"block_id": "select_identities",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Identities*"
+			},
+			"accessory": {
+				"action_id": "select_identities_action",
+				"type": "multi_external_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select identities"
+				},
+				"min_query_length": 3
+			}
+		},
+		{
+			"type": "section",
+			"block_id": "select_managed_policies",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Managed Policies*"
+			},
+			"accessory": {
+				"action_id": "select_managed_policies_action",
+				"type": "multi_external_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select managed policies"
+				},
+				"min_query_length": 3
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "duration",
+			"element": {
+				"type": "static_select",
+				"options": [
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "1 Hour",
+							"emoji": true
+						},
+						"value": "3600"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "2 Hours",
+							"emoji": true
+						},
+						"value": "7200"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "4 Hours",
+							"emoji": true
+						},
+						"value": "14400"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "8 Hours",
+							"emoji": true
+						},
+						"value": "28800"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "24 Hours",
+							"emoji": true
+						},
+						"value": "86400"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Never",
+							"emoji": true
+						},
+						"value": "no_expire"
+					}
+				],
+				"action_id": "duration"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Expiration",
+				"emoji": true
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "justification",
+			"element": {
+				"type": "plain_text_input",
+				"multiline": true,
+				"action_id": "justification",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "I need this for..."
+				}
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Justification",
+				"emoji": true
+			}
+		}
+	]
+}""")
