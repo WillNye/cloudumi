@@ -525,16 +525,11 @@ async def prune_iam_resource_tag(
 
     resource_tag.remove(value)
 
-    if resource_tag:
-        await aio_wrapper(
-            getattr(boto_conn, f"tag_{resource_type}"),
-            Tags=[{"Key": tag, "Value": ":".join(resource_tag)}],
-            **boto_kwargs,
-        )
-    else:
-        await aio_wrapper(
-            getattr(boto_conn, f"untag_{resource_type}"), TagKeys=[tag], **boto_kwargs
-        )
+    await aio_wrapper(
+        getattr(boto_conn, f"tag_{resource_type}"),
+        Tags=[{"Key": tag, "Value": ":".join(resource_tag) if resource_tag else ""}],
+        **boto_kwargs,
+    )
     return True
 
 
