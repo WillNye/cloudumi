@@ -23,7 +23,11 @@ export const parameters = {
   docs: {
     theme: storybookTheme,
     container: ({ context, children }) => (
-      <DocsContainer context={context}>{children}</DocsContainer>
+      <DocsContainer context={context}>
+        <DesignTokensProvider theme={theme}>
+          {children}
+        </DesignTokensProvider>
+      </DocsContainer>
     )
   },
   controls: {
