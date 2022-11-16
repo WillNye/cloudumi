@@ -1560,8 +1560,6 @@ async def apply_changes_to_role(
             if change.tag_action in [TagAction.create, TagAction.update]:
                 if change.original_key and not change.key:
                     change.key = change.original_key
-                if change.original_value and not change.value:
-                    change.value = change.original_value
                 try:
                     if resource_summary.resource_type == "role":
                         await aio_wrapper(
