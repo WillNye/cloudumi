@@ -107,7 +107,7 @@ export const theme: DesignTokens = {
   typography: {
     families: {
       fontFamily: 'Inter, sans-serif',
-      monoFontFamily: 'Monaco, monospace'
+      monoFontFamily: 'JetBrains Mono, monospace'
     },
     sizes: {
       xs: '8px',
