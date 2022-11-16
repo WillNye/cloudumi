@@ -125,6 +125,7 @@ class TestChangeRequestLib(AsyncTestCase):
         principal = AwsResourcePrincipalModel(
             principal_arn="arn:aws:iam::123456789012:role/roleName",
             principal_type="AwsResource",
+            accoiunt_id="123456789012",
         )
         resources = [
             ResourceModel(
