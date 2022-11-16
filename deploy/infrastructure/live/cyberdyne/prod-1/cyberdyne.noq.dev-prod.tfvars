@@ -5,13 +5,14 @@
 modify_ecs_task_role = false
 
 # Associated account id
-account_id = "940552945933"
+account_id = "775726381634"
 
 namespace   = "cyberdyne"
-zone        = "noq.dev"
+zone        = "cyberdyne.noq.dev"
 stage       = "prod"
 attributes  = 1
 domain_name = "cyberdyne.noq.dev"
+profile     = "cyberdyne_demo_org/cyberdyne_admin"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
@@ -35,13 +36,26 @@ allowed_inbound_cidr_blocks = [
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
 
-# Redis
-redis_node_type = "cache.t3.small"
+# Dax
+dax_node_type = "dax.t3.small"
+dax_node_count = 1
 
-profile = "prod/prod_admin"
+# SES
+notifications_mail_from_domain = "ses-us-west-2.cyberdyne.noq.dev"
+
+# Redis
+redis_node_type = "cache.t3.micro"
+secret_manager_secret_name = "cyberdyne-prod-noq_secrets"
+
 # Sentry
 sentry_dsn = "https://f446f0f25a74440db6e211ebe73c05f9@o1134078.ingest.sentry.io/6188334"
 
-s3_access_log_bucket = "s3-access-logs.940552945933.us-west-2"
-
+s3_access_log_bucket = "s3-access-logs.775726381634.us-west-2"
 elasticache_node_type = "cache.t3.micro"
+google_analytics_tracking_id = "G-P5K1SQF3P6"
+
+global_tenant_data_account_id = "615395543222"
+legal_docs_bucket_name = "noq-global-staging-legal-docs"
+
+api_count = 1
+worker_count = 1

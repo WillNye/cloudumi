@@ -78,7 +78,7 @@ variable "profile" {
   description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
   type        = string
   validation {
-    condition     = contains(["staging/staging_admin", "prod/prod_admin"], var.profile)
+    condition     = contains(["staging/staging_admin", "prod/prod_admin", "cyberdyne_demo_org/cyberdyne_admin"], var.profile)
     error_message = "Allowed AWS_PROFILEs are \"staging/staging_admin\" and \"prod/prod_admin\"."
   }
 }

@@ -1,8 +1,3 @@
-data "aws_iam_role" "ecs_task_role" {
-  count = var.modify_ecs_task_role ? 0 : 1
-  name  = "${var.cluster_id}-ecsTaskRole"
-}
-
 resource "aws_iam_role" "ecs_task_role" {
   count       = var.modify_ecs_task_role ? 1 : 0
   name        = "${var.cluster_id}-ecsTaskRole"
