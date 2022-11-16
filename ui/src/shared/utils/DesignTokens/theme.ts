@@ -110,27 +110,45 @@ export const theme: DesignTokens = {
       monoFontFamily: 'Monaco, monospace'
     },
     sizes: {
-      xs: 8,
-      sm: 11,
-      md: 16,
-      lg: 20,
-      xl: 28,
-      xxl: 32
+      xs: '8px',
+      sm: '12px',
+      md: '14px',
+      lg: '20px',
+      xl: '28px',
+      xxl: '32px'
     }
   },
   spacings: {
-    xs: 2,
-    sm: 5,
-    md: 10,
-    lg: 20,
-    xl: 24,
-    xxl: 30
+    xs: '2px',
+    sm: '5px',
+    md: '10px',
+    lg: '20px',
+    xl: '24px',
+    xxl: '30px'
   },
   borders: {
     radius: {
-      sm: 2,
-      md: 5,
-      lg: 10
+      sm: '2px',
+      md: '5px',
+      lg: '10px'
+    }
+  },
+  gradients: {
+    blue: {
+      '100': 'linear-gradient(204deg, #19D4EE 10%, #4B5CFA 100%)',
+      '200': 'linear-gradient(30deg, #2E27AD 0%, #679BFF 100%)'
+    },
+    orange: {
+      '100': 'linear-gradient(45deg, #C8511B 0%, #FFA800 100%)'
+    },
+    red: {
+      '100': 'linear-gradient(204deg, #FF8A8A 10%, #C14941 100%)'
+    },
+    green: {
+      '100': 'linear-gradient(45deg, #055F4E 0%, #56C0A7 100%)'
+    },
+    pink: {
+      '100': 'linear-gradient(204deg, #FC7AFF 10%, #C15179 100%)'
     }
   },
   shadows: {

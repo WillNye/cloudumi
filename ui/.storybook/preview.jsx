@@ -1,20 +1,32 @@
 import { DocsContainer } from '@storybook/addon-docs';
-import { darkTheme } from './theme';
+import { BrowserRouter } from 'react-router-dom';
+import { DesignTokensProvider } from 'reablocks';
+
+import { storybookTheme } from './theme';
+import { theme } from '../src/shared/utils/DesignTokens';
+
+import '../src/index.css';
+
+const withProvider = (Story, context) => (
+  <BrowserRouter>
+    <DesignTokensProvider theme={theme}>
+      <Story {...context} />
+    </DesignTokensProvider>
+  </BrowserRouter>
+);
+
+export const decorators = [withProvider];
 
 export const parameters = {
   layout: 'centered',
   actions: { argTypesRegex: '^on[A-Z].*' },
   docs: {
-    theme: darkTheme,
+    theme: storybookTheme,
     container: ({ context, children }) => (
       <DocsContainer context={context}>{children}</DocsContainer>
     )
   },
   controls: {
-    hideNoControlsWarning: true,
-    matchers: {
-      color: /(background|color)$/i,
-      date: /Date$/
-    }
+    hideNoControlsWarning: true
   }
 };

@@ -1,4 +1,4 @@
-import { BorderBlocks, ColorBlocks, ComponentBlocks, DesignTokensProvider, PaletteBlocks, ShadowBlocks, SpacingBlocks, TypographyBlocks } from 'reablocks';
+import { BorderBlocks, ColorBlocks, ComponentBlocks, DesignTokensProvider, GradientBlocks, PaletteBlocks, ShadowBlocks, SpacingBlocks, TypographyBlocks } from 'reablocks';
 import { theme } from './theme';
 
 export default {
@@ -39,6 +39,14 @@ export const Spacings = () => (
 export const Borders = () => (
   <DesignTokensProvider value={theme}>
     <BorderBlocks />
+  </DesignTokensProvider>
+);
+
+export const Gradients = () => (
+  <DesignTokensProvider value={theme}>
+    <div style={{ width: '90vw' }}>
+      <GradientBlocks />
+    </div>
   </DesignTokensProvider>
 );
 
