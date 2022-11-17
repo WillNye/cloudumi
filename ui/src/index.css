@@ -1,3 +1,6 @@
+@import url('./assets/fonts/inter/inter.css');
+@import url('./assets/fonts/mono/mono.css');
+
 :root {
   font-size: 16px;
   line-height: 24px;
