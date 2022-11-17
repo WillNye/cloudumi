@@ -189,7 +189,7 @@ http_file(
     downloaded_file_path = "noq",
     executable = True,
     url = "https://public-noq-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/noq",
-    sha256 = "e0ced3bb56ee2893acac552c8e2ae4a57dab8236800ce2be2902fcc9516f0b00",
+    sha256 = "f653ef37b899fd2d6ee3f932f774339aa2393e8aed47daa84e608f42457595cb",
 )
 
 register_toolchains(
