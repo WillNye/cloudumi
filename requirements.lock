@@ -448,7 +448,7 @@ mkdocs==1.4.2
     #   mkdocs-plugin-inline-svg
     #   mkdocs-render-swagger-plugin
     #   mkdocs-video
-mkdocs-material==8.5.7
+mkdocs-material==8.5.10
     # via -r ./docs/requirements.in
 mkdocs-material-extensions==1.1
     # via mkdocs-material
@@ -635,7 +635,7 @@ pyjwt==2.6.0
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   pygithub
-pymdown-extensions==9.7
+pymdown-extensions==9.8
     # via mkdocs-material
 pynacl==1.5.0
     # via
@@ -647,7 +647,7 @@ pyparsing==3.0.9
     # via
     #   httplib2
     #   packaging
-pyphen==0.13.0
+pyphen==0.13.1
     # via weasyprint
 pyrsistent==0.19.1
     # via jsonschema
@@ -976,7 +976,7 @@ wcwidth==0.2.5
     # via
     #   prettytable
     #   prompt-toolkit
-weasyprint==57.0
+weasyprint==57.1
     # via mkdocs-pdf-export-plugin
 webencodings==0.5.1
     # via
@@ -1006,7 +1006,7 @@ yarl==1.8.1
     #   okta
 zipp==3.10.0
     # via importlib-metadata
-zopfli==0.2.1
+zopfli==0.2.2
     # via fonttools
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -125,12 +125,13 @@ async def get_user_active_tra_roles_by_tag(tenant: str, user: str) -> list[str]:
 
 
 async def get_tra_supported_roles_by_tag(
-    eligible_roles: list[str], groups: list[str], tenant: str
+    eligible_roles: list[str], groups: list[str], user: str, tenant: str
 ) -> list[dict]:
     """Get TRA supported roles given a list of groups and already usable roles
 
     :param eligible_roles: Roles that are already accessible and can be ignored
     :param groups: List of groups to check against
+    :param user: User to check against
     :param tenant: The tenant to check against
 
     :return: A list of roles that can be used as part of the TRA workflow
@@ -153,7 +154,7 @@ async def get_tra_supported_roles_by_tag(
         if tra_groups := get_resource_tag(
             role, tra_config.supported_groups_tag, True, set()
         ):
-            if any(group in tra_groups for group in groups):
+            if any(group in tra_groups for group in groups) or user in tra_groups:
                 escalated_roles[iam_role.arn] = role
 
     return list(escalated_roles.values())
