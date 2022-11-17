@@ -52,7 +52,7 @@ oauth_settings = AsyncOAuthSettings(
     install_path="/api/v3/slack/install",
     redirect_uri_path="/api/v3/slack/oauth_redirect",
     # TODO: Replace ngrok with something more generic
-    redirect_uri="https://a340-68-4-188-30.ngrok.io/api/v3/slack/oauth_redirect",
+    # redirect_uri="https://a340-68-4-188-30.ngrok.io/api/v3/slack/oauth_redirect",
 )
 
 slack_app = AsyncApp(
