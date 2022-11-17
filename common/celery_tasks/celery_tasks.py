@@ -2953,5 +2953,3 @@ app.autodiscover_tasks(
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
-
-remove_expired_requests_for_tenant("localhost")
