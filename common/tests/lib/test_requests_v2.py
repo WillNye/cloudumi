@@ -2923,6 +2923,7 @@ class TestIsEligibleForAutoApproval(unittest.IsolatedAsyncioTestCase):
         self.principal = AwsResourcePrincipalModel(
             principal_arn=role_arn,
             principal_type="AwsResource",
+            account_id=role_arn.split(":")[4],
         )
 
         self.resource_tag_change = ResourceTagChangeModel(
