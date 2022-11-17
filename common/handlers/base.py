@@ -429,9 +429,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.user = res.get("user")
                 # Add groups_pending_eula so authorization_flow works as expected
                 # If EULA isn't signed groups will be cleared at the end of the auth flow
-                # EN-1406: also allow users to access console if they are configured for it
                 self.groups = res.get("groups", []) + res.get("groups_pending_eula", [])
-                self.groups.append(res.get("user"))
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)

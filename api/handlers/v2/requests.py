@@ -153,7 +153,7 @@ async def validate_request_creation(
     ):
         role_arn = tra_change.principal.principal_arn
         tra_supported_roles = await get_tra_supported_roles_by_tag(
-            handler.eligible_roles, handler.groups, tenant
+            handler.eligible_roles, handler.groups, handler.user, tenant
         )
         tra_supported_role = [
             role["arn"] for role in tra_supported_roles if role["arn"] == role_arn
