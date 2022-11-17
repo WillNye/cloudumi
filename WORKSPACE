@@ -203,7 +203,7 @@ get_repo_version(name="version")
 http_archive(
     name = "awscli",
     url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip",
-    sha256 = "9e35afc4e4556aefdcec57093a4d5bd1dc22c5c2870c43bb282ed6052a047643",
+    sha256 = "7209d0ad15290379c2c47c9a2e7c30621d2c918a37532038e9353ba89c0ae7e7",
     build_file = "@//util:awscli.BUILD",
 )
 
