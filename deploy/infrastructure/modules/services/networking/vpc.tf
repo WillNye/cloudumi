@@ -82,12 +82,6 @@ resource "aws_subnet" "subnet_public_az0" {
   map_public_ip_on_launch = "false"
   availability_zone       = element(var.subnet_azs, 0)
 
-  log_config {
-    aggregation_interval = "INTERVAL_10_MIN"
-    flow_sampling        = 0.5
-    metadata             = "INCLUDE_ALL_METADATA"
-  }
-
   tags = merge(
     var.tags,
     {
@@ -110,12 +104,6 @@ resource "aws_subnet" "subnet_public_az1" {
     }
   )
 
-  log_config {
-    aggregation_interval = "INTERVAL_10_MIN"
-    flow_sampling        = 0.5
-    metadata             = "INCLUDE_ALL_METADATA"
-  }
-
   timeouts {
     create = var.timeout
   }
@@ -132,12 +120,6 @@ resource "aws_subnet" "subnet_private_az0" {
     }
   )
 
-  log_config {
-    aggregation_interval = "INTERVAL_10_MIN"
-    flow_sampling        = 0.5
-    metadata             = "INCLUDE_ALL_METADATA"
-  }
-
   timeouts {
     create = var.timeout
   }
@@ -152,12 +134,6 @@ resource "aws_subnet" "subnet_private_az1" {
     {
     }
   )
-
-  log_config {
-    aggregation_interval = "INTERVAL_10_MIN"
-    flow_sampling        = 0.5
-    metadata             = "INCLUDE_ALL_METADATA"
-  }
 
   timeouts {
     create = var.timeout
