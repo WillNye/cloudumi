@@ -1,0 +1,49 @@
+.btn {
+  font-weight: normal;
+  border: solid 1px transparent;
+  display: inline-block;
+  user-select: none;
+  border-radius: var(--border-radius-lg);
+  font-family: var(--font-family);
+  font-weight: 500;
+  will-change: scale, background-color, color, border-color;
+  white-space: nowrap;
+  background: var(--btn-background);
+  color: var(--btn-color);
+
+  &.small {
+  }
+
+  &.medium {
+    margin: 0 var(--spacing-md);
+  }
+
+  &.large {
+
+  }
+
+  &.fullWidth {
+    display: block;
+    width: 100%;
+  }
+
+  &.disableMargins {
+    margin: 0;
+  }
+
+  &.disablePadding {
+    padding: 0;
+  }
+
+  &:not([disabled]) {
+    cursor: pointer;
+  }
+
+  &[disabled] {
+    cursor: not-allowed;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}

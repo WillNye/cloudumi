@@ -181,5 +181,13 @@ export const theme: DesignTokens = {
       background: themeColors.orange['500'],
       color: themeColors.slate['100']
     }
+  },
+  components: {
+    input: {
+      // NOTE: These are just placeholders
+      'btn-background': themeColors.slate['100'],
+      'btn-border': themeColors.blue['100'],
+      'btn-color': themeColors.slate['100'],
+    }
   }
 };
