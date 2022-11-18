@@ -9,6 +9,7 @@ resource "aws_s3_bucket_public_access_block" "cloudumi_log_bucket" {
   ignore_public_acls      = true
 }
 
+#tfsec:ignore:aws-s3-enable-bucket-logging
 resource "aws_s3_bucket" "cloudumi_log_bucket" {
   bucket = "cloudumi-log-${var.cluster_id}"
   acl    = "private"
@@ -31,10 +32,6 @@ resource "aws_s3_bucket" "cloudumi_log_bucket" {
     expiration {
       days = var.log_expiry
     }
-  }
-
-  logging {
-    target_bucket = aws_s3_bucket.cloudumi_log_bucket.id
   }
 
   tags = var.tags
