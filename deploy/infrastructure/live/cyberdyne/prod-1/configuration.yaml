@@ -2,7 +2,7 @@ extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:775726381634:secret:cyberdyne-prod-noq_secrets-ecs-2YXKnn
 _global_:
   landing_page_domains:
-    - cyberdyne.cyberdyne.noq.dev
+    - app.cyberdyne.noq.dev
   metrics:
     cloudwatch:
       namespace: cyberdyne-noq-dev-cyberdyne-prod-1
@@ -48,7 +48,7 @@ _global_:
   s3_buckets:
     legal_docs: noq-global-staging-legal-docs
   deployment:
-    domain_name: cyberdyne.cyberdyne.noq.dev
+    domain_name: app.cyberdyne.noq.dev
     namespace: cyberdyne
     zone: cyberdyne.noq.dev
     cluster_id: cyberdyne-noq-dev-cyberdyne-prod-1

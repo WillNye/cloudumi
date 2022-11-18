@@ -109,6 +109,7 @@ module "tenant_ses_service" {
   source = "./modules/services/ses"
 
   notifications_mail_from_domain = var.notifications_mail_from_domain
+  notifications_sender_identity  = var.notifications_sender_identity
   tags                           = var.tags
 }
 

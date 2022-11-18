@@ -79,13 +79,13 @@ resource "aws_ecr_repository" "noq_ecr_repository-celery" {
 }
 
 resource "aws_secretsmanager_secret" "noq_secrets" {
-  name       = "${var.namespace}-${var.stage}-noq_secrets-ecs"
+  name       = "${var.namespace}-${var.stage}-noq_secrets"
   kms_key_id = aws_kms_key.noq_ecs_kms_key.key_id
 }
 
 resource "aws_secretsmanager_secret_version" "noq_secrets" {
   secret_id     = aws_secretsmanager_secret.noq_secrets.id
-  secret_string = "placeholder" #tfsec:ignore:general-secrets-no-plaintext-exposure
+  secret_string = yamlencode({ "secret" : "placeholder" }) #tfsec:ignore:general-secrets-no-plaintext-exposure
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {

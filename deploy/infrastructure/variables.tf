@@ -204,6 +204,11 @@ variable "notifications_mail_from_domain" {
   type        = string
 }
 
+variable "notifications_sender_identity" {
+  description = "The email address that will be used to identify notification origins"
+  type        = string
+}
+
 variable "log_expiry" {
   description = "The number of days to keep logs for"
   type        = number
