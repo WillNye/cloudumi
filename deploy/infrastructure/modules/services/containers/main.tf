@@ -79,7 +79,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-celery" {
 }
 
 resource "aws_secretsmanager_secret" "noq_secrets" {
-  name       = "${var.namespace}-${var.stage}-noq_secrets"
+  name       = "${var.namespace}-${var.stage}-noq_secrets-ecs"
   kms_key_id = aws_kms_key.noq_ecs_kms_key.key_id
 }
 

@@ -1,5 +1,45 @@
 data "aws_elb_service_account" "main" {}
 
+resource "aws_s3_bucket_public_access_block" "cloudumi_log_bucket" {
+  bucket = aws_s3_bucket.cloudumi_log_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+  ignore_public_acls      = true
+}
+
+resource "aws_s3_bucket" "cloudumi_log_bucket" {
+  bucket = "cloudumi-log-${var.cluster_id}"
+  acl    = "private"
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
+  versioning {
+    enabled = true
+  }
+
+  lifecycle_rule {
+    enabled = true
+
+    expiration {
+      days = var.log_expiry
+    }
+  }
+
+  logging {
+    target_bucket = aws_s3_bucket.cloudumi_log_bucket.id
+  }
+
+  tags = var.tags
+}
+
 resource "aws_s3_bucket_public_access_block" "cloudumi_files_bucket" {
   bucket = aws_s3_bucket.cloudumi_files_bucket.id
 
@@ -57,7 +97,7 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
   )
 
   logging {
-    target_bucket = var.s3_access_log_bucket
+    target_bucket = aws_s3_bucket.cloudumi_log_bucket.id
   }
 }
 
@@ -104,7 +144,7 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
         ],
         "Principal": {
           "AWS": [
-            "arn:aws:iam::940552945933:root"
+            "arn:aws:iam::${var.account_id}:root"
           ]
         }
       }
@@ -120,6 +160,6 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
   )
 
   logging {
-    target_bucket = var.s3_access_log_bucket
+    target_bucket = aws_s3_bucket.cloudumi_log_bucket.id
   }
 }
