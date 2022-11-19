@@ -5,6 +5,7 @@ from itertools import chain
 from typing import List
 
 import sentry_sdk
+from aws_error_utils import ClientError
 
 import common.lib.noq_json as json
 from common.aws.iam.policy.utils import batch_get_policy_versions, is_tenant_policy
@@ -24,40 +25,57 @@ log = config.get_logger()
 
 
 def get_config_client(tenant: str, account: str, region: str = config.region):
-    spoke_account_name = (
+    spoke_role_name = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", tenant)
         .with_query({"account_id": account})
         .first.name
     )
-    return boto3_cached_conn(
-        "config",
-        tenant,
-        None,
-        account_number=account,
-        assume_role=spoke_account_name,
-        region=region,
-        sts_client_kwargs=dict(
-            region_name=region,
-            endpoint_url=f"https://sts.{region}.amazonaws.com",
-        ),
-        client_kwargs=config.get_tenant_specific_key("boto3.client_kwargs", tenant, {}),
-        session_name=sanitize_session_name("noq_aws_config_query"),
-    )
+    try:
+        return boto3_cached_conn(
+            "config",
+            tenant,
+            None,
+            account_number=account,
+            assume_role=spoke_role_name,
+            region=region,
+            sts_client_kwargs=dict(
+                region_name=region,
+                endpoint_url=f"https://sts.{region}.amazonaws.com",
+            ),
+            client_kwargs=config.get_tenant_specific_key(
+                "boto3.client_kwargs", tenant, {}
+            ),
+            session_name=sanitize_session_name("noq_aws_config_query"),
+        )
+    except ClientError as client_error:
+        msg = (
+            "Could not assume cross-account role: [role_arn: "
+            f"arn:aws:iam::{account}:role/{spoke_role_name}]."
+            f" [Error: {repr(client_error)}]."
+        )
+        log.warning(msg)
+        return None
 
 
 async def execute_query(query: str, tenant: str, account_id: str) -> List:
     async def _execute_query(region: str):
         resources_for_region = []
         try:
-            config_client = get_config_client(tenant, account_id, region)
-            response = config_client.select_resource_config(Expression=query, Limit=100)
+            if not (config_client := get_config_client(tenant, account_id, region)):
+                return resources_for_region
+            response = await aio_wrapper(
+                config_client.select_resource_config, Expression=query, Limit=100
+            )
             for r in response.get("Results", []):
                 resources_for_region.append(json.loads(r))
             # Query Config for a specific account in all regions we care about
             while response.get("NextToken"):
-                response = config_client.select_resource_config(
-                    Expression=query, Limit=100, NextToken=response["NextToken"]
+                response = await aio_wrapper(
+                    config_client.select_resource_config,
+                    Expression=query,
+                    Limit=100,
+                    NextToken=response["NextToken"],
                 )
                 for r in response.get("Results", []):
                     resources_for_region.append(json.loads(r))
@@ -224,15 +242,16 @@ async def get_resource_history(
     account = resource_summary.account
     region = resource_summary.region if resource_summary.region else config.region
     tenant = resource_summary.tenant
-    config_client = get_config_client(tenant, account, region)
+    configuration_changes = []
+    if not (config_client := get_config_client(tenant, account, region)):
+        return configuration_changes
     resource_details = await get_config_for_resources(
         config_client, [resource_summary.arn], ["resourceId", "resourceType"]
     )
     if not resource_details:
-        return []
+        return configuration_changes
 
     resource_details = resource_details[0]
-    configuration_changes = []
     for config_change in await _get_resource_history(**resource_details):
         configuration_changes.append(
             {
