@@ -1,5 +1,5 @@
 resource "aws_ses_email_identity" "notifications" {
-  email = "notifications@noq.dev"
+  email = var.notifications_sender_identity
 }
 
 resource "aws_ses_domain_mail_from" "notifications" {

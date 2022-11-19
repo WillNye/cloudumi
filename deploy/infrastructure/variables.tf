@@ -77,10 +77,6 @@ variable "noq_core" {
 variable "profile" {
   description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
   type        = string
-  validation {
-    condition     = contains(["staging/staging_admin", "prod/prod_admin", "cyberdyne_demo_org/cyberdyne_admin"], var.profile)
-    error_message = "Allowed AWS_PROFILEs are \"staging/staging_admin\" and \"prod/prod_admin\"."
-  }
 }
 
 variable "redis_node_type" {
@@ -201,5 +197,21 @@ variable "api_count" {
 
 variable "notifications_mail_from_domain" {
   description = "Messages sent through Amazon SES will be marked as originating from noq.dev domain"
+  type        = string
+}
+
+variable "notifications_sender_identity" {
+  description = "The email address that will be used to identify notification origins"
+  type        = string
+}
+
+variable "log_expiry" {
+  description = "The number of days to keep logs for"
+  type        = number
+}
+
+variable "redis_secrets" {
+  sensitive   = true
+  description = "Redis secret"
   type        = string
 }
