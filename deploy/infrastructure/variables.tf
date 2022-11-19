@@ -213,3 +213,9 @@ variable "log_expiry" {
   description = "The number of days to keep logs for"
   type        = number
 }
+
+variable "redis_secrets" {
+  sensitive   = true
+  description = "Redis secret"
+  type        = string
+}

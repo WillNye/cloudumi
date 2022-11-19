@@ -1,5 +1,5 @@
 extends:
-  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:775726381634:secret:cyberdyne-prod-noq_secrets-ecs-2YXKnn
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:775726381634:secret:cyberdyne-prod-noq_secrets-CqbT3k
 _global_:
   landing_page_domains:
     - app.cyberdyne.noq.dev

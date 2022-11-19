@@ -1,1 +1,3 @@
 .terraform
+**/secret*.tfvar
+**/secret.tfvar

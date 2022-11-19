@@ -45,5 +45,5 @@ output "kms_key_id" {
 
 output "aws_secrets_manager_arn" {
   description = "The ARN of the AWS Secrets Manager"
-  value       = data.aws_secretsmanager_secret.noq_secrets.arn
+  value       = aws_secretsmanager_secret.noq_secrets.arn
 }

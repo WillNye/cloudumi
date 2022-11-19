@@ -97,12 +97,12 @@ module "tenant_elasticache_service" {
   private_subnet_cidr_blocks  = module.tenant_networking.vpc_subnet_private_cidr
   redis_cluster_access_sg_ids = [module.tenant_container_service.ecs_security_group_id]
   redis_node_type             = var.redis_node_type
+  redis_secrets               = var.redis_secrets
   subnet_ids                  = module.tenant_networking.vpc_subnet_private_id
   tags                        = var.tags
   timeout                     = var.timeout
   vpc_id                      = module.tenant_networking.vpc_id
   elasticache_node_type       = var.elasticache_node_type
-  secret_manager_secret_name  = var.secret_manager_secret_name
 }
 
 module "tenant_ses_service" {

@@ -11,7 +11,7 @@ namespace   = "cyberdyne"
 zone        = "cyberdyne.noq.dev"
 stage       = "prod"
 attributes  = 1
-domain_name = "cyberdyne.noq.dev"
+domain_name = "app.cyberdyne.noq.dev"
 profile     = "cyberdyne_demo_org/cyberdyne_admin"
 
 region     = "us-west-2"

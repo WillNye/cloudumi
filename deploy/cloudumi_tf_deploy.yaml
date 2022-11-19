@@ -8,11 +8,11 @@ Resources:
           - Effect: Allow
             Principal:
               AWS:
-                - !Ref NOQCentralRoleArnParameter
+                - !Ref NoqCentralRoleArnParameter
             Action:
               - "sts:AssumeRole"
               - "sts:TagSession"
-      RoleName: "NOQTerraformApplyRole"
+      RoleName: !Ref NoqTerraformApplyRole
       Policies:
         - PolicyName: "Permissions_Needed_For_TF_Apply"
           PolicyDocument:
@@ -114,15 +114,22 @@ Resources:
                 Resource: "*"
 
 Parameters:
-  NOQCentralRoleArnParameter:
-    Description: The role used by NOQ to assume this role, to be created, and deploy the NOQ infrastructure using Terraform
+  NoqCentralRoleArnParameter:
+    Description: The role used by Noq to assume this role, to be created, and deploy the Noq infrastructure using Terraform
     Type: String
     MinLength: "2"
     MaxLength: "100"
     AllowedPattern: ^arn:aws:iam::\d{12}:role/.+
     ConstraintDescription: Invalid CentralRoleArn value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+ with a length between 2-100
 
+  NoqTerraformApplyRole:
+    Description: The role name that is going to be created and used to setup the Noq infrastructure
+    Type: String
+    MinLength: "6"
+    MaxLength: "50"
+    Default: "NoqSoftwareTerraformApplyRole"
+
 Outputs:
-  NOQTerraformApplyRole:
-    Description: The role that NOQ will use to setup the infrastructure in the environment
-    Value: !Ref NOQTerraformApplyRole
+  NoqTerraformApplyRole:
+    Description: The role that Noq will use to setup the infrastructure in the environment
+    Value: !Ref NoqTerraformApplyRole

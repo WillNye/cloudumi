@@ -83,11 +83,6 @@ resource "aws_secretsmanager_secret" "noq_secrets" {
   kms_key_id = aws_kms_key.noq_ecs_kms_key.key_id
 }
 
-resource "aws_secretsmanager_secret_version" "noq_secrets" {
-  secret_id     = aws_secretsmanager_secret.noq_secrets.id
-  secret_string = yamlencode({ "secret" : "placeholder" }) #tfsec:ignore:general-secrets-no-plaintext-exposure
-}
-
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
   name                 = "${var.namespace}-${var.stage}-registry-frontend"
   image_tag_mutability = "MUTABLE"

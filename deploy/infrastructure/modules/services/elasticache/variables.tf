@@ -29,6 +29,11 @@ variable "redis_node_type" {
   default = "cache.t3.small"
 }
 
+variable "redis_secrets" {
+  type        = string
+  description = "The secrets to use for the Redis cluster"
+  sensitive   = true
+}
 variable "subnet_ids" {
   description = "The subnet ids as generated"
   type        = list(string)
@@ -53,9 +58,4 @@ variable "elasticache_node_type" {
   description = "The node type for the Elasticache cluster"
   type        = string
   default     = "cache.t3.micro"
-}
-
-variable "secret_manager_secret_name" {
-  description = "secret name for cloudumi"
-  type        = string
 }
