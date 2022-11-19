@@ -23,14 +23,14 @@ resource "aws_iam_role" "ecs_task_role" {
     policy = jsonencode({
       "Statement" : [
         {
-          "Action": [
+          "Action" : [
             "secretsmanager:describesecret",
             "secretsmanager:GetSecretValue",
             "secretsmanager:ListSecretVersionIds",
             "secretsmanager:ListSecrets",
           ],
-          "Effect": "Allow",
-          "Resource": "${var.aws_secrets_manager_arn}"
+          "Effect" : "Allow",
+          "Resource" : "${var.aws_secrets_manager_arn}"
         },
         {
           "Action" : [
@@ -185,6 +185,6 @@ resource "aws_iam_role" "ecs_task_role" {
 }
 
 data "aws_iam_role" "ecs_task_role_pre_existing" {
-  count       = var.modify_ecs_task_role ? 0 : 1
-  name        = "${var.cluster_id}-ecsTaskRole"
+  count = var.modify_ecs_task_role ? 0 : 1
+  name  = "${var.cluster_id}-ecsTaskRole"
 }

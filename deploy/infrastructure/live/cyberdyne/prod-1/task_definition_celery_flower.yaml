@@ -1,6 +1,6 @@
 executionRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskExecutionRole
 containerDefinitions:
-  - dnsSearchDomains: [ ]
+  - dnsSearchDomains: []
     logConfiguration:
       logDriver: awslogs
       options:
@@ -12,7 +12,7 @@ containerDefinitions:
         protocol: tcp
         containerPort: 7071
     linuxParameters:
-      devices: [ ]
+      devices: []
       initProcessEnabled: true
     cpu: 0
     environment:
@@ -24,24 +24,24 @@ containerDefinitions:
         value: CELERY_FLOWER
       - name: STAGE
         value: prod
-    dnsServers: [ ]
-    mountPoints: [ ]
-    dockerSecurityOptions: [ ]
-    volumesFrom: [ ]
+    dnsServers: []
+    mountPoints: []
+    dockerSecurityOptions: []
+    volumesFrom: []
     image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-celery:prod
     essential: true
-    links: [ ]
-    extraHosts: [ ]
+    links: []
+    extraHosts: []
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
     name: cyberdyne-noq-dev-cyberdyne-prod-1-celery-flower
-placementConstraints: [ ]
-memory: '512'
+placementConstraints: []
+memory: "512"
 taskRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
 family: cyberdyne-noq-dev-cyberdyne-prod-1-celery-flower
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: '256'
-volumes: [ ]
+cpu: "256"
+volumes: []

@@ -1,6 +1,6 @@
 executionRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskExecutionRole
 containerDefinitions:
-  - dnsSearchDomains: [ ]
+  - dnsSearchDomains: []
     logConfiguration:
       logDriver: awslogs
       options:
@@ -12,7 +12,7 @@ containerDefinitions:
         protocol: tcp
         containerPort: 8092
     linuxParameters:
-      devices: [ ]
+      devices: []
       initProcessEnabled: true
     cpu: 0
     environment:
@@ -26,28 +26,28 @@ containerDefinitions:
         value: API
       - name: STAGE
         value: prod
-    dnsServers: [ ]
+    dnsServers: []
     # mountPoints:
     #   - containerPath: /data
     #     sourceVolume: efs-server-AP
-    dockerSecurityOptions: [ ]
-    volumesFrom: [ ]
+    dockerSecurityOptions: []
+    volumesFrom: []
     image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-api:prod
     essential: true
-    links: [ ]
-    extraHosts: [ ]
+    links: []
+    extraHosts: []
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
     name: cyberdyne-noq-dev-cyberdyne-prod-1-api
-placementConstraints: [ ]
-memory: '8192'
+placementConstraints: []
+memory: "8192"
 taskRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
 family: cyberdyne-noq-dev-cyberdyne-prod-1-api
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: '2048'
+cpu: "2048"
 # volumes:
 #  - name: efs-server-AP
 #    efsVolumeConfiguration:
