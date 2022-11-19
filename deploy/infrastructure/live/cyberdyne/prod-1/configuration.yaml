@@ -25,7 +25,7 @@ _global_:
       account_id: "775726381634"
       central_role_name: NoqCentralRole
       spoke_role_name: NoqSpokeRole
-      node_role:
+      node_role: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
       stage: prod
       region: us-west-2
       attributes: 1
@@ -62,8 +62,9 @@ _global_:
   development: false
   environment: prod
   tornado:
+  
     debug: false
-
+  
     port: 8092
     xsrf: true
     xsrf_cookie_kwargs:

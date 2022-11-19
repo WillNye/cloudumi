@@ -83,6 +83,11 @@ resource "aws_secretsmanager_secret" "noq_secrets" {
   kms_key_id = aws_kms_key.noq_ecs_kms_key.key_id
 }
 
+resource "aws_secretsmanager_secret_version" "noq_secrets" {
+  secret_id     = aws_secretsmanager_secret.noq_secrets.id
+  secret_string = var.aws_secrets_manager_cluster_string
+}
+
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
   name                 = "${var.namespace}-${var.stage}-registry-frontend"
   image_tag_mutability = "MUTABLE"
@@ -155,6 +160,11 @@ resource "aws_iam_role" "ecs_task_execution_role" {
     var.tags,
     {}
   )
+  managed_policy_arns = [
+    "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+    "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonSSMManagedInstanceCore",
+    "arn:${data.aws_partition.current.partition}:iam::aws:policy/CloudWatchAgentServerPolicy"
+  ]
 }
 
 resource "aws_iam_role" "ecs_task_role" {
@@ -173,7 +183,6 @@ resource "aws_iam_role" "ecs_task_role" {
       },
     ]
   })
-  tags = { "noq-authorized" : lower("${var.cluster_id}-ecsTaskRole@noq.dev") }
   inline_policy {
     name = "ecs_task_role_policy"
     policy = jsonencode({

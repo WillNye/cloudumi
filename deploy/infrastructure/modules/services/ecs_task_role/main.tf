@@ -18,11 +18,20 @@ resource "aws_iam_role" "ecs_task_role" {
       },
     ]
   })
-  tags = { "noq-authorized" : lower("${var.cluster_id}-ecsTaskRole@noq.dev") }
   inline_policy {
     name = "ecs_task_role_policy"
     policy = jsonencode({
       "Statement" : [
+        {
+          "Action": [
+            "secretsmanager:describesecret",
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:ListSecretVersionIds",
+            "secretsmanager:ListSecrets",
+          ],
+          "Effect": "Allow",
+          "Resource": "${var.aws_secrets_manager_arn}"
+        },
         {
           "Action" : [
             "access-analyzer:*",
@@ -173,4 +182,9 @@ resource "aws_iam_role" "ecs_task_role" {
       "Version" : "2012-10-17"
     })
   }
+}
+
+data "aws_iam_role" "ecs_task_role_pre_existing" {
+  count       = var.modify_ecs_task_role ? 0 : 1
+  name        = "${var.cluster_id}-ecsTaskRole"
 }

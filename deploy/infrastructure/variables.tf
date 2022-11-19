@@ -215,3 +215,9 @@ variable "redis_secrets" {
   description = "Redis secret"
   type        = string
 }
+
+variable "aws_secrets_manager_cluster_string" {
+  sensitive   = true
+  description = "AWS Secrets Manager secret string"
+  type        = string
+}

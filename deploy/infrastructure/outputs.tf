@@ -98,6 +98,16 @@ output "private_subnets" {
   value       = module.tenant_networking.vpc_subnet_private_id
 }
 
+output "aws_efs_data_storage_access_point_id" {
+  description = "The ID of the EFS access point"
+  value       = module.tenant_storage.aws_efs_data_storage_access_point_id
+}
+
+output "aws_efs_data_storage_file_system_id" {
+  description = "The ID of the EFS file system"
+  value       = module.tenant_storage.aws_efs_data_storage_file_system_id
+}
+
 output "profile" {
   description = "The selected profile"
   value       = var.profile

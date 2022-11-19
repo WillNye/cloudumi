@@ -121,6 +121,7 @@ module "tenant_ecs_task_role" {
   modify_ecs_task_role             = var.modify_ecs_task_role
   registration_queue_arn           = module.tenant_messaging.sqs_registration_queue_arn
   tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
+  aws_secrets_manager_arn         = module.tenant_container_service.aws_secrets_manager_arn
 }
 
 module "tenant_container_service" {
@@ -145,4 +146,18 @@ module "tenant_container_service" {
   timeout                          = var.timeout
   vpc_cidr_range                   = module.tenant_networking.vpc_cidr_range
   vpc_id                           = module.tenant_networking.vpc_id
+  aws_secrets_manager_cluster_string = var.aws_secrets_manager_cluster_string
+}
+
+module "tenant_storage" {
+  source = "./modules/services/storage"
+  attributes                       = var.attributes
+  ecs_security_group_id = [module.tenant_container_service.ecs_security_group_id]
+  kms_key_id = module.tenant_container_service.kms_key_id
+  cluster_id                       = local.cluster_id
+  region                           = var.region
+  tags                             = var.tags
+  vpc_id                           = module.tenant_networking.vpc_id
+  subnet_ids                       = module.tenant_networking.vpc_subnet_private_id
+  ecs_task_role_arn = module.tenant_container_service.ecs_task_role
 }
