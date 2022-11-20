@@ -33,6 +33,11 @@ output "domain_name" {
   value       = var.domain_name
 }
 
+output "landing_page_domains" {
+  description = "The domain names that should be used for common endpoints, like tenant_registration. This should NOT be set for non-noq (self-hosted) deployments"
+  value       = var.landing_page_domains
+}
+
 output "ecs_awslogs_group" {
   description = "The ecs aws logs group name (for automation)"
   value       = module.tenant_container_service.ecs_awslogs_group
@@ -96,6 +101,16 @@ output "namespace" {
 output "private_subnets" {
   description = "All private subnets used"
   value       = module.tenant_networking.vpc_subnet_private_id
+}
+
+output "aws_efs_data_storage_access_point_id" {
+  description = "The ID of the EFS access point"
+  value       = module.tenant_storage.aws_efs_data_storage_access_point_id
+}
+
+output "aws_efs_data_storage_file_system_id" {
+  description = "The ID of the EFS file system"
+  value       = module.tenant_storage.aws_efs_data_storage_file_system_id
 }
 
 output "profile" {

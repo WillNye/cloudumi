@@ -38,7 +38,7 @@ containerDefinitions:
     name: cyberdyne-noq-dev-cyberdyne-prod-1-celery-flower
 placementConstraints: []
 memory: "512"
-taskRoleArn:
+taskRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
 family: cyberdyne-noq-dev-cyberdyne-prod-1-celery-flower
 requiresCompatibilities:
   - FARGATE

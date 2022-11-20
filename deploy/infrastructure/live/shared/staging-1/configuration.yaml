@@ -1,8 +1,7 @@
 extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:259868150464:secret:shared-staging-noq_secrets-yMK1qO
 _global_:
-  landing_page_domains:
-    - shared.staging.noq.dev
+  landing_page_domains: ["shared.staging.noq.dev"]
   metrics:
     cloudwatch:
       namespace: staging-noq-dev-shared-staging-1
@@ -48,7 +47,7 @@ _global_:
   s3_buckets:
     legal_docs: noq-global-staging-legal-docs
   deployment:
-    domain_name: shared.staging.noq.dev
+    domain_name: "*.staging.noq.dev"
     namespace: shared
     zone: staging.noq.dev
     cluster_id: staging-noq-dev-shared-staging-1

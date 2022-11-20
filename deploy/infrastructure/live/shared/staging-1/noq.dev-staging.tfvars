@@ -8,12 +8,13 @@ modify_ecs_task_role = false
 account_id = "259868150464"
 
 # General cluster metadata
-namespace   = "shared"
-zone        = "staging.noq.dev"
-stage       = "staging"
-attributes  = 1
-domain_name = "*.staging.noq.dev"
-profile     = "staging/staging_admin"
+namespace            = "shared"
+zone                 = "staging.noq.dev"
+stage                = "staging"
+attributes           = 1
+domain_name          = "*.staging.noq.dev"
+landing_page_domains = ["shared.staging.noq.dev"]
+profile              = "staging/staging_admin"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
@@ -43,6 +44,7 @@ dax_node_count = 1
 
 # SES
 notifications_mail_from_domain = "ses-us-west-2.staging.noq.dev"
+notifications_sender_identity  = "notifications@noq.dev"
 
 # Redis
 redis_node_type            = "cache.t3.micro"
