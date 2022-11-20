@@ -34,12 +34,12 @@ variable "ecs_security_group_id" {
   type        = list(string)
 }
 
-variable subnet_ids {
+variable "subnet_ids" {
   description = "Subnet IDs"
   type        = list(string)
 }
 
-variable ecs_task_role_arn {
+variable "ecs_task_role_arn" {
   description = "ECS task  role ARN"
   type        = string
 }

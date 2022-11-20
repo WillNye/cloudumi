@@ -2,30 +2,30 @@
 
 # Creating Amazon EFS File system
 resource "aws_efs_file_system" "data_storage" {
-# Creating the AWS EFS lifecycle policy
-# Amazon EFS supports two lifecycle policies. Transition into IA and Transition out of IA
-# Transition into IA transition files into the file systems's Infrequent Access storage class
-# Transition files out of IA storage
+  # Creating the AWS EFS lifecycle policy
+  # Amazon EFS supports two lifecycle policies. Transition into IA and Transition out of IA
+  # Transition into IA transition files into the file systems's Infrequent Access storage class
+  # Transition files out of IA storage
   lifecycle_policy {
     transition_to_ia = "AFTER_7_DAYS"
   }
-  kms_key_id     = var.kms_key_id
-  encrypted = true
-  tags = var.tags
+  kms_key_id = var.kms_key_id
+  encrypted  = true
+  tags       = var.tags
 }
 
 # Creating the EFS access point for AWS EFS File system
 resource "aws_efs_access_point" "data_storage_access_point" {
   file_system_id = aws_efs_file_system.data_storage.id
-  tags = var.tags
+  tags           = var.tags
 }
 # Creating the AWS EFS System policy to transition files into and out of the file system.
 resource "aws_efs_file_system_policy" "policy" {
-  file_system_id = aws_efs_file_system.data_storage.id
+  file_system_id                     = aws_efs_file_system.data_storage.id
   bypass_policy_lockout_safety_check = true
-# The EFS System Policy allows clients to mount, read and perform 
-# write operations on File system 
-# The communication of client and EFS is set using aws:secureTransport Option
+  # The EFS System Policy allows clients to mount, read and perform
+  # write operations on File system
+  # The communication of client and EFS is set using aws:secureTransport Option
   policy = <<POLICY
 {
     "Version": "2012-10-17",
@@ -60,17 +60,17 @@ resource "aws_efs_file_system_policy" "policy" {
 }
 POLICY
 }
-# Creating the AWS EFS Mount point in a specified Subnet 
+# Creating the AWS EFS Mount point in a specified Subnet
 # AWS EFS Mount point uses File system ID to launch.
 resource "aws_efs_mount_target" "efs-mount-target" {
-  file_system_id = aws_efs_file_system.data_storage.id
-  subnet_id      = var.subnet_ids[0]
+  file_system_id  = aws_efs_file_system.data_storage.id
+  subnet_id       = var.subnet_ids[0]
   security_groups = [aws_security_group.efs-sg.id]
 }
 
 resource "aws_efs_mount_target" "efs-mount-target-2" {
-  file_system_id = aws_efs_file_system.data_storage.id
-  subnet_id      = var.subnet_ids[1]
+  file_system_id  = aws_efs_file_system.data_storage.id
+  subnet_id       = var.subnet_ids[1]
   security_groups = [aws_security_group.efs-sg.id]
 }
 
