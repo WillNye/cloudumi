@@ -21,9 +21,9 @@ containerDefinitions:
       - name: STAGE
         value: {{ stage }}
     dnsServers: [ ]
-    # mountPoints:
-    #   - containerPath: /data
-    #     sourceVolume: efs-server-AP
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
     dockerSecurityOptions: [ ]
     volumesFrom: [ ]
     image: {{ registry_repository_url_celery }}:{{ stage }}
@@ -42,11 +42,11 @@ requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
 cpu: '2048'
-# volumes:
-#  - name: efs-server-AP
-#    efsVolumeConfiguration:
-#     fileSystemId: {{ efs_file_system_id }}
-#     transitEncryption: ENABLED
-#     authorizationConfig:
-#       accessPointId: {{ efs_access_point_id }}
-#       iam: ENABLED
+volumes:
+ - name: efs-server-AP
+   efsVolumeConfiguration:
+    fileSystemId: {{ aws_efs_data_storage_file_system_id }}
+    transitEncryption: ENABLED
+    authorizationConfig:
+      accessPointId: {{ aws_efs_data_storage_access_point_id }}
+      iam: ENABLED

@@ -68,6 +68,11 @@ resource "aws_efs_mount_target" "efs-mount-target" {
   security_groups = [aws_security_group.efs-sg.id]
 }
 
+resource "aws_efs_mount_target" "efs-mount-target-2" {
+  file_system_id = aws_efs_file_system.data_storage.id
+  subnet_id      = var.subnet_ids[1]
+  security_groups = [aws_security_group.efs-sg.id]
+}
 
 resource "aws_security_group" "efs-sg" {
   name        = "${var.cluster_id}-efs-access-sg"

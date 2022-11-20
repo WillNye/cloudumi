@@ -1,6 +1,6 @@
 executionRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskExecutionRole
 containerDefinitions:
-  - dnsSearchDomains: []
+  - dnsSearchDomains: [ ]
     logConfiguration:
       logDriver: awslogs
       options:
@@ -8,7 +8,7 @@ containerDefinitions:
         awslogs-region: us-west-2
         awslogs-stream-prefix: celery-worker
     linuxParameters:
-      devices: []
+      devices: [ ]
       initProcessEnabled: true
     cpu: 0
     environment:
@@ -20,33 +20,33 @@ containerDefinitions:
         value: CELERY_WORKER
       - name: STAGE
         value: prod
-    dnsServers: []
-    # mountPoints:
-    #   - containerPath: /data
-    #     sourceVolume: efs-server-AP
-    dockerSecurityOptions: []
-    volumesFrom: []
+    dnsServers: [ ]
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
+    dockerSecurityOptions: [ ]
+    volumesFrom: [ ]
     image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-celery:prod
     essential: true
-    links: []
-    extraHosts: []
+    links: [ ]
+    extraHosts: [ ]
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
     name: cyberdyne-noq-dev-cyberdyne-prod-1-celery-worker
-placementConstraints: []
-memory: "8192"
+placementConstraints: [ ]
+memory: '8192'
 taskRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
 family: cyberdyne-noq-dev-cyberdyne-prod-1-celery-worker
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: "2048"
-# volumes:
-#  - name: efs-server-AP
-#    efsVolumeConfiguration:
-#     fileSystemId:
-#     transitEncryption: ENABLED
-#     authorizationConfig:
-#       accessPointId:
-#       iam: ENABLED
+cpu: '2048'
+volumes:
+ - name: efs-server-AP
+   efsVolumeConfiguration:
+    fileSystemId: fs-09159e1c426850e83
+    transitEncryption: ENABLED
+    authorizationConfig:
+      accessPointId: fsap-0d733700e863750cf
+      iam: ENABLED
