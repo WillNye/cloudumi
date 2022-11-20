@@ -157,6 +157,7 @@ class EligibleRoleHandler(BaseHandler):
         for role in await get_tra_supported_roles_by_tag(
             self.eligible_roles + active_tra_roles,
             self.groups + [self.user],
+            self.user,
             self.ctx.tenant,
         ):
             """

@@ -15,6 +15,7 @@ from common.lib.dynamo import RestrictedDynamoHandler  # noqa: F401, E402
 
 tenant_config = f"""
 _development_user_override: {override_email}
+_development_run_celery_tasks_1_min: true
 _development_groups_override:
   - engineering@noq.dev
   - {override_email}

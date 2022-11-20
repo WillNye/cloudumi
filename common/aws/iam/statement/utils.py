@@ -260,7 +260,7 @@ async def condense_statements(
         *[
             reduce_statement_actions(statement)
             for statement in statements
-            if len(statement["Action"]) > 0
+            if len(statement.get("Action", [])) > 0
             or any(statement.get(se) for se in IGNORE_STATEMENTS_WITH)
         ]
     )

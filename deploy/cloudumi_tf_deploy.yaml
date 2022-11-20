@@ -1,0 +1,135 @@
+Resources:
+  SpokeRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Ref NoqCentralRoleArnParameter
+            Action:
+              - "sts:AssumeRole"
+              - "sts:TagSession"
+      RoleName: !Ref NoqTerraformApplyRole
+      Policies:
+        - PolicyName: "Permissions_Needed_For_TF_Apply"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - acm:DeleteCertificate
+                  - acm:DescribeCertificate
+                  - acm:ListTagsForCertificate
+                  - acm:RequestCertificate
+                  - autoscaling:DescribeScalableTargets
+                  - autoscaling:DescribeScalingPolicies
+                  - dax:DescribeClusters
+                  - dax:DescribeParameterGroups
+                  - dax:DescribeParameters
+                  - dax:DescribeSubnetGroups
+                  - dax:ListTags
+                  - dynamodb:DescribeContinuousBackups
+                  - dynamodb:DescribeTable
+                  - dynamodb:DescribeTimeToLive
+                  - dynamodb:GetItem
+                  - dynamodb:ListTagsOfResource
+                  - dynamodb:PutItem
+                  - ec2:DescribeAccountAttributes
+                  - ec2:DescribeAddresses
+                  - ec2:DescribeInternetGateways
+                  - ec2:DescribeNatGateways
+                  - ec2:DescribeNetworkAcls
+                  - ec2:DescribeRouteTables
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeVpcAttribute
+                  - ec2:DescribeVpcClassicLink
+                  - ec2:DescribeVpcClassicLinkDnsSupport
+                  - ec2:DescribeVpcs
+                  - ecr:DescribeRepositories
+                  - ecr:ListTagsForResource
+                  - ecs:DescribeClusters
+                  - elasticache:DescribeCacheClusters
+                  - elasticache:DescribeCacheParameterGroups
+                  - elasticache:DescribeCacheParameters
+                  - elasticache:DescribeCacheSubnetGroups
+                  - elasticache:DescribeReplicationGroups
+                  - elasticache:ListTagsForResource
+                  - elasticloadbalancing:DescribeListeners
+                  - elasticloadbalancing:DescribeLoadBalancerAttributes
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeTags
+                  - elasticloadbalancing:DescribeTargetGroupAttributes
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:ModifyListener
+                  - email:GetIdentityMailFromDomainAttributes
+                  - email:GetIdentityVerificationAttributes
+                  - iam:GetRole
+                  - iam:GetRolePolicy
+                  - iam:ListAttachedRolePolicies
+                  - iam:ListRolePolicies
+                  - kms:DescribeKey
+                  - kms:GetKeyPolicy
+                  - kms:GetKeyRotationStatus
+                  - kms:ListAliases
+                  - kms:ListResourceTags
+                  - logs:DescribeLogGroups
+                  - logs:ListTagsLogGroup
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetChange
+                  - route53:GetHostedZone
+                  - route53:ListHostedZones
+                  - route53:ListResourceRecordSets
+                  - route53:ListTagsForResource
+                  - s3:GetBucketAccelerateConfiguration
+                  - s3:GetBucketAcl
+                  - s3:GetBucketCors
+                  - s3:GetBucketEncryption
+                  - s3:GetBucketLifecycleConfiguration
+                  - s3:GetBucketLogging
+                  - s3:GetBucketPolicy
+                  - s3:GetBucketReplication
+                  - s3:GetBucketRequestPayment
+                  - s3:GetBucketTagging
+                  - s3:GetBucketVersioning
+                  - s3:GetBucketWebsite
+                  - s3:GetObject
+                  - s3:GetObjectLockConfiguration
+                  - s3:GetPublicAccessBlock
+                  - s3:HeadBucket
+                  - s3:ListObjects
+                  - s3:PutObject
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetResourcePolicy
+                  - secretsmanager:GetSecretValue
+                  - sns:GetSubscriptionAttributes
+                  - sns:GetTopicAttributes
+                  - sns:ListTagsForResource
+                  - sqs:GetQueueAttributes
+                  - sqs:ListQueueTags
+                  - sts:GetCallerIdentity
+                Resource: "*"
+
+Parameters:
+  NoqCentralRoleArnParameter:
+    Description: The role used by Noq to assume this role, to be created, and deploy the Noq infrastructure using Terraform
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: ^arn:aws:iam::\d{12}:role/.+
+    ConstraintDescription: Invalid CentralRoleArn value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+ with a length between 2-100
+
+  NoqTerraformApplyRole:
+    Description: The role name that is going to be created and used to setup the Noq infrastructure
+    Type: String
+    MinLength: "6"
+    MaxLength: "50"
+    Default: "NoqSoftwareTerraformApplyRole"
+
+Outputs:
+  NoqTerraformApplyRole:
+    Description: The role that Noq will use to setup the infrastructure in the environment
+    Value: !Ref NoqTerraformApplyRole

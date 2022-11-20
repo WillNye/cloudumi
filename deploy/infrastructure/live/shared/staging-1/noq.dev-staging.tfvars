@@ -62,3 +62,5 @@ legal_docs_bucket_name        = "noq-global-staging-legal-docs"
 # Task counts
 api_count    = 1
 worker_count = 1
+
+log_expiry = 365

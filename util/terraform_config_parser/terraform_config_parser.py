@@ -34,11 +34,14 @@ def __add_ecr_registry_aws_link(terraform_config: dict) -> dict:
 
 def __set_aws_profile(terraform_config: dict) -> dict:
     """Set the aws_profile from configuration hints (staging/staging_admin or prod/prod_admin)."""
-    terraform_config["aws_profile"] = (
-        "staging/staging_admin"
-        if terraform_config["stage"] == "staging"
-        else "prod/prod_admin"
-    )
+    if terraform_config.get("profile"):
+        terraform_config["aws_profile"] = terraform_config["profile"]
+    else:
+        terraform_config["aws_profile"] = (
+            "staging/staging_admin"
+            if terraform_config["stage"] == "staging"
+            else "prod/prod_admin"
+        )
     return terraform_config
 
 

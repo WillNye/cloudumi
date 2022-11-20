@@ -110,7 +110,9 @@ async def cache_self_service_typeahead(tenant: str) -> SelfServiceTypeaheadModel
                 application_name=app_name,
                 application_url=app_url,
                 principal=AwsResourcePrincipalModel(
-                    principal_type="AwsResource", principal_arn=policy["Arn"]
+                    principal_type="AwsResource",
+                    principal_arn=policy["Arn"],
+                    account_id=account_id,
                 ),
                 details_endpoint=f"/api/v2/roles/{account_id}/{role_name}",
             )
@@ -163,7 +165,9 @@ async def cache_self_service_typeahead(tenant: str) -> SelfServiceTypeaheadModel
                 application_name=app_name,
                 application_url=app_url,
                 principal=AwsResourcePrincipalModel(
-                    principal_type="AwsResource", principal_arn=policy["Arn"]
+                    principal_type="AwsResource",
+                    principal_arn=policy["Arn"],
+                    account_id=account_id,
                 ),
                 details_endpoint=f"/api/v2/users/{account_id}/{user_name}",
             )

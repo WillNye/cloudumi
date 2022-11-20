@@ -49,21 +49,10 @@
 #   )
 # }
 
-data "aws_secretsmanager_secret_version" "creds" {
-  # Fill in the name you gave to your secret
-  secret_id = var.secret_manager_secret_name
-}
-
-locals {
-  redis_creds = yamldecode(
-    data.aws_secretsmanager_secret_version.creds.secret_string
-  )._global_.secrets.redis.password
-}
-
 resource "aws_elasticache_replication_group" "redis" {
   apply_immediately          = true
   at_rest_encryption_enabled = true
-  auth_token                 = local.redis_creds
+  auth_token                 = var.redis_secrets
   automatic_failover_enabled = false
   description                = "cloudumi usage"
   engine                     = "redis"
@@ -128,7 +117,7 @@ resource "aws_security_group" "redis_sg" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.private_subnet_cidr_blocks
     #security_groups = var.redis_cluster_access_sg_ids
   }
 

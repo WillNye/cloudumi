@@ -29,8 +29,8 @@ output "cluster_id" {
 }
 
 output "domain_name" {
-  description = "The configured domain name, which is derived from {namespace}.{zone}"
-  value       = "${var.namespace}.${var.zone}"
+  description = "The configured domain name"
+  value       = var.domain_name
 }
 
 output "ecs_awslogs_group" {
