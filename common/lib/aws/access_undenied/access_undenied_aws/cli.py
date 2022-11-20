@@ -34,7 +34,7 @@ pass_config = click.make_pass_decorator(common.Config, ensure=True)
 
 
 @click.group()
-@click_log.simple_verbosity_option(logger.name)
+#@click_log.simple_verbosity_option(logger.name)
 @click.option(
     "--profile",
     help="the AWS profile to use (default is default profile)",

@@ -40,8 +40,8 @@
     "zustand": "^4.0.0-rc.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "start_tls": "HTTPS=true react-scripts start",
+    "start": "react-scripts --openssl-legacy-provider  start",
+    "start_tls": "HTTPS=true react-scripts --openssl-legacy-provider  start",
     "build": "BUILD_PATH='./dist' react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",

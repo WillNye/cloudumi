@@ -1,15 +1,15 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // {
+    //   "label": "localtunnel",
+    //   "type": "shell",
+    //   "command": "lt --port 8092 --subdomain cool-rats-stare-68-4-188-30"
+    // },
     {
-      "label": "localtunnel",
+      "label": "localtunnel443",
       "type": "shell",
-      "command": "lt --port 8092 --subdomain cool-rats-stare-68-4-188-30"
-    },
-    {
-      "label": "localtunnel",
-      "type": "shell",
-      "command": "lt --port 443 --subdomain cool-rats-stare-68-4-188-30"
+      "command": "lt --port 443 --subdomain cool-rats-stare-68-4-188-30 --local-https --allow-invalid-cert"
     },
     {
       "type": "docker-build",

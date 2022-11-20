@@ -2,10 +2,11 @@ import asyncio
 import boto3
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
-from slack_sdk.oauth.installation_store.amazon_s3 import AmazonS3InstallationStore
 from slack_sdk.oauth.state_store import FileOAuthStateStore
+from slack_sdk.oauth.state_store.amazon_s3 import AmazonS3OAuthStateStore
 
 from api.handlers.v2.typeahead import get_matching_identity_typahead
+from api.handlers.v3.slack.installation_store import NoqSlackInstallationStore
 from common.config import config
 from common.lib.iambic.git import IambicGit
 from common.lib.slack.workflows import (
@@ -43,31 +44,25 @@ oauth_settings = AsyncOAuthSettings(
     client_secret=config.get("_global_.secrets.slack.client_secret"),
     # TODO: Fix these
     scopes=scopes,
-    installation_store=AmazonS3InstallationStore(
+    installation_store=NoqSlackInstallationStore(
         s3_client=boto3.client("s3", region_name="us-west-2"), # TODO Configurable
         bucket_name=config.get("_global_.s3_slack_installation_store_bucket"),
         client_id=config.get("_global_.secrets.slack.client_id"),
     ),
-    state_store=FileOAuthStateStore(expiration_seconds=600, base_dir="./data/states"),
+    state_store=AmazonS3OAuthStateStore(s3_client=boto3.client("s3", region_name="us-west-2"), # TODO Configurable
+        bucket_name=config.get("_global_.s3_slack_installation_store_bucket"),
+        expiration_seconds=600),
     install_path="/api/v3/slack/install",
     redirect_uri_path="/api/v3/slack/oauth_redirect",
-    # TODO: Replace ngrok with something more generic
-    # redirect_uri="https://a340-68-4-188-30.ngrok.io/api/v3/slack/oauth_redirect",
 )
 
 slack_app = AsyncApp(
     token=config.get("_global_.secrets.slack.bot_token"),
     signing_secret=config.get("_global_.secrets.slack.signing_secret"),
-    # installation_store=AmazonS3InstallationStore(
-    #     s3_client=boto3.client('s3'),
-    #     bucket_name=config.get("_global_.s3_slack_installation_store_bucket"),
-    #     client_id=config.get("_global_.secrets.slack.client_id"),
-    # ),
     oauth_settings=oauth_settings,
     process_before_response=True,
 )
 
-# Need a mapping of Slack Token to Tenant ID
 
 async def respond_to_ack(body, ack):
     await ack(

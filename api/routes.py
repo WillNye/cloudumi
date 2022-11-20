@@ -377,19 +377,19 @@ def make_app(jwt_validator=None):
 
     if config.get("_global_.development"):
         routes[:0] = [
-            ("/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
+            (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
             (
-                "/api/v3/slack/install/?",
+                r"/api/v3/slack/install/?",
                 AsyncSlackOAuthHandler,
                 dict(app=slack_app),
             ),
             (
-                "/api/v3/slack/install/?(.*)",
+                r"/api/v3/slack/install/?(.*)",
                 AsyncSlackOAuthHandler,
                 dict(app=slack_app),
             ),
             (
-                "/api/v3/slack/oauth_redirect/?(.*)",
+                r"/api/v3/slack/oauth_redirect/?(.*)",
                 AsyncSlackOAuthHandler,
                 dict(app=slack_app),
             ),

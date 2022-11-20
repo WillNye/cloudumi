@@ -82,13 +82,9 @@
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
         "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
-        "PYTHONASYNCIODEBUG": "1",
+        // "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
         "RUNTIME_PROFILE": "API",
-        "HTTP_PROXY": "http://127.0.0.1:8080",
-        "HTTPS_PROXY": "http://127.0.0.1:8080",
-        "AWS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem",
-        "REQUESTS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem"
       }
     },
     {
@@ -198,6 +194,27 @@
         "PYTEST_PLUGINS": "util.tests.fixtures.fixtures",
         "PYTHONASYNCIODEBUG": "1"
       }
-    }
+    },
+    {
+      "name": "Local Config: CloudUmi API with Burp Proxy",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/api/__main__.py",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+        // "PYTHONASYNCIODEBUG": "1",
+        "AWS_REGION": "us-west-2",
+        "RUNTIME_PROFILE": "API",
+        "HTTP_PROXY": "http://127.0.0.1:8080",
+        "HTTPS_PROXY": "http://127.0.0.1:8080",
+        "AWS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem",
+        "REQUESTS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem"
+      }
+    },
   ]
 }
