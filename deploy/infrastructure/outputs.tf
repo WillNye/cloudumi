@@ -33,6 +33,11 @@ output "domain_name" {
   value       = var.domain_name
 }
 
+output "landing_page_domains" {
+  description = "The domain names that should be used for common endpoints, like tenant_registration. This should NOT be set for non-noq (self-hosted) deployments"
+  value       = var.landing_page_domains
+}
+
 output "ecs_awslogs_group" {
   description = "The ecs aws logs group name (for automation)"
   value       = module.tenant_container_service.ecs_awslogs_group

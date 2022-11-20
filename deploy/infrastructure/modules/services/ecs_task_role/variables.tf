@@ -27,3 +27,8 @@ variable "aws_secrets_manager_arn" {
   description = "The ARN of the AWS Secrets Manager secret that contains the credentials for the tenant"
   type        = string
 }
+
+variable "noq_core" {
+  type    = bool
+  default = false
+}

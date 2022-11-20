@@ -7,12 +7,13 @@ modify_ecs_task_role = false
 # Associated account id
 account_id = "940552945933"
 
-namespace   = "shared"
-zone        = "noq.dev"
-stage       = "prod"
-attributes  = 1
-domain_name = "*.noq.dev"
-profile     = "prod/prod_admin"
+namespace            = "shared"
+zone                 = "noq.dev"
+stage                = "prod"
+attributes           = 1
+domain_name          = "*.noq.dev"
+landing_page_domains = ["shared.noq.dev"]
+profile              = "prod/prod_admin"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
@@ -37,11 +38,12 @@ allowed_inbound_cidr_blocks = [
 dynamo_table_replica_regions = ["us-west-2"]
 
 # Dax
-dax_node_type  = "dax.t3.small"
-dax_node_count = 1
+dax_node_type  = "dax.t3.medium"
+dax_node_count = 3
 
 # SES
 notifications_mail_from_domain = "ses-us-west-2.noq.dev"
+notifications_sender_identity  = "notifications@noq.dev"
 
 # Redis
 redis_node_type            = "cache.t3.small"
