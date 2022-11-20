@@ -21,7 +21,9 @@ containerDefinitions:
       - name: STAGE
         value: staging
     dnsServers: []
-    mountPoints: []
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
     image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-celery:staging
@@ -40,4 +42,11 @@ requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
 cpu: "2048"
-volumes: []
+volumes:
+  - name: efs-server-AP
+    efsVolumeConfiguration:
+      fileSystemId: fs-00d025e10faa53ff6
+      transitEncryption: ENABLED
+      authorizationConfig:
+        accessPointId: fsap-05a781c2b23d8ef89
+        iam: ENABLED

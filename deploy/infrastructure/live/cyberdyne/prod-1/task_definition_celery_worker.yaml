@@ -21,7 +21,9 @@ containerDefinitions:
       - name: STAGE
         value: prod
     dnsServers: []
-    mountPoints: []
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
     image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-celery:prod
@@ -34,10 +36,17 @@ containerDefinitions:
     name: cyberdyne-noq-dev-cyberdyne-prod-1-celery-worker
 placementConstraints: []
 memory: "8192"
-taskRoleArn:
+taskRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
 family: cyberdyne-noq-dev-cyberdyne-prod-1-celery-worker
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
 cpu: "2048"
-volumes: []
+volumes:
+  - name: efs-server-AP
+    efsVolumeConfiguration:
+      fileSystemId: fs-09159e1c426850e83
+      transitEncryption: ENABLED
+      authorizationConfig:
+        accessPointId: fsap-0d733700e863750cf
+        iam: ENABLED

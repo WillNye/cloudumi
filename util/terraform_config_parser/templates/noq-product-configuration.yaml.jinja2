@@ -1,8 +1,7 @@
 extends:
   - AWS_SECRETS_MANAGER:{{ aws_secrets_manager_arn }}
 _global_:
-  landing_page_domains:
-    - {{ domain_name }}
+  landing_page_domains: {{landing_page_domains}}
   metrics:
     cloudwatch:
       namespace: {{ cluster_id_safed }}
@@ -48,7 +47,7 @@ _global_:
   s3_buckets:
     legal_docs: {{ legal_docs_bucket_name }}
   deployment:
-    domain_name: {{ domain_name }}
+    domain_name: "{{ domain_name }}"
     namespace: {{ namespace }}
     zone: {{ zone }}
     cluster_id: {{ cluster_id_safed }}
