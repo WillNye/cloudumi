@@ -24,6 +24,7 @@ Resources:
                   - acm:DescribeCertificate
                   - acm:ListTagsForCertificate
                   - acm:RequestCertificate
+                  - application-autoscaling:RegisterScalableTarge
                   - autoscaling:DescribeScalableTargets
                   - autoscaling:DescribeScalingPolicies
                   - autoscaling:PutScalingPolicy
@@ -44,6 +45,7 @@ Resources:
                   - dynamodb:GetItem
                   - dynamodb:ListTagsOfResource
                   - dynamodb:PutItem
+                  - dynamodb:TagResource
                   - dynamodb:UpdateContinuousBackups
                   - dynamodb:UpdateTimeToLive
                   - ec2:AllocateAddress
@@ -58,6 +60,7 @@ Resources:
                   - ec2:CreateRouteTable
                   - ec2:CreateSecurityGroup
                   - ec2:CreateSubnet
+                  - ec2:CreateTags
                   - ec2:CreateVpc
                   - ec2:DescribeAccountAttributes
                   - ec2:DescribeAddresses
@@ -74,11 +77,27 @@ Resources:
                   - ec2:DescribeVpcs
                   - ec2:ModifyVpcAttribute
                   - ec2:RevokeSecurityGroupEgress
+                  - ecr:CompleteLayerUpload
                   - ecr:CreateRepository
                   - ecr:DescribeRepositories
+                  - ecr:GetRepositoryPolicy
+                  - ecr:InitiateLayerUpload
+                  - ecr:ListImages
                   - ecr:ListTagsForResource
+                  - ecr:PutImage
+                  - ecr:UploadLayerPart
                   - ecs:CreateCluster
+                  - ecs:DeleteCluster
+                  - ecs:DeleteService
+                  - ecs:DeregisterTaskDefinition
                   - ecs:DescribeClusters
+                  - ecs:DescribeTaskDefinition
+                  - ecs:DescribeTasks
+                  - ecs:ListClusters
+                  - ecs:RegisterTaskDefinition
+                  - ecs:RunTask
+                  - ecs:StartTask
+                  - ecs:StopTask
                   - elasticache:CreateCacheCluster
                   - elasticache:CreateCacheParameterGroup
                   - elasticache:CreateCacheSubnetGroup
@@ -112,11 +131,17 @@ Resources:
                   - iam:GetRolePolicy
                   - iam:ListAttachedRolePolicies
                   - iam:ListRolePolicies
+                  - iam:PassRole
                   - iam:PutRolePolicy
+                  - iam:TagRole
                   - kms:CreateAlias
                   - kms:CreateKey
+                  - kms:Decrypt
+                  - kms:DecryptKey
                   - kms:DescribeKey
                   - kms:EnableKeyRotation
+                  - kms:Encrypt
+                  - kms:EncryptKey
                   - kms:GetKeyPolicy
                   - kms:GetKeyRotationStatus
                   - kms:ListAliases
@@ -136,7 +161,7 @@ Resources:
                   - s3:GetBucketAcl
                   - s3:GetBucketCors
                   - s3:GetBucketEncryption
-                  - s3:GetBucketLifecycleConfiguration
+                  - s3:GetBucketLife*
                   - s3:GetBucketLogging
                   - s3:GetBucketPolicy
                   - s3:GetBucketReplication
@@ -145,12 +170,14 @@ Resources:
                   - s3:GetBucketVersioning
                   - s3:GetBucketWebsite
                   - s3:GetObject
+                  - s3:GetObjectAcl
                   - s3:GetObjectLockConfiguration
+                  - s3:GetObjectTagging
                   - s3:GetPublicAccessBlock
                   - s3:HeadBucket
                   - s3:ListObjects
                   - s3:PutBucketEncryption
-                  - s3:PutBucketLifecycleConfiguration
+                  - s3:PutBucketLife*
                   - s3:PutBucketLogging
                   - s3:PutBucketPolicy
                   - s3:PutBucketTagging
@@ -160,12 +187,14 @@ Resources:
                   - secretsmanager:CreateSecret
                   - secretsmanager:DescribeSecret
                   - secretsmanager:GetResourcePolicy
+                  - ses:GetIdentityVerificationAttributes
                   - sns:CreateTopic
                   - sns:GetSubscriptionAttributes
                   - sns:GetTopicAttributes
                   - sns:ListTagsForResource
                   - sns:SetTopicAttributes
                   - sns:Subscribe
+                  - sns:TagResource
                   - sqs:CreateQueue
                   - sqs:GetQueueAttributes
                   - sqs:ListQueueTags
