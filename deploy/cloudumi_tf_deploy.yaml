@@ -110,7 +110,6 @@ Resources:
                   - sns:ListTagsForResource
                   - sqs:GetQueueAttributes
                   - sqs:ListQueueTags
-                  - sts:GetCallerIdentity
                 Resource: "*"
 
 Parameters:
