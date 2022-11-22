@@ -11776,10 +11776,10 @@ raw-loader@^4.0.2:
     loader-utils "^2.0.0"
     schema-utils "^3.0.0"
 
-reablocks@^1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/reablocks/-/reablocks-1.4.0.tgz#4e444d3c436a1e74050df42897caebf01faaf039"
-  integrity sha512-VCyL7z5uLKMMZnviPGFhokBsv/iMdVjcnVtl7Wyc2wBKrzoZeFMjk8aOKT+NUAS/RnYfm5fxi1U2MY2RMC4MTg==
+reablocks@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/reablocks/-/reablocks-1.4.1.tgz#b66c9837280a83b3440ef8c06391d9a36fb65aeb"
+  integrity sha512-gJsINITna6EcacCfwT1Vs970BeLBtwXdjP5iKz6in/WZBzSzBMH9xi1StuLFvgcmvVDLa8M8roExary6U2uGwA==
   dependencies:
     classnames "^2.3.1"
     ellipsize "^0.5.1"

@@ -1,23 +1,8 @@
 import { Meta } from '@storybook/addon-docs';
-import { icons, IconDemo } from './IconDemo';
+import { IconBlocks } from 'reablocks';
+import { icons } from './icons';
 
 <Meta title="General/Icons" />
 
 ## Icons
-
-<style>
-  {`
-  .grid {
-    display: grid;
-    grid-gap: 15px;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    justify-items: stretch;
-  }
-`}
-</style>
-
-<div className="grid">
-  {icons.map(key => (
-    <IconDemo key={key.title} {...key} />
-  ))}
-</div>
+<IconBlocks icons={icons} />

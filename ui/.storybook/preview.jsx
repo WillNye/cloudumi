@@ -7,15 +7,15 @@ import { theme } from '../src/shared/utils/DesignTokens';
 
 import '../src/index.css';
 
-const withProvider = (Story, context) => (
-  <BrowserRouter>
-    <DesignTokensProvider theme={theme}>
-      <Story {...context} />
-    </DesignTokensProvider>
-  </BrowserRouter>
-);
-
-export const decorators = [withProvider];
+export const decorators = [
+  (Story) => (
+    <BrowserRouter>
+      <DesignTokensProvider value={theme}>
+        <Story />
+      </DesignTokensProvider>
+    </BrowserRouter>
+  ),
+];
 
 export const parameters = {
   layout: 'centered',
@@ -24,7 +24,7 @@ export const parameters = {
     theme: storybookTheme,
     container: ({ context, children }) => (
       <DocsContainer context={context}>
-        <DesignTokensProvider theme={theme}>
+        <DesignTokensProvider value={theme}>
           {children}
         </DesignTokensProvider>
       </DocsContainer>
