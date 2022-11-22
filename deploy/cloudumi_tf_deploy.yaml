@@ -18,677 +18,100 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Action: s3:ListObjects
-                Effect: Allow
-                Resource:
-                  - "*"
-              - Action: ec2:DescribeAccountAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2/index/tenant_index
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: route53:ListHostedZones
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:root
-              - Action: dynamodb:DescribeTable
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2/index/tenant-arn-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2/stream/2022-11-22T00:15:11.929
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2/index/arn-tenant-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2/index/tenant-arn-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2/index/tenant-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_users_multitenant_v2/stream/2022-11-22T00:15:24.372
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_api_keys_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2/index/aws_account_id_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2/index/tenant_index
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:parametergroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-parameter-group
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/flow_log_role
-              - Action: dynamodb:CreateTable
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2/index/tenant-arn-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2/index/tenant_index
-              - Action: sqs:GetQueueAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: ecr:CreateRepository
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-celery
-              - Action: ecr:DescribeRepositories
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-api
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-frontend
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-              - Action: sns:SetTopicAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2/index/aws_account_id_index
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-celery
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyStageParameter}-${CompanyNameParameter}-dax
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-              - Action: ecr:ListTagsForResource
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-api
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-celery
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-frontend
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-              - Action: email:GetIdentityVerificationAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-              - Action: iam:PutRolePolicy
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2/index/tenant-arn-index
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-ecsTaskExecutionRole
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-ecsTaskRole
-              - Action: sqs:CreateQueue
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-              - Action: sns:ListTagsForResource
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-              - Action: iam:GetRole
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/flow_log_role
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyStageParameter}-${CompanyNameParameter}-dax
-              - Action: iam:ListRolePolicies
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-api
-                  - !Sub arn:aws:secretsmanager:us-west-2:${CompanyAccountParameter}:secret:${CompanyNameParameter}-${CompanyStageParameter}-noq_secrets-XJ1a8U
-              - Action: s3:CreateBucket
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2/index/tenant_index
-              - Action: iam:GetRolePolicy
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/flow_log_role
-              - Action: logs:CreateLogGroup
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:kms:us-west-2:${CompanyAccountParameter}:key/be1b66be-3c43-4027-bad2-9b99c5c57d96
-                  - "arn:aws:logs:us-west-2:${CompanyAccountParameter}:log-group:flow_logs:"
-              - Action: logs:ListTagsLogGroup
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2-AlarmHigh-cdb8279f-c6f6-4b98-af26-b62b71259bf6
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2/stream/2022-11-22T00:15:11.929
-              - Action: iam:CreateRole
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/flow_log_role
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-ecsTaskExecutionRole
-              - Action: s3:PutBucketLifecycleConfiguration
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-              - Action: s3:PutBucketEncryption
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:root
-                  - !Sub arn:aws:iam::797873946194:root
-              - Action: kms:CreateKey
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:root
-              - Action: ec2:CreateVpc
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:kms:us-west-2:${CompanyAccountParameter}:key/be1b66be-3c43-4027-bad2-9b99c5c57d96
-              - Action: kms:EnableKeyRotation
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2/stream/2022-11-22T00:15:11.929
-              - Action: kms:GetKeyRotationStatus
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2-AlarmHigh-339f04b5-bd8a-4649-b67f-469e86d941da
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2/stream/2022-11-22T00:15:11.929
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_users_multitenant_v2/stream/2022-11-22T00:15:24.372
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2/index/tenant_index
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:root
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: dynamodb:UpdateContinuousBackups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2-AlarmHigh-a69321a8-d821-49a4-807a-46ada1053567
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2/index/tenant-arn-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2/index/arn-tenant-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_users_multitenant_v2/stream/2022-11-22T00:15:24.372
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2/index/tenant_index
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0c933c58e1dcdd071
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:root
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-              - Action: dynamodb:DescribeContinuousBackups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2-AlarmHigh-4c0749a8-ede3-43f7-9b6b-e82be9f5576e
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2/index/arn-tenant-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_users_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_users_multitenant_v2/stream/2022-11-22T00:15:24.372
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_api_keys_v2/index/tenant_index
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-celery
-                  - !Sub arn:aws:ecr:us-west-2:${CompanyAccountParameter}:repository/${CompanyNameParameter}-${CompanyStageParameter}-registry-frontend
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/flow_log_role
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-ecsTaskExecutionRole
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-                  - !Sub arn:aws:sts::${CompanyAccountParameter}:assumed-role/${CompanyNameParameter}_admin/matt@noq.dev
-              - Action: dynamodb:ListTagsOfResource
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2/index/arn-tenant-index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2/index/tenant-arn-index
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:replicationgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: dax:CreateParameterGroup
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_api_keys_v2/index/tenant_id_index
-              - Action: kms:GetKeyPolicy
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:root
-              - Action: kms:DescribeKey
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-                  - !Sub arn:aws:kms:us-west-2:${CompanyAccountParameter}:key/be1b66be-3c43-4027-bad2-9b99c5c57d96
-              - Action: dynamodb:UpdateTimeToLive
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-              - Action: ec2:DescribeVpcClassicLink
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2/index/tenant_index
-              - Action: ec2:AllocateAddress
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2/index/tenant-index
-              - Action: Request
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2-AlarmHigh-a69321a8-d821-49a4-807a-46ada1053567
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_users_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_users_multitenant_v2/stream/2022-11-22T00:15:24.372
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_api_keys_v2
-              - Action: acm:DescribeCertificate
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-              - Action: dynamodb:DescribeTimeToLive
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-              - Action: elasticache:CreateCacheParameterGroup
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:parametergroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-parameter-group
-              - Action: elasticache:ModifyCacheParameterGroup
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-              - Action: elasticache:DescribeCacheParameterGroups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:parametergroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-parameter-group
-              - Action: elasticache:DescribeCacheParameters
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: sqs:ListQueueTags
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2/stream/2022-11-22T00:15:11.929
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2/index/arn-tenant-index
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-ecsTaskRole
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: s3:PutPublicAccessBlock
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:ecs:us-west-2:${CompanyAccountParameter}:cluster/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-              - Action: s3:GetBucketTagging
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2/index/tenant-arn-index
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0d4e3d797db412148
-                  - !Sub arn:aws:iam::797873946194:root
-              - Action: s3:PutBucketLogging
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:root
-              - Action: s3:GetBucketAcl
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:targetgroup/tf-20221122001540629400000003/9947a0bd8960b6fe
-                  - "arn:aws:logs:us-west-2:${CompanyAccountParameter}:log-group:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}:"
-                  - !Sub arn:aws:s3:::${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-tenant-configuration-store/
-              - Action: s3:GetBucketEncryption
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:s3:::cloudumi-cache.${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}/AWSLogs/
-              - Action: kms:CreateAlias
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2/index/tenant_index
-              - Action: kms:ListAliases
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:kms:us-west-2:${CompanyAccountParameter}:alias/aws/acm
-              - Action: ec2:CreateSubnet
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2/index/tenant-index
-              - Action: acm:ListTagsForCertificate
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-              - Action: ec2:CreateInternetGateway
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0d4e3d797db412148
-              - Action: ec2:DescribeSubnets
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-096a2ab23a8a36027
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0b9b9a46599c3a741
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0c933c58e1dcdd071
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0d4e3d797db412148
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:targetgroup/tf-20221122001540629400000003/9947a0bd8960b6fe
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/flow_log_role
-              - Action: elasticloadbalancing:CreateTargetGroup
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2/index/arn-tenant-index
-              - Action: ec2:DescribeSecurityGroups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2/index/tenant-index
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-096a2ab23a8a36027
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyNameParameter}_admin
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-              - Action: elasticloadbalancing:DescribeTargetGroups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:targetgroup/tf-20221122001540629400000003/9947a0bd8960b6fe
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:root
-              - Action: elasticloadbalancing:ModifyTargetGroupAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:targetgroup/tf-20221122001540629400000003/9947a0bd8960b6fe
-              - Action: elasticloadbalancing:DescribeTargetGroupAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-096a2ab23a8a36027
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:targetgroup/tf-20221122001540629400000003/9947a0bd8960b6fe
-              - Action: ec2:CreateSecurityGroup
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0b9b9a46599c3a741
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: ec2:CreateFlowLogs
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0b9b9a46599c3a741
-              - Action: secretsmanager:CreateSecret
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2-AlarmHigh-b71f430d-e4c0-42dd-a930-96f1ada81df7
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0b9b9a46599c3a741
-                  - !Sub arn:aws:secretsmanager:us-west-2:${CompanyAccountParameter}:secret:${CompanyNameParameter}-${CompanyStageParameter}-noq_secrets-XJ1a8U
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: ec2:RevokeSecurityGroupEgress
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2/index/tenant_index
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2/index/arn-tenant-index
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: sns:Subscribe
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic:0ce11737-c333-410b-ae13-cb7f0e7541ab
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic:a50eef9a-b173-4ed2-9413-a7ba311bcd81
-              - Action: sns:GetSubscriptionAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyNameParameter}_admin
-              - Action: sqs:SetQueueAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: ec2:AuthorizeSecurityGroupIngress
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2/index/tenant_index
-              - Action: ecs:CreateCluster
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:kms:us-west-2:${CompanyAccountParameter}:key/be1b66be-3c43-4027-bad2-9b99c5c57d96
-              - Action: autoscaling:RegisterScalableTarget
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2-AlarmHigh-f460a071-ebea-4379-a5ec-23184a2b8884
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-              - Action: ec2:CreateRouteTable
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2/index/tenant-index
-              - Action: autoscaling:PutScalingPolicy
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2-AlarmHigh-1bce37c7-c0da-4245-aaba-465de1d338d5
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2-AlarmHigh-18b8de25-a191-4280-ac2e-e24e06b4a291
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2-AlarmHigh-97f84e4f-1bb4-4d9d-8e3a-99dd19c885ca
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2-AlarmHigh-518002be-b271-405c-b350-f4ed2f7320cd
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2-AlarmHigh-6c7f2924-7653-4037-a5fc-ff0abd951db5
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2-AlarmHigh-ae98e174-ab0b-487f-b25f-80126488d03b
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2-AlarmHigh-bb3be826-fbb7-4738-906c-d454c41a5c2d
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2-AlarmHigh-eab5467e-5c6f-4898-aaf4-d1b21c285d8b
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2-AlarmHigh-1c541790-da51-4d33-8fcb-b97cc92cde68
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2-AlarmHigh-aa1acd31-b0f3-401b-9b99-6c73239a3022
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2-AlarmHigh-016a3d38-b005-442a-b5cb-e8f56319792c
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2-AlarmHigh-339f04b5-bd8a-4649-b67f-469e86d941da
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2-AlarmHigh-9ad423a1-6238-40b2-995b-44f582ec1990
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2-AlarmHigh-e2a493bf-693f-448d-85dd-4517eaa414c7
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_api_keys_v2-AlarmHigh-cd3b016c-d655-48c3-84ba-b7d7e5b6d0d4
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_api_keys_v2-AlarmHigh-ffb4ab11-dd4b-4070-8ad2-d7046c86d9a1
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2-AlarmHigh-b9ff5904-fcca-4dec-914d-139c71d0e4f3
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2-AlarmHigh-cdb8279f-c6f6-4b98-af26-b62b71259bf6
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2/index/tenant_index
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: autoscaling:DescribeScalingPolicies
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2-AlarmHigh-1bce37c7-c0da-4245-aaba-465de1d338d5
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2-AlarmHigh-d07604d4-d7ae-4762-85bb-fedd3821f7e5
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2-AlarmHigh-18b8de25-a191-4280-ac2e-e24e06b4a291
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_config_multitenant_v2-AlarmHigh-97f84e4f-1bb4-4d9d-8e3a-99dd19c885ca
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2-AlarmHigh-518002be-b271-405c-b350-f4ed2f7320cd
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_iamroles_multitenant_v2-AlarmHigh-6c7f2924-7653-4037-a5fc-ff0abd951db5
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2-AlarmHigh-4c0749a8-ede3-43f7-9b6b-e82be9f5576e
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_groups_multitenant_v2-AlarmHigh-ae98e174-ab0b-487f-b25f-80126488d03b
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2-AlarmHigh-bb3be826-fbb7-4738-906c-d454c41a5c2d
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_requests_multitenant_v2-AlarmHigh-eab5467e-5c6f-4898-aaf4-d1b21c285d8b
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2-AlarmHigh-1c541790-da51-4d33-8fcb-b97cc92cde68
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_identity_users_multitenant_v2-AlarmHigh-aa1acd31-b0f3-401b-9b99-6c73239a3022
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2-AlarmHigh-a69321a8-d821-49a4-807a-46ada1053567
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_notifications_multitenant_v2-AlarmHigh-b71f430d-e4c0-42dd-a930-96f1ada81df7
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2-AlarmHigh-016a3d38-b005-442a-b5cb-e8f56319792c
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2-AlarmHigh-5fcc2785-a51c-4e9a-b805-c010901997ae
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2-AlarmHigh-339f04b5-bd8a-4649-b67f-469e86d941da
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2-AlarmHigh-9ad423a1-6238-40b2-995b-44f582ec1990
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2-AlarmHigh-e2a493bf-693f-448d-85dd-4517eaa414c7
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_tenant_static_configs_v2-AlarmHigh-f460a071-ebea-4379-a5ec-23184a2b8884
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_api_keys_v2-AlarmHigh-cd3b016c-d655-48c3-84ba-b7d7e5b6d0d4
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_api_keys_v2-AlarmHigh-ffb4ab11-dd4b-4070-8ad2-d7046c86d9a1
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2-AlarmHigh-b9ff5904-fcca-4dec-914d-139c71d0e4f3
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2-AlarmHigh-cdb8279f-c6f6-4b98-af26-b62b71259bf6
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2/index/arn-tenant-index
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:replicationgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: ec2:AssociateRouteTable
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_cloudtrail_multitenant_v2-AlarmHigh-d07604d4-d7ae-4762-85bb-fedd3821f7e5
-              - Action: elasticloadbalancing:CreateLoadBalancer
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-              - Action: ecs:DescribeClusters
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ecs:us-west-2:${CompanyAccountParameter}:cluster/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-              - Action: ec2:DescribeNatGateways
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:subnetgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-subnet-group
-              - Action: elasticache:DescribeCacheSubnetGroups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:subnetgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-subnet-group
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:listener/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4/b843aa1a1c9b75de
-              - Action: elasticache:ListTagsForResource
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:cluster:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-001
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:replicationgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-              - Action: dax:CreateCluster
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyStageParameter}-${CompanyNameParameter}-dax
-              - Action: elasticache:CreateReplicationGroup
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:replicationgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-              - Action: elasticache:CreateCacheCluster
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:cluster:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-service
-              - Action: elasticloadbalancing:DescribeLoadBalancers
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-              - Action: elasticache:DescribeReplicationGroups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:cluster:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-service
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:replicationgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-              - Action: elasticache:DescribeCacheClusters
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:cluster:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-service
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:replicationgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-              - Action: dax:DescribeClusters
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:cluster:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-service
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:replicationgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-              - Action: elasticloadbalancing:ModifyLoadBalancerAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-              - Action: elasticloadbalancing:SetSecurityGroups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:replicationgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-              - Action: elasticloadbalancing:DescribeLoadBalancerAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_noq_aws_accounts_v2-AlarmHigh-b9ff5904-fcca-4dec-914d-139c71d0e4f3
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-              - Action: route53:GetHostedZone
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-              - Action: elasticloadbalancing:DescribeListeners
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:subnetgroup:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-subnet-group
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-              - Action: elasticloadbalancing:DescribeTags
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:listener/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4/b843aa1a1c9b75de
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:listener/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4/f332177e3c3cde89
-              - Action: elasticloadbalancing:CreateListener
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:loadbalancer/app/tf-lb-20221122001553827400000004/a2a6ce61ca6be5e4
-              - Action: route53:ChangeResourceRecordSets
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-              - Action: route53:GetChange
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:cluster:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-service
-              - Action: dax:ListTags
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-                  - !Sub arn:aws:elasticache:us-west-2:${CompanyAccountParameter}:cluster:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-redis-service
-              - Action: s3:PutObject
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dax:us-west-2:${CompanyAccountParameter}:cache/${CompanyStageParameter}-${CompanyNameParameter}
-                  - !Sub arn:aws:iam::259868150464:role/staging_admin
-                  - !Sub arn:aws:secretsmanager:us-west-2:${CompanyAccountParameter}:secret:${CompanyNameParameter}-${CompanyStageParameter}-noq_secrets-XJ1a8U
-              - Action: sns:GetTopicAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:acm:us-west-2:${CompanyAccountParameter}:certificate/4f237c76-e2cb-4724-85c0-9691e1b3c901
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-              - Action: ec2:DescribeAddresses
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:dynamodb:us-west-2:${CompanyAccountParameter}:table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_resource_cache_multitenant_v2/index/tenant-index
-              - Action: s3:HeadBucket
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::797873946194:root
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-queue
-              - Action: s3:GetBucketLifecycleConfiguration
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-0c933c58e1dcdd071
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/${CompanyStageParameter}-${CompanyNameParameter}-dax
-              - Action: ec2:DescribeVpcAttribute
-                Effect: Allow
-                Resource:
-                  - "arn:aws:logs:us-west-2:${CompanyAccountParameter}:log-group:flow_logs:"
-              - Action: ec2:DescribeRouteTables
-                Effect: Allow
-                Resource:
-                  - "arn:aws:logs:us-west-2:${CompanyAccountParameter}:log-group:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}:"
-                  - !Sub arn:aws:sqs:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-response-queue
-              - Action: s3:GetBucketRequestPayment
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:elasticloadbalancing:us-west-2:${CompanyAccountParameter}:targetgroup/tf-20221122001540629400000003/9947a0bd8960b6fe
-              - Action: ec2:DescribeInternetGateways
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ec2:us-west-2:${CompanyAccountParameter}:subnet/subnet-096a2ab23a8a36027
-              - Action: email:GetIdentityMailFromDomainAttributes
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:sns:us-west-2:${CompanyAccountParameter}:${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}-registration-topic
-              - Action: autoscaling:DescribeScalableTargets
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:iam::${CompanyAccountParameter}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable
-              - Action: logs:DescribeLogGroups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:cloudwatch:us-west-2:${CompanyAccountParameter}:alarm:TargetTracking-table/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}_cloudumi_policy_requests_multitenant_v2-AlarmHigh-016a3d38-b005-442a-b5cb-e8f56319792c
-              - Action: dax:DescribeSubnetGroups
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:ecs:us-west-2:${CompanyAccountParameter}:cluster/${CompanyNameParameter}-noq-dev-${CompanyNameParameter}-${CompanyStageParameter}
-              - Action: secretsmanager:DescribeSecret
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:secretsmanager:us-west-2:${CompanyAccountParameter}:secret:${CompanyNameParameter}-${CompanyStageParameter}-noq_secrets-XJ1a8U
-              - Action: secretsmanager:GetResourcePolicy
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:secretsmanager:us-west-2:${CompanyAccountParameter}:secret:${CompanyNameParameter}-${CompanyStageParameter}-noq_secrets-XJ1a8U
+              - Effect: Allow
+                Action:
+                  - acm:DeleteCertificate
+                  - acm:DescribeCertificate
+                  - acm:ListTagsForCertificate
+                  - acm:RequestCertificate
+                  - autoscaling:DescribeScalableTargets
+                  - autoscaling:DescribeScalingPolicies
+                  - dax:DescribeClusters
+                  - dax:DescribeParameterGroups
+                  - dax:DescribeParameters
+                  - dax:DescribeSubnetGroups
+                  - dax:ListTags
+                  - dynamodb:DescribeContinuousBackups
+                  - dynamodb:DescribeTable
+                  - dynamodb:DescribeTimeToLive
+                  - dynamodb:GetItem
+                  - dynamodb:ListTagsOfResource
+                  - dynamodb:PutItem
+                  - ec2:DescribeAccountAttributes
+                  - ec2:DescribeAddresses
+                  - ec2:DescribeInternetGateways
+                  - ec2:DescribeNatGateways
+                  - ec2:DescribeNetworkAcls
+                  - ec2:DescribeRouteTables
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeVpcAttribute
+                  - ec2:DescribeVpcClassicLink
+                  - ec2:DescribeVpcClassicLinkDnsSupport
+                  - ec2:DescribeVpcs
+                  - ecr:DescribeRepositories
+                  - ecr:ListTagsForResource
+                  - ecs:DescribeClusters
+                  - elasticache:DescribeCacheClusters
+                  - elasticache:DescribeCacheParameterGroups
+                  - elasticache:DescribeCacheParameters
+                  - elasticache:DescribeCacheSubnetGroups
+                  - elasticache:DescribeReplicationGroups
+                  - elasticache:ListTagsForResource
+                  - elasticloadbalancing:DescribeListeners
+                  - elasticloadbalancing:DescribeLoadBalancerAttributes
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeTags
+                  - elasticloadbalancing:DescribeTargetGroupAttributes
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:ModifyListener
+                  - email:GetIdentityMailFromDomainAttributes
+                  - email:GetIdentityVerificationAttributes
+                  - iam:GetRole
+                  - iam:GetRolePolicy
+                  - iam:ListAttachedRolePolicies
+                  - iam:ListRolePolicies
+                  - kms:DescribeKey
+                  - kms:GetKeyPolicy
+                  - kms:GetKeyRotationStatus
+                  - kms:ListAliases
+                  - kms:ListResourceTags
+                  - logs:DescribeLogGroups
+                  - logs:ListTagsLogGroup
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetChange
+                  - route53:GetHostedZone
+                  - route53:ListHostedZones
+                  - route53:ListResourceRecordSets
+                  - route53:ListTagsForResource
+                  - s3:GetBucketAccelerateConfiguration
+                  - s3:GetBucketAcl
+                  - s3:GetBucketCors
+                  - s3:GetBucketEncryption
+                  - s3:GetBucketLifecycleConfiguration
+                  - s3:GetBucketLogging
+                  - s3:GetBucketPolicy
+                  - s3:GetBucketReplication
+                  - s3:GetBucketRequestPayment
+                  - s3:GetBucketTagging
+                  - s3:GetBucketVersioning
+                  - s3:GetBucketWebsite
+                  - s3:GetObject
+                  - s3:GetObjectLockConfiguration
+                  - s3:GetPublicAccessBlock
+                  - s3:HeadBucket
+                  - s3:ListObjects
+                  - s3:PutObject
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetResourcePolicy
+                  - secretsmanager:GetSecretValue
+                  - sns:GetSubscriptionAttributes
+                  - sns:GetTopicAttributes
+                  - sns:ListTagsForResource
+                  - sqs:GetQueueAttributes
+                  - sqs:ListQueueTags
+                  - sts:GetCallerIdentity
+                Resource: "*"
 
 Parameters:
   CompanyAccountParameter:
