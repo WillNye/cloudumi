@@ -11,7 +11,7 @@ export const icons = Object.keys(iconPaths).map(key => ({
 }));
 
 // eslint-disable-next-line react/prop-types
-export const IconDemo = ({ component: Component, title }) => (
+export const VendorIconDemo = ({ component: Component, title }) => (
   <div
     key={title}
     style={{
