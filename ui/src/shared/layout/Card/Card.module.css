@@ -1,0 +1,30 @@
+.card {
+  padding: var(--spacing-md);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-background);
+
+  &.disablePadding {
+    padding: 0;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+
+    .push {
+      flex: 1;
+      margin: 0 0 var(--spacing-md) 0;
+    }
+
+    .headerText {
+      font-size: 14px;
+      font-weight: 500;
+    }
+  }
+
+  .content {
+    flex: 1;
+  }
+}
