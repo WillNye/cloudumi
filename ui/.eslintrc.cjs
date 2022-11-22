@@ -28,6 +28,7 @@ module.exports = {
         args: 'none'
       }
     ],
+    'react/prop-types': ['off'],
     'react/display-name': ['off'],
     '@typescript-eslint/ban-ts-comment': ['warn'],
     'no-debugger': ['warn'],
