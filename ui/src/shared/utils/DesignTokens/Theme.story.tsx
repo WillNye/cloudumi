@@ -1,4 +1,14 @@
-import { BorderBlocks, ColorBlocks, ComponentBlocks, DesignTokensProvider, GradientBlocks, PaletteBlocks, ShadowBlocks, SpacingBlocks, TypographyBlocks } from 'reablocks';
+import {
+  BorderBlocks,
+  ColorBlocks,
+  ComponentBlocks,
+  DesignTokensProvider,
+  GradientBlocks,
+  PaletteBlocks,
+  ShadowBlocks,
+  SpacingBlocks,
+  TypographyBlocks
+} from 'reablocks';
 import { theme } from './theme';
 
 export default {

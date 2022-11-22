@@ -1,82 +1,61 @@
-import { Colors, DesignTokens } from 'reablocks';
+import { DesignTokens } from 'reablocks';
+import { ThemeColors } from './types';
 
-export const themeColors: Colors = {
-  red: {
-    '100': '#fffcfc',
-    '200': '#fff8f8',
-    '300': '#ffefef',
-    '400': '#ffe5e5',
-    '500': '#fdd8d8',
-    '600': '#f9c6c6',
-    '700': '#f3aeaf',
-    '800': '#eb9091',
-    '900': '#e5484d'
-  },
-  purple: {
-    '100': '#fefcfe',
-    '200': '#fdfaff',
-    '300': '#f9f1fe',
-    '400': '#f3e7fc',
-    '500': '#eddbf9',
-    '600': '#e3ccf4',
-    '700': '#d3b4ed',
-    '800': '#be93e4',
-    '900': '#8e4ec6'
-  },
+export const themeColors: ThemeColors = {
   blue: {
-    '100': '#fbfdff',
-    '200': '#f5faff',
-    '300': '#edf6ff',
-    '400': '#e1f0ff',
-    '500': '#cee7fe',
-    '600': '#b7d9f8',
-    '700': '#96c7f2',
-    '800': '#5eb0ef',
-    '900': '#0091ff'
+    '100': '#DFE4FF',
+    '200': '#C0C8FF',
+    '300': '#A1ACFF',
+    '400': '#8793FF',
+    '500': '#6372FF',
+    '600': '#4B5CFA',
+    '700': '#3B3EF0',
+    '800': '#2E2ED4',
+    '900': '#282AAB'
   },
-  green: {
-    '100': '#fbfefc',
-    '200': '#f2fcf5',
-    '300': '#e9f9ee',
-    '400': '#ddf3e4',
-    '500': '#ccebd7',
-    '600': '#b4dfc4',
-    '700': '#92ceac',
-    '800': '#5bb98c',
-    '900': '#30a46c'
+  gray: {
+    '100': '#CACBD0',
+    '200': '#90929E',
+    '300': '#878A96',
+    '400': '#696D77',
+    '500': '#454853',
+    '600': '#33363F',
+    '700': '#262931',
+    '800': '#1C1D22',
+    '900': '#101114'
   },
-  yellow: {
-    '100': '#abab05',
-    '200': '#ffdd02',
-    '300': '#ffea01',
-    '400': '#ffe601',
-    '500': '#fcdb00',
-    '600': '#f2c900',
-    '700': '#e3b200',
-    '800': '#ebbc00',
-    '900': '#f5d800'
+  red: {
+    '100': '#FEE2E2',
+    '200': '#FECACA',
+    '300': '#FCA5A5',
+    '400': '#F87171',
+    '500': '#F03C3C',
+    '600': '#DC2626',
+    '700': '#B91C1C',
+    '800': '#991B1B',
+    '900': '#7F1D1D'
   },
   orange: {
-    '100': '#fefcfb',
-    '200': '#fef8f4',
-    '300': '#fff1e7',
-    '400': '#ffe8d7',
-    '500': '#ffdcc3',
-    '600': '#ffcca7',
-    '700': '#ffb381',
-    '800': '#fa934e',
-    '900': '#f76808'
+    '100': '#FFF4D8',
+    '200': '#FFE7B1',
+    '300': '#FFD68A',
+    '400': '#FFB94D',
+    '500': '#FFAB3D',
+    '600': '#DB872C',
+    '700': '#B7681E',
+    '800': '#934B13',
+    '900': '#7A370B'
   },
-  grey: {
-    '100': '#fcfcfc',
-    '200': '#f8f8f8',
-    '300': '#f3f3f3',
-    '400': '#ededed',
-    '500': '#e8e8e8',
-    '600': '#e2e2e2',
-    '700': '#dbdbdb',
-    '800': '#c7c7c7',
-    '900': '#8f8f8f'
+  green: {
+    '100': '#CCFAD8',
+    '200': '#9BF5BC',
+    '300': '#66E29F',
+    '400': '#3EC58A',
+    '500': '#0E9F6E',
+    '600': '#0A886A',
+    '700': '#077263',
+    '800': '#045C58',
+    '900': '#02484C'
   },
   slate: {
     '100': '#fbfcfd',
@@ -167,7 +146,7 @@ export const theme: DesignTokens = {
     },
     secondary: {
       background: themeColors.slate['500'],
-      color: themeColors.slate['100']
+      color: themeColors.gray['700']
     },
     error: {
       background: themeColors.red['500'],

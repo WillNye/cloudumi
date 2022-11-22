@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Loader } from './Loader';
 
 export default {

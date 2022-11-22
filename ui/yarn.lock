@@ -11776,10 +11776,8 @@ raw-loader@^4.0.2:
     loader-utils "^2.0.0"
     schema-utils "^3.0.0"
 
-reablocks@^1.2.2:
+"reablocks@file:../../../reablocks":
   version "1.2.2"
-  resolved "https://registry.yarnpkg.com/reablocks/-/reablocks-1.2.2.tgz#b0d2dde5bb4b7e2a33a2ba1b7b2492a700f350eb"
-  integrity sha512-CnaWoEPxaN1rEmt9RFUTuHQ3Tgq25quTTiqoXz4scAxxGwierle0XZXF1fTgpDlPF3SiJHuzvCihrsBshjXasA==
   dependencies:
     classnames "^2.3.1"
     ellipsize "^0.5.1"

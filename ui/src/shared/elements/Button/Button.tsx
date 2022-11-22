@@ -9,8 +9,8 @@ export interface ButtonProps
     'onAnimationStart' | 'onDragStart' | 'onDragEnd' | 'onDrag'
   > {
   // Examples on how to use color/variants...
-  // color?: 'default' | 'primary' | 'secondary' | 'error';
-  // variant?: 'filled' | 'outline' | 'text';
+  color?: 'default' | 'primary' | 'secondary' | 'error';
+  variant?: 'filled' | 'outline' | 'text';
   fullWidth?: boolean;
   disableMargins?: boolean;
   disablePadding?: boolean;
@@ -25,8 +25,8 @@ export interface ButtonRef {
 export const Button: FC<ButtonProps & ButtonRef> = forwardRef(
   (
     {
-      // color,
-      // variant,
+      color = 'primary',
+      variant = 'filled',
       children,
       type,
       fullWidth,
@@ -47,13 +47,20 @@ export const Button: FC<ButtonProps & ButtonRef> = forwardRef(
       whileTap={{ scale: disabled || disableAnimation ? 1 : 0.9 }}
       type={type || 'button'}
       className={classNames(className, css.btn, {
-        // Example classes
-        // [css.primary]: color === 'primary',
-        // [css.text]: variant === 'text',
         [css.fullWidth]: fullWidth,
+
+        [css.primary]: color === 'primary',
+        [css.secondary]: color === 'secondary',
+        [css.error]: color === 'error',
+
         [css.small]: size === 'small',
         [css.medium]: size === 'medium',
         [css.large]: size === 'large',
+
+        [css.filled]: variant === 'filled',
+        [css.outline]: variant === 'outline',
+        [css.text]: variant === 'text',
+
         [css.disableMargins]: disableMargins,
         [css.disablePadding]: disablePadding
       })}
