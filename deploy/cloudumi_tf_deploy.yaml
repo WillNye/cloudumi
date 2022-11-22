@@ -20,25 +20,47 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - acm:DeleteCertificate
                   - acm:DescribeCertificate
                   - acm:ListTagsForCertificate
                   - acm:RequestCertificate
                   - autoscaling:DescribeScalableTargets
                   - autoscaling:DescribeScalingPolicies
+                  - autoscaling:PutScalingPolicy
+                  - autoscaling:RegisterScalableTarget
+                  - dax:CreateCluster
+                  - dax:CreateParameterGroup
+                  - dax:CreateSubnetGroup
                   - dax:DescribeClusters
                   - dax:DescribeParameterGroups
                   - dax:DescribeParameters
                   - dax:DescribeSubnetGroups
                   - dax:ListTags
+                  - dax:UpdateParameterGroup
+                  - dynamodb:CreateTable
                   - dynamodb:DescribeContinuousBackups
                   - dynamodb:DescribeTable
                   - dynamodb:DescribeTimeToLive
                   - dynamodb:GetItem
                   - dynamodb:ListTagsOfResource
                   - dynamodb:PutItem
+                  - dynamodb:UpdateContinuousBackups
+                  - dynamodb:UpdateTimeToLive
+                  - ec2:AllocateAddress
+                  - ec2:AssociateRouteTable
+                  - ec2:AttachInternetGateway
+                  - ec2:AuthorizeSecurityGroupEgress
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:CreateFlowLogs
+                  - ec2:CreateInternetGateway
+                  - ec2:CreateNatGateway
+                  - ec2:CreateRoute
+                  - ec2:CreateRouteTable
+                  - ec2:CreateSecurityGroup
+                  - ec2:CreateSubnet
+                  - ec2:CreateVpc
                   - ec2:DescribeAccountAttributes
                   - ec2:DescribeAddresses
+                  - ec2:DescribeFlowLogs
                   - ec2:DescribeInternetGateways
                   - ec2:DescribeNatGateways
                   - ec2:DescribeNetworkAcls
@@ -49,41 +71,66 @@ Resources:
                   - ec2:DescribeVpcClassicLink
                   - ec2:DescribeVpcClassicLinkDnsSupport
                   - ec2:DescribeVpcs
+                  - ec2:ModifyVpcAttribute
+                  - ec2:RevokeSecurityGroupEgress
+                  - ecr:CreateRepository
                   - ecr:DescribeRepositories
                   - ecr:ListTagsForResource
+                  - ecs:CreateCluster
                   - ecs:DescribeClusters
+                  - elasticache:CreateCacheCluster
+                  - elasticache:CreateCacheParameterGroup
+                  - elasticache:CreateCacheSubnetGroup
+                  - elasticache:CreateReplicationGroup
                   - elasticache:DescribeCacheClusters
                   - elasticache:DescribeCacheParameterGroups
                   - elasticache:DescribeCacheParameters
                   - elasticache:DescribeCacheSubnetGroups
                   - elasticache:DescribeReplicationGroups
                   - elasticache:ListTagsForResource
+                  - elasticache:ModifyCacheParameterGroup
+                  - elasticloadbalancing:AddTags
+                  - elasticloadbalancing:CreateListener
+                  - elasticloadbalancing:CreateLoadBalancer
+                  - elasticloadbalancing:CreateTargetGroup
                   - elasticloadbalancing:DescribeListeners
                   - elasticloadbalancing:DescribeLoadBalancerAttributes
                   - elasticloadbalancing:DescribeLoadBalancers
                   - elasticloadbalancing:DescribeTags
                   - elasticloadbalancing:DescribeTargetGroupAttributes
                   - elasticloadbalancing:DescribeTargetGroups
-                  - elasticloadbalancing:ModifyListener
+                  - elasticloadbalancing:ModifyLoadBalancerAttributes
+                  - elasticloadbalancing:ModifyTargetGroupAttributes
+                  - elasticloadbalancing:SetSecurityGroups
                   - email:GetIdentityMailFromDomainAttributes
                   - email:GetIdentityVerificationAttributes
+                  - email:SetIdentityMailFromDomain
+                  - email:VerifyEmailIdentity
+                  - iam:CreateRole
                   - iam:GetRole
                   - iam:GetRolePolicy
                   - iam:ListAttachedRolePolicies
                   - iam:ListRolePolicies
+                  - iam:PutRolePolicy
+                  - kms:CreateAlias
+                  - kms:CreateKey
                   - kms:DescribeKey
+                  - kms:EnableKeyRotation
                   - kms:GetKeyPolicy
                   - kms:GetKeyRotationStatus
                   - kms:ListAliases
                   - kms:ListResourceTags
+                  - logs:CreateLogGroup
                   - logs:DescribeLogGroups
                   - logs:ListTagsLogGroup
+                  - logs:PutRetentionPolicy
                   - route53:ChangeResourceRecordSets
                   - route53:GetChange
                   - route53:GetHostedZone
                   - route53:ListHostedZones
                   - route53:ListResourceRecordSets
                   - route53:ListTagsForResource
+                  - s3:CreateBucket
                   - s3:GetBucketAccelerateConfiguration
                   - s3:GetBucketAcl
                   - s3:GetBucketCors
@@ -101,15 +148,27 @@ Resources:
                   - s3:GetPublicAccessBlock
                   - s3:HeadBucket
                   - s3:ListObjects
+                  - s3:PutBucketEncryption
+                  - s3:PutBucketLifecycleConfiguration
+                  - s3:PutBucketLogging
+                  - s3:PutBucketPolicy
+                  - s3:PutBucketTagging
+                  - s3:PutBucketVersioning
                   - s3:PutObject
+                  - s3:PutPublicAccessBlock
+                  - secretsmanager:CreateSecret
                   - secretsmanager:DescribeSecret
                   - secretsmanager:GetResourcePolicy
-                  - secretsmanager:GetSecretValue
+                  - sns:CreateTopic
                   - sns:GetSubscriptionAttributes
                   - sns:GetTopicAttributes
                   - sns:ListTagsForResource
+                  - sns:SetTopicAttributes
+                  - sns:Subscribe
+                  - sqs:CreateQueue
                   - sqs:GetQueueAttributes
                   - sqs:ListQueueTags
+                  - sqs:SetQueueAttributes
                   - sts:GetCallerIdentity
                 Resource: "*"
 
