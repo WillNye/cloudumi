@@ -180,6 +180,12 @@ variable "global_tenant_data_account_id" {
   type        = string
 }
 
+variable "global_tenant_data_role_name" {
+  description = "Role name of the AWS Tenant Data Account"
+  type        = string
+  default     = "NoqServiceConnRole"
+}
+
 variable "legal_docs_bucket_name" {
   description = "The S3 bucket containing templates for our legal documentation"
   type        = string

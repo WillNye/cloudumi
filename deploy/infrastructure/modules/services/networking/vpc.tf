@@ -6,7 +6,7 @@ resource "aws_flow_log" "flow_log_binding" {
 }
 
 resource "aws_cloudwatch_log_group" "flow_logs" {
-  name = "flow_logs"
+  name = "flow_logs-${aws_vpc.main_vpc.id}"
 }
 
 resource "aws_iam_role" "flow_log_role" {

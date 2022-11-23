@@ -13,6 +13,11 @@ output "global_tenant_data_account_id" {
   value       = var.global_tenant_data_account_id
 }
 
+output "global_tenant_data_role_name" {
+  description = "Role name of the AWS Tenant Data Account"
+  value       = var.global_tenant_data_role_name
+}
+
 output "legal_docs_bucket_name" {
   description = "The S3 bucket containing templates for our legal documentation"
   value       = var.legal_docs_bucket_name

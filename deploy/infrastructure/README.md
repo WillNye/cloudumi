@@ -55,6 +55,22 @@ terraform refresh --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
 terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
 terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
 
+#### Akasa
+
+Add this to ~/.aws/config:
+
+```
+[profile akasa_deployment_role]
+credential_process = noq credential_process arn:aws:iam::940552945933:role/deployment_role -A arn:aws:iam::277516517760:role/NoqTerraformApplyRole
+```
+
+export AWS_PROFILE=akasa_deployment_role
+export AWS_REGION=us-west-2
+terraform workspace select akasa-prod-1
+terraform refresh --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
+terraform plan --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
+terraform apply --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
+
 Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
 
 To use terraform, follow the below steps:

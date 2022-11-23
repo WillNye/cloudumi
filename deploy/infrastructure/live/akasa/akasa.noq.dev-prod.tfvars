@@ -5,15 +5,14 @@
 modify_ecs_task_role = true
 
 # Associated account id
-account_id = "775726381634"
+account_id = "277516517760"
 
-namespace   = "cyberdyne"
-zone        = "cyberdyne.noq.dev"
+namespace   = "akasa"
+zone        = "internal.akasa.engineering"
 stage       = "prod"
-attributes  = 1
-domain_name = "app.cyberdyne.noq.dev"
-profile     = "cyberdyne_demo_org/NoqPocDeploy"
-# profile = "cyberdyne_demo_org/cyberdyne_admin"
+attributes  = 2
+domain_name = "noq.internal.akasa.engineering"
+profile     = "akasa_deployment_role"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
@@ -22,13 +21,13 @@ subnet_azs = ["us-west-2a", "us-west-2b"]
 # Name: {namespace}.{zone}
 # Environment: {stage}
 tags = {
-  "Name" : "cyberdyne.noq.dev",
+  "Name" : "noq.internal.akasa.engineering",
   "Environment" : "production",
 }
 
 # This variable should only be set to true for NOQ Corpo accounts
 # It sets up a container registry (so only for prod and staging)
-noq_core = true
+noq_core = false
 
 allowed_inbound_cidr_blocks = [
   "0.0.0.0/0"
@@ -39,25 +38,25 @@ dynamo_table_replica_regions = ["us-west-2"]
 
 # Dax
 dax_node_type  = "dax.t3.small"
-dax_node_count = 1
+dax_node_count = 2
 
 # SES
-notifications_mail_from_domain = "ses-us-west-2.cyberdyne.noq.dev"
+notifications_mail_from_domain = "ses-us-west-2.internal.akasa.engineering"
 
 # Redis
-redis_node_type            = "cache.t3.micro"
-secret_manager_secret_name = "cyberdyne-prod-noq_secrets"
+redis_node_type            = "cache.t3.small"
+secret_manager_secret_name = "akasa-prod-noq_secrets"
 
 # Sentry
 sentry_dsn                    = "https://f446f0f25a74440db6e211ebe73c05f9@o1134078.ingest.sentry.io/6188334"
-notifications_sender_identity = "notifications@noq.dev"
+notifications_sender_identity = "noq-notifications@akasa.com"
 
 s3_access_log_bucket         = "s3-access-logs.775726381634.us-west-2"
-elasticache_node_type        = "cache.t3.micro"
+elasticache_node_type        = "cache.t3.medium"
 google_analytics_tracking_id = "G-P5K1SQF3P6"
 
-global_tenant_data_account_id = "615395543222"
-legal_docs_bucket_name        = "noq-global-staging-legal-docs"
+global_tenant_data_account_id = "306086318698"
+legal_docs_bucket_name        = "noq-global-prod-legal-docs"
 
 api_count    = 1
 worker_count = 1
