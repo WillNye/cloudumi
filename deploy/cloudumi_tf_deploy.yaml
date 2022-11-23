@@ -1,5 +1,5 @@
 Resources:
-  SpokeRole:
+  DeploymentRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
