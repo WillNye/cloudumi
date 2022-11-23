@@ -56,7 +56,9 @@ terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --
 terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
 
 #### Akasa
+
 Add this to ~/.aws/config:
+
 ```
 [profile akasa_deployment_role]
 credential_process = noq credential_process arn:aws:iam::940552945933:role/deployment_role -A arn:aws:iam::277516517760:role/NoqTerraformApplyRole
