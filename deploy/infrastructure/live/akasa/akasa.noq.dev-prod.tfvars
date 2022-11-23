@@ -12,8 +12,7 @@ zone        = "internal.akasa.engineering"
 stage       = "prod"
 attributes  = 2
 domain_name = "noq.internal.akasa.engineering"
-profile     = "cyberdyne_demo_org/NoqSoftwareTerraformApplyRole"
-# profile = "cyberdyne_demo_org/cyberdyne_admin"
+profile     = "akasa_deployment_role"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
