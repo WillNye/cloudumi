@@ -1,8 +1,7 @@
 extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:775726381634:secret:cyberdyne-prod-noq_secrets-CqbT3k
 _global_:
-  landing_page_domains:
-    - app.cyberdyne.noq.dev
+  landing_page_domains: []
   metrics:
     cloudwatch:
       namespace: cyberdyne-noq-dev-cyberdyne-prod-1
@@ -25,7 +24,7 @@ _global_:
       account_id: "775726381634"
       central_role_name: NoqCentralRole
       spoke_role_name: NoqSpokeRole
-      node_role:
+      node_role: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
       stage: prod
       region: us-west-2
       attributes: 1
@@ -48,7 +47,7 @@ _global_:
   s3_buckets:
     legal_docs: noq-global-staging-legal-docs
   deployment:
-    domain_name: app.cyberdyne.noq.dev
+    domain_name: "app.cyberdyne.noq.dev"
     namespace: cyberdyne
     zone: cyberdyne.noq.dev
     cluster_id: cyberdyne-noq-dev-cyberdyne-prod-1

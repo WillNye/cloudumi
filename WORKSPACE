@@ -189,7 +189,7 @@ http_file(
     downloaded_file_path = "noq",
     executable = True,
     url = "https://public-noq-binaries.s3.us-west-2.amazonaws.com/linux_x86_64/noq",
-    sha256 = "f653ef37b899fd2d6ee3f932f774339aa2393e8aed47daa84e608f42457595cb",
+    # sha256 = "" - Disabled because the hashes change frequently
 )
 
 register_toolchains(
@@ -203,7 +203,7 @@ get_repo_version(name="version")
 http_archive(
     name = "awscli",
     url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip",
-    sha256 = "7209d0ad15290379c2c47c9a2e7c30621d2c918a37532038e9353ba89c0ae7e7",
+    # sha256 = "" - Disabled because the hashes change frequently
     build_file = "@//util:awscli.BUILD",
 )
 

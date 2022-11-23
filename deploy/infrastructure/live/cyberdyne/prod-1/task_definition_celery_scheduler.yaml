@@ -34,7 +34,7 @@ containerDefinitions:
     name: cyberdyne-noq-dev-cyberdyne-prod-1-celery-scheduler
 placementConstraints: []
 memory: "2048"
-taskRoleArn:
+taskRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
 family: cyberdyne-noq-dev-cyberdyne-prod-1-celery-scheduler
 requiresCompatibilities:
   - FARGATE

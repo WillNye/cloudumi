@@ -166,13 +166,13 @@ variable "secret_manager_secret_name" {
 
 variable "dax_node_type" {
   type    = string
-  default = "dax.t2.medium"
+  default = "dax.t3.small"
 }
 
 variable "dax_node_count" {
   description = "Number of cluster nodes"
   type        = number
-  default     = 3
+  default     = 1
 }
 
 variable "global_tenant_data_account_id" {
@@ -214,4 +214,16 @@ variable "redis_secrets" {
   sensitive   = true
   description = "Redis secret"
   type        = string
+}
+
+variable "aws_secrets_manager_cluster_string" {
+  sensitive   = true
+  description = "AWS Secrets Manager secret string"
+  type        = string
+}
+
+variable "landing_page_domains" {
+  description = "The domain names that should be used for common endpoints, like tenant_registration. This should NOT be set for non-noq (self-hosted) deployments"
+  type        = list(string)
+  default     = []
 }

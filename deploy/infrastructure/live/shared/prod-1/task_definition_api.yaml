@@ -27,7 +27,9 @@ containerDefinitions:
       - name: STAGE
         value: prod
     dnsServers: []
-    mountPoints: []
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
     image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:prod
@@ -46,4 +48,11 @@ requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
 cpu: "2048"
-volumes: []
+volumes:
+  - name: efs-server-AP
+    efsVolumeConfiguration:
+      fileSystemId: fs-0170f7fd4ae4e61ea
+      transitEncryption: ENABLED
+      authorizationConfig:
+        accessPointId: fsap-0e1bc4d033da3c98f
+        iam: ENABLED
