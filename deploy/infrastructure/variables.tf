@@ -233,3 +233,9 @@ variable "landing_page_domains" {
   type        = list(string)
   default     = []
 }
+
+variable "load_balancer_internal" {
+  description = "If set to true, the load balancer will be internal"
+  type        = bool
+  default     = false
+}

@@ -1,6 +1,6 @@
 # Create a new load balancer
 resource "aws_lb" "noq_api_load_balancer" {
-  internal           = false #tfsec:ignore:aws-elb-alb-not-public
+  internal           = var.load_balancer_internal #tfsec:ignore:aws-elb-alb-not-public
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb-sg.id]
   subnets            = [aws_subnet.subnet_public_az0.id, aws_subnet.subnet_public_az1.id]
