@@ -205,19 +205,6 @@ Resources:
                 Resource: "*"
 
 Parameters:
-  CompanyAccountParameter:
-    Description: The company's AWS account number
-    Type: String
-
-  CompanyNameParameter:
-    Description: The name of the company
-    Type: String
-
-  CompanyStageParameter:
-    Description: The type of AWS account that this role will deploy into (staging, ${CompanyStageParameter}, etc)
-    Type: String
-    Default: ${CompanyStageParameter}
-
   NoqCentralRoleArnParameter:
     Description: The role used by Noq to assume this role, to be created, and deploy the Noq infrastructure using Terraform
     Type: String
@@ -225,6 +212,7 @@ Parameters:
     MaxLength: "100"
     AllowedPattern: ^arn:aws:iam::\d{12}:role/.+
     ConstraintDescription: Invalid CentralRoleArn value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+ with a length between 2-100
+    Default: arn:aws:iam::940552945933:role/deployment_role
 
   NoqTerraformApplyRole:
     Description: The role name that is going to be created and used to setup the Noq infrastructure
