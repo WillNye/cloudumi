@@ -24,7 +24,7 @@ Resources:
                   - acm:DescribeCertificate
                   - acm:ListTagsForCertificate
                   - acm:RequestCertificate
-                  - application-autoscaling:RegisterScalableTarget
+                  - application-autoscaling:*
                   - autoscaling:DescribeScalableTargets
                   - autoscaling:DescribeScalingPolicies
                   - autoscaling:PutScalingPolicy
@@ -134,18 +134,19 @@ Resources:
                   - iam:PassRole
                   - iam:PutRolePolicy
                   - iam:TagRole
+                  - kms:CancelKeyDeletion
                   - kms:Create*
+                  - kms:Delete*
                   - kms:Describe*
+                  - kms:Disable*
                   - kms:Enable*
+                  - kms:Get*
+                  - kms:GenerateDataKey
                   - kms:List*
                   - kms:Put*
-                  - kms:Update*
                   - kms:Revoke*
-                  - kms:Disable*
-                  - kms:Get*
-                  - kms:Delete*
                   - kms:ScheduleKeyDeletion
-                  - kms:CancelKeyDeletion
+                  - kms:Update*
                   - logs:CreateLogGroup
                   - logs:DescribeLogGroups
                   - logs:ListTagsLogGroup
@@ -190,7 +191,10 @@ Resources:
                   - secretsmanager:CreateSecret
                   - secretsmanager:DescribeSecret
                   - secretsmanager:GetResourcePolicy
+                  - ses:GetIdentityMailFromDomainAttributes
                   - ses:GetIdentityVerificationAttributes
+                  - ses:SetIdentityMailFromDomain
+                  - ses:VerifyEmailIdentity
                   - sns:CreateTopic
                   - sns:GetSubscriptionAttributes
                   - sns:GetTopicAttributes

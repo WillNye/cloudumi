@@ -22,6 +22,32 @@ resource "aws_s3_bucket" "cloudumi_log_bucket" {
     }
   }
 
+  policy = <<POLICY
+  {
+    "Id": "Policy",
+    "Version": "2012-10-17",
+    "Statement":
+    [
+      {
+        "Action": [
+          "s3:ListBucket",
+          "s3:GetObject"
+        ],
+        "Effect": "Allow",
+        "Resource": [
+          "arn:aws:s3:::cloudumi-log-${var.cluster_id}/*",
+          "arn:aws:s3:::cloudumi-log-${var.cluster_id}"
+        ],
+        "Principal": {
+          "AWS": [
+            "arn:aws:iam::${var.account_id}:root"
+          ]
+        }
+      }
+    ]
+  }
+  POLICY
+
   versioning {
     enabled = true
   }
