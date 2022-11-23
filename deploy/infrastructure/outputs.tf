@@ -192,15 +192,15 @@ output "subnet_name_private_az1" {
   value       = module.tenant_networking.vpc_subnet_private_id[1]
 }
 
-output "subnet_name_public_az0" {
-  description = "The configured subnet name for AZ0 (for automation)"
-  value       = module.tenant_networking.vpc_subnet_public_id[0]
-}
+# output "subnet_name_public_az0" {
+#   description = "The configured subnet name for AZ0 (for automation)"
+#   value       = module.tenant_networking.vpc_subnet_public_id[0]
+# }
 
-output "subnet_name_public_az1" {
-  description = "The configured subnet name for AZ1 (for automation)"
-  value       = module.tenant_networking.vpc_subnet_public_id[1]
-}
+# output "subnet_name_public_az1" {
+#   description = "The configured subnet name for AZ1 (for automation)"
+#   value       = module.tenant_networking.vpc_subnet_public_id[1]
+# }
 
 output "target_group_arn" {
   description = "The target group ARN, needs to be updated in the BUILD file under the ecs-cli call"
@@ -222,20 +222,20 @@ output "vpc_cidr_range" {
   value       = module.tenant_networking.vpc_cidr_range
 }
 
-output "vpc_subnet_public_cidr" {
-  description = "The public CIDR range of the subnet assigned to the VPC"
-  value       = module.tenant_networking.vpc_subnet_public_cidr
-}
+# output "vpc_subnet_public_cidr" {
+#   description = "The public CIDR range of the subnet assigned to the VPC"
+#   value       = module.tenant_networking.vpc_subnet_public_cidr
+# }
 
 output "vpc_subnet_private_cidr" {
   description = "The private CIDR range of the private subnet assign to the VPC"
   value       = module.tenant_networking.vpc_subnet_private_cidr
 }
 
-output "vpc_subnet_public_id" {
-  description = "The public CIDR range of the subnet assigned to the VPC"
-  value       = module.tenant_networking.vpc_subnet_public_id
-}
+# output "vpc_subnet_public_id" {
+#   description = "The public CIDR range of the subnet assigned to the VPC"
+#   value       = module.tenant_networking.vpc_subnet_public_id
+# }
 
 output "vpc_subnet_private_id" {
   description = "The private CIDR range of the private subnet assign to the VPC"

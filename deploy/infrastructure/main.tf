@@ -24,7 +24,7 @@ provider "aws" {
 }
 
 locals {
-  cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
+  cluster_id = var.namespace
 }
 
 module "tenant_networking" {
