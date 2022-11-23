@@ -24,7 +24,7 @@ Resources:
                   - acm:DescribeCertificate
                   - acm:ListTagsForCertificate
                   - acm:RequestCertificate
-                  - application-autoscaling:RegisterScalableTarge
+                  - application-autoscaling:RegisterScalableTarget
                   - autoscaling:DescribeScalableTargets
                   - autoscaling:DescribeScalingPolicies
                   - autoscaling:PutScalingPolicy
@@ -134,18 +134,18 @@ Resources:
                   - iam:PassRole
                   - iam:PutRolePolicy
                   - iam:TagRole
-                  - kms:CreateAlias
-                  - kms:CreateKey
-                  - kms:Decrypt
-                  - kms:DecryptKey
-                  - kms:DescribeKey
-                  - kms:EnableKeyRotation
-                  - kms:Encrypt
-                  - kms:EncryptKey
-                  - kms:GetKeyPolicy
-                  - kms:GetKeyRotationStatus
-                  - kms:ListAliases
-                  - kms:ListResourceTags
+                  - kms:Create*
+                  - kms:Describe*
+                  - kms:Enable*
+                  - kms:List*
+                  - kms:Put*
+                  - kms:Update*
+                  - kms:Revoke*
+                  - kms:Disable*
+                  - kms:Get*
+                  - kms:Delete*
+                  - kms:ScheduleKeyDeletion
+                  - kms:CancelKeyDeletion
                   - logs:CreateLogGroup
                   - logs:DescribeLogGroups
                   - logs:ListTagsLogGroup
@@ -157,6 +157,8 @@ Resources:
                   - route53:ListResourceRecordSets
                   - route53:ListTagsForResource
                   - s3:CreateBucket
+                  - s3:DeleteObject
+                  - s3:DeleteObjectVersion
                   - s3:GetBucketAccelerateConfiguration
                   - s3:GetBucketAcl
                   - s3:GetBucketCors
@@ -182,6 +184,7 @@ Resources:
                   - s3:PutBucketPolicy
                   - s3:PutBucketTagging
                   - s3:PutBucketVersioning
+                  - s3:PutLifecycleConfiguration
                   - s3:PutObject
                   - s3:PutPublicAccessBlock
                   - secretsmanager:CreateSecret

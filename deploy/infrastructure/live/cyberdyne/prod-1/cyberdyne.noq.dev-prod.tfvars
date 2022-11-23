@@ -10,9 +10,10 @@ account_id = "775726381634"
 namespace   = "cyberdyne"
 zone        = "cyberdyne.noq.dev"
 stage       = "prod"
-attributes  = 1
+attributes  = 2
 domain_name = "app.cyberdyne.noq.dev"
-profile     = "cyberdyne_demo_org/cyberdyne_admin"
+# profile     = "cyberdyne_demo_org/NoqSoftwareTerraformApplyRole"
+profile = "cyberdyne_demo_org/cyberdyne_admin"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
