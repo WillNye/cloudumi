@@ -14,9 +14,9 @@ attributes  = 2
 domain_name = "noq.internal.akasa.engineering"
 profile     = "akasa_deployment_role"
 
-region     = "us-west-2"
-subnet_azs = ["us-west-2a", "us-west-2b"]
-
+region                 = "us-west-2"
+subnet_azs             = ["us-west-2a", "us-west-2b"]
+load_balancer_internal = true
 # Note tags cannot have variable names.
 # Name: {namespace}.{zone}
 # Environment: {stage}

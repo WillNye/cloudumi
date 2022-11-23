@@ -98,3 +98,9 @@ variable "zone" {
   description = "The zone is the base part of the domain name"
   type        = string
 }
+
+variable "load_balancer_internal" {
+  description = "If true, the LB will be internal."
+  type        = bool
+  default     = false
+}
