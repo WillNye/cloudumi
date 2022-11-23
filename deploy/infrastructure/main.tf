@@ -36,6 +36,7 @@ module "tenant_networking" {
   convert_case                = var.convert_case
   delimiter                   = var.delimiter
   domain_name                 = var.domain_name
+  load_balancer_internal      = var.load_balancer_internal
   lb_port                     = var.lb_port
   namespace                   = var.namespace
   stage                       = var.stage
