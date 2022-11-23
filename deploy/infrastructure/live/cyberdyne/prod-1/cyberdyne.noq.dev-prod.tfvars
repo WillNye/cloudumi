@@ -2,7 +2,7 @@
 # this MUST ONLY BE DONE ONCE IN THE BEGINNING
 # Once the ECS task role is created and we get access to environments, when it
 # is deleted, so is our access to environments, NO MATTER WHAT WE NAME IT
-modify_ecs_task_role = false
+modify_ecs_task_role = true
 
 # Associated account id
 account_id = "775726381634"
@@ -10,10 +10,10 @@ account_id = "775726381634"
 namespace   = "cyberdyne"
 zone        = "cyberdyne.noq.dev"
 stage       = "prod"
-attributes  = 2
+attributes  = 1
 domain_name = "app.cyberdyne.noq.dev"
-# profile     = "cyberdyne_demo_org/NoqSoftwareTerraformApplyRole"
-profile = "cyberdyne_demo_org/cyberdyne_admin"
+profile     = "cyberdyne_demo_org/NoqPocDeploy"
+# profile = "cyberdyne_demo_org/cyberdyne_admin"
 
 region     = "us-west-2"
 subnet_azs = ["us-west-2a", "us-west-2b"]
