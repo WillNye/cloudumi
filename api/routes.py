@@ -3,7 +3,6 @@ import os
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
-from api.handlers.v3.scim.scim import SCIMIntegrationHandler
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from common.handlers.base import AuthenticatedStaticFileHandler
 
@@ -365,7 +364,6 @@ def make_app(jwt_validator=None):
         # # (r"/api/v3/identities/requests/user/(.*?)/(.*)", IdentityRequestUserHandler),
         # (r"/api/v3/identities/requests_page_config", IdentityRequestsPageConfigHandler),
         (r"/api/v3/integrations/aws", AwsIntegrationHandler),
-        (r"/api/v3/scim/v2.0/(.*)", SCIMIntegrationHandler),
         # (r"/api/v3/tasks", TasksHandler),
         # (r"/api/v3/config", ConfigHandler),
         # (r"/api/v3/api_keys/add", AddApiKeyHandler),

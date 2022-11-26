@@ -50,7 +50,7 @@ test-lint: test lint
 
 .PHONY: docker_build
 docker_build:
-	 docker buildx build --platform=linux/amd64,linux/arm64 .
+	 docker buildx build --platform=linux/amd64 .
 
 .PHONY: docker_start
 docker_start:
