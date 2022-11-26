@@ -1,4 +1,3 @@
-# TODO: @ccastrapel: I don't think we need this anymore
 # For more information, please refer to https://aka.ms/vscode-docker-python
 FROM python:3.10
 ARG TARGETPLATFORM
@@ -57,8 +56,11 @@ RUN apt-get install build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openss
 ADD requirements.lock .
 RUN python -m pip install -r requirements.lock
 RUN npm install yarn -g
-COPY . /app
+ADD frontend/package.json frontend/package.json
+ADD frontend/yarn.lock frontend/yarn.lock
 RUN yarn --cwd frontend --dev
+COPY . /app
+# Install API
 RUN python -m pip install -e .
 
 # Install SPA frontend
