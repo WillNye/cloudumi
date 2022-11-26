@@ -40,9 +40,9 @@
     "zustand": "^4.0.0-rc.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "start_tls": "HTTPS=true react-scripts start",
-    "build": "BUILD_PATH='./dist' react-scripts build",
+    "start": "react-scripts --openssl-legacy-provider start",
+    "start_tls": "HTTPS=true react-scripts --openssl-legacy-provider start",
+    "build": "BUILD_PATH='./dist' react-scripts --openssl-legacy-provider build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "lint": "prettier --check './src/**/*.{jsx,js}'",

@@ -1,5 +1,5 @@
 # When running this locally, ensure your /etc/hosts file has the following configuration:
-# 127.0.0.1 localhost redis-cluster cloudumi-dynamodb cloudumi-redis localstack1 localstack2 localstack3
+# 127.0.0.1 localhost redis-cluster cloudumi-dynamodb cloudumi-redis localstack1 localstack2 localstack3 cloudumidev.com cloudumisamldev.com
 # TODO: Extends must NOT modify _global_. It must ONLY exist in the site_config specific namespace
 
 # AWS_PROFILE=development/development_admin aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
@@ -7,6 +7,7 @@ extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
+  data_location: ~/.config/noq/cache/
   profiler: yappi
   #  tracing:
   #    enabled: true
@@ -124,6 +125,8 @@ _global_:
   tenant_registration:
     set_login_page_ui:
       logo_location: frontend/src/assets/NoqLogo.png
+  tenant_storage:
+    base_path: ~/.config/noq/tenant_storage_dev/
 # Localhost configuration
 #  redis:
 #    cluster_mode:

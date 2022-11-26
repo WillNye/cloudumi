@@ -8,6 +8,10 @@ aenum==3.1.11
     # via okta
 aiodns==3.0.0
     # via checkov
+aiofile==3.8.1
+    # via aiopath
+aiofiles==22.1.0
+    # via -r ./common/requirements.in
 aiohttp==3.8.3
     # via
     #   -r ./common/celery_tasks/requirements.in
@@ -16,6 +20,8 @@ aiohttp==3.8.3
     #   okta
 aiomultiprocess==0.9.0
     # via checkov
+aiopath==0.6.11
+    # via -r ./common/requirements.in
 aiosignal==1.2.0
     # via aiohttp
 aiozipkin==1.1.1
@@ -28,6 +34,8 @@ amqp==5.1.1
     #   kombu
 antlr4-python3-runtime==4.7.2
     # via noq-dax-client
+anyio==3.6.2
+    # via aiopath
 argcomplete==2.0.0
     # via checkov
 asgiref==3.3.4
@@ -137,6 +145,8 @@ cachetools==5.2.0
     #   -r ./common/lib/aws/access_undenied/requirements.in
     #   checkov
     #   google-auth
+caio==0.9.11
+    # via aiofile
 celery==5.2.7
     # via
     #   -r ./api/requirements.in
@@ -215,6 +225,7 @@ cryptography==38.0.3
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
+    #   -r ./common/requirements.in
     #   -r ./common/util/requirements.in
     #   moto
     #   paramiko
@@ -362,6 +373,7 @@ identify==2.5.8
     # via pre-commit
 idna==3.4
     # via
+    #   anyio
     #   email-validator
     #   requests
     #   yarl
@@ -371,6 +383,8 @@ inflection==0.5.1
     # via cloudaux
 iniconfig==1.1.1
     # via pytest
+isodate==0.6.1
+    # via python3-saml
 jinja2==3.1.2
     # via
     #   -r ./common/lib/requirements.in
@@ -417,6 +431,10 @@ logmatic-python==0.1.7
     #   -r ./common/celery_tasks/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
+lxml==4.6.5
+    # via
+    #   python3-saml
+    #   xmlsec
 markdown==3.3.7
     # via
     #   cloudsplaining
@@ -730,6 +748,8 @@ python-json-logger==2.0.4
     # via logmatic-python
 python-terraform==0.10.1
     # via -r ./api/requirements.in
+python3-saml==1.14.0
+    # via -r ./common/requirements.in
 pytz==2022.6
     # via
     #   -r ./api/requirements.in
@@ -853,6 +873,7 @@ six==1.16.0
     #   google-auth-httplib2
     #   grpcio
     #   html5lib
+    #   isodate
     #   jsonpath-ng
     #   jsonschema
     #   junit-xml
@@ -868,6 +889,8 @@ six==1.16.0
     #   websocket-client
 smmap==5.0.0
     # via gitdb
+sniffio==1.3.0
+    # via anyio
 snowballstemmer==2.2.0
     # via pydocstyle
 sortedcontainers==2.4.0
@@ -994,6 +1017,8 @@ wrapt==1.14.1
     # via
     #   deprecated
     #   elastic-apm
+xmlsec==1.3.13
+    # via python3-saml
 xmltodict==0.13.0
     # via
     #   moto

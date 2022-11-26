@@ -29,7 +29,7 @@
 In this directory, you can run:
 mkdir .certs
 cd .certs
-`mkcert -cert-file=server.pem -key-file=server.key.pem localhost "*.localhost" 127.0.0.1 ::1 cyberdyne.localhost cloudumidev.com *.cloudumidev.com`
+`mkcert -cert-file=server.pem -key-file=server.key.pem localhost "*.localhost" 127.0.0.1 ::1 cyberdyne.localhost cloudumidev.com "*.cloudumidev.com" cloudumisamldev.com "*.cloudumisamldev.com"`
 cd ..
 vim .env
 
