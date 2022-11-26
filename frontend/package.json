@@ -43,8 +43,8 @@
     "start": "react-scripts --openssl-legacy-provider start",
     "start_tls": "HTTPS=true react-scripts --openssl-legacy-provider start",
     "build": "BUILD_PATH='./dist' react-scripts --openssl-legacy-provider build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject",
+    "test": "react-scripts --openssl-legacy-provider test --env=jsdom",
+    "eject": "react-scripts --openssl-legacy-provider eject",
     "lint": "prettier --check './src/**/*.{jsx,js}'",
     "lint:fix": "prettier --write './src/**/*.{jsx,js}'",
     "copy": "cp -a dist/ ../api/templates",
@@ -68,6 +68,7 @@
   },
   "devDependencies": {
     "@babel/helper-create-class-features-plugin": "^7.17.6",
+    "@babel/preset-react": "^7.18.6",
     "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/react": "^12.1.4",
     "@testing-library/user-event": "^13.5.0",

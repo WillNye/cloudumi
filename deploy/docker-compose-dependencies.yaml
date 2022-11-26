@@ -21,7 +21,7 @@ services:
       - REDIS_TLS_AUTH_CLIENTS=no
       - REDIS_TLS_PORT=6379
     volumes:
-      - ./local/redis/tests/tls/:/tls
+      - ./local/redis/tests/tls/:/tls:ro
 
   cloudumi-dynamodb:
     image: "amazon/dynamodb-local"

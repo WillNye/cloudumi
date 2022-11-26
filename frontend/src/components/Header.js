@@ -13,7 +13,7 @@ import ReactMarkdown from 'react-markdown'
 import SettingsModal from './SettingsModal'
 import { NotificationsModal } from './notifications/Notifications'
 import { useNotifications } from './hooks/notifications'
-import NoqLogo from '../assets/NoqLogo.svg'
+import NoqLogo from '../assets/NoqLogo.js'
 
 const NavHeader = ({ showMenuItems = true }) => {
   const { user } = useAuth()

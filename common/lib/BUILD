@@ -8,6 +8,8 @@ INT_DEPS = [
 ]
 
 EXT_DEPS = [
+    requirement("aiofiles"),
+    requirement("aiopath"),
     requirement("aiozipkin"),
     requirement("asgiref"),
     requirement("bcrypt"),
@@ -38,6 +40,7 @@ EXT_DEPS = [
     requirement("pyjwt"),
     requirement("pynamodax"),
     requirement("pytz"),
+    requirement("python3-saml"),
     requirement("redis"),
     requirement("requests"),
     requirement("retrying"),
@@ -51,6 +54,8 @@ EXT_DEPS = [
 ]
 
 REQUIRES = [
+    "aiofiles",
+    "aiopath",
     "aiozipkin",
     "asgiref",
     "bcrypt",
@@ -79,6 +84,7 @@ REQUIRES = [
     "policy_sentry",
     "pydantic",
     "pyjwt",
+    "python3-saml",
     "pytz",
     "redis",
     "requests",

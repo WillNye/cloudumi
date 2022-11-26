@@ -1,16 +1,6 @@
 #!/bin/bash
 set -ex
 echo
-echo "Checking whether VIRTUALENV exists in your environment"
-echo
-if [[ -z "${VIRTUAL_ENV}" && -z "${VIRTUALENVWRAPPER_PYTHON}" && -z "${PYENV_ROOT}" ]]; then
-    echo "Definitely need to have either VIRTUAL_ENV, VIRTUALENVWRAPPER_PYTHON or PYENV_ROOT defined, which means"
-    echo "you have to choose either venv, virtualenvwrapper or pyenv to install all requirements while we"
-    echo "work on making bazel hermetic"
-    exit 1
-fi
-
-echo
 echo "Setting AWS_PROFILE=staging/staging_admin"
 echo
 export AWS_PROFILE=staging/staging_admin
@@ -28,14 +18,20 @@ aws ecr get-login-password --region us-west-2 | docker login --username AWS --pa
 export VERSION=$(git describe --tags --abbrev=0)
 
 echo
-echo "Updating version stamping to $VERSION"
+echo "Building and tagging docker image"
 echo
-bazel sync --configure
+docker build \
+    -t shared-staging-registry-api \
+    -t shared-staging-registry-celery \
+    -t 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest \
+    -t 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:$VERSION \
+    .
 
 echo
 echo "Pushing API container - $VERSION"
 echo
-bazelisk run --stamp --workspace_status_command="echo VERSION $VERSION" //deploy/infrastructure/live/shared/staging-1:api-container-deploy-staging
+# TODO: These are the same image, we should just reference the same container
+docker push --all-tags 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api
 
 echo
 echo "Pushing Celery container - $VERSION"

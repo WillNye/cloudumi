@@ -138,16 +138,6 @@ output "registry_repository_url_api" {
   value       = length(module.tenant_container_service.registry_repository_url_api) > 0 ? module.tenant_container_service.registry_repository_url_api[0].repository_url : ""
 }
 
-output "registry_repository_url_celery" {
-  description = "The respository URL for the Celery registry"
-  value       = length(module.tenant_container_service.registry_repository_url_celery) > 0 ? module.tenant_container_service.registry_repository_url_celery[0].repository_url : ""
-}
-
-output "registry_repository_url_frontend" {
-  description = "The respository URL for the Frontend registry"
-  value       = length(module.tenant_container_service.registry_repository_url_frontend) > 0 ? module.tenant_container_service.registry_repository_url_frontend[0].repository_url : ""
-}
-
 output "sns_registration_topic_arn" {
   description = "The SNS registration topic ARN that is used to trigger customer registration using the NOQ CF templates"
   value       = module.tenant_messaging.sns_registration_topic_arn

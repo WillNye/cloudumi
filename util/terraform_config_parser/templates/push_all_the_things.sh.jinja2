@@ -1,16 +1,6 @@
 #!/bin/bash
 set -ex
 echo
-echo "Checking whether VIRTUALENV exists in your environment"
-echo
-if [[ -z "${VIRTUAL_ENV}" && -z "${VIRTUALENVWRAPPER_PYTHON}" && -z "${PYENV_ROOT}" ]]; then
-    echo "Definitely need to have either VIRTUAL_ENV, VIRTUALENVWRAPPER_PYTHON or PYENV_ROOT defined, which means"
-    echo "you have to choose either venv, virtualenvwrapper or pyenv to install all requirements while we"
-    echo "work on making bazel hermetic"
-    exit 1
-fi
-
-echo
 echo "Setting AWS_PROFILE={{ aws_profile }}"
 echo
 export AWS_PROFILE={{ aws_profile }}
@@ -28,14 +18,20 @@ aws ecr get-login-password --region {{ region }} | docker login --username AWS -
 export VERSION=$(git describe --tags --abbrev=0)
 
 echo
-echo "Updating version stamping to $VERSION"
+echo "Building and tagging docker image"
 echo
-bazel sync --configure
+docker buildx build --platform=linux/amd64,linux/arm64
+    -t {{ namespace }}-{{ stage }}-registry-api \
+    -t {{ namespace }}-{{ stage }}-registry-celery \
+    -t {{ registry_repository_url_api }}:latest \
+    -t {{ registry_repository_url_api }}:$VERSION \
+    .
 
 echo
 echo "Pushing API container - $VERSION"
 echo
-bazelisk run --stamp --workspace_status_command="echo VERSION $VERSION" //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:api-container-deploy-{{ stage }}
+# TODO: These are the same image, we should just reference the same container
+docker push --all-tags {{ registry_repository_url_api }}
 
 echo
 echo "Pushing Celery container - $VERSION"

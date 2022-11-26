@@ -113,6 +113,8 @@ _global_:
   # Saas Configuration
   ses_notifications_sender_identity: arn:aws:ses:us-west-2:759357822767:identity/notifications@noq.dev
   redis:
+    host:
+      global: cloudumi-redis
     ssl: true
     ssl_ca_certs: ./deploy/local/redis/tests/tls/ca.crt
     password: s2dKdXxjHeCQwoYZ

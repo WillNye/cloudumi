@@ -36,7 +36,7 @@ _global_:
     tenant_data:
       name: NoqServiceConnRole
       account_id: "615395543222"
-      role_arn: arn:aws:iam::615395543222:role/NoqServiceConnRole
+      role_arn: arn:aws:iam::615395543222:role/
       external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
       region: us-west-2
     zelkova:
