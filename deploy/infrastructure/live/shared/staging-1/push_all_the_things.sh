@@ -20,7 +20,7 @@ export VERSION=$(git describe --tags --abbrev=0)
 echo
 echo "Building and tagging docker image"
 echo
-docker build \
+docker buildx build --platform=linux/amd64 \
     -t shared-staging-registry-api \
     -t shared-staging-registry-celery \
     -t 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest \
@@ -34,11 +34,6 @@ echo
 docker push --all-tags 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api
 
 echo
-echo "Pushing Celery container - $VERSION"
-echo
-bazelisk run --action_env=AWS_PROFILE="$AWS_PROFILE" --stamp --workspace_status_command="echo VERSION $VERSION" //deploy/infrastructure/live/shared/staging-1:celery-container-deploy-staging
-
-echo
 echo "Deploying Service - $VERSION"
 echo
-VERSION=$VERSION bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_deployer
+python deploy/infrastructure/live/shared/staging-1/ecs_deployer.py

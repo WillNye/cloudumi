@@ -2,26 +2,30 @@ version: "3"
 # TODO: Set up for production environment security
 # Never use this in a production environment.
 services:
-  permission-adapter:
-    image: "bitnami/minideb"
-    command: bash -c "chmod -R 755 /tls && chown -R 1001:1001 /tls"
-    volumes:
-      - ./local/redis/tests/tls/:/tls
   cloudumi-redis:
     container_name: cloudumi-redis
+    user: 0:0 # root
     ports:
       - "6379:6379"
     image: "bitnami/redis:6.2"
     environment:
       - REDIS_PASSWORD=s2dKdXxjHeCQwoYZ
       - REDIS_TLS_ENABLED=yes
-      - REDIS_TLS_CERT_FILE=/tls/redis.crt
-      - REDIS_TLS_KEY_FILE=/tls/redis.key
-      - REDIS_TLS_CA_FILE=/tls/ca.crt
+      - REDIS_TLS_CERT_FILE=/opt/bitnami/redis/certs/redis.crt
+      - REDIS_TLS_KEY_FILE=/opt/bitnami/redis/certs/redis.key
+      - REDIS_TLS_CA_FILE=/opt/bitnami/redis/certs/ca.crt
       - REDIS_TLS_AUTH_CLIENTS=no
       - REDIS_TLS_PORT=6379
     volumes:
-      - ./local/redis/tests/tls/:/tls:ro
+      - redis_certs:/opt/bitnami/redis/certs
+    entrypoint: >
+      bash -c '
+        # mkdir -p /opt/bitnami/redis/certs/;
+        # chmod -R 755 /opt/bitnami/redis/certs/;
+        # chown -R 1001:1001 /opt/bitnami/redis/certs/;
+        sleep infinity;
+        /opt/bitnami/scripts/redis/entrypoint.sh'
+    command: "/opt/bitnami/scripts/redis/run.sh"
 
   cloudumi-dynamodb:
     image: "amazon/dynamodb-local"
@@ -40,6 +44,13 @@ services:
       - DYNAMO_ENDPOINT=http://cloudumi-dynamodb:8005
     ports:
       - "8001:8001"
+volumes:
+  redis_certs:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./local/redis/tests/tls/
+      o: bind
   # redis-cluster:
   #   image: noqdev/redis-cluster
   #   environment:

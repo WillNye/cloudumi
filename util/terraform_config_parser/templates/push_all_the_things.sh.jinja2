@@ -20,7 +20,7 @@ export VERSION=$(git describe --tags --abbrev=0)
 echo
 echo "Building and tagging docker image"
 echo
-docker buildx build --platform=linux/amd64
+docker buildx build --platform=linux/amd64 \
     -t {{ namespace }}-{{ stage }}-registry-api \
     -t {{ namespace }}-{{ stage }}-registry-celery \
     -t {{ registry_repository_url_api }}:latest \
@@ -34,11 +34,6 @@ echo
 docker push --all-tags {{ registry_repository_url_api }}
 
 echo
-echo "Pushing Celery container - $VERSION"
-echo
-bazelisk run --action_env=AWS_PROFILE="$AWS_PROFILE" --stamp --workspace_status_command="echo VERSION $VERSION" //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:celery-container-deploy-{{ stage }}
-
-echo
 echo "Deploying Service - $VERSION"
 echo
-VERSION=$VERSION bazelisk run //deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}:ecs_deployer
+python deploy/infrastructure/live/{{ namespace }}/{{ stage }}-{{ attributes }}/ecs_deployer.py
