@@ -23,6 +23,15 @@ class TenantConfig:
         return result if (result := config.get(f"_global_.{config_str}")) else default
 
     @property
+    def application_admins(self) -> list[str]:
+        application_admins = (
+            config.get_tenant_specific_key("application_admin", self.tenant) or []
+        )
+        if isinstance(application_admins, str):
+            application_admins = [application_admins]
+        return application_admins
+
+    @property
     def tenant_storage_base_path(self):
         global_path = os.path.expanduser(
             config.get(

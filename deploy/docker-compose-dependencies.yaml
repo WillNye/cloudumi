@@ -2,12 +2,8 @@ version: "3"
 # TODO: Set up for production environment security
 # Never use this in a production environment.
 services:
-  permission-adapter:
-    image: "bitnami/minideb"
-    command: bash -c "chmod -R 755 /tls && chown -R 1001:1001 /tls"
-    volumes:
-      - ./deploy/local/redis/tests/tls/:/tls
   cloudumi-redis:
+    user: root
     container_name: cloudumi-redis
     ports:
       - "6379:6379"
@@ -21,7 +17,7 @@ services:
       - REDIS_TLS_AUTH_CLIENTS=no
       - REDIS_TLS_PORT=6379
     volumes:
-      - ./deploy/local/redis/tests/tls/:/tls
+      - ${PWD}/deploy/local/redis/tests/tls/:/tls
 
   cloudumi-dynamodb:
     image: "amazon/dynamodb-local"
