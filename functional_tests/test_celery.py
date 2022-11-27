@@ -1,5 +1,4 @@
 import concurrent
-import os
 from concurrent.futures import ThreadPoolExecutor
 
 from common.celery_tasks import celery_tasks as celery
@@ -12,7 +11,7 @@ from functional_tests.conftest import (
 
 class TestCelery(FunctionalTest):
     def test_celery(self):
-        executor = ThreadPoolExecutor(max_workers=os.cpu_count())
+        executor = ThreadPoolExecutor(max_workers=1)
         futures = []
 
         futures.extend(

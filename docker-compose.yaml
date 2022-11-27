@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ~/.aws:/root/.aws:cached
-      - .:/app:cached
+      # - .:/app:cached
       - /app/frontend/node_modules/
     ports:
       - 8092:8092
