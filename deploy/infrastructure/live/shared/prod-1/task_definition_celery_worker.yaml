@@ -26,7 +26,7 @@ containerDefinitions:
         sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
-    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-celery:prod
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:prod
     essential: true
     links: []
     extraHosts: []
