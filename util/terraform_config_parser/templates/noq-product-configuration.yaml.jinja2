@@ -54,9 +54,9 @@ _global_:
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   web:
-    path: "/app/frontend/build"
+    path: "/app/frontend/dist"
   docs:
-    path: "/api/docs"
+    path: "/app/api/docs"
   s3_cache_bucket: {{ bucket_name }}
   development: false
   environment: {{ stage }}

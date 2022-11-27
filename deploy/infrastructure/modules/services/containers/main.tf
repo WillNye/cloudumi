@@ -54,7 +54,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-api" {
   count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
-    scan_on_push = true
+    scan_on_push = false
   }
 
   tags = merge(
@@ -69,7 +69,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-celery" {
   count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
-    scan_on_push = true
+    scan_on_push = false
   }
 
   tags = merge(
@@ -94,7 +94,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
   count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
-    scan_on_push = true
+    scan_on_push = false
   }
 
   tags = merge(

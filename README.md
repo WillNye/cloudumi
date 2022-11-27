@@ -200,6 +200,8 @@ AWS_PROFILE=prod/prod_admin ecsgo
 
 Select the appropriate cluster, service, and tasks to connect to the container of your choice.
 
+### Deprecated Bazel Instructions
+
 It may be useful to retrieve the environment variables used by the process in a Docker container running in Fargate.
 This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credential environment variables set
 appropriately without too much of a hassle. Run the following command to source all environment variables from the
