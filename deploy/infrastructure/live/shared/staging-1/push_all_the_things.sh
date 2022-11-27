@@ -50,7 +50,7 @@ echo
 docker build --platform=linux/amd64 \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
     -t shared-staging-registry-api \
-    --no-cache \
+    --progress=plain \
     .
 
 docker tag shared-staging-registry-api:latest \

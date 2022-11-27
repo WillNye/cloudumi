@@ -50,7 +50,7 @@ echo
 docker build --platform=linux/amd64 \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
     -t {{ namespace }}-{{ stage }}-registry-api \
-    --no-cache \
+    --progress=plain \
     .
 
 docker tag {{ namespace }}-{{ stage }}-registry-api:latest \

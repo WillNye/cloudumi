@@ -5,7 +5,7 @@ import {
   Menu,
   Label,
   Message,
-  Image,
+  // Image,
 } from 'semantic-ui-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProviderDefault'
@@ -211,7 +211,12 @@ const NavHeader = ({ showMenuItems = true }) => {
             width: '240px',
           }}
         >
-          <Image size='small' src={NoqLogo} style={{ marginRight: '1.5em' }} />
+          <NoqLogo
+            width={'70%'}
+            heigth={'70%'}
+            style={{ marginRight: '1.5em' }}
+          />
+          {/* <svg size='small' src={NoqLogo} style={{ marginRight: '1.5em' }} /> */}
         </Menu.Item>
 
         {showMenuItems && (

@@ -3,11 +3,14 @@ FROM python:3.10
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG TARGETVARIANT
+
+# Set environment variable PUBLIC_URL from build args, uses "/" as default
+ARG PUBLIC_URL
+ENV PUBLIC_URL=${PUBLIC_URL:-/}
+
 RUN mkdir -p /app
 WORKDIR /app
-RUN apt clean
-RUN apt update
-
+RUN apt-get clean
 RUN apt-get update
 RUN apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y
 RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
@@ -38,7 +41,10 @@ ADD frontend/package.json frontend/package.json
 ADD frontend/yarn.lock frontend/yarn.lock
 RUN yarn --cwd frontend --dev
 COPY frontend frontend
-RUN yarn --cwd frontend build
+RUN yarn --cwd frontend build --base=$PUBLIC_URL
+RUN echo $(pwd)
+RUN cat frontend/dist/index.html
+# RUN cat frontend/build/index.html | sed "s|PUBLIC_URL|${PUBLIC_URL}|g" > frontend/build/index.html
 RUN yarn --cwd frontend cache clean --all
 COPY . /app
 # Install API
