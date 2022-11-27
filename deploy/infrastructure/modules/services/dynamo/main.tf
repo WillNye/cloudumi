@@ -605,7 +605,7 @@ resource "aws_dynamodb_table" "cloudumi_resource_cache_multitenant_v2" {
     hash_key        = "tenant"
     projection_type = "ALL"
     read_capacity   = 1
-    write_capacity  = 1
+    write_capacity  = 5
   }
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
