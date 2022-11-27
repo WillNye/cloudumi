@@ -32,16 +32,6 @@ class TenantFileStorageHandler:
         full_path = AsyncPath(full_path_str)
         return await full_path.exists()
 
-    # async def open_file(self, file_path: str, *args, **kwargs):
-    #     full_file_path = await self.get_tenant_file_path(file_path)
-
-    #     if args[0] in ["w", "wb"]:
-    #         await aiofiles.os.makedirs(
-    #             os.path.dirname(full_file_path),
-    #             exist_ok=True
-    #         )
-    #     return aiofiles.open(full_file_path, *args, **kwargs)
-
     async def write_file(self, file_path: str, level: str, data: Any):
         full_file_path = await self.get_tenant_file_path(file_path)
         if level in {"w", "wb"}:

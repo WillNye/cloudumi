@@ -1,12 +1,5 @@
 import React, { useState } from 'react'
-import {
-  Button,
-  Dropdown,
-  Menu,
-  Label,
-  Message,
-  // Image,
-} from 'semantic-ui-react'
+import { Button, Dropdown, Menu, Label, Message } from 'semantic-ui-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProviderDefault'
 import ReactMarkdown from 'react-markdown'
@@ -216,7 +209,6 @@ const NavHeader = ({ showMenuItems = true }) => {
             heigth={'70%'}
             style={{ marginRight: '1.5em' }}
           />
-          {/* <svg size='small' src={NoqLogo} style={{ marginRight: '1.5em' }} /> */}
         </Menu.Item>
 
         {showMenuItems && (

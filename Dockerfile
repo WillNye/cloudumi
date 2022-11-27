@@ -51,8 +51,5 @@ COPY . /app
 RUN python -m pip install -e .
 RUN pip cache purge
 
-# Install SPA frontend
-
-
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["python", "api/__main__.py"]
