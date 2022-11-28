@@ -35,7 +35,7 @@ class TenantConfig:
     def tenant_storage_base_path(self):
         global_path = os.path.expanduser(
             config.get(
-                "_global_.tenant_storage.base_path", "/data/tenant_data/{tenant}/"
+                "_global_.tenant_storage.base_path", "/data/tenant_data/"
             ).format(tenant=self.tenant)
         )
         os.makedirs(os.path.dirname(global_path), exist_ok=True)
