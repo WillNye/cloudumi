@@ -393,17 +393,6 @@ class UnableToAuthenticate(BaseException):
         super().__init__(msg)
 
 
-class SilentException(BaseException):
-    """
-    Exception Traceback will not be printed (Useful for OIDC/SAML Redirects when we want Tornado to stop
-    processing a request)
-    """
-
-    def __init__(self, msg=""):
-        stats.count("SilentException")
-        super().__init__(msg)
-
-
 class TenantNoCentralRoleConfigured(BaseException):
     """
     Tenant has no central role configured
