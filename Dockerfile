@@ -7,7 +7,7 @@ RUN apt update
 
 RUN apt-get update
 RUN apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
 # logstash
 # test with: /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/00-cloudumi-s3-es.conf
 RUN bash -c 'wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -'

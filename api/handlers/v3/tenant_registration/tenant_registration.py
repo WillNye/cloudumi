@@ -337,7 +337,7 @@ get_user_by_oidc_settings:
   metadata_url: https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration
   jwt_verify: true
   jwt_email_key: email
-  jwt_groups_key: 'cognito:groups'
+  jwt_groups_key: 'custom:groups'
   grant_type: authorization_code
   id_token_response_key: id_token
   access_token_response_key: access_token
