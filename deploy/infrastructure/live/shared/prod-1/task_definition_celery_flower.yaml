@@ -11,6 +11,10 @@ containerDefinitions:
       - hostPort: 7071
         protocol: tcp
         containerPort: 7071
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - "python /app/common/celery_tasks/run.py"
     linuxParameters:
       devices: []
       initProcessEnabled: true

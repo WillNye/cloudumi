@@ -32,12 +32,12 @@ if [ -n "$UNTRACKED_FILES" ]; then
     fi
 fi
 
-if [ "prod" == "prod" ]; then
-  if [ "$BRANCH" != "main" ]; then
-    echo "Not on main branch, not deploying to prod"
-    exit 0
-  fi
-fi
+# if [ "prod" == "prod" ]; then
+#   if [ "$BRANCH" != "main" ]; then
+#     echo "Not on main branch, not deploying to prod"
+#     exit 0
+#   fi
+# fi
 
 export VERSION_PATH="$VERSION-$GIT_HASH$GIT_DIRTY/$BRANCH/"
 export UPLOAD_DIRECTORY="s3://noq-global-frontend/$VERSION_PATH"

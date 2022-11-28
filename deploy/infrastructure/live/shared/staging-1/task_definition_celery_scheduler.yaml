@@ -7,6 +7,10 @@ containerDefinitions:
         awslogs-group: staging-noq-dev-shared-staging-1
         awslogs-region: us-west-2
         awslogs-stream-prefix: celery-scheduler
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - "python /app/common/celery_tasks/run.py"
     linuxParameters:
       devices: []
       initProcessEnabled: true

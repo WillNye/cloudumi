@@ -7,6 +7,10 @@ containerDefinitions:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
         awslogs-stream-prefix: celery-worker
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - 'python /app/common/celery_tasks/run.py'
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
