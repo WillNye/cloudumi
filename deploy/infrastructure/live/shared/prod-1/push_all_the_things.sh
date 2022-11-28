@@ -32,16 +32,29 @@ if [ -n "$UNTRACKED_FILES" ]; then
     fi
 fi
 
-if [ "prod" == "prod" ]; then
-  if [ "$BRANCH" != "main" ]; then
-    echo "Not on main branch, not deploying to prod"
-    exit 0
-  fi
-fi
+# if [ "prod" == "prod" ]; then
+#   if [ "$BRANCH" != "main" ]; then
+#     echo "Not on main branch, not deploying to prod"
+#     exit 0
+#   fi
+# fi
 
 export VERSION_PATH="$VERSION-$GIT_HASH$GIT_DIRTY/$BRANCH/"
 export UPLOAD_DIRECTORY="s3://noq-global-frontend/$VERSION_PATH"
 export PUBLIC_URL="https://d2mxcvfujf7a5q.cloudfront.net/$VERSION_PATH"
+export DOCKER_IMAGE_NAME=shared-prod-registry-api
+export DOCKER_IMAGE_TAG_LATEST=shared-prod-registry-api:latest
+export DOCKER_IMAGE_TAG_VERSIONED=shared-prod-registry-api:$VERSION
+export ECR_IMAGE_TAG_LATEST=940552945933.dkr.ecr.us-west-2.amazonaws.com:latest
+
+echo
+echo "Removing older docker images"
+echo
+
+# TODO: How do we capture the older versions?
+docker rmi --force $(docker images "$DOCKER_IMAGE_TAG_LATEST" -a -q) || true
+docker rmi --force $(docker images "$DOCKER_IMAGE_TAG_VERSIONED" -a -q) || true
+docker rmi --force $(docker images "$DOCKER_IMAGE_NAME" -a -q) || true
 
 echo
 echo "Building and tagging docker image"
@@ -49,14 +62,14 @@ echo
 
 docker build --platform=linux/amd64 \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
-    -t shared-prod-registry-api \
+    -t $DOCKER_IMAGE_NAME \
     --progress=plain \
     .
 
-docker tag shared-prod-registry-api:latest \
-  940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:latest
+docker tag $DOCKER_IMAGE_TAG_LATEST \
+  $ECR_IMAGE_TAG_LATEST
 
-docker tag shared-prod-registry-api:latest \
+docker tag $DOCKER_IMAGE_TAG_LATEST \
   940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:$VERSION
 
 echo
@@ -67,10 +80,14 @@ docker push --all-tags 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-
 echo
 echo "Copying Frontend from container to S3"
 echo
+
+# Get production creds
 export PROD_ROLE_ARN=arn:aws:iam::940552945933:role/prod_admin
 noq file -p $PROD_ROLE_ARN $PROD_ROLE_ARN -f
+
+# Upload frontend files that we just built in the container to S3
 docker run -v "$HOME/.aws:/root/.aws" \
-    -e "AWS_PROFILE=$PROD_ROLE_ARN" 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:latest \
+    -e "AWS_PROFILE=$PROD_ROLE_ARN" $ECR_IMAGE_TAG_LATEST \
     bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 
 echo

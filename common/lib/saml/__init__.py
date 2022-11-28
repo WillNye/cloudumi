@@ -74,7 +74,7 @@ async def init_saml_auth(request, tenant):
             .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=3650))
             .add_extension(
                 x509.SubjectAlternativeName(
-                    [x509.DNSName("tenant_config.tenant_base_url")]
+                    [x509.DNSName(tenant_config.tenant_base_url)]
                 ),
                 critical=False,
                 # Sign our certificate with our private key
@@ -111,20 +111,21 @@ def get_saml_login_endpoint(saml_login_endpoint, tenant):
 
 
 async def prepare_tornado_request_for_saml(request, tenant):
+    tenant_config = TenantConfig(tenant)
     dataDict = {}
 
     for key in request.arguments:
         dataDict[key] = request.arguments[key][0].decode("utf-8")
     redirect_uri = dataDict.get("redirect_url")
     redirect_path = request.path
-    redirect_port = tornado.httputil.split_host_and_port(tenant)[1]
+    redirect_port = tornado.httputil.split_host_and_port(tenant_config.tenant_url)[1]
     if redirect_uri:
         parsed_redirect_uri = furl(redirect_uri)
         redirect_path = parsed_redirect_uri.pathstr
         redirect_port = parsed_redirect_uri.port
     result = {
         "https": "on" if request == "https" else "off",
-        "http_host": tornado.httputil.split_host_and_port(tenant)[0],
+        "http_host": tornado.httputil.split_host_and_port(tenant_config.tenant_url)[0],
         "script_name": redirect_path,
         "server_port": redirect_port,
         "get_data": dataDict,
