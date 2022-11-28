@@ -1,7 +1,7 @@
-# output "igw_arn" {
-#   description = "The main igw ARN"
-#   value       = aws_internet_gateway.main_igw.arn
-# }
+output "igw_arn" {
+  description = "The main igw ARN"
+  value       = aws_internet_gateway.main_igw.arn
+}
 
 output "load_balancer_endpoint" {
   description = "The endpoint URI of the load balancer configured to be used in the NOQ configuration files"
@@ -33,20 +33,20 @@ output "vpc_id" {
   value       = aws_vpc.main_vpc.id
 }
 
-# output "vpc_subnet_public_cidr" {
-#   description = "The public CIDR range of the subnet assigned to the VPC"
-#   value       = [aws_subnet.subnet_public_az0.cidr_block, aws_subnet.subnet_public_az1.cidr_block]
-# }
+output "vpc_subnet_public_cidr" {
+  description = "The public CIDR range of the subnet assigned to the VPC"
+  value       = [aws_subnet.subnet_public_az0.cidr_block, aws_subnet.subnet_public_az1.cidr_block]
+}
 
 output "vpc_subnet_private_cidr" {
   description = "The private CIDR range of the private subnet assign to the VPC"
   value       = [aws_subnet.subnet_private_az0.cidr_block, aws_subnet.subnet_private_az1.cidr_block]
 }
 
-# output "vpc_subnet_public_id" {
-#   description = "The public CIDR range of the subnet assigned to the VPC"
-#   value       = [aws_subnet.subnet_public_az0.id, aws_subnet.subnet_public_az1.id]
-# }
+output "vpc_subnet_public_id" {
+  description = "The public CIDR range of the subnet assigned to the VPC"
+  value       = [aws_subnet.subnet_public_az0.id, aws_subnet.subnet_public_az1.id]
+}
 
 output "vpc_subnet_private_id" {
   description = "The private CIDR range of the private subnet assign to the VPC"
