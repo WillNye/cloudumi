@@ -24,7 +24,6 @@ from common.exceptions.exceptions import (
     MissingConfigurationValue,
     NoGroupsException,
     NoUserException,
-    SilentException,
     WebAuthNError,
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
@@ -220,7 +219,7 @@ class BaseHandler(TornadoRequestHandler):
     """Default BaseHandler."""
 
     def log_exception(self, *args, **kwargs):
-        if args[0].__name__ == "SilentException":
+        if args[0].__name__ == "Finish":
             pass
         else:
             super(BaseHandler, self).log_exception(*args, **kwargs)
@@ -276,7 +275,7 @@ class BaseHandler(TornadoRequestHandler):
                 }
             )
             await self.finish()
-            raise SilentException(log_data["message"])
+            raise tornado.web.Finish(log_data["message"])
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -497,7 +496,7 @@ class BaseHandler(TornadoRequestHandler):
                         self.request.uri != "/saml/acs"
                         and not self.request.uri.startswith("/auth?")
                     ):
-                        raise SilentException(
+                        raise tornado.web.Finish(
                             "Unable to authenticate the user by SAML. "
                             "Redirecting to authentication endpoint"
                         )
@@ -510,7 +509,7 @@ class BaseHandler(TornadoRequestHandler):
             ):
                 res = await authenticate_user_by_oidc(self)
                 if not res:
-                    raise SilentException(
+                    raise tornado.web.Finish(
                         "Unable to authenticate the user by OIDC. "
                         "Redirecting to authentication endpoint"
                     )
@@ -547,7 +546,7 @@ class BaseHandler(TornadoRequestHandler):
                     }
                 )
                 await self.finish()
-                raise SilentException(
+                raise tornado.web.Finish(
                     "Redirecting user to authenticate by username/password."
                 )
 
@@ -932,7 +931,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 }
             )
             await self.finish()
-            raise SilentException(log_data["message"])
+            raise tornado.web.Finish(log_data["message"])
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
