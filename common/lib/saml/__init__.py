@@ -124,8 +124,8 @@ async def prepare_tornado_request_for_saml(request, tenant):
         redirect_path = parsed_redirect_uri.pathstr
         redirect_port = parsed_redirect_uri.port
     result = {
-        "https": "on" if request.protocol == "https" else "off",
-        "http_host": tornado.httputil.split_host_and_port(tenant_config.tenant_url)[0],
+        "https": "on" if tenant_config.tenant_url.startswith("https:") else "off",
+        "http_host": request.host,
         "script_name": redirect_path,
         "server_port": redirect_port,
         "get_data": dataDict,
