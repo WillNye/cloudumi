@@ -116,7 +116,7 @@ async def prepare_tornado_request_for_saml(request, tenant):
 
     for key in request.arguments:
         dataDict[key] = request.arguments[key][0].decode("utf-8")
-    redirect_uri = dataDict.get("redirect_url")
+    redirect_uri = dataDict.get("redirect_url") or "/"
     redirect_path = request.path
     redirect_port = tornado.httputil.split_host_and_port(tenant_config.tenant_url)[1]
     if redirect_uri:
@@ -124,7 +124,7 @@ async def prepare_tornado_request_for_saml(request, tenant):
         redirect_path = parsed_redirect_uri.pathstr
         redirect_port = parsed_redirect_uri.port
     result = {
-        "https": "on" if request == "https" else "off",
+        "https": "on" if request.protocol == "https" else "off",
         "http_host": tornado.httputil.split_host_and_port(tenant_config.tenant_url)[0],
         "script_name": redirect_path,
         "server_port": redirect_port,
